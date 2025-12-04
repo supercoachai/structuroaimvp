@@ -46,7 +46,7 @@ function parseNaturalLanguage(input: string) {
 
 /** ---------- Hoofdscherm ---------- */
 export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any) {
-  const { tasks, loading, addTask: apiAddTask, updateTask: apiUpdateTask, deleteTask: apiDeleteTask, updateTasks: apiUpdateTasks } = useTasks();
+  const { tasks, loading, addTask: apiAddTask, updateTask: apiUpdateTask, deleteTask: apiDeleteTask, updateTasks: apiUpdateTasks, fetchTasks } = useTasks();
   const [newTitle, setNewTitle] = useState("");
   const [quickDate, setQuickDate] = useState<string>("");
   const [quickTime, setQuickTime] = useState<string>("");
@@ -70,11 +70,11 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     [tasks]
   );
   const others = useMemo(
-    () => tasks.filter((t: any) => !top3.some((p: any) => p.id === t.id) && !t.done && !t.not_today),
+    () => tasks.filter((t: any) => !top3.some((p: any) => p.id === t.id) && !t.done && !t.notToday),
     [tasks, top3]
   );
   const notTodayTasks = useMemo(
-    () => tasks.filter((t: any) => t.not_today && !t.done),
+    () => tasks.filter((t: any) => t.notToday && !t.done),
     [tasks]
   );
   const completed = useMemo(() => tasks.filter((t: any) => t.done), [tasks]);
@@ -382,6 +382,8 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   const toggleNotToday = async (id: string, notToday: boolean) => {
     try {
       await apiUpdateTask(id, { notToday });
+      // Refresh tasks na update om de lijst te updaten
+      await fetchTasks();
       toast(notToday ? "📅 Taak verplaatst naar 'niet vandaag'" : "✅ Taak terug in je lijst");
       track("task_not_today_toggle", { taskId: id, notToday });
     } catch (error) {
@@ -646,6 +648,15 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
 
         {/* User Insights & Feedback Loop */}
         <UserInsights tasks={tasks} />
+
+        {/* Debug info - tijdelijk om te zien wat er aan de hand is */}
+        {tasks.length > 0 && (
+          <section style={card}>
+            <div style={{ fontSize: 12, color: theme.sub, marginBottom: 8 }}>
+              Debug: Totaal {tasks.length} taken | Top3: {top3.length} | Others: {others.length} | NotToday: {notTodayTasks.length} | Done: {completed.length}
+            </div>
+          </section>
+        )}
 
         {/* Geparkeerde Gedachten (altijd zichtbaar) */}
         <section style={card}>
@@ -1004,13 +1015,13 @@ function TaskRow({ task, onToggle, onRemove, onPromoteTo1, onPromoteTo2, onPromo
             </button>
             {onToggleNotToday && (
               <button 
-                title={task.not_today ? "Terug naar vandaag" : "Niet vandaag"} 
-                onClick={() => onToggleNotToday(!task.not_today)} 
+                title={task.notToday ? "Terug naar vandaag" : "Niet vandaag"} 
+                onClick={() => onToggleNotToday(!task.notToday)} 
                 style={{
                   ...iconBtn,
-                  background: task.not_today ? '#F59E0B' : '#F3F4F6',
-                  color: task.not_today ? 'white' : theme.sub,
-                  border: `1px solid ${task.not_today ? '#F59E0B' : '#E6E8EE'}`
+                  background: task.notToday ? '#F59E0B' : '#F3F4F6',
+                  color: task.notToday ? 'white' : theme.sub,
+                  border: `1px solid ${task.notToday ? '#F59E0B' : '#E6E8EE'}`
                 }}
               >
                 📅

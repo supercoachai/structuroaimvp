@@ -31,7 +31,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     // Haal openstaande taken op die naar morgen kunnen
     const openTasks = tasks.filter((t: any) => 
       !t.done && 
-      !t.not_today &&
+      !t.notToday &&
       (!t.priority || t.priority > 3)
     );
     setTasksToMove(openTasks);
