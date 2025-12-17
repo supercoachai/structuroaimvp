@@ -32,33 +32,51 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   
-  const { data, error } = await supabase
-    .from('tasks')
-    .insert({
-      user_id: user.id,
-      title: body.title,
-      done: body.done || false,
-      priority: body.priority,
-      due_at: body.dueAt || null,
-      duration: body.duration,
-      source: body.source || 'regular',
-      completed_at: body.completedAt || null,
-      reminders: body.reminders || [],
-      repeat: body.repeat || 'none',
-      impact: body.impact,
-      energy_level: body.energyLevel,
-      estimated_duration: body.estimatedDuration,
-      micro_steps: body.microSteps || [],
-      not_today: body.notToday || false,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  // Validate required fields
+  if (!body.title || body.title.trim() === '') {
+    return NextResponse.json({ error: 'Titel is verplicht' }, { status: 400 })
   }
+  
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        user_id: user.id,
+        title: body.title.trim(),
+        done: body.done || false,
+        priority: body.priority || null,
+        due_at: body.dueAt || null,
+        duration: body.duration || null, // null = gebruiker moet zelf instellen
+        source: body.source || 'regular',
+        completed_at: body.completedAt || null,
+        reminders: body.reminders || [],
+        repeat: body.repeat || 'none',
+        impact: body.impact || '🌱',
+        energy_level: body.energyLevel || 'medium',
+        estimated_duration: body.estimatedDuration || body.duration || null,
+        micro_steps: body.microSteps || [],
+        not_today: body.notToday || false,
+        started: body.started || false,
+      })
+      .select()
+      .single()
 
-  return NextResponse.json(data)
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ 
+        error: error.message || 'Database fout bij toevoegen van taak',
+        details: error.details || null,
+        hint: error.hint || null
+      }, { status: 500 })
+    }
+
+    return NextResponse.json(data)
+  } catch (err: any) {
+    console.error('Unexpected error:', err);
+    return NextResponse.json({ 
+      error: err.message || 'Onverwachte fout bij toevoegen van taak' 
+    }, { status: 500 })
+  }
 }
 
 export async function PUT(request: Request) {
@@ -80,6 +98,7 @@ export async function PUT(request: Request) {
   if (updates.estimatedDuration !== undefined) dbUpdates.estimated_duration = updates.estimatedDuration
   if (updates.microSteps !== undefined) dbUpdates.micro_steps = updates.microSteps
   if (updates.notToday !== undefined) dbUpdates.not_today = updates.notToday
+  if (updates.started !== undefined) dbUpdates.started = updates.started
   Object.assign(dbUpdates, {
     title: updates.title,
     done: updates.done,

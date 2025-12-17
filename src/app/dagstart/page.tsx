@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import DayStartCheckIn from '../../components/DayStartCheckIn';
-import AppLayout from '../../components/layout/AppLayout';
-import { createClient } from '../../lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { hasCheckedInToday } from '../../lib/localStorageTasks';
 
 export default function DagStartPage() {
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
@@ -15,24 +14,15 @@ export default function DagStartPage() {
     checkIfAlreadyCheckedIn();
   }, []);
 
-  const checkIfAlreadyCheckedIn = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      router.push('/login');
+  const checkIfAlreadyCheckedIn = () => {
+    if (typeof window === 'undefined') {
+      setLoading(false);
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const { data } = await supabase
-      .from('daily_checkins')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .single();
-
-    if (data) {
+    const checkedIn = hasCheckedInToday();
+    
+    if (checkedIn) {
       setHasCheckedIn(true);
       // Redirect naar home na 2 seconden
       setTimeout(() => {
@@ -46,39 +36,56 @@ export default function DagStartPage() {
   const handleComplete = () => {
     setHasCheckedIn(true);
     setTimeout(() => {
-      router.push('/todo');
+      router.push('/');
     }, 1500);
   };
 
   if (loading) {
     return (
-      <AppLayout>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-          <div style={{ fontSize: 16, color: '#6B7280' }}>Laden...</div>
-        </div>
-      </AppLayout>
+      <div style={{ 
+        minHeight: '100vh', 
+        background: '#F7F8FA',
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        padding: '32px 24px'
+      }}>
+        <div style={{ fontSize: 16, color: '#6B7280' }}>Laden...</div>
+      </div>
     );
   }
 
   if (hasCheckedIn) {
     return (
-      <AppLayout>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>✅ Check-in voltooid!</div>
-            <div style={{ fontSize: 14, color: '#6B7280' }}>Je wordt doorgestuurd...</div>
-          </div>
+      <div style={{ 
+        minHeight: '100vh', 
+        background: '#F7F8FA',
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        padding: '32px 24px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>✅ Check-in voltooid!</div>
+          <div style={{ fontSize: 14, color: '#6B7280' }}>Je wordt doorgestuurd...</div>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div style={{ padding: '28px 16px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#F7F8FA',
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: '32px 24px'
+    }}>
+      <div style={{ width: '100%', maxWidth: 840 }}>
         <DayStartCheckIn onComplete={handleComplete} />
       </div>
-    </AppLayout>
+    </div>
   );
 }
 

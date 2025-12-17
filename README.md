@@ -1,24 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StructuroAI MVP
+
+Een AI-powered platform voor volwassenen met ADHD-achtige kenmerken. Dit project helpt gebruikers met takenbeheer, planning, focus en gamification.
+
+## Features
+
+- ✅ **Authenticatie & Multi-user Support**: Elke gebruiker heeft zijn eigen data
+- ✅ **Takenbeheer**: Slimme takenlijst met prioriteiten en deadlines
+- ✅ **Agenda & Planning**: Dagplanner met herinneringen
+- ✅ **Focus Modus**: Concentratie hulp met timers
+- ✅ **Gamification**: Beloningen, badges en streaks
+- ✅ **Dashboard**: Overzicht van voortgang en statistieken
+
+## Database Setup
+
+**BELANGRIJK**: Voordat je de app kunt gebruiken, moet je Supabase instellen. Zie [DATABASE_SETUP.md](./DATABASE_SETUP.md) voor gedetailleerde instructies.
+
+Kort samengevat:
+1. Maak een Supabase account aan
+2. Maak een nieuw project
+3. Run het SQL schema uit `supabase/schema.sql`
+4. Voeg environment variables toe aan `.env.local`
 
 ## Getting Started
 
-First, run the development server:
+### 1. Installeer dependencies
+
+```bash
+npm install
+```
+
+### 2. Configureer Supabase
+
+Volg de instructies in [DATABASE_SETUP.md](./DATABASE_SETUP.md) om Supabase in te stellen.
+
+### 3. Maak `.env.local` bestand
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=je-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=je-anon-key
+```
+
+### 4. Start de development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) met je browser. Je wordt doorgestuurd naar de login pagina als je nog niet ingelogd bent.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structuur
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/              # Next.js App Router pages
+│   ├── api/          # API routes voor database operaties
+│   ├── login/        # Login/registratie pagina
+│   └── ...
+├── components/        # React components
+├── hooks/            # Custom React hooks (useTasks, etc.)
+├── lib/              # Utilities
+│   └── supabase/     # Supabase client configuratie
+└── contexts/         # React contexts
+```
+
+## Tech Stack
+
+- **Next.js 15** - React framework
+- **TypeScript** - Type safety
+- **Supabase** - Database & Authentication
+- **Tailwind CSS** - Styling
+- **Heroicons** - Icons
 
 ## Learn More
 

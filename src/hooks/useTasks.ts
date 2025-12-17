@@ -1,59 +1,109 @@
 import { useState, useEffect, useCallback } from 'react';
+import { 
+  getTasksFromStorage, 
+  saveTasksToStorage, 
+  addTaskToStorage, 
+  updateTaskInStorage, 
+  deleteTaskFromStorage,
+  LocalTask 
+} from '../lib/localStorageTasks';
+import { subscribeToTaskUpdates } from '../lib/taskSync';
 
 export interface Task {
   id: string;
   title: string;
   done: boolean;
+  started: boolean; // Nieuw: telt als succes zodra gestart
   priority: number | null;
   dueAt?: string | null;
-  duration?: number;
+  duration?: number | null;
   source?: string;
-  completedAt?: string | null;
+  completedAt?: string;
   reminders?: number[];
   repeat?: string;
   impact?: string;
   energyLevel?: string;
-  estimatedDuration?: number;
+  estimatedDuration?: number | null;
   microSteps?: string[];
   notToday?: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
+// Map LocalTask naar Task interface
+function mapLocalTaskToTask(localTask: LocalTask): Task {
+  return {
+    id: localTask.id,
+    title: localTask.title,
+    done: localTask.done,
+    started: localTask.started ?? false, // Default false als niet aanwezig
+    priority: localTask.priority,
+    dueAt: localTask.dueAt,
+    duration: localTask.duration,
+    source: localTask.source,
+    completedAt: localTask.completedAt,
+    reminders: localTask.reminders,
+    repeat: localTask.repeat,
+    impact: localTask.impact,
+    energyLevel: localTask.energyLevel,
+    estimatedDuration: localTask.estimatedDuration,
+    microSteps: localTask.microSteps,
+    notToday: localTask.notToday,
+    created_at: localTask.created_at,
+    updated_at: localTask.updated_at,
+  };
+}
+
+// Map Task naar LocalTask interface
+function mapTaskToLocalTask(task: Partial<Task>): Partial<LocalTask> {
+  return {
+    id: task.id,
+    title: task.title,
+    done: task.done,
+    started: task.started ?? false, // Default false als niet aanwezig
+    priority: task.priority,
+    dueAt: task.dueAt || null,
+    duration: task.duration || null,
+    source: task.source || 'regular',
+    completedAt: task.completedAt || null,
+    reminders: task.reminders || [],
+    repeat: task.repeat || 'none',
+    impact: task.impact || '🌱',
+    energyLevel: task.energyLevel || 'medium',
+    estimatedDuration: task.estimatedDuration || null,
+    microSteps: task.microSteps || [],
+    notToday: task.notToday || false,
+  };
+}
+
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const fetchTasks = useCallback(async () => {
+    // Skip fetch als we bezig zijn met toevoegen (voorkom race condition)
+    if (isAddingTask) return;
+    
     try {
       setLoading(true);
-      const response = await fetch('/api/tasks');
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
-      }
-      const data = await response.json();
-      // Map database fields to camelCase
-      const mappedTasks = data.map((task: any) => ({
-        id: task.id,
-        title: task.title,
-        done: task.done,
-        priority: task.priority,
-        dueAt: task.due_at,
-        duration: task.duration,
-        source: task.source,
-        completedAt: task.completed_at,
-        reminders: task.reminders,
-        repeat: task.repeat,
-        impact: task.impact,
-        energyLevel: task.energy_level,
-        estimatedDuration: task.estimated_duration,
-        microSteps: task.micro_steps || [],
-        notToday: task.not_today || false,
-        created_at: task.created_at,
-        updated_at: task.updated_at,
-      }));
-      setTasks(mappedTasks);
+      const localTasks = getTasksFromStorage(); // Deze functie verwijdert al duplicaten
+      const mappedTasks = localTasks.map(mapLocalTaskToTask);
+      
+      // Extra check: filter duplicaten op basis van ID in de mapped tasks
+      const uniqueTasksMap = new Map<string, Task>();
+      mappedTasks.forEach(task => {
+        if (task.id) {
+          const existing = uniqueTasksMap.get(task.id);
+          if (!existing) {
+            uniqueTasksMap.set(task.id, task);
+          }
+        }
+      });
+      
+      const uniqueTasks = Array.from(uniqueTasksMap.values());
+      setTasks(uniqueTasks);
       setError(null);
     } catch (err: any) {
       setError(err.message);
@@ -61,65 +111,125 @@ export function useTasks() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAddingTask]);
 
   useEffect(() => {
+    // Cleanup duplicaten bij mount (direct, niet async)
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('structuro_tasks');
+        if (stored) {
+          const tasks = JSON.parse(stored);
+          const uniqueMap = new Map<string, any>();
+          
+          tasks.forEach((task: any) => {
+            if (task && task.id) {
+              const existing = uniqueMap.get(task.id);
+              if (!existing) {
+                uniqueMap.set(task.id, task);
+              } else {
+                // Behoud meest recente
+                const existingDate = existing.updated_at ? new Date(existing.updated_at).getTime() : 0;
+                const newDate = task.updated_at ? new Date(task.updated_at).getTime() : 0;
+                if (newDate > existingDate) {
+                  uniqueMap.set(task.id, task);
+                }
+              }
+            }
+          });
+          
+          const uniqueTasks = Array.from(uniqueMap.values());
+          if (uniqueTasks.length !== tasks.length) {
+            localStorage.setItem('structuro_tasks', JSON.stringify(uniqueTasks));
+            window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          }
+        }
+      } catch (error) {
+        console.error('Error cleaning duplicates on mount:', error);
+      }
+    }
+    
     fetchTasks();
-  }, [fetchTasks]);
+    
+    // Luister naar task updates van andere componenten
+    const unsubscribe = subscribeToTaskUpdates(() => {
+      // Skip als we bezig zijn met toevoegen
+      if (!isAddingTask) {
+        fetchTasks();
+      }
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchTasks, isAddingTask]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task),
+      setIsAddingTask(true);
+      const localTaskData = mapTaskToLocalTask(task);
+      const newTask = addTaskToStorage(localTaskData as Omit<LocalTask, 'id' | 'created_at' | 'updated_at'>);
+      const mappedTask = mapLocalTaskToTask(newTask);
+      
+      // Voeg direct toe aan state (optimistic update) met duplicaat check
+      setTasks((prev) => {
+        // Check of taak al bestaat (voorkom duplicaat)
+        if (prev.some(t => t.id === mappedTask.id)) {
+          return prev;
+        }
+        return [mappedTask, ...prev];
       });
-      if (!response.ok) {
-        throw new Error('Failed to add task');
-      }
-      const newTask = await response.json();
-      // Map to camelCase
-      const mappedTask = {
-        ...newTask,
-        dueAt: newTask.due_at,
-        completedAt: newTask.completed_at,
-        energyLevel: newTask.energy_level,
-        estimatedDuration: newTask.estimated_duration,
-        microSteps: newTask.micro_steps || [],
-        notToday: newTask.not_today || false,
-      };
-      setTasks((prev) => [mappedTask, ...prev]);
+      
+      // Reset flag na korte delay en sync met localStorage
+      setTimeout(() => {
+        setIsAddingTask(false);
+        // Haal taken opnieuw op om zeker te zijn dat alles gesynchroniseerd is
+        // Maar alleen als we niet al bezig zijn met toevoegen
+        const localTasks = getTasksFromStorage();
+        const mappedTasks = localTasks.map(mapLocalTaskToTask);
+        const uniqueTasksMap = new Map<string, Task>();
+        mappedTasks.forEach(t => {
+          if (t.id && !uniqueTasksMap.has(t.id)) {
+            uniqueTasksMap.set(t.id, t);
+          }
+        });
+        setTasks(Array.from(uniqueTasksMap.values()));
+      }, 50);
+      
       return mappedTask;
     } catch (err: any) {
-      setError(err.message);
-      throw err;
+      setIsAddingTask(false);
+      const errorMessage = err?.message || err?.toString() || 'Onbekende fout bij toevoegen van taak';
+      setError(errorMessage);
+      console.error('Error adding task:', err, 'Task data:', task);
+      throw new Error(errorMessage);
     }
   }, []);
 
   const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update task');
+      const localUpdates = mapTaskToLocalTask(updates);
+      const updatedTask = updateTaskInStorage(id, localUpdates as Partial<LocalTask>);
+      
+      if (!updatedTask) {
+        throw new Error('Task not found');
       }
-      const updatedTask = await response.json();
-      // Map to camelCase
-      const mappedTask = {
-        ...updatedTask,
-        dueAt: updatedTask.due_at,
-        completedAt: updatedTask.completed_at,
-        energyLevel: updatedTask.energy_level,
-        estimatedDuration: updatedTask.estimated_duration,
-        microSteps: updatedTask.micro_steps || [],
-        notToday: updatedTask.not_today || false,
-      };
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? mappedTask : t))
-      );
+      
+      const mappedTask = mapLocalTaskToTask(updatedTask);
+      
+      // Optimistische update: behoud alle bestaande velden van de taak en merge met updates
+      setTasks((prev) => {
+        const existingTask = prev.find(t => t.id === id);
+        if (existingTask) {
+          // Merge bestaande taak met updates om alle velden te behouden
+          const mergedTask = { ...existingTask, ...mappedTask };
+          return prev.map((t) => (t.id === id ? mergedTask : t));
+        } else {
+          // Als taak niet bestaat, voeg toe
+          return [...prev, mappedTask];
+        }
+      });
+      
       return mappedTask;
     } catch (err: any) {
       setError(err.message);
@@ -129,11 +239,9 @@ export function useTasks() {
 
   const deleteTask = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/tasks?id=${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete task');
+      const deleted = deleteTaskFromStorage(id);
+      if (!deleted) {
+        throw new Error('Task not found');
       }
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err: any) {
@@ -144,27 +252,17 @@ export function useTasks() {
 
   const updateTasks = useCallback(async (newTasks: Task[]) => {
     try {
-      // Batch update via API
-      const response = await fetch('/api/tasks/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tasks: newTasks }),
+      const localTasks = newTasks.map(task => {
+        const localData = mapTaskToLocalTask(task);
+        return {
+          ...localData,
+          id: task.id,
+          created_at: task.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as LocalTask;
       });
-      if (!response.ok) {
-        throw new Error('Failed to update tasks');
-      }
-      const updatedTasks = await response.json();
-      // Map to camelCase
-      const mappedTasks = updatedTasks.map((task: any) => ({
-        ...task,
-        dueAt: task.due_at,
-        completedAt: task.completed_at,
-        energyLevel: task.energy_level,
-        estimatedDuration: task.estimated_duration,
-        microSteps: task.micro_steps || [],
-        notToday: task.not_today || false,
-      }));
-      setTasks(mappedTasks);
+      saveTasksToStorage(localTasks);
+      setTasks(newTasks);
     } catch (err: any) {
       setError(err.message);
       throw err;

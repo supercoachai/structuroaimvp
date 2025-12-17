@@ -6,18 +6,18 @@ import { scheduleReminders, requestNotificationPermission, formatWhen, startTask
 import { useTaskShortcuts } from "../hooks/useTaskShortcuts";
 import { toast } from "./Toast";
 import { track } from "../shared/track";
-import UserInsights from "./UserInsights";
 import { useTasks } from "../hooks/useTasks";
+import { designSystem } from "../lib/design-system";
 
-/** ---- Calm theme: afstemmen met HomeCalm ---- */
+/** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
-  bg: "#F7F8FA",
-  card: "#FFFFFF",
-  text: "#2F3441",
-  sub: "rgba(47,52,65,0.75)", // Iets donkerder voor betere leesbaarheid
-  line: "#E6E8EE",
-  accent: "#4A90E2",
-  soft: "rgba(74,144,226,0.06)", // zachte spotlight achtergrond
+  bg: designSystem.colors.background,
+  card: designSystem.colors.white,
+  text: designSystem.colors.text,
+  sub: designSystem.colors.textSecondary,
+  line: designSystem.colors.border,
+  accent: designSystem.colors.primary,
+  soft: "rgba(74,144,226,0.06)",
 };
 
 /** --- Demo startdata (vervang met API/data store) --- */
@@ -53,6 +53,8 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   const [editing, setEditing] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isEditingDuration, setIsEditingDuration] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   // Vraag notificatie permissie bij app start
   useEffect(() => {
@@ -64,22 +66,26 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   const top3 = useMemo(
     () =>
       tasks
-        .filter((t: any) => t.priority != null)
+        .filter((t: any) => t.priority != null && t.source !== 'medication')
         .sort((a: any, b: any) => a.priority - b.priority)
         .slice(0, 3),
     [tasks]
   );
   const others = useMemo(
-    () => tasks.filter((t: any) => !top3.some((p: any) => p.id === t.id) && !t.done && !t.notToday),
+    () => tasks.filter((t: any) => !top3.some((p: any) => p.id === t.id) && !t.done && !t.notToday && t.source !== 'medication'),
     [tasks, top3]
   );
   const notTodayTasks = useMemo(
-    () => tasks.filter((t: any) => t.notToday && !t.done),
+    () => tasks.filter((t: any) => t.notToday && !t.done && t.source !== 'medication'),
     [tasks]
   );
-  const completed = useMemo(() => tasks.filter((t: any) => t.done), [tasks]);
+  const completed = useMemo(() => tasks.filter((t: any) => t.done && t.source !== 'medication'), [tasks]);
 
   // Groepeer taken op type voor betere organisatie
+  const parkedThoughts = useMemo(() => 
+    tasks.filter((t: any) => t.source === 'parked_thought' && !t.done && t.source !== 'medication' && t.source !== 'event'),
+    [tasks]
+  );
   const interruptionTasks = useMemo(() => 
     others.filter((t: any) => t.source === 'interruption_hopper'),
     [others]
@@ -89,30 +95,40 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     [others]
   );
   const regularTasks = useMemo(() => 
-    others.filter((t: any) => !t.source || (t.source !== 'interruption_hopper' && t.source !== 'focus_remainder')),
+    others.filter((t: any) => t.source !== 'medication' && (!t.source || (t.source !== 'interruption_hopper' && t.source !== 'focus_remainder' && t.source !== 'parked_thought'))),
     [others]
   );
 
-  // Debug logging
-  console.log('Debug - Tasks:', tasks);
-  console.log('Debug - Top3:', top3);
-  console.log('Debug - Others:', others);
-  console.log('Debug - InterruptionTasks:', interruptionTasks);
-  console.log('Debug - RemainderTasks:', remainderTasks);
-  console.log('Debug - RegularTasks:', regularTasks);
+  // Debug logging (uitgezet voor productie)
+  // console.log('Debug - Tasks:', tasks);
+  // console.log('Debug - Top3:', top3);
+  // console.log('Debug - Others:', others);
+  // console.log('Debug - InterruptionTasks:', interruptionTasks);
+  // console.log('Debug - RemainderTasks:', remainderTasks);
+  // console.log('Debug - RegularTasks:', regularTasks);
 
   const update = async (next: any) => {
-    // Filter duplicaten op basis van ID (uniek) en titel + source (voor legacy)
-    const uniqueTasks = next.filter((task: any, index: number, arr: any[]) => {
-      // Eerst check op ID (meest betrouwbaar)
-      const existingById = arr.findIndex((t: any) => t.id === task.id);
-      if (existingById !== index) return false;
-      
-      // Dan check op titel + source (voor legacy taken zonder ID)
-      const key = `${task.title}-${task.source || 'regular'}`;
-      const firstIndex = arr.findIndex((t: any) => `${t.title}-${t.source || 'regular'}` === key);
-      return index === firstIndex;
+    // Filter duplicaten op basis van ID (uniek) - gebruik Map voor betere performance
+    const uniqueTasksMap = new Map<string, any>();
+    
+    next.forEach((task: any) => {
+      if (task.id) {
+        // Als taak al bestaat, behoud de meest recente (nieuwste updated_at)
+        const existing = uniqueTasksMap.get(task.id);
+        if (!existing || (task.updated_at && existing.updated_at && 
+            new Date(task.updated_at) > new Date(existing.updated_at))) {
+          uniqueTasksMap.set(task.id, task);
+        }
+      } else {
+        // Legacy taken zonder ID: gebruik titel + source als key
+        const key = `${task.title}-${task.source || 'regular'}`;
+        if (!uniqueTasksMap.has(key)) {
+          uniqueTasksMap.set(key, task);
+        }
+      }
     });
+    
+    const uniqueTasks = Array.from(uniqueTasksMap.values());
     
     // Sync met database via API
     try {
@@ -192,8 +208,8 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
       energyLevel = 'low';
     }
 
-    // Automatisch duur schatten
-    let estimatedDuration = 15; // default 15 min
+    // Automatisch duur schatten (optioneel, gebruiker kan later aanpassen)
+    let estimatedDuration: number | null = null; // Geen automatische duur
     if (cleanTitle.toLowerCase().includes('mail') || cleanTitle.toLowerCase().includes('bericht')) {
       estimatedDuration = 5;
     } else if (cleanTitle.toLowerCase().includes('plan') || cleanTitle.toLowerCase().includes('vergadering')) {
@@ -202,15 +218,20 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
 
     const newTask = {
       title: cleanTitle,
-      duration: estimatedDuration,
+      duration: estimatedDuration || undefined, // undefined = gebruiker moet zelf instellen
       priority: null,
       done: false,
+      started: false, // Nieuw veld
       dueAt: due ? due.toISOString() : null,
       reminders: [10],
       repeat: "none",
       impact: "🌱", // Standaard klein verschil
-      energyLevel: energyLevel,
-      estimatedDuration: estimatedDuration
+      energyLevel: energyLevel || 'medium',
+      estimatedDuration: estimatedDuration || undefined,
+      source: 'regular',
+      completedAt: null,
+      microSteps: [],
+      notToday: false
     };
     
     try {
@@ -233,9 +254,9 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         energyLevel: energyLevel,
         estimatedDuration: estimatedDuration
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add task:', error);
-      toast('Fout bij toevoegen van taak');
+      toast('Fout bij toevoegen van taak: ' + (error.message || 'Onbekende fout'));
     }
   };
 
@@ -251,6 +272,30 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
       });
       
       if (checked) {
+        // Update gamification data
+        try {
+          const response = await fetch('/api/gamification');
+          if (response.ok) {
+            const gamificationData = await response.json();
+            const updatedData = {
+              currentStreak: gamificationData.current_streak || 0,
+              longestStreak: gamificationData.longest_streak || 0,
+              totalTasksCompleted: (gamificationData.total_tasks_completed || 0) + 1,
+              badges: gamificationData.badges || [],
+              level: gamificationData.level || 1,
+              experiencePoints: (gamificationData.experience_points || 0) + 10
+            };
+            
+            await fetch('/api/gamification', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedData)
+            });
+          }
+        } catch (error) {
+          console.error('Failed to update gamification:', error);
+        }
+        
         // Confetti effect voor voltooide taken
         showConfetti();
         toast("🎉 Taak voltooid! Je bent geweldig!");
@@ -315,12 +360,19 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   };
 
   const convertToTask = async (id: string) => {
-    const updatedTasks = tasks.map((t: any) => 
-      t.id === id ? { ...t, source: undefined } : t
-    );
-    await update(updatedTasks);
+    const task = tasks.find((t: any) => t.id === id);
+    if (!task) return;
+    
+    try {
+      await apiUpdateTask(id, {
+        source: 'regular',
+        impact: task.impact || '🌱',
+      });
     toast("Geparkeerde gedachte omgezet naar taak! 📝");
-    track("task_convert", { taskId: id, from: "interruption_hopper" });
+      track("task_convert", { taskId: id, from: task.source || "unknown" });
+    } catch (error: any) {
+      toast("Fout bij omzetten: " + (error.message || 'Onbekende fout'));
+    }
   };
 
   /** Promoot naar 1/2/3; verschuif anderen netjes mee */
@@ -347,11 +399,32 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   };
 
   const clearPriority = async (id: string) => {
-    await update(tasks.map((t: any) => (t.id === id ? { ...t, priority: null } : t)));
+    // Verwijder prioriteit en zet taak terug naar openstaande taken
+    await update(tasks.map((t: any) => (t.id === id ? { ...t, priority: null, notToday: false } : t)));
+    track("task_priority_cleared", { taskId: id });
+  };
+
+  // Markeer taak als gestart (zonder focus sessie)
+  const markTaskAsStarted = async (task: any) => {
+    try {
+      await updateTask(task.id, { started: true });
+      toast("✓ Je bent begonnen! Dat is al een overwinning.");
+      track("task_started", { taskId: task.id });
+    } catch (error) {
+      console.error('Error marking task as started:', error);
+      toast('Fout bij markeren van taak. Probeer het opnieuw.');
+    }
   };
 
   // Start Focus Modus voor een taak
-  const startFocus = (task: any) => {
+  const startFocus = async (task: any) => {
+    // Markeer als gestart
+    try {
+      await updateTask(task.id, { started: true });
+    } catch (error) {
+      console.error('Error marking task as started:', error);
+    }
+
     // Start task tracking voor reminders
     startTask({
       id: task.id,
@@ -378,19 +451,146 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     });
   };
 
+  // Drag & Drop handlers
+  const handleDragStart = (taskId: string) => {
+    setDraggedTaskId(taskId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTaskId(null);
+    setDragOverTarget(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, target: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTarget(target);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTarget(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, target: 'priority1' | 'priority2' | 'priority3' | 'others' | 'notToday' | 'parked' | 'completed') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTarget(null);
+
+    if (!draggedTaskId) return;
+
+    const task = tasks.find((t: any) => t.id === draggedTaskId);
+    if (!task) return;
+
+    try {
+      switch (target) {
+        case 'priority1':
+          await setPriority(draggedTaskId, 1);
+          // Als taak voltooid was, maak onvoltooid
+          if (task.done) {
+            await toggleDone(draggedTaskId, false);
+          }
+          break;
+        case 'priority2':
+          await setPriority(draggedTaskId, 2);
+          // Als taak voltooid was, maak onvoltooid
+          if (task.done) {
+            await toggleDone(draggedTaskId, false);
+          }
+          break;
+        case 'priority3':
+          await setPriority(draggedTaskId, 3);
+          // Als taak voltooid was, maak onvoltooid
+          if (task.done) {
+            await toggleDone(draggedTaskId, false);
+          }
+          break;
+        case 'others':
+          await clearPriority(draggedTaskId);
+          // Als taak voltooid was, maak onvoltooid
+          if (task.done) {
+            await toggleDone(draggedTaskId, false);
+          }
+          break;
+        case 'notToday':
+          await toggleNotToday(draggedTaskId, true);
+          // Als taak voltooid was, maak onvoltooid
+          if (task.done) {
+            await toggleDone(draggedTaskId, false);
+          }
+          break;
+        case 'completed':
+          // Markeer taak als voltooid
+          await toggleDone(draggedTaskId, true);
+          break;
+        case 'parked':
+          // Alleen voor geparkeerde gedachten - converteer naar taak
+          if (task.source === 'parked_thought') {
+            await convertToTask(draggedTaskId);
+          }
+          break;
+      }
+      track("task_drag_drop", { taskId: draggedTaskId, target });
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      toast('Fout bij verplaatsen van taak');
+    }
+
+    setDraggedTaskId(null);
+  };
+
   // Toggle "niet vandaag" status
   const toggleNotToday = async (id: string, notToday: boolean) => {
     try {
       await apiUpdateTask(id, { notToday });
       // Refresh tasks na update om de lijst te updaten
       await fetchTasks();
-      toast(notToday ? "📅 Taak verplaatst naar 'niet vandaag'" : "✅ Taak terug in je lijst");
       track("task_not_today_toggle", { taskId: id, notToday });
     } catch (error) {
       console.error('Failed to update task:', error);
       toast('Fout bij bijwerken van taak');
     }
   };
+
+  // Verplaats taak naar morgen, deze week, of deze maand
+  const moveTaskToDate = async (id: string, option: 'tomorrow' | 'thisWeek' | 'thisMonth') => {
+    try {
+      const task = tasks.find((t: any) => t.id === id);
+      if (!task) return;
+
+      const now = new Date();
+      let targetDate: Date;
+
+      switch (option) {
+        case 'tomorrow':
+          targetDate = new Date(now);
+          targetDate.setDate(targetDate.getDate() + 1);
+          targetDate.setHours(9, 0, 0, 0);
+          break;
+        case 'thisWeek':
+          // Vind volgende maandag
+          const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+          targetDate = new Date(now);
+          targetDate.setDate(targetDate.getDate() + daysUntilMonday);
+          targetDate.setHours(9, 0, 0, 0);
+          break;
+        case 'thisMonth':
+          // Eerste dag van volgende maand
+          targetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1, 9, 0, 0);
+          break;
+      }
+
+      await apiUpdateTask(id, { 
+        notToday: false, // Haal uit "niet vandaag"
+        dueAt: targetDate.toISOString()
+      });
+      await fetchTasks();
+      track("task_move_date", { taskId: id, option });
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      toast('Fout bij verplaatsen van taak');
+    }
+  };
+
 
   // Keyboard shortcuts
   useTaskShortcuts({
@@ -413,12 +613,41 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   }, [others, selectedTaskId]);
 
   const updateTask = async (task: any) => {
-    // Als de taak al bestaat, update deze direct
+    // Als de taak al bestaat, update deze direct via API
     if (task.id && tasks.some((t: any) => t.id === task.id)) {
-      const updatedTasks = tasks.map((t: any) => 
-        t.id === task.id ? task : t
-      );
-      await update(updatedTasks);
+      try {
+        // Zorg dat microSteps correct wordt gemapped
+        const microStepsToSave = task.microSteps !== undefined 
+          ? task.microSteps 
+          : (task.micro_steps !== undefined ? task.micro_steps : undefined);
+        
+        // Update alleen de gewijzigde velden
+        const updatePayload: any = {};
+        if (microStepsToSave !== undefined) {
+          updatePayload.microSteps = microStepsToSave;
+        }
+        if (task.duration !== undefined) updatePayload.duration = task.duration;
+        if (task.estimatedDuration !== undefined) updatePayload.estimatedDuration = task.estimatedDuration;
+        if (task.title !== undefined) updatePayload.title = task.title;
+        if (task.priority !== undefined) updatePayload.priority = task.priority;
+        if (task.done !== undefined) updatePayload.done = task.done;
+        if (task.started !== undefined) updatePayload.started = task.started;
+        if (task.notToday !== undefined) updatePayload.notToday = task.notToday;
+        if (task.dueAt !== undefined) updatePayload.dueAt = task.dueAt;
+        if (task.energyLevel !== undefined) updatePayload.energyLevel = task.energyLevel;
+        if (task.source !== undefined) updatePayload.source = task.source;
+        
+        // Update in localStorage via API (deze doet al een optimistische update)
+        await apiUpdateTask(task.id, updatePayload);
+        
+        // GEEN fetchTasks() meer - de optimistische update in useTasks.ts is voldoende
+        // Dit voorkomt dat de taak verdwijnt
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        toast('Fout bij bijwerken van taak');
+        // Alleen bij error: refresh om correcte state te krijgen
+        fetchTasks();
+      }
     } else {
       // Anders open de editor
       setEditing(task);
@@ -436,9 +665,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         minHeight: "100vh",
         background: theme.bg,
         color: theme.text,
-        display: "grid",
-        justifyContent: "center",
-        padding: "28px 16px 64px",
+        padding: "24px 16px 64px",
       }}
     >
       {/* Confetti CSS */}
@@ -446,56 +673,116 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         @keyframes confetti-fall {
           0% {
             transform: translateY(0) rotate(0deg);
-            opacity: 1;
+            opacity: '1',
           }
           100% {
             transform: translateY(100vh) rotate(720deg);
-            opacity: 0;
+            opacity: '0',
           }
         }
       `}</style>
 
-      <main style={{ width: "min(720px, 92vw)", display: "grid", gap: 20 }}>
+      <div style={designSystem.container}>
         {/* Header */}
-        <header style={{ textAlign: "center", marginBottom: 4 }}>
-          <div style={{ fontSize: 22, fontWeight: 700 }}>Jouw dag in overzicht</div>
-          <div style={{ fontSize: 14, color: theme.sub, marginTop: 6 }}>
+        <header style={{ textAlign: "center", marginBottom: designSystem.spacing.lg }}>
+          <div style={designSystem.typography.h1}>Jouw dag in overzicht</div>
+          <div style={{ ...designSystem.typography.body, color: theme.sub, marginTop: 8 }}>
             Eerst wat nú telt. De rest kan later.
-          </div>
-          
-          {/* Micro-gamification: Progress bar voor "Dag voltooid" badge */}
-          <div style={{ marginTop: 16, padding: "12px 16px", background: "linear-gradient(135deg, #F0F9FF, #E0F2FE)", border: "1px solid #BAE6FD", borderRadius: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#0369A1" }}>
-                🎯 Dag Voltooid Badge
-              </div>
-              <div style={{ fontSize: 12, color: "#0369A1" }}>
-                {tasks.filter((t: any) => t.done).length}/3 taken
-              </div>
-            </div>
-            <div style={{ width: "100%", height: 8, background: "#E0F2FE", borderRadius: 4, overflow: "hidden" }}>
-              <div 
-                style={{ 
-                  height: "100%", 
-                  background: "linear-gradient(90deg, #0EA5E9, #38BDF8)", 
-                  borderRadius: 4,
-                  width: `${Math.min(100, (tasks.filter((t: any) => t.done).length / 3) * 100)}%`,
-                  transition: "width 0.5s ease",
-                  boxShadow: "0 0 8px rgba(14, 165, 233, 0.3)"
-                }}
-              />
-            </div>
-            {tasks.filter((t: any) => t.done).length >= 3 && (
-              <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#0369A1", fontWeight: 600 }}>
-                🏆 Gefeliciteerd! Je hebt je dag voltooid!
-              </div>
-            )}
           </div>
         </header>
 
+        {/* Agenda Preview - vandaag */}
+        <section style={designSystem.section}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: designSystem.spacing.md }}>
+            <div style={designSystem.typography.h3}>📅 Vandaag</div>
+            <a 
+              href="/agenda" 
+              style={{ 
+                fontSize: 14, 
+                color: designSystem.colors.primary, 
+                textDecoration: 'none',
+                fontWeight: 600
+              }}
+            >
+              Volledige agenda →
+            </a>
+          </div>
+          <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+            {tasks
+              .filter((t: any) => {
+                if (!t.dueAt || t.done || t.source === 'medication') return false;
+                const taskDate = new Date(t.dueAt);
+                const today = new Date();
+                return taskDate.toDateString() === today.toDateString();
+              })
+              .sort((a: any, b: any) => {
+                const timeA = new Date(a.dueAt).getTime();
+                const timeB = new Date(b.dueAt).getTime();
+                return timeA - timeB;
+              })
+              .slice(0, 5)
+              .map((task: any) => {
+                const taskTime = new Date(task.dueAt);
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => window.location.href = `/focus?task=${encodeURIComponent(task.title)}&duration=${task.duration || 15}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: designSystem.spacing.sm,
+                      padding: designSystem.spacing.sm,
+                      borderRadius: 8,
+                      background: theme.card,
+                      border: `1px solid ${theme.line}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F8F9FA';
+                      e.currentTarget.style.borderColor = designSystem.colors.primary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = theme.card;
+                      e.currentTarget.style.borderColor = theme.line;
+                    }}
+                  >
+                    <div style={{ 
+                      fontSize: 12, 
+                      fontWeight: 600, 
+                      color: designSystem.colors.primary,
+                      minWidth: 60,
+                      textAlign: 'right'
+                    }}>
+                      {taskTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div style={{ flex: 1, ...designSystem.typography.body }}>
+                      {task.title}
+                    </div>
+                    {task.duration && (
+                      <div style={{ fontSize: 11, color: theme.sub }}>
+                        ⏱ {task.duration} min
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            {tasks.filter((t: any) => {
+              if (!t.dueAt || t.done || t.source === 'medication') return false;
+              const taskDate = new Date(t.dueAt);
+              const today = new Date();
+              return taskDate.toDateString() === today.toDateString();
+            }).length === 0 && (
+              <div style={{ ...designSystem.typography.body, color: theme.sub, textAlign: 'center' as const, padding: '20px' }}>
+                Geen taken gepland voor vandaag
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Snel taak toevoegen */}
-        <section style={card}>
-          <div style={{ display: "grid", gap: 8 }}>
+        <section style={designSystem.section}>
+          <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input
                 value={newTitle}
@@ -548,25 +835,35 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                 🗓
               </button>
             </div>
-            <div style={{ fontSize: 12, color: theme.sub, marginTop: 0 }}>
-              💡 Snel: vul datum/tijd of typ natuurlijke taal bv. "morgen 15:00" / "over 2 uur".
+            <div style={{ ...designSystem.typography.bodySmall, marginTop: designSystem.spacing.xs }}>
+              Snel: vul datum/tijd of typ natuurlijke taal bv. "morgen 15:00" / "over 2 uur".
             </div>
           </div>
         </section>
 
         {/* Top 3 Prioriteiten - Visuele Hiërarchie */}
-        <section style={card}>
-          <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 16, textAlign: 'center' as const }}>
-            <span style={{ color: theme.accent }}>Prioriteiten voor Vandaag</span>
+        <section style={designSystem.section}>
+          <div style={{ ...designSystem.typography.h3, marginBottom: designSystem.spacing.md }}>
+            Prioriteiten voor vandaag
           </div>
           
-          <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: designSystem.spacing.sm }}>
             {/* Prioriteit 1 - Moet vandaag */}
-            <div style={{ ...spotlightWrap, border: "1px solid #EF4444", background: "#FEF2F2" }}>
+            <div 
+              style={{ 
+                ...spotlightWrap, 
+                border: "1px solid #EF4444", 
+                background: dragOverTarget === 'priority1' ? "#FEE2E2" : "#FEF2F2",
+                transition: "all 200ms ease"
+              }}
+              onDragOver={(e) => handleDragOver(e, 'priority1')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'priority1')}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <NumberBadge n={1} big />
                 <div style={{ display: "grid", gap: 6, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#EF4444", fontWeight: 700 }}>🔥 MOET VANDAAG</div>
+                  <div style={{ fontSize: 12, color: "#EF4444", fontWeight: 600 }}>MOET VANDAAG</div>
                   {top3[0] ? (
                     <TaskInline
                       task={top3[0]}
@@ -576,6 +873,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                       onDemote={() => clearPriority(top3[0].id)}
                       onEdit={updateTask}
                       onStart={startFocus}
+                      onMarkStarted={markTaskAsStarted}
                       openTaskEditor={openTaskEditor}
                     />
                   ) : (
@@ -586,11 +884,21 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
             </div>
 
             {/* Prioriteit 2 - Belangrijk */}
-            <div style={{ ...spotlightWrap, border: "1px solid #F59E0B", background: "#FFFBEB" }}>
+            <div 
+              style={{ 
+                ...spotlightWrap, 
+                border: "1px solid #F59E0B", 
+                background: dragOverTarget === 'priority2' ? "#FEF3C7" : "#FFFBEB",
+                transition: "all 200ms ease"
+              }}
+              onDragOver={(e) => handleDragOver(e, 'priority2')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'priority2')}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <NumberBadge n={2} big />
                 <div style={{ display: "grid", gap: 6, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 700 }}>⚡ BELANGRIJK</div>
+                  <div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>BELANGRIJK</div>
                   {top3[1] ? (
                     <TaskInline
                       task={top3[1]}
@@ -600,6 +908,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                       onDemote={() => clearPriority(top3[1].id)}
                       onEdit={updateTask}
                       onStart={startFocus}
+                      onMarkStarted={markTaskAsStarted}
                       openTaskEditor={openTaskEditor}
                     />
                   ) : (
@@ -610,11 +919,21 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
             </div>
 
             {/* Prioriteit 3 - Extra focus */}
-            <div style={{ ...spotlightWrap, border: "1px solid #4A90E2", background: "#F0F9FF" }}>
+            <div 
+              style={{ 
+                ...spotlightWrap, 
+                border: "1px solid #4A90E2", 
+                background: dragOverTarget === 'priority3' ? "#DBEAFE" : "#F0F9FF",
+                transition: "all 200ms ease"
+              }}
+              onDragOver={(e) => handleDragOver(e, 'priority3')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'priority3')}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <NumberBadge n={3} big />
                 <div style={{ display: "grid", gap: 6, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#4A90E2", fontWeight: 700 }}>💡 EXTRA FOCUS</div>
+                  <div style={{ fontSize: 12, color: "#4A90E2", fontWeight: 600 }}>EXTRA FOCUS</div>
                   {top3[2] ? (
                     <TaskInline
                       task={top3[2]}
@@ -624,6 +943,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                       onDemote={() => clearPriority(top3[2].id)}
                       onEdit={updateTask}
                       onStart={startFocus}
+                      onMarkStarted={markTaskAsStarted}
                       openTaskEditor={openTaskEditor}
                     />
                   ) : (
@@ -635,44 +955,100 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
           </div>
 
           {/* Aanmoediging */}
-          {top3.length === 0 ? (
-            <div style={{ marginTop: 12, fontSize: 14, color: theme.sub, textAlign: 'center', padding: '20px' }}>
+          {top3.length === 0 && (
+            <div style={{ marginTop: designSystem.spacing.md, ...designSystem.typography.body, color: theme.sub, textAlign: 'center' }}>
               Kies je eerste taak voor vandaag.
-            </div>
-          ) : (
-            <div style={{ marginTop: 12, fontSize: 12, color: theme.sub }}>
-              Tip: kies je eerste taak om mee te starten.
             </div>
           )}
         </section>
 
-        {/* User Insights & Feedback Loop */}
-        <UserInsights tasks={tasks} />
-
-        {/* Debug info - tijdelijk om te zien wat er aan de hand is */}
-        {tasks.length > 0 && (
-          <section style={card}>
-            <div style={{ fontSize: 12, color: theme.sub, marginBottom: 8 }}>
-              Debug: Totaal {tasks.length} taken | Top3: {top3.length} | Others: {others.length} | NotToday: {notTodayTasks.length} | Done: {completed.length}
+        {/* Geparkeerde Gedachten (van Focus Modus) - uitklapbaar */}
+        <section style={designSystem.section}>
+          <Collapsible title={`🧠 Geparkeerde gedachten (${parkedThoughts.length})`} defaultOpen={false}>
+            <div 
+              style={{ 
+                display: "grid", 
+                gap: designSystem.spacing.sm,
+                minHeight: parkedThoughts.length === 0 ? 60 : 'auto',
+                padding: dragOverTarget === 'parked' ? 8 : 0,
+                borderRadius: dragOverTarget === 'parked' ? 8 : 0,
+                background: dragOverTarget === 'parked' ? theme.soft : 'transparent',
+                transition: 'all 200ms ease',
+                marginTop: designSystem.spacing.md
+              }}
+              onDragOver={(e) => handleDragOver(e, 'parked')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'parked')}
+            >
+              {parkedThoughts.length === 0 ? (
+                <div style={{ ...designSystem.typography.body, color: theme.sub, textAlign: 'center' as const, padding: '20px' }}>
+                  Nog geen gedachten geparkeerd. Gebruik de Focus Modus om gedachten te parkeren.
+                </div>
+              ) : (
+                parkedThoughts.map((thought: any) => (
+                  <div
+                    key={thought.id}
+                    style={{
+                      ...rowWrap,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: designSystem.spacing.sm,
+                    }}
+                  >
+                    <div style={{ flex: 1, ...designSystem.typography.body }}>
+                      🧠 {thought.title}
+                    </div>
+                    <div style={{ display: "flex", gap: designSystem.spacing.xs, alignItems: "center" }}>
+                      <button
+                        onClick={() => convertToTask(thought.id)}
+                        style={{
+                          ...chipBtn,
+                          background: designSystem.colors.primary,
+                          color: 'white',
+                          borderColor: designSystem.colors.primary,
+                        }}
+                      >
+                        Omzetten naar taak
+                      </button>
+                      <button
+                        onClick={() => removeTask(thought.id)}
+                        style={{
+                          ...iconBtn,
+                          padding: '6px 8px',
+                        }}
+                        title="Markeer als afgehandeld"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          </section>
-        )}
+          </Collapsible>
+        </section>
 
-        {/* Geparkeerde Gedachten (altijd zichtbaar) */}
-        <section style={card}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: theme.accent, marginBottom: 8 }}>
-            📝 Geparkeerde Gedachten ({interruptionTasks.length})
-          </div>
-          {interruptionTasks.length === 0 ? (
-            <div style={{ color: theme.sub, fontSize: 14, textAlign: 'center' as const, padding: '16px' }}>
-              Nog niets geparkeerd.
+        {/* Openstaande taken (inklaps) */}
+        <section style={designSystem.section}>
+          <Collapsible title={`Openstaande taken (${regularTasks.length + remainderTasks.length})`}>
+            <div style={{ display: "grid", gap: 10, marginTop: designSystem.spacing.md }}>
+              {(regularTasks.length + remainderTasks.length) === 0 ? (
+                <div style={{ ...designSystem.typography.body, color: theme.sub, textAlign: 'center' as const, padding: '20px' }}>
+                  Alles gedaan. Nice!
             </div>
           ) : (
             <>
-              <div style={{ display: "grid", gap: 8 }}>
-                {interruptionTasks.map((t: any) => (
+                  {/* Resterende tijd taken */}
+                  {remainderTasks.length > 0 && (
+                    <div style={{ marginBottom: designSystem.spacing.md }}>
+                      <div style={{ ...designSystem.typography.body, fontWeight: 600, marginBottom: designSystem.spacing.sm }}>
+                        Resterende tijd
+                      </div>
+                      <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+                        {remainderTasks.map((t: any, idx: number) => (
                   <TaskRow
-                    key={t.id}
+                    key={t.id || `remainder-${idx}`}
                     task={t}
                     isSelected={t.id === selectedTaskId}
                     onSelect={() => setSelectedTaskId(t.id)}
@@ -686,37 +1062,206 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                     onConvertToTask={convertToTask}
                     openTaskEditor={openTaskEditor}
                     onClearPriority={() => clearPriority(t.id)}
-                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                            onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
                   />
                 ))}
               </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: theme.sub }}>
-                💡 Klik op "✓ Taak" om een gedachte om te zetten naar een echte taak
+                    </div>
+                  )}
+
+                  {/* Reguliere taken - in kolommen op basis van duur */}
+                  <div
+                    onDragOver={(e) => handleDragOver(e, 'others')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, 'others')}
+                    style={{
+                      minHeight: regularTasks.length === 0 ? 60 : 'auto',
+                      padding: dragOverTarget === 'others' ? 8 : 0,
+                      borderRadius: dragOverTarget === 'others' ? 8 : 0,
+                      background: dragOverTarget === 'others' ? theme.soft : 'transparent',
+                      transition: 'all 200ms ease'
+                    }}
+                  >
+                    {(() => {
+                      // Groepeer taken op duur - exclusief: een taak kan maar in 1 categorie zitten
+                      const tasksByDuration = {
+                        // Kort: alleen taken MET duration <= 15 (geen duration = niet hier)
+                        short: regularTasks.filter((t: any) => t.duration && t.duration <= 15),
+                        // Medium: taken met duration tussen 15 en 60
+                        medium: regularTasks.filter((t: any) => t.duration && t.duration > 15 && t.duration <= 60),
+                        // Lang: taken met duration > 60
+                        long: regularTasks.filter((t: any) => t.duration && t.duration > 60),
+                        // Geen duur: alleen taken ZONDER duration
+                        noDuration: regularTasks.filter((t: any) => !t.duration)
+                      };
+                      
+                      return (
+                        <div style={{ 
+                          display: "grid", 
+                          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+                          gap: designSystem.spacing.md 
+                        }}>
+                          {tasksByDuration.short.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: designSystem.spacing.xs, color: "#10B981" }}>
+                                ⚡ Kort (≤15 min) - {tasksByDuration.short.length}
+                              </div>
+                              <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+                                {tasksByDuration.short.map((t: any, idx: number) => (
+                                  <TaskRow
+                                    key={t.id || `short-${idx}`}
+                                    task={t}
+                                    isSelected={t.id === selectedTaskId}
+                                    onSelect={() => setSelectedTaskId(t.id)}
+                                    onToggle={(c: boolean) => toggleDone(t.id, c)}
+                                    onRemove={() => removeTask(t.id)}
+                                    onPromoteTo1={() => setPriority(t.id, 1)}
+                                    onPromoteTo2={() => setPriority(t.id, 2)}
+                                    onPromoteTo3={() => setPriority(t.id, 3)}
+                                    onEdit={updateTask}
+                                    onStart={startFocus}
+                                    onConvertToTask={convertToTask}
+                                    openTaskEditor={openTaskEditor}
+                                    onClearPriority={() => clearPriority(t.id)}
+                                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {tasksByDuration.medium.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: designSystem.spacing.xs, color: "#4A90E2" }}>
+                                📋 Medium (15-60 min) - {tasksByDuration.medium.length}
+                              </div>
+                              <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+                                {tasksByDuration.medium.map((t: any, idx: number) => (
+                                  <TaskRow
+                                    key={t.id || `medium-${idx}`}
+                                    task={t}
+                                    isSelected={t.id === selectedTaskId}
+                                    onSelect={() => setSelectedTaskId(t.id)}
+                                    onToggle={(c: boolean) => toggleDone(t.id, c)}
+                                    onRemove={() => removeTask(t.id)}
+                                    onPromoteTo1={() => setPriority(t.id, 1)}
+                                    onPromoteTo2={() => setPriority(t.id, 2)}
+                                    onPromoteTo3={() => setPriority(t.id, 3)}
+                                    onEdit={updateTask}
+                                    onStart={startFocus}
+                                    onConvertToTask={convertToTask}
+                                    openTaskEditor={openTaskEditor}
+                                    onClearPriority={() => clearPriority(t.id)}
+                                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {tasksByDuration.long.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: designSystem.spacing.xs, color: "#F59E0B" }}>
+                                🎯 Lang (&gt;60 min) - {tasksByDuration.long.length}
+                              </div>
+                              <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+                                {tasksByDuration.long.map((t: any, idx: number) => (
+                                  <TaskRow
+                                    key={t.id || `long-${idx}`}
+                                    task={t}
+                                    isSelected={t.id === selectedTaskId}
+                                    onSelect={() => setSelectedTaskId(t.id)}
+                                    onToggle={(c: boolean) => toggleDone(t.id, c)}
+                                    onRemove={() => removeTask(t.id)}
+                                    onPromoteTo1={() => setPriority(t.id, 1)}
+                                    onPromoteTo2={() => setPriority(t.id, 2)}
+                                    onPromoteTo3={() => setPriority(t.id, 3)}
+                                    onEdit={updateTask}
+                                    onStart={startFocus}
+                                    onConvertToTask={convertToTask}
+                                    openTaskEditor={openTaskEditor}
+                                    onClearPriority={() => clearPriority(t.id)}
+                                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {tasksByDuration.noDuration.length > 0 && (
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: designSystem.spacing.xs, color: theme.sub }}>
+                                📝 Geen duur - {tasksByDuration.noDuration.length}
+                              </div>
+                              <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
+                                {tasksByDuration.noDuration.map((t: any, idx: number) => (
+                                  <TaskRow
+                                    key={t.id || `nodur-${idx}`}
+                                    task={t}
+                                    isSelected={t.id === selectedTaskId}
+                                    onSelect={() => setSelectedTaskId(t.id)}
+                                    onToggle={(c: boolean) => toggleDone(t.id, c)}
+                                    onRemove={() => removeTask(t.id)}
+                                    onPromoteTo1={() => setPriority(t.id, 1)}
+                                    onPromoteTo2={() => setPriority(t.id, 2)}
+                                    onPromoteTo3={() => setPriority(t.id, 3)}
+                                    onEdit={updateTask}
+                                    onStart={startFocus}
+                                    onConvertToTask={convertToTask}
+                                    openTaskEditor={openTaskEditor}
+                                    onClearPriority={() => clearPriority(t.id)}
+                                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                                    onDragStart={handleDragStart}
+                                    onDragEnd={handleDragEnd}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
               </div>
             </>
           )}
+            </div>
+          </Collapsible>
         </section>
 
-        {/* Overige taken (inklaps) */}
-        <section style={card}>
-          <Collapsible title={`Overige taken (${regularTasks.length + remainderTasks.length})`}>
-            <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-              {(regularTasks.length + remainderTasks.length) === 0 ? (
-                <div style={{ color: theme.sub, fontSize: 14, textAlign: 'center' as const, padding: '20px' }}>
-                  Alles gedaan. Nice! 🎉
+        {/* Niet vandaag lijst */}
+        <section style={designSystem.section}>
+          <Collapsible title={`Niet vandaag (${notTodayTasks.length})`} defaultOpen={false}>
+            <div 
+              style={{ 
+                display: "grid", 
+                gap: 10, 
+                marginTop: designSystem.spacing.xs,
+                minHeight: notTodayTasks.length === 0 ? 60 : 'auto',
+                padding: dragOverTarget === 'notToday' ? 8 : 0,
+                borderRadius: dragOverTarget === 'notToday' ? 8 : 0,
+                background: dragOverTarget === 'notToday' ? theme.soft : 'transparent',
+                transition: 'all 200ms ease'
+              }}
+              onDragOver={(e) => handleDragOver(e, 'notToday')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'notToday')}
+            >
+              {notTodayTasks.length === 0 ? (
+                <div style={{ ...designSystem.typography.body, color: theme.sub, textAlign: 'center' as const, padding: '20px' }}>
+                  Sleep hier taken naartoe die je vandaag niet hoeft te doen
                 </div>
               ) : (
-                <>
-                  {/* Resterende tijd taken */}
-                  {remainderTasks.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div style={{ fontSize: 12, color: theme.accent, fontWeight: 600, marginBottom: 8 }}>
-                        ⏱️ Resterende tijd
-                      </div>
-                      <div style={{ display: "grid", gap: 8 }}>
-                        {remainderTasks.map((t: any) => (
+                notTodayTasks.map((t: any, idx: number) => (
+                  <div key={t.id || `nottoday-${idx}`} style={{ border: '1px solid ' + theme.line, borderRadius: 8, padding: 12, background: theme.card }}>
                           <TaskRow
-                            key={t.id}
                             task={t}
                             isSelected={t.id === selectedTaskId}
                             onSelect={() => setSelectedTaskId(t.id)}
@@ -730,17 +1275,110 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                             onConvertToTask={convertToTask}
                             openTaskEditor={openTaskEditor}
                             onClearPriority={() => clearPriority(t.id)}
-                            onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
-                          />
-                        ))}
+                      onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                    />
+                    {/* Verplaats opties */}
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid ' + theme.line, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => moveTaskToDate(t.id, 'tomorrow')}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          background: '#F0F9FF',
+                          color: theme.accent,
+                          border: '1px solid ' + theme.accent,
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                        title="Verplaats deze taak naar morgen"
+                      >
+                        📅 Morgen
+                      </button>
+                      <button
+                        onClick={() => moveTaskToDate(t.id, 'thisWeek')}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          background: '#F0F9FF',
+                          color: theme.accent,
+                          border: '1px solid ' + theme.accent,
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                        title="Verplaats deze taak naar deze week"
+                      >
+                        📅 Deze week
+                      </button>
+                      <button
+                        onClick={() => moveTaskToDate(t.id, 'thisMonth')}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          background: '#F0F9FF',
+                          color: theme.accent,
+                          border: '1px solid ' + theme.accent,
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                        title="Verplaats deze taak naar deze maand"
+                      >
+                        📅 Deze maand
+                      </button>
+                      <button
+                        onClick={() => toggleNotToday(t.id, false)}
+                        style={{
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          background: '#F3F4F6',
+                          color: theme.sub,
+                          border: '1px solid ' + theme.line,
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                        title="Terug naar vandaag"
+                      >
+                        ✅ Terug naar vandaag
+                      </button>
                       </div>
                     </div>
-                  )}
+                ))
+              )}
+            </div>
+          </Collapsible>
+        </section>
 
-                  {/* Reguliere taken */}
-                  {regularTasks.map((t: any) => (
+        {/* Voltooid (altijd zichtbaar) */}
+        <section style={designSystem.section}>
+          <Collapsible title={`Voltooid (${completed.length})`} defaultOpen={false}>
+            <div 
+              style={{ 
+                display: "grid", 
+                gap: 10, 
+                marginTop: designSystem.spacing.xs,
+                minHeight: completed.length === 0 ? 60 : 'auto',
+                padding: dragOverTarget === 'completed' ? 8 : 0,
+                borderRadius: dragOverTarget === 'completed' ? 8 : 0,
+                background: dragOverTarget === 'completed' ? theme.soft : 'transparent',
+                transition: 'all 200ms ease'
+              }}
+              onDragOver={(e) => handleDragOver(e, 'completed')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'completed')}
+            >
+              {completed.length === 0 ? (
+                <div style={{ ...designSystem.typography.body, color: theme.sub, textAlign: 'center' as const, padding: '20px' }}>
+                  Nog geen taken voltooid vandaag. Sleep hier taken naartoe om ze als voltooid te markeren.
+                </div>
+              ) : (
+                completed.map((t: any, idx: number) => (
                     <TaskRow
-                      key={t.id}
+                      key={t.id || `completed-${idx}`}
                       task={t}
                       isSelected={t.id === selectedTaskId}
                       onSelect={() => setSelectedTaskId(t.id)}
@@ -754,56 +1392,15 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                       onConvertToTask={convertToTask}
                       openTaskEditor={openTaskEditor}
                       onClearPriority={() => clearPriority(t.id)}
-                      onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                     />
-                  ))}
-                </>
+                ))
               )}
             </div>
           </Collapsible>
         </section>
-
-        {/* Niet vandaag lijst */}
-        {notTodayTasks.length > 0 && (
-          <section style={card}>
-            <Collapsible title={`📅 Niet vandaag (${notTodayTasks.length})`} defaultOpen={false}>
-              <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-                {notTodayTasks.map((t: any) => (
-                  <TaskRow
-                    key={t.id}
-                    task={t}
-                    isSelected={t.id === selectedTaskId}
-                    onSelect={() => setSelectedTaskId(t.id)}
-                    onToggle={(c: boolean) => toggleDone(t.id, c)}
-                    onRemove={() => removeTask(t.id)}
-                    onPromoteTo1={() => setPriority(t.id, 1)}
-                    onPromoteTo2={() => setPriority(t.id, 2)}
-                    onPromoteTo3={() => setPriority(t.id, 3)}
-                    onEdit={updateTask}
-                    onStart={startFocus}
-                    onConvertToTask={convertToTask}
-                    openTaskEditor={openTaskEditor}
-                    onClearPriority={() => clearPriority(t.id)}
-                    onToggleNotToday={(notToday: boolean) => toggleNotToday(t.id, notToday)}
-                  />
-                ))}
-              </div>
-            </Collapsible>
-          </section>
-        )}
-
-        {/* Voltooid (optioneel zichtbaar) */}
-        {completed.length > 0 && (
-          <section style={card}>
-            <Collapsible title={`Voltooid (${completed.length})`} defaultOpen={false}>
-              <ul style={{ marginTop: 8, paddingLeft: 18, color: theme.sub, lineHeight: 1.7 }}>
-                {completed.map((t: any) => (
-                  <li key={t.id}>{t.title}</li>
-                ))}
-              </ul>
-            </Collapsible>
-          </section>
-        )}
 
         {/* Schedule Editor Overlay */}
         {editing && (
@@ -829,7 +1426,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
             />
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
@@ -888,9 +1485,14 @@ function PriorityRow({ number, label, task, onPromote, onDemote, onToggle, onRem
   );
 }
 
-function TaskRow({ task, onToggle, onRemove, onPromoteTo1, onPromoteTo2, onPromoteTo3, onEdit, onStart, onConvertToTask, openTaskEditor, onClearPriority, onToggleNotToday }: any) {
+function TaskRow({ task, onToggle, onRemove, onPromoteTo1, onPromoteTo2, onPromoteTo3, onEdit, onStart, onMarkStarted, onConvertToTask, openTaskEditor, onClearPriority, onToggleNotToday, onDragStart, onDragEnd }: any) {
   const [showMicroSteps, setShowMicroSteps] = useState(false);
   const [newMicroStep, setNewMicroStep] = useState('');
+  
+  const startButtonTitle = task.duration 
+    ? 'Start Focus sessie voor deze taak (' + task.duration + ' minuten)' 
+    : 'Start Focus sessie - stel eerst een duur in door op ⏱ te klikken';
+  
   const getEnergyColor = (level: string) => {
     switch (level) {
       case 'low': return '#10B981'; // groen
@@ -910,137 +1512,278 @@ function TaskRow({ task, onToggle, onRemove, onPromoteTo1, onPromoteTo2, onPromo
   };
 
   return (
-    <div style={taskRow}>
-      <input
-        type="checkbox"
-        checked={task.done}
-        onChange={(e) => onToggle(e.target.checked)}
-        aria-label={`Taak: ${task.title}`}
-        style={{ width: 18, height: 18, accentColor: theme.accent, cursor: "pointer" }}
-      />
+    <div 
+      style={{
+        ...taskRow,
+        cursor: 'grab',
+      }}
+      draggable={true}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', task.id);
+        if (onDragStart) onDragStart(task.id);
+      }}
+      onDragEnd={() => {
+        if (onDragEnd) onDragEnd();
+      }}
+    >
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 600, fontSize: 14 }}>{task.title}</div>
+        <div style={{ fontWeight: 500, fontSize: 15, color: theme.text }}>{task.title}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+          {/* Duur - klikbaar om te bewerken */}
         {task.duration ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-            <div style={{ fontSize: 11, color: theme.sub }}>⏱ {task.duration} min</div>
+            <button
+              onClick={async () => {
+                const newDuration = prompt(`Hoe lang duurt deze taak? (minuten)\nHuidige duur: ${task.duration} min`, task.duration.toString());
+                if (newDuration && !isNaN(parseInt(newDuration))) {
+                  try {
+                    await onEdit({ ...task, duration: parseInt(newDuration), estimatedDuration: parseInt(newDuration) });
+                  } catch (error) {
+                    console.error('Error updating duration:', error);
+                    toast('Fout bij bijwerken van duur. Probeer het opnieuw.');
+                  }
+                }
+              }}
+              style={{
+                fontSize: 11,
+                color: theme.sub,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 4px',
+                borderRadius: 4,
+                textDecoration: 'none'
+              }}
+              title="Klik om duur aan te passen - schat in hoe lang deze taak gaat duren"
+            >
+              ⏱ {task.duration} min
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                const newDuration = prompt('Hoe lang duurt deze taak? (minuten)\n\nTip: Schat realistisch in. Je kunt dit later altijd aanpassen.', '');
+                if (newDuration && !isNaN(parseInt(newDuration)) && parseInt(newDuration) > 0) {
+                  try {
+                    await onEdit({ ...task, duration: parseInt(newDuration), estimatedDuration: parseInt(newDuration) });
+                    toast(`Duur ingesteld op ${newDuration} minuten`);
+                  } catch (error) {
+                    console.error('Error setting duration:', error);
+                    toast('Fout bij instellen van duur. Probeer het opnieuw.');
+                  }
+                } else if (newDuration !== null) {
+                  toast('Voer een geldig aantal minuten in (bijv. 15, 30, 60)');
+                }
+              }}
+              style={{
+                fontSize: 11,
+                color: theme.accent,
+                background: '#F0F9FF',
+                border: '1px dashed ' + theme.accent,
+                cursor: 'pointer',
+                padding: '3px 6px',
+                borderRadius: 4,
+                fontWeight: 500
+              }}
+              title="Klik om duur in te stellen - schat in hoe lang deze taak gaat duren (bijv. 15, 30, 60 minuten)"
+            >
+              ⏱ Duur instellen
+            </button>
+          )}
             {task.energyLevel && (
               <div
                 style={{
                   fontSize: 9,
-                  padding: "1px 3px",
-                  borderRadius: 3,
+                  padding: "2px 4px",
+                  borderRadius: 4,
                   background: getEnergyColor(task.energyLevel),
                   color: "white",
                   fontWeight: 600
                 }}
-                title={`Energie: ${getEnergyLabel(task.energyLevel)}`}
+              title={'Energie-niveau: ' + getEnergyLabel(task.energyLevel)}
               >
                 {getEnergyLabel(task.energyLevel).charAt(0)}
               </div>
             )}
+            <TimeChip dueAt={task.dueAt} />
           </div>
-        ) : null}
-        <TimeChip dueAt={task.dueAt} />
         {task.source === 'interruption_hopper' && (
-          <div style={{ fontSize: 11, color: theme.accent, marginTop: 2 }}>
-            📝 Geparkeerde gedachte
+          <div style={{ fontSize: 12, color: theme.accent, marginTop: 4 }}>
+            Geparkeerde gedachte
           </div>
         )}
         {/* Micro-stappen */}
-        {task.micro_steps && task.micro_steps.length > 0 && (
-          <div style={{ marginTop: 8 }}>
-            <button
-              onClick={() => setShowMicroSteps(!showMicroSteps)}
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${theme.line}` }}>
+          <div style={{ fontSize: 10, color: theme.sub, fontWeight: 600, marginBottom: 4 }}>
+            Micro-stappen:
+          </div>
+          {(task.microSteps || task.micro_steps) && (task.microSteps || task.micro_steps || []).length > 0 ? (
+            <>
+              <button
+                onClick={() => setShowMicroSteps(!showMicroSteps)}
+                style={{
+                  fontSize: 11,
+                  color: theme.accent,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                  marginBottom: 4
+                }}
+                title="Klik om micro-stappen te tonen/verbergen - kleine stappen helpen om te beginnen"
+              >
+                {showMicroSteps ? '▼' : '▶'} {(task.microSteps || task.micro_steps || []).length} micro-stap{(task.microSteps || task.micro_steps || []).length !== 1 ? 'pen' : ''}
+              </button>
+              {showMicroSteps && (
+                <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: `2px solid ${theme.accent}` }}>
+                  {(task.microSteps || task.micro_steps || []).map((step: string, idx: number) => (
+                    <div key={idx} style={{ fontSize: 12, color: theme.sub, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>{idx + 1}. {step}</span>
+                      <button
+                        onClick={() => {
+                          const currentSteps = task.microSteps || task.micro_steps || [];
+                          const updatedSteps = currentSteps.filter((_: string, i: number) => i !== idx);
+                          onEdit({ ...task, microSteps: updatedSteps, micro_steps: updatedSteps });
+                        }}
+                        style={{
+                          fontSize: 10,
+                          padding: '1px 4px',
+                          background: '#EF4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 3,
+                          cursor: 'pointer'
+                        }}
+                        title="Verwijder deze micro-stap"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
+          {/* Toevoegen micro-stap */}
+          <div style={{ marginTop: 4, display: 'flex', gap: 4, alignItems: 'center' }}>
+            <input
+              type="text"
+              value={newMicroStep}
+              onChange={(e) => setNewMicroStep(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newMicroStep.trim()) {
+                  const currentSteps = task.microSteps || task.micro_steps || [];
+                  const updatedSteps = [...currentSteps, newMicroStep.trim()];
+                  onEdit({ ...task, microSteps: updatedSteps, micro_steps: updatedSteps });
+                  setNewMicroStep('');
+                }
+              }}
+              placeholder="Bijv: 'Open laptop', 'Pak pen', 'Bel mama'..."
               style={{
                 fontSize: 11,
-                color: theme.accent,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                textDecoration: 'underline'
+                padding: '4px 8px',
+                border: '1px solid ' + theme.line,
+                borderRadius: 4,
+                flex: 1,
+                maxWidth: 250
               }}
-            >
-              {showMicroSteps ? '▼' : '▶'} {task.micro_steps.length} micro-stap{task.micro_steps.length !== 1 ? 'pen' : ''}
-            </button>
-            {showMicroSteps && (
-              <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: `2px solid ${theme.accent}` }}>
-                {task.micro_steps.map((step: string, idx: number) => (
-                  <div key={idx} style={{ fontSize: 12, color: theme.sub, marginTop: 4 }}>
-                    {idx + 1}. {step}
-                  </div>
-                ))}
-              </div>
+              title="Voeg een kleine eerste stap toe om te beginnen - dit helpt bij uitstel"
+            />
+            {newMicroStep.trim() && (
+              <button
+                onClick={() => {
+                  const currentSteps = task.microSteps || task.micro_steps || [];
+                  const updatedSteps = [...currentSteps, newMicroStep.trim()];
+                  onEdit({ ...task, microSteps: updatedSteps, micro_steps: updatedSteps });
+                  setNewMicroStep('');
+                }}
+                style={{
+                  fontSize: 11,
+                  padding: '4px 8px',
+                  background: theme.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer'
+                }}
+                title="Micro-stap toevoegen"
+              >
+                +
+              </button>
             )}
           </div>
-        )}
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {task.source === 'interruption_hopper' ? (
+      <div style={{ display: "flex", gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {(task.source === 'interruption_hopper' || task.source === 'parked_thought') ? (
           <>
             <button 
               title="Omzetten naar taak" 
-              onClick={() => onConvertToTask(task.id)} 
+              onClick={() => {
+                if (onConvertToTask) {
+                  onConvertToTask(task.id);
+                } else if (onPromoteTo1) {
+                  // Als er geen convert functie is, promoveer direct naar prioriteit 1
+                  onPromoteTo1();
+                }
+              }} 
               style={{
                 ...iconBtn,
                 background: theme.accent,
                 color: 'white',
-                border: `1px solid ${theme.accent}`,
-                fontWeight: '600',
-                fontSize: '12px'
+                border: '1px solid ' + theme.accent,
+                fontWeight: '600'
               }}
             >
-              ✓ Taak
+              ✓
             </button>
             <button title="Verwijder" onClick={onRemove} style={iconBtn}>×</button>
           </>
         ) : (
           <>
-            <button title="Maak #1" onClick={onPromoteTo1} style={chipBtn}>1</button>
-            <button title="Maak #2" onClick={onPromoteTo2} style={chipBtn}>2</button>
-            <button title="Maak #3" onClick={onPromoteTo3} style={chipBtn}>3</button>
             <button 
-              title="Prioriteit wissen" 
-              onClick={() => onClearPriority(task.id)} 
-              style={{
-                ...iconBtn,
-                background: '#6B7280',
-                color: 'white',
-                border: '1px solid #6B7280',
-                fontSize: '12px',
-                padding: '4px 8px'
-              }}
+              title="Verwijder" 
+              onClick={onRemove} 
+              style={iconBtn}
             >
               ×
             </button>
-            {onToggleNotToday && (
+            {/* "Ik ben begonnen" knop - alleen tonen als nog niet gestart */}
+            {!task.started && onMarkStarted && (
               <button 
-                title={task.notToday ? "Terug naar vandaag" : "Niet vandaag"} 
-                onClick={() => onToggleNotToday(!task.notToday)} 
+                title="Markeer als begonnen" 
+                onClick={() => onMarkStarted(task)} 
                 style={{
                   ...iconBtn,
-                  background: task.notToday ? '#F59E0B' : '#F3F4F6',
-                  color: task.notToday ? 'white' : theme.sub,
-                  border: `1px solid ${task.notToday ? '#F59E0B' : '#E6E8EE'}`
+                  background: '#10B981',
+                  color: 'white',
+                  border: '1px solid #10B981',
+                  fontWeight: '600',
+                  fontSize: 11,
+                  padding: '4px 8px'
                 }}
               >
-                📅
+                ✓ Begonnen
               </button>
             )}
-            <button title="Planning" onClick={() => openTaskEditor(task)} style={iconBtn}>🗓</button>
-            <button title="Verwijder" onClick={onRemove} style={iconBtn}>×</button>
             <button 
-              title={`Start Focus ${task.duration || 3} min`} 
-              onClick={() => onStart(task)} 
+              title={startButtonTitle} 
+              onClick={() => {
+                if (!task.duration) {
+                  toast('Stel eerst een duur in door op ⏱ te klikken');
+                  return;
+                }
+                onStart(task);
+              }} 
               style={{
                 ...iconBtn,
                 background: theme.accent,
                 color: 'white',
-                border: `1px solid ${theme.accent}`,
+                border: '1px solid ' + theme.accent,
                 fontWeight: '600'
               }}
             >
-              ▶ {task.duration || 3}m
+              ▶ {task.duration ? task.duration + 'm' : '?'}
             </button>
           </>
         )}
@@ -1049,7 +1792,7 @@ function TaskRow({ task, onToggle, onRemove, onPromoteTo1, onPromoteTo2, onPromo
   );
 }
 
-function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onStart, openTaskEditor }: any) {
+function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onStart, onMarkStarted, openTaskEditor }: any) {
   const [isEditingDuration, setIsEditingDuration] = useState(false);
   const [newDuration, setNewDuration] = useState(task.duration || 15);
   const [showHint, setShowHint] = useState(true);
@@ -1108,15 +1851,8 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
 
   return (
     <div style={inlineTask(checked)}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onToggle(e.target.checked)}
-        style={{ width: 16, height: 16, accentColor: theme.accent }}
-      />
-      
       <div style={{ flex: 1, display: "grid", gap: 4 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, textDecoration: checked ? "line-through" : "none" }}>
+        <div style={{ fontWeight: 500, fontSize: 15, color: theme.text, textDecoration: checked ? "line-through" : "none" }}>
           {task.title}
         </div>
         
@@ -1209,9 +1945,9 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
                   color: "white",
                   fontWeight: 600,
                   border: "none",
-                  opacity: 0.8
+                  opacity: '0.8'
                 }}
-                title={`Energie-niveau: ${getEnergyLabel(task.energyLevel || 'medium')}`}
+                title={'Energie-niveau: ' + getEnergyLabel(task.energyLevel || 'medium')}
               >
                 {getEnergyLabel(task.energyLevel || 'medium').charAt(0)}
               </div>
@@ -1228,7 +1964,7 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
                   style={{
                     fontSize: 8,
                     color: "#6B7280",
-                    opacity: 0.8,
+                    opacity: '0.8',
                     cursor: "pointer",
                     background: "none",
                     border: "none",
@@ -1261,6 +1997,24 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
       </div>
 
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        {/* "Ik ben begonnen" knop - alleen tonen als nog niet gestart */}
+        {!task.started && onMarkStarted && (
+          <button
+            title="Markeer als begonnen"
+            onClick={() => onMarkStarted(task)}
+            style={{
+              ...iconBtn,
+              background: '#10B981',
+              color: 'white',
+              border: '1px solid #10B981',
+              fontWeight: '600',
+              fontSize: '11px',
+              padding: "6px 10px"
+            }}
+          >
+            ✓ Begonnen
+          </button>
+        )}
         {/* Start-knop */}
         <button
           title="Start deze taak"
@@ -1269,7 +2023,7 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
             ...iconBtn,
             background: theme.accent,
             color: 'white',
-            border: `1px solid ${theme.accent}`,
+            border: '1px solid ' + theme.accent,
             fontWeight: '600',
             fontSize: '12px',
             padding: "6px 10px"
@@ -1292,7 +2046,25 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
           ✏️
         </button>
 
-        {/* Verwijder knop */}
+        {/* Verwijder of terugzetten knop */}
+        {onDemote ? (
+          <button
+            title="Terugzetten naar openstaande taken - verwijder prioriteit"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDemote();
+            }}
+            style={{
+              ...iconBtn,
+              background: '#6B7280',
+              color: 'white',
+              border: '1px solid #6B7280'
+            }}
+          >
+            ×
+          </button>
+        ) : (
         <button
           title="Verwijder"
           onClick={onRemove}
@@ -1300,6 +2072,7 @@ function TaskInline({ task, checked, onToggle, onRemove, onDemote, onEdit, onSta
         >
           ×
         </button>
+        )}
       </div>
     </div>
   );
@@ -1313,18 +2086,24 @@ function TimeChip({ dueAt }: { dueAt: string | null }) {
   const diffMs = d.getTime() - now.getTime();
   const diffMins = Math.round(diffMs / 60000);
   
-  let statusColor = theme.line; // normaal
-  if (diffMins < 0) statusColor = "#EF4444"; // over-due
-  else if (diffMins < 60) statusColor = "#F59E0B"; // bijna-due
+  let statusColor = theme.sub; // normaal - gebruik subtiele kleur
+  let borderColor = theme.line; // subtiele border
+  if (diffMins < 0) {
+    statusColor = "#DC2626"; // iets zachter rood
+    borderColor = "#FEE2E2"; // zeer lichte rode border
+  } else if (diffMins < 60) {
+    statusColor = "#D97706"; // iets zachter oranje
+    borderColor = "#FEF3C7"; // zeer lichte oranje border
+  }
   
   return (
     <span style={{ 
       fontSize: 11, 
       padding: "3px 8px", 
-      border: `1px solid ${statusColor}`, 
-      borderRadius: 999,
+      border: '1px solid ' + borderColor, 
+      borderRadius: 6,
       color: statusColor,
-      background: statusColor === theme.line ? "transparent" : `${statusColor}10`
+      background: diffMins < 0 ? "#FEF2F2" : diffMins < 60 ? "#FFFBEB" : "transparent"
     }}>
       {formatWhen(d)}
     </span>
@@ -1375,12 +2154,12 @@ function Collapsible({ title, children, defaultOpen = true }: { title: string; c
         onClick={() => setOpen((v) => !v)}
         style={collapseBtn}
       >
-        <span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
-        <span style={{ color: theme.sub }}>{open ? "▴" : "▾"}</span>
+        <span style={designSystem.typography.h3}>{title}</span>
+        <span style={{ ...designSystem.typography.bodySmall, fontSize: 12 }}>{open ? "▴" : "▾"}</span>
       </button>
       <div
         style={{
-          marginTop: open ? 10 : 0,
+          marginTop: open ? designSystem.spacing.sm : 0,
           maxHeight: open ? 1200 : 0,
           overflow: "hidden",
           transition: "max-height 260ms ease, margin-top 260ms ease",
@@ -1392,12 +2171,8 @@ function Collapsible({ title, children, defaultOpen = true }: { title: string; c
   );
 }
 /** ---------- Stijlen ---------- */
-const card = {
-  background: theme.card,
-  border: "1px solid " + theme.line,
-  borderRadius: 14,
-  padding: 14,
-};
+// Gebruik designSystem.section in plaats van card
+const card = designSystem.section;
 
 const input = {
   flex: 1,
@@ -1423,23 +2198,27 @@ const buttonPrimary = {
   }
 };
 
+// Eenvoudige, uniforme knopstijl voor ADHD-vriendelijke interface
 const chipBtn = {
-  padding: "6px 8px",
+  padding: "6px 10px",
   borderRadius: 8,
   border: "1px solid " + theme.line,
   background: "#FFF",
   color: theme.text,
-  fontSize: 12,
+  fontSize: 13,
   cursor: "pointer",
   transition: "all 200ms ease",
-  ":hover": {
-    background: theme.soft,
-    borderColor: theme.accent,
-  }
+  fontWeight: 600,
+  minWidth: "36px",
+  height: "36px",
+  textAlign: "center" as const,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const iconBtn = {
-  padding: "6px 8px",
+  padding: "6px 10px",
   borderRadius: 8,
   border: "1px solid " + theme.line,
   background: "#FFF",
@@ -1447,11 +2226,11 @@ const iconBtn = {
   fontSize: 14,
   cursor: "pointer",
   transition: "all 200ms ease",
-  ":hover": {
-    background: theme.soft,
-    borderColor: theme.accent,
-    color: theme.accent,
-  }
+  minWidth: "36px",
+  height: "36px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const spotlightWrap = {
@@ -1486,7 +2265,7 @@ const inlineTask = (checked: boolean) => ({
   borderRadius: 10,
   border: "1px solid " + theme.line,
   background: "#FFF",
-  opacity: checked ? 0.6 : 1,
+  opacity: checked ? '0.6' : '1',
   transition: "opacity 220ms ease, background 220ms ease",
 });
 
@@ -1496,11 +2275,11 @@ const collapseBtn = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 8,
-  padding: 10,
+  gap: designSystem.spacing.xs,
+  padding: designSystem.spacing.sm,
   borderRadius: 10,
   border: "1px solid " + theme.line,
-  background: "#FFF",
+  background: designSystem.colors.white,
   color: theme.text,
   cursor: "pointer",
 };
