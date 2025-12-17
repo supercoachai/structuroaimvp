@@ -88,21 +88,43 @@ export function useTasks() {
     
     try {
       setLoading(true);
+      
+      // Haal ALTIJD de volledige array op uit localStorage
       const localTasks = getTasksFromStorage(); // Deze functie verwijdert al duplicaten
+      
+      // Als array leeg is, return lege array (geen mock data meer)
+      // Gebruiker kan zelf taken toevoegen
+      if (localTasks.length === 0) {
+        setTasks([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+      
+      // Map alle taken - BEHOUD ALLES
       const mappedTasks = localTasks.map(mapLocalTaskToTask);
       
-      // Extra check: filter duplicaten op basis van ID in de mapped tasks
+      // Extra check: filter duplicaten op basis van ID (behoud meest recente)
       const uniqueTasksMap = new Map<string, Task>();
       mappedTasks.forEach(task => {
         if (task.id) {
           const existing = uniqueTasksMap.get(task.id);
           if (!existing) {
             uniqueTasksMap.set(task.id, task);
+          } else {
+            // Behoud meest recente versie (gebaseerd op updated_at)
+            const existingDate = existing.updated_at ? new Date(existing.updated_at).getTime() : 0;
+            const newDate = task.updated_at ? new Date(task.updated_at).getTime() : 0;
+            if (newDate > existingDate) {
+              uniqueTasksMap.set(task.id, task);
+            }
           }
         }
       });
       
       const uniqueTasks = Array.from(uniqueTasksMap.values());
+      
+      // BELANGRIJK: Zet ALTIJD de volledige array in state - geen filtering hier!
       setTasks(uniqueTasks);
       setError(null);
     } catch (err: any) {
@@ -151,16 +173,37 @@ export function useTasks() {
     
     fetchTasks();
     
-    // Luister naar task updates van andere componenten
+    // BELANGRIJK: Luister naar task updates van andere componenten (same-tab)
     const unsubscribe = subscribeToTaskUpdates(() => {
       // Skip als we bezig zijn met toevoegen
       if (!isAddingTask) {
+        console.log('🔄 useTasks: Task update event received, refreshing...');
         fetchTasks();
       }
     });
     
+    // BELANGRIJK: Luister ook naar localStorage storage events (cross-tab sync)
+    // Dit zorgt ervoor dat als data verandert in localStorage (bijv. in andere tab),
+    // alle componenten onmiddellijk mee-synchroniseren
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'structuro_tasks' && e.newValue) {
+        // Skip als we bezig zijn met toevoegen
+        if (!isAddingTask) {
+          console.log('🔄 useTasks: localStorage changed (cross-tab), refreshing...');
+          fetchTasks();
+        }
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+    }
+    
     return () => {
       unsubscribe();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange);
+      }
     };
   }, [fetchTasks, isAddingTask]);
 
@@ -179,6 +222,11 @@ export function useTasks() {
         }
         return [mappedTask, ...prev];
       });
+      
+      // BELANGRIJK: Trigger expliciet een sync event zodat andere pagina's direct updaten
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }
       
       // Reset flag na korte delay en sync met localStorage
       setTimeout(() => {
@@ -261,8 +309,13 @@ export function useTasks() {
           updated_at: new Date().toISOString()
         } as LocalTask;
       });
-      saveTasksToStorage(localTasks);
+      saveTasksToStorage(localTasks); // Deze functie triggert al een event
       setTasks(newTasks);
+      
+      // BELANGRIJK: Trigger expliciet een sync event voor extra zekerheid
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }
     } catch (err: any) {
       setError(err.message);
       throw err;

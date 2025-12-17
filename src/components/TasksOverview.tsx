@@ -8,6 +8,7 @@ import { toast } from "./Toast";
 import { track } from "../shared/track";
 import { useTasks } from "../hooks/useTasks";
 import { designSystem } from "../lib/design-system";
+import { getTodayCheckIn } from "../lib/localStorageTasks";
 
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
@@ -48,32 +49,113 @@ function parseNaturalLanguage(input: string) {
 export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any) {
   const { tasks, loading, addTask: apiAddTask, updateTask: apiUpdateTask, deleteTask: apiDeleteTask, updateTasks: apiUpdateTasks, fetchTasks } = useTasks();
   const [newTitle, setNewTitle] = useState("");
-  const [quickDate, setQuickDate] = useState<string>("");
-  const [quickTime, setQuickTime] = useState<string>("");
+  const [selectedEnergyLevel, setSelectedEnergyLevel] = useState<'low' | 'medium' | 'high' | null>(null);
   const [editing, setEditing] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isEditingDuration, setIsEditingDuration] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [todayEnergyLevel, setTodayEnergyLevel] = useState<string | null>(null);
 
   // Vraag notificatie permissie bij app start
   useEffect(() => {
     requestNotificationPermission();
   }, []);
 
+  // Haal energie-niveau op uit check-in
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const { getTodayCheckIn } = require('../lib/localStorageTasks');
+      const checkIn = getTodayCheckIn();
+      if (checkIn && checkIn.energy_level) {
+        setTodayEnergyLevel(checkIn.energy_level);
+      }
+    }
+  }, []);
+
+  // Forceer refresh van taken bij mount en na navigatie
+  useEffect(() => {
+    // Haal taken opnieuw op bij mount om zeker te zijn dat we de laatste versie hebben
+    fetchTasks();
+    
+    // Luister naar task update events
+    const handleTaskUpdate = () => {
+      console.log('🔄 Task update event received, refreshing tasks...');
+      fetchTasks();
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('structuro_tasks_updated', handleTaskUpdate);
+      return () => {
+        window.removeEventListener('structuro_tasks_updated', handleTaskUpdate);
+      };
+    }
+  }, [fetchTasks]);
+
+  // Debug: log taken met priority
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const priorityTasks = tasks.filter((t: any) => 
+        t.priority != null && t.priority >= 1 && t.priority <= 3
+      );
+      console.log('📊 TasksOverview - Total tasks:', tasks.length);
+      console.log('📊 TasksOverview - Tasks with priority 1-3:', priorityTasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority
+      })));
+    }
+  }, [tasks]);
+
   // Tasks worden nu via API geladen via useTasks hook
 
   const top3 = useMemo(
-    () =>
-      tasks
-        .filter((t: any) => t.priority != null && t.source !== 'medication')
-        .sort((a: any, b: any) => a.priority - b.priority)
-        .slice(0, 3),
+    () => {
+      // EXACTE FILTER LOGICA: Kolom 1 = priority === 1, Kolom 2 = priority === 2, Kolom 3 = priority === 3
+      // BELANGRIJK: Toon ook done taken, zodat gebruiker kan zien wat er is toegevoegd
+      
+      // Kolom 1 (MOET VANDAAG): alleen tasks.filter(t => t.priority === 1)
+      const priority1Task = tasks.find((t: any) => 
+        t && 
+        t.id &&
+        t.title &&
+        t.priority === 1 && 
+        t.source !== 'medication'
+      );
+      
+      // Kolom 2 (BELANGRIJK): alleen tasks.filter(t => t.priority === 2)
+      const priority2Task = tasks.find((t: any) => 
+        t && 
+        t.id &&
+        t.title &&
+        t.priority === 2 && 
+        t.source !== 'medication'
+      );
+      
+      // Kolom 3 (EXTRA FOCUS): alleen tasks.filter(t => t.priority === 3)
+      const priority3Task = tasks.find((t: any) => 
+        t && 
+        t.id &&
+        t.title &&
+        t.priority === 3 && 
+        t.source !== 'medication'
+      );
+      
+      // Zet taken in de juiste slots (0-based index)
+      return [priority1Task || null, priority2Task || null, priority3Task || null];
+    },
     [tasks]
   );
   const others = useMemo(
-    () => tasks.filter((t: any) => !top3.some((p: any) => p.id === t.id) && !t.done && !t.notToday && t.source !== 'medication'),
-    [tasks, top3]
+    () => tasks.filter((t: any) => {
+      // Filter uit: taken met prioriteit 1-3 (staan al in top3 sectie)
+      const hasPriority = t.priority != null && t.priority >= 1 && t.priority <= 3;
+      if (hasPriority) return false;
+      // Filter uit: gedaan, notToday, medication
+      if (t.done || t.notToday || t.source === 'medication') return false;
+      return true;
+    }),
+    [tasks]
   );
   const notTodayTasks = useMemo(
     () => tasks.filter((t: any) => t.notToday && !t.done && t.source !== 'medication'),
@@ -133,6 +215,11 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     // Sync met database via API
     try {
       await apiUpdateTasks(uniqueTasks);
+      
+      // BELANGRIJK: Trigger expliciet een sync event zodat andere pagina's direct updaten
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }
     } catch (error) {
       console.error('Failed to update tasks:', error);
       toast('Fout bij opslaan van taken');
@@ -161,73 +248,28 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
 
   const addTask = async () => {
     const title = newTitle.trim();
-    if (!title) return;
-
-    const parsed = parseNaturalLanguage(title);
-    let cleanTitle = title;
-    let due: Date | null = null;
-
-    // 1) Inline quick date/time heeft prioriteit
-    if (quickDate || quickTime) {
-      const base = quickDate ? new Date(`${quickDate}T00:00:00`) : new Date();
-      const [hh, mm] = (quickTime || "09:00").split(":").map((s) => parseInt(s, 10));
-      base.setHours(hh || 9, mm || 0, 0, 0);
-      due = base;
-    } else if (parsed.hasTime && (parsed as any).regex) {
-      // 2) Fallback: natuurlijke taal uit titel
-      cleanTitle = title.replace((parsed as any).regex, '').trim();
-      if (parsed.pattern === 'tomorrow') {
-        const [hours, minutes] = (parsed as any).match.slice(1).map(Number);
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(hours, minutes, 0, 0);
-        due = tomorrow;
-      } else if (parsed.pattern === 'hours') {
-        const hours = parseInt((parsed as any).match[1]);
-        const later = new Date();
-        later.setHours(later.getHours() + hours);
-        due = later;
-      } else if (parsed.pattern === 'minutes') {
-        const minutes = parseInt((parsed as any).match[1]);
-        const later = new Date();
-        later.setMinutes(later.getMinutes() + minutes);
-        due = later;
-      } else if (parsed.pattern === 'today') {
-        const [hours, minutes] = (parsed as any).match.slice(1).map(Number);
-        const today = new Date();
-        today.setHours(hours, minutes, 0, 0);
-        due = today;
-      }
+    if (!title) {
+      toast('Vul eerst een taaknaam in');
+      return;
     }
 
-    // Automatisch energie-niveau bepalen op basis van titel
-    let energyLevel = 'medium';
-    if (cleanTitle.toLowerCase().includes('belangrijk') || cleanTitle.toLowerCase().includes('urgent')) {
-      energyLevel = 'high';
-    } else if (cleanTitle.toLowerCase().includes('klein') || cleanTitle.toLowerCase().includes('snel')) {
-      energyLevel = 'low';
-    }
-
-    // Automatisch duur schatten (optioneel, gebruiker kan later aanpassen)
-    let estimatedDuration: number | null = null; // Geen automatische duur
-    if (cleanTitle.toLowerCase().includes('mail') || cleanTitle.toLowerCase().includes('bericht')) {
-      estimatedDuration = 5;
-    } else if (cleanTitle.toLowerCase().includes('plan') || cleanTitle.toLowerCase().includes('vergadering')) {
-      estimatedDuration = 30;
+    if (!selectedEnergyLevel) {
+      toast('Kies eerst een moeilijkheid (groen, oranje of rood)');
+      return;
     }
 
     const newTask = {
-      title: cleanTitle,
-      duration: estimatedDuration || undefined, // undefined = gebruiker moet zelf instellen
+      title: title,
+      duration: null, // Geen automatische duur
       priority: null,
       done: false,
-      started: false, // Nieuw veld
-      dueAt: due ? due.toISOString() : null,
-      reminders: [10],
+      started: false,
+      dueAt: null, // Geen datum/tijd meer
+      reminders: [],
       repeat: "none",
-      impact: "🌱", // Standaard klein verschil
-      energyLevel: energyLevel || 'medium',
-      estimatedDuration: estimatedDuration || undefined,
+      impact: "🌱",
+      energyLevel: selectedEnergyLevel, // Gebruik geselecteerde energie-niveau
+      estimatedDuration: null,
       source: 'regular',
       completedAt: null,
       microSteps: [],
@@ -236,23 +278,21 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     
     try {
       await apiAddTask(newTask);
-      setNewTitle(""); // dopamine: input leeg + taak fade-in
-      setQuickDate("");
-      setQuickTime("");
+      setNewTitle(""); // Reset input
+      setSelectedEnergyLevel(null); // Reset selectie
       
       // Toast notificatie
-      if (due) {
-        toast(`Taak toegevoegd voor ${formatWhen(due)}`);
-      } else {
-        toast("Taak toegevoegd");
-      }
+      const energyLabels = {
+        low: 'Groen (makkelijk)',
+        medium: 'Oranje (normaal)',
+        high: 'Rood (moeilijk)'
+      };
+      toast(`✅ Taak toegevoegd - ${energyLabels[selectedEnergyLevel]}`);
       
       // Track event
       track("task_add", { 
         source: "quick_input", 
-        hasDueDate: !!due,
-        energyLevel: energyLevel,
-        estimatedDuration: estimatedDuration
+        energyLevel: selectedEnergyLevel
       });
     } catch (error: any) {
       console.error('Failed to add task:', error);
@@ -782,61 +822,89 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
 
         {/* Snel taak toevoegen */}
         <section style={designSystem.section}>
-          <div style={{ display: "grid", gap: designSystem.spacing.xs }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "grid", gap: designSystem.spacing.sm }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: 'wrap' }}>
               <input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addTask()}
-                placeholder="Nieuwe taak…"
-                style={input}
-                aria-label="Taak titel"
-              />
-              <input
-                type="date"
-                value={quickDate}
-                onChange={(e) => setQuickDate(e.target.value)}
-                aria-label="Datum"
-                style={{ ...input, flex: undefined, width: 150 }}
-              />
-              <input
-                type="time"
-                value={quickTime}
-                onChange={(e) => setQuickTime(e.target.value)}
-                aria-label="Tijd"
-                style={{ ...input, flex: undefined, width: 120 }}
-              />
-              <button onClick={addTask} style={buttonPrimary}>Toevoegen</button>
-              <button 
-                onClick={() => {
-                  if (newTitle.trim()) {
-                    const newTask = {
-                      id: "t" + Math.random().toString(36).slice(2, 8),
-                      title: newTitle.trim(),
-                      duration: null,
-                      priority: null,
-                      done: false,
-                      dueAt: null,
-                      reminders: [10],
-                      repeat: "none"
-                    };
-                    // Eerst de taak opslaan in de state
-                    const updatedTasks = [newTask, ...tasks];
-                    update(updatedTasks).catch(console.error);
-                    setNewTitle("");
-                    
-                    // Dan de planning editor openen
-                    setEditing(newTask);
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && selectedEnergyLevel) {
+                    addTask();
                   }
                 }}
-                style={planningBtn}
-                title="Toevoegen met planning"
+                placeholder="Nieuwe taak…"
+                style={{ ...input, flex: 1, minWidth: 200 }}
+                aria-label="Taak titel"
+              />
+              
+              {/* Energie-niveau knoppen: Groen, Oranje, Rood */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button
+                  onClick={() => setSelectedEnergyLevel('low')}
+                  style={{
+                    padding: '10px 20px',
+                    background: selectedEnergyLevel === 'low' ? '#10B981' : '#E5F9F0',
+                    color: selectedEnergyLevel === 'low' ? 'white' : '#10B981',
+                    border: `2px solid ${selectedEnergyLevel === 'low' ? '#10B981' : '#A7F3D0'}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Groen - Makkelijk (lage energie)"
+                >
+                  🟢 Groen
+                </button>
+                <button
+                  onClick={() => setSelectedEnergyLevel('medium')}
+                  style={{
+                    padding: '10px 20px',
+                    background: selectedEnergyLevel === 'medium' ? '#F59E0B' : '#FFFBEB',
+                    color: selectedEnergyLevel === 'medium' ? 'white' : '#F59E0B',
+                    border: `2px solid ${selectedEnergyLevel === 'medium' ? '#F59E0B' : '#FDE68A'}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Oranje - Normaal (gemiddelde energie)"
+                >
+                  🟠 Oranje
+                </button>
+                <button
+                  onClick={() => setSelectedEnergyLevel('high')}
+                  style={{
+                    padding: '10px 20px',
+                    background: selectedEnergyLevel === 'high' ? '#EF4444' : '#FEF2F2',
+                    color: selectedEnergyLevel === 'high' ? 'white' : '#EF4444',
+                    border: `2px solid ${selectedEnergyLevel === 'high' ? '#EF4444' : '#FECACA'}`,
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Rood - Moeilijk (hoge energie)"
+                >
+                  🔴 Rood
+                </button>
+              </div>
+              
+              <button 
+                onClick={addTask} 
+                style={buttonPrimary}
+                disabled={!selectedEnergyLevel}
               >
-                🗓
+                Toevoegen
               </button>
             </div>
-            <div style={{ ...designSystem.typography.bodySmall, marginTop: designSystem.spacing.xs }}>
-              Snel: vul datum/tijd of typ natuurlijke taal bv. "morgen 15:00" / "over 2 uur".
+            <div style={{ ...designSystem.typography.bodySmall, color: theme.sub }}>
+              Kies een moeilijkheid: Groen (makkelijk), Oranje (normaal) of Rood (moeilijk)
             </div>
           </div>
         </section>
@@ -884,74 +952,114 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
             </div>
 
             {/* Prioriteit 2 - Belangrijk */}
-            <div 
-              style={{ 
-                ...spotlightWrap, 
-                border: "1px solid #F59E0B", 
-                background: dragOverTarget === 'priority2' ? "#FEF3C7" : "#FFFBEB",
-                transition: "all 200ms ease"
-              }}
-              onDragOver={(e) => handleDragOver(e, 'priority2')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, 'priority2')}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <NumberBadge n={2} big />
-                <div style={{ display: "grid", gap: 6, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>BELANGRIJK</div>
-                  {top3[1] ? (
-                    <TaskInline
-                      task={top3[1]}
-                      checked={top3[1].done}
-                      onToggle={(c: boolean) => toggleDone(top3[1].id, c)}
-                      onRemove={() => removeTask(top3[1].id)}
-                      onDemote={() => clearPriority(top3[1].id)}
-                      onEdit={updateTask}
-                      onStart={startFocus}
-                      onMarkStarted={markTaskAsStarted}
-                      openTaskEditor={openTaskEditor}
-                    />
-                  ) : (
-                    <EmptySlot text="Sleep hier je tweede prioriteit naartoe" />
-                  )}
+            {(() => {
+              const isLowEnergy = todayEnergyLevel === 'low';
+              const isDisabled = isLowEnergy;
+              return (
+                <div 
+                  style={{ 
+                    ...spotlightWrap, 
+                    border: `1px solid ${isDisabled ? '#D1D5DB' : '#F59E0B'}`, 
+                    background: isDisabled 
+                      ? '#F9FAFB' 
+                      : dragOverTarget === 'priority2' ? "#FEF3C7" : "#FFFBEB",
+                    transition: "all 200ms ease",
+                    opacity: isDisabled ? 0.4 : 1,
+                    pointerEvents: isDisabled ? 'none' : 'auto'
+                  }}
+                  onDragOver={isDisabled ? undefined : (e) => handleDragOver(e, 'priority2')}
+                  onDragLeave={isDisabled ? undefined : handleDragLeave}
+                  onDrop={isDisabled ? undefined : (e) => handleDrop(e, 'priority2')}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <NumberBadge n={2} big />
+                    <div style={{ display: "grid", gap: 6, flex: 1 }}>
+                      <div style={{ 
+                        fontSize: 12, 
+                        color: isDisabled ? '#9CA3AF' : "#F59E0B", 
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                      }}>
+                        BELANGRIJK
+                        {isDisabled && <span style={{ fontSize: 10, fontStyle: 'italic' }}>💤 Niet beschikbaar bij lage energie</span>}
+                      </div>
+                      {top3[1] ? (
+                        <TaskInline
+                          task={top3[1]}
+                          checked={top3[1].done}
+                          onToggle={(c: boolean) => toggleDone(top3[1].id, c)}
+                          onRemove={() => removeTask(top3[1].id)}
+                          onDemote={() => clearPriority(top3[1].id)}
+                          onEdit={updateTask}
+                          onStart={startFocus}
+                          onMarkStarted={markTaskAsStarted}
+                          openTaskEditor={openTaskEditor}
+                        />
+                      ) : (
+                        <EmptySlot text={isDisabled ? "Niet beschikbaar bij lage energie" : "Sleep hier je tweede prioriteit naartoe"} />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Prioriteit 3 - Extra focus */}
-            <div 
-              style={{ 
-                ...spotlightWrap, 
-                border: "1px solid #4A90E2", 
-                background: dragOverTarget === 'priority3' ? "#DBEAFE" : "#F0F9FF",
-                transition: "all 200ms ease"
-              }}
-              onDragOver={(e) => handleDragOver(e, 'priority3')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, 'priority3')}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <NumberBadge n={3} big />
-                <div style={{ display: "grid", gap: 6, flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#4A90E2", fontWeight: 600 }}>EXTRA FOCUS</div>
-                  {top3[2] ? (
-                    <TaskInline
-                      task={top3[2]}
-                      checked={top3[2].done}
-                      onToggle={(c: boolean) => toggleDone(top3[2].id, c)}
-                      onRemove={() => removeTask(top3[2].id)}
-                      onDemote={() => clearPriority(top3[2].id)}
-                      onEdit={updateTask}
-                      onStart={startFocus}
-                      onMarkStarted={markTaskAsStarted}
-                      openTaskEditor={openTaskEditor}
-                    />
-                  ) : (
-                    <EmptySlot text="Sleep hier je derde prioriteit naartoe" />
-                  )}
+            {(() => {
+              const isLowEnergy = todayEnergyLevel === 'low';
+              const isDisabled = isLowEnergy;
+              return (
+                <div 
+                  style={{ 
+                    ...spotlightWrap, 
+                    border: `1px solid ${isDisabled ? '#D1D5DB' : '#4A90E2'}`, 
+                    background: isDisabled 
+                      ? '#F9FAFB' 
+                      : dragOverTarget === 'priority3' ? "#DBEAFE" : "#F0F9FF",
+                    transition: "all 200ms ease",
+                    opacity: isDisabled ? 0.4 : 1,
+                    pointerEvents: isDisabled ? 'none' : 'auto'
+                  }}
+                  onDragOver={isDisabled ? undefined : (e) => handleDragOver(e, 'priority3')}
+                  onDragLeave={isDisabled ? undefined : handleDragLeave}
+                  onDrop={isDisabled ? undefined : (e) => handleDrop(e, 'priority3')}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <NumberBadge n={3} big />
+                    <div style={{ display: "grid", gap: 6, flex: 1 }}>
+                      <div style={{ 
+                        fontSize: 12, 
+                        color: isDisabled ? '#9CA3AF' : "#4A90E2", 
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                      }}>
+                        EXTRA FOCUS
+                        {isDisabled && <span style={{ fontSize: 10, fontStyle: 'italic' }}>💤 Niet beschikbaar bij lage energie</span>}
+                      </div>
+                      {top3[2] ? (
+                        <TaskInline
+                          task={top3[2]}
+                          checked={top3[2].done}
+                          onToggle={(c: boolean) => toggleDone(top3[2].id, c)}
+                          onRemove={() => removeTask(top3[2].id)}
+                          onDemote={() => clearPriority(top3[2].id)}
+                          onEdit={updateTask}
+                          onStart={startFocus}
+                          onMarkStarted={markTaskAsStarted}
+                          openTaskEditor={openTaskEditor}
+                        />
+                      ) : (
+                        <EmptySlot text={isDisabled ? "Niet beschikbaar bij lage energie" : "Sleep hier je derde prioriteit naartoe"} />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
 
           {/* Aanmoediging */}

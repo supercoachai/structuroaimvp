@@ -9,12 +9,13 @@ import { saveCheckInToStorage, getTodayCheckIn } from '../lib/localStorageTasks'
 
 interface DayStartCheckInProps {
   onComplete: () => void;
+  existingCheckIn?: any; // Bestaande check-in data om te bewerken
 }
 
-export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
+export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStartCheckInProps) {
   const { tasks, addTask, fetchTasks, updateTask } = useTasks();
   const router = useRouter();
-  const [energyLevel, setEnergyLevel] = useState<string | null>(null);
+  const [energyLevel, setEnergyLevel] = useState<string | null>(existingCheckIn?.energy_level || null);
   const [hoveredEnergyLevel, setHoveredEnergyLevel] = useState<string | null>(null);
   const [top3Tasks, setTop3Tasks] = useState<{ [key: number]: any }>({ 1: null, 2: null, 3: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,26 +55,28 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
   };
 
   // Filter taken op basis van energie-niveau (PRIMAIR op energy_level veld)
+  // BELANGRIJK: Dit is ALLEEN voor UI weergave - taken worden NOOIT verwijderd uit de data!
   const getFilteredTasks = () => {
     if (!energyLevel) return [];
     
     // Filter: toon alleen taken ZONDER prioriteit (1, 2, 3) - taken met prioriteit staan al in de slots
-    const top3TaskIds = new Set(
-      Object.values(top3Tasks)
-        .filter(t => t !== null && t.id)
-        .map(t => t.id)
-    );
-    
-    const baseTasks = tasks.filter((t: any) => 
-      t &&
-      t.id &&
-      t.title &&
-      !t.done && 
-      !t.notToday && 
-      t.source !== 'medication' &&
-      (t.priority === null || t.priority === undefined || t.priority > 3) && // Geen prioriteit 1-3
-      !top3TaskIds.has(t.id) // Niet al in een slot
-    );
+    // Gebruik expliciete checks: !task.priority || task.priority === 0 || task.priority > 3
+    const baseTasks = tasks.filter((t: any) => {
+      // Basis validatie
+      if (!t || !t.id || !t.title) return false;
+      if (t.done || t.notToday || t.source === 'medication') return false;
+      
+      // BELANGRIJK: Toon alleen taken ZONDER prioriteit 1, 2 of 3
+      // Taken met priority 1-3 staan al in de slots, niet in suggesties
+      const hasPriority = t.priority != null && t.priority >= 1 && t.priority <= 3;
+      if (hasPriority) return false;
+      
+      // Check of taak al in een slot staat (extra veiligheid)
+      const isInSlot = Object.values(top3Tasks).some(slotTask => slotTask?.id === t.id);
+      if (isInSlot) return false;
+      
+      return true;
+    });
 
     // Filter op basis van energie-niveau EN complexiteit
     if (energyLevel === 'low') {
@@ -154,10 +157,53 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
   // Haal bestaande prioriteiten op bij mount en bij wijzigingen
   const [isUpdating, setIsUpdating] = useState(false);
   const updateTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = React.useRef(false);
+  const userHasInteractedRef = React.useRef(false); // Track of gebruiker heeft gesleept
   
+  // Laad bestaande check-in data bij mount
   useEffect(() => {
-    // Skip update als we net een optimistic update hebben gedaan
-    if (isUpdating) {
+    if (existingCheckIn && existingCheckIn.top3_task_ids && tasks.length > 0 && !hasInitializedRef.current) {
+      // Laad taken uit bestaande check-in
+      const slots: { [key: number]: any } = { 1: null, 2: null, 3: null };
+      const taskIds = existingCheckIn.top3_task_ids;
+      
+      // Zoek taken op basis van IDs en zet ze in de juiste slots
+      // Gebruik de priority van de taak in plaats van de index
+      taskIds.forEach((taskId: string) => {
+        const task = tasks.find((t: any) => t.id === taskId);
+        if (task && task.priority && task.priority >= 1 && task.priority <= 3) {
+          slots[task.priority] = task;
+        }
+      });
+      
+      // Als taken geen priority hebben, gebruik dan de volgorde in de array
+      if (!Object.values(slots).some(t => t !== null)) {
+        taskIds.forEach((taskId: string, index: number) => {
+          const task = tasks.find((t: any) => t.id === taskId);
+          if (task) {
+            const slotNumber = index + 1; // 1, 2, of 3
+            if (slotNumber >= 1 && slotNumber <= 3) {
+              slots[slotNumber] = task;
+            }
+          }
+        });
+      }
+      
+      setTop3Tasks(slots);
+      hasInitializedRef.current = true;
+    }
+  }, [existingCheckIn, tasks]);
+  
+  // BELANGRIJK: Sync top3Tasks met tasks array ALLEEN bij eerste load
+  // Zodra de gebruiker een taak heeft gesleept, is top3Tasks de bron van waarheid
+  // en wordt deze useEffect NIET MEER uitgevoerd
+  useEffect(() => {
+    // Skip als:
+    // 1. We aan het updaten zijn (tijdens drag & drop operatie)
+    // 2. De gebruiker heeft geïnterageerd (gesleept) - dan is top3Tasks de bron van waarheid
+    // 3. Er is al een bestaande check-in geladen (die wordt in een andere useEffect geladen)
+    // 4. We al geïnitialiseerd zijn
+    if (isUpdating || userHasInteractedRef.current || existingCheckIn || hasInitializedRef.current) {
       return;
     }
     
@@ -176,30 +222,27 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
       )
       .sort((a: any, b: any) => a.priority - b.priority);
     
-    // Vul slots op basis van priority
+    // Vul slots op basis van priority - ELKE slot krijgt alleen taken met exact die priority
     const slots: { [key: number]: any } = { 1: null, 2: null, 3: null };
     top3.forEach((task) => {
       if (task && task.priority && task.priority >= 1 && task.priority <= 3 && task.id && task.title) {
-        slots[task.priority] = task;
+        // Prioriteit 1 zone: alleen task.priority === 1
+        if (task.priority === 1) slots[1] = task;
+        // Prioriteit 2 zone: alleen task.priority === 2
+        if (task.priority === 2) slots[2] = task;
+        // Prioriteit 3 zone: alleen task.priority === 3
+        if (task.priority === 3) slots[3] = task;
       }
     });
     
-    // Update alleen als er echt iets veranderd is (voorkom onnodige re-renders)
-    const currentIds = Object.values(slots)
-      .map(t => t?.id)
-      .filter(Boolean)
-      .sort()
-      .join(',');
-    const previousIds = Object.values(top3Tasks)
-      .map(t => t?.id)
-      .filter(Boolean)
-      .sort()
-      .join(',');
-    
-    if (currentIds !== previousIds) {
+    // Update top3Tasks ALLEEN bij eerste load (als nog niet geïnitialiseerd)
+    // Dit voorkomt dat we top3Tasks overschrijven tijdens de sessie
+    const hasTasks = Object.values(slots).some(t => t !== null);
+    if (hasTasks) {
       setTop3Tasks(slots);
+      hasInitializedRef.current = true;
     }
-  }, [tasks, isUpdating]);
+  }, [tasks, isUpdating, existingCheckIn]);
 
   // Fade-in animatie voor tweede scherm - MOET voor early return staan
   useEffect(() => {
@@ -219,60 +262,114 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
     }
 
     try {
-      // STAP 1: Verwijder oude prioriteit van de taak als die in een andere slot zat
+      // STAP 1: Markeer dat gebruiker heeft geïnterageerd - VOORDAT we iets doen
+      // Dit voorkomt dat useEffect top3Tasks nog update vanuit tasks array
+      userHasInteractedRef.current = true;
+      
+      // STAP 2: Markeer dat we een optimistic update doen - VOORDAT we iets doen
+      // Dit voorkomt dat useEffect interfereert
+      setIsUpdating(true);
+      
+      // STAP 3: Optimistic update EERST - taak direct zichtbaar maken
+      // BELANGRIJK: Gebruik functionele update om race conditions te voorkomen
+      setTop3Tasks((prevTop3Tasks) => {
+        const newTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
+        
+        // Kopieer bestaande taken (behalve de gesleepte taak)
+        [1, 2, 3].forEach(num => {
+          const existingTask = prevTop3Tasks[num];
+          if (existingTask && existingTask.id && existingTask.id !== draggedTask.id) {
+            newTop3Tasks[num] = existingTask;
+          }
+        });
+        
+        // Zet gesleepte taak in nieuwe slot - BEHOUD ALLE VELDEN, update alleen priority
+        const taskWithPriority = { 
+          ...draggedTask, // Behoud ALLE bestaande velden (title, duration, energyLevel, etc.)
+          priority: slotNumber // Update ALLEEN priority
+        };
+        newTop3Tasks[slotNumber] = taskWithPriority;
+        
+        return newTop3Tasks;
+      });
+      
+      // STAP 3: Verwijder oude prioriteit van de taak als die in een andere slot zat
       const oldSlot = Object.entries(top3Tasks).find(([_, task]) => task?.id === draggedTask.id)?.[0];
       if (oldSlot && oldSlot !== slotNumber.toString()) {
-        // Verwijder prioriteit van oude slot
         await updateTask(draggedTask.id, { priority: null });
       }
 
-      // STAP 2: Verwijder taak uit huidige slot als die al gevuld is met een andere taak
+      // STAP 4: Verwijder taak uit huidige slot als die al gevuld is met een andere taak
       if (top3Tasks[slotNumber] && top3Tasks[slotNumber].id !== draggedTask.id) {
         await updateTask(top3Tasks[slotNumber].id, { priority: null });
       }
 
-      // STAP 3: Zet nieuwe prioriteit - dit slaat het op in localStorage
-      // BELANGRIJK: Update alleen priority, behoud alle andere velden
+      // STAP 5: VERIFICATIE - controleer of taak bestaat in localStorage
+      const { getTasksFromStorage } = await import('../lib/localStorageTasks');
+      const tasksInStorage = getTasksFromStorage();
+      const taskExists = tasksInStorage.find((t: any) => t.id === draggedTask.id);
+      
+      if (!taskExists) {
+        console.error('❌ Task not found in localStorage:', draggedTask.id, draggedTask.title);
+        // Taak bestaat niet - voeg toe aan localStorage
+        const { addTaskToStorage } = await import('../lib/localStorageTasks');
+        const taskToAdd = {
+          id: draggedTask.id,
+          title: draggedTask.title,
+          done: false,
+          started: false,
+          priority: slotNumber,
+          dueAt: draggedTask.dueAt || null,
+          duration: draggedTask.duration || null,
+          source: draggedTask.source || 'regular',
+          completedAt: null,
+          reminders: draggedTask.reminders || [],
+          repeat: draggedTask.repeat || 'none',
+          impact: draggedTask.impact || '🌱',
+          energyLevel: draggedTask.energyLevel || 'medium',
+          estimatedDuration: draggedTask.estimatedDuration || null,
+          microSteps: draggedTask.microSteps || [],
+          notToday: false,
+          created_at: draggedTask.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        addTaskToStorage(taskToAdd);
+        console.log('✅ Task added to localStorage:', taskToAdd);
+      } else {
+        console.log('✅ Task exists in localStorage, updating priority');
+      }
+      
+      // STAP 6: Zet nieuwe prioriteit - gebruik updateTask(taskId, { priority: slotNumber })
+      // BELANGRIJK: Dit update ALLEEN priority, alle andere velden (zoals energyLevel) blijven behouden
+      // De updateTask functie behoudt automatisch alle bestaande velden via updateTaskInStorage
       await updateTask(draggedTask.id, { priority: slotNumber });
       
-      // STAP 4: Update state DIRECT (optimistic update) - dit zorgt dat de taak direct zichtbaar is
-      const newTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
+      // BELANGRIJK: Trigger expliciet een sync event zodat andere pagina's direct updaten
+      // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe priority zien
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }
       
-      // Kopieer bestaande taken (behalve de gesleepte taak)
-      [1, 2, 3].forEach(num => {
-        const existingTask = top3Tasks[num];
-        if (existingTask && existingTask.id && existingTask.id !== draggedTask.id) {
-          newTop3Tasks[num] = existingTask;
-        }
-      });
-      
-      // Zet gesleepte taak in nieuwe slot met priority - BEHOUD alle velden
-      const taskWithPriority = { 
-        ...draggedTask, // Behoud ALLE bestaande velden
-        priority: slotNumber // Update alleen priority
-      };
-      newTop3Tasks[slotNumber] = taskWithPriority;
-      
-      // Markeer dat we een optimistic update doen (voorkom dat useEffect overschrijft)
-      setIsUpdating(true);
-      
-      // Update state DIRECT - dit zorgt dat de taak direct zichtbaar is
-      setTop3Tasks(newTop3Tasks);
-      
-      // STAP 5: Wacht even zodat de update is doorgevoerd in localStorage
+      // STAP 7: Wacht even zodat localStorage update volledig is doorgevoerd
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // STAP 6: Haal taken opnieuw op - dit zorgt dat alles gesynchroniseerd is
+      // STAP 8: Haal taken opnieuw op - dit synchroniseert met localStorage
+      // BELANGRIJK: fetchTasks haalt ALLE taken op, geen filtering!
       await fetchTasks();
       
-      // STAP 7: Reset update flag na een delay zodat useEffect weer normaal werkt
+      // STAP 9: Wacht even zodat fetchTasks volledig is doorgevoerd en tasks state is geüpdatet
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // STAP 9: Reset update flag - taak staat al in top3Tasks (optimistic update)
+      // BELANGRIJK: top3Tasks is nu de bron van waarheid, niet meer tasks array
+      // De useEffect zal top3Tasks niet meer overschrijven omdat userHasInteractedRef.current = true
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
       updateTimeoutRef.current = setTimeout(() => {
         setIsUpdating(false);
         updateTimeoutRef.current = null;
-      }, 2000);
+      }, 500); // Kortere delay - taak staat al in top3Tasks
       
       // Visuele feedback
       setRecentlyAdded(draggedTask.id);
@@ -354,31 +451,114 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Eerst: zorg dat alle taken in top3Tasks de juiste prioriteit hebben
-      // Doe dit in parallel voor betere performance
-      const updatePromises = [];
-      for (const [slotNumber, task] of Object.entries(top3Tasks)) {
-        if (task && task.id) {
-          const priority = parseInt(slotNumber);
-          updatePromises.push(updateTask(task.id, { priority }));
-        }
-      }
-      
-      // Wacht tot alle updates klaar zijn
-      await Promise.all(updatePromises);
-      
-      // Wacht even zodat localStorage updates zijn doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Haal taken opnieuw op om zeker te zijn dat alles gesynchroniseerd is
-      await fetchTasks();
-      
-      // Wacht nog even voor zekerheid
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      // Eerst: VERIFICATIE - controleer of taken bestaan in localStorage
+      const { getTasksFromStorage } = await import('../lib/localStorageTasks');
+      const tasksBeforeUpdate = getTasksFromStorage();
       const top3Ids = Object.values(top3Tasks)
         .filter(t => t !== null)
         .map(t => t.id);
+      
+      console.log('🔍 VOOR UPDATE - Taken in localStorage:', tasksBeforeUpdate.length);
+      console.log('🔍 VOOR UPDATE - Top3 task IDs:', top3Ids);
+      
+      // Check of alle taken bestaan
+      const missingTasks = top3Ids.filter(id => !tasksBeforeUpdate.find((t: any) => t.id === id));
+      if (missingTasks.length > 0) {
+        console.error('❌ MISSING TASKS:', missingTasks);
+        toast(`Fout: ${missingTasks.length} ta(a)k(en) niet gevonden in opslag`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // DIRECTE OPSLAG: Sla taken direct op in localStorage zonder via updateTask te gaan
+      // Dit voorkomt race conditions en verlies van data
+      const { saveTasksToStorage } = await import('../lib/localStorageTasks');
+      const allTasks = getTasksFromStorage();
+      
+      // Update taken direct in de array
+      const updatedTasks = allTasks.map((t: any) => {
+        const top3Task = Object.values(top3Tasks).find((tt: any) => tt && tt.id === t.id);
+        if (top3Task) {
+          const slotNumber = Object.entries(top3Tasks).find(([_, tt]: any) => tt && tt.id === t.id)?.[0];
+          const priority = slotNumber ? parseInt(slotNumber) : null;
+          console.log(`📝 Direct updating task ${t.id} (${t.title}) with priority ${priority}`);
+          return {
+            ...t, // Behoud ALLE bestaande velden
+            priority: priority,
+            notToday: false,
+            done: false,
+            updated_at: new Date().toISOString()
+          };
+        }
+        return t;
+      });
+      
+      // Voeg taken toe die nog niet bestaan
+      for (const [slotNumber, task] of Object.entries(top3Tasks)) {
+        if (task && task.id) {
+          const exists = updatedTasks.find((t: any) => t.id === task.id);
+          if (!exists) {
+            console.log(`➕ Adding missing task ${task.id} (${task.title}) to storage`);
+            const priority = parseInt(slotNumber);
+            updatedTasks.push({
+              id: task.id,
+              title: task.title,
+              done: false,
+              started: false,
+              priority: priority,
+              dueAt: task.dueAt || null,
+              duration: task.duration || null,
+              source: task.source || 'regular',
+              completedAt: null,
+              reminders: task.reminders || [],
+              repeat: task.repeat || 'none',
+              impact: task.impact || '🌱',
+              energyLevel: task.energyLevel || 'medium',
+              estimatedDuration: task.estimatedDuration || null,
+              microSteps: task.microSteps || [],
+              notToday: false,
+              created_at: task.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          }
+        }
+      }
+      
+      // Sla direct op in localStorage
+      saveTasksToStorage(updatedTasks);
+      console.log('💾 Direct saved to localStorage:', updatedTasks.length, 'tasks');
+      
+      // VERIFICATIE: Controleer of taken correct zijn opgeslagen
+      const tasksAfterSave = getTasksFromStorage();
+      const tasksWithPriority = tasksAfterSave.filter((t: any) => 
+        t.priority != null && t.priority >= 1 && t.priority <= 3
+      );
+      console.log('📋 NA DIRECTE OPSLAG - Taken in localStorage:', tasksAfterSave.length);
+      console.log('📋 NA DIRECTE OPSLAG - Taken met priority:', tasksWithPriority.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority,
+        done: t.done,
+        notToday: t.notToday
+      })));
+      
+      // Check of alle taken nog steeds bestaan
+      const stillMissing = top3Ids.filter(id => !tasksAfterSave.find((t: any) => t.id === id));
+      if (stillMissing.length > 0) {
+        console.error('❌ TAKEN VERDWENEN NA DIRECTE OPSLAG:', stillMissing);
+        toast(`Fout: ${stillMissing.length} ta(a)k(en) verdwenen na opslaan`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Wacht even zodat localStorage updates volledig zijn doorgevoerd
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Haal taken opnieuw op via fetchTasks om state te synchroniseren
+      await fetchTasks();
+      
+      // Wacht nog even zodat fetchTasks volledig is doorgevoerd
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       // Sla check-in op in localStorage
       saveCheckInToStorage({
@@ -387,6 +567,12 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
         energy_level: energyLevel,
         top3_task_ids: top3Ids.length > 0 ? top3Ids : null,
       });
+
+      // BELANGRIJK: Trigger expliciet een sync event zodat alle pagina's direct updaten
+      // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe prioriteiten zien
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }
 
       // Pas dagindeling aan op basis van energie
       if (energyLevel === 'low') {
@@ -399,9 +585,11 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
 
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
       
-      // Navigeer naar dashboard
+      // Navigeer naar /todo pagina waar de taken zichtbaar zijn
+      // Wacht iets langer om zeker te zijn dat alles is opgeslagen
       setTimeout(() => {
-        router.push('/');
+        // Navigeer naar /todo waar "1 - MOET VANDAAG" staat
+        router.push('/todo');
       }, 500);
     } catch (error: any) {
       console.error('Error saving check-in:', error);
@@ -441,10 +629,10 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
         margin: '0 auto'
       }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: 'center', color: '#111827' }}>
-          {userName ? `Dagstart van ${userName}` : 'Dagstart Check-in'}
+          {userName ? `Dagstart van ${userName}` : existingCheckIn ? 'Bewerk je Dagstart' : 'Dagstart Check-in'}
         </h2>
         <p style={{ fontSize: 14, color: 'rgba(47,52,65,0.75)', textAlign: 'center', marginBottom: 32 }}>
-          Start je dag met helderheid en rust
+          {existingCheckIn ? 'Pas je prioriteiten en energie aan' : 'Start je dag met helderheid en rust'}
         </p>
 
         {/* Energie selectie - EERST */}
@@ -582,10 +770,10 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4, color: '#111827' }}>
-            Kies je 3 belangrijkste focuspunten
+            {existingCheckIn ? 'Bewerk je focuspunten' : 'Kies je 3 belangrijkste focuspunten'}
           </h2>
           <p style={{ fontSize: 14, color: 'rgba(47,52,65,0.75)' }}>
-            Sleep taken naar de juiste prioriteit
+            {existingCheckIn ? 'Pas je prioriteiten aan door taken te verplaatsen' : 'Sleep taken naar de juiste prioriteit'}
           </p>
         </div>
         {/* Progress indicator */}
@@ -958,7 +1146,15 @@ export default function DayStartCheckIn({ onComplete }: DayStartCheckInProps) {
           boxShadow: (energyLevel && filledSlots > 0 && !isSubmitting) ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none'
         }}
       >
-        {isSubmitting ? 'Opslaan...' : filledSlots === 0 ? 'Kies minimaal 1 prioriteit' : filledSlots < 3 ? `Je bent er klaar voor! (${filledSlots}/3)` : '🎉 Start mijn dag'}
+        {isSubmitting 
+          ? 'Opslaan...' 
+          : filledSlots === 0 
+            ? 'Kies minimaal 1 prioriteit' 
+            : existingCheckIn
+              ? `✅ Wijzigingen opslaan (${filledSlots}/3)`
+              : filledSlots < 3 
+                ? `Je bent er klaar voor! (${filledSlots}/3)` 
+                : '🎉 Start mijn dag'}
       </button>
     </div>
   );

@@ -4,6 +4,17 @@ import { mockTasks, MockTask } from './mockData';
 const STORAGE_KEY = 'structuro_tasks';
 const STORAGE_KEY_CHECKINS = 'structuro_daily_checkins';
 
+// Verwijder ALLE taken uit localStorage (voor schone start)
+export function clearAllTasks(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('✅ Alle taken verwijderd uit localStorage');
+  } catch (error) {
+    console.error('Error clearing tasks:', error);
+  }
+}
+
 export interface LocalTask {
   id: string;
   title: string;
@@ -70,14 +81,9 @@ export function getTasksFromStorage(): LocalTask[] {
       
       return uniqueTasks;
     }
-    // Als localStorage leeg is, laad mock data
-    const initialTasks = mockTasks.map(task => ({
-      ...task,
-      dueAt: task.dueAt,
-      completedAt: task.completedAt
-    }));
-    saveTasksToStorage(initialTasks);
-    return initialTasks;
+    // Als localStorage leeg is, return lege array (geen mock data meer)
+    // Gebruiker kan zelf taken toevoegen
+    return [];
   } catch (error) {
     console.error('Error reading from localStorage:', error);
     return mockTasks;
@@ -139,26 +145,70 @@ export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'up
 }
 
 // Update een taak - BEHOUD alle bestaande velden, update alleen wat nodig is
+// BELANGRIJK: Deze functie is de Single Source of Truth voor task updates
 export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>): LocalTask | null {
   const tasks = getTasksFromStorage();
   const index = tasks.findIndex(t => t.id === taskId);
   
   if (index === -1) {
-    console.warn(`Task ${taskId} not found in storage`);
+    console.warn(`❌ Task ${taskId} not found in storage. Available tasks:`, tasks.map((t: any) => ({ id: t.id, title: t.title })));
+    // Probeer taak toe te voegen als die niet bestaat (fallback)
+    if (updates.title) {
+      console.log(`⚠️ Attempting to add missing task: ${updates.title}`);
+      const newTask: LocalTask = {
+        id: taskId,
+        title: updates.title,
+        done: updates.done || false,
+        started: updates.started || false,
+        priority: updates.priority || null,
+        dueAt: updates.dueAt || null,
+        duration: updates.duration || null,
+        source: updates.source || 'regular',
+        completedAt: updates.completedAt || null,
+        reminders: updates.reminders || [],
+        repeat: updates.repeat || 'none',
+        impact: updates.impact || '🌱',
+        energyLevel: updates.energyLevel || 'medium',
+        estimatedDuration: updates.estimatedDuration || null,
+        microSteps: updates.microSteps || [],
+        notToday: updates.notToday || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      tasks.push(newTask);
+      saveTasksToStorage(tasks);
+      console.log(`✅ Added missing task to storage:`, newTask);
+      return newTask;
+    }
     return null;
   }
   
-  // Behoud ALLE bestaande velden, merge alleen de updates
+  // BELANGRIJK: Behoud ALLE bestaande velden, merge alleen de updates
+  // Dit zorgt ervoor dat energyLevel, title, etc. behouden blijven bij priority updates
   const existingTask = tasks[index];
-  tasks[index] = {
+  const updatedTask = {
     ...existingTask, // Behoud alle bestaande velden (title, duration, energyLevel, etc.)
     ...updates,      // Pas alleen de geüpdatete velden toe
     id: existingTask.id, // Zorg dat ID altijd behouden blijft
     updated_at: new Date().toISOString()
   };
   
-  saveTasksToStorage(tasks);
-  return tasks[index];
+  tasks[index] = updatedTask;
+  saveTasksToStorage(tasks); // Deze functie triggert al een event
+  
+  // BELANGRIJK: Trigger ook expliciet een custom event voor same-tab sync
+  if (typeof window !== 'undefined') {
+    const { notifyTaskUpdate } = require('./taskSync');
+    notifyTaskUpdate();
+  }
+  
+  console.log(`✅ Task updated in storage:`, { 
+    id: updatedTask.id, 
+    title: updatedTask.title, 
+    priority: updatedTask.priority,
+    energyLevel: updatedTask.energyLevel 
+  });
+  return updatedTask;
 }
 
 // Verwijder een taak
