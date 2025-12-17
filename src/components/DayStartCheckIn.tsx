@@ -616,19 +616,39 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
 
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
       
-      // BELANGRIJK: Trigger expliciet een sync event VOORDAT we navigeren
-      // Dit zorgt ervoor dat TasksOverview de taken direct ziet
+      // KRITIEK: Trigger MULTIPLE sync events VOORDAT we navigeren
       if (typeof window !== 'undefined') {
+        // Event 1: Direct
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-        console.log('🔄 DayStart: Sync event triggered BEFORE navigation');
+        console.log('🔄 DayStart: Sync event 1 triggered');
+        
+        // Event 2: Na korte delay
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          console.log('🔄 DayStart: Sync event 2 triggered (delayed)');
+        }, 100);
+        
+        // Event 3: Na langere delay
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          console.log('🔄 DayStart: Sync event 3 triggered (delayed 2)');
+        }, 300);
       }
       
-      // Wacht nog even zodat event is doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wacht zodat events zijn doorgevoerd
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Navigeer naar /todo pagina waar de taken zichtbaar zijn
       console.log('🔄 DayStart: Navigating to /todo');
       router.push('/todo');
+      
+      // Event 4: NA navigatie (voor zekerheid)
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          console.log('🔄 DayStart: Sync event 4 triggered AFTER navigation');
+        }
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Error saving check-in:', error);
       toast(`Fout bij opslaan: ${error?.message || 'Onbekende fout'}`);

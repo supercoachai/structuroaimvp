@@ -83,17 +83,17 @@ export function useTasks() {
   const [isAddingTask, setIsAddingTask] = useState(false);
 
   const fetchTasks = useCallback(async () => {
-    // Skip fetch als we bezig zijn met toevoegen (voorkom race condition)
-    if (isAddingTask) return;
+    // BELANGRIJK: Verwijder isAddingTask check - we moeten ALTIJD de laatste data kunnen ophalen
+    // De isAddingTask flag wordt alleen gebruikt om dubbele optimistic updates te voorkomen
     
     try {
       setLoading(true);
       
-      // Haal ALTIJD de volledige array op uit localStorage
-      const localTasks = getTasksFromStorage(); // Deze functie verwijdert al duplicaten
+      // Haal ALTIJD de volledige array op uit localStorage (direct, synchroon)
+      const localTasks = getTasksFromStorage();
       
-      // Als array leeg is, return lege array (geen mock data meer)
-      // Gebruiker kan zelf taken toevoegen
+      console.log('🔄 fetchTasks: Loaded', localTasks.length, 'tasks from localStorage');
+      
       if (localTasks.length === 0) {
         setTasks([]);
         setError(null);
@@ -112,7 +112,6 @@ export function useTasks() {
           if (!existing) {
             uniqueTasksMap.set(task.id, task);
           } else {
-            // Behoud meest recente versie (gebaseerd op updated_at)
             const existingDate = existing.updated_at ? new Date(existing.updated_at).getTime() : 0;
             const newDate = task.updated_at ? new Date(task.updated_at).getTime() : 0;
             if (newDate > existingDate) {
@@ -124,16 +123,17 @@ export function useTasks() {
       
       const uniqueTasks = Array.from(uniqueTasksMap.values());
       
-      // BELANGRIJK: Zet ALTIJD de volledige array in state - geen filtering hier!
+      console.log('✅ fetchTasks: Setting', uniqueTasks.length, 'unique tasks in state');
+      
       setTasks(uniqueTasks);
       setError(null);
     } catch (err: any) {
       setError(err.message);
-      console.error('Error fetching tasks:', err);
+      console.error('❌ Error fetching tasks:', err);
     } finally {
       setLoading(false);
     }
-  }, [isAddingTask]);
+  }, []); // Verwijder isAddingTask dependency
 
   useEffect(() => {
     // Cleanup duplicaten bij mount (direct, niet async)
@@ -173,39 +173,45 @@ export function useTasks() {
     
     fetchTasks();
     
-    // BELANGRIJK: Luister naar task updates van andere componenten (same-tab)
+    // BELANGRIJK: Luister naar task updates - ALTIJD, niet alleen als !isAddingTask
     const unsubscribe = subscribeToTaskUpdates(() => {
-      // Skip als we bezig zijn met toevoegen
-      if (!isAddingTask) {
-        console.log('🔄 useTasks: Task update event received, refreshing...');
+      console.log('🔄 useTasks: Task update event received, refreshing...');
+      setTimeout(() => {
         fetchTasks();
-      }
+      }, 10);
     });
     
-    // BELANGRIJK: Luister ook naar localStorage storage events (cross-tab sync)
-    // Dit zorgt ervoor dat als data verandert in localStorage (bijv. in andere tab),
-    // alle componenten onmiddellijk mee-synchroniseren
+    // BELANGRIJK: Luister ook naar localStorage storage events - ALTIJD
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'structuro_tasks' && e.newValue) {
-        // Skip als we bezig zijn met toevoegen
-        if (!isAddingTask) {
-          console.log('🔄 useTasks: localStorage changed (cross-tab), refreshing...');
+        console.log('🔄 useTasks: localStorage changed, refreshing...');
+        setTimeout(() => {
           fetchTasks();
-        }
+        }, 10);
       }
+    };
+    
+    // BELANGRIJK: Luister ook naar custom events direct
+    const handleCustomEvent = () => {
+      console.log('🔄 useTasks: Custom event received, refreshing...');
+      setTimeout(() => {
+        fetchTasks();
+      }, 10);
     };
     
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorageChange);
+      window.addEventListener('structuro_tasks_updated', handleCustomEvent);
     }
     
     return () => {
       unsubscribe();
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('structuro_tasks_updated', handleCustomEvent);
       }
     };
-  }, [fetchTasks, isAddingTask]);
+  }, [fetchTasks]); // Verwijder isAddingTask dependency
 
   const addTask = useCallback(async (task: Omit<Task, 'id'>) => {
     try {

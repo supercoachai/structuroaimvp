@@ -95,10 +95,25 @@ export function saveTasksToStorage(tasks: LocalTask[]): void {
   if (typeof window === 'undefined') return;
   
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    // Notify alle listeners dat taken zijn veranderd
+    const tasksJson = JSON.stringify(tasks);
+    localStorage.setItem(STORAGE_KEY, tasksJson);
+    
+    // KRITIEK: Trigger MULTIPLE events om zeker te zijn dat alle listeners worden getriggerd
     if (typeof window !== 'undefined') {
+      // Event 1: Direct
       window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      
+      // Event 2: Na korte delay (voor componenten die later mounten)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }, 50);
+      
+      // Event 3: Na langere delay (voor race conditions)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+      }, 200);
+      
+      console.log('📢 saveTasksToStorage: Events triggered for', tasks.length, 'tasks');
     }
   } catch (error) {
     console.error('Error saving to localStorage:', error);
