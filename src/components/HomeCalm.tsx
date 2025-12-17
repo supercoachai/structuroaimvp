@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTasks, Task } from '../hooks/useTasks';
 import { designSystem } from '../lib/design-system';
 import { getTodayCheckIn, hasCheckedInToday } from '../lib/localStorageTasks';
+import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
 
 interface DashboardData {
   totalTasks: number;
@@ -323,7 +324,68 @@ export default function HomeCalm() {
     return adhdQuotes[dayOfYear % adhdQuotes.length];
   };
 
+  // DEBUG: Reset functie (alleen in development)
+  const handleReset = () => {
+    if (confirm('Weet je zeker dat je alle data wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
+      resetAndLoadMockData();
+    }
+  };
+
+  // Verwijder ALLEEN taken (schone start)
+  const handleClearAllTasks = () => {
+    if (confirm('Weet je zeker dat je ALLE taken wilt verwijderen? Dit kan niet ongedaan worden gemaakt. Je kunt daarna zelf handmatig taken toevoegen.')) {
+      clearAllTasksOnly();
+    }
+  };
+
   return (
+    <>
+      {/* DEBUG: Reset knoppen (alleen in development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8
+        }}>
+          <button
+            onClick={handleClearAllTasks}
+            style={{
+              padding: '8px 16px',
+              background: '#DC2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+          >
+            🗑️ Verwijder ALLE taken
+          </button>
+          <button
+            onClick={handleReset}
+            style={{
+              padding: '8px 16px',
+              background: '#EF4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}
+            title="Reset alle data (development only)"
+          >
+            🔄 Reset Data
+          </button>
+        </div>
+      )}
     <div
       style={{
         minHeight: "100vh",
@@ -989,5 +1051,6 @@ export default function HomeCalm() {
         )}
       </div>
     </div>
+    </>
   );
 }

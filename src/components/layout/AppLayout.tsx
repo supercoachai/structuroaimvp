@@ -7,10 +7,21 @@ import { ToastHost } from '../Toast';
 
 interface AppLayoutProps {
   children: ReactNode;
+  hideSidebar?: boolean; // Voor Focus Mode - verberg sidebar volledig
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const { collapsed, toggleSidebar } = useSidebar();
+
+  // Zen-modus: geen sidebar, volledig scherm
+  if (hideSidebar) {
+    return (
+      <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+        {children}
+        <ToastHost />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-50" style={{ width: '100%', height: '100vh' }}>
