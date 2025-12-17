@@ -305,14 +305,13 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       }
 
       // STAP 5: VERIFICATIE - controleer of taak bestaat in localStorage
-      const { getTasksFromStorage } = await import('../lib/localStorageTasks');
+      const { getTasksFromStorage, addTaskToStorage } = await import('../lib/localStorageTasks');
       const tasksInStorage = getTasksFromStorage();
       const taskExists = tasksInStorage.find((t: any) => t.id === draggedTask.id);
       
       if (!taskExists) {
         console.error('❌ Task not found in localStorage:', draggedTask.id, draggedTask.title);
         // Taak bestaat niet - voeg toe aan localStorage
-        const { addTaskToStorage } = await import('../lib/localStorageTasks');
         const taskToAdd = {
           id: draggedTask.id,
           title: draggedTask.title,
@@ -342,23 +341,34 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       // STAP 6: Zet nieuwe prioriteit - gebruik updateTask(taskId, { priority: slotNumber })
       // BELANGRIJK: Dit update ALLEEN priority, alle andere velden (zoals energyLevel) blijven behouden
       // De updateTask functie behoudt automatisch alle bestaande velden via updateTaskInStorage
+      console.log(`🔄 DayStart: Updating task ${draggedTask.id} with priority ${slotNumber}`);
       await updateTask(draggedTask.id, { priority: slotNumber });
+      
+      // STAP 7: VERIFICATIE - controleer of taak correct is opgeslagen
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const tasksAfterUpdate = getTasksFromStorage();
+      const updatedTask = tasksAfterUpdate.find((t: any) => t.id === draggedTask.id);
+      console.log('🔍 DayStart: Task after update in localStorage:', updatedTask ? {
+        id: updatedTask.id,
+        title: updatedTask.title,
+        priority: updatedTask.priority,
+        energyLevel: updatedTask.energyLevel
+      } : 'NOT FOUND');
       
       // BELANGRIJK: Trigger expliciet een sync event zodat andere pagina's direct updaten
       // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe priority zien
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+        console.log('🔄 DayStart: Sync event triggered');
       }
-      
-      // STAP 7: Wacht even zodat localStorage update volledig is doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       // STAP 8: Haal taken opnieuw op - dit synchroniseert met localStorage
       // BELANGRIJK: fetchTasks haalt ALLE taken op, geen filtering!
       await fetchTasks();
+      console.log('🔄 DayStart: fetchTasks completed');
       
       // STAP 9: Wacht even zodat fetchTasks volledig is doorgevoerd en tasks state is geüpdatet
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // STAP 9: Reset update flag - taak staat al in top3Tasks (optimistic update)
       // BELANGRIJK: top3Tasks is nu de bron van waarheid, niet meer tasks array
@@ -470,36 +480,56 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         return;
       }
       
-      // DIRECTE OPSLAG: Sla taken direct op in localStorage zonder via updateTask te gaan
-      // Dit voorkomt race conditions en verlies van data
-      const { saveTasksToStorage } = await import('../lib/localStorageTasks');
+      // KRITIEK: DIRECTE OPSLAG in localStorage - dit is de ENIGE manier om zeker te zijn dat taken blijven bestaan
+      // Gebruik NIET updateTask omdat die async is en race conditions kan veroorzaken
+      const { saveTasksToStorage, updateTaskInStorage } = await import('../lib/localStorageTasks');
       const allTasks = getTasksFromStorage();
       
-      // Update taken direct in de array
+      console.log('🔍 handleSubmit: Starting direct save. Total tasks in storage:', allTasks.length);
+      console.log('🔍 handleSubmit: Top3 tasks to save:', top3Ids);
+      
+      // DIRECTE UPDATE: Update elke taak direct in de array
       const updatedTasks = allTasks.map((t: any) => {
-        const top3Task = Object.values(top3Tasks).find((tt: any) => tt && tt.id === t.id);
-        if (top3Task) {
-          const slotNumber = Object.entries(top3Tasks).find(([_, tt]: any) => tt && tt.id === t.id)?.[0];
-          const priority = slotNumber ? parseInt(slotNumber) : null;
-          console.log(`📝 Direct updating task ${t.id} (${t.title}) with priority ${priority}`);
+        // Zoek of deze taak in top3Tasks staat
+        const top3Entry = Object.entries(top3Tasks).find(([_, task]: any) => task && task.id === t.id);
+        
+        if (top3Entry) {
+          const [slotNumber, task] = top3Entry;
+          const priority = parseInt(slotNumber);
+          
+          console.log(`📝 DIRECT SAVE: Task ${t.id} (${t.title}) -> priority ${priority}`);
+          
+          // Behoud ALLE bestaande velden, update alleen priority, notToday en done
           return {
-            ...t, // Behoud ALLE bestaande velden
+            ...t, // Behoud ALLES (title, energyLevel, duration, etc.)
             priority: priority,
             notToday: false,
             done: false,
             updated_at: new Date().toISOString()
           };
         }
+        
+        // Als taak NIET in top3Tasks staat maar WEL een priority 1-3 heeft, reset priority
+        // Dit voorkomt dat oude prioriteiten blijven staan
+        if (t.priority && t.priority >= 1 && t.priority <= 3 && !top3Ids.includes(t.id)) {
+          console.log(`🔄 RESET: Task ${t.id} (${t.title}) priority ${t.priority} -> null (niet meer in top3)`);
+          return {
+            ...t,
+            priority: null,
+            updated_at: new Date().toISOString()
+          };
+        }
+        
         return t;
       });
       
-      // Voeg taken toe die nog niet bestaan
+      // Voeg taken toe die nog niet bestaan (fallback)
       for (const [slotNumber, task] of Object.entries(top3Tasks)) {
         if (task && task.id) {
           const exists = updatedTasks.find((t: any) => t.id === task.id);
           if (!exists) {
-            console.log(`➕ Adding missing task ${task.id} (${task.title}) to storage`);
             const priority = parseInt(slotNumber);
+            console.log(`➕ ADD MISSING: Task ${task.id} (${task.title}) -> priority ${priority}`);
             updatedTasks.push({
               id: task.id,
               title: task.title,
@@ -524,35 +554,35 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         }
       }
       
-      // Sla direct op in localStorage
+      // SLA DIRECT OP - dit is synchroon en gegarandeerd
       saveTasksToStorage(updatedTasks);
-      console.log('💾 Direct saved to localStorage:', updatedTasks.length, 'tasks');
+      console.log('💾 DIRECT SAVE COMPLETE: Saved', updatedTasks.length, 'tasks to localStorage');
       
-      // VERIFICATIE: Controleer of taken correct zijn opgeslagen
+      // VERIFICATIE: Controleer DIRECT of taken correct zijn opgeslagen
       const tasksAfterSave = getTasksFromStorage();
       const tasksWithPriority = tasksAfterSave.filter((t: any) => 
         t.priority != null && t.priority >= 1 && t.priority <= 3
       );
-      console.log('📋 NA DIRECTE OPSLAG - Taken in localStorage:', tasksAfterSave.length);
-      console.log('📋 NA DIRECTE OPSLAG - Taken met priority:', tasksWithPriority.map((t: any) => ({
+      
+      console.log('✅ VERIFICATION: Tasks in localStorage:', tasksAfterSave.length);
+      console.log('✅ VERIFICATION: Tasks with priority 1-3:', tasksWithPriority.map((t: any) => ({
         id: t.id,
         title: t.title,
         priority: t.priority,
-        done: t.done,
-        notToday: t.notToday
+        energyLevel: t.energyLevel
       })));
       
       // Check of alle taken nog steeds bestaan
       const stillMissing = top3Ids.filter(id => !tasksAfterSave.find((t: any) => t.id === id));
       if (stillMissing.length > 0) {
-        console.error('❌ TAKEN VERDWENEN NA DIRECTE OPSLAG:', stillMissing);
+        console.error('❌ KRITIEKE FOUT: Taken verdwenen na directe opslag:', stillMissing);
         toast(`Fout: ${stillMissing.length} ta(a)k(en) verdwenen na opslaan`);
         setIsSubmitting(false);
         return;
       }
       
-      // Wacht even zodat localStorage updates volledig zijn doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wacht even zodat localStorage volledig is doorgevoerd
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Haal taken opnieuw op via fetchTasks om state te synchroniseren
       await fetchTasks();
@@ -572,6 +602,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe prioriteiten zien
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+        console.log('🔄 DayStart: Final sync event triggered');
       }
 
       // Pas dagindeling aan op basis van energie
@@ -585,12 +616,19 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
 
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
       
+      // BELANGRIJK: Trigger expliciet een sync event VOORDAT we navigeren
+      // Dit zorgt ervoor dat TasksOverview de taken direct ziet
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+        console.log('🔄 DayStart: Sync event triggered BEFORE navigation');
+      }
+      
+      // Wacht nog even zodat event is doorgevoerd
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       // Navigeer naar /todo pagina waar de taken zichtbaar zijn
-      // Wacht iets langer om zeker te zijn dat alles is opgeslagen
-      setTimeout(() => {
-        // Navigeer naar /todo waar "1 - MOET VANDAAG" staat
-        router.push('/todo');
-      }, 500);
+      console.log('🔄 DayStart: Navigating to /todo');
+      router.push('/todo');
     } catch (error: any) {
       console.error('Error saving check-in:', error);
       toast(`Fout bij opslaan: ${error?.message || 'Onbekende fout'}`);

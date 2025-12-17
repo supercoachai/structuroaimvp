@@ -49,7 +49,6 @@ function parseNaturalLanguage(input: string) {
 export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any) {
   const { tasks, loading, addTask: apiAddTask, updateTask: apiUpdateTask, deleteTask: apiDeleteTask, updateTasks: apiUpdateTasks, fetchTasks } = useTasks();
   const [newTitle, setNewTitle] = useState("");
-  const [selectedEnergyLevel, setSelectedEnergyLevel] = useState<'low' | 'medium' | 'high' | null>(null);
   const [editing, setEditing] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isEditingDuration, setIsEditingDuration] = useState(false);
@@ -76,18 +75,42 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
   // Forceer refresh van taken bij mount en na navigatie
   useEffect(() => {
     // Haal taken opnieuw op bij mount om zeker te zijn dat we de laatste versie hebben
+    console.log('🔄 TasksOverview: Mounting, fetching tasks...');
     fetchTasks();
     
     // Luister naar task update events
     const handleTaskUpdate = () => {
-      console.log('🔄 Task update event received, refreshing tasks...');
-      fetchTasks();
+      console.log('🔄 TasksOverview: Task update event received, refreshing tasks...');
+      // Forceer directe refresh
+      setTimeout(() => {
+        fetchTasks();
+      }, 100);
+    };
+    
+    // Luister ook naar storage events (cross-tab sync)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'structuro_tasks' && e.newValue) {
+        console.log('🔄 TasksOverview: localStorage changed, refreshing tasks...');
+        setTimeout(() => {
+          fetchTasks();
+        }, 100);
+      }
     };
     
     if (typeof window !== 'undefined') {
       window.addEventListener('structuro_tasks_updated', handleTaskUpdate);
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Forceer ook een refresh na korte delay (voor navigatie van andere pagina's)
+      const delayedRefresh = setTimeout(() => {
+        console.log('🔄 TasksOverview: Delayed refresh after mount');
+        fetchTasks();
+      }, 500);
+      
       return () => {
         window.removeEventListener('structuro_tasks_updated', handleTaskUpdate);
+        window.removeEventListener('storage', handleStorageChange);
+        clearTimeout(delayedRefresh);
       };
     }
   }, [fetchTasks]);
@@ -102,7 +125,20 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
       console.log('📊 TasksOverview - Tasks with priority 1-3:', priorityTasks.map((t: any) => ({
         id: t.id,
         title: t.title,
-        priority: t.priority
+        priority: t.priority,
+        energyLevel: t.energyLevel,
+        done: t.done,
+        source: t.source
+      })));
+      
+      // Debug: specifiek voor priority 1
+      const priority1Tasks = tasks.filter((t: any) => t.priority === 1);
+      console.log('📊 TasksOverview - Priority 1 tasks:', priority1Tasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority,
+        done: t.done,
+        source: t.source
       })));
     }
   }, [tasks]);
@@ -113,6 +149,18 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     () => {
       // EXACTE FILTER LOGICA: Kolom 1 = priority === 1, Kolom 2 = priority === 2, Kolom 3 = priority === 3
       // BELANGRIJK: Toon ook done taken, zodat gebruiker kan zien wat er is toegevoegd
+      
+      // Debug: log alle taken met priority
+      const allPriorityTasks = tasks.filter((t: any) => 
+        t && t.id && t.title && t.priority != null && t.priority >= 1 && t.priority <= 3
+      );
+      console.log('🔍 Top3 filter - All tasks with priority:', allPriorityTasks.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        priority: t.priority,
+        done: t.done,
+        source: t.source
+      })));
       
       // Kolom 1 (MOET VANDAAG): alleen tasks.filter(t => t.priority === 1)
       const priority1Task = tasks.find((t: any) => 
@@ -140,6 +188,12 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         t.priority === 3 && 
         t.source !== 'medication'
       );
+      
+      console.log('🔍 Top3 result:', {
+        priority1: priority1Task ? { id: priority1Task.id, title: priority1Task.title } : null,
+        priority2: priority2Task ? { id: priority2Task.id, title: priority2Task.title } : null,
+        priority3: priority3Task ? { id: priority3Task.id, title: priority3Task.title } : null
+      });
       
       // Zet taken in de juiste slots (0-based index)
       return [priority1Task || null, priority2Task || null, priority3Task || null];
@@ -246,15 +300,11 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     cleanup();
   }, [tasks, loading]);
 
-  const addTask = async () => {
+  // Direct toevoegen met energyLevel - wordt aangeroepen bij klik op kleur knop
+  const handleAddTaskWithEnergy = async (energyLevel: 'low' | 'medium' | 'high') => {
     const title = newTitle.trim();
     if (!title) {
       toast('Vul eerst een taaknaam in');
-      return;
-    }
-
-    if (!selectedEnergyLevel) {
-      toast('Kies eerst een moeilijkheid (groen, oranje of rood)');
       return;
     }
 
@@ -268,7 +318,7 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
       reminders: [],
       repeat: "none",
       impact: "🌱",
-      energyLevel: selectedEnergyLevel, // Gebruik geselecteerde energie-niveau
+      energyLevel: energyLevel, // Gebruik geselecteerde energie-niveau
       estimatedDuration: null,
       source: 'regular',
       completedAt: null,
@@ -279,7 +329,6 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
     try {
       await apiAddTask(newTask);
       setNewTitle(""); // Reset input
-      setSelectedEnergyLevel(null); // Reset selectie
       
       // Toast notificatie
       const energyLabels = {
@@ -287,12 +336,12 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         medium: 'Oranje (normaal)',
         high: 'Rood (moeilijk)'
       };
-      toast(`✅ Taak toegevoegd - ${energyLabels[selectedEnergyLevel]}`);
+      toast(`✅ Taak toegevoegd - ${energyLabels[energyLevel]}`);
       
       // Track event
       track("task_add", { 
         source: "quick_input", 
-        energyLevel: selectedEnergyLevel
+        energyLevel: energyLevel
       });
     } catch (error: any) {
       console.error('Failed to add task:', error);
@@ -634,7 +683,12 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
 
   // Keyboard shortcuts
   useTaskShortcuts({
-    onAdd: addTask,
+    onAdd: () => {
+      // Bij keyboard shortcut: voeg toe met medium (oranje) als default
+      if (newTitle.trim()) {
+        handleAddTaskWithEnergy('medium');
+      }
+    },
     onPromote1: () => selectedTaskId && setPriority(selectedTaskId, 1),
     onPromote2: () => selectedTaskId && setPriority(selectedTaskId, 2),
     onPromote3: () => selectedTaskId && setPriority(selectedTaskId, 3),
@@ -823,13 +877,14 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
         {/* Snel taak toevoegen */}
         <section style={designSystem.section}>
           <div style={{ display: "grid", gap: designSystem.spacing.sm }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: 'wrap' }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: 'wrap' }}>
               <input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && selectedEnergyLevel) {
-                    addTask();
+                  // Enter toevoegt taak met medium (oranje) als default
+                  if (e.key === "Enter" && newTitle.trim()) {
+                    handleAddTaskWithEnergy('medium');
                   }
                 }}
                 placeholder="Nieuwe taak…"
@@ -837,74 +892,93 @@ export default function TasksOverviewCalm({ initialTasks = seed, onChange }: any
                 aria-label="Taak titel"
               />
               
-              {/* Energie-niveau knoppen: Groen, Oranje, Rood */}
+              {/* Energie-niveau knoppen: alleen kleuren, direct toevoegen bij klik */}
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <button
-                  onClick={() => setSelectedEnergyLevel('low')}
+                  onClick={() => handleAddTaskWithEnergy('low')}
+                  disabled={!newTitle.trim()}
                   style={{
-                    padding: '10px 20px',
-                    background: selectedEnergyLevel === 'low' ? '#10B981' : '#E5F9F0',
-                    color: selectedEnergyLevel === 'low' ? 'white' : '#10B981',
-                    border: `2px solid ${selectedEnergyLevel === 'low' ? '#10B981' : '#A7F3D0'}`,
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
+                    width: 48,
+                    height: 48,
+                    background: '#10B981',
+                    border: '2px solid #10B981',
+                    borderRadius: 12,
+                    cursor: newTitle.trim() ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease',
+                    opacity: newTitle.trim() ? 1 : 0.5,
+                    boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (newTitle.trim()) {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.2)';
                   }}
                   title="Groen - Makkelijk (lage energie)"
-                >
-                  🟢 Groen
-                </button>
+                />
                 <button
-                  onClick={() => setSelectedEnergyLevel('medium')}
+                  onClick={() => handleAddTaskWithEnergy('medium')}
+                  disabled={!newTitle.trim()}
                   style={{
-                    padding: '10px 20px',
-                    background: selectedEnergyLevel === 'medium' ? '#F59E0B' : '#FFFBEB',
-                    color: selectedEnergyLevel === 'medium' ? 'white' : '#F59E0B',
-                    border: `2px solid ${selectedEnergyLevel === 'medium' ? '#F59E0B' : '#FDE68A'}`,
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
+                    width: 48,
+                    height: 48,
+                    background: '#F59E0B',
+                    border: '2px solid #F59E0B',
+                    borderRadius: 12,
+                    cursor: newTitle.trim() ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease',
+                    opacity: newTitle.trim() ? 1 : 0.5,
+                    boxShadow: '0 2px 4px rgba(245, 158, 11, 0.2)',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (newTitle.trim()) {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.2)';
                   }}
                   title="Oranje - Normaal (gemiddelde energie)"
-                >
-                  🟠 Oranje
-                </button>
+                />
                 <button
-                  onClick={() => setSelectedEnergyLevel('high')}
+                  onClick={() => handleAddTaskWithEnergy('high')}
+                  disabled={!newTitle.trim()}
                   style={{
-                    padding: '10px 20px',
-                    background: selectedEnergyLevel === 'high' ? '#EF4444' : '#FEF2F2',
-                    color: selectedEnergyLevel === 'high' ? 'white' : '#EF4444',
-                    border: `2px solid ${selectedEnergyLevel === 'high' ? '#EF4444' : '#FECACA'}`,
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
+                    width: 48,
+                    height: 48,
+                    background: '#EF4444',
+                    border: '2px solid #EF4444',
+                    borderRadius: 12,
+                    cursor: newTitle.trim() ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease',
+                    opacity: newTitle.trim() ? 1 : 0.5,
+                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (newTitle.trim()) {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.2)';
                   }}
                   title="Rood - Moeilijk (hoge energie)"
-                >
-                  🔴 Rood
-                </button>
+                />
               </div>
-              
-              <button 
-                onClick={addTask} 
-                style={buttonPrimary}
-                disabled={!selectedEnergyLevel}
-              >
-                Toevoegen
-              </button>
             </div>
-            <div style={{ ...designSystem.typography.bodySmall, color: theme.sub }}>
-              Kies een moeilijkheid: Groen (makkelijk), Oranje (normaal) of Rood (moeilijk)
+            <div style={{ ...designSystem.typography.bodySmall, color: theme.sub, fontSize: 11 }}>
+              Klik op een kleur om de taak direct toe te voegen: Groen (makkelijk), Oranje (normaal), Rood (moeilijk)
             </div>
           </div>
         </section>
