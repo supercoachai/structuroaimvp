@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+
+const LOCAL_MODE_COOKIE = 'structuro_local_mode';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -13,8 +15,27 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
+  const [hasLocalTasks, setHasLocalTasks] = useState(false);
   const router = useRouter();
-  
+
+  // Check of er taken in localStorage staan (voor "Doorgaan met lokale data")
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('structuro_tasks');
+      const tasks = stored ? JSON.parse(stored) : [];
+      setHasLocalTasks(Array.isArray(tasks) && tasks.length > 0);
+    } catch {
+      setHasLocalTasks(false);
+    }
+  }, []);
+
+  const handleContinueWithLocalData = () => {
+    document.cookie = `${LOCAL_MODE_COOKIE}=1; path=/; max-age=2592000; SameSite=Lax`;
+    // Volledige paginanavigatie zodat de cookie zeker meegaat naar de middleware
+    window.location.href = '/';
+  };
+
   // Initialize Supabase client only when needed
   const getSupabase = () => {
     try {
@@ -92,8 +113,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
-      <div className="max-w-md w-full rounded-3xl shadow-2xl p-10" style={{ 
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-8 overflow-y-auto">
+      <div className="max-w-md w-full rounded-3xl shadow-2xl p-10 relative" style={{ 
         backgroundColor: 'transparent',
         background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%)'
       }}>
@@ -187,7 +208,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-4">
           <button
             type="button"
             onClick={() => {
@@ -195,7 +216,7 @@ export default function LoginPage() {
               setError(null);
               setMessage(null);
             }}
-            className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            className="text-sm text-gray-600 hover:text-blue-600 transition-colors block w-full"
           >
             {isSignUp ? (
               <>
@@ -207,6 +228,21 @@ export default function LoginPage() {
               </>
             )}
           </button>
+
+          <div className="pt-4 border-t border-gray-200 relative z-10">
+            <p className="text-xs text-gray-500 mb-3">
+              {hasLocalTasks
+                ? 'Kun je niet inloggen? Je hebt al taken opgeslagen in deze browser.'
+                : 'Kun je niet inloggen? Doorgaan zonder account (taken worden lokaal opgeslagen).'}
+            </p>
+            <button
+              type="button"
+              onClick={handleContinueWithLocalData}
+              className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors cursor-pointer border border-slate-200"
+            >
+              Doorgaan met lokale data →
+            </button>
+          </div>
         </div>
       </div>
     </div>

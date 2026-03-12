@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useTasks } from '../hooks/useTasks';
+import { useTaskContext } from '../context/TaskContext';
 import { createClient } from '../lib/supabase/client';
 import { toast } from './Toast';
 import { track } from '../shared/track';
@@ -11,7 +11,7 @@ interface DayShutdownProps {
 }
 
 export default function DayShutdown({ onComplete }: DayShutdownProps) {
-  const { tasks, updateTask } = useTasks();
+  const { tasks, updateTask } = useTaskContext();
   const [energyLevel, setEnergyLevel] = useState<string | null>(null);
   const [reflection, setReflection] = useState('');
   const [completedTasks, setCompletedTasks] = useState<any[]>([]);
@@ -85,7 +85,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
       if (error) throw error;
 
-      toast('✨ Shutdown voltooid! Goede nacht en rust goed uit.');
+      toast('✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.');
       track('day_shutdown', { 
         energyLevel, 
         completedCount: completedTasks.length,
@@ -94,7 +94,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       onComplete();
     } catch (error: any) {
       console.error('Error saving shutdown:', error);
-      toast('Fout bij opslaan van shutdown');
+      toast('Fout bij opslaan van dagafsluiter');
     } finally {
       setIsSubmitting(false);
     }

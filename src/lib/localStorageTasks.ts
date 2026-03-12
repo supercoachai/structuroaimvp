@@ -27,16 +27,22 @@ export interface LocalTask {
   completedAt: string | null;
   reminders: number[];
   repeat: string;
+  repeatUntil?: string | null;
+  repeatWeekdays?: 'all' | 'weekdays' | 'weekends';
+  repeatExcludeDates?: string[];
   impact: string;
   energyLevel: string;
   estimatedDuration: number | null;
-  microSteps: string[];
+  microSteps: any[];
   notToday: boolean;
+  isDeadline?: boolean;
+  category?: string; // 'work' | 'personal' | 'appointment' | 'health'
   created_at: string;
   updated_at: string;
 }
 
 // Haal taken op uit localStorage en verwijder duplicaten
+// KRITIEK: Schone start script - verwijder corrupte taken en forceer integers
 export function getTasksFromStorage(): LocalTask[] {
   if (typeof window === 'undefined') return [];
   
@@ -48,12 +54,32 @@ export function getTasksFromStorage(): LocalTask[] {
       // Verwijder duplicaten op basis van ID (unieke ID's)
       const uniqueTasksMap = new Map<string, LocalTask>();
       let hasDuplicates = false;
+      let hasTypeIssues = false;
+      let hasCorruption = false;
       
       tasks.forEach((task: LocalTask) => {
-        if (!task || !task.id) {
-          // Skip invalid tasks
-          hasDuplicates = true;
-          return;
+        // KRITIEK: Schone start - verwijder corrupte taken (zonder titel of id)
+        if (!task || !task.id || !task.title || task.title.trim() === '') {
+          hasCorruption = true;
+          console.warn('🗑️ Removing corrupt task:', task);
+          return; // Skip corrupte taken
+        }
+        
+        // KRITIEK: Forceer integer met parseInt(value, 10) - NUCLEAIRE fix
+        if (task.priority != null) {
+          const priorityStr = String(task.priority);
+          const priorityNum = parseInt(priorityStr, 10);
+          if (!isNaN(priorityNum)) {
+            task.priority = priorityNum; // Forceer integer
+            if (typeof task.priority !== 'number') {
+              hasTypeIssues = true;
+            }
+          } else {
+            task.priority = null; // Invalid priority wordt null
+            hasTypeIssues = true;
+          }
+        } else {
+          task.priority = null; // Zet lege/null priority expliciet op null
         }
         
         // Als taak al bestaat, behoud de meest recente (nieuwste updated_at)
@@ -74,8 +100,14 @@ export function getTasksFromStorage(): LocalTask[] {
       
       const uniqueTasks = Array.from(uniqueTasksMap.values());
       
-      // Als er duplicaten waren, sla de unieke versie terug op
-      if (hasDuplicates || uniqueTasks.length !== tasks.length) {
+      // Als er duplicaten, type-issues of corruptie waren, sla de gecorrigeerde versie terug op
+      if (hasDuplicates || hasTypeIssues || hasCorruption || uniqueTasks.length !== tasks.length) {
+        if (hasCorruption) {
+          console.log('🧹 getTasksFromStorage: Removed corrupt tasks');
+        }
+        if (hasTypeIssues) {
+          console.log('🔧 getTasksFromStorage: Fixed priority type issues (forced integers)');
+        }
         saveTasksToStorage(uniqueTasks);
       }
       
@@ -98,17 +130,24 @@ export function saveTasksToStorage(tasks: LocalTask[]): void {
     const tasksJson = JSON.stringify(tasks);
     localStorage.setItem(STORAGE_KEY, tasksJson);
     
-    // KRITIEK: Trigger MULTIPLE events om zeker te zijn dat alle listeners worden getriggerd
+    // KRITIEK: Directe sync - dispatch storage event voor onmiddellijke her-render
     if (typeof window !== 'undefined') {
-      // Event 1: Direct
+      // Event 1: Custom event (same-tab)
       window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
       
-      // Event 2: Na korte delay (voor componenten die later mounten)
+      // Event 2: Storage event (cross-tab sync) - NUCLEAIRE fix
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: STORAGE_KEY,
+        newValue: tasksJson,
+        storageArea: window.localStorage
+      }));
+      
+      // Event 3: Na korte delay (voor componenten die later mounten)
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
       }, 50);
       
-      // Event 3: Na langere delay (voor race conditions)
+      // Event 4: Na langere delay (voor race conditions)
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
       }, 200);
@@ -141,16 +180,18 @@ export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'up
     updated_at: new Date().toISOString()
   };
   
-  // Controleer of er al een taak bestaat met dezelfde titel en source (binnen laatste 5 seconden)
-  const recentDuplicate = tasks.find(t => 
-    t.title === newTask.title && 
-    t.source === newTask.source &&
-    t.created_at && 
-    new Date().getTime() - new Date(t.created_at).getTime() < 5000
-  );
-  
+  // Controleer op dubbele submit (zelfde titel + source binnen 5 sec) – niet voor medicatie/events met dueAt
+  const isRecurringWithDue = (newTask.source === 'medication' || newTask.source === 'event') && newTask.dueAt;
+  const recentDuplicate = !isRecurringWithDue
+    ? tasks.find(t =>
+        t.title === newTask.title &&
+        t.source === newTask.source &&
+        t.created_at &&
+        new Date().getTime() - new Date(t.created_at).getTime() < 5000
+      )
+    : null;
+
   if (recentDuplicate) {
-    // Update bestaande taak in plaats van nieuwe toe te voegen
     return updateTaskInStorage(recentDuplicate.id, newTask) || newTask;
   }
   
@@ -161,9 +202,18 @@ export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'up
 
 // Update een taak - BEHOUD alle bestaande velden, update alleen wat nodig is
 // BELANGRIJK: Deze functie is de Single Source of Truth voor task updates
+// KRITIEK: Converteer priority altijd naar Number
 export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>): LocalTask | null {
   const tasks = getTasksFromStorage();
   const index = tasks.findIndex(t => t.id === taskId);
+  
+  // KRITIEK: Forceer ALTIJD integer met parseInt(value, 10) - NUCLEAIRE fix
+  let priority: number | null = null;
+  if (updates.priority != null) {
+    const priorityStr = String(updates.priority);
+    const priorityNum = parseInt(priorityStr, 10);
+    priority = isNaN(priorityNum) ? null : priorityNum;
+  }
   
   if (index === -1) {
     console.warn(`❌ Task ${taskId} not found in storage. Available tasks:`, tasks.map((t: any) => ({ id: t.id, title: t.title })));
@@ -175,7 +225,7 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
         title: updates.title,
         done: updates.done || false,
         started: updates.started || false,
-        priority: updates.priority || null,
+        priority: priority, // Gebruik geconverteerde priority
         dueAt: updates.dueAt || null,
         duration: updates.duration || null,
         source: updates.source || 'regular',
@@ -183,7 +233,7 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
         reminders: updates.reminders || [],
         repeat: updates.repeat || 'none',
         impact: updates.impact || '🌱',
-        energyLevel: updates.energyLevel || 'medium',
+        energyLevel: updates.energyLevel !== undefined && updates.energyLevel !== null ? updates.energyLevel : 'medium',
         estimatedDuration: updates.estimatedDuration || null,
         microSteps: updates.microSteps || [],
         notToday: updates.notToday || false,
@@ -201,14 +251,119 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
   // BELANGRIJK: Behoud ALLE bestaande velden, merge alleen de updates
   // Dit zorgt ervoor dat energyLevel, title, etc. behouden blijven bij priority updates
   const existingTask = tasks[index];
-  const updatedTask = {
-    ...existingTask, // Behoud alle bestaande velden (title, duration, energyLevel, etc.)
-    ...updates,      // Pas alleen de geüpdatete velden toe
-    id: existingTask.id, // Zorg dat ID altijd behouden blijft
+  
+  // KRITIEK: Als updates.energyLevel undefined is, behoud de bestaande energyLevel
+  // Dit voorkomt dat energyLevel wordt overschreven naar undefined
+  const safeUpdates = { ...updates };
+  if (!safeUpdates.hasOwnProperty('energyLevel') || safeUpdates.energyLevel === undefined) {
+    // Behoud bestaande energyLevel als deze niet expliciet wordt geüpdatet
+    safeUpdates.energyLevel = existingTask.energyLevel || 'medium';
+  }
+  
+  // KRITIEK: Verifieer dat existingTask alle essentiële velden heeft
+  if (!existingTask || !existingTask.id || !existingTask.title) {
+    console.error('❌ KRITIEKE FOUT: existingTask mist essentiële velden!', {
+      existingTask,
+      taskId,
+      index,
+      tasksLength: tasks.length
+    });
+    return null;
+  }
+  
+  // KRITIEK: Als priority expliciet wordt geüpdatet (inclusief null), gebruik die waarde
+  // Anders behoud de bestaande priority
+  if (updates.hasOwnProperty('priority')) {
+    // Priority wordt expliciet geüpdatet (kan null zijn om priority te verwijderen)
+    safeUpdates.priority = priority; // Gebruik de geconverteerde priority (kan null zijn)
+  } else {
+    // Behoud bestaande priority als deze niet expliciet wordt geüpdatet
+    safeUpdates.priority = existingTask.priority;
+  }
+  
+  // KRITIEK: Zorg dat we ALLE velden behouden en alleen de updates toepassen
+  // Gebruik expliciete defaults voor alle velden om te voorkomen dat velden ontbreken
+  const updatedTask: LocalTask = {
+    id: existingTask.id || taskId, // Zorg dat ID altijd behouden blijft
+    title: existingTask.title || 'Untitled Task', // Zorg dat title altijd behouden blijft
+    done: safeUpdates.done !== undefined ? safeUpdates.done : (existingTask.done ?? false),
+    started: safeUpdates.started !== undefined ? safeUpdates.started : (existingTask.started ?? false),
+    priority: safeUpdates.priority !== undefined ? safeUpdates.priority : (existingTask.priority ?? null),
+    dueAt: safeUpdates.dueAt !== undefined ? safeUpdates.dueAt : (existingTask.dueAt ?? null),
+    duration: safeUpdates.duration !== undefined ? safeUpdates.duration : (existingTask.duration ?? null),
+    source: safeUpdates.source !== undefined ? safeUpdates.source : (existingTask.source || 'regular'),
+    completedAt: safeUpdates.completedAt !== undefined ? safeUpdates.completedAt : (existingTask.completedAt ?? null),
+    reminders: safeUpdates.reminders !== undefined ? safeUpdates.reminders : (existingTask.reminders || []),
+    repeat: safeUpdates.repeat !== undefined ? safeUpdates.repeat : (existingTask.repeat || 'none'),
+    repeatUntil: (safeUpdates as any).repeatUntil !== undefined ? (safeUpdates as any).repeatUntil : (existingTask as any).repeatUntil ?? null,
+    repeatWeekdays: (safeUpdates as any).repeatWeekdays !== undefined ? (safeUpdates as any).repeatWeekdays : (existingTask as any).repeatWeekdays ?? 'all',
+    repeatExcludeDates: (safeUpdates as any).repeatExcludeDates !== undefined ? (safeUpdates as any).repeatExcludeDates : (existingTask as any).repeatExcludeDates ?? undefined,
+    impact: safeUpdates.impact !== undefined ? safeUpdates.impact : (existingTask.impact || '🌱'),
+    energyLevel: safeUpdates.energyLevel !== undefined && safeUpdates.energyLevel !== null ? safeUpdates.energyLevel : (existingTask.energyLevel || 'medium'),
+    estimatedDuration: safeUpdates.estimatedDuration !== undefined ? safeUpdates.estimatedDuration : (existingTask.estimatedDuration ?? null),
+    microSteps: safeUpdates.microSteps !== undefined ? safeUpdates.microSteps : (existingTask.microSteps || []),
+    notToday: safeUpdates.notToday !== undefined ? safeUpdates.notToday : (existingTask.notToday ?? false),
+    isDeadline: (safeUpdates as any).isDeadline !== undefined ? (safeUpdates as any).isDeadline : (existingTask as any).isDeadline ?? false,
+    category: (safeUpdates as any).category !== undefined ? (safeUpdates as any).category : (existingTask as any).category,
+    created_at: existingTask.created_at || new Date().toISOString(), // Behoud originele created_at of maak nieuwe
     updated_at: new Date().toISOString()
   };
   
+  // KRITIEK: Verifieer dat de taak nog steeds alle essentiële velden heeft
+  if (!updatedTask.title || !updatedTask.id) {
+    console.error('❌ KRITIEKE FOUT: Taak verliest essentiële velden na update!', {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      priority: updatedTask.priority,
+      originalTask: existingTask,
+      safeUpdates,
+      updatedTask,
+      taskId,
+      index
+    });
+    // Herstel de taak met alle originele velden + updates
+    const restoredTask: LocalTask = {
+      id: existingTask.id || taskId,
+      title: existingTask.title || 'Untitled Task',
+      done: existingTask.done ?? false,
+      started: existingTask.started ?? false,
+      priority: priority !== undefined ? priority : (existingTask.priority ?? null),
+      dueAt: existingTask.dueAt ?? null,
+      duration: existingTask.duration ?? null,
+      source: existingTask.source || 'regular',
+      completedAt: existingTask.completedAt ?? null,
+      reminders: existingTask.reminders || [],
+      repeat: existingTask.repeat || 'none',
+      impact: existingTask.impact || '🌱',
+      energyLevel: existingTask.energyLevel || 'medium',
+      estimatedDuration: existingTask.estimatedDuration ?? null,
+      microSteps: existingTask.microSteps || [],
+      notToday: existingTask.notToday ?? false,
+      isDeadline: (existingTask as any).isDeadline ?? false,
+      created_at: existingTask.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    console.log('✅ Taak hersteld met alle originele velden:', restoredTask);
+    return restoredTask;
+  }
+  
+  // KRITIEK: Verifieer dat de taak nog steeds bestaat in de array VOORDAT we opslaan
+  if (index >= tasks.length) {
+    console.error('❌ KRITIEKE FOUT: Index buiten bereik!', { index, tasksLength: tasks.length, taskId });
+    return null;
+  }
+  
   tasks[index] = updatedTask;
+  
+  // KRITIEK: Verifieer dat de taak nog steeds in de array staat NA de update
+  const taskStillExists = tasks.find((t: any) => t.id === taskId);
+  if (!taskStillExists) {
+    console.error('❌ KRITIEKE FOUT: Taak verdwenen na update!', { taskId, updatedTask });
+    // Herstel: voeg de taak terug toe
+    tasks.push(updatedTask);
+    console.log('✅ Taak hersteld in array');
+  }
+  
   saveTasksToStorage(tasks); // Deze functie triggert al een event
   
   // BELANGRIJK: Trigger ook expliciet een custom event voor same-tab sync
@@ -217,11 +372,23 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
     notifyTaskUpdate();
   }
   
+  // KRITIEK: Verifieer dat de taak nog steeds bestaat in localStorage NA opslaan
+  const tasksAfterSave = getTasksFromStorage();
+  const taskExistsAfterSave = tasksAfterSave.find((t: any) => t.id === taskId);
+  if (!taskExistsAfterSave) {
+    console.error('❌ KRITIEKE FOUT: Taak verdwenen uit localStorage na opslaan!', { taskId, updatedTask });
+    // Probeer opnieuw op te slaan
+    tasksAfterSave.push(updatedTask);
+    saveTasksToStorage(tasksAfterSave);
+    console.log('✅ Taak opnieuw opgeslagen in localStorage');
+  }
+  
   console.log(`✅ Task updated in storage:`, { 
     id: updatedTask.id, 
     title: updatedTask.title, 
     priority: updatedTask.priority,
-    energyLevel: updatedTask.energyLevel 
+    energyLevel: updatedTask.energyLevel,
+    totalTasksInStorage: tasksAfterSave.length
   });
   return updatedTask;
 }

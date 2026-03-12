@@ -38,6 +38,9 @@ Volg de instructies in [DATABASE_SETUP.md](./DATABASE_SETUP.md) om Supabase in t
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=je-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=je-anon-key
+
+# Optioneel: beschermd testaccount – data wordt nooit gewist tijdens development
+NEXT_PUBLIC_PROTECTED_TEST_ACCOUNT_EMAIL=info@structuro.eu
 ```
 
 ### 4. Start de development server

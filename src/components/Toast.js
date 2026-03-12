@@ -3,7 +3,16 @@ import React, { useEffect, useState } from "react";
 let push;
 export function useToast() {
   const [q, setQ] = useState([]);
-  push = (msg) => setQ((s) => [...s, { id: Math.random(), msg }]);
+  push = (msg, opts = {}) => {
+    const { durationMs = 3000, replace = false } = opts || {};
+    const id = Math.random();
+    setQ((s) => (replace ? [{ id, msg }] : [...s, { id, msg }]));
+    if (typeof durationMs === "number" && durationMs > 0) {
+      setTimeout(() => {
+        setQ((s) => s.filter((x) => x.id !== id));
+      }, durationMs);
+    }
+  };
   const dismiss = (id) => setQ((s) => s.filter((x) => x.id !== id));
   return { q, dismiss };
 }
@@ -53,4 +62,5 @@ export function ToastHost() {
   );
 }
 
-export const toast = (m) => push?.(m);
+// Backwards-compatible: toast("msg") and toast("msg", { durationMs, replace })
+export const toast = (m, opts) => push?.(m, opts);

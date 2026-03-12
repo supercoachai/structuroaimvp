@@ -37,28 +37,28 @@ export const designSystem = {
     },
   },
 
-  // Standaard section styling
+  // Standaard section styling – shadows over borders (Herinneringen)
   section: {
     background: '#FFFFFF',
     padding: '24px',
-    borderRadius: '12px',
-    border: '1px solid #E6E8EE',
+    borderRadius: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     marginTop: '24px',
   },
 
   // Standaard card styling
   card: {
     background: '#FFFFFF',
-    border: '1px solid #E6E8EE',
-    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    borderRadius: '20px',
     padding: '24px',
   },
 
   // Stat card styling (voor de 4 statistiek blokken)
   statCard: {
     background: '#FFFFFF',
-    border: '1px solid #E6E8EE',
-    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    borderRadius: '20px',
     padding: '20px 16px',
     textAlign: 'center' as const,
     display: 'flex',
@@ -126,15 +126,14 @@ export const designSystem = {
     white: '#FFFFFF',
   },
 
-  // Quick action button styling
+  // Quick action button styling – Herinneringen: shadow, geen border
   quickActionButton: {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '16px 12px',
-    borderRadius: '8px',
-    border: '1px solid',
+    padding: '20px 16px',
+    borderRadius: '20px',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     textAlign: 'center' as const,

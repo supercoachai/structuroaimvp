@@ -35,8 +35,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Lokale modus: cookie staat toe om zonder Supabase-login de app te gebruiken (voor taken in localStorage)
+  const localModeCookie = request.cookies.get('structuro_local_mode')?.value
+
   if (
     !user &&
+    !localModeCookie &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/_next') &&

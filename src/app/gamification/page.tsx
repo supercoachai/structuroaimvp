@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../../components/layout/AppLayout';
-import { useTasks } from '../../hooks/useTasks';
+import { useTaskContext } from '../../context/TaskContext';
 import Collapsible from '../../components/Collapsible';
+import { xpForTask, progressWithinLevel, unlockedTrophies, TROPHIES, XP_PER_LEVEL, prestigeForTotalXp, levelInPrestigeForTotalXp, PRESTIGE_BADGES, getPrestigeBadge } from '../../lib/xp';
+import { awardBonusXp, loadGamificationMeta, saveGamificationMeta, type GamificationMeta } from '../../lib/gamificationMeta';
+import { getRandomCompletionReward } from '../../lib/completionRewards';
 
 interface Task {
   id: string;
@@ -11,6 +15,7 @@ interface Task {
   done: boolean;
   priority: number | null;
   completedAt?: string;
+  energyLevel?: 'low' | 'medium' | 'high' | string;
 }
 
 interface GamificationData {
@@ -41,8 +46,10 @@ interface Badge {
   eventName?: string;
 }
 
-export default function GamificationPage() {
-  const { tasks, loading } = useTasks();
+function GamificationContent() {
+  const { tasks, loading } = useTaskContext();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [gamificationData, setGamificationData] = useState<GamificationData>({
     currentStreak: 0,
     longestStreak: 0,
@@ -58,8 +65,16 @@ export default function GamificationPage() {
 
   const [showStreak, setShowStreak] = useState(true);
   const [showProgress, setShowProgress] = useState(true);
+  const [celebration, setCelebration] = useState<{ gain: number; taskTitle?: string; quote: string } | null>(null);
+  const [confettiElements, setConfettiElements] = useState<number[]>([]);
+  const [meta, setMeta] = useState<GamificationMeta>(() => ({ bonusXp: 0, awardedTrophyIds: [], awardedPrestiges: [] }));
+  const [majorPopupOpen, setMajorPopupOpen] = useState(false);
 
   // Bereken gamification data op basis van voltooide taken
+  useEffect(() => {
+    setMeta(loadGamificationMeta());
+  }, []);
+
   useEffect(() => {
     if (loading) return;
     
@@ -77,10 +92,11 @@ export default function GamificationPage() {
         // Bereken streak
         const streak = calculateStreak(completedTasks);
         
-        // Bereken level en experience
-        const totalExp = completedTasks.length * 10; // 10 XP per taak
-        const level = Math.floor(totalExp / 100) + 1; // Level up elke 100 XP
-        const experience = totalExp % 100;
+        // Bereken XP op basis van taak-moeilijkheid
+        const baseExp = completedTasks.reduce((sum, t) => sum + xpForTask(t), 0);
+        const totalExp = baseExp + (meta?.bonusXp || 0);
+        const { level, xpIntoLevel } = progressWithinLevel(totalExp);
+        const experience = xpIntoLevel; // compat (progress binnen level)
 
         // Bereken badges
         const badges = calculateBadges(completedTasks, streak);
@@ -92,7 +108,7 @@ export default function GamificationPage() {
           todayTasksCompleted: todayTasks.length,
           todayGoal: 3,
           level,
-          experience,
+          experience, // xp in current level
           badges,
           totalXP: totalExp,
           unlockedBadges: calculateUnlockedBadges(completedTasks, streak.current)
@@ -103,7 +119,109 @@ export default function GamificationPage() {
     };
 
     calculateGamificationData();
-  }, [tasks, loading]);
+  }, [tasks, loading, meta?.bonusXp]);
+
+  // Celebration banner when coming from Focus Mode
+  useEffect(() => {
+    const gainParam = searchParams?.get('gain');
+    if (!gainParam) return;
+    const gain = parseInt(gainParam, 10);
+    if (!Number.isFinite(gain) || gain <= 0) return;
+    const taskTitle = searchParams?.get('task') ? decodeURIComponent(searchParams?.get('task') as string) : undefined;
+    setCelebration({ gain, taskTitle, quote: getRandomCompletionReward(Date.now()) });
+    // Confetti burst
+    setConfettiElements(Array.from({ length: 24 }, (_, i) => Date.now() + i));
+    setTimeout(() => setConfettiElements([]), 1200);
+    // BELANGRIJK: Niet automatisch sluiten; gebruiker sluit zelf.
+  }, [searchParams]);
+
+  // Award trophy + prestige bonus XP (one-time) when arriving with a gain
+  useEffect(() => {
+    if (!celebration) return;
+    if (loading) return;
+
+    const completedTasks = tasks.filter((t: any) => t?.done);
+    const baseExpNow = completedTasks.reduce((sum: number, t: any) => sum + xpForTask(t), 0);
+    const bonusXpNow = meta?.bonusXp || 0;
+
+    // Assume `celebration.gain` was the task XP gained from Focus.
+    const baseExpPrev = Math.max(0, baseExpNow - celebration.gain);
+    const prevTotal = baseExpPrev + bonusXpNow;
+    const totalBeforeAwards = baseExpNow + bonusXpNow;
+
+    let nextMeta = meta;
+    let changed = false;
+
+    // Award trophies that were crossed
+    const newly = unlockedTrophies(totalBeforeAwards).filter(t => t.requiredTotalXp > prevTotal);
+    for (const t of newly) {
+      if (nextMeta.awardedTrophyIds.includes(t.id)) continue;
+      nextMeta = {
+        ...awardBonusXp(nextMeta, t.xpReward),
+        awardedTrophyIds: [...nextMeta.awardedTrophyIds, t.id],
+      };
+      changed = true;
+    }
+
+    // Award prestige badge(s) if prestige increased
+    const prevPrestige = prestigeForTotalXp(prevTotal);
+    const nowPrestige = prestigeForTotalXp(totalBeforeAwards);
+    if (nowPrestige > prevPrestige) {
+      for (let p = prevPrestige + 1; p <= nowPrestige; p++) {
+        if (nextMeta.awardedPrestiges.includes(p)) continue;
+        const badge = getPrestigeBadge(p);
+        if (badge) {
+          nextMeta = {
+            ...awardBonusXp(nextMeta, badge.xpReward),
+            awardedPrestiges: [...nextMeta.awardedPrestiges, p],
+          };
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      setMeta(nextMeta);
+      saveGamificationMeta(nextMeta);
+    }
+  }, [celebration, loading, tasks, meta]);
+
+  const levelProgressPct = useMemo(() => {
+    return Math.min(100, Math.max(0, (gamificationData.experience / XP_PER_LEVEL) * 100));
+  }, [gamificationData.experience]);
+
+  const nextLevelXp = useMemo(() => {
+    return Math.max(0, XP_PER_LEVEL - gamificationData.experience);
+  }, [gamificationData.experience]);
+
+  const trophies = useMemo(() => {
+    return unlockedTrophies(gamificationData.totalXP);
+  }, [gamificationData.totalXP]);
+
+  const newlyUnlockedTrophies = useMemo(() => {
+    if (!celebration) return [];
+    const prevTotal = Math.max(0, gamificationData.totalXP - celebration.gain);
+    return unlockedTrophies(gamificationData.totalXP).filter(t => t.requiredTotalXp > prevTotal);
+  }, [celebration, gamificationData.totalXP]);
+
+  const levelUp = useMemo(() => {
+    if (!celebration) return false;
+    const prevTotal = Math.max(0, gamificationData.totalXP - celebration.gain);
+    const prev = Math.floor(prevTotal / XP_PER_LEVEL) + 1;
+    return gamificationData.level > prev;
+  }, [celebration, gamificationData.level, gamificationData.totalXP]);
+
+  const prestige = useMemo(() => prestigeForTotalXp(gamificationData.totalXP), [gamificationData.totalXP]);
+  const levelInPrestige = useMemo(() => levelInPrestigeForTotalXp(gamificationData.totalXP), [gamificationData.totalXP]);
+  const prestigeBadge = useMemo(() => getPrestigeBadge(prestige), [prestige]);
+
+  // Open a big popup only when a trophy unlocks or a level-up happens.
+  useEffect(() => {
+    if (!celebration) return;
+    if (newlyUnlockedTrophies.length > 0 || levelUp) {
+      setMajorPopupOpen(true);
+    }
+  }, [celebration, newlyUnlockedTrophies.length, levelUp]);
 
   const calculateStreak = (completedTasks: Task[]) => {
     if (completedTasks.length === 0) return { current: 0, longest: 0 };
@@ -422,12 +540,8 @@ export default function GamificationPage() {
     return allBadges;
   };
 
-  const getProgressPercentage = () => {
+  const getTodayProgressPercentage = () => {
     return Math.min((gamificationData.todayTasksCompleted / gamificationData.todayGoal) * 100, 100);
-  };
-
-  const getNextLevelExp = () => {
-    return 100 - gamificationData.experience;
   };
 
   // Level namen voor game-vibe
@@ -467,6 +581,7 @@ export default function GamificationPage() {
 
   // BadgeCard Component - Visueel aantrekkelijke badge weergave met game-vibe en zeldzaamheid
   const BadgeCard = ({ badge }: { badge: Badge }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
     // Zeldzaamheid kleuren en effecten
     const getRarityStyle = () => {
       switch (badge.rarity) {
@@ -527,13 +642,16 @@ export default function GamificationPage() {
           transform: badge.unlocked ? "scale(1)" : "scale(0.95)",
           boxShadow: badge.unlocked ? `0 4px 15px ${rarityStyle.glowColor}` : "none"
         }}
+        className="prizeHover"
         onMouseEnter={(e) => {
+          setShowTooltip(true);
           if (badge.unlocked) {
             e.currentTarget.style.transform = "scale(1.05)";
             e.currentTarget.style.boxShadow = `0 8px 25px ${rarityStyle.glowColor}`;
           }
         }}
         onMouseLeave={(e) => {
+          setShowTooltip(false);
           e.currentTarget.style.transform = badge.unlocked ? "scale(1)" : "scale(0.95)";
           e.currentTarget.style.boxShadow = badge.unlocked ? `0 4px 15px ${rarityStyle.glowColor}` : "none";
         }}
@@ -641,41 +759,37 @@ export default function GamificationPage() {
         
         {/* Locked Badge Tooltip */}
         {!badge.unlocked && (
-          <div 
+          <div
             style={{
               position: "absolute",
-              bottom: "100%",
+              bottom: "calc(100% + 8px)",
               left: "50%",
               transform: "translateX(-50%)",
-              background: "#1F2937",
+              background: "#111827",
               color: "white",
               padding: "8px 12px",
-              borderRadius: 8,
+              borderRadius: 10,
               fontSize: 11,
-              whiteSpace: "nowrap",
-              marginBottom: 8,
-              opacity: '0',
+              maxWidth: 220,
+              textAlign: "center",
+              opacity: showTooltip ? 1 : 0,
               pointerEvents: "none",
-              transition: "opacity 0.3s ease",
-              zIndex: 10,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0';
+              transition: "opacity 160ms ease",
+              zIndex: 50,
+              boxShadow: "0 10px 24px rgba(0,0,0,0.22)",
             }}
           >
             {badge.requirement}
-            <div style={{
-              position: "absolute",
-              top: "100%",
-              left: "50%",
-              transform: "translateX(-50%)",
-              border: "4px solid transparent",
-              borderTopColor: "#1F2937"
-            }}></div>
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                border: "6px solid transparent",
+                borderTopColor: "#111827",
+              }}
+            />
           </div>
         )}
         
@@ -713,34 +827,331 @@ export default function GamificationPage() {
 
   return (
     <AppLayout>
+      <style>{`
+        @keyframes confetti-fall {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(140px) rotate(360deg); opacity: 0; }
+        }
+        .confetti {
+          animation: confetti-fall 1.2s ease-out forwards;
+        }
+        .prizeHover {
+          transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+        }
+        .prizeHover:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+        }
+      `}</style>
       <div
+        className="min-h-screen py-12 px-4 sm:px-6 pb-16"
         style={{
-          minHeight: "100vh",
-          background: "#F7F8FA",
+          background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
           color: "#2F3441",
-          display: "grid",
-          justifyContent: "center",
-          padding: "28px 16px 64px",
         }}
       >
-        <main style={{ width: "min(720px, 92vw)", display: "grid", gap: 20 }}>
-          {/* Header */}
-          <header style={{ textAlign: "center", marginBottom: 4 }}>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>Prestaties</div>
-            <div style={{ fontSize: 14, color: "rgba(47,52,65,0.75)", marginTop: 6 }}>
-              Motiveer jezelf met beloningen en voortgang
+        <main
+          style={{
+            width: "100%",
+            maxWidth: 720,
+            margin: "0 auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 32,
+          }}
+        >
+          {/* Confetti */}
+          {confettiElements.map((id, idx) => (
+            <div
+              key={id}
+              className="confetti"
+              style={{
+                position: 'fixed',
+                top: 20,
+                left: `${(idx * 37) % 100}%`,
+                width: 10,
+                height: 10,
+                background: ['#10B981', '#4A90E2', '#F59E0B', '#EF4444', '#9333EA'][idx % 5],
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: 9999,
+              }}
+            />
+          ))}
+
+          {/* Big popup: only on trophy unlock or level-up */}
+          {celebration && majorPopupOpen && (newlyUnlockedTrophies.length > 0 || levelUp) && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(15, 23, 42, 0.55)',
+                backdropFilter: 'blur(6px)',
+                zIndex: 10000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
+              onClick={() => setMajorPopupOpen(false)}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 560,
+                  background: 'white',
+                  borderRadius: 16,
+                  border: '1px solid #E6E8EE',
+                  boxShadow: '0 24px 60px rgba(0,0,0,0.22)',
+                  overflow: 'hidden',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                  style={{
+                    padding: 18,
+                    background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(74,144,226,0.10))',
+                    borderBottom: '1px solid rgba(74, 144, 226, 0.18)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: '#10B981' }}>
+                        {levelUp ? 'Level omhoog!' : 'Nieuwe trofee vrijgespeeld!'}
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900, color: '#2F3441' }}>
+                        {levelUp
+                          ? `${prestigeBadge?.icon || '🎖️'} ${prestigeBadge?.name || `Prestige ${prestige}`} · Level ${levelInPrestige}`
+                          : newlyUnlockedTrophies.length > 0
+                            ? newlyUnlockedTrophies.length === 1
+                              ? `${newlyUnlockedTrophies[0].icon} ${newlyUnlockedTrophies[0].name}`
+                              : `🏆 ${newlyUnlockedTrophies.length} trofeeën`
+                            : ''}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setMajorPopupOpen(false)}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 12,
+                        border: '1px solid #E6E8EE',
+                        background: 'white',
+                        color: 'rgba(47,52,65,0.75)',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Sluiten
+                    </button>
+                  </div>
+
+                  {newlyUnlockedTrophies.length > 0 && (
+                    <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+                      {newlyUnlockedTrophies.slice(0, 2).map((t) => (
+                        <div
+                          key={t.id}
+                          style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'center',
+                            padding: '12px 14px',
+                            background: 'rgba(74, 144, 226, 0.08)',
+                            border: '1px solid rgba(74, 144, 226, 0.22)',
+                            borderRadius: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 999,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'rgba(74, 144, 226, 0.16)',
+                              border: '1px solid rgba(74, 144, 226, 0.25)',
+                              flexShrink: 0,
+                              fontSize: 22,
+                            }}
+                          >
+                            {t.icon}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: '#2F3441' }}>{t.name}</div>
+                            <div style={{ marginTop: 2, fontSize: 12, color: 'rgba(47,52,65,0.75)' }}>{t.description}</div>
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: '#10B981' }}>+{t.xpReward} XP</div>
+                        </div>
+                      ))}
+                      {newlyUnlockedTrophies.length > 2 && (
+                        <div style={{ fontSize: 12, color: 'rgba(47,52,65,0.75)', fontWeight: 700 }}>
+                          +{newlyUnlockedTrophies.length - 2} meer…
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      marginTop: 12,
+                      fontSize: 13,
+                      color: 'rgba(47,52,65,0.85)',
+                      lineHeight: 1.6,
+                      fontStyle: 'italic',
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'center',
+                      padding: '12px 14px',
+                      background: 'rgba(74, 144, 226, 0.08)',
+                      border: '1px solid rgba(74, 144, 226, 0.22)',
+                      borderRadius: 12,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(74, 144, 226, 0.16)',
+                        border: '1px solid rgba(74, 144, 226, 0.25)',
+                        flexShrink: 0,
+                        fontSize: 16,
+                        lineHeight: 1,
+                      }}
+                    >
+                      💡
+                    </span>
+                    <span style={{ flex: 1 }}>{celebration.quote}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* Celebration banner */}
+          {celebration && (
+            <section style={{
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.10), rgba(74,144,226,0.10))',
+              border: '1px solid #E6E8EE',
+              borderRadius: 12,
+              padding: 16,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#10B981' }}>
+                +{celebration.gain} XP verdiend{celebration.taskTitle ? ` voor “${celebration.taskTitle}”` : ''}!
+                {levelUp ? '  (Level up!)' : ''}
+              </div>
+                <button
+                  onClick={() => {
+                    setCelebration(null);
+                    router.replace('/gamification');
+                  }}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 10,
+                    border: '1px solid #E6E8EE',
+                    background: 'white',
+                    color: 'rgba(47,52,65,0.75)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sluiten
+                </button>
+              </div>
+              <div style={{
+                marginTop: 10,
+                fontSize: 13,
+                color: 'rgba(47,52,65,0.85)',
+                lineHeight: 1.6,
+                fontStyle: 'italic',
+                display: 'flex',
+                gap: 10,
+                alignItems: 'center',
+                padding: '12px 14px',
+                background: 'rgba(74, 144, 226, 0.08)',
+                border: '1px solid rgba(74, 144, 226, 0.22)',
+                borderRadius: 12
+              }}>
+                <span style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(74, 144, 226, 0.16)',
+                  border: '1px solid rgba(74, 144, 226, 0.25)',
+                  flexShrink: 0,
+                  fontSize: 16,
+                  lineHeight: 1
+                }}>💡</span>
+                <span style={{ flex: 1 }}>{celebration.quote}</span>
+              </div>
+              {newlyUnlockedTrophies.length > 0 && (
+                <div style={{
+                  marginTop: 10,
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'center',
+                  padding: '12px 14px',
+                  background: 'rgba(74, 144, 226, 0.08)',
+                  border: '1px solid rgba(74, 144, 226, 0.22)',
+                  borderRadius: 12,
+                }}>
+                  <span style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(74, 144, 226, 0.16)',
+                    border: '1px solid rgba(74, 144, 226, 0.25)',
+                    flexShrink: 0,
+                    fontSize: 16,
+                    lineHeight: 1
+                  }}>🏆</span>
+                  <div style={{ fontSize: 13, color: 'rgba(47,52,65,0.85)', fontStyle: 'italic' }}>
+                    Nieuwe trofee{newlyUnlockedTrophies.length > 1 ? 'ën' : ''}:{' '}
+                    {newlyUnlockedTrophies.map(t => `${t.icon} ${t.name}`).join(' • ')}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Header – zweeft los, luchtigheid zoals Taken/Herinneringen */}
+          <header className="text-center pt-12 pb-0 mb-4">
+            <div
+              className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+              style={{
+                background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+                boxShadow: "0 4px 14px rgba(245, 158, 11, 0.35)",
+              }}
+            >
+              <span style={{ fontSize: 28 }}>🏆</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Prestaties</h1>
+            <p className="text-sm text-gray-500 mt-2">
+              Motiveer jezelf met beloningen en voortgang
+            </p>
           </header>
 
           {/* Level & Experience */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>🎖️</div>
               <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>
-                Level {gamificationData.level}
+                {prestigeBadge?.icon || '🎖️'} {prestigeBadge?.name || `Prestige ${prestige}`} · Level {levelInPrestige}
               </div>
               <div style={{ fontSize: 14, color: "rgba(47,52,65,0.75)" }}>
-                {gamificationData.experience} / 100 XP
+                {gamificationData.experience} / {XP_PER_LEVEL} XP
               </div>
             </div>
             
@@ -751,14 +1162,14 @@ export default function GamificationPage() {
                   background: "#4A90E2", 
                   borderRadius: 8, 
                   height: "100%", 
-                  width: `${getProgressPercentage()}%`,
+                  width: `${levelProgressPct}%`,
                   transition: "width 0.3s ease"
                 }}
               />
             </div>
             
             <div style={{ textAlign: "center", fontSize: 12, color: "rgba(47,52,65,0.75)" }}>
-              {getNextLevelExp()} XP tot level {gamificationData.level + 1}
+              {nextLevelXp} XP tot level {gamificationData.level + 1}
             </div>
             
             {/* Total XP Display */}
@@ -767,8 +1178,51 @@ export default function GamificationPage() {
             </div>
           </section>
 
+          {/* Trofeeën */}
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Trofeeën</div>
+              <div style={{ fontSize: 12, color: 'rgba(47,52,65,0.7)' }}>
+                {trophies.length} / {TROPHIES.length} vrijgespeeld
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {TROPHIES.map((t) => {
+                const unlocked = gamificationData.totalXP >= t.requiredTotalXp;
+                return (
+                  <div
+                    key={t.id}
+                    className="prizeHover"
+                    style={{
+                      display: 'flex',
+                      gap: 12,
+                      alignItems: 'center',
+                      padding: 12,
+                      borderRadius: 12,
+                      border: `1px solid ${unlocked ? 'rgba(16,185,129,0.35)' : '#E6E8EE'}`,
+                      background: unlocked ? 'rgba(16,185,129,0.06)' : '#FFFFFF',
+                      opacity: unlocked ? 1 : 0.55,
+                    }}
+                    title={unlocked ? 'Ontgrendeld' : `Nog ${Math.max(0, t.requiredTotalXp - gamificationData.totalXP)} XP`}
+                  >
+                    <div style={{ fontSize: 22, width: 28, textAlign: 'center' }}>{t.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800 }}>{t.name}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(47,52,65,0.75)', marginTop: 2 }}>
+                        {t.description} · {t.requiredTotalXp} XP
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: '#10B981' }}>
+                      +{t.xpReward} XP
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Streak & Progress */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
               {/* Current Streak */}
               <div style={{ textAlign: "center" }}>
@@ -795,7 +1249,7 @@ export default function GamificationPage() {
           </section>
 
           {/* Focus Streaks - Verplaatst van Focus Modus */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
               🎯 Focus Streaks
             </div>
@@ -892,7 +1346,7 @@ export default function GamificationPage() {
           </section>
 
           {/* Today's Progress */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
                 📊 Vandaag's Voortgang
@@ -902,7 +1356,7 @@ export default function GamificationPage() {
                   {gamificationData.todayTasksCompleted} / {gamificationData.todayGoal} taken voltooid
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 600, color: "#4A90E2" }}>
-                  {Math.round(getProgressPercentage())}%
+                  {Math.round(getTodayProgressPercentage())}%
                 </span>
               </div>
               
@@ -913,7 +1367,7 @@ export default function GamificationPage() {
                     background: "#4A90E2", 
                     borderRadius: 8, 
                     height: "100%", 
-                    width: `${getProgressPercentage()}%`,
+                    width: `${getTodayProgressPercentage()}%`,
                     transition: "width 0.3s ease"
                   }}
                 />
@@ -923,7 +1377,7 @@ export default function GamificationPage() {
 
           {/* Badges */}
           {gamificationData.badges.length > 0 && (
-            <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+            <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
                 🏅 Verdiende Badges
               </div>
@@ -939,13 +1393,7 @@ export default function GamificationPage() {
           )}
 
           {/* 🏆 Structuro Prijzenkast - 50+ Badges - Uitklapbaar */}
-          <section style={{ 
-            background: "linear-gradient(135deg, #FFFFFF, #F8FAFC)", 
-            border: "2px solid #E6E8EE", 
-            borderRadius: 16, 
-            padding: 24,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
-          }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <Collapsible title="🏆 Structuro Prijzenkast" defaultOpen={false}>
             {/* Header - Cleaner versie */}
             <div style={{ marginBottom: 24 }}>
@@ -953,7 +1401,7 @@ export default function GamificationPage() {
                 🏆 Prijzenkast
               </div>
               <div style={{ fontSize: 14, color: "rgba(47,52,65,0.75)", marginBottom: 20, textAlign: "center" }}>
-                {gamificationData.unlockedBadges.filter(b => b.unlocked).length} van de 50+ badges ontgrendeld
+                Trofee boosters, prestige badges en 50+ achievements – alles op één plek
               </div>
               
               {/* XP Progressiebalk */}
@@ -969,7 +1417,7 @@ export default function GamificationPage() {
                     🎯 {getLevelName(gamificationData.level)}
                   </div>
                   <div style={{ fontSize: 12, color: "#0369A1" }}>
-                    {gamificationData.experience}/{100} XP
+                    {gamificationData.experience}/{XP_PER_LEVEL} XP
                   </div>
                 </div>
                 <div style={{ width: "100%", height: 8, background: "#E0F2FE", borderRadius: 4, overflow: "hidden" }}>
@@ -978,15 +1426,137 @@ export default function GamificationPage() {
                       height: "100%", 
                       background: "linear-gradient(90deg, #0EA5E9, #38BDF8)", 
                       borderRadius: 4,
-                      width: `${(gamificationData.experience / 100) * 100}%`,
+                      width: `${levelProgressPct}%`,
                       transition: "width 0.5s ease",
                       boxShadow: "0 0 8px rgba(14, 165, 233, 0.3)"
                     }}
                   />
                 </div>
                 <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#0369A1" }}>
-                  Nog {100 - gamificationData.experience} XP tot Level {gamificationData.level + 1} 🔥
+                  Nog {nextLevelXp} XP tot Level {gamificationData.level + 1} 🔥
                 </div>
+              </div>
+            </div>
+
+            {/* 1) Trofee Boosters */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: "#10B981", display: "flex", alignItems: "center", gap: 8 }}>
+                🏆 Trofee Boosters
+                <span style={{ fontSize: 12, background: "rgba(16,185,129,0.12)", color: "#059669", padding: "2px 8px", borderRadius: 999 }}>
+                  {unlockedTrophies(gamificationData.totalXP).length}/{TROPHIES.length} vrij
+                </span>
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                {TROPHIES
+                  .slice()
+                  .sort((a, b) => a.requiredTotalXp - b.requiredTotalXp)
+                  .map((t) => {
+                    const unlocked = gamificationData.totalXP >= t.requiredTotalXp;
+                    const remaining = Math.max(0, t.requiredTotalXp - gamificationData.totalXP);
+                    return (
+                      <div
+                        key={t.id}
+                        className="prizeHover"
+                        style={{
+                          display: "flex",
+                          gap: 12,
+                          alignItems: "center",
+                          padding: "12px 14px",
+                          borderRadius: 14,
+                          border: `1px solid ${unlocked ? "rgba(16,185,129,0.35)" : "rgba(74,144,226,0.22)"}`,
+                          background: unlocked ? "rgba(16,185,129,0.06)" : "rgba(74, 144, 226, 0.06)",
+                          opacity: unlocked ? 1 : 0.78,
+                        }}
+                        title={unlocked ? "Ontgrendeld" : `Nog ${remaining} XP`}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: unlocked ? "rgba(16,185,129,0.12)" : "rgba(74,144,226,0.12)",
+                            border: `1px solid ${unlocked ? "rgba(16,185,129,0.25)" : "rgba(74,144,226,0.25)"}`,
+                            flexShrink: 0,
+                            fontSize: 22,
+                          }}
+                        >
+                          {t.icon}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#2F3441" }}>{t.name}</div>
+                          <div style={{ marginTop: 2, fontSize: 12, color: "rgba(47,52,65,0.75)" }}>
+                            {t.description}
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: 11, color: "rgba(47,52,65,0.7)" }}>
+                            Voorwaarde: {t.requiredTotalXp} XP {unlocked ? "· Ontgrendeld" : `· Nog ${remaining} XP`}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: "#10B981" }}>+{t.xpReward} XP</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* 2) Prestige Badges (1..15) */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: "#4A90E2", display: "flex", alignItems: "center", gap: 8 }}>
+                🎖️ Prestige Badges
+                <span style={{ fontSize: 12, background: "rgba(74,144,226,0.12)", color: "#2563EB", padding: "2px 8px", borderRadius: 999 }}>
+                  {prestige}/{PRESTIGE_BADGES.length} bereikt
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                {PRESTIGE_BADGES.map((b) => {
+                  const unlocked = prestige >= b.prestige;
+                  return (
+                    <div
+                      key={b.prestige}
+                      className="prizeHover"
+                      style={{
+                        padding: 14,
+                        borderRadius: 14,
+                        border: `1px solid ${unlocked ? "rgba(16,185,129,0.35)" : "rgba(74,144,226,0.22)"}`,
+                        background: unlocked ? "rgba(16,185,129,0.06)" : "rgba(74,144,226,0.06)",
+                        opacity: unlocked ? 1 : 0.7,
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "center",
+                      }}
+                      title={unlocked ? "Prestige bereikt" : `Nog ${b.prestige - prestige} prestige(s)`}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 14,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: unlocked ? "rgba(16,185,129,0.12)" : "rgba(74,144,226,0.12)",
+                          border: `1px solid ${unlocked ? "rgba(16,185,129,0.25)" : "rgba(74,144,226,0.25)"}`,
+                          flexShrink: 0,
+                          fontSize: 22,
+                        }}
+                      >
+                        {unlocked ? b.icon : "🔒"}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: "#2F3441" }}>
+                          {b.name}
+                        </div>
+                        <div style={{ marginTop: 2, fontSize: 12, color: "rgba(47,52,65,0.75)" }}>
+                          Voorwaarde: Prestige {b.prestige}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 900, color: "#10B981" }}>+{b.xpReward} XP</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             
@@ -1001,7 +1571,11 @@ export default function GamificationPage() {
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
-                  {gamificationData.unlockedBadges.filter(b => b.category === 'streak').map((badge) => (
+                  {gamificationData.unlockedBadges
+                    .filter(b => b.category === 'streak')
+                    .slice()
+                    .sort((a, b) => Number(b.unlocked) - Number(a.unlocked))
+                    .map((badge) => (
                     <BadgeCard key={badge.id} badge={badge} />
                   ))}
                 </div>
@@ -1016,7 +1590,11 @@ export default function GamificationPage() {
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
-                  {gamificationData.unlockedBadges.filter(b => b.category === 'task').map((badge) => (
+                  {gamificationData.unlockedBadges
+                    .filter(b => b.category === 'task')
+                    .slice()
+                    .sort((a, b) => Number(b.unlocked) - Number(a.unlocked))
+                    .map((badge) => (
                     <BadgeCard key={badge.id} badge={badge} />
                   ))}
                 </div>
@@ -1031,7 +1609,11 @@ export default function GamificationPage() {
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
-                  {gamificationData.unlockedBadges.filter(b => b.category === 'focus').map((badge) => (
+                  {gamificationData.unlockedBadges
+                    .filter(b => b.category === 'focus')
+                    .slice()
+                    .sort((a, b) => Number(b.unlocked) - Number(a.unlocked))
+                    .map((badge) => (
                     <BadgeCard key={badge.id} badge={badge} />
                   ))}
                 </div>
@@ -1046,7 +1628,11 @@ export default function GamificationPage() {
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
-                  {gamificationData.unlockedBadges.filter(b => b.category === 'challenge' || b.category === 'fun').map((badge) => (
+                  {gamificationData.unlockedBadges
+                    .filter(b => b.category === 'challenge' || b.category === 'fun')
+                    .slice()
+                    .sort((a, b) => Number(b.unlocked) - Number(a.unlocked))
+                    .map((badge) => (
                     <BadgeCard key={badge.id} badge={badge} />
                   ))}
                 </div>
@@ -1076,7 +1662,7 @@ export default function GamificationPage() {
           </section>
 
           {/* Statistics - Uitgebreid */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
               📈 Statistieken
             </div>
@@ -1143,7 +1729,7 @@ export default function GamificationPage() {
           </section>
 
           {/* Settings */}
-          <section style={{ background: "white", border: "1px solid #E6E8EE", borderRadius: 12, padding: 24 }}>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
               ⚙️ Instellingen
             </div>
@@ -1182,5 +1768,17 @@ export default function GamificationPage() {
         </main>
       </div>
     </AppLayout>
+  );
+}
+
+export default function GamificationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
+        <span className="text-slate-500">Laden...</span>
+      </div>
+    }>
+      <GamificationContent />
+    </Suspense>
   );
 }

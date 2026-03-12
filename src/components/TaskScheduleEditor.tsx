@@ -40,9 +40,20 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
   const due = date && time ? toDate(date, time) : date ? atNine(date) : null;
 
   return (
-    <div style={wrap}>
+    <div style={wrap} className="task-schedule-editor">
+      <style>{`
+        .task-schedule-editor input,
+        .task-schedule-editor select {
+          color: ${theme.text};
+          background: ${theme.card};
+        }
+        .task-schedule-editor input::placeholder {
+          color: #6B7280;
+          opacity: 1;
+        }
+      `}</style>
       <div style={header}>
-        <div style={{ fontWeight: 700 }}>Planning</div>
+        <div style={{ fontWeight: 700, color: theme.text }}>Planning</div>
         <button onClick={onClose} style={ghost}>Sluiten</button>
       </div>
 
@@ -160,11 +171,11 @@ function fromDateInput(v: string){
   return dt; 
 }
 
-const wrap = { background:"#FFF", border:"1px solid #E6E8EE", borderRadius:12, padding:14 };
+const wrap = { background:"#FFF", border:"1px solid #E6E8EE", borderRadius:12, padding:14, color: theme.text };
 const header = { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 };
 const row = { display:"grid", gridTemplateColumns:"120px 1fr", alignItems:"center", gap:10, marginTop:8 };
-const label = { fontSize:13, color: theme.sub };
-const input = { padding:"10px 12px", border:"1px solid #E6E8EE", borderRadius:10, outline:"none" };
+const label = { fontSize:13, color: "#374151", fontWeight: 600 };
+const input = { padding:"10px 12px", border:"1px solid #E6E8EE", borderRadius:10, outline:"none", background:"#FFFFFF", color: theme.text };
 const chip = { padding:"6px 10px", border:"1px solid #E6E8EE", borderRadius:999, cursor:"pointer" };
 const primary = { padding:"10px 14px", border:"1px solid #E6E8EE", borderRadius:10, background:"#FFF", cursor:"pointer" };
-const ghost = { padding:"8px 12px", border:"1px solid #E6E8EE", borderRadius:10, background:"#FFF", color:theme.sub, cursor:"pointer" };
+const ghost = { padding:"8px 12px", border:"1px solid #E6E8EE", borderRadius:10, background:"#FFF", color:"#374151", cursor:"pointer" };

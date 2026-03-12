@@ -1,16 +1,36 @@
+/** Alle bekende Structuro localStorage-keys (voor volledige data-wipe) */
+export const STRUCTURO_STORAGE_KEYS = [
+  'structuro_tasks',
+  'structuro_daily_checkins',
+  'structuro_user_name',
+  'structuro_gamification_meta',
+  'structuro_theme',
+  'focus_duration',
+  'focus_streak_5',
+  'focus_streak_15',
+  'focus_streak_25',
+] as const;
+
 // Utility functie om localStorage te resetten (voor debugging/testing)
 export function clearAllStorage() {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === 'undefined') return false;
+
   try {
-    localStorage.removeItem('structuro_tasks');
-    localStorage.removeItem('structuro_daily_checkins');
-    console.log('✅ localStorage cleared');
+    STRUCTURO_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    console.log('✅ Structuro localStorage cleared');
     return true;
   } catch (error) {
     console.error('Error clearing storage:', error);
     return false;
   }
+}
+
+/** Alle app-data wissen (instellingen: autonomie gebruiker). Herlaadt de pagina. */
+export function wipeAllUserData(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ok = clearAllStorage();
+  if (ok) window.location.href = '/';
+  return ok;
 }
 
 // Verwijder ALLEEN taken (geen mock data, geen check-ins)

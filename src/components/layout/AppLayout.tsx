@@ -16,7 +16,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   // Zen-modus: geen sidebar, volledig scherm
   if (hideSidebar) {
     return (
-      <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
         {children}
         <ToastHost />
       </div>
@@ -24,16 +24,17 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   }
 
   return (
-    <div className="flex h-screen bg-slate-50" style={{ width: '100%', height: '100vh' }}>
+    <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
       <Sidebar collapsed={collapsed} />
       
-      {/* Toggle knop */}
+      {/* Toggle knop – net rechts van de sidebar, overlapt nooit menu-items */}
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 z-50 p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
-        style={{ 
-          left: collapsed ? '4.5rem' : '16.5rem',
-          transition: 'left 0.3s ease'
+        className="fixed top-4 z-40 p-2 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+        style={{
+          left: collapsed ? '4.5rem' : '17rem',
+          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'left'
         }}
         title={collapsed ? 'Menu uitklappen' : 'Menu inklappen'}
       >
@@ -42,12 +43,9 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         </span>
       </button>
       
-      <main className="flex-1 overflow-y-auto p-6" style={{ 
-        minWidth: 0,
-        width: '100%',
-        marginLeft: collapsed ? '4rem' : '16rem',
-        transition: 'margin-left 0.3s ease'
-      }}>
+      <main
+        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden p-6"
+      >
         {children}
       </main>
       

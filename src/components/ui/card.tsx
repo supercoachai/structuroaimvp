@@ -22,10 +22,10 @@ interface CardContentProps {
 }
 
 export function Card({ children, className = '', variant = 'elevated' }: CardProps) {
-  const baseClasses = 'rounded-lg border';
+  const baseClasses = 'rounded-2xl bg-white';
   const variantClasses = {
-    elevated: 'bg-white border-slate-200 shadow-sm',
-    outlined: 'bg-white border-slate-300'
+    elevated: 'shadow-sm',
+    outlined: 'shadow-sm'
   };
 
   return (
@@ -37,7 +37,7 @@ export function Card({ children, className = '', variant = 'elevated' }: CardPro
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`px-6 py-4 border-b border-slate-200 ${className}`}>
+    <div className={`px-6 py-4 ${className}`}>
       {children}
     </div>
   );

@@ -97,9 +97,8 @@ supabase stop
 ### Stap 2: Run het schema
 
 1. Ga naar SQL Editor
-2. Open `supabase/schema.sql`
-3. Kopieer en plak alles
-4. Klik "Run"
+2. Open `supabase/schema.sql`, kopieer en plak alles, klik "Run"
+3. Open daarna `supabase/migration_app_columns.sql`, kopieer en plak, klik "Run" (extra kolommen voor taken)
 
 ### Stap 3: Test met test project
 
@@ -116,7 +115,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=test-project-anon-key
 npm run dev
 ```
 
-Test alle functionaliteit.
+Test alle functionaliteit. **Testgebruikers:** elke gebruiker die inlogt (Supabase Auth) krijgt automatisch een eigen omgeving: taken en dagstart-check-ins worden opgeslagen op `user_id`. Zonder inloggen kun je "Doorgaan met lokale data" kiezen op de loginpagina (data in localStorage).
 
 ### Stap 5: Terug naar productie
 

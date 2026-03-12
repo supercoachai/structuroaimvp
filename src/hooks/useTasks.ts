@@ -24,7 +24,7 @@ export interface Task {
   impact?: string;
   energyLevel?: string;
   estimatedDuration?: number | null;
-  microSteps?: string[];
+  microSteps?: any[];
   notToday?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -41,7 +41,7 @@ function mapLocalTaskToTask(localTask: LocalTask): Task {
     dueAt: localTask.dueAt,
     duration: localTask.duration,
     source: localTask.source,
-    completedAt: localTask.completedAt,
+    completedAt: localTask.completedAt ?? undefined,
     reminders: localTask.reminders,
     repeat: localTask.repeat,
     impact: localTask.impact,

@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../../components/layout/AppLayout';
 import { track } from '../../shared/track';
 import { toast } from '../../components/Toast';
-import { useTasks } from '../../hooks/useTasks';
+import { useTaskContext } from '../../context/TaskContext';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import GedachteParkerenModal from '../../components/GedachteParkerenModal';
-import { getTodayCheckIn } from '../../lib/localStorageTasks';
+import { useCheckIn } from '../../hooks/useCheckIn';
+import { getRandomAdhdPlanningQuote } from '../../lib/adhdQuotes';
+import { xpForTask } from '../../lib/xp';
+import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from '../../lib/microSteps';
 
 // Energie kleuren helper
 const getEnergyColor = (level: string) => {
@@ -61,26 +64,22 @@ const theme = {
   soft: 'rgba(74,144,226,0.06)',
 };
 
-export default function FocusPage() {
+function FocusContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { addTask, tasks, fetchTasks, updateTask } = useTasks();
-  const [taskTitle, setTaskTitle] = useState(searchParams.get('task') || 'Focus sessie');
-  const [checkIn, setCheckIn] = useState<any>(null);
+  const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
+  const [taskTitle, setTaskTitle] = useState(searchParams?.get('task') || 'Focus sessie');
+  const { checkIn } = useCheckIn();
   const [showMicroSteps, setShowMicroSteps] = useState(false);
-  const [microStepInputs, setMicroStepInputs] = useState<string[]>(['', '', '']);
-  const [completedMicroSteps, setCompletedMicroSteps] = useState<Set<number>>(new Set());
+  const [microStepInputs, setMicroStepInputs] = useState<Array<{ id?: string; title: string; minutes: number | null; difficulty: MicroStepDifficulty | null; done?: boolean }>>([
+    { title: '', minutes: null, difficulty: null },
+  ]);
   const [confettiElements, setConfettiElements] = useState<number[]>([]);
   const [showFocusCard, setShowFocusCard] = useState(true); // Toon Focus Card standaard
   
-  // Haal laatste check-in op
-  useEffect(() => {
-    const todayCheckIn = getTodayCheckIn();
-    setCheckIn(todayCheckIn);
-  }, []);
-  
   // Vind taak op basis van titel of ID, of gebruik priority 1 taak
   const currentTask = useMemo(() => {
-    const taskParam = searchParams.get('task');
+    const taskParam = searchParams?.get('task');
     
     // Als er een task parameter is, zoek die taak
     if (taskParam) {
@@ -127,10 +126,14 @@ export default function FocusPage() {
   // Persistent timer state met localStorage (default 15 minuten)
   const [duration, setDuration] = useState(() => {
     if (typeof window !== 'undefined') {
+      // Prefer explicit query param over localStorage, so duration can "match" the task when navigating.
+      const qp = searchParams?.get('duration');
+      if (qp) return parseInt(qp);
+
       const saved = localStorage.getItem('focus_duration');
       if (saved) return parseInt(saved);
     }
-    return parseInt(searchParams.get('duration') || '15');
+    return parseInt(searchParams?.get('duration') || '15');
   });
   
   const [timeLeft, setTimeLeft] = useState(duration * 60); // in seconden
@@ -145,6 +148,71 @@ export default function FocusPage() {
   const [showTipTooltip, setShowTipTooltip] = useState(false);
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [showAddTooltip, setShowAddTooltip] = useState(false);
+  const lastTaskIdRef = useRef<string | null>(null);
+
+  // Timer is klaar: vraag of taak voltooid is, of verlengen met extra tijd + quote
+  const [showTimeUpPrompt, setShowTimeUpPrompt] = useState(false);
+  const [extendMinutes, setExtendMinutes] = useState<number>(10);
+  const [timeUpQuote, setTimeUpQuote] = useState<string>('');
+
+  // Altijd een uitweg terug naar het hoofdmenu (Focus Mode verbergt sidebar).
+  const goToMainMenu = () => {
+    // Voorkom dat iemand per ongeluk een lopende focus sessie verlaat.
+    if (isRunning) {
+      const ok = confirm('Je focus sessie loopt nog. Weet je zeker dat je terug wilt naar het hoofdmenu?');
+      if (!ok) return;
+    }
+    router.push('/'); // hoofdmenu/overzicht (met sidebar)
+  };
+
+  const BackToMenuButton = () => (
+    <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 10000, display: 'flex', gap: 10 }}>
+      <button
+        onClick={goToMainMenu}
+        style={{
+          padding: '10px 14px',
+          borderRadius: 999,
+          background: 'rgba(255, 255, 255, 0.10)',
+          border: '1px solid rgba(255, 255, 255, 0.22)',
+          color: '#F1F5F9',
+          cursor: 'pointer',
+          fontSize: 14,
+          fontWeight: 500,
+          letterSpacing: '-0.025em',
+          fontFamily: 'inherit',
+          backdropFilter: 'blur(8px)',
+        }}
+        title="Terug naar hoofdmenu"
+      >
+        ← Hoofdmenu
+      </button>
+      <button
+        onClick={() => {
+          if (isRunning) {
+            const ok = confirm('Je focus sessie loopt nog. Weet je zeker dat je terug wilt naar je taken?');
+            if (!ok) return;
+          }
+          router.push('/todo');
+        }}
+        style={{
+          padding: '10px 14px',
+          borderRadius: 999,
+          background: 'rgba(255, 255, 255, 0.06)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          color: '#F1F5F9',
+          cursor: 'pointer',
+          fontSize: 14,
+          fontWeight: 500,
+          letterSpacing: '-0.025em',
+          fontFamily: 'inherit',
+          backdropFilter: 'blur(8px)',
+        }}
+        title="Terug naar taken"
+      >
+        Taken
+      </button>
+    </div>
+  );
 
   // Sla duration op in localStorage wanneer deze verandert
   useEffect(() => {
@@ -217,7 +285,9 @@ export default function FocusPage() {
         setTimeLeft(prev => {
           if (prev <= 1) {
             setIsRunning(false);
-            setCompleted(true);
+            setCompleted(false);
+            setShowTimeUpPrompt(true);
+            setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now()));
             track("ignite_complete", { taskTitle, duration });
             return 0;
           }
@@ -257,25 +327,40 @@ export default function FocusPage() {
   const energyColors = getEnergyColor(taskEnergy);
   const hasEnergyMismatch = taskEnergy === 'high' && userEnergy === 'low';
 
-  // Handle "Help me starten" - toon micro-stappen editor
+  // Open mini-stappen editor: lege velden om zelf in te vullen (beginnen met 1)
   const handleHelpMeStart = () => {
     if (!currentTask) return;
-    
-    const existingSteps = currentTask.microSteps || [];
-    if (existingSteps.length > 0) {
-      setMicroStepInputs([...existingSteps, '', '', '']);
+
+    const existing = normalizeMicroSteps(currentTask.microSteps);
+    if (existing.length > 0) {
+      setMicroStepInputs([
+        ...existing.map(s => ({ id: s.id, title: s.title, minutes: s.minutes ?? null, difficulty: (s.difficulty as any) ?? null, done: s.done })),
+        { title: '', minutes: null, difficulty: null },
+      ]);
     } else {
-      setMicroStepInputs(['', '', '']);
+      setMicroStepInputs([{ title: '', minutes: null, difficulty: null }]);
     }
-    setCompletedMicroSteps(new Set());
     setShowMicroSteps(true);
   };
 
   // Sla micro-stappen op
   const handleSaveMicroSteps = async () => {
     if (!currentTask) return;
-    
-    const steps = microStepInputs.filter(step => step.trim() !== '');
+
+    const baseDifficulty = (currentTask?.energyLevel === 'low' || currentTask?.energyLevel === 'medium' || currentTask?.energyLevel === 'high')
+      ? (currentTask.energyLevel as MicroStepDifficulty)
+      : 'medium';
+
+    const steps: MicroStep[] = microStepInputs
+      .map((s) => ({
+        id: s.id ? String(s.id) : microStepId(),
+        title: String(s.title || '').trim(),
+        minutes: typeof s.minutes === 'number' && Number.isFinite(s.minutes) ? s.minutes : null,
+        difficulty: (s.difficulty ?? baseDifficulty) as any,
+        done: Boolean(s.done),
+      }))
+      .filter(s => s.title !== '');
+
     if (steps.length === 0) {
       toast('Voeg minimaal 1 micro-stap toe');
       return;
@@ -291,31 +376,22 @@ export default function FocusPage() {
   };
 
   // Toggle micro-stap completion met confetti effect
-  const handleToggleMicroStep = (index: number) => {
-    const newCompleted = new Set(completedMicroSteps);
-    if (newCompleted.has(index)) {
-      newCompleted.delete(index);
-    } else {
-      newCompleted.add(index);
-      
-      // Confetti effect
+  const handleToggleMicroStep = async (stepId: string) => {
+    if (!currentTask) return;
+    const steps = normalizeMicroSteps(currentTask.microSteps);
+    const idx = steps.findIndex(s => s.id === stepId);
+    if (idx < 0) return;
+
+    const next = steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
+    await updateTask(currentTask.id, { microSteps: next });
+
+    // Confetti only when marking done
+    const nowDone = next[idx]?.done;
+    if (nowDone) {
       setConfettiElements(prev => [...prev, Date.now()]);
-      setTimeout(() => {
-        setConfettiElements(prev => prev.slice(1));
-      }, 1000);
-      
-      // Glow effect via CSS class
-      const checkbox = document.getElementById(`micro-step-${index}`);
-      if (checkbox) {
-        checkbox.classList.add('glow-checkbox');
-        setTimeout(() => {
-          checkbox.classList.remove('glow-checkbox');
-        }, 600);
-      }
-      
-      toast('✓ Stap voltooid!');
+      setTimeout(() => setConfettiElements(prev => prev.slice(1)), 900);
+      toast('✓ Stap voltooid', { durationMs: 3000, replace: true });
     }
-    setCompletedMicroSteps(newCompleted);
   };
 
   // Start sessie (vanuit Focus Card)
@@ -341,6 +417,49 @@ export default function FocusPage() {
     track("ignite_stop", { taskTitle, duration });
   };
 
+  // Taak direct voltooien (ook als timer nog loopt)
+  const completeCurrentTask = async () => {
+    if (!currentTask?.id) {
+      toast('Geen taak om te voltooien');
+      return;
+    }
+    try {
+      const gainXp = xpForTask(currentTask);
+
+      // Stop timer UI
+      setIsRunning(false);
+      setIsPaused(false);
+      setCompleted(false);
+
+      await updateTask(currentTask.id, {
+        done: true,
+        completedAt: new Date().toISOString(),
+        started: false,
+      });
+
+      toast('Taak voltooid!');
+      track('task_completed_early', {
+        taskId: currentTask.id,
+        minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
+        durationPlanned: duration,
+        xp: gainXp,
+      });
+
+      // Confetti burst (korte viering in Focus Mode)
+      setConfettiElements(prev => [...prev, Date.now(), Date.now() + 1, Date.now() + 2, Date.now() + 3, Date.now() + 4]);
+      setTimeout(() => {
+        setConfettiElements([]);
+      }, 900);
+
+      // Navigeer direct naar gamification met XP gain.
+      const title = encodeURIComponent(currentTask.title || 'Taak');
+      router.push(`/gamification?gain=${gainXp}&task=${title}`);
+    } catch (err) {
+      console.error('Error completing task:', err);
+      toast('Fout bij voltooien van taak');
+    }
+  };
+
   // Verleng sessie met 5 minuten
   const extendSession = () => {
     setTimeLeft(prev => prev + 300);
@@ -357,6 +476,7 @@ export default function FocusPage() {
         duration: null,
         priority: null,
         done: false,
+        started: false,
         dueAt: null,
         reminders: [],
         repeat: "none",
@@ -406,29 +526,62 @@ export default function FocusPage() {
     setTimeLeft(mins * 60);
   };
 
-  // Update taskTitle en duration als currentTask verandert
+  // Update taskTitle en (initiële) duration wanneer de taak verandert.
+  // KRITIEK: reset NOOIT de timer terwijl een sessie loopt (bv. na "Gedachte parkeren" triggert tasks refresh).
   useEffect(() => {
-    if (currentTask) {
-      setTaskTitle(currentTask.title);
-      if (currentTask.duration) {
-        setDuration(currentTask.duration);
-        setTimeLeft(currentTask.duration * 60);
-      }
+    if (!currentTask) return;
+
+    setTaskTitle(currentTask.title);
+
+    const taskDuration =
+      (typeof currentTask.duration === 'number' && currentTask.duration > 0 ? currentTask.duration : null) ??
+      (typeof (currentTask as any).estimatedDuration === 'number' &&
+      (currentTask as any).estimatedDuration > 0
+        ? (currentTask as any).estimatedDuration
+        : null);
+
+    if (!taskDuration) return;
+
+    const taskId = currentTask.id;
+    const taskChanged = lastTaskIdRef.current !== taskId;
+    if (taskChanged) {
+      lastTaskIdRef.current = taskId;
     }
-  }, [currentTask]);
 
-  const existingMicroSteps = currentTask?.microSteps || [];
+    // Alleen duration/timeLeft initialiseren wanneer:
+    // - taak wisselt, OF
+    // - je zit nog in de Focus Card (voor de sessie start),
+    // EN de timer loopt niet.
+    if (!isRunning && !showCountdown && (taskChanged || showFocusCard)) {
+      setDuration(taskDuration);
+      setTimeLeft(taskDuration * 60);
+    }
+  }, [
+    currentTask?.id,
+    currentTask?.title,
+    currentTask?.duration,
+    (currentTask as any)?.estimatedDuration,
+    isRunning,
+    showCountdown,
+    showFocusCard,
+  ]);
 
-  // Countdown overlay
+  const existingMicroSteps = normalizeMicroSteps(currentTask?.microSteps);
+
+  // Countdown overlay –zelfde stijl als dashboard (licht, rustig)
   if (showCountdown) {
     return (
-      <AppLayout>
+      <AppLayout hideSidebar={true}>
         <style>{confettiStyle}</style>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="text-8xl font-bold text-blue-600 mb-4">{countdown}</div>
-            <p className="text-xl text-gray-600 mb-2">Focus sessie start over</p>
-            <p className="text-gray-500">{currentTask?.title || taskTitle}</p>
+        <BackToMenuButton />
+        <div
+          className="min-h-screen flex items-center justify-center p-6"
+          style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
+        >
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-sm p-8 sm:p-10 text-center">
+            <div className="text-6xl font-medium text-gray-800 mb-6 tabular-nums tracking-tight">{countdown}</div>
+            <p className="text-lg font-medium text-gray-900 mb-1">Focus sessie start over</p>
+            <p className="text-sm text-gray-500">{currentTask?.title || taskTitle}</p>
           </div>
         </div>
       </AppLayout>
@@ -436,89 +589,62 @@ export default function FocusPage() {
   }
 
   // Focus Card - toon VOOR timer (alleen als er een taak is)
-  // Als er geen taak is, toon een melding
+  // Als er geen taak is, toon melding in dezelfde stijl als dashboard
   if (showFocusCard) {
     if (!currentTask) {
-      // Geen taak gevonden - toon melding
+      // Geen taak gevonden –zelfde stijl als Dagstart-pagina (header + witte kaart)
       return (
         <AppLayout>
-          <div style={{ 
-            minHeight: '100vh',
-            background: theme.bg,
-            padding: '40px 24px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}>
-            <div style={{ 
-              maxWidth: 600, 
-              width: '100%',
-              background: theme.card,
-              borderRadius: 24,
-              padding: 48,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 24 }}>🎯</div>
-              <h1 style={{
-                fontSize: 28,
-                fontWeight: 700,
-                color: theme.text,
-                marginBottom: 16
-              }}>
-                Geen focus taak
-              </h1>
-              <p style={{
-                fontSize: 16,
-                color: theme.sub,
-                marginBottom: 32,
-                lineHeight: 1.6
-              }}>
-                Stel je prioriteiten in via de dagstart check-in om te beginnen, of kies een taak uit je takenlijst.
-              </p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a
-                  href="/dagstart"
-                  style={{
-                    padding: '16px 32px',
-                    background: theme.accent,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 12,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textDecoration: 'none',
-                    display: 'inline-block'
-                  }}
-                >
-                  Start dagstart check-in
-                </a>
-                <a
-                  href="/todo"
-                  style={{
-                    padding: '16px 32px',
-                    background: 'transparent',
-                    color: theme.accent,
-                    border: `2px solid ${theme.accent}`,
-                    borderRadius: 12,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textDecoration: 'none',
-                    display: 'inline-block'
-                  }}
-                >
-                  Bekijk takenlijst
-                </a>
+          <div
+            className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+            style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
+          >
+            <main className="max-w-3xl mx-auto flex flex-col gap-6">
+              {/* Header –zelfde als Dagstart */}
+              <header className="text-center pt-12 pb-0 mb-8">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4 shadow-sm">
+                  <span className="text-2xl">🎯</span>
+                </div>
+                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                  Geen focus taak
+                </h1>
+                <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+                  Stel je prioriteiten in via de dagstart of kies een taak uit je takenlijst.
+                </p>
+              </header>
+
+              {/* Content kaart –zelfde stijl als DayStartCheckIn */}
+              <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8 mb-6 max-w-3xl mx-auto">
+                <div className="space-y-5 text-center">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Hoe wil je verder?
+                  </h2>
+                  <p className="text-sm text-gray-500 max-w-md mx-auto">
+                    Start de dagstart check-in om je focus voor vandaag te bepalen, of ga naar je taken om een taak te kiezen.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                    <a
+                      href="/dagstart"
+                      className="inline-flex items-center justify-center py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-colors text-center"
+                    >
+                      Start dagstart check-in
+                    </a>
+                    <a
+                      href="/todo"
+                      className="inline-flex items-center justify-center py-3 px-6 rounded-2xl bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold shadow-sm transition-colors text-center"
+                    >
+                      Bekijk takenlijst
+                    </a>
+                  </div>
+                </div>
               </div>
-            </div>
+            </main>
           </div>
         </AppLayout>
       );
     }
     
-    // Er is een taak - toon Zen-modus Focus Card
+    // Er is een taak - toon Zen-modus Focus Card (geen Hoofdmenu/Taken tot sessie start)
     return (
       <AppLayout hideSidebar={true}>
         <style>{confettiStyle}</style>
@@ -550,7 +676,7 @@ export default function FocusPage() {
           color: '#F1F5F9', // Lichte tekst
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           alignItems: 'center',
           padding: '60px 24px 40px',
           position: 'relative'
@@ -560,95 +686,148 @@ export default function FocusPage() {
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             alignItems: 'center',
             width: '100%',
             maxWidth: '800px',
-            textAlign: 'center'
+            textAlign: 'center',
+            paddingTop: '40px',
+            paddingBottom: '40px'
           }}>
-            {/* Taak titel - EXTRA GROOT en rustig */}
+            {/* Taak titel –zelfde typografie als dashboard */}
             <h1 style={{
-              fontSize: 'clamp(32px, 8vw, 72px)',
-              fontWeight: 300, // Lichter font voor rust
+              fontSize: 'clamp(24px, 5vw, 42px)',
+              fontWeight: 500,
               color: '#F1F5F9',
-              marginBottom: 48,
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              maxWidth: '90%'
+              marginBottom: 8,
+              lineHeight: 1.4,
+              letterSpacing: '-0.025em',
+              width: '100%',
+              maxWidth: '100%',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              textAlign: 'center',
+              fontFamily: 'inherit'
             }}>
               {currentTask.title}
             </h1>
+            {/* Tijdsduur en moeilijkheid informatief */}
+            <div style={{ marginBottom: 40, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', fontSize: 14, color: 'rgba(241,245,249,0.75)', fontWeight: 400 }}>
+              {(() => {
+                const mins = currentTask.duration ?? currentTask.estimatedDuration;
+                return mins != null && mins > 0 ? <span>{mins} min</span> : null;
+              })()}
+              <span>{currentTask?.energyLevel === 'low' ? 'Makkelijk' : currentTask?.energyLevel === 'high' ? 'Moeilijk' : 'Normaal'}</span>
+            </div>
 
-            {/* Micro-stappen - Prominent met grote checkboxes */}
-            {existingMicroSteps.length > 0 && (
-              <div style={{
-                width: '100%',
-                maxWidth: '600px',
-                marginBottom: 60
-              }}>
-                {existingMicroSteps.map((step: string, idx: number) => (
+            {/* Mini-stappen – altijd zichtbaar vóór start */}
+            <div style={{
+              width: '100%',
+              maxWidth: '600px',
+              marginBottom: 24
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(241,245,249,0.8)', marginBottom: 12 }}>
+                Mini-stappen
+              </div>
+              {existingMicroSteps.length > 0 ? (
+                existingMicroSteps.map((step: MicroStep, idx: number) => (
                   <div 
-                    key={idx}
+                    key={step.id}
                     id={`micro-step-${idx}`}
                     style={{
-                      display: 'flex',
+                      display: 'grid',
+                      gridTemplateColumns: '34px 1fr',
                       alignItems: 'center',
-                      gap: 20,
-                      marginBottom: 24,
-                      padding: 20,
-                      background: completedMicroSteps.has(idx) 
+                      gap: 14,
+                      marginBottom: 16,
+                      padding: 16,
+                      background: step.done
                         ? 'rgba(16, 185, 129, 0.1)' 
                         : 'rgba(255, 255, 255, 0.03)',
                       borderRadius: 16,
-                      border: `2px solid ${completedMicroSteps.has(idx) ? '#10B981' : 'rgba(255, 255, 255, 0.1)'}`,
+                      border: `2px solid ${step.done ? '#10B981' : 'rgba(255, 255, 255, 0.1)'}`,
                       transition: 'all 0.3s ease',
                       cursor: 'pointer'
                     }}
-                    onClick={() => handleToggleMicroStep(idx)}
+                    onClick={() => handleToggleMicroStep(step.id)}
                   >
-                    {/* Grote checkbox */}
                     <input
                       type="checkbox"
-                      checked={completedMicroSteps.has(idx)}
-                      onChange={() => handleToggleMicroStep(idx)}
+                      checked={Boolean(step.done)}
+                      onChange={() => handleToggleMicroStep(step.id)}
+                      onClick={(e) => e.stopPropagation()}
                       style={{
-                        width: 32,
-                        height: 32,
+                        width: 28,
+                        height: 28,
                         cursor: 'pointer',
                         accentColor: '#10B981',
                         flexShrink: 0
                       }}
                     />
                     <span style={{
-                      fontSize: 20,
-                      color: completedMicroSteps.has(idx) ? 'rgba(241, 245, 249, 0.5)' : '#F1F5F9',
-                      textDecoration: completedMicroSteps.has(idx) ? 'line-through' : 'none',
-                      flex: 1,
+                      fontSize: 17,
+                      color: step.done ? 'rgba(241, 245, 249, 0.5)' : '#F1F5F9',
+                      textDecoration: step.done ? 'line-through' : 'none',
                       fontWeight: 400,
-                      transition: 'all 0.3s ease',
                       textAlign: 'left'
                     }}>
-                      {step}
+                      {step.title}
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <p style={{ fontSize: 14, color: 'rgba(241,245,249,0.6)' }}>
+                  Nog geen mini-stappen. Klik op de knop hieronder om stappen in te vullen.
+                </p>
+              )}
+            </div>
 
-            {/* Start Focus Sessie knop - Subtiel maar duidelijk */}
+          </div>
+
+          {/* Twee knoppen net boven het lijntje */}
+          <div style={{
+            width: '100%',
+            maxWidth: '600px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            paddingBottom: 24,
+          }}>
+            <button
+              type="button"
+              onClick={handleHelpMeStart}
+              style={{
+                padding: '12px 20px',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                color: '#F1F5F9',
+                cursor: 'pointer',
+                fontSize: 15,
+                fontWeight: 500,
+                width: '100%',
+                maxWidth: 320,
+                margin: '0 auto',
+              }}
+            >
+              {existingMicroSteps.length > 0 ? 'Bewerk mini-stappen' : 'Opdelen in mini-stappen'}
+            </button>
             <button
               onClick={startSession}
               style={{
-                padding: '20px 48px',
+                padding: '12px 28px',
                 background: 'rgba(74, 144, 226, 0.2)',
                 color: '#4A90E2',
                 border: '2px solid rgba(74, 144, 226, 0.4)',
-                borderRadius: 16,
-                fontSize: 18,
+                borderRadius: 12,
+                fontSize: 15,
                 fontWeight: 500,
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                marginTop: 40
+                width: '100%',
+                maxWidth: 320,
+                margin: '0 auto',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(74, 144, 226, 0.3)';
@@ -683,7 +862,7 @@ export default function FocusPage() {
             >
               <input
                 type="text"
-                placeholder="Parkeer een afleiding..."
+                placeholder="Parkeer een gedachte..."
                 style={{
                   flex: 1,
                   padding: '14px 20px',
@@ -729,6 +908,113 @@ export default function FocusPage() {
             </form>
           </div>
         </div>
+
+        {/* Mini-stappen editor modal (ook in Focus Card zodat knop werkt) */}
+        {showMicroSteps && currentTask && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            zIndex: 12000,
+          }}
+            onClick={() => setShowMicroSteps(false)}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 560,
+                background: '#0B1220',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 16,
+                padding: 14,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                <div style={{ fontWeight: 600, color: '#F1F5F9', letterSpacing: '-0.025em' }}>Mini-stappen (behapbaar maken)</div>
+                <button
+                  onClick={() => setShowMicroSteps(false)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: 'rgba(241,245,249,0.9)',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  Sluiten
+                </button>
+              </div>
+
+              <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+                {microStepInputs.map((row, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      value={row.title}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setMicroStepInputs((prev) => prev.map((p, i) => (i === idx ? { ...p, title: v } : p)));
+                      }}
+                      placeholder="Mini-stap (1 zin)…"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: '#F1F5F9',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMicroStepInputs((prev) => [...prev, { title: '', minutes: null, difficulty: null }]);
+                  }}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: '#F1F5F9',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  + Mini stap toevoegen
+                </button>
+                <button
+                  onClick={handleSaveMicroSteps}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(74,144,226,0.55)',
+                    background: 'rgba(74,144,226,0.22)',
+                    color: '#93C5FD',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Opslaan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </AppLayout>
     );
   }
@@ -736,6 +1022,7 @@ export default function FocusPage() {
   // Timer modus - Zen-modus met donkere achtergrond
   return (
     <AppLayout hideSidebar={true}>
+      <BackToMenuButton />
       <div
         style={{
           minHeight: "100vh",
@@ -743,9 +1030,9 @@ export default function FocusPage() {
           color: "#F1F5F9", // Lichte tekst
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           alignItems: "center",
-          padding: "60px 24px 40px",
+          padding: "60px 24px 40px"
         }}
       >
         {/* Hoofdcontent: Timer groot gecentreerd */}
@@ -753,37 +1040,51 @@ export default function FocusPage() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           alignItems: "center",
           width: "100%",
           maxWidth: "800px",
-          textAlign: "center"
+          textAlign: "center",
+          paddingTop: "40px",
+          paddingBottom: "40px"
         }}>
-          {/* Taak titel (als er een is) */}
+          {/* Taak titel –zelfde typografie als dashboard */}
           {currentTask && (
-            <h1 style={{
-              fontSize: 'clamp(24px, 5vw, 48px)',
-              fontWeight: 300,
-              color: '#F1F5F9',
-              marginBottom: 32,
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              opacity: 0.8
-            }}>
-              {currentTask.title}
-            </h1>
+            <div style={{ width: '100%', maxWidth: '100%', marginBottom: 24 }}>
+              <h1 style={{
+                fontSize: 'clamp(20px, 4vw, 36px)',
+                fontWeight: 500,
+                color: '#F1F5F9',
+                marginBottom: 6,
+                lineHeight: 1.4,
+                letterSpacing: '-0.025em',
+                opacity: 0.95,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'center',
+                fontFamily: 'inherit'
+              }}>
+                {currentTask.title}
+              </h1>
+              <div style={{ fontSize: 14, color: 'rgba(241,245,249,0.65)', textAlign: 'center', fontWeight: 400 }}>
+                {(currentTask.duration || currentTask.estimatedDuration) && (
+                  <span>{(currentTask.duration ?? currentTask.estimatedDuration) ?? 0} min gepland</span>
+                )}
+              </div>
+            </div>
           )}
 
-          {/* Timer Display - EXTRA GROOT */}
+          {/* Timer Display –zelfde vibe als dashboard (Inter, tracking-tight) */}
           <div style={{ marginBottom: "40px" }}>
             <div style={{ 
               fontSize: "clamp(64px, 15vw, 120px)", 
-              fontFamily: "system-ui, -apple-system, sans-serif",
+              fontFamily: "inherit",
               fontVariantNumeric: "tabular-nums",
-              fontWeight: 300, // Lichter voor rust
+              fontWeight: 500,
               color: "#F1F5F9",
               lineHeight: 1,
-              letterSpacing: "-0.05em"
+              letterSpacing: "-0.025em"
             }}>
               {formatTime(timeLeft)}
             </div>
@@ -796,30 +1097,32 @@ export default function FocusPage() {
               maxWidth: '500px',
               marginBottom: 40
             }}>
-              {existingMicroSteps.map((step: string, idx: number) => (
+              {existingMicroSteps.map((step: MicroStep, idx: number) => (
                 <div 
-                  key={idx}
-                  style={{
-                    display: 'flex',
+                  key={step.id}
+                    style={{
+                    display: 'grid',
+                    gridTemplateColumns: '26px 1fr',
                     alignItems: 'center',
-                    gap: 16,
+                    gap: 12,
                     marginBottom: 16,
                     padding: 12,
-                    background: completedMicroSteps.has(idx) 
+                    background: step.done
                       ? 'rgba(16, 185, 129, 0.1)' 
                       : 'rgba(255, 255, 255, 0.03)',
                     borderRadius: 12,
-                    border: `1px solid ${completedMicroSteps.has(idx) ? '#10B981' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `1px solid ${step.done ? '#10B981' : 'rgba(255, 255, 255, 0.1)'}`,
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
-                    opacity: completedMicroSteps.has(idx) ? 0.6 : 1
+                    opacity: step.done ? 0.6 : 1
                   }}
-                  onClick={() => handleToggleMicroStep(idx)}
+                  onClick={() => handleToggleMicroStep(step.id)}
                 >
                   <input
                     type="checkbox"
-                    checked={completedMicroSteps.has(idx)}
-                    onChange={() => handleToggleMicroStep(idx)}
+                    checked={Boolean(step.done)}
+                    onChange={() => handleToggleMicroStep(step.id)}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       width: 24,
                       height: 24,
@@ -830,22 +1133,152 @@ export default function FocusPage() {
                   />
                   <span style={{
                     fontSize: 16,
-                    color: completedMicroSteps.has(idx) ? 'rgba(241, 245, 249, 0.5)' : '#F1F5F9',
-                    textDecoration: completedMicroSteps.has(idx) ? 'line-through' : 'none',
+                    color: step.done ? 'rgba(241, 245, 249, 0.5)' : '#F1F5F9',
+                    textDecoration: step.done ? 'line-through' : 'none',
                     flex: 1,
                     fontWeight: 400,
                     textAlign: 'left'
                   }}>
-                    {step}
+                    {step.title}
                   </span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Controls - Subtiel */}
-          {!completed && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "400px" }}>
+          {/* During-focus add/edit button */}
+          {currentTask && (
+            <div style={{ marginBottom: 18 }}>
+              <button
+                onClick={handleHelpMeStart}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 999,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  color: '#F1F5F9',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  letterSpacing: '-0.025em',
+                  fontFamily: 'inherit',
+                }}
+              >
+                + Mini-stap toevoegen
+              </button>
+            </div>
+          )}
+
+          {/* Micro steps editor modal (lightweight) */}
+          {showMicroSteps && currentTask && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+              zIndex: 12000,
+            }}
+              onClick={() => setShowMicroSteps(false)}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: 560,
+                  background: '#0B1220',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 16,
+                  padding: 14,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                  <div style={{ fontWeight: 600, color: '#F1F5F9', letterSpacing: '-0.025em', fontFamily: 'inherit' }}>Mini-stappen (behapbaar maken)</div>
+                  <button
+                    onClick={() => setShowMicroSteps(false)}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(241,245,249,0.9)',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 500,
+                    }}
+                  >
+                    Sluiten
+                  </button>
+                </div>
+
+                <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
+                  {microStepInputs.map((row, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        value={row.title}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setMicroStepInputs((prev) => prev.map((p, i) => (i === idx ? { ...p, title: v } : p)));
+                        }}
+                        placeholder="Mini-stap (1 zin)…"
+                        style={{
+                          flex: 1,
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          background: 'rgba(255,255,255,0.06)',
+                          color: '#F1F5F9',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMicroStepInputs((prev) => [...prev, { title: '', minutes: null, difficulty: null }]);
+                    }}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#F1F5F9',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    + Mini stap toevoegen
+                  </button>
+                  <button
+                    onClick={handleSaveMicroSteps}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(74,144,226,0.55)',
+                      background: 'rgba(74,144,226,0.22)',
+                      color: '#93C5FD',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Opslaan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Controls – naar onderen, meer ademruimte */}
+          {!completed && !showTimeUpPrompt && (
+            <div style={{ marginTop: 'auto', paddingTop: 72, paddingBottom: 80, display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "400px" }}>
               {!isRunning ? (
                 <>
                   {/* Tijdskeuze - Subtiel */}
@@ -926,10 +1359,12 @@ export default function FocusPage() {
                       fontWeight: 500,
                       color: isPaused ? "#10B981" : "#F59E0B",
                       cursor: "pointer",
-                      transition: "all 0.3s ease"
+                      transition: "all 0.3s ease",
+                      fontFamily: "inherit",
+                      letterSpacing: "-0.025em"
                     }}
                   >
-                    {isPaused ? '▶ Hervatten' : '⏸ Pauzeren'}
+                    {isPaused ? 'Hervatten' : 'Pauzeren'}
                   </button>
                   
                   {showExtendButton && (
@@ -943,6 +1378,8 @@ export default function FocusPage() {
                         padding: "12px 20px",
                         fontSize: "14px",
                         fontWeight: 500,
+                        fontFamily: "inherit",
+                        letterSpacing: "-0.025em",
                         color: "#10B981",
                         cursor: "pointer",
                         transition: "all 0.3s ease"
@@ -959,18 +1396,134 @@ export default function FocusPage() {
                       background: "rgba(239, 68, 68, 0.2)",
                       border: "2px solid rgba(239, 68, 68, 0.4)",
                       borderRadius: "12px",
-                      padding: "12px 20px",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "#EF4444",
+                    padding: "14px 20px",
+                    fontSize: "15px",
+                    fontWeight: 500,
+                    fontFamily: 'inherit',
+                    letterSpacing: '-0.025em',
+                    color: "#EF4444",
                       cursor: "pointer",
                       transition: "all 0.3s ease"
                     }}
                   >
                     Stoppen
                   </button>
+
+                  <button
+                    onClick={completeCurrentTask}
+                    style={{
+                      width: "100%",
+                      background: "rgba(16, 185, 129, 0.2)",
+                      border: "2px solid rgba(16, 185, 129, 0.4)",
+                      borderRadius: "12px",
+                    padding: "14px 20px",
+                    fontSize: "15px",
+                    fontWeight: 500,
+                    fontFamily: 'inherit',
+                    letterSpacing: '-0.025em',
+                    color: "#10B981",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease"
+                    }}
+                  >
+                    Taak voltooid
+                  </button>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Timer klaar prompt */}
+          {showTimeUpPrompt && (
+            <div style={{
+              width: '100%',
+              maxWidth: 520,
+              marginTop: 8,
+              padding: 20,
+              borderRadius: 16,
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.14)',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.025em', fontFamily: 'inherit', color: '#F1F5F9', marginBottom: 8 }}>
+                Tijd is om. Is de taak voltooid?
+              </div>
+              <div style={{ fontSize: 14, color: 'rgba(241, 245, 249, 0.75)', marginBottom: 14, lineHeight: 1.5 }}>
+                {timeUpQuote}
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={completeCurrentTask}
+                  style={{
+                    padding: '12px 16px',
+                    minWidth: 180,
+                    borderRadius: 12,
+                    background: 'rgba(16, 185, 129, 0.22)',
+                    border: '2px solid rgba(16, 185, 129, 0.40)',
+                    color: '#10B981',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    letterSpacing: '-0.025em',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Ja, taak voltooid
+                </button>
+
+                <button
+                  onClick={() => {
+                    const extra = Math.max(1, Math.min(480, extendMinutes || 10));
+                    setShowTimeUpPrompt(false);
+                    setCompleted(false);
+                    setIsPaused(false);
+                    setIsRunning(true);
+                    setDuration(prev => prev + extra);
+                    setTimeLeft(extra * 60);
+                    track('ignite_extend_after_timeup', { taskTitle, duration, extra });
+                    toast(`Top — nog ${extra} minuten!`);
+                  }}
+                  style={{
+                    padding: '12px 16px',
+                    minWidth: 180,
+                    borderRadius: 12,
+                    background: 'rgba(74, 144, 226, 0.18)',
+                    border: '2px solid rgba(74, 144, 226, 0.35)',
+                    color: '#93C5FD',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    letterSpacing: '-0.025em',
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Nee, verlengen
+                </button>
+              </div>
+
+              <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {[5, 10, 15, 25].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setExtendMinutes(m)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 999,
+                      background: extendMinutes === m ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      color: '#F1F5F9',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    +{m} min
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -994,11 +1547,7 @@ export default function FocusPage() {
               
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <button
-                  onClick={() => {
-                    setCompleted(false);
-                    setTimeLeft(duration * 60);
-                    setIsRunning(false);
-                  }}
+                  onClick={completeCurrentTask}
                   style={{
                     width: "100%",
                     background: "rgba(16, 185, 129, 0.2)",
@@ -1012,7 +1561,7 @@ export default function FocusPage() {
                     transition: "all 0.3s ease"
                   }}
                 >
-                  🎯 Klaar! Taak Voltooid
+                  Taak voltooid
                 </button>
               </div>
             </div>
@@ -1039,7 +1588,7 @@ export default function FocusPage() {
           >
             <input
               type="text"
-              placeholder="Parkeer een afleiding..."
+              placeholder="Parkeer een gedachte..."
               style={{
                 flex: 1,
                 padding: "14px 20px",
@@ -1086,5 +1635,17 @@ export default function FocusPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function FocusPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
+        <span className="text-slate-400">Laden...</span>
+      </div>
+    }>
+      <FocusContent />
+    </Suspense>
   );
 }

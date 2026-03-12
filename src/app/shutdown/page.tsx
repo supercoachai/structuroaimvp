@@ -59,9 +59,14 @@ export default function ShutdownPage() {
   if (hasShutdown) {
     return (
       <AppLayout>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div
+          className="min-h-screen py-12 px-4 sm:px-6 pb-16 flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🌙 Shutdown voltooid!</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>🌙 Dagafsluiter voltooid!</div>
             <div style={{ fontSize: 14, color: '#6B7280' }}>Rust goed uit. Tot morgen!</div>
           </div>
         </div>
@@ -71,7 +76,12 @@ export default function ShutdownPage() {
 
   return (
     <AppLayout>
-      <div style={{ padding: '28px 16px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        className="min-h-screen py-12 px-4 sm:px-6 pb-16 flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+        }}
+      >
         <DayShutdown onComplete={handleComplete} />
       </div>
     </AppLayout>

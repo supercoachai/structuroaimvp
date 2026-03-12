@@ -2,12 +2,13 @@ import React from 'react';
 
 interface ButtonProps {
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  title?: string;
 }
 
 export function Button({ 
@@ -17,13 +18,14 @@ export function Button({
   size = 'md', 
   className = '',
   disabled = false,
-  type = 'button'
+  type = 'button',
+  title
 }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variantClasses = {
-    default: 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-500',
-    outline: 'border border-slate-300 text-slate-700 hover:bg-slate-50 focus:ring-slate-500',
+    default: 'bg-slate-900 text-white hover:bg-slate-800 shadow-sm focus:ring-slate-500',
+    outline: 'bg-white text-slate-700 shadow-sm hover:shadow-md hover:bg-gray-50 focus:ring-slate-500',
     ghost: 'text-slate-700 hover:bg-slate-100 focus:ring-slate-500'
   };
 
@@ -40,6 +42,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className}`}
     >
       {children}
