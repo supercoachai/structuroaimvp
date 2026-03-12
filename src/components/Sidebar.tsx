@@ -90,9 +90,9 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
           </div>
         </div>
 
-        {/* Main Navigation – luchtig, subtiele actieve states */}
+        {/* Main Navigation – scrollbaar zonder zichtbare scrollbalk (responsief) */}
         <nav
-          className={`flex-1 overflow-y-auto ${collapsed ? 'px-2 py-2' : 'px-3 py-4'}`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden sidebar-nav-no-scrollbar ${collapsed ? 'px-2 py-2' : 'px-3 py-4'}`}
           style={{ transition: 'padding 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
         >
           <div className="space-y-1">

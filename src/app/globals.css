@@ -89,3 +89,12 @@ body {
 .progress-bar-fill {
   animation: progressPulse 0.6s ease-out;
 }
+
+/* Verberg scrollbalk in sidebar (blijft scrollen met muis/touch) */
+.sidebar-nav-no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.sidebar-nav-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
