@@ -323,7 +323,7 @@ function FocusContent() {
 
   // Energie matching
   const taskEnergy = currentTask?.energyLevel || 'medium';
-  const userEnergy = checkIn?.energyLevel || 'medium';
+  const userEnergy = checkIn?.energy_level || 'medium';
   const energyColors = getEnergyColor(taskEnergy);
   const hasEnergyMismatch = taskEnergy === 'high' && userEnergy === 'low';
 
