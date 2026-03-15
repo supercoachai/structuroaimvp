@@ -34,17 +34,39 @@ export function useCheckIn(): {
     setLoading(true);
     try {
       if (user?.id) {
-        const row = await getCheckInFromSupabase(user.id, date);
-        if (row) {
-          setCheckIn({
-            date: row.date,
-            energy_level: row.energy_level ?? "",
-            top3_task_ids: row.top3_task_ids ?? null,
-            user_id: row.user_id,
-            created_at: row.created_at,
-          });
-        } else {
-          setCheckIn(null);
+        try {
+          const row = await getCheckInFromSupabase(user.id, date);
+          if (row) {
+            setCheckIn({
+              date: row.date,
+              energy_level: row.energy_level ?? "",
+              top3_task_ids: row.top3_task_ids ?? null,
+              user_id: row.user_id,
+              created_at: row.created_at,
+            });
+          } else {
+            setCheckIn(null);
+          }
+        } catch (supabaseErr: any) {
+          // Tabel daily_checkins ontbreekt of andere Supabase-fout → fallback op localStorage
+          const msg = supabaseErr?.message ?? "";
+          if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("daily_checkins")) {
+            console.warn("useCheckIn: Supabase-tabel ontbreekt, gebruik localStorage. Run supabase/migration_daily_checkins.sql in Supabase SQL Editor.");
+            const local = getTodayCheckIn();
+            if (local) {
+              setCheckIn({
+                date: local.date ?? date,
+                energy_level: local.energy_level ?? "",
+                top3_task_ids: local.top3_task_ids ?? null,
+                user_id: local.user_id,
+                created_at: local.created_at,
+              });
+            } else {
+              setCheckIn(null);
+            }
+          } else {
+            throw supabaseErr;
+          }
         }
       } else {
         const local = getTodayCheckIn();

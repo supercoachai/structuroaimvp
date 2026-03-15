@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import Sidebar from '../Sidebar';
 import { ToastHost } from '../Toast';
 
@@ -11,7 +12,8 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
-  const { collapsed, toggleSidebar } = useSidebar();
+  const { collapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Zen-modus: geen sidebar, volledig scherm
   if (hideSidebar) {
@@ -25,31 +27,56 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
-      <Sidebar collapsed={collapsed} />
-      
-      {/* Toggle knop – net rechts van de sidebar, overlapt nooit menu-items */}
-      <button
-        onClick={toggleSidebar}
-        className="fixed top-4 z-40 p-2 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-        style={{
-          left: collapsed ? '4.5rem' : '17rem',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'left'
-        }}
-        title={collapsed ? 'Menu uitklappen' : 'Menu inklappen'}
+      {/* Sidebar: op mobiel als overlay, anders normaal */}
+      <div
+        className={isMobile ? 'fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-out' : 'relative z-10 flex-shrink-0'}
+        style={isMobile ? {
+          width: 'min(280px, 85vw)',
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          boxShadow: mobileOpen ? '4px 0 24px rgba(0,0,0,0.15)' : 'none',
+        } : undefined}
       >
-        <span className="text-gray-600 font-medium">
-          {collapsed ? '→' : '←'}
-        </span>
+        <Sidebar collapsed={isMobile ? false : collapsed} onNavigate={isMobile ? () => setMobileOpen(false) : undefined} />
+      </div>
+
+      {/* Backdrop op mobiel wanneer menu open */}
+      {isMobile && mobileOpen && (
+        <button
+          type="button"
+          aria-label="Menu sluiten"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-20 bg-black/40 transition-opacity"
+        />
+      )}
+
+      {/* Menu-knop: hamburger op mobiel, pijl op desktop */}
+      <button
+        onClick={() => isMobile ? setMobileOpen(!mobileOpen) : toggleSidebar()}
+        className="fixed top-4 z-40 p-2.5 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow touch-manipulation"
+        style={{
+          left: isMobile ? 16 : collapsed ? '4.5rem' : '17rem',
+          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'left',
+        }}
+        title={isMobile ? (mobileOpen ? 'Menu sluiten' : 'Menu openen') : (collapsed ? 'Menu uitklappen' : 'Menu inklappen')}
+      >
+        {isMobile ? (
+          <span className="block w-5 h-4 flex flex-col justify-between">
+            <span className="block h-0.5 bg-gray-600 rounded-full" />
+            <span className="block h-0.5 bg-gray-600 rounded-full" />
+            <span className="block h-0.5 bg-gray-600 rounded-full" />
+          </span>
+        ) : (
+          <span className="text-gray-600 font-medium">{collapsed ? '→' : '←'}</span>
+        )}
       </button>
-      
+
       <main
-        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden p-6"
+        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pt-16 sm:pt-6"
       >
         {children}
       </main>
-      
-      {/* Toast notificaties */}
+
       <ToastHost />
     </div>
   );

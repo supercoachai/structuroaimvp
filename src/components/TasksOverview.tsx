@@ -343,22 +343,11 @@ export default function TasksOverviewCalm() {
 
         {/* Content – losse witte kaarten met gelijke afstand */}
         <div className="flex flex-col gap-8">
-      {/* SECTIE 1: Nieuwe taak toevoegen – prominent bovenaan */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
-          <button
-            type="button"
-            onClick={() => newTitle.trim() && handleAddTaskWithEnergy('medium')}
-            disabled={!newTitle.trim()}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Taak toevoegen
-          </button>
-        </div>
+      {/* SECTIE 1: Nieuwe taak toevoegen – compact op mobiel, ruim op desktop */}
+      <section className="bg-white rounded-3xl shadow-sm p-4 sm:p-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe taak toevoegen</h2>
         
-        <div className="bg-gray-50 rounded-2xl p-5 mb-4">
+        <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 mb-4">
           <div className="flex gap-3 items-center flex-wrap">
             <input
               type="text"
@@ -451,6 +440,17 @@ export default function TasksOverviewCalm() {
               className="w-20 px-3 py-2 rounded-xl shadow-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-200 text-gray-900"
             />
           </div>
+
+          {/* Taak toevoegen – compacte knop, op mobiel niet te groot */}
+          <button
+            type="button"
+            onClick={() => newTitle.trim() && handleAddTaskWithEnergy('medium')}
+            disabled={!newTitle.trim()}
+            className="mt-4 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl text-sm sm:text-base font-semibold shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            Taak toevoegen
+          </button>
         </div>
 
         {/* "Vandaag?" prompt */}
@@ -508,8 +508,8 @@ export default function TasksOverviewCalm() {
         )}
       </section>
 
-      {/* SECTIE 3: Vandaag gekozen */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+      {/* SECTIE 3: Vandaag gekozen – responsief: op mobiel titel boven, knoppen eronder */}
+      <section className="bg-white rounded-3xl shadow-sm p-4 sm:p-8">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Vandaag gekozen</h2>
           <p className="text-xs text-gray-500 mt-0.5">(klaargezet voor vandaag)</p>
@@ -525,54 +525,57 @@ export default function TasksOverviewCalm() {
             return (
               <div
                 key={priority}
-                className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4 transition-all duration-200 hover:bg-white hover:shadow-md hover:scale-[1.01] cursor-default"
+                className="bg-gray-50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition-all duration-200 hover:bg-white hover:shadow-md sm:hover:scale-[1.01] cursor-default min-w-0"
               >
-                <div style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: theme.accent,
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  flexShrink: 0
-                }}>
-                  {priority}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 500, color: theme.text, marginBottom: 4 }}>
-                    {task.title}
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto">
+                  <div style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: theme.accent,
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    flexShrink: 0
+                  }}>
+                    {priority}
                   </div>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13, color: theme.sub }}>
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: getEnergyColor(task.energyLevel || 'medium'),
-                        boxShadow: getEnergyGlow(task.energyLevel || 'medium')
-                      }}
-                      title={getEnergyLabel(task.energyLevel || 'medium')}
-                    />
-                    {task.duration && (
-                      <span className="tabular-nums">· {task.duration} min</span>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm sm:text-base font-medium text-gray-900 break-words" style={{ marginBottom: 4 }}>
+                      {task.title}
+                    </div>
+                    <div className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm text-gray-500">
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: getEnergyColor(task.energyLevel || 'medium'),
+                          boxShadow: getEnergyGlow(task.energyLevel || 'medium'),
+                          flexShrink: 0
+                        }}
+                        title={getEnergyLabel(task.energyLevel || 'medium')}
+                      />
+                      {task.duration && (
+                        <span className="tabular-nums">· {task.duration} min</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Acties: uit vandaag halen / verwijderen */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {/* Acties: op mobiel volle breedte, rechts uitgelijnd */}
+                <div className="flex gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end">
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
                       await updateTask(task.id, { priority: null });
                       toast('Taak staat weer bij Alle open taken');
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-200 transition-colors"
+                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-200 transition-colors"
                     title="Uit vandaag halen"
                   >
                     Uit vandaag
@@ -586,7 +589,7 @@ export default function TasksOverviewCalm() {
                         toast('Taak verwijderd');
                       }
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium shadow-sm hover:bg-red-100 transition-colors"
+                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium shadow-sm hover:bg-red-100 transition-colors"
                     title="Taak verwijderen"
                   >
                     Verwijderen
@@ -626,45 +629,47 @@ export default function TasksOverviewCalm() {
               return (
                 <div
                   key={task.id}
-                  className="group bg-gray-50 rounded-2xl overflow-hidden transition-all duration-200 hover:bg-white hover:shadow-md hover:scale-[1.01]"
+                  className="group bg-gray-50 rounded-2xl overflow-hidden transition-all duration-200 hover:bg-white hover:shadow-md sm:hover:scale-[1.01]"
                 >
-                  {/* Collapsed view – zwevende kaart */}
+                  {/* Collapsed view – op mobiel: titel bovenop volle breedte (volledig leesbaar), acties eronder; min-w-0 zodat knop binnen kaart blijft */}
                   <div
                     onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                    className="p-4 flex items-center justify-between gap-4 cursor-pointer"
+                    className="p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-x-4 sm:gap-y-2 cursor-pointer min-w-0"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex items-start gap-4 flex-1 min-w-0 w-full sm:basis-0">
                       <div
-                        className="w-5 h-5 rounded-full flex-shrink-0"
+                        className="w-5 h-5 rounded-full flex-shrink-0 mt-0.5"
                         style={{
                           background: getEnergyColor(energyLevel),
                           boxShadow: getEnergyGlow(energyLevel)
                         }}
                         title={getEnergyLabel(energyLevel)}
                       />
-                      <span className="text-lg font-medium text-gray-900 truncate flex-1">
+                      <span className="text-sm sm:text-base font-medium text-gray-900 flex-1 min-w-0 break-words">
                         {task.title}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center justify-between w-full sm:justify-start sm:w-auto gap-3 flex-shrink-0 min-w-0 sm:pl-0 pl-9">
                       {task.duration && (
-                        <span className="text-sm text-gray-500 tabular-nums">{task.duration} min</span>
+                        <span className="text-xs sm:text-sm text-gray-500 tabular-nums">{task.duration} min</span>
                       )}
-                      {/* Start-knop alleen zichtbaar wanneer rij is ingeklapt – uitgeklapt staat Start Focus in de action bar */}
-                      {!isExpanded && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); startFocus(task); }}
-                          className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 ${
-                            isFirstTask
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-transparent border-2 border-blue-500 text-blue-500 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-500'
-                          }`}
-                          title="Start deze taak"
-                        >
-                          Start
-                        </button>
-                      )}
-                      <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
+                      <div className="flex items-center gap-3 ml-auto sm:ml-0">
+                        {/* Start-knop alleen zichtbaar wanneer rij is ingeklapt – op mobiel rechtsonder */}
+                        {!isExpanded && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); startFocus(task); }}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 ${
+                              isFirstTask
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-transparent border-2 border-blue-500 text-blue-500 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-500'
+                            }`}
+                            title="Start deze taak"
+                          >
+                            Start
+                          </button>
+                        )}
+                        <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -691,7 +696,7 @@ export default function TasksOverviewCalm() {
                                     onChange={() => toggleMicroStepDone(task, s.id)}
                                     className="w-4 h-4 accent-green-500 flex-shrink-0"
                                   />
-                                  <div className="flex-1 text-sm text-gray-900 truncate" style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
+                                  <div className="flex-1 min-w-0 text-sm text-gray-900 break-words line-clamp-2" style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
                                     {s.title}
                                   </div>
                                 </div>
@@ -812,11 +817,11 @@ export default function TasksOverviewCalm() {
                 >
                   <div
                     onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                    className="p-4 flex items-center gap-3 cursor-pointer"
+                    className="p-4 flex flex-wrap items-center gap-3 cursor-pointer"
                   >
-                    <span className="text-xl">🧠</span>
-                    <span className="flex-1 text-lg font-medium text-gray-900 truncate">{task.title}</span>
-                    <span className="text-gray-500 text-sm">{isExpanded ? '▼' : '›'}</span>
+                    <span className="text-xl flex-shrink-0">🧠</span>
+                    <span className="flex-1 min-w-0 text-lg font-medium text-gray-900 break-words line-clamp-3">{task.title}</span>
+                    <span className="text-gray-500 text-sm flex-shrink-0">{isExpanded ? '▼' : '›'}</span>
                   </div>
                   
                   {isExpanded && (

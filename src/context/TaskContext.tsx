@@ -186,6 +186,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const loading = authLoading || tasksLoading;
 
+  const FETCH_TASKS_TIMEOUT_MS = 10000;
+
   const fetchTasks = useCallback(async () => {
     if (typeof window === 'undefined') return;
 
@@ -194,7 +196,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       if (user) {
-        const list = await fetchTasksFromSupabase(user.id);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('fetch_tasks_timeout')), FETCH_TASKS_TIMEOUT_MS)
+        );
+        const list = await Promise.race([
+          fetchTasksFromSupabase(user.id),
+          timeoutPromise,
+        ]);
         setTasks(list);
         console.log('🔄 TaskContext: Loaded', list.length, 'tasks from Supabase (user)', user.id);
       } else {

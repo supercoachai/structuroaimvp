@@ -23,8 +23,25 @@ const getEnergyColor = (level: string) => {
   }
 };
 
-// Confetti animatie CSS
+// Confetti kleuren voor taak-voltooid viering
+const CONFETTI_COLORS = ['#10B981', '#F59E0B', '#4A90E2', '#EC4899', '#8B5CF6', '#F97316', '#EAB308', '#22C55E'];
+
+// Confetti animatie CSS – burst vanuit midden, daarna vallen
 const confettiStyle = `
+  @keyframes confetti-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(720deg);
+      opacity: 0;
+    }
+  }
+  
   @keyframes confetti-fall {
     0% {
       transform: translateY(0) rotate(0deg);
@@ -43,6 +60,11 @@ const confettiStyle = `
     50% {
       box-shadow: 0 0 20px 10px rgba(74, 144, 226, 0.4);
     }
+  }
+  
+  .confetti-burst {
+    animation: confetti-burst 1.4s ease-out forwards;
+    pointer-events: none;
   }
   
   .confetti {
@@ -445,15 +467,16 @@ function FocusContent() {
         xp: gainXp,
       });
 
-      // Confetti burst (korte viering in Focus Mode)
-      setConfettiElements(prev => [...prev, Date.now(), Date.now() + 1, Date.now() + 2, Date.now() + 3, Date.now() + 4]);
+      // Confetti-viering: veel kleuren, burst vanuit midden
+      const burstCount = 28;
+      setConfettiElements(Array.from({ length: burstCount }, (_, i) => Date.now() + i));
+
+      // Na confetti pas doorsturen naar gamification
+      const title = encodeURIComponent(currentTask.title || 'Taak');
       setTimeout(() => {
         setConfettiElements([]);
-      }, 900);
-
-      // Navigeer direct naar gamification met XP gain.
-      const title = encodeURIComponent(currentTask.title || 'Taak');
-      router.push(`/gamification?gain=${gainXp}&task=${title}`);
+        router.push(`/gamification?gain=${gainXp}&task=${title}`);
+      }, 1600);
     } catch (err) {
       console.error('Error completing task:', err);
       toast('Fout bij voltooien van taak');
@@ -649,25 +672,35 @@ function FocusContent() {
       <AppLayout hideSidebar={true}>
         <style>{confettiStyle}</style>
         
-        {/* Confetti elements */}
-        {confettiElements.map((id, idx) => (
-          <div
-            key={id}
-            className="confetti"
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              width: 10,
-              height: 10,
-              background: energyColors.border,
-              borderRadius: '50%',
-              pointerEvents: 'none',
-              zIndex: 9999,
-              transform: `translate(-50%, -50%) rotate(${idx * 45}deg)`,
-            }}
-          />
-        ))}
+        {/* Confetti bij Taak voltooid – burst vanuit midden */}
+        {confettiElements.map((id, idx) => {
+          const total = confettiElements.length;
+          const angle = (idx / total) * 2 * Math.PI;
+          const tx = Math.cos(angle) * 140;
+          const ty = Math.sin(angle) * 140 + 80;
+          const color = CONFETTI_COLORS[idx % CONFETTI_COLORS.length];
+          const size = 8 + (idx % 4);
+          const isRect = idx % 3 === 0;
+          return (
+            <div
+              key={id}
+              className="confetti-burst"
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                width: size,
+                height: isRect ? size * 0.6 : size,
+                background: color,
+                borderRadius: isRect ? 2 : '50%',
+                pointerEvents: 'none',
+                zIndex: 9999,
+                ['--tx' as string]: `${tx}px`,
+                ['--ty' as string]: `${ty}px`,
+              }}
+            />
+          );
+        })}
 
         {/* Zen-modus: Donkere achtergrond, gecentreerde content */}
         <div style={{ 
@@ -1025,19 +1058,22 @@ function FocusContent() {
       <BackToMenuButton />
       <div
         style={{
+          height: "100dvh",
           minHeight: "100vh",
-          background: "#0F172A", // Donkere achtergrond
-          color: "#F1F5F9", // Lichte tekst
+          background: "#0F172A",
+          color: "#F1F5F9",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-start",
           alignItems: "center",
-          padding: "60px 24px 40px"
+          padding: "60px 16px 16px",
+          overflow: "hidden",
+          boxSizing: "border-box"
         }}
       >
-        {/* Hoofdcontent: Timer groot gecentreerd */}
+        {/* Hoofdcontent: scrollbaar; Gedachten parkeren blijft onderaan in beeld */}
         <div style={{
           flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
@@ -1045,8 +1081,10 @@ function FocusContent() {
           width: "100%",
           maxWidth: "800px",
           textAlign: "center",
-          paddingTop: "40px",
-          paddingBottom: "40px"
+          paddingTop: "24px",
+          paddingBottom: "16px",
+          overflowY: "auto",
+          overflowX: "hidden"
         }}>
           {/* Taak titel –zelfde typografie als dashboard */}
           {currentTask && (
@@ -1276,9 +1314,9 @@ function FocusContent() {
             </div>
           )}
 
-          {/* Controls – naar onderen, meer ademruimte */}
+          {/* Controls – compact zodat Gedachten parkeren op één scherm blijft */}
           {!completed && !showTimeUpPrompt && (
-            <div style={{ marginTop: 'auto', paddingTop: 72, paddingBottom: 80, display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "400px" }}>
+            <div style={{ marginTop: 'auto', paddingTop: 24, paddingBottom: 16, display: "flex", flexDirection: "column", gap: "10px", width: "100%", maxWidth: "400px" }}>
               {!isRunning ? (
                 <>
                   {/* Tijdskeuze - Subtiel */}
@@ -1568,11 +1606,13 @@ function FocusContent() {
           )}
         </div>
 
-        {/* Gedachten parkeren - Subtiel onderaan */}
+        {/* Gedachten parkeren – altijd zichtbaar onderaan (geen scrollen nodig) */}
         <div style={{
           width: "100%",
           maxWidth: "600px",
-          paddingTop: 40,
+          flexShrink: 0,
+          paddingTop: 12,
+          paddingBottom: 8,
           borderTop: "1px solid rgba(255, 255, 255, 0.1)"
         }}>
           <form
@@ -1584,18 +1624,18 @@ function FocusContent() {
                 input.value = '';
               }
             }}
-            style={{ display: "flex", gap: 12 }}
+            style={{ display: "flex", gap: 10 }}
           >
             <input
               type="text"
               placeholder="Parkeer een gedachte..."
               style={{
                 flex: 1,
-                padding: "14px 20px",
+                padding: "12px 16px",
                 background: "rgba(255, 255, 255, 0.05)",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
                 borderRadius: 12,
-                fontSize: 15,
+                fontSize: 14,
                 color: "#F1F5F9",
                 outline: "none",
                 transition: "all 0.2s"
@@ -1612,7 +1652,7 @@ function FocusContent() {
             <button
               type="submit"
               style={{
-                padding: "14px 24px",
+                padding: "12px 20px",
                 background: "rgba(255, 255, 255, 0.1)",
                 color: "#F1F5F9",
                 border: "1px solid rgba(255, 255, 255, 0.2)",

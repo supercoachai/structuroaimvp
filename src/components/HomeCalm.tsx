@@ -413,14 +413,17 @@ export default function HomeCalm() {
         color: designSystem.colors.text,
       }}
     >
-      <div style={{
-        ...designSystem.container,
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 32,
-      }}>
+      <div
+        className="dashboard-inner"
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 32,
+          boxSizing: 'border-box',
+        }}
+      >
         {/* Header – zweeft los, luchtigheid zoals Taken/Herinneringen */}
         <header className="text-center pt-12 pb-0 mb-4">
           <div
@@ -646,8 +649,8 @@ export default function HomeCalm() {
           </section>
         )}
 
-        {/* Snelle acties - 3 kolommen grid */}
-        <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+        {/* Snelle acties - 3 kolommen grid; gelijke witruimte links en rechts */}
+        <section className="bg-white rounded-3xl shadow-sm snelle-acties-section">
           <div style={{ 
             ...designSystem.typography.h3, 
             marginBottom: designSystem.spacing.md,
@@ -656,6 +659,7 @@ export default function HomeCalm() {
           }}>Snelle acties</div>
           <div style={designSystem.grid.quickActions} className="dashboard-actions-grid">
             <button
+              className="quick-action-btn"
               onClick={() => router.push('/todo')}
               style={{
                 ...designSystem.quickActionButton,
@@ -701,7 +705,7 @@ export default function HomeCalm() {
               >
                 <PlusCircle size={24} strokeWidth={1.5} color="#2563EB" />
               </div>
-              <div style={{ 
+              <div className="quick-action-label" style={{ 
                 fontSize: '14px',
                 fontWeight: 500,
                 color: '#475569'
@@ -709,6 +713,7 @@ export default function HomeCalm() {
             </button>
 
             <button
+              className="quick-action-btn"
               onClick={() => router.push('/focus')}
               style={{
                 ...designSystem.quickActionButton,
@@ -754,7 +759,7 @@ export default function HomeCalm() {
               >
                 <Zap size={24} strokeWidth={1.5} color="#EA580C" />
               </div>
-              <div style={{ 
+              <div className="quick-action-label" style={{ 
                 fontSize: '14px',
                 fontWeight: 500,
                 color: '#475569'
@@ -762,6 +767,7 @@ export default function HomeCalm() {
             </button>
 
             <button
+              className="quick-action-btn"
               onClick={() => router.push('/agenda')}
               style={{
                 ...designSystem.quickActionButton,
@@ -807,7 +813,7 @@ export default function HomeCalm() {
               >
                 <CalendarDays size={24} strokeWidth={1.5} color="#16A34A" />
               </div>
-              <div style={{ 
+              <div className="quick-action-label" style={{ 
                 fontSize: '14px',
                 fontWeight: 500,
                 color: '#475569'
@@ -815,6 +821,7 @@ export default function HomeCalm() {
             </button>
 
             <button
+              className="quick-action-btn"
               onClick={() => router.push('/gamification')}
               style={{
                 ...designSystem.quickActionButton,
@@ -860,7 +867,7 @@ export default function HomeCalm() {
               >
                 <Trophy size={24} strokeWidth={1.5} color="#CA8A04" />
               </div>
-              <div style={{ 
+              <div className="quick-action-label" style={{ 
                 fontSize: '14px',
                 fontWeight: 500,
                 color: '#475569'
@@ -868,6 +875,7 @@ export default function HomeCalm() {
             </button>
 
             <button
+              className="quick-action-btn"
               onClick={() => router.push('/dagstart')}
               style={{
                 ...designSystem.quickActionButton,
@@ -913,7 +921,7 @@ export default function HomeCalm() {
               >
                 <SunMedium size={24} strokeWidth={1.5} color="#F59E0B" />
               </div>
-              <div style={{ 
+              <div className="quick-action-label" style={{ 
                 fontSize: '14px',
                 fontWeight: 500,
                 color: '#475569'
@@ -922,23 +930,27 @@ export default function HomeCalm() {
 
             <button
               type="button"
+              className="quick-action-btn"
               disabled
+              title="Nog in ontwikkeling"
               style={{
                 ...designSystem.quickActionButton,
                 background: '#F1F5F9',
-                padding: '20px 16px',
-                width: '100%',
                 boxShadow: 'none',
                 cursor: 'not-allowed',
                 opacity: 0.9,
+                padding: '24px 20px',
+                width: '100%',
+                transition: 'all 0.3s ease-in-out',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '16px'
               }}
             >
               <div
+                data-icon-container
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -952,11 +964,8 @@ export default function HomeCalm() {
               >
                 <Moon size={24} strokeWidth={1.5} color="#94A3B8" />
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: '#64748B' }}>
+              <div className="quick-action-label" style={{ fontSize: '14px', fontWeight: 500, color: '#64748B' }}>
                 Dagafsluiter
-              </div>
-              <div style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 400 }}>
-                Nog in ontwikkeling
               </div>
             </button>
           </div>

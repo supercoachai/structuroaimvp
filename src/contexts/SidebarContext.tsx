@@ -6,17 +6,20 @@ interface SidebarContextType {
   collapsed: boolean;
   toggleSidebar: () => void;
   setCollapsed: (collapsed: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleSidebar = () => setCollapsed(!collapsed);
 
   return (
-    <SidebarContext.Provider value={{ collapsed, toggleSidebar, setCollapsed }}>
+    <SidebarContext.Provider value={{ collapsed, toggleSidebar, setCollapsed, mobileOpen, setMobileOpen }}>
       {children}
     </SidebarContext.Provider>
   );

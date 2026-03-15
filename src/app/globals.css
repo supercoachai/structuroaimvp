@@ -45,15 +45,69 @@ body {
   }
 }
 
+/* Dashboard: op mobiel gelijke horizontale padding (geen dubbele padding) */
+.dashboard-inner {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+@media (min-width: 640px) {
+  .dashboard-inner {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* Snelle acties: mobiel eerst, exact gelijke witruimte links en rechts */
+.snelle-acties-section {
+  padding-top: 24px;
+  padding-bottom: 24px;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .snelle-acties-section {
+    padding-top: 32px;
+    padding-bottom: 32px;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+}
+
 .dashboard-actions-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+@media (min-width: 769px) {
+  .dashboard-actions-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
 }
 
 @media (max-width: 768px) {
-  .dashboard-actions-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .dashboard-actions-grid .quick-action-btn {
+    padding: 12px 8px !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+  .dashboard-actions-grid .quick-action-btn [data-icon-container] {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .dashboard-actions-grid .quick-action-btn [data-icon-container] svg {
+    width: 20px;
+    height: 20px;
+  }
+  .dashboard-actions-grid .quick-action-btn .quick-action-label {
+    font-size: 12px !important;
   }
 }
 

@@ -11,6 +11,18 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
   return Boolean(cookie)
 }
 
+/** Supabase niet geconfigureerd of placeholder → app lokaal gebruiken, geen redirect. */
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+  return Boolean(
+    url &&
+    key &&
+    !url.includes('placeholder') &&
+    !key.includes('placeholder')
+  )
+}
+
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPublicPath =
@@ -20,6 +32,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/api/auth')
 
   if (isPublicPath) {
+    return NextResponse.next({ request })
+  }
+
+  // Geen Supabase-config → altijd doorlaten (lokaal/localStorage), voorkomt hangen
+  if (!isSupabaseConfigured()) {
     return NextResponse.next({ request })
   }
 

@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/client';
 
 interface SidebarProps {
   collapsed?: boolean;
+  onNavigate?: () => void; // Op mobiel: sluit menu na klik op link
 }
 
 const mainMenuItems = [
@@ -29,18 +30,18 @@ const mainMenuItems = [
   { name: 'Instellingen', href: '/settings', icon: Cog6ToothIcon, description: 'Persoonlijk', accent: '#6366f1' },
 ];
 
-export default function Sidebar({ collapsed = false }: SidebarProps) {
+export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
 
   const handleLogout = async () => {
+    onNavigate?.();
     try {
       await supabase.auth.signOut();
     } catch {
       // Geen actieve sessie, bijvoorbeeld bij lokale modus
     }
-    // Verwijder lokale modus cookie (als die er was)
     document.cookie = 'structuro_local_mode=; path=/; max-age=0';
     router.push('/login');
     router.refresh();
@@ -103,6 +104,7 @@ export default function Sidebar({ collapsed = false }: SidebarProps) {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={onNavigate}
                   className={`relative flex items-center rounded-xl group transition-all duration-200 ${
                     collapsed ? 'justify-center px-2 py-4' : 'pl-4 pr-3 py-4 space-x-3'
                   } ${isActive ? 'bg-white/10' : 'hover:bg-white/5'}`}

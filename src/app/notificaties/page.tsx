@@ -238,58 +238,30 @@ export default function HerinneringenPage() {
                 {startedNotCompleted.map((task) => (
                   <div
                     key={task.id}
-                    style={{
-                      background: "#fff",
-                      borderRadius: 20,
-                      padding: "18px 20px",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 16,
-                    }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:py-5 sm:px-5 rounded-2xl bg-white shadow-sm min-w-0"
+                    style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
                   >
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <PlayIcon
-                        style={{ width: 22, height: 22, color: "#3b82f6" }}
-                      />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
+                    <div className="flex items-start gap-3 flex-1 min-w-0 w-full sm:w-auto">
+                      <div
+                        className="flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
                         style={{
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          margin: 0,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          background: "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)",
                         }}
                       >
-                        {task.title}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "#64748b",
-                          marginTop: 2,
-                          marginBottom: 0,
-                        }}
-                      >
-                        Gestart in focus · +{xpForTask(task)} XP bij afronden
-                      </p>
+                        <PlayIcon
+                          style={{ width: 22, height: 22, color: "#3b82f6" }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base sm:text-[15px] font-semibold text-gray-900 break-words m-0">
+                          {task.title}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1 m-0 break-words">
+                          Gestart in focus · +{xpForTask(task)} XP bij afronden
+                        </p>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end">
                       <button
                         type="button"
                         onClick={() =>

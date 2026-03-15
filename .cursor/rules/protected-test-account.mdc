@@ -1,0 +1,15 @@
+---
+description: Bescherm het testaccount – data mag nooit gewist worden
+alwaysApply: true
+---
+
+# Beschermd testaccount
+
+Er is een dedicated testaccount voor live testing. De data van dit account moet altijd bereikbaar blijven.
+
+## Regels
+
+- **Nooit** code voorstellen of uitvoeren die `clearAllStorage`, `wipeAllUserData`, `resetAndLoadMockData` of `clearAllTasksOnly` aanroept voor het beschermde account
+- **Nooit** database-reset scripts uitvoeren die data van het testaccount kunnen verwijderen
+- Het testaccount wordt geconfigureerd via `NEXT_PUBLIC_PROTECTED_TEST_ACCOUNT_EMAIL` in `.env.local`
+- Zie `src/lib/protectedTestAccount.ts` voor de implementatie

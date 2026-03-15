@@ -1,0 +1,18 @@
+0 verbose cli /opt/homebrew/Cellar/node@20/20.19.4/bin/node /opt/homebrew/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.19.4
+3 silly config load:file:/opt/homebrew/Cellar/node@20/20.19.4/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/nielsvandenhurk/structuroai-mvp/.npmrc
+5 silly config load:file:/Users/nielsvandenhurk/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm run dev
+8 verbose argv "run" "dev"
+9 verbose logfile logs-max:10 dir:/Users/nielsvandenhurk/structuroai-mvp/.npm-cache/_logs/2026-01-20T11_23_01_752Z-
+10 verbose logfile /Users/nielsvandenhurk/structuroai-mvp/.npm-cache/_logs/2026-01-20T11_23_01_752Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/nielsvandenhurk/structuroai-mvp
+13 verbose os Darwin 24.6.0
+14 verbose node v20.19.4
+15 verbose npm  v10.8.2
+16 verbose exit 1
+17 verbose code 1
