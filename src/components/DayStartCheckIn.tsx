@@ -105,66 +105,49 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       return true;
     });
 
-    // Filter op basis van energie-niveau EN complexiteit
+    // Alle taken zijn altijd zichtbaar en selecteerbaar – alleen de volgorde hangt af van energie
+    const withComplexity = baseTasks.map((t: any) => ({
+      task: t,
+      complexity: getTaskComplexity(t),
+    }));
+
     if (energyLevel === 'low') {
-      // Bij lage energie: toon groene taken actief, oranje/rode als "voor later"
-      const allTasks = baseTasks.map((t: any) => {
-        const complexity = getTaskComplexity(t);
-        return { task: t, complexity };
-      });
-      
-      // Sorteer: groene eerst (actief), dan oranje/rode (voor later)
-      const sorted = allTasks.sort((a: any, b: any) => {
-        // Groene taken (<=2) eerst
-        if (a.complexity.level <= 2 && b.complexity.level > 2) return -1;
-        if (a.complexity.level > 2 && b.complexity.level <= 2) return 1;
-        
-        // Binnen groene taken: laagste complexiteit eerst
-        if (a.complexity.level <= 2 && b.complexity.level <= 2) {
-          if (a.complexity.level !== b.complexity.level) {
-            return a.complexity.level - b.complexity.level;
-          }
-          const durA = a.task.duration || a.task.estimatedDuration || 999;
-          const durB = b.task.duration || b.task.estimatedDuration || 999;
-          return durA - durB;
+      // Lage energie: makkelijke eerst, moeilijke onderaan (allemaal selecteerbaar)
+      const sorted = withComplexity.sort((a: any, b: any) => {
+        if (a.complexity.level !== b.complexity.level) {
+          return a.complexity.level - b.complexity.level;
         }
-        
-        // Binnen oranje/rode taken: ook sorteren
-        return a.complexity.level - b.complexity.level;
+        const durA = a.task.duration || a.task.estimatedDuration || 999;
+        const durB = b.task.duration || b.task.estimatedDuration || 999;
+        return durA - durB;
       });
-      
-      // Toon alle taken (zowel actief als voor later)
-      return sorted.map(item => item.task).slice(0, 10);
-    } else if (energyLevel === 'high') {
-      // Bij hoge energie: toon ALLE taken, gesorteerd van moeilijk naar makkelijk
-      const allTasks = baseTasks.map((t: any) => {
-        const complexity = getTaskComplexity(t);
-        return { task: t, complexity };
-      });
-      
-      // Sorteer: hoogste complexiteit eerst (moeilijk → makkelijk)
-      const sorted = allTasks.sort((a: any, b: any) => {
-        // Eerst op complexiteit (hoogste eerst)
+      return sorted.map((item) => item.task).slice(0, 15);
+    }
+
+    if (energyLevel === 'high') {
+      // Hoge energie: moeilijk eerst, dan makkelijk
+      const sorted = withComplexity.sort((a: any, b: any) => {
         if (a.complexity.level !== b.complexity.level) {
           return b.complexity.level - a.complexity.level;
         }
-        // Bij gelijke complexiteit: langste duur eerst
         const durA = a.task.duration || a.task.estimatedDuration || 0;
         const durB = b.task.duration || b.task.estimatedDuration || 0;
         return durB - durA;
       });
-      
-      return sorted.map(item => item.task).slice(0, 10);
-    } else {
-      // Normaal: normale taken (medium energie of gemiddelde duur)
-      return baseTasks.filter((t: any) => {
-        if (t.energyLevel === 'medium') return true;
-        if (t.energyLevel === 'low' && t.duration && t.duration <= 30) return true;
-        if (t.duration && t.duration > 15 && t.duration <= 60) return true;
-        if (!t.energyLevel && !t.duration) return true;
-        return false;
-      }).slice(0, 8);
+      return sorted.map((item) => item.task).slice(0, 15);
     }
+
+    // Medium: eerst medium (oranje/geel), dan makkelijk (groen), dan moeilijk (rood) – allemaal zichtbaar
+    const sortOrder = (level: string) => (level === 'medium' || !level ? 0 : level === 'low' ? 1 : 2);
+    const sorted = withComplexity.sort((a: any, b: any) => {
+      const orderA = sortOrder(a.task.energyLevel || '');
+      const orderB = sortOrder(b.task.energyLevel || '');
+      if (orderA !== orderB) return orderA - orderB;
+      const durA = a.task.duration || a.task.estimatedDuration || 999;
+      const durB = b.task.duration || b.task.estimatedDuration || 999;
+      return durA - durB;
+    });
+    return sorted.map((item) => item.task).slice(0, 15);
   };
 
   const filteredTasks = useMemo(() => getFilteredTasks(), [tasks, top3Tasks, energyLevel]);
@@ -213,7 +196,8 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
   const updateTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const hasInitializedRef = React.useRef(false);
   const userHasInteractedRef = React.useRef(false); // Track of gebruiker heeft gesleept
-  
+  const dragStartedRef = React.useRef(false); // Voorkom dat click opent na een drag
+
   // Sync energyLevel wanneer check-in uit DB/lokalStorage binnenkomt
   useEffect(() => {
     const source = checkInFromDb ?? existingCheckIn;
@@ -521,8 +505,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       const taskExists = tasksInStorage.find((t: any) => t.id === taskToUse.id);
       
       if (!taskExists) {
-        console.error('❌ Task not found in localStorage:', taskToUse.id, taskToUse.title);
-        // Taak bestaat niet - voeg toe aan localStorage
+        // Taak kan uit Supabase komen (niet in localStorage) – voeg lokaal toe zodat priority overal synct
         const taskToAdd = {
           id: taskToUse.id,
           title: taskToUse.title,
@@ -652,44 +635,32 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
     }
 
     try {
-      // Import localStorage helpers
-      const { getTasksFromStorage, updateTaskInStorage } = await import('../lib/localStorageTasks');
-      
-      // Check of taak bestaat in localStorage
-      const tasksInStorage = getTasksFromStorage();
-      const taskExists = tasksInStorage.find((t: any) => t.id === task.id);
-      
-      if (taskExists) {
-        // KRITIEK: Behoud duration en estimatedDuration expliciet
-        const preservedDuration = task.duration || task.estimatedDuration || taskExists.duration || taskExists.estimatedDuration || null;
-        const preservedEstimatedDuration = task.estimatedDuration || taskExists.estimatedDuration || null;
-        
-        // Update taak: verwijder prioriteit (taak gaat automatisch terug naar takenlijst)
-        updateTaskInStorage(task.id, { 
-          priority: null,
-          duration: preservedDuration,
-          estimatedDuration: preservedEstimatedDuration
-        });
-        console.log(`✅ Task ${task.id} priority verwijderd (terug naar suggesties)`, {
-          duration: preservedDuration,
-          estimatedDuration: preservedEstimatedDuration
-        });
-      } else {
-        console.warn(`⚠️ Task ${task.id} niet gevonden in localStorage, wordt overgeslagen`);
-      }
-
-      // Update state direct (optimistic update)
+      // Eerst: slot leegmaken (optimistic) zodat de taak direct uit het vak verdwijnt
       const newTop3Tasks: { [key: number]: any } = { ...top3Tasks };
       newTop3Tasks[slotNumber] = null;
       setTop3Tasks(newTop3Tasks);
-
-      // Markeer als updating om useEffect te voorkomen
       setIsUpdating(true);
 
-      // Refresh taken - dit zorgt ervoor dat de taak terugkomt in de suggesties
+      // Context + Supabase: prioriteit op null zetten – dan komt de taak terug in suggesties
+      await updateTask(task.id, { priority: null });
+
+      // Ook localStorage bijwerken als de taak daar in staat (sync met lokaal)
+      const { getTasksFromStorage, updateTaskInStorage } = await import('../lib/localStorageTasks');
+      const tasksInStorage = getTasksFromStorage();
+      const taskExists = tasksInStorage.find((t: any) => t.id === task.id);
+      if (taskExists) {
+        const preservedDuration = task.duration ?? task.estimatedDuration ?? taskExists.duration ?? taskExists.estimatedDuration ?? null;
+        const preservedEstimatedDuration = task.estimatedDuration ?? taskExists.estimatedDuration ?? null;
+        updateTaskInStorage(task.id, {
+          priority: null,
+          duration: preservedDuration,
+          estimatedDuration: preservedEstimatedDuration,
+        });
+      }
+
+      // Refresh zodat suggestielijst de taak weer toont
       await fetchTasks();
 
-      // Reset update flag
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
@@ -698,7 +669,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         updateTimeoutRef.current = null;
       }, 500);
 
-      toast('Prioriteit verwijderd - taak staat weer in je takenlijst');
+      toast('Prioriteit verwijderd – taak staat weer bij de suggesties');
     } catch (error) {
       console.error('❌ Error in handleRemoveFromSlot:', error);
       toast('Fout bij verwijderen van prioriteit. Probeer het opnieuw.');
@@ -1251,7 +1222,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         <p className="text-sm text-gray-500 mb-6">
           {existingCheckIn
             ? 'Dit zijn de taken die je vandaag hebt gekozen. Je kunt ze nog aanpassen.'
-            : 'Kies 1-3 taken die je vandaag wilt doen. Begin met 1, de rest kan later.'}
+            : 'Kies 1-3 taken die je vandaag wilt doen. Klik of sleep ze naar de juiste plek.'}
         </p>
 
         <div className="grid gap-4">
@@ -1358,7 +1329,15 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
 
                 {task && task.id && task.title ? (
                   <div
-                    className={`p-4 rounded-2xl bg-white min-h-[50px] ${recentlyAdded === task.id ? 'animate-pulse' : ''}`}
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', task.id);
+                      setDraggedTask(task);
+                    }}
+                    onDragEnd={() => setDraggedTask(null)}
+                    className={`p-4 rounded-2xl bg-white min-h-[50px] cursor-grab active:cursor-grabbing ${recentlyAdded === task.id ? 'animate-pulse' : ''} ${draggedTask?.id === task.id ? 'opacity-60' : ''}`}
                     style={{
                       border: `1px solid ${slot.borderColor}`,
                       opacity: task.done ? 0.7 : 1,
@@ -1399,7 +1378,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
                     {shouldDisable ? (
                       isLowEnergy ? 'Niet beschikbaar bij lage energie' : 'Niet beschikbaar bij normale energie'
                     ) : (
-                      'Klik een taak aan om hier te zetten'
+                      'Klik of sleep een taak hierheen'
                     )}
                   </div>
                 )}
@@ -1417,7 +1396,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
               Suggesties voor vandaag ({filteredTasks.length})
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Klik een taak aan om prioriteit te kiezen (1, 2 of 3)
+              Klik een taak aan of sleep hem naar een van de vakken hierboven (1, 2 of 3)
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTasks.map((task) => {
@@ -1436,17 +1415,37 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
               const isForLater = isLocked;
               
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={isLocked ? -1 : 0}
                   key={task.id}
-                  disabled={isLocked}
+                  draggable={!isLocked}
+                  onDragStart={(e) => {
+                    if (isLocked) return;
+                    dragStartedRef.current = true;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', task.id);
+                    setDraggedTask(task);
+                  }}
+                  onDragEnd={() => {
+                    dragStartedRef.current = false;
+                    setDraggedTask(null);
+                  }}
                   onClick={() => {
                     if (isLocked) return;
+                    if (dragStartedRef.current) return;
                     setPriorityPickerTask(task);
                   }}
-                  className={`p-4 rounded-2xl flex flex-col gap-2 min-h-[70px] transition-all duration-200 touch-manipulation text-left w-full ${
-                    isLocked ? 'bg-gray-50/50 cursor-not-allowed opacity-50' : 'bg-gray-50 cursor-pointer hover:bg-gray-100 active:bg-gray-200'
-                  } ${recentlyAdded === task.id ? 'ring-2 ring-green-200' : ''}`}
+                  onKeyDown={(e) => {
+                    if (isLocked) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setPriorityPickerTask(task);
+                    }
+                  }}
+                  className={`p-4 rounded-2xl flex flex-col gap-2 min-h-[70px] transition-all duration-200 touch-manipulation text-left w-full cursor-grab active:cursor-grabbing ${
+                    isLocked ? 'bg-gray-50/50 cursor-not-allowed opacity-50' : 'bg-gray-50 hover:bg-gray-100 active:bg-gray-200'
+                  } ${recentlyAdded === task.id ? 'ring-2 ring-green-200' : ''} ${draggedTask?.id === task.id ? 'opacity-60' : ''}`}
                   style={{
                     border: isLocked ? '1px dashed #E5E7EB' : '1px solid transparent',
                   }}
@@ -1506,10 +1505,10 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
                       </span>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
-          </div>
+            </div>
           </>
         ) : (
           <div className="p-6 rounded-2xl bg-gray-50 text-center border border-dashed border-gray-200">

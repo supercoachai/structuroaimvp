@@ -99,14 +99,36 @@ export function useCheckIn(): {
     async (payload: { energy_level: string; top3_task_ids: string[] | null }) => {
       const date = today();
       if (user?.id) {
-        await upsertCheckInToSupabase(user.id, date, payload as CheckInPayload);
-        setCheckIn({
-          date,
-          energy_level: payload.energy_level,
-          top3_task_ids: payload.top3_task_ids,
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-        });
+        try {
+          await upsertCheckInToSupabase(user.id, date, payload as CheckInPayload);
+          setCheckIn({
+            date,
+            energy_level: payload.energy_level,
+            top3_task_ids: payload.top3_task_ids,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+          });
+        } catch (err: any) {
+          const msg = err?.message ?? "";
+          if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("daily_checkins") || msg.includes("Could not find table")) {
+            console.warn("useCheckIn save: Supabase-tabel ontbreekt, opslaan in localStorage. Run supabase/migration_daily_checkins.sql in Supabase SQL Editor.");
+            saveCheckInToStorage({
+              date,
+              energy_level: payload.energy_level,
+              top3_task_ids: payload.top3_task_ids,
+              user_id: user.id,
+            });
+            setCheckIn({
+              date,
+              energy_level: payload.energy_level,
+              top3_task_ids: payload.top3_task_ids,
+              user_id: user.id,
+              created_at: new Date().toISOString(),
+            });
+          } else {
+            throw err;
+          }
+        }
       } else {
         saveCheckInToStorage({
           date,

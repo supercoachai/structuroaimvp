@@ -70,6 +70,16 @@ function GamificationContent() {
   const [meta, setMeta] = useState<GamificationMeta>(() => ({ bonusXp: 0, awardedTrophyIds: [], awardedPrestiges: [] }));
   const [majorPopupOpen, setMajorPopupOpen] = useState(false);
 
+  // Kalenderdag – elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
+  const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const next = new Date().toDateString();
+      setTodayKey((prev) => (next !== prev ? next : prev));
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Bereken gamification data op basis van voltooide taken
   useEffect(() => {
     setMeta(loadGamificationMeta());
@@ -82,11 +92,10 @@ function GamificationContent() {
       try {
         const completedTasks = tasks.filter(task => task.done);
         
-        // Bereken dagelijkse voltooiingen
-        const today = new Date().toDateString();
+        // Alleen taken voltooid op de huidige kalenderdag (reset na middernacht)
         const todayTasks = completedTasks.filter(task => {
           if (!task.completedAt) return false;
-          return new Date(task.completedAt).toDateString() === today;
+          return new Date(task.completedAt).toDateString() === todayKey;
         });
 
         // Bereken streak
@@ -119,7 +128,7 @@ function GamificationContent() {
     };
 
     calculateGamificationData();
-  }, [tasks, loading, meta?.bonusXp]);
+  }, [tasks, loading, meta?.bonusXp, todayKey]);
 
   // Celebration banner when coming from Focus Mode
   useEffect(() => {

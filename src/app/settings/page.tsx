@@ -243,17 +243,17 @@ export default function SettingsPage() {
               </h2>
               <span
                 className="flex-shrink-0 text-slate-400 hover:text-slate-600 cursor-help mt-0.5"
-                title="Recht op vergetelheid (AVG): je mag altijd vragen om verwijdering van je data. Bij Structuro staat alles lokaal op dit apparaat – met deze knop wist je alles in één keer. Wij kunnen niet meekijken; na het wissen is het alsof je er nooit bent geweest."
+                title="Recht op vergetelheid (AVG): je mag altijd vragen om verwijdering van je data. Met deze knop wist je al je gegevens in één keer (ook op onze servers)."
               >
                 <InformationCircleIcon className="w-5 h-5" aria-hidden />
               </span>
             </div>
             <p className="text-sm text-slate-500 mb-2">
-              Verwijder al je gegevens lokaal: taken, check-ins, aanspreeknaam,
+              Verwijder al je gegevens: taken, check-ins, aanspreeknaam,
               focus- en beloningsdata. Dit kan niet ongedaan worden.
             </p>
             <p className="text-sm text-slate-500 mb-4">
-              <strong>Waarom deze knop?</strong> Structuro is privacy-by-design: alles blijft op je eigen apparaat. Wil je stoppen of opnieuw beginnen? Dan wist je hier alles – wij kunnen niet meekijken.
+              <strong>Waarom deze knop?</strong> Structuro is privacy-by-design. Wil je stoppen of opnieuw beginnen? Dan wist je hier al je gegevens.
             </p>
             {!confirmWipe ? (
               <button
@@ -267,7 +267,7 @@ export default function SettingsPage() {
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-slate-600">
-                  Weet je het zeker? Al je taken en voortgang worden lokaal van dit apparaat verwijderd. Typ <strong>WISSEN</strong> om te bevestigen:
+                  Weet je het zeker? Al je taken en voortgang worden verwijderd. Typ <strong>WISSEN</strong> om te bevestigen:
                 </p>
                 <input
                   type="text"
@@ -298,7 +298,7 @@ export default function SettingsPage() {
 
           {/* Privacy-first melding */}
           <p className="text-xs text-slate-400 text-center mt-6 max-w-md mx-auto">
-            Privacy-first: Tijdens deze testfase wordt al je data veilig op je eigen apparaat opgeslagen. Wij kunnen niet meekijken.
+            Privacy-first: je data wordt veilig verwerkt.
           </p>
         </main>
       </div>

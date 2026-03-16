@@ -9,7 +9,7 @@ import { toast } from "./Toast";
 import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
-import { PlayIcon, CheckCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PlayIcon, CheckCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
   bg: designSystem.colors.background,
@@ -44,6 +44,11 @@ export default function TasksOverviewCalm() {
   const [convertEnergy, setConvertEnergy] = useState<'low' | 'medium' | 'high'>('medium');
   const { checkIn: todayCheckIn } = useCheckIn();
   const [priorityTasks, setPriorityTasks] = useState<{ [key: number]: any }>({ 1: null, 2: null, 3: null });
+  const [completedSectionOpen, setCompletedSectionOpen] = useState(false);
+  /** Taak net aangevinkt: line-through + opacity, na 300ms echte update + verhuizing naar Voltooide taken */
+  const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
+  /** Pop-animatie op checkbox (task.id) */
+  const [checkboxPopId, setCheckboxPopId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFromDayStart = () => {
@@ -276,6 +281,23 @@ export default function TasksOverviewCalm() {
     }
   };
 
+  // Voltooien vanuit Alle open taken: eerst visueel (line-through, pop), dan na 300ms persist + verhuizing naar Voltooide taken
+  const handleCompleteFromList = (task: any) => {
+    setCompletingTaskIds((prev) => new Set(prev).add(task.id));
+    setCheckboxPopId(task.id);
+    setTimeout(() => setCheckboxPopId(null), 200);
+    setTimeout(() => {
+      updateTask(task.id, { done: true, completedAt: new Date().toISOString() });
+      setCompletingTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(task.id);
+        return next;
+      });
+      setCompletedSectionOpen(true); // Sectie Voltooide taken open zodat de taak daar zichtbaar is
+      toast('Taak afgevinkt!');
+    }, 300);
+  };
+
   // Bepaal "Nu aan zet" taak (eerste taak uit "Vandaag gekozen")
   const nuAanZetTask = useMemo(() => {
     for (let i = 1; i <= maxSlots; i++) {
@@ -304,6 +326,17 @@ export default function TasksOverviewCalm() {
         const diff = durationOf(a) - durationOf(b);
         if (diff !== 0) return diff;
         return String(a?.title || '').localeCompare(String(b?.title || ''));
+      });
+  }, [tasks]);
+
+  // Filter: Voltooide taken (done, gesorteerd op completedAt nieuwste eerst)
+  const completedTasks = useMemo(() => {
+    return tasks
+      .filter((t: any) => t.done && t.source !== 'medication' && t.source !== 'event')
+      .sort((a: any, b: any) => {
+        const da = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const db = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return db - da;
       });
   }, [tasks]);
 
@@ -424,7 +457,7 @@ export default function TasksOverviewCalm() {
           </div>
           </div>
           
-          {/* Tijdveld voor duur */}
+          {/* Duur optioneel – alleen als je een getal wilt invullen */}
           <div className="flex gap-3 items-center mt-3">
             <label className="text-sm font-medium text-gray-500">Duur (min):</label>
             <input
@@ -437,20 +470,9 @@ export default function TasksOverviewCalm() {
                 setNewDuration(value === '' ? null : parseInt(value, 10));
               }}
               placeholder="15"
-              className="w-20 px-3 py-2 rounded-xl shadow-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-200 text-gray-900"
+              className="w-24 px-3 py-2 rounded-xl shadow-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-200 text-gray-900 placeholder:text-gray-400"
             />
           </div>
-
-          {/* Taak toevoegen – compacte knop, op mobiel niet te groot */}
-          <button
-            type="button"
-            onClick={() => newTitle.trim() && handleAddTaskWithEnergy('medium')}
-            disabled={!newTitle.trim()}
-            className="mt-4 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl text-sm sm:text-base font-semibold shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700"
-          >
-            <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-            Taak toevoegen
-          </button>
         </div>
 
         {/* "Vandaag?" prompt */}
@@ -520,7 +542,7 @@ export default function TasksOverviewCalm() {
             if (priority > maxSlots) return null;
             
             const task = priorityTasks[priority];
-            if (!task) return null;
+            if (!task || task.done) return null;
             
             return (
               <div
@@ -567,8 +589,15 @@ export default function TasksOverviewCalm() {
                   </div>
                 </div>
 
-                {/* Acties: op mobiel volle breedte, rechts uitgelijnd */}
-                <div className="flex gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end">
+                {/* Acties: Start, Uit vandaag, Verwijderen – elke taak heeft eigen Start */}
+                <div className="flex gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end flex-wrap">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); startFocus(task); }}
+                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                    title="Start Focus voor deze taak"
+                  >
+                    Start
+                  </button>
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -599,7 +628,7 @@ export default function TasksOverviewCalm() {
             );
           })}
           
-          {Object.values(priorityTasks).filter(t => t !== null).length === 0 && (
+          {Object.values(priorityTasks).filter(t => t !== null && !t.done).length === 0 && (
             <div className="p-6 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
               Geen taken gekozen voor vandaag
             </div>
@@ -625,6 +654,8 @@ export default function TasksOverviewCalm() {
               const isExpanded = expandedTaskId === task.id;
               const energyLevel = task.energyLevel || 'medium';
               const isFirstTask = taskIndex === 0;
+              const isCompleting = completingTaskIds.has(task.id);
+              const isPop = checkboxPopId === task.id;
 
               return (
                 <div
@@ -636,16 +667,24 @@ export default function TasksOverviewCalm() {
                     onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
                     className="p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-x-4 sm:gap-y-2 cursor-pointer min-w-0"
                   >
-                    <div className="flex items-start gap-4 flex-1 min-w-0 w-full sm:basis-0">
-                      <div
-                        className="w-5 h-5 rounded-full flex-shrink-0 mt-0.5"
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:basis-0">
+                      {/* Gekleurde bol = afvinken: klik om taak te voltooien (zelfde flow: line-through, verhuizing naar Voltooide taken) */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleCompleteFromList(task); }}
+                        aria-label="Taak afvinken"
+                        title={`${getEnergyLabel(energyLevel)} – klik om af te vinken`}
+                        className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center transition-transform duration-200 cursor-pointer select-none ${isPop ? 'scale-125' : 'scale-100'}`}
                         style={{
                           background: getEnergyColor(energyLevel),
                           boxShadow: getEnergyGlow(energyLevel)
                         }}
-                        title={getEnergyLabel(energyLevel)}
                       />
-                      <span className="text-sm sm:text-base font-medium text-gray-900 flex-1 min-w-0 break-words">
+                      <span
+                        className={`text-sm sm:text-base font-medium flex-1 min-w-0 break-words transition-all duration-200 ${
+                          isCompleting ? 'text-gray-500 opacity-50 line-through' : 'text-gray-900'
+                        }`}
+                      >
                         {task.title}
                       </span>
                     </div>
@@ -797,6 +836,83 @@ export default function TasksOverviewCalm() {
         )}
       </section>
 
+      {/* SECTIE 4b: Voltooide taken – inklapbaar, legen of terugzetten */}
+      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+        <button
+          type="button"
+          onClick={() => setCompletedSectionOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between gap-3 text-left mb-4 group"
+        >
+          <h2 className="text-lg font-semibold text-gray-900">Voltooide taken</h2>
+          <span className="flex items-center gap-2 text-sm text-gray-500">
+            {completedTasks.length > 0 && (
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg font-medium">
+                {completedTasks.length}
+              </span>
+            )}
+            {completedSectionOpen ? (
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" aria-hidden />
+            ) : (
+              <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" aria-hidden />
+            )}
+          </span>
+        </button>
+
+        {completedSectionOpen && (
+          <>
+            {completedTasks.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
+                Geen voltooide taken
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {completedTasks.map((task: any) => (
+                  <div
+                    key={task.id}
+                    className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100/80 transition-colors"
+                  >
+                    <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" aria-hidden />
+                    <span className="flex-1 min-w-0 text-sm text-gray-700 line-through break-words">{task.title}</span>
+                    {task.completedAt && (
+                      <span className="text-xs text-gray-400 tabular-nums">
+                        {new Date(task.completedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateTask(task.id, { done: false, completedAt: null });
+                          toast('Taak teruggezet bij Alle open taken');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
+                      >
+                        Terug naar open
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm(`Weet je zeker dat je alle ${completedTasks.length} voltooide taken wilt verwijderen? Ze zijn daarna niet meer terug te halen.`)) return;
+                      for (const task of completedTasks) {
+                        await deleteTask(task.id);
+                      }
+                      toast('Voltooide taken geleegd');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-colors"
+                  >
+                    Voltooide taken legen
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       {/* SECTIE 5: Geparkeerde gedachten */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Geparkeerde gedachten</h2>
@@ -914,30 +1030,28 @@ export default function TasksOverviewCalm() {
         </div>
       </main>
 
-      {/* Task Editor Modal */}
+      {/* Task Editor Modal –zelfde layout als rest van de app */}
       {editing && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20
-        }}>
-          <TaskScheduleEditor
-            task={editing}
-            onSave={async (updatedTask: any) => {
-              await updateTask(updatedTask.id, updatedTask);
-              setEditing(null);
-              setExpandedTaskId(null);
-            }}
-            onClose={() => setEditing(null)}
-          />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 overflow-y-auto">
+          <div className="my-auto w-full max-w-lg">
+            <TaskScheduleEditor
+              task={editing}
+              onSave={async (updatedTask: any) => {
+                await updateTask(updatedTask.id, {
+                  title: updatedTask.title,
+                  dueAt: updatedTask.dueAt ?? null,
+                  reminders: updatedTask.reminders ?? [],
+                  repeat: updatedTask.repeat ?? "none",
+                  duration: updatedTask.duration ?? null,
+                  estimatedDuration: updatedTask.estimatedDuration ?? null,
+                  energyLevel: updatedTask.energyLevel ?? "medium",
+                });
+                setEditing(null);
+                setExpandedTaskId(null);
+              }}
+              onClose={() => setEditing(null)}
+            />
+          </div>
         </div>
       )}
 

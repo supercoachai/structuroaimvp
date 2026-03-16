@@ -48,6 +48,16 @@ export default function HomeCalm() {
   const [dumpSubmitting, setDumpSubmitting] = useState(false);
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
 
+  // Huidige kalenderdag – wordt elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
+  const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const next = new Date().toDateString();
+      setTodayKey((prev) => (next !== prev ? next : prev));
+    }, 60 * 1000); // elke minuut checken
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const checkProtected = async () => {
       try {
@@ -131,12 +141,10 @@ export default function HomeCalm() {
 
     const calculateDashboardData = () => {
       try {
-        const today = new Date().toDateString();
-        
-        // Alleen echt voltooide taken tellen voor vandaag (niet alleen gestart)
+        // todayKey = kalenderdag; na middernacht (0:00) wordt die geüpdatet, dan reset de teller
         const completedToday = tasks.filter(task => {
           return task.done && task.completedAt &&
-            new Date(task.completedAt).toDateString() === today;
+            new Date(task.completedAt).toDateString() === todayKey;
         }).length;
 
         // Filter medicatie uit taken (medicatie telt niet als echte taak)
@@ -156,9 +164,9 @@ export default function HomeCalm() {
           new Date(task.dueAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         ).length;
 
-        // Recente taken (laatste 3 voltooid)
+        // Recent voltooid: alleen vandaag (zelfde kalenderdag als todayKey, leeg na 0:00)
         const recentCompleted = tasks
-          .filter(task => task.done && task.completedAt)
+          .filter(task => task.done && task.completedAt && new Date(task.completedAt).toDateString() === todayKey)
           .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
           .slice(0, 3);
 
@@ -190,7 +198,7 @@ export default function HomeCalm() {
     };
 
     calculateDashboardData();
-  }, [tasks, loading, todayCheckIn]);
+  }, [tasks, loading, todayCheckIn, todayKey]);
 
   const getProgressPercentage = () => {
     return Math.min((dashboardData.completedToday / dashboardData.todayGoal) * 100, 100);

@@ -80,7 +80,7 @@ export default function DagStartPage() {
           <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full">
             <DayStartCheckIn onComplete={handleComplete} />
             <p className="text-xs text-gray-400 text-center max-w-md mx-auto">
-              Privacy-first: Al je data wordt veilig op je eigen apparaat opgeslagen. Wij kunnen niet meekijken.
+              Privacy-first: je data wordt veilig verwerkt.
             </p>
           </div>
         </main>
