@@ -882,7 +882,7 @@ export default function TasksOverviewCalm() {
                       <button
                         type="button"
                         onClick={async () => {
-                          await updateTask(task.id, { done: false, completedAt: null });
+                          await updateTask(task.id, { done: false, completedAt: undefined });
                           toast('Taak teruggezet bij Alle open taken');
                         }}
                         className="px-3 py-1.5 rounded-xl bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
