@@ -6,8 +6,14 @@ export function useToast() {
   push = (msg, opts = {}) => {
     const { durationMs = 3000, replace = false } = opts || {};
     const id = Math.random();
-    setQ((s) => (replace ? [{ id, msg }] : [...s, { id, msg }]));
+    setQ((s) => (replace ? [{ id, msg, durationMs, fading: false }] : [...s, { id, msg, durationMs, fading: false }]));
     if (typeof durationMs === "number" && durationMs > 0) {
+      // Fade-out net voor removal
+      const fadeMs = 250;
+      const fadeAt = Math.max(0, durationMs - fadeMs);
+      setTimeout(() => {
+        setQ((s) => s.map((x) => (x.id === id ? { ...x, fading: true } : x)));
+      }, fadeAt);
       setTimeout(() => {
         setQ((s) => s.filter((x) => x.id !== id));
       }, durationMs);
@@ -39,7 +45,9 @@ export function ToastHost() {
           padding:"8px 12px", 
           boxShadow:"0 2px 8px rgba(0,0,0,0.04)",
           fontSize: '14px',
-          color: '#374151'
+          color: '#374151',
+          opacity: t.fading ? 0 : 1,
+          transition: 'opacity 250ms ease'
         }}>
           {t.msg}
           <button 

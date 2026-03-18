@@ -1,6 +1,9 @@
 "use client";
 
 import { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { createClient } from '@/lib/supabase/client';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import Sidebar from '../Sidebar';
@@ -14,6 +17,20 @@ interface AppLayoutProps {
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const { collapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    setMobileOpen(false);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Geen actieve sessie, bijvoorbeeld bij lokale modus
+    }
+    document.cookie = 'structuro_local_mode=; path=/; max-age=0';
+    router.push('/login');
+    router.refresh();
+  };
 
   // Zen-modus: geen sidebar, volledig scherm
   if (hideSidebar) {
@@ -21,6 +38,15 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       <div style={{ width: '100%', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
         {children}
         <ToastHost />
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="fixed bottom-5 right-5 z-50 p-2.5 rounded-xl bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 transition-colors shadow-lg"
+          title="Uitloggen"
+          aria-label="Uitloggen"
+        >
+          <ArrowRightOnRectangleIcon className="w-5 h-5" />
+        </button>
       </div>
     );
   }
@@ -78,6 +104,17 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       </main>
 
       <ToastHost />
+
+      {/* Uitloggen: klein icoon rechtsonder */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="fixed bottom-5 right-5 z-50 p-2.5 rounded-xl bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 transition-colors shadow-lg"
+        title="Uitloggen"
+        aria-label="Uitloggen"
+      >
+        <ArrowRightOnRectangleIcon className="w-5 h-5" />
+      </button>
     </div>
   );
 }

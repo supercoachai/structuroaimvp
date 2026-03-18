@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "../context/TaskContext";
 import { designSystem } from "../lib/design-system";
@@ -50,6 +50,18 @@ export default function TasksOverviewCalm() {
   /** Pop-animatie op checkbox (task.id) */
   const [checkboxPopId, setCheckboxPopId] = useState<string | null>(null);
 
+  // Mobiele kolommen: scroll-snap pager
+  const columnsWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [activeEnergyCol, setActiveEnergyCol] = useState(0);
+
+  // Nieuwe taak UX: eerst titel + duur invullen, pas daarna op energie-kleur klikken.
+  const durationValid =
+    typeof newDuration === 'number' &&
+    Number.isFinite(newDuration) &&
+    newDuration >= 1 &&
+    newDuration <= 480;
+  const canAddNewTask = newTitle.trim().length > 0 && durationValid;
+
   useEffect(() => {
     const loadFromDayStart = () => {
       if (typeof window === 'undefined') return;
@@ -79,6 +91,49 @@ export default function TasksOverviewCalm() {
     
     loadFromDayStart();
   }, [tasks]);
+
+  useEffect(() => {
+    const el = columnsWrapperRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const updateActive = () => {
+      const cards = Array.from(el.querySelectorAll<HTMLElement>(".tasks-column-card"));
+      if (cards.length === 0) return;
+
+      const center = el.scrollLeft + el.clientWidth / 2;
+      let bestIdx = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+
+      for (let i = 0; i < cards.length; i++) {
+        const c = cards[i];
+        const cCenter = c.offsetLeft + c.offsetWidth / 2;
+        const d = Math.abs(cCenter - center);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = i;
+        }
+      }
+
+      setActiveEnergyCol((prev) => (prev === bestIdx ? prev : bestIdx));
+    };
+
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateActive);
+    };
+
+    // Init + listeners
+    updateActive();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", onScroll as any);
+      window.removeEventListener("resize", onScroll as any);
+    };
+  }, []);
 
   // Bepaal max slots
   const maxSlots = useMemo(() => {
@@ -176,6 +231,13 @@ export default function TasksOverviewCalm() {
       return;
     }
 
+    if (!durationValid) {
+      toast('Vul eerst de duur (minuten) in (minimaal 1).');
+      return;
+    }
+
+    const duration = newDuration as number;
+
     try {
       const taskData = {
         title: newTitle.trim(),
@@ -183,8 +245,8 @@ export default function TasksOverviewCalm() {
         started: false,
         priority: null, // GEEN prioriteit bij toevoegen
         energyLevel: energyLevel, // KRITIEK: Explicit doorgeven
-        estimatedDuration: newDuration || null,
-        duration: newDuration || null,
+        estimatedDuration: duration,
+        duration: duration,
         notToday: false,
         source: 'regular',
       };
@@ -329,6 +391,24 @@ export default function TasksOverviewCalm() {
       });
   }, [tasks]);
 
+  // Energy Board (Taken & Prioriteiten): verdeel open taken in 3 kolommen
+  const openByEnergy = useMemo(() => {
+    const normalize = (lvl?: string) => {
+      // Support zowel legacy low/medium/high als green/yellow/red
+      if (!lvl) return 'yellow';
+      if (lvl === 'low') return 'green';
+      if (lvl === 'medium') return 'yellow';
+      if (lvl === 'high') return 'red';
+      return lvl;
+    };
+    const withNorm = openTasks.map((t: any) => ({ ...t, _energyNorm: normalize(t.energyLevel) }));
+    return {
+      green: withNorm.filter((t: any) => t._energyNorm === 'green'),
+      yellow: withNorm.filter((t: any) => t._energyNorm === 'yellow'),
+      red: withNorm.filter((t: any) => t._energyNorm === 'red'),
+    };
+  }, [openTasks]);
+
   // Filter: Voltooide taken (done, gesorteerd op completedAt nieuwste eerst)
   const completedTasks = useMemo(() => {
     return tasks
@@ -377,8 +457,34 @@ export default function TasksOverviewCalm() {
         {/* Content – losse witte kaarten met gelijke afstand */}
         <div className="flex flex-col gap-8">
       {/* SECTIE 1: Nieuwe taak toevoegen – compact op mobiel, ruim op desktop */}
-      <section className="bg-white rounded-3xl shadow-sm p-4 sm:p-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe taak toevoegen</h2>
+      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
+          <div className="group relative flex items-center">
+            <button
+              type="button"
+              aria-label="Uitleg nieuwe taak toevoegen"
+              title="Uitleg nieuwe taak toevoegen"
+              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+              onClick={() => {
+                toast("Vul eerst de duur (minuten) in. Klik daarna op een kleur om de taak toe te voegen.");
+              }}
+            >
+              i
+            </button>
+            <div
+              className="pointer-events-none absolute top-7 right-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+              role="tooltip"
+            >
+              <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
+              <div className="text-[11px] text-gray-600 leading-relaxed">
+                Vul eerst <span className="font-semibold">Duur (min)</span> in.
+                <br />
+                Klik daarna op <span className="font-semibold">een kleur</span> (groen/geel/rood).
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 mb-4">
           <div className="flex gap-3 items-center flex-wrap">
@@ -396,14 +502,14 @@ export default function TasksOverviewCalm() {
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
             <button
               onClick={() => handleAddTaskWithEnergy('low')}
-              disabled={!newTitle.trim()}
+              disabled={!canAddNewTask}
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
               style={{
                 background: 'rgba(16, 185, 129, 0.15)',
                 boxShadow: '0 1px 3px rgba(16, 185, 129, 0.2)',
-                cursor: newTitle.trim() ? 'pointer' : 'not-allowed'
+                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
               }}
-              onMouseEnter={(e) => newTitle.trim() && (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)')}
+              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)')}
               title="Makkelijk"
             >
@@ -416,14 +522,14 @@ export default function TasksOverviewCalm() {
             </button>
             <button
               onClick={() => handleAddTaskWithEnergy('medium')}
-              disabled={!newTitle.trim()}
+              disabled={!canAddNewTask}
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
               style={{
                 background: 'rgba(245, 158, 11, 0.15)',
                 boxShadow: '0 1px 3px rgba(245, 158, 11, 0.2)',
-                cursor: newTitle.trim() ? 'pointer' : 'not-allowed'
+                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
               }}
-              onMouseEnter={(e) => newTitle.trim() && (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.25)')}
+              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.25)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)')}
               title="Normaal"
             >
@@ -436,14 +542,14 @@ export default function TasksOverviewCalm() {
             </button>
             <button
               onClick={() => handleAddTaskWithEnergy('high')}
-              disabled={!newTitle.trim()}
+              disabled={!canAddNewTask}
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
               style={{
                 background: 'rgba(239, 68, 68, 0.15)',
                 boxShadow: '0 1px 3px rgba(239, 68, 68, 0.2)',
-                cursor: newTitle.trim() ? 'pointer' : 'not-allowed'
+                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
               }}
-              onMouseEnter={(e) => newTitle.trim() && (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)')}
+              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
               title="Moeilijk"
             >
@@ -457,9 +563,11 @@ export default function TasksOverviewCalm() {
           </div>
           </div>
           
-          {/* Duur optioneel – alleen als je een getal wilt invullen */}
+          {/* Duur is verplicht voordat je de taak toevoegt */}
           <div className="flex gap-3 items-center mt-3">
-            <label className="text-sm font-medium text-gray-500">Duur (min):</label>
+            <label className="text-sm font-medium text-gray-500">
+              Duur (min): <span className="text-gray-400">(verplicht)</span>
+            </label>
             <input
               type="number"
               min="1"
@@ -499,7 +607,31 @@ export default function TasksOverviewCalm() {
 
       {/* SECTIE 2: Nu aan zet */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Nu aan zet</h2>
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Nu aan zet</h2>
+          <div className="group relative flex items-center">
+            <button
+              type="button"
+              aria-label="Uitleg nu aan zet"
+              title="Uitleg nu aan zet"
+              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+              onClick={() =>
+                toast("Nu aan zet: dit is je eerste focus-taak. Klik op Beginnen om Focus Modus te starten.")
+              }
+            >
+              i
+            </button>
+            <div
+              className="pointer-events-none absolute top-7 left-0 z-50 w-56 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+              role="tooltip"
+            >
+              <div className="text-[11px] font-semibold text-gray-900 mb-1">Nu aan zet</div>
+              <div className="text-[11px] text-gray-600 leading-relaxed">
+                Je eerste focus-taak. Klik op <span className="font-semibold">Beginnen</span> om Focus Modus te starten.
+              </div>
+            </div>
+          </div>
+        </div>
         
         {nuAanZetTask ? (
           <div className="bg-gray-50 rounded-2xl p-6 hover:shadow-sm transition-shadow">
@@ -531,9 +663,33 @@ export default function TasksOverviewCalm() {
       </section>
 
       {/* SECTIE 3: Vandaag gekozen – responsief: op mobiel titel boven, knoppen eronder */}
-      <section className="bg-white rounded-3xl shadow-sm p-4 sm:p-8">
+      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Vandaag gekozen</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Vandaag gekozen</h2>
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                aria-label="Uitleg vandaag gekozen"
+                title="Uitleg vandaag gekozen"
+                className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+                onClick={() =>
+                  toast("Vandaag gekozen: dit zijn je focuspunten voor vandaag (prioriteit 1/2/3). Start per taak met Start Focus.")
+                }
+              >
+                i
+              </button>
+              <div
+                className="pointer-events-none absolute top-7 left-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                role="tooltip"
+              >
+                <div className="text-[11px] font-semibold text-gray-900 mb-1">Vandaag gekozen</div>
+                <div className="text-[11px] text-gray-600 leading-relaxed">
+                  Je focuspunten voor vandaag (prioriteit 1/2/3). Start per taak met <span className="font-semibold">Start Focus</span>.
+                </div>
+              </div>
+            </div>
+          </div>
           <p className="text-xs text-gray-500 mt-0.5">(klaargezet voor vandaag)</p>
         </div>
         
@@ -601,7 +757,8 @@ export default function TasksOverviewCalm() {
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
-                      await updateTask(task.id, { priority: null });
+                      // Zorg dat de taak weer zichtbaar wordt bij "Alle open taken"
+                      await updateTask(task.id, { priority: null, notToday: false });
                       toast('Taak staat weer bij Alle open taken');
                     }}
                     className="px-3 py-2 sm:py-1.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-200 transition-colors"
@@ -637,8 +794,33 @@ export default function TasksOverviewCalm() {
       </section>
 
       {/* SECTIE 4: Alle open taken – zwevende kaarten */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Alle open taken</h2>
+      <section id="alle-open-taken" className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Alle open taken</h2>
+          <div className="group relative flex items-center">
+            <button
+              type="button"
+              aria-label="Uitleg energie-zones"
+              title="Uitleg energie-zones"
+              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+            >
+              i
+            </button>
+            <div
+              className="pointer-events-none absolute top-7 right-[-120px] z-50 w-56 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+              role="tooltip"
+            >
+              <div className="text-[11px] font-semibold text-gray-900 mb-1">Energie-zones</div>
+              <div className="text-[11px] text-gray-600 leading-relaxed">
+                <span className="font-semibold text-emerald-600">Makkelijk</span>: dit zijn taken die je weinig energie kosten.
+                <br />
+                <span className="font-semibold text-amber-600">Normaal</span>: taken met normale energie-kost.
+                <br />
+                <span className="font-semibold text-red-600">Intensief</span>: taken die je veel energie kosten.
+              </div>
+            </div>
+          </div>
+        </div>
         
         {loading ? (
           <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm animate-pulse">
@@ -649,190 +831,165 @@ export default function TasksOverviewCalm() {
             Geen openstaande taken
           </div>
         ) : (
-          <div className="space-y-4">
-            {openTasks.map((task: any, taskIndex: number) => {
-              const isExpanded = expandedTaskId === task.id;
-              const energyLevel = task.energyLevel || 'medium';
-              const isFirstTask = taskIndex === 0;
-              const isCompleting = completingTaskIds.has(task.id);
-              const isPop = checkboxPopId === task.id;
-
-              return (
-                <div
-                  key={task.id}
-                  className="group bg-gray-50 rounded-2xl overflow-hidden transition-all duration-200 hover:bg-white hover:shadow-md sm:hover:scale-[1.01]"
-                >
-                  {/* Collapsed view – op mobiel: titel bovenop volle breedte (volledig leesbaar), acties eronder; min-w-0 zodat knop binnen kaart blijft */}
-                  <div
-                    onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                    className="p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-x-4 sm:gap-y-2 cursor-pointer min-w-0"
-                  >
-                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:basis-0">
-                      {/* Gekleurde bol = afvinken: klik om taak te voltooien (zelfde flow: line-through, verhuizing naar Voltooide taken) */}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleCompleteFromList(task); }}
-                        aria-label="Taak afvinken"
-                        title={`${getEnergyLabel(energyLevel)} – klik om af te vinken`}
-                        className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center transition-transform duration-200 cursor-pointer select-none ${isPop ? 'scale-125' : 'scale-100'}`}
-                        style={{
-                          background: getEnergyColor(energyLevel),
-                          boxShadow: getEnergyGlow(energyLevel)
-                        }}
-                      />
-                      <span
-                        className={`text-sm sm:text-base font-medium flex-1 min-w-0 break-words transition-all duration-200 ${
-                          isCompleting ? 'text-gray-500 opacity-50 line-through' : 'text-gray-900'
-                        }`}
-                      >
-                        {task.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between w-full sm:justify-start sm:w-auto gap-3 flex-shrink-0 min-w-0 sm:pl-0 pl-9">
-                      {task.duration && (
-                        <span className="text-xs sm:text-sm text-gray-500 tabular-nums">{task.duration} min</span>
-                      )}
-                      <div className="flex items-center gap-3 ml-auto sm:ml-0">
-                        {/* Start-knop alleen zichtbaar wanneer rij is ingeklapt – op mobiel rechtsonder */}
-                        {!isExpanded && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); startFocus(task); }}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all duration-200 ${
-                              isFirstTask
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-transparent border-2 border-blue-500 text-blue-500 group-hover:bg-blue-500 group-hover:text-white group-hover:border-blue-500'
-                            }`}
-                            title="Start deze taak"
-                          >
-                            Start
-                          </button>
-                        )}
-                        <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
-                      </div>
+          <>
+            <div ref={columnsWrapperRef} className="tasks-columns-wrapper grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  key: 'green' as const,
+                  title: 'Makkelijk',
+                },
+                {
+                  key: 'yellow' as const,
+                  title: 'Normaal',
+                },
+                {
+                  key: 'red' as const,
+                  title: 'Intensief',
+                },
+              ].map((col) => {
+                const list = (openByEnergy as any)[col.key] as any[];
+                return (
+                  <div key={col.key} className="tasks-column-card bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="tasks-column-title text-sm font-semibold text-gray-900">{col.title}</div>
+                    <div className="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-lg px-2 py-0.5">
+                      {list.length}
                     </div>
                   </div>
-                  
-                  {/* Expanded view – Launchpad: zachte achtergrond, duidelijke hiërarchie, Start Focus als primaire actie */}
-                  {isExpanded && (
-                    <div
-                      className="pt-6 pb-5 px-5 bg-gray-50/50 border-t border-gray-100"
-                      style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.03)' }}
-                    >
-                      {/* Mini-stappen – meer witruimte onder de taaknaam */}
-                      <div className="pt-2">
-                        {normalizeMicroSteps(task.microSteps).length > 0 && (
-                          <div className="mb-5">
-                            <div className="text-xs font-medium text-gray-500 mb-2">Mini-stappen</div>
-                            <div className="space-y-2">
-                              {normalizeMicroSteps(task.microSteps).slice(0, 6).map((s: MicroStep) => (
-                                <div
-                                  key={s.id}
-                                  className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(s.done)}
-                                    onChange={() => toggleMicroStepDone(task, s.id)}
-                                    className="w-4 h-4 accent-green-500 flex-shrink-0"
-                                  />
-                                  <div className="flex-1 min-w-0 text-sm text-gray-900 break-words line-clamp-2" style={{ textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.6 : 1 }}>
-                                    {s.title}
+                  {list.length === 0 ? (
+                    <div className="text-xs text-gray-500 italic">Geen taken</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {list.map((task: any) => {
+                        const isExpanded = expandedTaskId === task.id;
+                        const energyLevel = task.energyLevel || 'medium';
+                        const isCompleting = completingTaskIds.has(task.id);
+                        const isPop = checkboxPopId === task.id;
+
+                        return (
+                          <div
+                            key={task.id}
+                            className="group bg-white rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-sm border border-gray-100"
+                          >
+                            <div
+                              onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                              className="p-4 flex flex-col gap-2 cursor-pointer min-w-0"
+                            >
+                              <div className="flex items-start gap-3 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); handleCompleteFromList(task); }}
+                                  aria-label="Taak afvinken"
+                                  title={`${getEnergyLabel(energyLevel)} – klik om af te vinken`}
+                                  className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full transition-transform duration-200 cursor-pointer ${isPop ? 'scale-125' : 'scale-100'}`}
+                                  style={{
+                                    background: getEnergyColor(energyLevel),
+                                    boxShadow: getEnergyGlow(energyLevel)
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div
+                                    className={`text-sm font-medium break-words transition-all duration-200 ${
+                                      isCompleting ? 'text-gray-500 opacity-50 line-through' : 'text-gray-900'
+                                    }`}
+                                  >
+                                    {task.title}
+                                  </div>
+                                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                                    {(task.duration || task.estimatedDuration) && (
+                                      <span className="text-[11px] text-gray-400 tabular-nums">
+                                        {task.duration || task.estimatedDuration} min
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                              ))}
-                              {normalizeMicroSteps(task.microSteps).length > 6 && (
-                                <div className="text-xs text-gray-500 italic">+{normalizeMicroSteps(task.microSteps).length - 6} meer</div>
+                              </div>
+
+                              {!isExpanded && (
+                                <div className="flex items-center justify-end gap-3 pt-2">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); startFocus(task); }}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                                    title="Start deze taak"
+                                  >
+                                    Start
+                                  </button>
+                                  <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
+                                </div>
                               )}
                             </div>
-                          </div>
-                        )}
 
-                        {/* Mini-stap toevoegen: borderless input + plus-icoon */}
-                        <div className="mb-6">
-                          <div className="flex items-center gap-2 rounded-xl bg-white/80 border border-transparent focus-within:border-gray-300 focus-within:shadow-sm transition-all">
-                            <input
-                              value={microStepDraft.title}
-                              onChange={(e) => setMicroStepDraft((p) => ({ ...p, title: e.target.value }))}
-                              onKeyDown={(e) => { if (e.key === 'Enter') addMicroStepToTask(task); }}
-                              placeholder="Mini-stap toevoegen…"
-                              className="flex-1 py-2.5 px-3 text-sm text-gray-900 bg-transparent border-none rounded-l-xl outline-none placeholder:text-gray-400"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => addMicroStepToTask(task)}
-                              className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50/50 rounded-r-xl transition-colors"
-                              title="Toevoegen"
-                            >
-                              <PlusIcon className="w-5 h-5" aria-hidden />
-                            </button>
+                            {isExpanded && (
+                              <div
+                                className="pt-5 pb-5 px-5 bg-gray-50/50 border-t border-gray-100"
+                                style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.03)' }}
+                              >
+                                <div className="flex flex-col gap-4">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); startFocus(task); setExpandedTaskId(null); }}
+                                    className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all text-center"
+                                  >
+                                    Start Focus
+                                  </button>
+                                  <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setEditing(task); }}
+                                      className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1.5"
+                                    >
+                                      <PencilSquareIcon className="w-4 h-4" aria-hidden />
+                                      Bewerken
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (confirm('Weet je zeker dat je deze taak wilt verwijderen?')) {
+                                          await deleteTask(task.id);
+                                          setExpandedTaskId(null);
+                                        }
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                      title="Verwijderen"
+                                    >
+                                      <TrashIcon className="w-5 h-5" aria-hidden />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Action bar: primaire actie = Start Focus, links secundaire links, rechts prullenbak */}
-                      <div className="flex flex-col gap-4">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); startFocus(task); setExpandedTaskId(null); }}
-                          className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-all text-center"
-                          title="Start Focus"
-                        >
-                          Start Focus
-                        </button>
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
-                          <div className="flex items-center gap-4">
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setEditing(task); }}
-                              className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1.5"
-                            >
-                              <PencilSquareIcon className="w-4 h-4" aria-hidden />
-                              Bewerken
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                const currentVandaagCount = Object.values(priorityTasks).filter(t => t !== null).length;
-                                if (currentVandaagCount >= maxSlots) {
-                                  toast('Je focus voor vandaag is al gekozen');
-                                  return;
-                                }
-                                let targetPriority = 1;
-                                for (let i = 1; i <= maxSlots; i++) {
-                                  if (!priorityTasks[i]) { targetPriority = i; break; }
-                                }
-                                await updateTask(task.id, { priority: targetPriority, energyLevel: task.energyLevel || 'medium' });
-                                toast('Taak toegevoegd aan vandaag');
-                                setExpandedTaskId(null);
-                              }}
-                              className="text-sm text-gray-500 hover:text-blue-600"
-                            >
-                              Toevoegen aan vandaag
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm('Weet je zeker dat je deze taak wilt verwijderen?')) {
-                                await deleteTask(task.id);
-                                setExpandedTaskId(null);
-                              }
-                            }}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Verwijderen"
-                          >
-                            <TrashIcon className="w-5 h-5" aria-hidden />
-                          </button>
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Mobiele pager dots: Makkelijk / Normaal / Intensief */}
+            <div className="mt-4 flex items-center justify-center gap-2 lg:hidden">
+              {['Makkelijk', 'Normaal', 'Intensief'].map((label, idx) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-label={`Ga naar ${label}`}
+                  onClick={() => {
+                    const el = columnsWrapperRef.current;
+                    if (!el) return;
+                    const cards = Array.from(el.querySelectorAll<HTMLElement>(".tasks-column-card"));
+                    const card = cards[idx];
+                    card?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                  }}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${
+                    activeEnergyCol === idx ? 'bg-slate-700 w-7' : 'bg-slate-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
 
@@ -915,7 +1072,31 @@ export default function TasksOverviewCalm() {
 
       {/* SECTIE 5: Geparkeerde gedachten */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Geparkeerde gedachten</h2>
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Geparkeerde gedachten</h2>
+          <div className="group relative flex items-center">
+            <button
+              type="button"
+              aria-label="Uitleg geparkeerde gedachten"
+              title="Uitleg geparkeerde gedachten"
+              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+              onClick={() =>
+                toast("Geparkeerde gedachten: gedachten die je even niet kunt doen. Je kunt ze later omzetten naar een taak of afhandelen.")
+              }
+            >
+              i
+            </button>
+            <div
+              className="pointer-events-none absolute top-7 left-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+              role="tooltip"
+            >
+              <div className="text-[11px] font-semibold text-gray-900 mb-1">Geparkeerde gedachten</div>
+              <div className="text-[11px] text-gray-600 leading-relaxed">
+                Onderbrekingen die je parkeert, zodat je focus kan blijven. Later kun je ze omzetten naar een taak.
+              </div>
+            </div>
+          </div>
+        </div>
         
         {parkedThoughts.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
@@ -1079,7 +1260,33 @@ export default function TasksOverviewCalm() {
             padding: 16
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, color: theme.text }}>Omzetten naar taak</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontWeight: 700, color: theme.text }}>Omzetten naar taak</div>
+                <button
+                  type="button"
+                  aria-label="Uitleg omzetten naar taak"
+                  title="Uitleg omzetten naar taak"
+                  onClick={() => {
+                    toast('Vul eerst de duur (minuten) in, daarna kun je omzetten naar taak.');
+                  }}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    border: `1px solid ${theme.line}`,
+                    background: '#ffffff',
+                    color: theme.sub,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 700
+                  }}
+                >
+                  i
+                </button>
+              </div>
               <button
                 onClick={() => setConvertingThought(null)}
                 style={{
@@ -1173,7 +1380,19 @@ export default function TasksOverviewCalm() {
               <button
                 onClick={async () => {
                   try {
-                    const duration = convertDuration && convertDuration > 0 ? convertDuration : null;
+                    const duration =
+                      typeof convertDuration === 'number' &&
+                      Number.isFinite(convertDuration) &&
+                      convertDuration >= 1 &&
+                      convertDuration <= 480
+                        ? convertDuration
+                        : null;
+
+                    if (!duration) {
+                      toast('Vul eerst de duur (minuten) in (minimaal 1).');
+                      return;
+                    }
+
                     await updateTask(convertingThought.id, {
                       source: 'regular',
                       priority: null,

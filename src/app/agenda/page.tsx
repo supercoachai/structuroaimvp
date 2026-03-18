@@ -86,6 +86,17 @@ function toDateKey(d: Date): string {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// Helpers voor datum-input (YYYY-MM-DD):
+// JS interpreteert "YYYY-MM-DD" als UTC; dat kan tot tijdverschuivingen leiden.
+function parseDateInputLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
+}
+
+function formatDateInputLocal(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 // Helper: valt datum binnen herhaling? (repeat, repeatUntil, repeatWeekdays, repeatExcludeDates)
 function isDateInRecurrence(
   startDate: Date,
@@ -102,9 +113,9 @@ function isDateInRecurrence(
   if (check.getTime() < start.getTime()) return false;
 
   if (repeatUntil) {
-    const until = new Date(repeatUntil);
-    until.setHours(23, 59, 59, 999);
-    if (check.getTime() > until.getTime()) return false;
+    const untilDate = repeatUntil.includes('T') ? new Date(repeatUntil) : parseDateInputLocal(repeatUntil);
+    untilDate.setHours(23, 59, 59, 999);
+    if (check.getTime() > untilDate.getTime()) return false;
   }
 
   const checkKey = toDateKey(check);
@@ -469,7 +480,7 @@ export default function AgendaPage() {
     }
     try {
       const [startHours, startMinutes] = newEvent.startTime.split(':').map(Number);
-      const eventDate = new Date(newEvent.date);
+      const eventDate = parseDateInputLocal(newEvent.date);
       eventDate.setHours(startHours, startMinutes, 0, 0);
       const endDate = new Date(eventDate);
       if (newEvent.endTime) {
@@ -1105,16 +1116,21 @@ export default function AgendaPage() {
       const maxDuration = 8 * 60;
 
       if (resizingItem.edge === 'top') {
-        const newStart = Math.max(0, Math.min(minutes, originalEnd - minDuration));
+        // Altijd relatief aan het zichtbare bereik (viewStartHour), niet aan 00:00
+        const newStart = Math.max(dayRangeStartMinutes, Math.min(minutes, originalEnd - minDuration));
         const newDuration = originalEnd - newStart;
         setResizePreview({ startMinutes: newStart, duration: newDuration });
       } else {
-        const newEnd = Math.max(resizingItem.originalStartMinutes + minDuration, Math.min(24 * 60, minutes));
+        // Altijd relatief aan het zichtbare bereik (viewStartHour), niet aan 24:00
+        const newEnd = Math.max(
+          resizingItem.originalStartMinutes + minDuration,
+          Math.min(dayRangeEndMinutes, minutes)
+        );
         const newDuration = newEnd - resizingItem.originalStartMinutes;
         setResizePreview({ startMinutes: resizingItem.originalStartMinutes, duration: newDuration });
       }
     },
-    [resizingItem, clientYToMinutes]
+    [resizingItem, clientYToMinutes, dayRangeStartMinutes, dayRangeEndMinutes]
   );
 
   const handleResizeEnd = useCallback(async () => {
@@ -1444,9 +1460,19 @@ export default function AgendaPage() {
                             const endMinutes = startMinutes + duration;
                             const visStart = Math.max(startMinutes, dayRangeStartMinutes);
                             const visEnd = Math.min(endMinutes, dayRangeEndMinutes);
+                            // Events/taken horen alleen zichtbaar te zijn als ze (minimaal deels) binnen het bereik vallen.
+                            // Voorbeeld: bij day-range tot 18:00 mag een event dat precies op 18:00 begint niet renderen.
+                            const isCompletelyOutsideForTimeline =
+                              item.type !== 'medication' &&
+                              (startMinutes >= dayRangeEndMinutes || endMinutes <= dayRangeStartMinutes);
+                            if (isCompletelyOutsideForTimeline) return null;
                             // Items buiten het zichtbare bereik (bijv. medicatie 07:00 of 22:00) toch tonen aan rand
-                            const isBeforeRange = endMinutes <= dayRangeStartMinutes;
-                            const isAfterRange = startMinutes >= dayRangeEndMinutes;
+                            // Als een item precies op de startgrens eindigt, hoort het niet als "vóór het bereik"
+                            // behandeld te worden.
+                            const isBeforeRange = endMinutes < dayRangeStartMinutes;
+                            // Als een item precies op de eindgrens start (bv. 18:00 terwijl dag eindigt op 18:00),
+                            // dan hoort het aan de onderkant van het bereik te landen (niet omhoog geschoven).
+                            const isAfterRange = startMinutes > dayRangeEndMinutes;
                             let topPx: number;
                             let heightPx: number;
                             if (isBeforeRange) {
@@ -1641,7 +1667,7 @@ export default function AgendaPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNewEvent({ ...newEvent, date: selectedDate.toISOString().split('T')[0] });
+                    setNewEvent({ ...newEvent, date: formatDateInputLocal(selectedDate) });
                     setShowAddEvent(true);
                   }}
                   className="flex items-center gap-3 w-full p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow text-left group"
@@ -1839,7 +1865,7 @@ export default function AgendaPage() {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Datum *</label>
                   <input
                     type="date"
-                    value={newEvent.date || selectedDate.toISOString().split('T')[0]}
+                    value={newEvent.date || formatDateInputLocal(selectedDate)}
                     onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
                     className="w-full p-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-gray-200"
                   />
@@ -2208,7 +2234,7 @@ export default function AgendaPage() {
                                         defaultDate.setFullYear(defaultDate.getFullYear() + 1);
                                         setEditingItem({
                                           ...editingItem,
-                                          metadata: { ...editingItem.metadata, repeatUntil: isDate ? (eventRepeatUntil || defaultDate.toISOString().split('T')[0]) : null }
+                                          metadata: { ...editingItem.metadata, repeatUntil: isDate ? (eventRepeatUntil || formatDateInputLocal(defaultDate)) : null }
                                         });
                                       }}
                                       className="flex-1 p-3 text-sm bg-gray-50 rounded-lg border-0 focus:ring-2 focus:ring-gray-200"
@@ -2219,7 +2245,7 @@ export default function AgendaPage() {
                                     {eventRepeatUntil && (
                                       <input
                                         type="date"
-                                        value={eventRepeatUntil.split('T')[0]}
+                                        value={formatDateInputLocal(new Date(eventRepeatUntil))}
                                         onChange={(e) => setEditingItem({
                                           ...editingItem,
                                           metadata: { ...editingItem.metadata, repeatUntil: e.target.value || null }

@@ -171,6 +171,7 @@ function FocusContent() {
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [showAddTooltip, setShowAddTooltip] = useState(false);
   const lastTaskIdRef = useRef<string | null>(null);
+  const endAtRef = useRef<number | null>(null); // timestamp (ms) waarop de sessie eindigt; voorkomt drift in background tabs
 
   // Timer is klaar: vraag of taak voltooid is, of verlengen met extra tijd + quote
   const [showTimeUpPrompt, setShowTimeUpPrompt] = useState(false);
@@ -187,51 +188,24 @@ function FocusContent() {
     router.push('/'); // hoofdmenu/overzicht (met sidebar)
   };
 
-  const BackToMenuButton = () => (
-    <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 10000, display: 'flex', gap: 10 }}>
-      <button
-        onClick={goToMainMenu}
-        style={{
-          padding: '10px 14px',
-          borderRadius: 999,
-          background: 'rgba(255, 255, 255, 0.10)',
-          border: '1px solid rgba(255, 255, 255, 0.22)',
-          color: '#F1F5F9',
-          cursor: 'pointer',
-          fontSize: 14,
-          fontWeight: 500,
-          letterSpacing: '-0.025em',
-          fontFamily: 'inherit',
-          backdropFilter: 'blur(8px)',
-        }}
-        title="Terug naar hoofdmenu"
-      >
-        ← Hoofdmenu
-      </button>
+  const BackToDashboardButton = ({ variant }: { variant: "light" | "dark" }) => (
+    <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 10000 }}>
       <button
         onClick={() => {
           if (isRunning) {
-            const ok = confirm('Je focus sessie loopt nog. Weet je zeker dat je terug wilt naar je taken?');
+            const ok = confirm('Je focus sessie loopt nog. Weet je zeker dat je terug wilt naar je dashboard?');
             if (!ok) return;
           }
-          router.push('/todo');
+          router.push('/');
         }}
-        style={{
-          padding: '10px 14px',
-          borderRadius: 999,
-          background: 'rgba(255, 255, 255, 0.06)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          color: '#F1F5F9',
-          cursor: 'pointer',
-          fontSize: 14,
-          fontWeight: 500,
-          letterSpacing: '-0.025em',
-          fontFamily: 'inherit',
-          backdropFilter: 'blur(8px)',
-        }}
-        title="Terug naar taken"
+        className={
+          variant === "light"
+            ? "px-3 py-2 rounded-full bg-white/90 border border-gray-200 text-gray-800 shadow-sm hover:bg-white hover:shadow transition-colors text-sm font-semibold"
+            : "px-3 py-2 rounded-full bg-white/10 border border-white/20 text-slate-100 backdrop-blur hover:bg-white/15 transition-colors text-sm font-semibold"
+        }
+        title="Terug naar dashboard"
       >
-        Taken
+        ← Dashboard
       </button>
     </div>
   );
@@ -242,6 +216,22 @@ function FocusContent() {
       localStorage.setItem('focus_duration', duration.toString());
     }
   }, [duration]);
+
+  // External timer: sync resterende tijd naar tab title
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!isRunning || isPaused) {
+      document.title = 'Structuro';
+      return;
+    }
+    const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+    const ss = String(timeLeft % 60).padStart(2, '0');
+    const name = (currentTask?.title || taskTitle || 'Focus').trim();
+    document.title = `(${mm}:${ss}) ${name} | Structuro`;
+    return () => {
+      document.title = 'Structuro';
+    };
+  }, [isRunning, isPaused, timeLeft, currentTask?.title, taskTitle]);
 
   // Bereken dynamische presets: [current-5, current, current+10] met grenzen 5-60
   const presets = useMemo(() => {
@@ -288,6 +278,8 @@ function FocusContent() {
       setShowCountdown(false);
       setIsRunning(true);
       setShowFirstStep(false);
+      // Start timer op basis van absolute eindtijd (drift-proof)
+      endAtRef.current = Date.now() + (timeLeft * 1000);
       
       // Markeer taak als gestart
       if (currentTask && !currentTask.started) {
@@ -300,24 +292,29 @@ function FocusContent() {
     }
   }, [showCountdown, countdown, taskTitle, duration, currentTask, updateTask]);
 
-  // Timer countdown
+  // Timer countdown (drift-proof): reken timeLeft uit vanaf endAtRef
   useEffect(() => {
-    if (isRunning && !isPaused && timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            setCompleted(false);
-            setShowTimeUpPrompt(true);
-            setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now()));
-            track("ignite_complete", { taskTitle, duration });
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
+    if (!isRunning || isPaused) return;
+    if (!endAtRef.current) {
+      endAtRef.current = Date.now() + (timeLeft * 1000);
     }
+    const tick = () => {
+      const endAt = endAtRef.current;
+      if (!endAt) return;
+      const next = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+      setTimeLeft((prev) => (prev === next ? prev : next));
+      if (next <= 0) {
+        endAtRef.current = null;
+        setIsRunning(false);
+        setCompleted(false);
+        setShowTimeUpPrompt(true);
+        setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now()));
+        track("ignite_complete", { taskTitle, duration });
+      }
+    };
+    tick();
+    const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
   }, [isRunning, isPaused, timeLeft, taskTitle, duration]);
 
   // Toon verleng-knop in laatste minuut
@@ -427,8 +424,23 @@ function FocusContent() {
 
   // Pauzeer/hervat sessie
   const pauseSession = () => {
-    setIsPaused(prev => !prev);
-    track("ignite_pause", { taskTitle, duration, paused: !isPaused });
+    setIsPaused((prev) => {
+      const nextPaused = !prev;
+      if (nextPaused) {
+        // Pauzeren: bevries endAt en zet timeLeft exact
+        const endAt = endAtRef.current;
+        if (endAt) {
+          const remaining = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+          endAtRef.current = null;
+          setTimeLeft(remaining);
+        }
+      } else {
+        // Hervatten: nieuwe eindtijd vanaf nu
+        endAtRef.current = Date.now() + (timeLeft * 1000);
+      }
+      track("ignite_pause", { taskTitle, duration, paused: nextPaused });
+      return nextPaused;
+    });
   };
 
   // Stop sessie
@@ -436,6 +448,7 @@ function FocusContent() {
     setIsRunning(false);
     setIsPaused(false);
     setTimeLeft(duration * 60);
+    endAtRef.current = null;
     track("ignite_stop", { taskTitle, duration });
   };
 
@@ -596,7 +609,7 @@ function FocusContent() {
     return (
       <AppLayout hideSidebar={true}>
         <style>{confettiStyle}</style>
-        <BackToMenuButton />
+        <BackToDashboardButton variant="light" />
         <div
           className="min-h-screen flex items-center justify-center p-6"
           style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
@@ -671,6 +684,7 @@ function FocusContent() {
     return (
       <AppLayout hideSidebar={true}>
         <style>{confettiStyle}</style>
+        <BackToDashboardButton variant="light" />
         
         {/* Confetti bij Taak voltooid – burst vanuit midden */}
         {confettiElements.map((id, idx) => {
@@ -1055,7 +1069,7 @@ function FocusContent() {
   // Timer modus - Zen-modus met donkere achtergrond
   return (
     <AppLayout hideSidebar={true}>
-      <BackToMenuButton />
+      <BackToDashboardButton variant="dark" />
       <div
         style={{
           height: "100dvh",
@@ -1071,7 +1085,7 @@ function FocusContent() {
         }}
       >
         {/* Hoofdcontent: scrollbaar; Gedachten parkeren blijft onderaan in beeld */}
-        <div style={{
+        <div className="no-scrollbar" style={{
           flex: 1,
           minHeight: 0,
           display: "flex",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../../components/layout/AppLayout';
 import { useTaskContext } from '../../context/TaskContext';
@@ -8,6 +8,7 @@ import Collapsible from '../../components/Collapsible';
 import { xpForTask, progressWithinLevel, unlockedTrophies, TROPHIES, XP_PER_LEVEL, prestigeForTotalXp, levelInPrestigeForTotalXp, PRESTIGE_BADGES, getPrestigeBadge } from '../../lib/xp';
 import { awardBonusXp, loadGamificationMeta, saveGamificationMeta, type GamificationMeta } from '../../lib/gamificationMeta';
 import { getRandomCompletionReward } from '../../lib/completionRewards';
+import confetti from 'canvas-confetti';
 
 interface Task {
   id: string;
@@ -69,6 +70,7 @@ function GamificationContent() {
   const [confettiElements, setConfettiElements] = useState<number[]>([]);
   const [meta, setMeta] = useState<GamificationMeta>(() => ({ bonusXp: 0, awardedTrophyIds: [], awardedPrestiges: [] }));
   const [majorPopupOpen, setMajorPopupOpen] = useState(false);
+  const prevLevelRef = useRef<number>(1);
 
   // Kalenderdag – elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
   const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
@@ -129,6 +131,25 @@ function GamificationContent() {
 
     calculateGamificationData();
   }, [tasks, loading, meta?.bonusXp, todayKey]);
+
+  // Level-up confetti: trigger direct bij nieuw level
+  useEffect(() => {
+    const currentLevel = gamificationData.level;
+    const prev = prevLevelRef.current;
+    if (typeof window !== 'undefined' && currentLevel > prev) {
+      try {
+        confetti({
+          particleCount: 140,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#F59E0B', '#4A90E2', '#EC4899', '#8B5CF6'],
+        });
+      } catch {
+        // ignore
+      }
+    }
+    prevLevelRef.current = currentLevel;
+  }, [gamificationData.level]);
 
   // Celebration banner when coming from Focus Mode
   useEffect(() => {

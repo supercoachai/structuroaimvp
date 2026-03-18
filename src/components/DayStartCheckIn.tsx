@@ -197,6 +197,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
   const hasInitializedRef = React.useRef(false);
   const userHasInteractedRef = React.useRef(false); // Track of gebruiker heeft gesleept
   const dragStartedRef = React.useRef(false); // Voorkom dat click opent na een drag
+  const lastReplacedTaskRef = React.useRef<any>(null); // Taak die uit een slot is vervangen (voor terugzetten naar suggesties)
 
   // Sync energyLevel wanneer check-in uit DB/lokalStorage binnenkomt
   useEffect(() => {
@@ -365,11 +366,13 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       
       // STAP 3: BELANGRIJK - Optimistic update EERST (zodat oude taak direct uit top3Tasks wordt verwijderd)
       // Dit zorgt ervoor dat getFilteredTasks de oude taak direct kan zien in suggesties
-      const taskToRemove = top3Tasks[slotNumber] && top3Tasks[slotNumber].id !== taskToUse.id 
-        ? top3Tasks[slotNumber] 
-        : null;
-      
       setTop3Tasks((prevTop3Tasks) => {
+        const taskToRemove =
+          prevTop3Tasks[slotNumber] && prevTop3Tasks[slotNumber].id !== taskToUse.id
+            ? prevTop3Tasks[slotNumber]
+            : null;
+        lastReplacedTaskRef.current = taskToRemove;
+
         const newTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
         
         // Kopieer bestaande taken (behalve de gesleepte taak EN de taak die uit deze slot wordt verwijderd)
@@ -396,6 +399,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       
       // STAP 4: Verwijder de oude taak uit localStorage (priority = null) zodat deze terugkomt in suggesties
       // BELANGRIJK: Dit gebeurt NA de optimistic update, zodat getFilteredTasks de taak direct kan zien
+      const taskToRemove = lastReplacedTaskRef.current;
       if (taskToRemove) {
         console.log(`🔄 Removing existing task from slot ${slotNumber}: ${taskToRemove.id} (${taskToRemove.title})`);
         

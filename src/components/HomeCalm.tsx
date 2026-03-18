@@ -47,6 +47,7 @@ export default function HomeCalm() {
   const [dumpInput, setDumpInput] = useState('');
   const [dumpSubmitting, setDumpSubmitting] = useState(false);
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Huidige kalenderdag – wordt elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
   const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
@@ -71,7 +72,45 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
-  // Huidige focus = gestarte taak blijft staan tot die afgerond is; anders eerste uit dagstart op prioriteit
+  // Onboarding: toon 1x uitleg bij eerste sessie (Supabase profiles of fallback localStorage)
+  useEffect(() => {
+    const KEY = 'structuro_has_seen_onboarding';
+    const run = async () => {
+      // Local-first: als we dit device al gemarkeerd hebben, nooit meer tonen
+      try {
+        const seenLocal = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
+        if (seenLocal) return;
+      } catch {
+        // ignore
+      }
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) {
+          const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
+          if (!seen) setShowOnboarding(true);
+          return;
+        }
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('has_seen_onboarding')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (error) {
+          const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
+          if (!seen) setShowOnboarding(true);
+          return;
+        }
+        if (!data?.has_seen_onboarding) setShowOnboarding(true);
+      } catch {
+        const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
+        if (!seen) setShowOnboarding(true);
+      }
+    };
+    run();
+  }, []);
+
+  // Huidige focus: matcht "Taken & Prioriteiten" -> toon altijd Prioriteit 1 (MOET VANDAAG) als die bestaat
   const findLowestEnergyTask = useMemo(() => {
     const fromDayStart = tasks.filter(task =>
       task.source !== 'medication' &&
@@ -81,10 +120,11 @@ export default function HomeCalm() {
       task.priority <= 3
     );
     if (fromDayStart.length === 0) return null;
+    const priority1 = fromDayStart.find(t => t.priority === 1);
+    if (priority1) return priority1;
+    // Fallback: kleinste prioriteit (1->3) als er iets mis is met data
     const byPriority = [...fromDayStart].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99));
-    // Gestarte maar niet-afgeronde taak blijft huidige focus
-    const started = byPriority.find(t => t.started);
-    return started ?? byPriority[0];
+    return byPriority[0] ?? null;
   }, [tasks]);
 
   // Check of laagste-energie-pad actief moet zijn - altijd tonen als er een taak is
@@ -368,6 +408,61 @@ export default function HomeCalm() {
 
   return (
     <>
+      {/* Onboarding modal */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8">
+            <div className="text-lg font-semibold text-gray-900 mb-2">Welkom bij Structuro!</div>
+            <div className="text-sm text-gray-600 leading-relaxed">
+              In 60 seconden snap je de flow.
+            </div>
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  const KEY = 'structuro_has_seen_onboarding';
+                  if (typeof window !== 'undefined') localStorage.setItem(KEY, '1');
+                  try {
+                    const supabase = createClient();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user?.id) {
+                      await supabase.from('profiles').upsert({ id: user.id, has_seen_onboarding: true }, { onConflict: 'id' });
+                    }
+                  } catch {
+                    // localStorage is al gezet
+                  }
+                  setShowOnboarding(false);
+                  router.push('/uitleg');
+                }}
+                className="flex-1 py-2.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors"
+              >
+                Lees uitleg
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const KEY = 'structuro_has_seen_onboarding';
+                  if (typeof window !== 'undefined') localStorage.setItem(KEY, '1');
+                  try {
+                    const supabase = createClient();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user?.id) {
+                      await supabase.from('profiles').upsert({ id: user.id, has_seen_onboarding: true }, { onConflict: 'id' });
+                    }
+                  } catch {
+                    // localStorage is al gezet
+                  }
+                  setShowOnboarding(false);
+                }}
+                className="py-2.5 px-4 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DEBUG: Reset knoppen (alleen in development, niet voor beschermd testaccount) */}
       {process.env.NODE_ENV === 'development' && !isProtectedAccount && (
         <div style={{
@@ -549,14 +644,19 @@ export default function HomeCalm() {
               Vandaag voltooid
             </div>
           </div>
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => router.push('/todo#alle-open-taken')}
+            className="bg-white rounded-3xl p-5 shadow-sm text-left hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-gray-100"
+            aria-label="Ga naar Taken & Prioriteiten: alle open taken"
+          >
             <div className="text-2xl font-semibold text-slate-800 tabular-nums" style={{ lineHeight: 1.3 }}>
               {dashboardData.pendingTasks}
             </div>
             <div className="text-sm text-slate-500 mt-1" style={{ lineHeight: 1.4 }}>
               Nog te doen
             </div>
-          </div>
+          </button>
         </section>
         {dashboardData.completedToday === 0 && dashboardData.pendingTasks === 0 && (
           <p className="text-sm text-slate-500 mt-3 text-center" style={{ lineHeight: 1.6 }}>

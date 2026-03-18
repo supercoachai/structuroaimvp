@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   HomeIcon,
   ClipboardDocumentCheckIcon,
@@ -10,9 +10,8 @@ import {
   FireIcon,
   TrophyIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import { createClient } from '@/lib/supabase/client';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -27,25 +26,12 @@ const mainMenuItems = [
   { name: 'Herinneringen', href: '/notificaties', icon: BellIcon, description: 'Slimme alerts', accent: '#8b5cf6' },
   { name: 'Focus Modus', href: '/focus', icon: FireIcon, description: 'Concentratie hulp', accent: '#ea580c' },
   { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
+  { name: 'Uitleg', href: '/uitleg', icon: InformationCircleIcon, description: 'Hoe werkt het?', accent: '#3b82f6' },
   { name: 'Instellingen', href: '/settings', icon: Cog6ToothIcon, description: 'Persoonlijk', accent: '#6366f1' },
 ];
 
 export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleLogout = async () => {
-    onNavigate?.();
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Geen actieve sessie, bijvoorbeeld bij lokale modus
-    }
-    document.cookie = 'structuro_local_mode=; path=/; max-age=0';
-    router.push('/login');
-    router.refresh();
-  };
 
   return (
     <div
@@ -163,37 +149,13 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
           </div>
         </nav>
 
-        {/* Footer – ruimte */}
+        {/* Footer – versie */}
         <div
-          className={`relative z-20 flex-shrink-0 border-t border-white/5 ${collapsed ? 'p-3' : 'p-4 pt-6'}`}
+          className={`relative z-20 flex-shrink-0 border-t border-white/5 ${collapsed ? 'p-3' : 'p-4 pt-4'}`}
           style={{ transition: 'padding 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
         >
-          <button
-            type="button"
-            onClick={handleLogout}
-            className={`w-full flex items-center rounded-xl text-sm font-medium text-slate-400 hover:text-gray-200 hover:bg-white/5 transition-colors cursor-pointer ${
-              collapsed ? 'justify-center px-2 py-4' : 'px-4 py-4 space-x-3'
-            }`}
-            title={collapsed ? 'Uitloggen' : undefined}
-          >
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/5">
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
-            </div>
-            <span
-              style={{
-                opacity: collapsed ? 0 : 1,
-                width: collapsed ? 0 : 'auto',
-                overflow: 'hidden',
-                transition: 'opacity 0.2s, width 0.3s',
-                whiteSpace: 'nowrap',
-                marginLeft: collapsed ? 0 : 12
-              }}
-            >
-              Uitloggen
-            </span>
-          </button>
           {!collapsed && (
-            <p className="text-xs text-slate-500 text-center mt-4">Structuro AI v0.1.0</p>
+            <p className="text-xs text-slate-500 text-center">Structuro AI v0.1.0</p>
           )}
         </div>
       </div>
