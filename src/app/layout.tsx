@@ -4,6 +4,7 @@ import './globals.css'
 import { SidebarProvider } from '../contexts/SidebarContext'
 import { TaskProvider } from '../context/TaskContext'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -41,6 +42,7 @@ export default function RootLayout({
             </SidebarProvider>
           </TaskProvider>
         </ErrorBoundary>
+        <SpeedInsights />
       </body>
     </html>
   )
