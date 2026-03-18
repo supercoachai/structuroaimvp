@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { SidebarProvider } from '../contexts/SidebarContext'
 import { TaskProvider } from '../context/TaskContext'
@@ -41,6 +42,7 @@ export default function RootLayout({
             </SidebarProvider>
           </TaskProvider>
         </ErrorBoundary>
+        <Analytics />
       </body>
     </html>
   )
