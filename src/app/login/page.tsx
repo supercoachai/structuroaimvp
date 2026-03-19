@@ -101,14 +101,16 @@ export default function LoginPage() {
           {/* Logo - groter en prominenter */}
           <div className="mb-8 flex justify-center">
             {logoError ? (
-              <div className="w-24 h-24 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-3xl">S</span>
+              <div className="w-32 h-32 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-4xl">S</span>
               </div>
             ) : (
               <img 
                 src="/Logo Structuro.png" 
                 alt="Structuro Logo" 
-                className="h-32 w-auto drop-shadow-lg"
+                width={128}
+                height={128}
+                className="w-32 h-32 object-contain drop-shadow-lg"
                 onError={() => setLogoError(true)}
               />
             )}
