@@ -37,7 +37,8 @@ export function ConsentBanner() {
           className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed"
         >
           We willen graag begrijpen hoe de app gebruikt wordt om de flow te verbeteren. Als je
-          akkoord gaat, laden we Google Analytics (GA4) pas nu — niet eerder. Je kunt dit altijd
+          akkoord gaat, meten we pas (Consent Mode: de tag staat wel op de site, cookies/analytics
+          gaan pas aan na jouw ja). Je kunt dit altijd
           wijzigen onder Instellingen.
         </p>
 
