@@ -8,8 +8,8 @@ const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? 'G-S21LBEY64B';
 
 /**
- * Laadt gtag alleen na expliciete toestemming (ConsentContext).
- * Privacy-vriendelijke config: geen Google Signals / ad-personalization voor advertenties.
+ * Google tag (gtag.js), gelijk aan de officiële snippet — alleen ná analytics-toestemming.
+ * @see https://developers.google.com/tag-platform/gtagjs
  */
 export function GoogleAnalytics() {
   const { consentReady, hasAnalyticsConsent } = useConsent();
@@ -32,10 +32,7 @@ export function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}', {
-              allow_google_signals: false,
-              allow_ad_personalization_signals: false
-            });
+            gtag('config', '${GA_MEASUREMENT_ID}');
           `,
         }}
       />

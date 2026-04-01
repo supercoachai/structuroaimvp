@@ -50,8 +50,8 @@ export function ConsentBanner() {
           <p className="mt-2 text-[11px] sm:text-xs text-slate-500 leading-relaxed border-t border-slate-100 pt-2">
             GA4 gebruiken we alleen voor gebruiksstatistieken. Zet je analytics uit, dan wordt er
             geen meetscript geladen. In je privacyverklaring kun je verder uitleggen wat je meet en
-            waarom (transparantie, AVG). IP-anonimisering is in GA4 standaard; advertentie-signalen
-            schakelen we in de technische configuratie uit.
+            waarom (transparantie, AVG). IP-anonimisering is in GA4 standaard. Extra opties kun je
+            in Google Analytics beheren (property-instellingen).
           </p>
         </details>
 
