@@ -7,10 +7,12 @@ import { toast } from '../../components/Toast';
 import { InformationCircleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
+import { useConsent } from '@/contexts/ConsentContext';
 
 const NAME_KEY = 'structuro_user_name';
 
 export default function SettingsPage() {
+  const { analyticsConsent, reopenConsentBanner } = useConsent();
   const [name, setName] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
@@ -174,6 +176,37 @@ export default function SettingsPage() {
             </p>
           </section>
 
+          {/* AVG: analytics-toestemming (GA4 alleen na akkoord) */}
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-slate-900 mb-2">
+              Statistieken & cookies (analytics)
+            </h2>
+            <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+              Google Analytics (GA4) gebruiken we alleen als je dat expliciet toestaat. Zonder toestemming
+              wordt er geen meetscript geladen. Je keuze slaat Structuro op in deze browser
+              {analyticsConsent !== 'pending' ? ' (en bij inloggen ook in je profiel, als die kolom bestaat).' : '.'}
+            </p>
+            <p className="text-sm font-medium text-slate-800 mb-3">
+              Huidige keuze:{' '}
+              {analyticsConsent === 'granted' && (
+                <span className="text-green-700">toegestaan</span>
+              )}
+              {analyticsConsent === 'denied' && (
+                <span className="text-slate-600">niet toegestaan</span>
+              )}
+              {analyticsConsent === 'pending' && (
+                <span className="text-amber-700">nog niet gekozen — zie banner onderaan</span>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={reopenConsentBanner}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-slate-200 bg-white text-slate-800 hover:bg-slate-50 transition-colors"
+            >
+              Keuze aanpassen
+            </button>
+          </section>
+
           {/* Aanspreeknaam */}
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <h2 className="text-lg font-semibold text-slate-900 mb-2">
@@ -250,7 +283,7 @@ export default function SettingsPage() {
             </div>
             <p className="text-sm text-slate-500 mb-2">
               Verwijder al je gegevens: taken, check-ins, aanspreeknaam,
-              focus- en beloningsdata. Dit kan niet ongedaan worden.
+              analytics-voorkeur, focus- en beloningsdata. Dit kan niet ongedaan worden.
             </p>
             <p className="text-sm text-slate-500 mb-4">
               <strong>Waarom deze knop?</strong> Structuro is privacy-by-design. Wil je stoppen of opnieuw beginnen? Dan wist je hier al je gegevens.

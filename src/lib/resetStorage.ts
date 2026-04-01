@@ -3,6 +3,7 @@ export const STRUCTURO_STORAGE_KEYS = [
   'structuro_tasks',
   'structuro_daily_checkins',
   'structuro_user_name',
+  'structuro_analytics_consent',
   'structuro_gamification_meta',
   'structuro_theme',
   'focus_duration',

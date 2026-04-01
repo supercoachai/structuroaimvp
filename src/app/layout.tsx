@@ -4,8 +4,11 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { SidebarProvider } from '../contexts/SidebarContext'
+import { ConsentProvider } from '../contexts/ConsentContext'
 import { TaskProvider } from '../context/TaskContext'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { GoogleAnalytics } from '../components/GoogleAnalytics'
+import { ConsentBanner } from '../components/ConsentBanner'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,15 +39,19 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body className={inter.className}>
-        <ErrorBoundary>
-          <TaskProvider>
-            <SidebarProvider>
-              {children}
-            </SidebarProvider>
-          </TaskProvider>
-        </ErrorBoundary>
-        <Analytics />
-        <SpeedInsights />
+        <ConsentProvider>
+          <GoogleAnalytics />
+          <ErrorBoundary>
+            <TaskProvider>
+              <SidebarProvider>
+                {children}
+              </SidebarProvider>
+            </TaskProvider>
+          </ErrorBoundary>
+          <ConsentBanner />
+          <Analytics />
+          <SpeedInsights />
+        </ConsentProvider>
       </body>
     </html>
   )

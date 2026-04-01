@@ -244,30 +244,75 @@ export default function HomeCalm() {
     return Math.min((dashboardData.completedToday / dashboardData.todayGoal) * 100, 100);
   };
 
-  // Haal gebruikersnaam op bij mount (uit localStorage)
+  const getFirstName = (name: string) => {
+    const first = name.trim().split(' ')[0];
+    return first || null;
+  };
+
+  // Haal gebruikersnaam op bij mount (uit localStorage, fallback naar Supabase auth metadata)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsClient(true);
-      const storedName = localStorage.getItem('structuro_user_name');
-      if (storedName) {
-        setUserName(storedName.split(' ')[0]);
-        setShowNamePrompt(false);
-      } else {
-        setShowNamePrompt(true);
-      }
+    if (typeof window === 'undefined') return;
+
+    setIsClient(true);
+
+    const storedName = localStorage.getItem('structuro_user_name');
+    const firstFromLocal = storedName ? getFirstName(storedName) : null;
+    if (firstFromLocal) {
+      setUserName(firstFromLocal);
+      setShowNamePrompt(false);
+      return;
     }
+
+    // Fallback: naam uit Supabase user_metadata (zodat je na opnieuw inloggen niet opnieuw hoeft in te vullen).
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        const metaFullName =
+          (data?.user?.user_metadata as any)?.full_name ??
+          (data?.user?.user_metadata as any)?.fullName ??
+          (data?.user?.user_metadata as any)?.full_name_string;
+
+        if (typeof metaFullName === 'string' && metaFullName.trim()) {
+          const trimmed = metaFullName.trim();
+          localStorage.setItem('structuro_user_name', trimmed);
+          const first = getFirstName(trimmed);
+          if (first) {
+            setUserName(first);
+            setShowNamePrompt(false);
+            return;
+          }
+        }
+      } catch {
+        // ignore: we tonen dan gewoon de prompt
+      }
+
+      setShowNamePrompt(true);
+    })();
   }, []);
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     if (!newName.trim()) return;
     
     try {
+      const trimmed = newName.trim();
+
       // Sla naam op in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('structuro_user_name', newName.trim());
-        setUserName(newName.trim().split(' ')[0]);
-        setShowNamePrompt(false);
-        setNewName('');
+      if (typeof window !== 'undefined') localStorage.setItem('structuro_user_name', trimmed);
+
+      // UI direct bijwerken
+      const first = getFirstName(trimmed);
+      if (first) setUserName(first);
+      setShowNamePrompt(false);
+      setNewName('');
+
+      // Schrijf ook naar Supabase auth metadata zodat het blijft werken over meerdere logins/devices.
+      // Best-effort: als dit faalt, werkt localStorage nog steeds.
+      try {
+        const supabase = createClient();
+        await supabase.auth.updateUser({ data: { full_name: trimmed } });
+      } catch {
+        // ignore
       }
     } catch (error: any) {
       console.error('Unexpected error saving name:', error);
