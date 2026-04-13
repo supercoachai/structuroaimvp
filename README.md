@@ -51,6 +51,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) met je browser. Je wordt doorgestuurd naar de login pagina als je nog niet ingelogd bent.
 
+### 5. Claude CLI (optioneel)
+
+Voor de [Claude](https://claude.ai/) command-line tool op je machine:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
 ## Project Structuur
 
 ```
