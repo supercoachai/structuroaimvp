@@ -11,6 +11,7 @@ import { useCheckIn } from '../hooks/useCheckIn';
 import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
+import { isOpenBacklogTask } from '@/lib/taskFilters';
 
 interface DashboardData {
   totalTasks: number;
@@ -189,8 +190,8 @@ export default function HomeCalm() {
 
         // Filter medicatie uit taken (medicatie telt niet als echte taak)
         const realTasks = tasks.filter(task => task.source !== 'medication');
-        
-        const pendingTasks = realTasks.filter(task => !task.done).length;
+        // Gelijk aan "Alle open taken" (zonder focus-slots 1–3, zonder parkeer/events/medicatie)
+        const pendingTasks = realTasks.filter((task) => isOpenBacklogTask(task)).length;
         const top3Tasks = realTasks.filter(task => task.priority && task.priority <= 3 && !task.done).length;
         
         // Bereken streak (alleen echte taken)
@@ -699,11 +700,18 @@ export default function HomeCalm() {
               {dashboardData.pendingTasks}
             </div>
             <div className="text-sm text-slate-500 mt-1" style={{ lineHeight: 1.4 }}>
-              Nog te doen
+              Open in lijst
             </div>
+            {dashboardData.top3Tasks > 0 && (
+              <div className="text-xs text-slate-400 mt-1" style={{ lineHeight: 1.35 }}>
+                + {dashboardData.top3Tasks} focus vandaag
+              </div>
+            )}
           </button>
         </section>
-        {dashboardData.completedToday === 0 && dashboardData.pendingTasks === 0 && (
+        {dashboardData.completedToday === 0 &&
+          dashboardData.pendingTasks === 0 &&
+          dashboardData.top3Tasks === 0 && (
           <p className="text-sm text-slate-500 mt-3 text-center" style={{ lineHeight: 1.6 }}>
             Je lei is schoon. Tijd om te plannen?
           </p>

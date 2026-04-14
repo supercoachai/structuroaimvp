@@ -9,6 +9,7 @@ import { toast } from "./Toast";
 import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
+import { isOpenBacklogTask } from "../lib/taskFilters";
 import { PlayIcon, CheckCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
@@ -75,7 +76,9 @@ export default function TasksOverviewCalm() {
         
         for (let i = 1; i <= 3; i++) {
           const task = allTasks.find((t: any) => {
-            if (!t || !t.id || !t.title || t.source === 'medication' || t.source === 'event') return false;
+            if (!t || !t.id || !t.title || t.done || t.source === 'medication' || t.source === 'event') {
+              return false;
+            }
             return t.priority == i;
           });
           if (task) {
@@ -378,11 +381,7 @@ export default function TasksOverviewCalm() {
     };
 
     return tasks
-      .filter((t: any) => {
-      if (t.done || t.notToday || t.source === 'medication' || t.source === 'event' || t.source === 'parked_thought') return false;
-      const hasPriority = t.priority != null && t.priority != 0 && (t.priority == 1 || t.priority == 2 || t.priority == 3);
-      return !hasPriority;
-      })
+      .filter((t: any) => isOpenBacklogTask(t))
       // Sorteer op ingeschatte duur: kortste eerst, zonder duur onderaan
       .sort((a: any, b: any) => {
         const diff = durationOf(a) - durationOf(b);

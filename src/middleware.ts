@@ -2,11 +2,7 @@ import { updateSession } from './lib/supabase/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Tijdelijk: middleware overslaan om hang bij localhost te omzeilen.
-  // Als de app nu wél laadt, was de middleware de oorzaak.
-  if (request.nextUrl.hostname === 'localhost' && request.nextUrl.port === '3000') {
-    return NextResponse.next({ request })
-  }
+  // Zelfde gedrag als productie (login, dagstart-cookie). Lokaal: zorg voor geldige Supabase-env of local_mode-cookie.
   return await updateSession(request)
 }
 

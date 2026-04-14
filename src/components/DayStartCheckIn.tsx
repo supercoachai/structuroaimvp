@@ -30,7 +30,11 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
   const [showSecondScreen, setShowSecondScreen] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [priorityPickerTask, setPriorityPickerTask] = useState<any>(null);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
+
+  const MAX_DAYSTART_SUGGESTIONS = 40;
+  const COLLAPSED_SUGGESTIONS = 5;
 
   // Helper: Get energie kleur (GELIJK AAN TasksOverview)
   const getEnergyColor = (level: string) => {
@@ -80,6 +84,17 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
     }
   };
 
+  const taskMatchesDayEnergy = (task: any, day: string | null) => {
+    if (!day) return true;
+    const te = String(task.energyLevel || '').toLowerCase();
+    if (te === 'low' || te === 'medium' || te === 'high') return te === day;
+    const { label } = getTaskComplexity(task);
+    if (day === 'low') return label === 'Laag';
+    if (day === 'medium') return label === 'Normaal';
+    if (day === 'high') return label === 'Hoog';
+    return false;
+  };
+
   // Filter taken op basis van energie-niveau (PRIMAIR op energy_level veld)
   // BELANGRIJK: Dit is ALLEEN voor UI weergave - taken worden NOOIT verwijderd uit de data!
   const getFilteredTasks = () => {
@@ -121,7 +136,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         const durB = b.task.duration || b.task.estimatedDuration || 999;
         return durA - durB;
       });
-      return sorted.map((item) => item.task).slice(0, 15);
+      return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
     }
 
     if (energyLevel === 'high') {
@@ -134,7 +149,7 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         const durB = b.task.duration || b.task.estimatedDuration || 0;
         return durB - durA;
       });
-      return sorted.map((item) => item.task).slice(0, 15);
+      return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
     }
 
     // Medium: eerst medium (oranje/geel), dan makkelijk (groen), dan moeilijk (rood) – allemaal zichtbaar
@@ -147,10 +162,28 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
       const durB = b.task.duration || b.task.estimatedDuration || 999;
       return durA - durB;
     });
-    return sorted.map((item) => item.task).slice(0, 15);
+    return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
   };
 
-  const filteredTasks = useMemo(() => getFilteredTasks(), [tasks, top3Tasks, energyLevel]);
+  const allRankedSuggestions = useMemo(
+    () => getFilteredTasks(),
+    [tasks, top3Tasks, energyLevel]
+  );
+
+  const collapsedSuggestions = useMemo(() => {
+    if (!energyLevel || allRankedSuggestions.length === 0) return [];
+    const matched = allRankedSuggestions.filter((t) => taskMatchesDayEnergy(t, energyLevel));
+    if (matched.length > 0) return matched.slice(0, COLLAPSED_SUGGESTIONS);
+    return allRankedSuggestions.slice(0, COLLAPSED_SUGGESTIONS);
+  }, [allRankedSuggestions, energyLevel]);
+
+  const suggestionsToRender = showAllSuggestions ? allRankedSuggestions : collapsedSuggestions;
+  const hasMoreSuggestions =
+    allRankedSuggestions.length > collapsedSuggestions.length;
+
+  useEffect(() => {
+    setShowAllSuggestions(false);
+  }, [energyLevel]);
 
   // KRITIEK: Bereken max slots op basis van energie niveau
   const maxSlots = useMemo(() => {
@@ -1027,6 +1060,9 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
         top3_task_ids: top3Ids.length > 0 ? top3Ids : null,
       });
 
+      const { setDagstartCookieOnClient } = await import('../lib/dagstartCookie');
+      setDagstartCookieOnClient();
+
       // BELANGRIJK: Trigger expliciet een sync event zodat alle pagina's direct updaten
       // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe prioriteiten zien
       if (typeof window !== 'undefined') {
@@ -1394,16 +1430,24 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
 
       {/* Taak suggesties */}
       <div className="mb-10">
-        {filteredTasks.length > 0 ? (
+        {allRankedSuggestions.length > 0 ? (
           <>
             <h3 className="text-sm font-semibold text-gray-900 mb-2">
-              Suggesties voor vandaag ({filteredTasks.length})
+              Suggesties voor vandaag
+              {!showAllSuggestions && hasMoreSuggestions
+                ? ` (${suggestionsToRender.length} van ${allRankedSuggestions.length})`
+                : ` (${allRankedSuggestions.length})`}
             </h3>
+            {!showAllSuggestions && hasMoreSuggestions && (
+              <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                Je ziet eerst de {COLLAPSED_SUGGESTIONS} meest passende suggesties bij je energie. De rest kun je optioneel tonen.
+              </p>
+            )}
             <p className="text-sm text-gray-500 mb-4">
               Klik een taak aan of sleep hem naar een van de vakken hierboven (1, 2 of 3)
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.map((task) => {
+            {suggestionsToRender.map((task) => {
               const complexity = getTaskComplexity(task);
               const isLowEnergy = energyLevel === 'low';
               const taskEnergy = (task.energyLevel || 'medium') as string;
@@ -1513,6 +1557,17 @@ export default function DayStartCheckIn({ onComplete, existingCheckIn }: DayStar
               );
             })}
             </div>
+            {hasMoreSuggestions && (
+              <button
+                type="button"
+                onClick={() => setShowAllSuggestions((v) => !v)}
+                className="mt-4 w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-gray-200 bg-white text-gray-800 hover:bg-gray-50 transition-colors"
+              >
+                {showAllSuggestions
+                  ? 'Minder tonen'
+                  : `Meer zien (${allRankedSuggestions.length - collapsedSuggestions.length})`}
+              </button>
+            )}
           </>
         ) : (
           <div className="p-6 rounded-2xl bg-gray-50 text-center border border-dashed border-gray-200">
