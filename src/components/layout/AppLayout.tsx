@@ -8,6 +8,7 @@ import { useSidebar } from '../../contexts/SidebarContext';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import Sidebar from '../Sidebar';
 import { ToastHost } from '../Toast';
+import { clearDagstartCookieOnClient } from '@/lib/dagstartCookie';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -28,6 +29,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       // Geen actieve sessie, bijvoorbeeld bij lokale modus
     }
     document.cookie = 'structuro_local_mode=; path=/; max-age=0';
+    clearDagstartCookieOnClient();
     router.push('/login');
     router.refresh();
   };

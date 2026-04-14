@@ -1,3 +1,5 @@
+import { STRUCTURO_DAGSTART_COOKIE } from './dagstartCookie';
+
 /** Alle bekende Structuro localStorage-keys (voor volledige data-wipe) */
 export const STRUCTURO_STORAGE_KEYS = [
   'structuro_tasks',
@@ -30,6 +32,11 @@ export function clearAllStorage() {
 export function wipeAllUserData(): boolean {
   if (typeof window === 'undefined') return false;
   const ok = clearAllStorage();
+  try {
+    document.cookie = `${STRUCTURO_DAGSTART_COOKIE}=; path=/; max-age=0`;
+  } catch {
+    /* ignore */
+  }
   if (ok) window.location.href = '/';
   return ok;
 }

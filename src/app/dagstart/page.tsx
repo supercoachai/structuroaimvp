@@ -1,13 +1,22 @@
 "use client";
 
+import { useEffect } from 'react';
 import DayStartCheckIn from '../../components/DayStartCheckIn';
 import AppLayout from '../../components/layout/AppLayout';
 import { useRouter } from 'next/navigation';
 import { useCheckIn } from '../../hooks/useCheckIn';
+import { setDagstartCookieOnClient } from '@/lib/dagstartCookie';
 
 export default function DagStartPage() {
   const { hasCheckedIn, loading } = useCheckIn();
   const router = useRouter();
+
+  // Check-in staat al in DB/localStorage maar cookie mist (nieuwe browser): zet cookie zodat middleware doorlaat.
+  useEffect(() => {
+    if (!loading && hasCheckedIn) {
+      setDagstartCookieOnClient();
+    }
+  }, [loading, hasCheckedIn]);
 
   const handleComplete = () => {
     // Na opslaan, refresh om eventuele wijzigingen te tonen

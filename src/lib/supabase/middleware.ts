@@ -1,4 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  STRUCTURO_DAGSTART_COOKIE,
+  getCalendarDateAmsterdam,
+} from '@/lib/dagstartCookie'
 
 // Edge Runtime-compatible: geen Supabase-client (gebruikt Node APIs).
 // We checken alleen op auth-cookie en lokale-modus cookie.
@@ -47,6 +51,24 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Dagstart vandaag afgerond? (Edge leest geen DB; cookie zet client na check-in.)
+  const needsDagstart =
+    !pathname.startsWith('/dagstart') &&
+    !pathname.startsWith('/login') &&
+    !pathname.startsWith('/auth') &&
+    !pathname.startsWith('/api')
+
+  if (needsDagstart) {
+    const today = getCalendarDateAmsterdam()
+    const raw = request.cookies.get(STRUCTURO_DAGSTART_COOKIE)?.value
+    const cookieVal = raw ? decodeURIComponent(raw) : ''
+    if (cookieVal !== today) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dagstart'
+      return NextResponse.redirect(url)
+    }
   }
 
   return NextResponse.next({ request })
