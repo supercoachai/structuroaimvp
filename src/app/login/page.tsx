@@ -1,8 +1,39 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
+import {
+  clearStructuroLocalModeCookie,
+  markLocalSessionFresh,
+} from '@/lib/localModeSession';
+import { LOCAL_ONBOARDING_COMPLETED_KEY } from '@/lib/onboardingProfile';
+import {
+  clearLocalOnboardingDoneCookieOnClient,
+  markEnteringLocalOnboardingSession,
+} from '@/lib/localOnboardingCookie';
+
+/** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
+const SHOW_LOCAL_TEST_LOGIN =
+  process.env.NODE_ENV === "development" ||
+  process.env.NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN === "true";
+
+function isLikelyLocalDevHost(hostname: string): boolean {
+  if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+  // RFC1918 — typisch next dev op LAN (telefoon / ander device)
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+}
+
+function emailAllowsLocalTestLogin(emailValue: string): boolean {
+  if (isProtectedTestAccount(emailValue)) return true;
+  const owner = process.env.NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL?.trim().toLowerCase();
+  if (!owner) return false;
+  return emailValue.trim().toLowerCase() === owner;
+}
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -14,6 +45,21 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
   const router = useRouter();
+  const [localDevHost, setLocalDevHost] = useState(false);
+
+  useLayoutEffect(() => {
+    try {
+      setLocalDevHost(isLikelyLocalDevHost(window.location.hostname));
+    } catch {
+      setLocalDevHost(false);
+    }
+  }, []);
+
+  /** Productie: alleen zichtbaar na intypen van allowlisted email (protected testaccount of NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL). */
+  const showLocalTest =
+    SHOW_LOCAL_TEST_LOGIN ||
+    localDevHost ||
+    emailAllowsLocalTestLogin(email);
 
   // Initialize Supabase client only when needed
   const getSupabase = () => {
@@ -59,6 +105,7 @@ export default function LoginPage() {
           setMessage('Account aangemaakt! Check je email voor verificatie (als email verificatie is ingeschakeld).');
           // Auto login na signup
           setTimeout(() => {
+            clearStructuroLocalModeCookie();
             router.push('/');
           }, 2000);
         }
@@ -71,6 +118,7 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
+          clearStructuroLocalModeCookie();
           router.push('/');
           router.refresh();
         }
@@ -106,7 +154,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <img 
-                src="/Logo Structuro.png" 
+                src="/Logo Structuro - met tekst.png" 
                 alt="Structuro Logo" 
                 width={128}
                 height={128}
@@ -180,7 +228,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button
+                   <button
             type="submit"
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none mt-6"
@@ -188,6 +236,33 @@ export default function LoginPage() {
             {loading ? 'Bezig...' : isSignUp ? 'Account aanmaken' : 'Inloggen'}
           </button>
         </form>
+
+        {showLocalTest && (
+          <div className="mt-8 pt-6 border-t border-gray-200/80">
+            <p className="text-xs text-gray-500 text-center mb-3">
+              Lokaal testen zonder Supabase-account (taken in deze browser).
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                document.cookie =
+                  "structuro_local_mode=1; path=/; max-age=604800; SameSite=Lax";
+                markLocalSessionFresh();
+                markEnteringLocalOnboardingSession();
+                try {
+                  window.localStorage.removeItem(LOCAL_ONBOARDING_COMPLETED_KEY);
+                } catch {
+                  /* ignore */
+                }
+                clearLocalOnboardingDoneCookieOnClient();
+                window.location.assign("/onboarding");
+              }}
+              className="w-full py-3 rounded-xl text-sm font-medium border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+            >
+              Doorgaan als lokale test
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

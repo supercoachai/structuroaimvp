@@ -60,7 +60,7 @@ export default function ShutdownPage() {
     return (
       <AppLayout>
         <div
-          className="min-h-screen py-12 px-4 sm:px-6 pb-16 flex items-center justify-center"
+          className="min-h-full py-6 sm:py-8 px-4 sm:px-6 flex items-center justify-center"
           style={{
             background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
           }}
@@ -77,7 +77,7 @@ export default function ShutdownPage() {
   return (
     <AppLayout>
       <div
-        className="min-h-screen py-12 px-4 sm:px-6 pb-16 flex items-center justify-center"
+        className="min-h-full py-6 sm:py-8 px-4 sm:px-6 flex items-center justify-center"
         style={{
           background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
         }}

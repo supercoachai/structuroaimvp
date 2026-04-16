@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { PlusIcon, CheckCircleIcon, ClockIcon, TrophyIcon, CalendarIcon, PlayIcon } from '@heroicons/react/24/outline';
-import { PlusCircle, Zap, CalendarDays, Trophy, SunMedium, Moon } from 'lucide-react';
+import { CheckCircleIcon, PlayIcon } from '@heroicons/react/24/outline';
+import { SunMedium } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTaskContext, Task } from '../context/TaskContext';
 import { designSystem } from '../lib/design-system';
@@ -11,44 +11,19 @@ import { useCheckIn } from '../hooks/useCheckIn';
 import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
-import { isOpenBacklogTask } from '@/lib/taskFilters';
-
-interface DashboardData {
-  totalTasks: number;
-  completedToday: number;
-  pendingTasks: number;
-  top3Tasks: number;
-  currentStreak: number;
-  todayGoal: number;
-  upcomingDeadlines: number;
-}
-
 export default function HomeCalm() {
   const router = useRouter();
   const { tasks, loading } = useTaskContext();
-  const { checkIn: todayCheckIn, hasCheckedIn } = useCheckIn();
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    totalTasks: 0,
-    completedToday: 0,
-    pendingTasks: 0,
-    top3Tasks: 0,
-    currentStreak: 0,
-    todayGoal: 3,
-    upcomingDeadlines: 0
-  });
-
+  const { checkIn: todayCheckIn } = useCheckIn();
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [newName, setNewName] = useState('');
-  const [previousCompleted, setPreviousCompleted] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { updateTask, addTask } = useTaskContext();
   const [dumpInput, setDumpInput] = useState('');
   const [dumpSubmitting, setDumpSubmitting] = useState(false);
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Huidige kalenderdag – wordt elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
   const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
@@ -73,45 +48,7 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
-  // Onboarding: toon 1x uitleg bij eerste sessie (Supabase profiles of fallback localStorage)
-  useEffect(() => {
-    const KEY = 'structuro_has_seen_onboarding';
-    const run = async () => {
-      // Local-first: als we dit device al gemarkeerd hebben, nooit meer tonen
-      try {
-        const seenLocal = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
-        if (seenLocal) return;
-      } catch {
-        // ignore
-      }
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.id) {
-          const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
-          if (!seen) setShowOnboarding(true);
-          return;
-        }
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('has_seen_onboarding')
-          .eq('id', user.id)
-          .maybeSingle();
-        if (error) {
-          const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
-          if (!seen) setShowOnboarding(true);
-          return;
-        }
-        if (!data?.has_seen_onboarding) setShowOnboarding(true);
-      } catch {
-        const seen = typeof window !== 'undefined' ? localStorage.getItem(KEY) : '1';
-        if (!seen) setShowOnboarding(true);
-      }
-    };
-    run();
-  }, []);
-
-  // Huidige focus: matcht "Taken & Prioriteiten" -> toon altijd Prioriteit 1 (MOET VANDAAG) als die bestaat
+  // Huidige focus: toon altijd Prioriteit 1 (Kernfocus) als die bestaat
   const findLowestEnergyTask = useMemo(() => {
     const fromDayStart = tasks.filter(task =>
       task.source !== 'medication' &&
@@ -134,116 +71,18 @@ export default function HomeCalm() {
     return true;
   }, []);
 
-  // Helper functie - moet voor useEffect worden gedefinieerd
-  const calculateStreak = (completedTasks: Task[]) => {
-    if (completedTasks.length === 0) return { current: 0, longest: 0 };
-
-    const sortedTasks = completedTasks
-      .filter(task => task.completedAt)
-      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
-
-    let currentStreak = 0;
-    let tempStreak = 0;
-    let lastDate: string | null = null;
-
-    for (const task of sortedTasks) {
-      const taskDate = new Date(task.completedAt!).toDateString();
-      
-      if (!lastDate) {
-        tempStreak = 1;
-        lastDate = taskDate;
-      } else {
-        const daysDiff = Math.floor((new Date(lastDate).getTime() - new Date(taskDate).getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (daysDiff === 1) {
-          tempStreak++;
-        } else if (daysDiff === 0) {
-          continue;
-        } else {
-          break;
-        }
-        lastDate = taskDate;
-      }
-    }
-
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-    
-    if (lastDate === today || lastDate === yesterday) {
-      currentStreak = tempStreak;
-    }
-
-    return { current: currentStreak, longest: 0 };
-  };
-
-  // Bereken dashboard data
   useEffect(() => {
     if (loading) return;
-
-    const calculateDashboardData = () => {
-      try {
-        // todayKey = kalenderdag; na middernacht (0:00) wordt die geüpdatet, dan reset de teller
-        const completedToday = tasks.filter(task => {
-          return task.done && task.completedAt &&
-            new Date(task.completedAt).toDateString() === todayKey;
-        }).length;
-
-        // Filter medicatie uit taken (medicatie telt niet als echte taak)
-        const realTasks = tasks.filter(task => task.source !== 'medication');
-        // Gelijk aan "Alle open taken" (zonder focus-slots 1–3, zonder parkeer/events/medicatie)
-        const pendingTasks = realTasks.filter((task) => isOpenBacklogTask(task)).length;
-        const top3Tasks = realTasks.filter(task => task.priority && task.priority <= 3 && !task.done).length;
-        
-        // Bereken streak (alleen echte taken)
-        const completedTasks = realTasks.filter(task => task.done && task.completedAt);
-        const streak = calculateStreak(completedTasks);
-        
-        // Bereken aankomende deadlines (alleen echte taken)
-        const upcomingDeadlines = realTasks.filter(task => 
-          !task.done && task.dueAt && 
-          new Date(task.dueAt) > new Date() &&
-          new Date(task.dueAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        ).length;
-
-        // Recent voltooid: alleen vandaag (zelfde kalenderdag als todayKey, leeg na 0:00)
-        const recentCompleted = tasks
-          .filter(task => task.done && task.completedAt && new Date(task.completedAt).toDateString() === todayKey)
-          .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
-          .slice(0, 3);
-
-        // Bepaal todayGoal op basis van energie-niveau uit dagstart check-in
-        const energyLevel = todayCheckIn?.energy_level || 'medium';
-        const todayGoal = energyLevel === 'low' ? 1 : energyLevel === 'medium' ? 2 : 3;
-
-        // Micro-animatie trigger bij voltooiing
-        if (completedToday > previousCompleted && previousCompleted > 0) {
-          setShowCelebration(true);
-          setTimeout(() => setShowCelebration(false), 2000);
-        }
-        setPreviousCompleted(completedToday);
-
-        setDashboardData({
-          totalTasks: realTasks.length,
-          completedToday,
-          pendingTasks,
-          top3Tasks,
-          currentStreak: streak.current,
-          todayGoal,
-          upcomingDeadlines
-        });
-
-        setRecentTasks(recentCompleted);
-      } catch (error) {
-        console.error('Error calculating dashboard data:', error);
-      }
-    };
-
-    calculateDashboardData();
-  }, [tasks, loading, todayCheckIn, todayKey]);
-
-  const getProgressPercentage = () => {
-    return Math.min((dashboardData.completedToday / dashboardData.todayGoal) * 100, 100);
-  };
+    try {
+      const recentCompleted = tasks
+        .filter(task => task.done && task.completedAt && new Date(task.completedAt).toDateString() === todayKey)
+        .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
+        .slice(0, 3);
+      setRecentTasks(recentCompleted);
+    } catch (error) {
+      console.error('Error building recent tasks:', error);
+    }
+  }, [tasks, loading, todayKey]);
 
   const getFirstName = (name: string) => {
     const first = name.trim().split(' ')[0];
@@ -382,7 +221,7 @@ export default function HomeCalm() {
     "Eén ding tegelijk is genoeg.",
     "Perfectie is niet het doel, vooruitgang wel.",
     "Kleine stappen zijn ook stappen.",
-    "Focus op wat je nu doet, niet op wat nog moet.",
+    "Focus op wat je nu doet, niet op wat nog komt.",
     "Je bent niet te laat, je bent precies op tijd.",
     "Vandaag is een nieuwe kans.",
     "Elke taak begint met één stap.",
@@ -404,7 +243,7 @@ export default function HomeCalm() {
     "Kleine stappen, grote impact.",
     "Focus op het nu, niet op morgen.",
     "Rust is onderdeel van productiviteit.",
-    "Je bent precies waar je moet zijn.",
+    "Je bent precies waar je hoort te zijn.",
     "Elke stap telt, hoe klein ook.",
     "Kalmte helpt je helder te denken.",
     "Je bent niet alleen in deze reis.",
@@ -454,61 +293,6 @@ export default function HomeCalm() {
 
   return (
     <>
-      {/* Onboarding modal */}
-      {showOnboarding && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40">
-          <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8">
-            <div className="text-lg font-semibold text-gray-900 mb-2">Welkom bij Structuro!</div>
-            <div className="text-sm text-gray-600 leading-relaxed">
-              In 60 seconden snap je de flow.
-            </div>
-            <div className="mt-4 flex flex-col sm:flex-row gap-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  const KEY = 'structuro_has_seen_onboarding';
-                  if (typeof window !== 'undefined') localStorage.setItem(KEY, '1');
-                  try {
-                    const supabase = createClient();
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user?.id) {
-                      await supabase.from('profiles').upsert({ id: user.id, has_seen_onboarding: true }, { onConflict: 'id' });
-                    }
-                  } catch {
-                    // localStorage is al gezet
-                  }
-                  setShowOnboarding(false);
-                  router.push('/uitleg');
-                }}
-                className="flex-1 py-2.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition-colors"
-              >
-                Lees uitleg
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const KEY = 'structuro_has_seen_onboarding';
-                  if (typeof window !== 'undefined') localStorage.setItem(KEY, '1');
-                  try {
-                    const supabase = createClient();
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user?.id) {
-                      await supabase.from('profiles').upsert({ id: user.id, has_seen_onboarding: true }, { onConflict: 'id' });
-                    }
-                  } catch {
-                    // localStorage is al gezet
-                  }
-                  setShowOnboarding(false);
-                }}
-                className="py-2.5 px-4 rounded-2xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors"
-              >
-                Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* DEBUG: Reset knoppen (alleen in development, niet voor beschermd testaccount) */}
       {process.env.NODE_ENV === 'development' && !isProtectedAccount && (
         <div style={{
@@ -556,7 +340,7 @@ export default function HomeCalm() {
         </div>
       )}
     <div
-      className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+      className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
       style={{
         background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
         color: designSystem.colors.text,
@@ -569,14 +353,13 @@ export default function HomeCalm() {
           margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 32,
+          gap: 24,
           boxSizing: 'border-box',
         }}
       >
-        {/* Header – zweeft los, luchtigheid zoals Taken/Herinneringen */}
-        <header className="text-center pt-12 pb-0 mb-4">
+        <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
           <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+            className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
             style={{
               background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
               boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
@@ -584,10 +367,10 @@ export default function HomeCalm() {
           >
             <SunMedium size={28} strokeWidth={1.5} color="#fff" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">
             {getGreeting()}{userName ? `, ${userName}` : ''}
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
             {(() => {
               const energyStatus = getEnergyStatusLabel();
               if (energyStatus) {
@@ -676,88 +459,6 @@ export default function HomeCalm() {
           </div>
         )}
 
-        {/* Zen stats: alleen 2 blokken – Dopamine + Overzicht */}
-        <section
-          className="grid gap-4"
-          style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}
-        >
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
-            <div className="text-2xl font-semibold text-slate-800 tabular-nums" style={{ lineHeight: 1.3 }}>
-              {dashboardData.completedToday}
-              {showCelebration && <span className="ml-1" aria-hidden>🎉</span>}
-            </div>
-            <div className="text-sm text-slate-500 mt-1" style={{ lineHeight: 1.4 }}>
-              Vandaag voltooid
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => router.push('/todo#alle-open-taken')}
-            className="bg-white rounded-3xl p-5 shadow-sm text-left hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-gray-100"
-            aria-label="Ga naar Taken & Prioriteiten: alle open taken"
-          >
-            <div className="text-2xl font-semibold text-slate-800 tabular-nums" style={{ lineHeight: 1.3 }}>
-              {dashboardData.pendingTasks}
-            </div>
-            <div className="text-sm text-slate-500 mt-1" style={{ lineHeight: 1.4 }}>
-              Open in lijst
-            </div>
-            {dashboardData.top3Tasks > 0 && (
-              <div className="text-xs text-slate-400 mt-1" style={{ lineHeight: 1.35 }}>
-                + {dashboardData.top3Tasks} focus vandaag
-              </div>
-            )}
-          </button>
-        </section>
-        {dashboardData.completedToday === 0 &&
-          dashboardData.pendingTasks === 0 &&
-          dashboardData.top3Tasks === 0 && (
-          <p className="text-sm text-slate-500 mt-3 text-center" style={{ lineHeight: 1.6 }}>
-            Je lei is schoon. Tijd om te plannen?
-          </p>
-        )}
-
-        {/* Dagelijkse voortgang */}
-        <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between", 
-            marginBottom: 10,
-            width: '100%'
-          }}>
-            <div style={{ ...designSystem.typography.h3, lineHeight: 1.5 }}>Dagelijkse voortgang</div>
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#64748B',
-              fontWeight: 700,
-              textAlign: 'right',
-              flexShrink: 0
-            }}>
-              {getProgressPercentage() >= 100 ? "Behaald!" : `${Math.round(getProgressPercentage())}% van je doelen`}
-            </div>
-          </div>
-          
-          {/* Progress Bar - Zachte kleuren */}
-          <div style={{ 
-            background: '#EFF3F6', 
-            borderRadius: 8, 
-            height: 12, 
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div 
-              style={{ 
-                background: 'rgba(59, 130, 246, 0.9)', 
-                borderRadius: 8, 
-                height: "100%", 
-                width: `${getProgressPercentage()}%`,
-                transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-              className="progress-bar-fill"
-            />
-          </div>
-        </section>
 
         {/* Focus kaart – zen, uitnodigend, niet dwingend */}
         {shouldShowLowestEnergyPath && findLowestEnergyTask && (
@@ -787,350 +488,6 @@ export default function HomeCalm() {
           </section>
         )}
 
-        {/* Motivatie sectie – subtiel, niet schreeuwerig */}
-        {dashboardData.completedToday > 0 && (
-          <section>
-            <div className="bg-white rounded-3xl shadow-sm p-4 sm:p-5 text-center">
-              <div
-                className="inline-flex items-center justify-center w-10 h-10 rounded-full mb-3"
-                style={{
-                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.25)',
-                }}
-              >
-                <span className="text-lg">🎯</span>
-              </div>
-              <h2 className="text-base font-medium text-gray-900 tracking-tight">
-                Je bent weer gestart
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                Elke stap telt vandaag
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* Snelle acties - 3 kolommen grid; gelijke witruimte links en rechts */}
-        <section className="bg-white rounded-3xl shadow-sm snelle-acties-section">
-          <div style={{ 
-            ...designSystem.typography.h3, 
-            marginBottom: designSystem.spacing.md,
-            textAlign: 'left',
-            paddingLeft: 0 // Links uitlijnen met stat cards
-          }}>Snelle acties</div>
-          <div style={designSystem.grid.quickActions} className="dashboard-actions-grid">
-            <button
-              className="quick-action-btn"
-              onClick={() => router.push('/todo')}
-              style={{
-                ...designSystem.quickActionButton,
-                background: "#f8fafc",
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(37, 99, 235, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(37, 99, 235, 0.1)';
-                }
-              }}
-            >
-              <div 
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'rgba(37, 99, 235, 0.15)',
-                  boxShadow: '0 1px 3px rgba(37, 99, 235, 0.15)',
-                  transition: 'background 0.3s ease-in-out'
-                }}
-              >
-                <PlusCircle size={24} strokeWidth={1.5} color="#2563EB" />
-              </div>
-              <div className="quick-action-label" style={{ 
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#475569'
-              }}>Taak toevoegen</div>
-            </button>
-
-            <button
-              className="quick-action-btn"
-              onClick={() => router.push('/focus')}
-              style={{
-                ...designSystem.quickActionButton,
-                background: "#f8fafc",
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(234, 88, 12, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(234, 88, 12, 0.1)';
-                }
-              }}
-            >
-              <div 
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'rgba(234, 88, 12, 0.15)',
-                  boxShadow: '0 1px 3px rgba(234, 88, 12, 0.15)',
-                  transition: 'background 0.3s ease-in-out'
-                }}
-              >
-                <Zap size={24} strokeWidth={1.5} color="#EA580C" />
-              </div>
-              <div className="quick-action-label" style={{ 
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#475569'
-              }}>Focus modus</div>
-            </button>
-
-            <button
-              className="quick-action-btn"
-              onClick={() => router.push('/agenda')}
-              style={{
-                ...designSystem.quickActionButton,
-                background: "#f8fafc",
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(22, 163, 74, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(22, 163, 74, 0.1)';
-                }
-              }}
-            >
-              <div 
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'rgba(22, 163, 74, 0.15)',
-                  boxShadow: '0 1px 3px rgba(22, 163, 74, 0.15)',
-                  transition: 'background 0.3s ease-in-out'
-                }}
-              >
-                <CalendarDays size={24} strokeWidth={1.5} color="#16A34A" />
-              </div>
-              <div className="quick-action-label" style={{ 
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#475569'
-              }}>Agenda</div>
-            </button>
-
-            <button
-              className="quick-action-btn"
-              onClick={() => router.push('/gamification')}
-              style={{
-                ...designSystem.quickActionButton,
-                background: "#f8fafc",
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(202, 138, 4, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(202, 138, 4, 0.1)';
-                }
-              }}
-            >
-              <div 
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'rgba(202, 138, 4, 0.15)',
-                  boxShadow: '0 1px 3px rgba(202, 138, 4, 0.15)',
-                  transition: 'background 0.3s ease-in-out'
-                }}
-              >
-                <Trophy size={24} strokeWidth={1.5} color="#CA8A04" />
-              </div>
-              <div className="quick-action-label" style={{ 
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#475569'
-              }}>Prestaties</div>
-            </button>
-
-            <button
-              className="quick-action-btn"
-              onClick={() => router.push('/dagstart')}
-              style={{
-                ...designSystem.quickActionButton,
-                background: "#f8fafc",
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(245, 158, 11, 0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-                const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                if (iconContainer) {
-                  iconContainer.style.background = 'rgba(245, 158, 11, 0.1)';
-                }
-              }}
-            >
-              <div 
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  boxShadow: '0 1px 3px rgba(245, 158, 11, 0.15)',
-                  transition: 'background 0.3s ease-in-out'
-                }}
-              >
-                <SunMedium size={24} strokeWidth={1.5} color="#F59E0B" />
-              </div>
-              <div className="quick-action-label" style={{ 
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#475569'
-              }}>Dagstart</div>
-            </button>
-
-            <button
-              type="button"
-              className="quick-action-btn"
-              disabled
-              title="Nog in ontwikkeling"
-              style={{
-                ...designSystem.quickActionButton,
-                background: '#F1F5F9',
-                boxShadow: 'none',
-                cursor: 'not-allowed',
-                opacity: 0.9,
-                padding: '24px 20px',
-                width: '100%',
-                transition: 'all 0.3s ease-in-out',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px'
-              }}
-            >
-              <div
-                data-icon-container
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  background: '#E2E8F0',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                }}
-              >
-                <Moon size={24} strokeWidth={1.5} color="#94A3B8" />
-              </div>
-              <div className="quick-action-label" style={{ fontSize: '14px', fontWeight: 500, color: '#64748B' }}>
-                Dagafsluiter
-              </div>
-            </button>
-          </div>
-        </section>
 
         {/* Recent voltooid */}
         {recentTasks.length > 0 && (

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structuro Onboarding Flow Status</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-soft: #f1f5f9;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #dbe3ee;
+      --blue: #2563eb;
+      --green: #059669;
+      --amber: #d97706;
+      --violet: #7c3aed;
+      --red: #dc2626;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    .hero,
+    .card,
+    .step,
+    .mini {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 10px;
+      line-height: 1.15;
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 42px);
+    }
+
+    h2 {
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 17px;
+    }
+
+    p,
+    li {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .intro {
+      font-size: 17px;
+      max-width: 860px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--panel-soft);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 24px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 24px;
+    }
+
+    .card {
+      padding: 22px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .step {
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 5px;
+      background: linear-gradient(180deg, var(--blue), #93c5fd);
+    }
+
+    .step-header {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .index {
+      min-width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .sub {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini {
+      padding: 16px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+
+    .branch {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px dashed var(--line);
+    }
+
+    .status-ok {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .status-warn {
+      color: var(--amber);
+      font-weight: 700;
+    }
+
+    .status-risk {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .legend .blue { color: var(--blue); }
+    .legend .green { color: var(--green); }
+    .legend .amber { color: var(--amber); }
+    .legend .violet { color: var(--violet); }
+    .legend .red { color: var(--red); }
+
+    @media (max-width: 900px) {
+      .layout,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .wrap {
+        width: min(100% - 24px, 1120px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Structuro onboarding: huidige status</h1>
+      <p class="intro">
+        Dit document beschrijft de actuele onboardingflow zoals die nu in de code staat. Het is bedoeld als snelle context voor een volgende agent of ontwikkelaar, zodat direct duidelijk is hoe de onboarding wordt gestart, afgedwongen, opgeslagen en afgerond.
+      </p>
+      <div class="meta">
+        <div class="pill">Route: <code>/onboarding</code></div>
+        <div class="pill">Client component: <code>OnboardingFlow.tsx</code></div>
+        <div class="pill">Aantal slides: <code>8</code></div>
+        <div class="pill">Finish redirect: <code>/dagstart</code></div>
+      </div>
+      <div class="legend">
+        <span class="blue">Flow UI</span>
+        <span class="green">Persistente status</span>
+        <span class="amber">Guards en redirects</span>
+        <span class="violet">Naam/persoonlijkheid</span>
+        <span class="red">Let op / nuance</span>
+      </div>
+    </section>
+
+    <div class="layout">
+      <main class="stack">
+        <section class="card">
+          <h2>1. Overzicht van de flow</h2>
+          <p>De onboarding is een volledig client-side, swipebare slides-flow. De route <code>src/app/onboarding/page.tsx</code> rendert alleen dynamisch <code>OnboardingFlow</code> met <code>ssr: false</code>.</p>
+
+          <div class="flow">
+            <article class="step">
+              <div class="step-header">
+                <span class="index">1</span>
+                <div>
+                  <h3>Welkom</h3>
+                  <p>Korte introductie: Structuro is voor rust, focus en structuur op jouw energie.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">2</span>
+                <div>
+                  <h3>Energie</h3>
+                  <p>Legt uit dat de dag start met een energiekeuze en dat het aantal focuspunten daarop wordt afgestemd.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">3</span>
+                <div>
+                  <h3>Focuspunten</h3>
+                  <p>Toont de 3 focuslagen: kernfocus, vervolgstap en bonusactie.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">4</span>
+                <div>
+                  <h3>Focus modus</h3>
+                  <p>Legt uit dat de gebruiker in een scherm met één taak tegelijk terechtkomt.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">5</span>
+                <div>
+                  <h3>Microstappen</h3>
+                  <p>Belangrijk visueel scherm. Bevat een demo-animatie met 3 microstappen en een afrondingsbanner.</p>
+                </div>
+              </div>
+              <p class="sub">Deze slide gebruikt een lokale state-machine <code>microDemoStage</code> en respecteert <code>prefers-reduced-motion</code>.</p>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">6</span>
+                <div>
+                  <h3>Naam vragen</h3>
+                  <p>Verplichte stap. Verder gaan kan pas als de naam minimaal 2 tekens heeft.</p>
+                </div>
+              </div>
+              <p class="sub">Bij ingelogde users wordt de naam opgeslagen via <code>persistPreferredDisplayName()</code>. Zonder user gaat de naam alleen naar <code>localStorage</code>.</p>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">7</span>
+                <div>
+                  <h3>Persoonlijk welkom</h3>
+                  <p>Gebruikt de net ingevulde voornaam in de copy en geeft een laatste korte bevestiging.</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="step">
+              <div class="step-header">
+                <span class="index">8</span>
+                <div>
+                  <h3>Klaar</h3>
+                  <p>Laat het globale model zien: dagstart, taken kiezen, focus modus, beloningen &amp; levels.</p>
+                </div>
+              </div>
+              <p class="sub">Bij het bereiken van deze slide wordt een kleine confetti-burst getriggerd. De knop onderaan roept <code>finish()</code> aan en stuurt door naar <code>/dagstart</code>.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>2. Routing en guards</h2>
+          <div class="grid-2">
+            <div class="mini">
+              <h3>Ingelogde gebruiker</h3>
+              <ul>
+                <li>Middleware leest in <code>profiles.onboarding_completed</code> of onboarding klaar is.</li>
+                <li>Als dat <code>false</code> is, wordt elke route behalve <code>/onboarding</code> doorgestuurd naar onboarding.</li>
+                <li>Als het <code>true</code> is en de user opent toch <code>/onboarding</code>, dan volgt redirect naar <code>/dagstart</code>.</li>
+              </ul>
+            </div>
+
+            <div class="mini">
+              <h3>Lokale test zonder account</h3>
+              <ul>
+                <li>Loginpagina kan <code>structuro_local_mode=1</code> zetten.</li>
+                <li>Middleware gebruikt dan de cookie <code>structuro_local_onboarding_done</code> als bron van waarheid.</li>
+                <li>Zonder die cookie blijft de gebruiker verplicht op <code>/onboarding</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="branch">
+            <strong>Belangrijk:</strong> de middleware kan geen <code>localStorage</code> lezen. Daarom bestaat er een aparte cookie-spiegel voor lokale onboardingstatus.
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>3. Persistente status en opslag</h2>
+          <div class="grid-2">
+            <div class="mini">
+              <h3>Voor ingelogde users</h3>
+              <ul>
+                <li><code>profiles.onboarding_completed</code> bepaalt of onboarding klaar is.</li>
+                <li>De voornaam wordt opgeslagen in <code>display_name</code> en <code>preferred_name</code>.</li>
+                <li>Daarnaast wordt auth metadata bijgewerkt met <code>full_name</code>.</li>
+              </ul>
+              <p class="sub status-ok">Status: consistente opslag op meerdere plekken.</p>
+            </div>
+
+            <div class="mini">
+              <h3>Voor lokale testmodus</h3>
+              <ul>
+                <li><code>structuro_onboarding_completed_local</code> in <code>localStorage</code> bewaart completion.</li>
+                <li><code>structuro_local_onboarding_done</code> in cookies is de middleware-vriendelijke spiegel.</li>
+                <li><code>structuro_user_name</code> bewaart de ingevulde voornaam lokaal.</li>
+              </ul>
+              <p class="sub status-ok">Status: werkt zonder Supabase-user.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>4. Relatie met dagstart</h2>
+          <p>De onboarding eindigt altijd op <code>/dagstart</code>. Dat is niet alleen een redirect, maar ook de plek waar de rest van het eerste-gebruikerspad verdergaat.</p>
+          <ul>
+            <li><code>DagStartPage</code> gebruikt <code>useOnboardingStatus()</code> om te bepalen of de gebruiker nog in de eerste onboardingfase zit.</li>
+            <li>De prop <code>firstTimeOnboarding={!onboardingCompleted}</code> wordt doorgegeven aan <code>DayStartCheckIn</code>.</li>
+            <li>Na een eerste geslaagde dagstart kan <code>markOnboardingCompleted()</code> alsnog de completion-status zetten.</li>
+          </ul>
+
+          <div class="branch">
+            <strong>Interpretatie:</strong> de slides-onboarding is dus niet het enige onboardingmoment. De dagstart is functioneel onderdeel van de eerste-run ervaring.
+          </div>
+        </section>
+      </main>
+
+      <aside class="stack">
+        <section class="card">
+          <h2>5. Huidige user journeys</h2>
+
+          <div class="mini" style="margin-bottom: 14px;">
+            <h3>Journey A: normale ingelogde user</h3>
+            <ul>
+              <li>Login</li>
+              <li>Middleware checkt <code>profiles.onboarding_completed</code></li>
+              <li>Niet klaar: naar <code>/onboarding</code></li>
+              <li>Naam opslaan op slide 6</li>
+              <li>Slide 8 afronden</li>
+              <li><code>finish()</code> zet <code>profiles.onboarding_completed = true</code></li>
+              <li>Redirect naar <code>/dagstart</code></li>
+            </ul>
+          </div>
+
+          <div class="mini">
+            <h3>Journey B: lokaal testen zonder account</h3>
+            <ul>
+              <li>Loginpagina: knop "Doorgaan als lokale test"</li>
+              <li>Cookie <code>structuro_local_mode</code> wordt gezet</li>
+              <li>Local onboarding flags worden gereset</li>
+              <li>Route naar <code>/onboarding</code></li>
+              <li>Bij finish: lokale completion + done-cookie + redirect naar <code>/dagstart</code></li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>6. Belangrijke helpers</h2>
+          <ul>
+            <li><code>useOnboardingStatus()</code>: combineert Supabase-profiel, auth metadata en local fallback.</li>
+            <li><code>persistPreferredDisplayName()</code>: slaat naam op in profile, auth metadata en localStorage.</li>
+            <li><code>setProfileOnboardingCompleted()</code>: zet completionflag in <code>profiles</code>.</li>
+            <li><code>markOnboardingCompleted()</code>: fallback / afronding vanuit dagstart.</li>
+            <li><code>localOnboardingCookie.ts</code>: cookie-spiegel voor lokale testflow.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>7. Huidige statusbeoordeling</h2>
+          <p class="status-ok">Wat stabiel lijkt</p>
+          <ul>
+            <li>De flow heeft een duidelijke 8-stappenstructuur.</li>
+            <li>Er is onderscheid tussen account-flow en lokale testflow.</li>
+            <li>Routing, completion en naamopslag zijn logisch gekoppeld.</li>
+          </ul>
+
+          <p class="status-warn" style="margin-top: 14px;">Wat conceptueel belangrijk is</p>
+          <ul>
+            <li>De onboardingstatus leeft op meerdere niveaus: slideflow, profielstatus, cookie en dagstart-ervaring.</li>
+            <li>Voor Claude is het belangrijk om niet alleen naar <code>/onboarding</code> te kijken, maar ook naar <code>useOnboardingStatus</code>, middleware en dagstart.</li>
+          </ul>
+
+          <p class="status-risk" style="margin-top: 14px;">Waar je snel misverstanden krijgt</p>
+          <ul>
+            <li><code>finish()</code> zet onboarding al klaar, maar dagstart kan die status ook nog zetten.</li>
+            <li>Lokale testmodus gebruikt andere bronnen van waarheid dan ingelogde users.</li>
+            <li>De verplichte naamstap zit in de onboardingslides, maar naamvalidatie komt ook terug in statusbepaling via profielmetadata.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>8. Korte briefing voor Claude</h2>
+          <div class="mini">
+            <p>
+              Gebruik deze samenvatting als uitgangspunt: Structuro heeft een 8-stappen onboarding op <code>/onboarding</code>, volledig client-side. Ingelogde users worden via middleware naar onboarding gestuurd zolang <code>profiles.onboarding_completed</code> niet waar is. Lokale testgebruikers zonder account volgen dezelfde flow, maar completion wordt dan bewaakt via <code>localStorage</code> plus een cookie-spiegel. Slide 6 vraagt verplicht een naam en slaat die op. De flow eindigt op <code>/dagstart</code>, waar de eerste-run ervaring verdergaat en onboardingcompletion ook nogmaals kan worden bevestigd.
+            </p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

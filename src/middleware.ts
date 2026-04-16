@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   // Zelfde gedrag als productie (login, dagstart-cookie). Lokaal: zorg voor geldige Supabase-env of local_mode-cookie.
-  return await updateSession(request)
+  try {
+    return await updateSession(request)
+  } catch (err) {
+    console.error('[Structuro middleware]', err)
+    // Voorkomt totale 500 bij onverwachte Edge/runtime-fouten (corrupte cookies, bundel, enz.)
+    return NextResponse.next({ request })
+  }
 }
 
 export const config = {

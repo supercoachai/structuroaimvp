@@ -1,0 +1,24 @@
+---
+description: Geen em-dashes in user-facing tekst
+globs: 
+alwaysApply: true
+---
+
+# Geen em-dashes (—)
+
+Gebruik **nooit** het em-dash karakter `—` (U+2014) in user-facing tekst zoals labels, toasts, ondertitels of quotes.
+
+## Alternatieven
+
+- Vervang `— ` door een punt en nieuwe zin: `tekst. Vervolg.`
+- Of gebruik een komma: `tekst, vervolg`
+- Of een dubbele punt: `tekst: vervolg`
+
+## Voorbeelden
+
+| Fout | Goed |
+|------|------|
+| `Focus modus — met timer` | `Focus modus, met timer` |
+| `Goed bezig — door!` | `Goed bezig. Door!` |
+
+Code-comments mogen vrij zijn, maar alle strings die de eindgebruiker ziet moeten em-dash-vrij zijn.

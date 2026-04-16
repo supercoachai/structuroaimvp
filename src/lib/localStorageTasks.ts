@@ -1,5 +1,6 @@
 // LocalStorage helpers voor taken opslag (tijdelijk zonder Supabase)
 import { mockTasks, MockTask } from './mockData';
+import { notifyTaskUpdate } from './taskSync';
 
 const STORAGE_KEY = 'structuro_tasks';
 const STORAGE_KEY_CHECKINS = 'structuro_daily_checkins';
@@ -368,7 +369,6 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
   
   // BELANGRIJK: Trigger ook expliciet een custom event voor same-tab sync
   if (typeof window !== 'undefined') {
-    const { notifyTaskUpdate } = require('./taskSync');
     notifyTaskUpdate();
   }
   

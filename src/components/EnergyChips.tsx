@@ -35,7 +35,7 @@ export default function EnergyChips({ onStart }: EnergyChipsProps) {
       { id: "6", title: "Boodschappen", duration: 45, icon: "🛒" }
     ],
     "⚡": [
-      { id: "7", title: "Belangrijkste taak", duration: 45, icon: "🎯" },
+      { id: "7", title: "Kernfocus van de dag", duration: 45, icon: "🎯" },
       { id: "8", title: "Focus blok", duration: 60, icon: "🔥" },
       { id: "9", title: "Project werk", duration: 90, icon: "🚀" }
     ]

@@ -4,8 +4,26 @@
  */
 export const STRUCTURO_DAGSTART_COOKIE = 'structuro_dagstart_datum';
 
+/** Veilig voor middleware: corrupte cookie (ongeldige %…) mag nooit een 500 geven. */
+export function decodeDagstartCookieValue(raw: string | undefined): string {
+  if (!raw) return '';
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return '';
+  }
+}
+
 export function getCalendarDateAmsterdam(now: Date = new Date()): string {
-  return now.toLocaleDateString('en-CA', { timeZone: 'Europe/Amsterdam' });
+  try {
+    return now.toLocaleDateString('en-CA', { timeZone: 'Europe/Amsterdam' });
+  } catch {
+    // Zeldzame Edge/runtime-fout bij timeZone → val terug op lokale kalenderdag (YYYY-MM-DD)
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 }
 
 /** Client-only: zet cookie na geslaagde dagstart (niet httpOnly; middleware leest mee). */

@@ -28,21 +28,28 @@ type MenuItem = {
   accent: string;
 };
 
-/** Kern-loop: rustig menu — eerst deze drie. */
+/** Kern-loop: dagstart, taken, focus + beloningen bovenaan. */
 const primaryNavItems: MenuItem[] = [
   { name: 'Dagstart', href: '/dagstart', icon: '🌅', description: 'Begin je dag', accent: '#f59e0b' },
   { name: 'Taken & Prioriteiten', href: '/todo', icon: ClipboardDocumentCheckIcon, description: 'Slimme takenlijst', accent: '#22c55e' },
   { name: 'Focus Modus', href: '/focus', icon: FireIcon, description: 'Concentratie hulp', accent: '#ea580c' },
+  { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
 ];
 
-/** Ondersteunend: standaard ingeklapt (expanded sidebar). */
+const settingsNavItem: MenuItem = {
+  name: 'Instellingen',
+  href: '/settings',
+  icon: Cog6ToothIcon,
+  description: 'Persoonlijk',
+  accent: '#6366f1',
+};
+
+/** Ondersteunend: standaard ingeklapt onder “Meer opties” (expanded sidebar). */
 const secondaryNavItems: MenuItem[] = [
   { name: 'Overzicht', href: '/', icon: HomeIcon, description: 'Dagelijkse planning', accent: '#3b82f6' },
   { name: 'Agenda & Planning', href: '/agenda', icon: CalendarIcon, description: 'Dagplanner', accent: '#6366f1' },
   { name: 'Herinneringen', href: '/notificaties', icon: BellIcon, description: 'Slimme alerts', accent: '#8b5cf6' },
-  { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
   { name: 'Uitleg', href: '/uitleg', icon: InformationCircleIcon, description: 'Hoe werkt het?', accent: '#3b82f6' },
-  { name: 'Instellingen', href: '/settings', icon: Cog6ToothIcon, description: 'Persoonlijk', accent: '#6366f1' },
 ];
 
 export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
@@ -177,8 +184,12 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
           )}
           <div className="space-y-1 flex-shrink-0">{primaryNavItems.map(renderItem)}</div>
 
+          <div className="mt-2 flex-shrink-0 space-y-1 border-t border-white/10 pt-2">
+            {renderItem(settingsNavItem)}
+          </div>
+
           {collapsed ? (
-            <div className="space-y-1 mt-3 pt-3 border-t border-white/10 flex-shrink-0">
+            <div className="mt-3 flex-shrink-0 space-y-1 border-t border-white/10 pt-3">
               {secondaryNavItems.map(renderItem)}
             </div>
           ) : (
@@ -196,7 +207,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
                 <ChevronDownIcon
                   className={`w-4 h-4 flex-shrink-0 transition-transform ${secondaryOpen ? 'rotate-180' : ''}`}
                 />
-                <span>{secondaryOpen ? 'Minder opties' : 'Meer — overzicht, agenda, …'}</span>
+                <span>{secondaryOpen ? 'Minder opties' : 'Meer opties'}</span>
               </button>
               {secondaryOpen && (
                 <div className="space-y-1 mt-2 pl-0.5">{secondaryNavItems.map(renderItem)}</div>

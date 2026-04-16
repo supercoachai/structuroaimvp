@@ -6,16 +6,16 @@ export default function UitlegPage() {
   return (
     <AppLayout>
       <div
-        className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+        className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
         style={{ background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)" }}
       >
-        <main className="max-w-3xl mx-auto flex flex-col gap-6">
-          <header className="text-center pt-12 pb-0 mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4 shadow-sm">
-              <span className="text-2xl">🧭</span>
+        <main className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
+            <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 shadow-sm">
+              <span className="text-xl">🧭</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Hoe werkt Structuro?</h1>
-            <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Hoe werkt Structuro?</h1>
+            <p className="mt-2 max-w-md text-sm text-slate-500">
               Kort en simpel. Geen gedoe, wél doen.
             </p>
           </header>
@@ -29,7 +29,7 @@ export default function UitlegPage() {
                   n: 1,
                   icon: "📝",
                   title: "Dagstart + focuspunten",
-                  text: "Klik of sleep taken naar prioriteit 1/2/3. Dit zijn je focuspunten.",
+                  text: "Kies je Kernfocus, Vervolgstap en Bonusactie. Dit zijn je focuspunten.",
                   bg: "bg-blue-50",
                 },
                 {
@@ -83,7 +83,7 @@ export default function UitlegPage() {
                     <span className="font-semibold">Voltooide taken:</span> staan in een inklapbare lijst. Je kunt ze terugzetten of legen.
                   </li>
                   <li>
-                    <span className="font-semibold">Dagstart is je stuur:</span> daar zet je jouw focus voor vandaag (prioriteit 1/2/3).
+                    <span className="font-semibold">Dagstart is je stuur:</span> daar kies je jouw focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie.
                   </li>
                 </ul>
               </div>

@@ -63,7 +63,7 @@ export default function GedachteParkerenModal({ isOpen, onClose, onPark }: Gedac
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Bijvoorbeeld: 'Moet nog boodschappen doen' of 'Bel mama terug'..."
+          placeholder="Bijvoorbeeld: 'Boodschappen doen' of 'Bel mama terug'..."
           maxLength={240}
           rows={4}
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all text-gray-900 placeholder:text-gray-500"

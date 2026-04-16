@@ -1,44 +1,68 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { createClient } from '@/lib/supabase/client';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import Sidebar from '../Sidebar';
 import { ToastHost } from '../Toast';
-import { clearDagstartCookieOnClient } from '@/lib/dagstartCookie';
+import { performClientLogout } from '@/lib/logoutClient';
+import {
+  STRUCTURO_DAGSTART_COOKIE,
+  getCalendarDateAmsterdam,
+  decodeDagstartCookieValue,
+} from '@/lib/dagstartCookie';
+
+function isDagstartDoneToday(): boolean {
+  if (typeof document === 'undefined') return false;
+  const cookies = document.cookie.split(';');
+  for (const c of cookies) {
+    const [key, val] = c.trim().split('=');
+    if (key === STRUCTURO_DAGSTART_COOKIE) {
+      return decodeDagstartCookieValue(val) === getCalendarDateAmsterdam();
+    }
+  }
+  return false;
+}
 
 interface AppLayoutProps {
   children: ReactNode;
-  hideSidebar?: boolean; // Voor Focus Mode - verberg sidebar volledig
+  hideSidebar?: boolean;
 }
 
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const { collapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const router = useRouter();
-  const supabase = createClient();
+
+  const [dagstartDone, setDagstartDone] = useState(false);
+
+  useEffect(() => {
+    setDagstartDone(isDagstartDoneToday());
+
+    const onUpdate = () => setDagstartDone(isDagstartDoneToday());
+    window.addEventListener('structuro_tasks_updated', onUpdate);
+    const interval = setInterval(onUpdate, 2000);
+    return () => {
+      window.removeEventListener('structuro_tasks_updated', onUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const shouldHideSidebar = hideSidebar || !dagstartDone;
 
   const handleLogout = async () => {
     setMobileOpen(false);
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // Geen actieve sessie, bijvoorbeeld bij lokale modus
-    }
-    document.cookie = 'structuro_local_mode=; path=/; max-age=0';
-    clearDagstartCookieOnClient();
-    router.push('/login');
-    router.refresh();
+    await performClientLogout(router);
   };
 
-  // Zen-modus: geen sidebar, volledig scherm
-  if (hideSidebar) {
+  if (shouldHideSidebar) {
     return (
-      <div style={{ width: '100%', height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
-        {children}
+      <div className="w-full h-[100dvh] flex flex-col overflow-hidden">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          {children}
+        </main>
         <ToastHost />
         <button
           type="button"
@@ -54,7 +78,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-gray-50 overflow-hidden">
       {/* Sidebar: op mobiel als overlay, anders normaal */}
       <div
         className={isMobile ? 'fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-out' : 'relative z-10 flex-shrink-0'}
@@ -100,7 +124,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       </button>
 
       <main
-        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pt-16 sm:pt-6"
+        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden pt-14 sm:pt-0"
       >
         {children}
       </main>

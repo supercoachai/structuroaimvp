@@ -36,7 +36,7 @@ export default function EnergyStartPanel({ onStart }: EnergyStartPanelProps) {
       { id: "6", title: "Boodschappen", duration: 45, icon: "🛒", energy: "🙂" }
     ],
     "⚡": [
-      { id: "7", title: "Belangrijkste taak", duration: 45, icon: "🎯", energy: "⚡" },
+      { id: "7", title: "Kernfocus van de dag", duration: 45, icon: "🎯", energy: "⚡" },
       { id: "8", title: "Focus blok", duration: 60, icon: "🔥", energy: "⚡" },
       { id: "9", title: "Project werk", duration: 90, icon: "🚀", energy: "⚡" }
     ]

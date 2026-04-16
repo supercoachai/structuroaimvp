@@ -1,6 +1,7 @@
 /**
- * Zelfde regels als "Alle open taken" in TasksOverview:
- * geen prioriteit 1–3, geen medicatie/events/parkeer, niet afgerond, niet "niet vandaag".
+ * Basisregels voor "backlog"-taken (o.a. energie-kolommen in TasksOverview).
+ * TasksOverview filtert daarnaast taken weg die al onder "Vandaag gekozen" staan (één plek per scherm).
+ * Uitgesloten: medicatie, agenda-events, geparkeerde gedachten, afgerond, "niet vandaag".
  */
 export function isOpenBacklogTask(t: {
   done?: boolean;
@@ -12,9 +13,5 @@ export function isOpenBacklogTask(t: {
   if (t.source === 'medication' || t.source === 'event' || t.source === 'parked_thought') {
     return false;
   }
-  const hasPriority =
-    t.priority != null &&
-    t.priority !== 0 &&
-    (t.priority == 1 || t.priority == 2 || t.priority == 3);
-  return !hasPriority;
+  return true;
 }

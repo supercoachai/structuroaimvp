@@ -28,21 +28,65 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError && this.state.error) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-            <h1 className="text-xl font-bold text-slate-900 mb-2">Er ging iets mis</h1>
-            <p className="text-slate-600 mb-4">
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f8fafc',
+            padding: 24,
+            fontFamily:
+              'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 420,
+              width: '100%',
+              backgroundColor: '#ffffff',
+              borderRadius: 12,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+              border: '1px solid #e2e8f0',
+              padding: 24,
+            }}
+          >
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>
+              Er ging iets mis
+            </h1>
+            <p style={{ fontSize: '0.95rem', color: '#475569', margin: '0 0 16px', lineHeight: 1.5 }}>
               De app kon niet laden. Probeer de pagina te vernieuwen (F5 of Cmd+R).
             </p>
-            <details className="text-sm text-slate-500 mb-4">
-              <summary className="cursor-pointer hover:text-slate-700">Technische details</summary>
-              <pre className="mt-2 p-3 bg-slate-100 rounded-lg overflow-auto text-xs">
+            <details style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 500 }}>Technische details</summary>
+              <pre
+                style={{
+                  marginTop: 8,
+                  padding: 12,
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: 8,
+                  overflow: 'auto',
+                  fontSize: 11,
+                  color: '#334155',
+                }}
+              >
                 {this.state.error.message}
               </pre>
             </details>
             <button
+              type="button"
               onClick={() => window.location.reload()}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+              }}
             >
               Pagina vernieuwen
             </button>

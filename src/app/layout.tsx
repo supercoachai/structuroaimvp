@@ -1,14 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
-import { SidebarProvider } from '../contexts/SidebarContext'
-import { ConsentProvider } from '../contexts/ConsentContext'
-import { TaskProvider } from '../context/TaskContext'
-import ErrorBoundary from '../components/ErrorBoundary'
-import { GoogleAnalytics } from '../components/GoogleAnalytics'
-import { ConsentBanner } from '../components/ConsentBanner'
+import { AppProviders } from '@/components/AppProviders'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -38,20 +31,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl">
-      <body className={inter.className}>
-        <ConsentProvider>
-          <GoogleAnalytics />
-          <ErrorBoundary>
-            <TaskProvider>
-              <SidebarProvider>
-                {children}
-              </SidebarProvider>
-            </TaskProvider>
-          </ErrorBoundary>
-          <ConsentBanner />
-          <Analytics />
-          <SpeedInsights />
-        </ConsentProvider>
+      <body className={`${inter.className} min-h-full bg-gray-50 text-gray-900 antialiased`}>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   )

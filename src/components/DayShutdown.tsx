@@ -165,10 +165,10 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         )}
       </div>
 
-      {/* Wat moet naar morgen? */}
+      {/* Wat neem je mee naar morgen? */}
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          📅 Wat moet naar morgen?
+          📅 Wat neem je mee naar morgen?
         </h3>
         {tasksToMove.length > 0 ? (
           <div style={{ display: 'grid', gap: 8, maxHeight: 200, overflowY: 'auto' }}>

@@ -531,7 +531,7 @@ export default function AgendaPage() {
     "Gebruik een 'parkeerplaats' voor afleidende gedachten",
     "Plan routine taken op vaste tijden elke dag",
     "Werk in een prikkelarme omgeving",
-    "Plan je belangrijkste taak als eerste van de dag",
+    "Plan je kernfocus als eerste van de dag",
     "Gebruik een checklist voor dagelijkse routines",
     "Plan buffer tijd voor ADHD-tax (extra tijd die dingen kosten)",
     "Wissel af tussen verschillende soorten werk",
@@ -575,7 +575,7 @@ export default function AgendaPage() {
     "Sta jezelf toe om taken te verplaatsen naar morgen",
     "Gebruik kleuren per type taak in je agenda",
     "Leg je spullen klaar de avond ervoor",
-    "Vermijd 'moeten'; kies 'ik kies ervoor'",
+    "Vervang 'ik moet' door 'ik kies ervoor'",
     "Neem pauzes voordat je uitgeput bent",
     "Schakel tussen taken mag; plan het dan bewust",
     "Gebruik spraak-naar-tekst voor snelle notities",
@@ -620,7 +620,7 @@ export default function AgendaPage() {
     "Vermijd multitasken; het kost meer tijd dan het oplevert",
     "Schrijf op wat je afleidt en plan het later in",
     "Gebruik een 'stop'-woord om piekeren te onderbreken",
-    "Plan tijd voor creativiteit en spel, niet alleen moeten",
+    "Plan tijd voor creativiteit en spel, niet alleen verplichtingen",
     "Korte check-ins met jezelf: wat heb ik nu nodig?",
     "Gebruik een boodschappenlijst en houd hem bij",
     "Stel je voor dat de taak al klaar is; wat was de stap?",
@@ -650,12 +650,12 @@ export default function AgendaPage() {
     "Kleine stappen zijn nog steeds stappen",
     "Plan 'me-time' zonder schuldgevoel",
     "Gebruik automatische betalingen voor vaste lasten",
-    "Vermijd 'moet ik nog' in je hoofd; schrijf het op",
+    "Laat gedachten niet ronddraaien in je hoofd; schrijf ze op",
     "Plan een wekelijkse reset (opruimen, lijsten leegmaken)",
     "Gebruik dezelfde start van de dag als anker",
     "Je hoeft niet alles te onthouden; dat is wat systemen doen",
     "Plan pauzes in vergaderingen in plaats van uren achter elkaar",
-    "Gebruik een 'wacht'-map voor dingen die later moeten",
+    "Gebruik een 'wacht'-map voor dingen die later aan de beurt zijn",
     "Focus op wat je wél gedaan hebt vandaag",
     "Plan tijd voor leren en experimenteren",
     "Gebruik korte video's of podcasts voor motivatie",
@@ -1181,7 +1181,7 @@ export default function AgendaPage() {
   return (
     <AppLayout>
       <div
-        className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+        className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
         style={{
           color: "#2F3441",
           background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
@@ -1194,22 +1194,21 @@ export default function AgendaPage() {
             margin: "0 auto",
             display: "flex",
             flexDirection: "column",
-            gap: 32,
+            gap: 24,
           }}
         >
-          {/* Header – zweeft los, luchtigheid zoals Taken/Herinneringen */}
-          <header className="text-center pt-12 pb-0 mb-4">
+          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
             <div
-              className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+              className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
               style={{
                 background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
                 boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
               }}
             >
-              <CalendarIcon className="w-7 h-7 text-white" />
+              <CalendarIcon className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Agenda & Planning</h1>
-            <p className="text-sm text-gray-500 mt-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Agenda & Planning</h1>
+            <p className="mt-2 max-w-xl text-sm text-slate-500">
               Plan je dag en houd overzicht over je afspraken en taken.
             </p>
           </header>

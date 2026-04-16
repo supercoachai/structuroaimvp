@@ -55,13 +55,15 @@ export default function TasksOverviewCalm() {
   const columnsWrapperRef = useRef<HTMLDivElement | null>(null);
   const [activeEnergyCol, setActiveEnergyCol] = useState(0);
 
-  // Nieuwe taak UX: eerst titel + duur invullen, pas daarna op energie-kleur klikken.
+  const DEFAULT_NEW_TASK_DURATION_MIN = 15;
+
+  // Duur optioneel: lege invoer → stille standaard (tijdblindheid-vriendelijk).
   const durationValid =
     typeof newDuration === 'number' &&
     Number.isFinite(newDuration) &&
     newDuration >= 1 &&
     newDuration <= 480;
-  const canAddNewTask = newTitle.trim().length > 0 && durationValid;
+  const canAddNewTask = newTitle.trim().length > 0;
 
   useEffect(() => {
     const loadFromDayStart = () => {
@@ -234,12 +236,7 @@ export default function TasksOverviewCalm() {
       return;
     }
 
-    if (!durationValid) {
-      toast('Vul eerst de duur (minuten) in (minimaal 1).');
-      return;
-    }
-
-    const duration = newDuration as number;
+    const duration = durationValid ? (newDuration as number) : DEFAULT_NEW_TASK_DURATION_MIN;
 
     try {
       const taskData = {
@@ -363,17 +360,27 @@ export default function TasksOverviewCalm() {
     }, 300);
   };
 
-  // Bepaal "Nu aan zet" taak (eerste taak uit "Vandaag gekozen")
-  const nuAanZetTask = useMemo(() => {
+  // Eerste niet-afgeronde focus (prioriteit 1→maxSlots), zelfde volgorde als "Vandaag gekozen".
+  // `prioritySlot` =zelfde nummer als het bolletje bij "Vandaag gekozen".
+  const nuAanZet = useMemo((): { task: any | null; prioritySlot: number | null } => {
     for (let i = 1; i <= maxSlots; i++) {
-      if (priorityTasks[i] && !priorityTasks[i].done && !priorityTasks[i].started) {
-        return priorityTasks[i];
-      }
+      const t = priorityTasks[i];
+      if (t && !t.done) return { task: t, prioritySlot: i };
     }
-    return null;
+    return { task: null, prioritySlot: null };
   }, [priorityTasks, maxSlots]);
 
-  // Filter: Alle open taken (geen priority, niet done, geen medication/events/parked_thought)
+  /** Taken die al onder "Vandaag gekozen" staan: niet opnieuw in het energie-bord (één plek per scherm). */
+  const vandaagFocusIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (let p = 1; p <= maxSlots; p++) {
+      const t = priorityTasks[p];
+      if (t?.id && !t.done) ids.add(t.id);
+    }
+    return ids;
+  }, [priorityTasks, maxSlots]);
+
+  // Filter: backlog voor energie-kolommen — zelfde basis als isOpenBacklogTask, minus vandaag-focus
   const openTasks = useMemo(() => {
     const durationOf = (t: any) => {
       const d = t?.duration ?? t?.estimatedDuration;
@@ -381,14 +388,14 @@ export default function TasksOverviewCalm() {
     };
 
     return tasks
-      .filter((t: any) => isOpenBacklogTask(t))
+      .filter((t: any) => isOpenBacklogTask(t) && !vandaagFocusIds.has(t.id))
       // Sorteer op ingeschatte duur: kortste eerst, zonder duur onderaan
       .sort((a: any, b: any) => {
         const diff = durationOf(a) - durationOf(b);
         if (diff !== 0) return diff;
         return String(a?.title || '').localeCompare(String(b?.title || ''));
       });
-  }, [tasks]);
+  }, [tasks, vandaagFocusIds]);
 
   // Energy Board (Taken & Prioriteiten): verdeel open taken in 3 kolommen
   const openByEnergy = useMemo(() => {
@@ -428,14 +435,13 @@ export default function TasksOverviewCalm() {
 
   return (
     <div
-      className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+      className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
       style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
     >
-      <main className="mx-auto max-w-4xl flex flex-col gap-8">
-        {/* Header – zweeft los op grijze achtergrond, luchtigheid zoals Herinneringen */}
-        <header className="text-center pt-12 pb-0 mb-12">
+      <main className="mx-auto w-full max-w-4xl flex flex-col gap-6">
+        <header className="flex w-full flex-col items-start text-left mb-10 sm:mb-12">
           <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full mb-5"
             style={{
               background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
               boxShadow: '0 4px 14px rgba(34, 197, 94, 0.35)',
@@ -443,8 +449,8 @@ export default function TasksOverviewCalm() {
           >
             <CheckCircleIcon className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Taken en Prioriteiten</h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight">Taken en Prioriteiten</h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
             {loading ? (
               'Taken laden…'
             ) : (
@@ -466,7 +472,7 @@ export default function TasksOverviewCalm() {
               title="Uitleg nieuwe taak toevoegen"
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
               onClick={() => {
-                toast("Vul eerst de duur (minuten) in. Klik daarna op een kleur om de taak toe te voegen.");
+                toast('Vul een titel in. Klik op een kleur om toe te voegen. Duur is optioneel (standaard 15 min).');
               }}
             >
               i
@@ -477,9 +483,9 @@ export default function TasksOverviewCalm() {
             >
               <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
               <div className="text-[11px] text-gray-600 leading-relaxed">
-                Vul eerst <span className="font-semibold">Duur (min)</span> in.
+                Vul een <span className="font-semibold">titel</span> in. Klik op <span className="font-semibold">een kleur</span> (groen/geel/rood).
                 <br />
-                Klik daarna op <span className="font-semibold">een kleur</span> (groen/geel/rood).
+                <span className="font-semibold">Duur</span> is optioneel; zonder invoer gebruiken we 15 min.
               </div>
             </div>
           </div>
@@ -562,10 +568,9 @@ export default function TasksOverviewCalm() {
           </div>
           </div>
           
-          {/* Duur is verplicht voordat je de taak toevoegt */}
-          <div className="flex gap-3 items-center mt-3">
+          <div className="flex gap-3 items-center mt-3 flex-wrap">
             <label className="text-sm font-medium text-gray-500">
-              Duur (min): <span className="text-gray-400">(verplicht)</span>
+              Duur (min): <span className="text-gray-400">(optioneel)</span>
             </label>
             <input
               type="number"
@@ -585,7 +590,7 @@ export default function TasksOverviewCalm() {
         {/* "Vandaag?" prompt */}
         {showVandaagPrompt && (
           <div className="mt-3 p-4 bg-gray-50 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span className="text-gray-600">Moet dit vandaag?</span>
+            <span className="text-gray-600">Wil je dit vandaag oppakken?</span>
             <div className="flex gap-2">
               <button
                 onClick={() => handleAddToVandaag(showVandaagPrompt)}
@@ -615,7 +620,9 @@ export default function TasksOverviewCalm() {
               title="Uitleg nu aan zet"
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
               onClick={() =>
-                toast("Nu aan zet: dit is je eerste focus-taak. Klik op Beginnen om Focus Modus te starten.")
+                toast(
+                  'Nu aan zet: je hoofdfocus (eerste prioriteit vandaag). Beginnen of Hervatten opent Focus Modus.'
+                )
               }
             >
               i
@@ -626,37 +633,63 @@ export default function TasksOverviewCalm() {
             >
               <div className="text-[11px] font-semibold text-gray-900 mb-1">Nu aan zet</div>
               <div className="text-[11px] text-gray-600 leading-relaxed">
-                Je eerste focus-taak. Klik op <span className="font-semibold">Beginnen</span> om Focus Modus te starten.
+                Zelfde taak als je eerste vak onder Vandaag gekozen.{' '}
+                <span className="font-semibold">Beginnen</span> of{' '}
+                <span className="font-semibold">Hervatten</span> opent Focus Modus.
               </div>
             </div>
           </div>
         </div>
         
-        {nuAanZetTask ? (
+        {nuAanZet.task ? (
           <div className="bg-gray-50 rounded-2xl p-6 hover:shadow-sm transition-shadow">
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, marginBottom: 6, lineHeight: 1.35 }}>
-                  {nuAanZetTask.title}
-                </div>
-                <div style={{ fontSize: 13, color: theme.sub }}>
-                  {getEnergyLabel(nuAanZetTask.energyLevel || 'medium')}
-                  {nuAanZetTask.duration ? ` · ${nuAanZetTask.duration} min` : ''}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
+                {nuAanZet.prioritySlot != null && (
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      background: theme.accent,
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                    aria-hidden
+                  >
+                    {nuAanZet.prioritySlot}
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, marginBottom: 6, lineHeight: 1.35 }}>
+                    {nuAanZet.task.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: theme.sub }}>
+                    {getEnergyLabel(nuAanZet.task.energyLevel || 'medium')}
+                    {(nuAanZet.task.duration ?? nuAanZet.task.estimatedDuration)
+                      ? ` · ${nuAanZet.task.duration ?? nuAanZet.task.estimatedDuration} min`
+                      : ''}
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => startFocus(nuAanZetTask)}
+                onClick={() => startFocus(nuAanZet.task)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors flex-shrink-0"
               >
                 <PlayIcon className="w-4 h-4" aria-hidden />
-                Beginnen
+                {nuAanZet.task.started ? 'Hervatten' : 'Beginnen'}
               </button>
             </div>
           </div>
         ) : (
           <div className="p-6 bg-gray-50 rounded-2xl shadow-sm text-center text-gray-500 text-sm">
-            Geen taak gekozen voor vandaag
+            Geen open focus voor vandaag. Kies eerst taken bij Dagstart of zet ze hieronder op vandaag.
           </div>
         )}
       </section>
@@ -673,7 +706,7 @@ export default function TasksOverviewCalm() {
                 title="Uitleg vandaag gekozen"
                 className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
                 onClick={() =>
-                  toast("Vandaag gekozen: dit zijn je focuspunten voor vandaag (prioriteit 1/2/3). Start per taak met Start Focus.")
+                  toast("Dit zijn je focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie. Start per taak met Start Focus.")
                 }
               >
                 i
@@ -684,7 +717,7 @@ export default function TasksOverviewCalm() {
               >
                 <div className="text-[11px] font-semibold text-gray-900 mb-1">Vandaag gekozen</div>
                 <div className="text-[11px] text-gray-600 leading-relaxed">
-                  Je focuspunten voor vandaag (prioriteit 1/2/3). Start per taak met <span className="font-semibold">Start Focus</span>.
+                  Je focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie. Start per taak met <span className="font-semibold">Start Focus</span>.
                 </div>
               </div>
             </div>
@@ -737,22 +770,26 @@ export default function TasksOverviewCalm() {
                         }}
                         title={getEnergyLabel(task.energyLevel || 'medium')}
                       />
-                      {task.duration && (
-                        <span className="tabular-nums">· {task.duration} min</span>
+                      {(task.duration ?? task.estimatedDuration) != null && (
+                        <span className="tabular-nums">
+                          · {task.duration ?? task.estimatedDuration} min
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Acties: Start, Uit vandaag, Verwijderen – elke taak heeft eigen Start */}
+                {/* Start verborgen als deze taak al in Nu aan zet staat en gestart is (actie zit daar bij Hervatten). */}
                 <div className="flex gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end flex-wrap">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); startFocus(task); }}
-                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
-                    title="Start Focus voor deze taak"
-                  >
-                    Start
-                  </button>
+                  {!(nuAanZet.task?.id === task.id && task.started) && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); startFocus(task); }}
+                      className="px-3 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
+                      title="Start Focus voor deze taak"
+                    >
+                      Start
+                    </button>
+                  )}
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();

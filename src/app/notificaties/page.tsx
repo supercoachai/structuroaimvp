@@ -121,35 +121,28 @@ export default function HerinneringenPage() {
   return (
     <AppLayout>
       <div
-        className="min-h-screen py-12 px-4 sm:px-6 pb-16"
+        className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
         style={{
           background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
         }}
       >
         <main
-          style={{
-            maxWidth: 640,
-            margin: "0 auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: 32,
-          }}
+          className="mx-auto flex w-full max-w-[640px] flex-col gap-6"
         >
-          {/* Header – zweeft los, pt-12/mb-12 voor luchtigheid */}
-          <header className="text-center pt-12 pb-0 mb-12">
+          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
             <div
-              className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+              className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
               style={{
                 background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
                 boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
               }}
             >
-              <BellAlertIcon className="w-7 h-7 text-white" />
+              <BellAlertIcon className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">
               Herinneringen
             </h1>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="mt-2 max-w-md text-sm text-slate-500">
               Taken afmaken en komende afspraken
             </p>
           </header>

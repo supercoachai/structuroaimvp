@@ -32,9 +32,9 @@ interface TaskItemProps {
 }
 
 const PRIORITY_LABELS = {
-  1: "Belangrijkst",
-  2: "Belangrijk", 
-  3: "Extra focus"
+  1: "Kernfocus",
+  2: "Vervolgstap",
+  3: "Bonusactie",
 };
 
 /** Kalme taakkaart met één duidelijke actie: afvinken. */
