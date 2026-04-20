@@ -11,6 +11,7 @@ import TaskScheduleEditor from "./TaskScheduleEditor";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
 import { isOpenBacklogTask } from "../lib/taskFilters";
 import { PlayIcon, CheckCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
   bg: designSystem.colors.background,
@@ -449,8 +450,8 @@ export default function TasksOverviewCalm() {
           >
             <CheckCircleIcon className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight">Taken en Prioriteiten</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-500">
+          <h1 className="structuro-page-title">Taken en Prioriteiten</h1>
+          <p className="structuro-page-subtitle">
             {loading ? (
               'Taken laden…'
             ) : (
@@ -459,9 +460,11 @@ export default function TasksOverviewCalm() {
           </p>
         </header>
 
-        {/* Content – losse witte kaarten met gelijke afstand */}
+        <GeparkeerdeGedachtenSection />
+
+        {/* Content: losse witte kaarten met gelijke afstand */}
         <div className="flex flex-col gap-8">
-      {/* SECTIE 1: Nieuwe taak toevoegen – compact op mobiel, ruim op desktop */}
+      {/* SECTIE 1: Nieuwe taak toevoegen */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
@@ -1356,7 +1359,7 @@ export default function TasksOverviewCalm() {
                   const val = e.target.value ? parseInt(e.target.value, 10) : null;
                   setConvertDuration(Number.isFinite(val as any) ? val : null);
                 }}
-                placeholder="Bijv. 15, 30, 60"
+                placeholder="Minuten, bijv. 15"
                 style={{
                   padding: '10px 12px',
                   border: `1px solid ${theme.line}`,

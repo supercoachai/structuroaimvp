@@ -15,7 +15,7 @@ export default function CheckIn({ onCheckIn }: CheckInProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-xl font-semibold mb-4 text-gray-800">Hoe voel je je vandaag?</h3>
+      <h3 className="text-xl font-semibold mb-4 text-gray-800">Hoe zit je in je energie vandaag?</h3>
       <div className="flex gap-3 mb-4">
         {["😴", "🙂", "⚡"].map((emoji) => (
           <button 

@@ -28,12 +28,11 @@ type MenuItem = {
   accent: string;
 };
 
-/** Kern-loop: dagstart, taken, focus + beloningen bovenaan. */
+/** Kern-loop: dagstart, taken, focus. Beloningen staat onder “Meer opties”. */
 const primaryNavItems: MenuItem[] = [
   { name: 'Dagstart', href: '/dagstart', icon: '🌅', description: 'Begin je dag', accent: '#f59e0b' },
   { name: 'Taken & Prioriteiten', href: '/todo', icon: ClipboardDocumentCheckIcon, description: 'Slimme takenlijst', accent: '#22c55e' },
   { name: 'Focus Modus', href: '/focus', icon: FireIcon, description: 'Concentratie hulp', accent: '#ea580c' },
-  { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
 ];
 
 const settingsNavItem: MenuItem = {
@@ -46,6 +45,7 @@ const settingsNavItem: MenuItem = {
 
 /** Ondersteunend: standaard ingeklapt onder “Meer opties” (expanded sidebar). */
 const secondaryNavItems: MenuItem[] = [
+  { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
   { name: 'Overzicht', href: '/', icon: HomeIcon, description: 'Dagelijkse planning', accent: '#3b82f6' },
   { name: 'Agenda & Planning', href: '/agenda', icon: CalendarIcon, description: 'Dagplanner', accent: '#6366f1' },
   { name: 'Herinneringen', href: '/notificaties', icon: BellIcon, description: 'Slimme alerts', accent: '#8b5cf6' },

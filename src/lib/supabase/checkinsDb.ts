@@ -32,18 +32,27 @@ export async function getCheckInFromSupabase(
   return data as CheckInRow | null;
 }
 
+const ENERGY_MAX_TASKS: Record<string, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+};
+
 export async function upsertCheckInToSupabase(
   userId: string,
   date: string,
   payload: CheckInPayload
 ): Promise<void> {
+  const maxTasks = ENERGY_MAX_TASKS[payload.energy_level] ?? 3;
+  const ids = payload.top3_task_ids?.slice(0, maxTasks) ?? null;
+
   const supabase = createClient();
   const { error } = await supabase.from("daily_checkins").upsert(
     {
       user_id: userId,
       date,
       energy_level: payload.energy_level,
-      top3_task_ids: payload.top3_task_ids?.length ? payload.top3_task_ids : null,
+      top3_task_ids: ids?.length ? ids : null,
     },
     { onConflict: "user_id,date" }
   );

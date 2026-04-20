@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../../components/layout/AppLayout';
+import { DopamineAirlock } from '@/components/DopamineAirlock';
 import { track } from '../../shared/track';
 import { toast } from '../../components/Toast';
 import { useTaskContext } from '../../context/TaskContext';
@@ -11,6 +12,9 @@ import { getRandomAdhdPlanningQuote } from '../../lib/adhdQuotes';
 import { xpForTask } from '../../lib/xp';
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from '../../lib/microSteps';
 import { parkFocusTaskSilently } from '@/lib/parkFocusTask';
+import { useUser } from '@/hooks/useUser';
+import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
+import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
 
 const CONFETTI_COLORS = ['#10B981', '#F59E0B', '#4A90E2', '#EC4899', '#8B5CF6', '#F97316', '#EAB308', '#22C55E'];
 
@@ -33,12 +37,17 @@ function FocusContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
+  const { user } = useUser();
   const [taskTitle, setTaskTitle] = useState(searchParams?.get('task') || 'Focus sessie');
   const { checkIn, saveCheckIn } = useCheckIn();
   const [nuNietBusy, setNuNietBusy] = useState(false);
+  const [parkedCount, setParkedCount] = useState(0);
   const [confettiElements, setConfettiElements] = useState<number[]>([]);
   const [showFocusCard, setShowFocusCard] = useState(true);
   const [inlineNewStep, setInlineNewStep] = useState('');
+  const [isAirlockActive, setIsAirlockActive] = useState(false);
+  const [microUndoSnapshot, setMicroUndoSnapshot] = useState<MicroStep[] | null>(null);
+  const microUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentTask = useMemo(() => {
     const taskParam = searchParams?.get('task');
@@ -52,6 +61,13 @@ function FocusContent() {
     );
     return priority1Task || null;
   }, [tasks, searchParams]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    countActiveParkedThoughts(user.id)
+      .then(setParkedCount)
+      .catch(() => setParkedCount(0));
+  }, [user?.id]);
 
   useEffect(() => {
     const handleTaskUpdate = () => { fetchTasks(); };
@@ -170,19 +186,40 @@ function FocusContent() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleToggleMicroStep = async (stepId: string) => {
+  const handleUndoMicrostep = useCallback(() => {
+    if (!currentTask || !microUndoSnapshot) return;
+    if (microUndoTimerRef.current) {
+      clearTimeout(microUndoTimerRef.current);
+      microUndoTimerRef.current = null;
+    }
+    void updateTask(currentTask.id, { microSteps: microUndoSnapshot });
+    setMicroUndoSnapshot(null);
+  }, [currentTask, microUndoSnapshot, updateTask]);
+
+  const handleToggleMicroStep = (stepId: string) => {
     if (!currentTask) return;
     const steps = normalizeMicroSteps(currentTask.microSteps);
     const idx = steps.findIndex(s => s.id === stepId);
     if (idx < 0) return;
+    const wasDone = Boolean(steps[idx]?.done);
     const next = steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
-    await updateTask(currentTask.id, { microSteps: next });
-    const nowDone = next[idx]?.done;
-    if (nowDone) {
-      setConfettiElements(prev => [...prev, Date.now()]);
-      setTimeout(() => setConfettiElements(prev => prev.slice(1)), 900);
-      toast('Stap voltooid', { durationMs: 3000, replace: true });
+    const nowDone = Boolean(next[idx]?.done);
+    if (!wasDone && nowDone) {
+      triggerHaptic(HAPTIC_PATTERNS.MICROSTEP_DONE);
+      if (microUndoTimerRef.current) clearTimeout(microUndoTimerRef.current);
+      setMicroUndoSnapshot(steps.map(s => ({ ...s })));
+      microUndoTimerRef.current = setTimeout(() => {
+        setMicroUndoSnapshot(null);
+        microUndoTimerRef.current = null;
+      }, 400);
+    } else {
+      setMicroUndoSnapshot(null);
+      if (microUndoTimerRef.current) {
+        clearTimeout(microUndoTimerRef.current);
+        microUndoTimerRef.current = null;
+      }
     }
+    void updateTask(currentTask.id, { microSteps: next });
   };
 
   const handleInlineAddStep = async () => {
@@ -264,25 +301,32 @@ function FocusContent() {
     finally { setNuNietBusy(false); }
   };
 
+  const handleAirlockComplete = useCallback(() => {
+    setIsAirlockActive(false);
+    router.push('/shutdown');
+  }, [router]);
+
   const completeCurrentTask = async () => {
     if (!currentTask?.id) { toast('Geen taak om te voltooien'); return; }
     try {
       const gainXp = xpForTask(currentTask);
+      triggerHaptic(HAPTIC_PATTERNS.TASK_DONE);
       setIsRunning(false);
       setIsPaused(false);
       setCompleted(false);
       setShowTimeUpPrompt(false);
-      await updateTask(currentTask.id, { done: true, completedAt: new Date().toISOString(), started: false });
-      toast('Taak voltooid!');
+      setMicroUndoSnapshot(null);
+      if (microUndoTimerRef.current) {
+        clearTimeout(microUndoTimerRef.current);
+        microUndoTimerRef.current = null;
+      }
+      void updateTask(currentTask.id, { done: true, completedAt: new Date().toISOString(), started: false });
       track('task_completed_early', {
         taskId: currentTask.id,
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
         durationPlanned: duration, xp: gainXp,
       });
-      const burstCount = 28;
-      setConfettiElements(Array.from({ length: burstCount }, (_, i) => Date.now() + i));
-      const title = encodeURIComponent(currentTask.title || 'Taak');
-      setTimeout(() => { setConfettiElements([]); router.push(`/gamification?gain=${gainXp}&task=${title}`); }, 1600);
+      setIsAirlockActive(true);
     } catch (err) { console.error('Error completing task:', err); toast('Fout bij voltooien van taak'); }
   };
 
@@ -295,14 +339,32 @@ function FocusContent() {
 
   const handleParkThought = async (thoughtText: string) => {
     try {
-      await addTask({
-        title: thoughtText, duration: null, priority: null, done: false, started: false,
-        dueAt: null, reminders: [], repeat: "none", impact: "🧠",
-        source: "parked_thought", energyLevel: 'low', estimatedDuration: null,
-      });
-      toast("Gedachte geparkeerd!");
+      if (user?.id) {
+        if (parkedCount >= 10) {
+          toast("Je hebt al 10 geparkeerde gedachten. Zet er eerst een paar om naar taken.");
+          return;
+        }
+        await insertParkedThought(user.id, thoughtText);
+        setParkedCount((c) => c + 1);
+        if (parkedCount + 1 >= 9) {
+          toast("Bijna vol (9/10). Na je sessie: omzetten naar taken.");
+        } else {
+          toast("Gedachte geparkeerd!");
+        }
+      } else {
+        await addTask({
+          title: thoughtText, duration: null, priority: null, done: false, started: false,
+          dueAt: null, reminders: [], repeat: "none", impact: "🧠",
+          source: "parked_thought", energyLevel: 'low', estimatedDuration: null,
+        });
+        toast("Gedachte geparkeerd!");
+      }
       track("interruption_parked", { taskTitle, duration, thought: thoughtText });
     } catch (error: any) {
+      if (error.message === "max_reached") {
+        toast("Maximum 10 gedachten bereikt. Zet ze om naar taken.");
+        return;
+      }
       console.error('Failed to park thought:', error);
       toast("Fout bij parkeren: " + (error.message || 'Onbekende fout'));
     }
@@ -367,8 +429,8 @@ function FocusContent() {
 
   // ─── Shared: Microsteps section ───────────────
   const microStepsSection = (
-    <div className="bg-white p-5 sm:p-6">
-      <div className="flex items-center gap-2 mb-4">
+    <div className="bg-white p-4">
+      <div className="flex items-center gap-2 mb-3">
         <svg className="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" />
         </svg>
@@ -376,33 +438,42 @@ function FocusContent() {
       </div>
 
       {existingMicroSteps.length > 0 ? (
-        <div className="space-y-1.5">
+        <div className="space-y-0">
           {existingMicroSteps.map((step, idx) => {
             const isDone = Boolean(step.done);
             const isActive = !isDone && idx === activeStepIdx;
             return (
-              <button
-                key={step.id} type="button"
-                onClick={() => handleToggleMicroStep(step.id)}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
-                  isActive ? 'bg-purple-50 border border-purple-200' : 'hover:bg-slate-50'
+              <div
+                key={step.id}
+                className={`overflow-hidden transition-all duration-300 ease-out ${
+                  isDone
+                    ? 'max-h-0 opacity-0 mb-0 py-0 pointer-events-none'
+                    : 'max-h-24 opacity-100 mb-1.5 py-0 pointer-events-auto'
                 }`}
               >
-                {isDone ? (
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                ) : isActive ? (
-                  <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                  </div>
-                ) : (
-                  <div className="w-7 h-7 rounded-full border-2 border-slate-300 flex-shrink-0" />
-                )}
-                <span className={`text-sm ${isDone ? 'text-slate-400 line-through' : isActive ? 'text-purple-800 font-medium' : 'text-slate-700'}`}>
-                  {step.title}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMicroStep(step.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${
+                    isActive ? 'bg-purple-50 border border-purple-200' : 'border border-transparent hover:bg-slate-50'
+                  }`}
+                >
+                  {isDone ? (
+                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </div>
+                  ) : isActive ? (
+                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-purple-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    </div>
+                  ) : (
+                    <div className="w-7 h-7 flex-shrink-0 rounded-full border-2 border-slate-300" />
+                  )}
+                  <span className={`text-sm ${isActive ? 'text-purple-800 font-medium' : 'text-slate-700'}`}>
+                    {step.title}
+                  </span>
+                </button>
+              </div>
             );
           })}
         </div>
@@ -418,13 +489,25 @@ function FocusContent() {
           placeholder="Nieuwe stap toevoegen..."
           className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-300 text-slate-700"
         />
-        <button type="button" onClick={handleInlineAddStep} disabled={!inlineNewStep.trim()}
+               <button type="button" onClick={handleInlineAddStep} disabled={!inlineNewStep.trim()}
           className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 flex items-center justify-center transition-colors disabled:opacity-40 flex-shrink-0 text-lg font-light"
         >+</button>
       </div>
 
+      {microUndoSnapshot && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleUndoMicrostep}
+            className="text-xs font-medium text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+          >
+            Ongedaan
+          </button>
+        </div>
+      )}
+
       {existingMicroSteps.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
           <span className="text-sm text-slate-400">{completedStepsCount} van {existingMicroSteps.length} klaar</span>
           <div className="flex gap-1.5">
             {existingMicroSteps.map((step, idx) => (
@@ -438,24 +521,45 @@ function FocusContent() {
     </div>
   );
 
-  // ─── Shared: Thought parking form ─────────────
-  const parkThoughtForm = (
-    <div className="max-w-md w-full mt-6 pt-4 border-t border-slate-200">
+  // ─── Shared: Thought parking (fixed onderaan viewport) ─────────────
+  const parkThoughtBar = (
+    <div
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-100 bg-white px-4 pt-3 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)]"
+      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
           const input = e.currentTarget.querySelector('input') as HTMLInputElement;
-          if (input && input.value.trim()) { handleParkThought(input.value.trim()); input.value = ''; }
+          if (input && input.value.trim()) {
+            handleParkThought(input.value.trim());
+            input.value = '';
+          }
         }}
-        className="flex gap-2"
+        className="mx-auto flex max-w-md gap-2"
       >
-        <input type="text" placeholder="Parkeer een gedachte..."
-          className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-300"
+        <input
+          type="text"
+          placeholder="Parkeer een gedachte..."
+          className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-slate-300/40 focus:border-gray-300"
         />
-        <button type="submit"
-          className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-        >Parkeer</button>
+        <button
+          type="submit"
+          className="shrink-0 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+        >
+          Parkeer
+        </button>
       </form>
+      {user?.id && parkedCount > 0 ? (
+        <p
+          className={`mx-auto mt-2 max-w-md text-center text-xs ${
+            parkedCount >= 9 ? 'font-medium text-amber-600' : 'text-slate-400'
+          }`}
+        >
+          {parkedCount}/10 gedachten geparkeerd
+          {parkedCount >= 9 ? ' \u00B7 Na je sessie: omzetten' : ''}
+        </p>
+      ) : null}
     </div>
   );
 
@@ -523,13 +627,14 @@ function FocusContent() {
     <AppLayout hideSidebar={true}>
       <style>{confettiStyle}</style>
       {confettiOverlay}
+      <DopamineAirlock isActive={isAirlockActive} onAirlockComplete={handleAirlockComplete} />
       <BackToDashboardButton />
 
-      <div className="bg-slate-50 min-h-full px-4 py-6 sm:py-8 flex flex-col items-center">
+      <div className="bg-slate-50 min-h-full px-4 py-4 sm:py-6 flex flex-col items-center pb-24">
         {/* ── The Card ── */}
-        <div className="max-w-md w-full rounded-2xl shadow-lg overflow-hidden mt-10">
+        <div className="max-w-md w-full rounded-2xl shadow-lg overflow-hidden mt-6 sm:mt-8">
           {/* Dark Header */}
-          <div className="bg-slate-900 text-white p-6 text-center">
+          <div className="bg-slate-900 text-white p-5 text-center sm:p-6">
             <p className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
               {priorityLabel}
             </p>
@@ -543,8 +648,8 @@ function FocusContent() {
             </p>
 
             {showTimerInHeader && (
-              <div className="mt-5">
-                <div className="text-5xl sm:text-6xl font-medium tabular-nums tracking-tight leading-none">
+              <div className="mt-4">
+                <div className="text-5xl font-medium tabular-nums tracking-tight leading-none">
                   {formatTime(timeLeft)}
                 </div>
                 {isPaused && (
@@ -554,21 +659,8 @@ function FocusContent() {
             )}
 
             {preTimerState && (
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <span className="text-xs text-slate-500">🕒</span>
-                <select
-                  value={duration}
-                  onChange={(e) => { const val = parseInt(e.target.value); if (val) { setDuration(val); setTimeLeft(val * 60); } }}
-                  className="bg-slate-800 text-slate-300 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none cursor-pointer appearance-none pr-8"
-                  style={{
-                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394A3B8' d='M6 9L1 4h10z'/%3E%3C/svg%3E\")",
-                    backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center",
-                  }}
-                >
-                  {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map((m) => (
-                    <option key={m} value={m}>{m} min</option>
-                  ))}
-                </select>
+              <div className="mt-4 text-sm text-slate-400">
+                🕒 {duration} min
               </div>
             )}
           </div>
@@ -578,12 +670,23 @@ function FocusContent() {
         </div>
 
         {/* ── Action Buttons (below card) ── */}
-        <div className="max-w-md w-full mt-6 flex flex-col gap-3">
+        <div className="max-w-md w-full mt-4 flex flex-col gap-2">
+          {!showTimeUpPrompt ? (
+            <button
+              type="button"
+              onClick={handleNuNietPark}
+              disabled={nuNietBusy}
+              className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors disabled:opacity-40"
+            >
+              {nuNietBusy ? '…' : 'Nu niet'}
+            </button>
+          ) : null}
+
           {showTimeUpPrompt ? (
             <>
               <p className="text-center text-slate-500 text-sm mb-1 italic">&ldquo;{timeUpQuote}&rdquo;</p>
               <button onClick={completeCurrentTask}
-                className="w-full py-3 rounded-xl border-2 border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors">
+                className="w-full py-2 rounded-xl border-2 border-emerald-200 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors">
                 Ja, taak voltooid
               </button>
               <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -607,50 +710,42 @@ function FocusContent() {
                   track('ignite_extend_after_timeup', { taskTitle, duration, extra });
                   toast(`Top, nog ${extra} minuten!`);
                 }}
-                className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
+                className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                 Nee, verlengen met {extendMinutes} min
               </button>
             </>
           ) : timerActive ? (
             <>
               <button onClick={pauseSession}
-                className={`w-full py-3 rounded-xl border-2 font-semibold transition-colors ${
+                className={`w-full py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
                   isPaused ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-amber-200 text-amber-700 hover:bg-amber-50'
                 }`}>
                 {isPaused ? 'Hervatten' : 'Pauzeren'}
               </button>
               <button onClick={completeCurrentTask}
-                className="w-full py-3 rounded-xl border-2 border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors">
+                className="w-full py-2 rounded-xl border-2 border-emerald-200 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors">
                 Taak afgerond
               </button>
               {showExtendButton && (
                 <button onClick={extendSession}
-                  className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
+                  className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
                   +5 Minuten
                 </button>
               )}
               <button onClick={stopSession}
-                className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-500 font-semibold hover:bg-slate-50 transition-colors">
+                className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors">
                 Stoppen
               </button>
             </>
           ) : (
             <button onClick={startSession}
-              className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">
+              className="w-full py-2 rounded-xl bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 transition-colors">
               Start Focus Sessie
-            </button>
-          )}
-
-          {!showTimeUpPrompt && (
-            <button type="button" onClick={handleNuNietPark} disabled={nuNietBusy}
-              className="text-sm text-slate-400 hover:text-slate-600 py-2 transition-colors disabled:opacity-40">
-              {nuNietBusy ? '…' : 'Nu niet'}
             </button>
           )}
         </div>
 
-        {/* ── Gedachte parkeren ── */}
-        {parkThoughtForm}
+        {parkThoughtBar}
       </div>
     </AppLayout>
   );

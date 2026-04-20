@@ -38,7 +38,7 @@ function notify(payload: any) {
         body: payload.body || "Herinnering",
         tag: payload.id || undefined,
         silent: false,
-        icon: "/favicon.ico" // Voeg een icoon toe
+        icon: "/Logo Structuro.png",
       });
       n.onclick = () => payload.onClick?.();
       

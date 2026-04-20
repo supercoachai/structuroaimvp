@@ -883,7 +883,7 @@ function GamificationContent() {
         <main
           style={{
             width: "100%",
-            maxWidth: 720,
+            maxWidth: 896,
             margin: "0 auto",
             display: "flex",
             flexDirection: "column",
@@ -1167,8 +1167,8 @@ function GamificationContent() {
             >
               <span style={{ fontSize: 28 }}>🏆</span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Prestaties</h1>
-            <p className="text-sm text-gray-500 mt-2">
+            <h1 className="structuro-page-title">Prestaties</h1>
+            <p className="structuro-page-subtitle mx-auto">
               Motiveer jezelf met beloningen en voortgang
             </p>
           </header>

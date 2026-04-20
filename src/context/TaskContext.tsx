@@ -18,6 +18,37 @@ import {
   subscribeToTasks,
 } from '../lib/supabase/tasksDb';
 
+/** Tijdelijke id tijdens optimistic add; wordt vervangen zodra Supabase insert klaar is. */
+export const OPTIMISTIC_TASK_ID_PREFIX = 'structuro-pending:';
+
+function newOptimisticTaskId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `${OPTIMISTIC_TASK_ID_PREFIX}${crypto.randomUUID()}`;
+  }
+  return `${OPTIMISTIC_TASK_ID_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function buildOptimisticTask(input: Omit<Task, 'id'>, tempId: string): Task {
+  const now = new Date().toISOString();
+  return {
+    ...input,
+    id: tempId,
+    title: input.title ?? '',
+    done: input.done ?? false,
+    started: input.started ?? false,
+    priority: input.priority ?? null,
+    source: input.source ?? 'regular',
+    reminders: input.reminders ?? [],
+    repeat: input.repeat ?? 'none',
+    impact: input.impact ?? '🌱',
+    energyLevel: input.energyLevel ?? 'medium',
+    microSteps: Array.isArray(input.microSteps) ? input.microSteps : [],
+    notToday: input.notToday ?? false,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
 // Task interface (export voor gebruik in andere componenten)
 export interface Task {
   id: string;
@@ -258,10 +289,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const addTask = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
       if (user) {
-        const newTask = await addTaskToSupabase(user.id, task);
-        setTasks((prev) => (prev.some(t => t.id === newTask.id) ? prev : [newTask, ...prev]));
+        const tempId = newOptimisticTaskId();
+        const optimistic = buildOptimisticTask(task, tempId);
+        setTasks((prev) => (prev.some((t) => t.id === optimistic.id) ? prev : [optimistic, ...prev]));
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-        return newTask;
+        try {
+          const newTask = await addTaskToSupabase(user.id, task);
+          setTasks((prev) => prev.map((t) => (t.id === tempId ? newTask : t)));
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          return newTask;
+        } catch (syncErr) {
+          console.error('TaskContext: addTask Supabase sync failed, rollback', syncErr);
+          setTasks((prev) => prev.filter((t) => t.id !== tempId));
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          await fetchTasks();
+          throw syncErr;
+        }
       }
       const localTaskData = mapTaskToLocalTask(task);
       const newTask = addTaskToStorage(localTaskData as Omit<LocalTask, 'id' | 'created_at' | 'updated_at'>);
@@ -283,10 +326,27 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
     try {
       if (user) {
-        const updated = await updateTaskInSupabase(user.id, id, updates);
-        setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
+        if (id.startsWith(OPTIMISTIC_TASK_ID_PREFIX)) {
+          throw new Error(
+            'Deze taak wordt nog opgeslagen. Wacht even en probeer het opnieuw.'
+          );
+        }
+        setTasks((prev) => {
+          const t = prev.find((x) => x.id === id);
+          if (!t) return prev;
+          return prev.map((x) => (x.id === id ? { ...t, ...updates } : x));
+        });
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-        return updated;
+        try {
+          const updated = await updateTaskInSupabase(user.id, id, updates);
+          setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          return updated;
+        } catch (syncErr) {
+          console.error('TaskContext: Supabase sync failed, refetching', syncErr);
+          await fetchTasks();
+          throw syncErr;
+        }
       }
       const localUpdates = mapTaskUpdatesToLocalTask(updates);
       const updatedTask = updateTaskInStorage(id, localUpdates as Partial<LocalTask>);
@@ -304,11 +364,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       console.error('TaskContext: Error updating task:', err);
       throw err;
     }
-  }, [user?.id]);
+  }, [user?.id, fetchTasks]);
 
   const deleteTask = useCallback(async (id: string) => {
     try {
       if (user) {
+        if (id.startsWith(OPTIMISTIC_TASK_ID_PREFIX)) {
+          setTasks((prev) => prev.filter((t) => t.id !== id));
+          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
+          return;
+        }
         await deleteTaskFromSupabase(user.id, id);
         setTasks((prev) => prev.filter((t) => t.id !== id));
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));

@@ -116,15 +116,15 @@ export default function DagStartPage() {
         <div className="flex min-h-full flex-col items-center justify-center px-4 sm:px-6 pt-14 sm:pt-16 pb-8"
           style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
         >
-          <main className="flex w-full max-w-lg flex-col gap-5">
+          <main className="mx-auto flex w-full max-w-2xl flex-col gap-5">
             <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
               <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 shadow-sm">
                 <span className="text-xl" aria-hidden>
                   {'\u{1F305}'}
                 </span>
               </div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-800 sm:text-2xl">Je focus voor vandaag</h1>
-                <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-600">
+              <h1 className="structuro-page-title">Je focus voor vandaag</h1>
+                <p className="structuro-page-subtitle">
                   {energyDoneSubtitle}
                 </p>
             </header>
@@ -196,13 +196,6 @@ export default function DagStartPage() {
                       : firstActionable.title}
                   </button>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => router.push('/todo')}
-                  className="w-full py-3 px-4 rounded-xl border-2 border-gray-200 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition-colors"
-                >
-                  Open Taken &amp; prioriteiten
-                </button>
               </div>
             </div>
           </main>
@@ -218,14 +211,14 @@ export default function DagStartPage() {
         style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
       >
         <main className="mx-auto flex w-full max-w-xl flex-col gap-4">
-          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
+          <header className="mb-10 flex w-full flex-col items-center text-center sm:mb-12">
             <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 shadow-sm">
               <span className="text-xl" aria-hidden>
                 {'\u{1F305}'}
               </span>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Dagstart</h1>
-            <p className="mt-2 max-w-xs text-balance text-sm text-slate-500">Neem even de tijd om je dag te overzien.</p>
+            <h1 className="structuro-page-title">Dagstart</h1>
+            <p className="structuro-page-subtitle mx-auto">Neem even de tijd om je dag te overzien.</p>
           </header>
 
           <div className="flex flex-col gap-4 w-full">

@@ -26,6 +26,35 @@ export function getCalendarDateAmsterdam(now: Date = new Date()): string {
   }
 }
 
+/** Uur 0–23 in Europe/Amsterdam (zelfde dagafbakening als dagstart). */
+export function getClockHourAmsterdam(now: Date = new Date()): number {
+  try {
+    const parts = new Intl.DateTimeFormat('nl-NL', {
+      timeZone: 'Europe/Amsterdam',
+      hour: 'numeric',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const hourPart = parts.find((p) => p.type === 'hour')?.value;
+    const h = hourPart != null ? parseInt(hourPart, 10) : NaN;
+    if (Number.isFinite(h) && h >= 0 && h <= 23) return h;
+  } catch {
+    /* fallthrough */
+  }
+  return now.getHours();
+}
+
+/**
+ * Korte begroeting voor UI, afgestemd op lokale dagritme (NL).
+ * Ochtend / middag / avond / nacht op basis van Amsterdam-tijd.
+ */
+export function getTimeOfDayGreetingNl(now: Date = new Date()): string {
+  const h = getClockHourAmsterdam(now);
+  if (h >= 5 && h < 12) return 'Goedemorgen';
+  if (h >= 12 && h < 18) return 'Goedemiddag';
+  if (h >= 18 && h < 23) return 'Goedenavond';
+  return 'Goedenacht';
+}
+
 /** Client-only: zet cookie na geslaagde dagstart (niet httpOnly; middleware leest mee). */
 export function setDagstartCookieOnClient(): void {
   if (typeof document === 'undefined') return;

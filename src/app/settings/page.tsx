@@ -137,7 +137,7 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       <div className="min-h-full bg-gradient-to-br from-slate-50 to-blue-50 text-slate-900">
-        <main className="mx-auto max-w-md px-4 sm:px-6 pt-14 sm:pt-16 pb-12">
+        <main className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-14 sm:pt-16 pb-12">
           <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
             <div
               className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-md"
@@ -148,8 +148,8 @@ export default function SettingsPage() {
             >
               <Settings className="h-7 w-7 text-white" strokeWidth={2} aria-hidden />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-800">Instellingen</h1>
-            <p className="mt-2 max-w-sm text-balance text-sm text-slate-500">
+            <h1 className="structuro-page-title">Instellingen</h1>
+            <p className="structuro-page-subtitle">
               Persoonlijke voorkeuren en beheer
             </p>
           </header>
@@ -225,10 +225,9 @@ export default function SettingsPage() {
             </button>
           </section>
 
-          {/* Gevarenzone: buiten de witte kaarten */}
-          <div className="mt-8">
-            <h3 className="text-sm font-semibold text-red-900/80 mb-1">Account & gegevens verwijderen</h3>
-            <p className="text-xs text-red-800/60 mb-3 text-balance leading-relaxed">
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-1">Account & gegevens verwijderen</h2>
+            <p className="text-sm text-slate-500 mb-4 text-balance leading-relaxed">
               Wis al je taken en check-ins permanent. Dit kan niet ongedaan worden gemaakt.
             </p>
 
@@ -243,12 +242,12 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleWipeData}
                 disabled={isProtectedAccount === true}
-                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
               >
                 Alle gegevens wissen
               </button>
             ) : (
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-white/60 p-4">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                 <p className="text-sm text-slate-600 text-balance">
                   Weet je het zeker? Typ <span className="font-semibold text-slate-800">WISSEN</span> om te bevestigen.
                 </p>
@@ -263,21 +262,21 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={handleWipeData}
-                    className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-[0.98]"
+                    className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 active:scale-[0.98]"
                   >
                     Definitief wissen
                   </button>
                   <button
                     type="button"
                     onClick={cancelWipe}
-                    className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 active:scale-[0.98]"
+                    className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 transition-colors hover:bg-slate-50 active:scale-[0.98]"
                   >
                     Annuleren
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
           <p className="mt-8 text-center text-xs text-slate-400 leading-relaxed text-balance">
             Structuro is privacy-by-design. Je data is alleen voor jou inzichtelijk.

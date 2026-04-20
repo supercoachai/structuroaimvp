@@ -140,106 +140,104 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-8 overflow-y-auto">
-      <div className="max-w-md w-full rounded-3xl shadow-2xl p-10 relative" style={{ 
-        backgroundColor: 'transparent',
-        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%)'
-      }}>
-        <div className="text-center mb-10">
-          {/* Logo - groter en prominenter */}
-          <div className="mb-8 flex justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-6 overflow-y-auto">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl bg-white px-8 pb-8 pt-5 shadow-sm">
+        <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-center gap-2 leading-none">
             {logoError ? (
-              <div className="w-32 h-32 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-4xl">S</span>
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-600 shadow-md">
+                <span className="text-3xl font-bold text-white">S</span>
               </div>
             ) : (
-              <img 
-                src="/Logo Structuro - met tekst.png" 
-                alt="Structuro Logo" 
-                width={128}
-                height={128}
-                className="w-32 h-32 object-contain drop-shadow-lg"
+              <img
+                src="/Logo Structuro.png"
+                alt=""
+                width={96}
+                height={96}
+                className="h-20 w-20 object-contain drop-shadow-sm"
                 onError={() => setLogoError(true)}
               />
             )}
+            <span className="text-lg font-semibold tracking-tight text-slate-800">Structuro</span>
           </div>
+          <p className="mt-1 text-xs leading-tight text-gray-400">Jouw houvast in chaos.</p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-5">
-          {isSignUp && (
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
-                Volledige naam
+        <form onSubmit={handleAuth} className="space-y-6">
+          <div className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-1">
+                <label htmlFor="fullName" className="block text-sm font-normal text-gray-500">
+                  Volledige naam
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="Je naam"
+                  required={isSignUp}
+                />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label htmlFor="email" className="block text-sm font-normal text-gray-500">
+                Email
               </label>
               <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white text-gray-900"
-                placeholder="Je naam"
-                required={isSignUp}
-                style={{ color: '#111827' }}
-              />
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white text-gray-900"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 placeholder="je@email.com"
                 required
-                style={{ color: '#111827' }}
-            />
-          </div>
+              />
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              Wachtwoord
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white text-gray-900"
-              placeholder="••••••••"
-              required
-              minLength={6}
-            />
+            <div className="space-y-1">
+              <label htmlFor="password" className="block text-sm font-normal text-gray-500">
+                Wachtwoord
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="••••••••"
+                required
+                minLength={6}
+              />
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg text-sm">
+            <div className="rounded-r-lg border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-r-lg text-sm">
+            <div className="rounded-r-lg border-l-4 border-green-500 bg-green-50 px-4 py-3 text-sm text-green-700">
               {message}
             </div>
           )}
 
-                   <button
+          <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 active:bg-blue-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none mt-6"
+            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? 'Bezig...' : isSignUp ? 'Account aanmaken' : 'Inloggen'}
           </button>
         </form>
 
         {showLocalTest && (
-          <div className="mt-8 pt-6 border-t border-gray-200/80">
-            <p className="text-xs text-gray-500 text-center mb-3">
+          <div className="border-t border-gray-200/80 pt-4 mt-0 space-y-3">
+            <p className="text-center text-xs text-gray-500">
               Lokaal testen zonder Supabase-account (taken in deze browser).
             </p>
             <button

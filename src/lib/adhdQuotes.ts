@@ -131,3 +131,7 @@ export function getNextUniqueQuote(): string {
 
   return quote;
 }
+
+export function getRandomAdhdPlanningQuote(seed: number): string {
+  return ADHD_QUOTES[Math.abs(seed) % ADHD_QUOTES.length];
+}

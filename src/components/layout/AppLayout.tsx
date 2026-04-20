@@ -1,7 +1,7 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -13,6 +13,14 @@ import {
   getCalendarDateAmsterdam,
   decodeDagstartCookieValue,
 } from '@/lib/dagstartCookie';
+import {
+  FIRST_DAGSTART_AFTER_ONBOARDING_KEY,
+  FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED,
+  clearFirstDagstartAfterOnboarding,
+} from '@/lib/firstDagstartSession';
+
+/** Blijft bestaan over AppLayout-remounts heen (elke pagina heeft eigen AppLayout-instance). */
+let appLayoutPreviousPathname: string | null = null;
 
 function isDagstartDoneToday(): boolean {
   if (typeof document === 'undefined') return false;
@@ -35,8 +43,47 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const { collapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const router = useRouter();
+  const pathname = usePathname();
 
   const [dagstartDone, setDagstartDone] = useState(false);
+  /** Eerste dagstart na onboarding: geen sidebar op /dagstart (alleen content + uitloggen). */
+  const [minimalFirstDagstart, setMinimalFirstDagstart] = useState(false);
+
+  /** Eerste-dagstart-vlag wissen zodra je /dagstart verlaat (focus, taken, …). */
+  useEffect(() => {
+    const prev = appLayoutPreviousPathname;
+    if (prev === '/dagstart' && pathname !== '/dagstart') {
+      try {
+        if (localStorage.getItem(FIRST_DAGSTART_AFTER_ONBOARDING_KEY) === '1') {
+          clearFirstDagstartAfterOnboarding();
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    appLayoutPreviousPathname = pathname;
+  }, [pathname]);
+
+  useLayoutEffect(() => {
+    if (pathname !== '/dagstart') {
+      setMinimalFirstDagstart(false);
+      return;
+    }
+    const readFlag = () => {
+      try {
+        setMinimalFirstDagstart(
+          localStorage.getItem(FIRST_DAGSTART_AFTER_ONBOARDING_KEY) === '1'
+        );
+      } catch {
+        setMinimalFirstDagstart(false);
+      }
+    };
+    readFlag();
+    window.addEventListener(FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED, readFlag);
+    return () => {
+      window.removeEventListener(FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED, readFlag);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     setDagstartDone(isDagstartDoneToday());
@@ -50,7 +97,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     };
   }, []);
 
-  const shouldHideSidebar = hideSidebar || !dagstartDone;
+  const shouldHideSidebar =
+    hideSidebar || !dagstartDone || (pathname === '/dagstart' && minimalFirstDagstart);
 
   const handleLogout = async () => {
     setMobileOpen(false);
@@ -60,7 +108,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   if (shouldHideSidebar) {
     return (
       <div className="w-full h-[100dvh] flex flex-col overflow-hidden">
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar">
           {children}
         </main>
         <ToastHost />
@@ -124,7 +172,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       </button>
 
       <main
-        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden pt-14 sm:pt-0"
+        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pt-14 sm:pt-0"
       >
         {children}
       </main>

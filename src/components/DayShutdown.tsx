@@ -5,6 +5,7 @@ import { useTaskContext } from '../context/TaskContext';
 import { createClient } from '../lib/supabase/client';
 import { toast } from './Toast';
 import { track } from '../shared/track';
+import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -29,9 +30,11 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     setCompletedTasks(completed);
 
     // Haal openstaande taken op die naar morgen kunnen
-    const openTasks = tasks.filter((t: any) => 
-      !t.done && 
+    const openTasks = tasks.filter((t: any) =>
+      !t.done &&
       !t.notToday &&
+      t.source !== 'medication' &&
+      t.source !== 'parked_thought' &&
       (!t.priority || t.priority > 3)
     );
     setTasksToMove(openTasks);
@@ -85,6 +88,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
       if (error) throw error;
 
+      triggerHaptic(HAPTIC_PATTERNS.DAY_DONE);
       toast('✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.');
       track('day_shutdown', { 
         energyLevel, 

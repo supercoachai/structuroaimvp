@@ -72,7 +72,7 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
             max={480}
             value={duration ?? ""}
             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-            placeholder="Bijv. 15, 30, 60"
+            placeholder="Minuten, bijv. 15"
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
           />
         </div>

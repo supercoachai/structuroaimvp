@@ -6,6 +6,8 @@ import { toast } from './Toast';
 import { track } from '../shared/track';
 import { useCheckIn } from '../hooks/useCheckIn';
 import { markOnboardingCompleted } from '@/lib/onboardingProfile';
+import { checkVoorzorgsmodus, resolveVoorzorgsmodus, type EnergyLevel, type VoorzorgsmodusOption } from '@/lib/voorzorgsmodus';
+import VoorzorgsmodusModal from './VoorzorgsmodusModal';
 import {
   addTaskToStorage,
   getTasksFromStorage,
@@ -52,6 +54,7 @@ export default function DayStartCheckIn({
   const [quickAddTitle, setQuickAddTitle] = useState('');
   const [quickAddBusy, setQuickAddBusy] = useState(false);
   const [energyOnboardingHintHidden, setEnergyOnboardingHintHidden] = useState(false);
+  const [voorzorgsmodusState, setVoorzorgsmodusState] = useState<ReturnType<typeof checkVoorzorgsmodus> | null>(null);
 
   const MAX_DAYSTART_SUGGESTIONS = 40;
   const COLLAPSED_SUGGESTIONS = 5;
@@ -1236,7 +1239,7 @@ export default function DayStartCheckIn({
         <div className="space-y-4">
           <div className="text-center space-y-1.5">
             <h2 className="text-xl font-bold text-gray-900">
-              {userName ? `Hoe zit je vandaag qua energie, ${userName}?` : existingCheckIn ? 'Pas je energie aan' : 'Hoe zit je vandaag qua energie?'}
+              {userName ? `Hoe zit je in je energie, ${userName}?` : existingCheckIn ? 'Pas je energie aan' : 'Hoe zit je in je energie?'}
             </h2>
             <p className="text-sm text-gray-500 max-w-xs mx-auto text-balance leading-relaxed">
               Op basis van je energie kiezen we de juiste taken om je dag soepel te starten
@@ -1258,6 +1261,10 @@ export default function DayStartCheckIn({
                   setEnergyLevel(level.value);
                   setEnergySelected(true);
                   setShowConfirmation(true);
+
+                  const vzCheck = checkVoorzorgsmodus(tasks, level.value as EnergyLevel);
+                  setVoorzorgsmodusState(vzCheck.shouldShow ? vzCheck : null);
+
                   const messages: { [key: string]: string } = {
                     low: '😴 Tijd voor een rustige start',
                     medium: '🙂 Goede balans vandaag',
@@ -1291,6 +1298,42 @@ export default function DayStartCheckIn({
           )}
         </div>
       </div>
+    );
+  }
+
+  // Voorzorgsmodus modal (te veel deadlines voor gekozen energie)
+  if (voorzorgsmodusState) {
+    const handleVoorzorgsmodusResolve = (option: VoorzorgsmodusOption) => {
+      const result = resolveVoorzorgsmodus(
+        voorzorgsmodusState.deadlineTasks,
+        voorzorgsmodusState.capacity,
+        option
+      );
+
+      if (result.deferredTaskIds.length > 0) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString();
+        result.deferredTaskIds.forEach((id) => {
+          updateTask(id, { dueAt: tomorrowStr, notToday: true }).catch(console.error);
+        });
+        toast(`${result.deferredTaskIds.length} ${result.deferredTaskIds.length === 1 ? "taak" : "taken"} naar morgen verplaatst`);
+      }
+
+      if (option === "push") {
+        toast("Alle deadline-taken staan klaar. Je bent sterk.");
+      }
+
+      setVoorzorgsmodusState(null);
+    };
+
+    return (
+      <VoorzorgsmodusModal
+        deadlineTasks={voorzorgsmodusState.deadlineTasks}
+        capacity={voorzorgsmodusState.capacity}
+        excess={voorzorgsmodusState.excess}
+        onResolve={handleVoorzorgsmodusResolve}
+      />
     );
   }
 
