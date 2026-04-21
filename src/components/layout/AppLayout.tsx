@@ -11,11 +11,7 @@ import { ToastHost } from '../Toast';
 import BottomTabNav from '../navigation/BottomTabNav';
 import TodoParkThoughtBar from '@/components/TodoParkThoughtBar';
 import { performClientLogout } from '@/lib/logoutClient';
-import {
-  STRUCTURO_DAGSTART_COOKIE,
-  getCalendarDateAmsterdam,
-  decodeDagstartCookieValue,
-} from '@/lib/dagstartCookie';
+import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
 import {
   FIRST_DAGSTART_AFTER_ONBOARDING_KEY,
   FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED,
@@ -23,18 +19,6 @@ import {
 } from '@/lib/firstDagstartSession';
 
 let appLayoutPreviousPathname: string | null = null;
-
-function isDagstartDoneToday(): boolean {
-  if (typeof document === 'undefined') return false;
-  const cookies = document.cookie.split(';');
-  for (const c of cookies) {
-    const [key, val] = c.trim().split('=');
-    if (key === STRUCTURO_DAGSTART_COOKIE) {
-      return decodeDagstartCookieValue(val) === getCalendarDateAmsterdam();
-    }
-  }
-  return false;
-}
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -45,7 +29,9 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const router = useRouter();
   const pathname = usePathname();
 
-  const [dagstartDone, setDagstartDone] = useState(false);
+  const [dagstartDone, setDagstartDone] = useState(() =>
+    typeof document !== 'undefined' ? isDagstartDoneTodayClient() : false
+  );
   const [minimalFirstDagstart, setMinimalFirstDagstart] = useState(false);
 
   useEffect(() => {
@@ -83,10 +69,13 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     };
   }, [pathname]);
 
-  useEffect(() => {
-    setDagstartDone(isDagstartDoneToday());
+  /** Direct na mount en bij route-wissel: voorkomt dat tab-nav even (of blijvend) verdwijnt op mobiel door useEffect-lat. */
+  useLayoutEffect(() => {
+    setDagstartDone(isDagstartDoneTodayClient());
+  }, [pathname]);
 
-    const onUpdate = () => setDagstartDone(isDagstartDoneToday());
+  useEffect(() => {
+    const onUpdate = () => setDagstartDone(isDagstartDoneTodayClient());
     window.addEventListener('structuro_tasks_updated', onUpdate);
     const interval = setInterval(onUpdate, 2000);
     return () => {

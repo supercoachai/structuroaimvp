@@ -66,3 +66,23 @@ export function clearDagstartCookieOnClient(): void {
   if (typeof document === 'undefined') return;
   document.cookie = `${STRUCTURO_DAGSTART_COOKIE}=; path=/; max-age=0`;
 }
+
+/**
+ * Client: of de dagstart-cookie overeenkomt met vandaag (Amsterdam).
+ * Gebruikt indexOf('=') i.p.v. split('=') zodat waarden met '=' niet breken.
+ */
+export function isDagstartDoneTodayClient(): boolean {
+  if (typeof document === 'undefined') return false;
+  const today = getCalendarDateAmsterdam();
+  const parts = document.cookie.split(';');
+  for (const part of parts) {
+    const s = part.trim();
+    const eq = s.indexOf('=');
+    if (eq < 0) continue;
+    const key = s.slice(0, eq).trim();
+    if (key !== STRUCTURO_DAGSTART_COOKIE) continue;
+    const raw = s.slice(eq + 1);
+    return decodeDagstartCookieValue(raw) === today;
+  }
+  return false;
+}
