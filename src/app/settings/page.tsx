@@ -9,7 +9,10 @@ import { toast } from '../../components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { setProfileOnboardingCompleted } from '@/lib/onboardingMutations';
-import { LOCAL_ONBOARDING_COMPLETED_KEY } from '@/lib/onboardingProfile';
+import {
+  LOCAL_ONBOARDING_COMPLETED_KEY,
+  LOCAL_ONBOARDING_VERSION_KEY,
+} from '@/lib/onboardingProfile';
 import { clearLocalOnboardingDoneCookieOnClient, hasStructuroLocalModeCookieOnClient } from '@/lib/localOnboardingCookie';
 import { performClientLogout } from '@/lib/logoutClient';
 
@@ -56,7 +59,10 @@ export default function SettingsPage() {
         return;
       }
     } else {
-      try { window.localStorage.removeItem(LOCAL_ONBOARDING_COMPLETED_KEY); } catch { /* ignore */ }
+      try {
+        window.localStorage.removeItem(LOCAL_ONBOARDING_COMPLETED_KEY);
+        window.localStorage.removeItem(LOCAL_ONBOARDING_VERSION_KEY);
+      } catch { /* ignore */ }
       clearLocalOnboardingDoneCookieOnClient();
     }
     window.location.assign(`${window.location.origin}/onboarding`);

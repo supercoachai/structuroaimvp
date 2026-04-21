@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { ONBOARDING_VERSION_CURRENT } from "@/lib/onboardingVersion";
 
 export async function setProfileOnboardingCompleted(
   completed: boolean
@@ -13,9 +14,15 @@ export async function setProfileOnboardingCompleted(
     if (!user?.id) {
       return { error: "Niet ingelogd" };
     }
+    const payload = completed
+      ? {
+          onboarding_completed: true,
+          onboarding_version: ONBOARDING_VERSION_CURRENT,
+        }
+      : { onboarding_completed: false, onboarding_version: null };
     const { error } = await supabase
       .from("profiles")
-      .update({ onboarding_completed: completed })
+      .update(payload)
       .eq("id", user.id);
     if (error) {
       return { error: error.message };

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./useUser";
 import { isLocalOnboardingCompleted } from "@/lib/onboardingProfile";
+import { isProfileOnboardingUpToDate } from "@/lib/onboardingVersion";
 import type { User } from "@supabase/supabase-js";
 
 function firstNameFromFull(full: string | null | undefined): string | null {
@@ -70,7 +71,7 @@ export function useOnboardingStatus(): {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "onboarding_completed, display_name, preferred_name, full_name"
+          "onboarding_completed, onboarding_version, display_name, preferred_name, full_name"
         )
         .eq("id", userId)
         .maybeSingle();
@@ -83,7 +84,12 @@ export function useOnboardingStatus(): {
         return;
       }
 
-      setOnboardingCompleted(data?.onboarding_completed === true);
+      setOnboardingCompleted(
+        isProfileOnboardingUpToDate(
+          data?.onboarding_completed,
+          data?.onboarding_version as number | null | undefined
+        )
+      );
       const fromProfile =
         firstNameFromFull(data?.display_name) ??
         firstNameFromFull(data?.preferred_name) ??

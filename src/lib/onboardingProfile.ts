@@ -1,8 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { ONBOARDING_VERSION_CURRENT } from "@/lib/onboardingVersion";
 
 export const LOCAL_ONBOARDING_COMPLETED_KEY = "structuro_onboarding_completed_local";
+export const LOCAL_ONBOARDING_VERSION_KEY = "structuro_onboarding_version_local";
 
 /** Legacy key (zonder user-id); wordt bij logout gewist. */
 export const SESSION_WELCOME_DISMISSED_KEY = "structuro_onboarding_welcome_dismissed";
@@ -34,7 +36,14 @@ export function clearAllWelcomeDismissedSessionKeys(): void {
 export function isLocalOnboardingCompleted(): boolean {
   if (typeof window === "undefined") return true;
   try {
-    return window.localStorage.getItem(LOCAL_ONBOARDING_COMPLETED_KEY) === "1";
+    if (window.localStorage.getItem(LOCAL_ONBOARDING_COMPLETED_KEY) !== "1") {
+      return false;
+    }
+    const v = parseInt(
+      window.localStorage.getItem(LOCAL_ONBOARDING_VERSION_KEY) || "0",
+      10
+    );
+    return Number.isFinite(v) && v >= ONBOARDING_VERSION_CURRENT;
   } catch {
     return false;
   }
@@ -44,6 +53,10 @@ export function setLocalOnboardingCompleted(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(LOCAL_ONBOARDING_COMPLETED_KEY, "1");
+    window.localStorage.setItem(
+      LOCAL_ONBOARDING_VERSION_KEY,
+      String(ONBOARDING_VERSION_CURRENT)
+    );
   } catch {
     /* ignore */
   }
@@ -87,7 +100,10 @@ export async function markOnboardingCompleted(): Promise<void> {
     if (user?.id) {
       const { error } = await supabase
         .from("profiles")
-        .update({ onboarding_completed: true })
+        .update({
+          onboarding_completed: true,
+          onboarding_version: ONBOARDING_VERSION_CURRENT,
+        })
         .eq("id", user.id);
       if (error) {
         console.warn("markOnboardingCompleted:", error.message);

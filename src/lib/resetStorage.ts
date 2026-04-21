@@ -1,4 +1,8 @@
 import { STRUCTURO_DAGSTART_COOKIE } from './dagstartCookie';
+import {
+  LOCAL_ONBOARDING_COMPLETED_KEY,
+  LOCAL_ONBOARDING_VERSION_KEY,
+} from './onboardingProfile';
 
 /** Alle bekende Structuro localStorage-keys (voor volledige data-wipe) */
 export const STRUCTURO_STORAGE_KEYS = [
@@ -8,6 +12,8 @@ export const STRUCTURO_STORAGE_KEYS = [
   'structuro_analytics_consent',
   'structuro_gamification_meta',
   'structuro_theme',
+  LOCAL_ONBOARDING_COMPLETED_KEY,
+  LOCAL_ONBOARDING_VERSION_KEY,
   'focus_duration',
   'focus_streak_5',
   'focus_streak_15',

@@ -36,7 +36,7 @@ Belangrijke mappen:
 ### 3.1 Ingelogde gebruiker (Supabase)
 
 - Zonder sessie: redirect naar **`/login`** (behalve login/auth/static assets).
-- Met sessie maar **`profiles.onboarding_completed !== true`**: alleen **`/onboarding`** toegestaan, andere routes gaan naar onboarding.
+- Met sessie: onboarding geldt als **afgerond** alleen als **`onboarding_completed === true` én `onboarding_version >= 2`** (huidige intro). Ontbrekende of oude versie: redirect naar **`/onboarding`**.
 - Na voltooide onboarding: middleware stuurt een bezoek aan **`/onboarding`** door naar **`/`** (home), niet meer naar een aparte dagstart-URL.
 
 ### 3.2 Lokale modus (geen account)

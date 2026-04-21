@@ -8,7 +8,10 @@ import {
   clearStructuroLocalModeCookie,
   markLocalSessionFresh,
 } from '@/lib/localModeSession';
-import { LOCAL_ONBOARDING_COMPLETED_KEY } from '@/lib/onboardingProfile';
+import {
+  LOCAL_ONBOARDING_COMPLETED_KEY,
+  LOCAL_ONBOARDING_VERSION_KEY,
+} from '@/lib/onboardingProfile';
 import {
   clearLocalOnboardingDoneCookieOnClient,
   markEnteringLocalOnboardingSession,
@@ -249,6 +252,7 @@ export default function LoginPage() {
                 markEnteringLocalOnboardingSession();
                 try {
                   window.localStorage.removeItem(LOCAL_ONBOARDING_COMPLETED_KEY);
+                  window.localStorage.removeItem(LOCAL_ONBOARDING_VERSION_KEY);
                 } catch {
                   /* ignore */
                 }

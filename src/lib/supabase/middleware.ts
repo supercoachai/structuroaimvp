@@ -7,6 +7,7 @@ import {
 } from "../dagstartCookie";
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
+import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -103,11 +104,14 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const { data: obData, error: obError } = await supabase
       .from("profiles")
-      .select("onboarding_completed")
+      .select("onboarding_completed, onboarding_version")
       .eq("id", user.id)
       .maybeSingle();
     if (!obError) {
-      onboardingCompleted = obData?.onboarding_completed === true;
+      onboardingCompleted = isProfileOnboardingUpToDate(
+        obData?.onboarding_completed,
+        obData?.onboarding_version as number | null | undefined
+      );
     } else {
       onboardingCompleted = false;
     }
@@ -243,8 +247,9 @@ function applyLocalAnonymousOnboardingGuard(
     return response;
   }
 
-  const localOnboardingDone =
-    request.cookies.get(LOCAL_ONBOARDING_DONE_COOKIE)?.value === "1";
+  const localObRaw =
+    request.cookies.get(LOCAL_ONBOARDING_DONE_COOKIE)?.value;
+  const localOnboardingDone = localObRaw === "2";
 
   if (
     !localOnboardingDone &&

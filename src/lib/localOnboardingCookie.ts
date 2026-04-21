@@ -4,15 +4,16 @@
  */
 export const LOCAL_ONBOARDING_DONE_COOKIE = "structuro_local_onboarding_done";
 
+/** Waarde "2" = huidige onboarding-versie afgerond (middleware leest dit). */
 export function isLocalOnboardingDoneCookieValue(
   raw: string | undefined
 ): boolean {
-  return raw === "1";
+  return raw === "2";
 }
 
 export function setLocalOnboardingDoneCookieOnClient(): void {
   if (typeof document === "undefined") return;
-  document.cookie = `${LOCAL_ONBOARDING_DONE_COOKIE}=1; path=/; max-age=31536000; SameSite=Lax`;
+  document.cookie = `${LOCAL_ONBOARDING_DONE_COOKIE}=2; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 export function clearLocalOnboardingDoneCookieOnClient(): void {

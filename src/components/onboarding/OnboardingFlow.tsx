@@ -781,8 +781,8 @@ export default function OnboardingFlow() {
       if (user?.id) {
         const { error } = await setProfileOnboardingCompleted(true);
         if (error) {
-          const dbHint = error.includes("onboarding_completed")
-            ? " Voer in Supabase onder SQL het bestand supabase/migration_onboarding_completed.sql uit (kolom onboarding_completed op profiles)."
+          const dbHint = error.includes("onboarding_completed") || error.includes("onboarding_version")
+            ? " Voer in Supabase migration_onboarding_completed.sql en migration_onboarding_version.sql uit (kolommen op profiles)."
             : "";
           alert(`Kon intro niet afronden: ${error}.${dbHint}`);
           setFinishing(false);
