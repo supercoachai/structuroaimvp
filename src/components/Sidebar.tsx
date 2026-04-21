@@ -30,7 +30,7 @@ type MenuItem = {
 
 /** Kern-loop: dagstart, taken, focus. Beloningen staat onder “Meer opties”. */
 const primaryNavItems: MenuItem[] = [
-  { name: 'Dagstart', href: '/dagstart', icon: '🌅', description: 'Begin je dag', accent: '#f59e0b' },
+  { name: 'Dagstart', href: '/', icon: '🌅', description: 'Begin je dag', accent: '#f59e0b' },
   { name: 'Taken & Prioriteiten', href: '/todo', icon: ClipboardDocumentCheckIcon, description: 'Slimme takenlijst', accent: '#22c55e' },
   { name: 'Focus Modus', href: '/focus', icon: FireIcon, description: 'Concentratie hulp', accent: '#ea580c' },
 ];

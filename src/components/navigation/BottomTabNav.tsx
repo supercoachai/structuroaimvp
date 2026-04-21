@@ -58,7 +58,7 @@ export default function BottomTabNav({ disabled = false }: { disabled?: boolean 
   return (
     <nav
       className={`structuro-bottom-nav flex shrink-0 border-t bg-white px-2.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5 ${
-        disabled ? "pointer-events-none opacity-40" : ""
+        disabled ? "relative z-[110] pointer-events-none opacity-50" : ""
       }`}
       style={{ borderColor: "var(--structuro-border)" }}
       aria-label="Hoofdnavigatie"

@@ -328,7 +328,7 @@ function FocusContent() {
         return t && !t.done;
       });
       if (nextId) router.replace(`/focus?task=${encodeURIComponent(nextId)}`);
-      else router.push('/dagstart');
+      else router.push('/');
     } catch (e) {
       console.error('park focus (nu niet):', e);
     } finally {

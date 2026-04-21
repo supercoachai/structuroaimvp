@@ -1541,7 +1541,8 @@ export default function DayStartCheckIn({
             <div>
               <p className="text-sm font-bold text-gray-900">
                 {energyLevel === 'low' && 'Rustig aan vandaag, en dat is helemaal prima.'}
-                {energyLevel === 'medium' && 'Lekker stabiel vandaag. Goed moment om focus te pakken.'}
+                {energyLevel === 'medium' &&
+                  'Goede balans vandaag. Goed moment om focus te pakken.'}
                 {energyLevel === 'high' && 'Je knalt vandaag de dag door met hoge energie!'}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">

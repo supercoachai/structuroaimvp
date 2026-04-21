@@ -10,14 +10,9 @@ import {
 import { ToastHost } from '../Toast';
 import BottomTabNav from '../navigation/BottomTabNav';
 import TodoParkThoughtBar from '@/components/TodoParkThoughtBar';
+import DagstartOverlay from '@/components/DagstartOverlay';
 import { performClientLogout } from '@/lib/logoutClient';
 import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
-import {
-  FIRST_DAGSTART_AFTER_ONBOARDING_KEY,
-  clearFirstDagstartAfterOnboarding,
-} from '@/lib/firstDagstartSession';
-
-let appLayoutPreviousPathname: string | null = null;
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -31,20 +26,6 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const [dagstartDone, setDagstartDone] = useState(() =>
     typeof document !== 'undefined' ? isDagstartDoneTodayClient() : false
   );
-
-  useEffect(() => {
-    const prev = appLayoutPreviousPathname;
-    if (prev === '/dagstart' && pathname !== '/dagstart') {
-      try {
-        if (localStorage.getItem(FIRST_DAGSTART_AFTER_ONBOARDING_KEY) === '1') {
-          clearFirstDagstartAfterOnboarding();
-        }
-      } catch {
-        /* ignore */
-      }
-    }
-    appLayoutPreviousPathname = pathname;
-  }, [pathname]);
 
   /** Direct na mount en bij route-wissel: voorkomt dat tab-nav even (of blijvend) verdwijnt op mobiel door useEffect-lat. */
   useLayoutEffect(() => {
@@ -64,13 +45,18 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   /** Focus: fullscreen donker scherm; geen tab-balk (doctrine). */
   const isFocusRoute = (pathname ?? '').startsWith('/focus');
 
-  /** Alleen focus / expliciet verbergen: geen shell. Dagstart: shell wél, tabs disabled tot cookie. */
+  /** Alleen focus / expliciet verbergen: geen shell. Dagstart: shell wél, overlay + tabs disabled tot cookie. */
   const shouldHideChrome = hideSidebar || isFocusRoute;
 
   const mainNavLocked = !dagstartDone;
 
   const handleLogout = async () => {
     await performClientLogout(router);
+  };
+
+  const handleDagstartComplete = () => {
+    setDagstartDone(isDagstartDoneTodayClient());
+    router.refresh();
   };
 
   if (shouldHideChrome) {
@@ -103,9 +89,21 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     );
   }
 
+  const showDagstartOverlay = !dagstartDone;
+
   return (
-    <div className="box-border flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--structuro-bg)] pb-[var(--keyboard-inset-bottom)]">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm">
+    <div
+      className={`box-border flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--structuro-bg)] pb-[var(--keyboard-inset-bottom)] ${mainNavLocked ? 'overflow-hidden' : ''}`}
+    >
+      {showDagstartOverlay ? (
+        <DagstartOverlay onComplete={handleDagstartComplete} />
+      ) : null}
+
+      <header
+        className={`flex shrink-0 items-center justify-between gap-3 border-b bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm ${
+          mainNavLocked ? 'relative z-[110] pointer-events-none opacity-50' : ''
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-2">
           <img
             src="/Logo Structuro.png"
@@ -139,11 +137,15 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         </div>
       </header>
 
-      <main className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar">
-        {children}
-      </main>
+      <div
+        className={`flex min-h-0 flex-1 flex-col ${mainNavLocked ? "relative z-[5]" : ""}`}
+      >
+        <main className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar">
+          {children}
+        </main>
 
-      {(pathname ?? '') === '/' ? <TodoParkThoughtBar /> : null}
+        {(pathname ?? "") === "/" ? <TodoParkThoughtBar /> : null}
+      </div>
 
       <BottomTabNav disabled={mainNavLocked} />
 

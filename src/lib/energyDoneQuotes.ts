@@ -110,7 +110,7 @@ const LOW_QUOTES: string[] = [
 ];
 
 const MEDIUM_QUOTES: string[] = [
-  "Lekker stabiel vandaag, hou het haalbaar.",
+  "Je zit in een fijne balans, hou het haalbaar.",
   "Je zit in een fijne middenstand, hou het haalbaar.",
   "Normale energie is een fijne basis, hou het haalbaar.",
   "Vandaag kun je rustig bouwen op wat past, hou het haalbaar.",
@@ -135,7 +135,7 @@ const MEDIUM_QUOTES: string[] = [
   "Je mag vandaag plannen met mildheid naar jezelf, hou het haalbaar.",
   "Normale energie is een fijne basis voor structuur, hou het haalbaar.",
   "Vandaag kun je bouwen zonder jezelf te overvragen, hou het haalbaar.",
-  "Lekker stabiel vandaag, dat is fijn.",
+  "Stabiel genoeg vandaag, dat is fijn.",
   "Je zit in een fijne middenstand, dat is fijn.",
   "Normale energie is een fijne basis, dat is fijn.",
   "Vandaag kun je rustig bouwen op wat past, dat is fijn.",
@@ -160,7 +160,7 @@ const MEDIUM_QUOTES: string[] = [
   "Je mag vandaag plannen met mildheid naar jezelf, dat is fijn.",
   "Normale energie is een fijne basis voor structuur, dat is fijn.",
   "Vandaag kun je bouwen zonder jezelf te overvragen, dat is fijn.",
-  "Lekker stabiel vandaag, geen haast nodig.",
+  "Je zit goed in je middenstand, geen haast nodig.",
   "Je zit in een fijne middenstand, geen haast nodig.",
   "Normale energie is een fijne basis, geen haast nodig.",
   "Vandaag kun je rustig bouwen op wat past, geen haast nodig.",
@@ -185,7 +185,7 @@ const MEDIUM_QUOTES: string[] = [
   "Je mag vandaag plannen met mildheid naar jezelf, geen haast nodig.",
   "Normale energie is een fijne basis voor structuur, geen haast nodig.",
   "Vandaag kun je bouwen zonder jezelf te overvragen, geen haast nodig.",
-  "Lekker stabiel vandaag, kies met zorg.",
+  "Balans voelt goed vandaag, kies met zorg.",
   "Je zit in een fijne middenstand, kies met zorg.",
   "Normale energie is een fijne basis, kies met zorg.",
   "Vandaag kun je rustig bouwen op wat past, kies met zorg.",

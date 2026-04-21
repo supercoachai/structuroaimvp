@@ -30,6 +30,12 @@ function isSupabaseConfigured(): boolean {
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
@@ -165,7 +171,7 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dagstart";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
@@ -221,9 +227,7 @@ function applyDagstartDbGate(
     return response;
   }
 
-  const url = request.nextUrl.clone();
-  url.pathname = "/dagstart";
-  return NextResponse.redirect(url);
+  return response;
 }
 
 /** Lokale test zonder account: verplichte /onboarding tot cookie gezet is. */
@@ -257,7 +261,7 @@ function applyLocalAnonymousOnboardingGuard(
     pathname.startsWith("/onboarding")
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dagstart";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
@@ -265,33 +269,21 @@ function applyLocalAnonymousOnboardingGuard(
 }
 
 function applyDagstartCookieGuard(
-  request: NextRequest,
+  _request: NextRequest,
   response: NextResponse,
-  pathname: string
+  _pathname: string
 ): NextResponse {
-  const needsDagstart =
-    !pathname.startsWith("/dagstart") &&
-    !pathname.startsWith("/login") &&
-    !pathname.startsWith("/auth") &&
-    !pathname.startsWith("/onboarding") &&
-    !pathname.startsWith("/api");
-
-  if (needsDagstart) {
-    const today = getCalendarDateAmsterdam();
-    const raw = request.cookies.get(STRUCTURO_DAGSTART_COOKIE)?.value;
-    const cookieVal = decodeDagstartCookieValue(raw);
-    if (cookieVal !== today) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dagstart";
-      return NextResponse.redirect(url);
-    }
-  }
-
   return response;
 }
 
 function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
 
   if (
     pathname.startsWith("/login") ||

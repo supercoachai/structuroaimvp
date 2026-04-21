@@ -28,8 +28,12 @@ import {
   setLocalOnboardingDoneCookieOnClient,
 } from "@/lib/localOnboardingCookie";
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
-import { getCalendarDateAmsterdam, getTimeOfDayGreetingNl } from "@/lib/dagstartCookie";
-import { markFirstDagstartAfterOnboarding } from "@/lib/firstDagstartSession";
+import {
+  getCalendarDateAmsterdam,
+  getTimeOfDayGreetingNl,
+  setDagstartCookieOnClient,
+} from "@/lib/dagstartCookie";
+import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
 import { microStepId, type MicroStep } from "@/lib/microSteps";
 import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
@@ -166,7 +170,7 @@ export default function OnboardingFlow() {
     if (isLocalMode && isLocalOnboardingCompleted()) {
       setLocalOnboardingDoneCookieOnClient();
       clearLocalSessionFresh();
-      window.location.replace("/dagstart");
+      window.location.replace("/");
     }
   }, [isLocalMode]);
 
@@ -789,8 +793,15 @@ export default function OnboardingFlow() {
         setLocalOnboardingDoneCookieOnClient();
         clearLocalSessionFresh();
       }
-      markFirstDagstartAfterOnboarding();
-      window.location.assign("/dagstart");
+      setDagstartCookieOnClient();
+      if (user?.id && firstDayEnergy) {
+        try {
+          await updateProfileAfterDagstartComplete(user.id, firstDayEnergy);
+        } catch (e) {
+          console.warn("Profiel dagstart na onboarding niet gezet:", e);
+        }
+      }
+      window.location.assign("/");
     } catch { setFinishing(false); }
   };
 
