@@ -88,16 +88,6 @@ function FocusContent() {
       const n = parseInt(qp, 10);
       if (Number.isFinite(n) && n > 0) return Math.min(480, n);
     }
-    if (typeof window !== 'undefined') {
-      const hasTaskInUrl = Boolean(searchParams?.get('task'));
-      if (!hasTaskInUrl) {
-        const saved = localStorage.getItem('focus_duration');
-        if (saved) {
-          const n = parseInt(saved, 10);
-          if (Number.isFinite(n) && n > 0) return Math.min(480, n);
-        }
-      }
-    }
     return 15;
   });
 
@@ -137,12 +127,6 @@ function FocusContent() {
       Sluiten
     </button>
   );
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('focus_duration', duration.toString());
-    }
-  }, [duration]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

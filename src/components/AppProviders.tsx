@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -38,10 +38,23 @@ function FullscreenLoading() {
   );
 }
 
+/** Eenmalig: oude key die focusduur bevatte; duration komt nu alleen uit URL + taak. */
+function RemoveLegacyFocusDurationKey() {
+  useEffect(() => {
+    try {
+      localStorage.removeItem("focus_duration");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  return null;
+}
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <>
+        <RemoveLegacyFocusDurationKey />
         <VisualViewportBridge />
         <GoogleAnalytics />
         <TaskProvider>
