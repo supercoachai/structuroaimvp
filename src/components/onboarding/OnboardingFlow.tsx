@@ -1671,7 +1671,7 @@ export default function OnboardingFlow() {
                         [
                           {
                             emoji: "\u2705",
-                            title: "Wat is af vandaag?",
+                            title: "Wat heb je vandaag voor elkaar gekregen?",
                             sub: "Erken wat je hebt gedaan",
                           },
                           {

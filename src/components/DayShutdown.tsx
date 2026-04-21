@@ -25,6 +25,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
   /** Alleen focus-taken van vandaag (dagstart top 3) die nog niet af zijn, met checkbox-state. */
   const [tasksToRemember, setTasksToRemember] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const todayYmd = getCalendarDateAmsterdam();
 
@@ -65,6 +66,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     }
 
     setIsSubmitting(true);
+    setSaveError(null);
     const supabase = createClient();
     const {
       data: { user },
@@ -92,6 +94,14 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         await insertDagafsluiterSuggestions(user.id, suggestionItems);
       }
 
+      const rememberedTasksPayload =
+        selected.length > 0
+          ? selected.map((t: any) => ({
+              id: String(t.id),
+              title: String(t.title ?? "").trim() || "Taak",
+            }))
+          : null;
+
       const { error } = await supabase.from("daily_shutdowns").upsert(
         {
           user_id: user.id,
@@ -101,6 +111,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
           energy_level: null,
           satisfaction_level: satisfactionLevel,
           reflection: reflection.trim() || null,
+          remembered_tasks: rememberedTasksPayload,
         },
         {
           onConflict: "user_id,date",
@@ -117,9 +128,11 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         dagafsluiterSuggestionCount: suggestionItems.length,
       });
       onComplete();
-    } catch (error: any) {
-      console.error("Error saving shutdown:", error);
-      toast("Fout bij opslaan van dagafsluiter");
+    } catch (error: unknown) {
+      console.error("Dagafsluiter save error:", error);
+      const msg = "Kon niet opslaan, probeer opnieuw.";
+      setSaveError(msg);
+      toast(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,7 +181,9 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       </p>
 
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>✅ Wat is af vandaag?</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+          ✅ Wat heb je vandaag voor elkaar gekregen?
+        </h3>
         {completedTasks.length > 0 ? (
           <div style={{ display: "grid", gap: 8 }}>
             {completedTasks.map((task) => (
@@ -342,6 +357,20 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         />
       </div>
 
+      {saveError ? (
+        <p
+          style={{
+            marginBottom: 12,
+            fontSize: 14,
+            color: "#b91c1c",
+            textAlign: "center",
+            lineHeight: 1.45,
+          }}
+          role="alert"
+        >
+          {saveError}
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={handleSubmit}

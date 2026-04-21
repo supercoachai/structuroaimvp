@@ -80,7 +80,10 @@ CREATE TABLE IF NOT EXISTS daily_shutdowns (
   completed_task_ids UUID[], -- taken die af zijn
   moved_to_tomorrow_task_ids UUID[], -- taken naar morgen
   energy_level TEXT, -- 'low', 'medium', 'high'
+  satisfaction_level TEXT, -- 'low' | 'good' | 'great'
   reflection TEXT, -- reflectie tekst
+  notes TEXT,
+  remembered_tasks JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   UNIQUE(user_id, date)
 );

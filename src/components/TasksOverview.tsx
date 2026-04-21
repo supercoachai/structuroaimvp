@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "../context/TaskContext";
 import { designSystem } from "../lib/design-system";
@@ -77,6 +78,9 @@ export default function TasksOverviewCalm() {
   const [newTaskMicroTitles, setNewTaskMicroTitles] = useState<string[]>([]);
   const [newTaskMicroInput, setNewTaskMicroInput] = useState("");
   const [showVandaagPrompt, setShowVandaagPrompt] = useState<string | null>(null); // taskId die prompt moet tonen
+  const newTaskInfo = useDismissibleTooltip();
+  const openTasksInfo = useDismissibleTooltip();
+  const convertTaskInfo = useDismissibleTooltip();
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [editing, setEditing] = useState<any>(null);
   const [microStepDraft, setMicroStepDraft] = useState<{ title: string; minutes: number | null; difficulty: MicroStepDifficulty | null }>({
@@ -87,6 +91,10 @@ export default function TasksOverviewCalm() {
 
   // Parked thought -> task conversion modal state
   const [convertingThought, setConvertingThought] = useState<any>(null);
+
+  useEffect(() => {
+    if (!convertingThought) convertTaskInfo.setOpen(false);
+  }, [convertingThought, convertTaskInfo.setOpen]);
   const [convertDuration, setConvertDuration] = useState<number | null>(null);
   const [convertEnergy, setConvertEnergy] = useState<'low' | 'medium' | 'high'>('medium');
   const { checkIn: todayCheckIn } = useCheckIn();
@@ -700,30 +708,28 @@ export default function TasksOverviewCalm() {
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
-          <div className="group relative flex items-center">
+          <div ref={newTaskInfo.wrapperRef} className="relative flex items-center">
             <button
               type="button"
               aria-label="Uitleg nieuwe taak toevoegen"
-              title="Uitleg nieuwe taak toevoegen"
+              aria-expanded={newTaskInfo.open}
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
-              onClick={() => {
-                toast(
-                  "Stap voor stap: titel (meer dan 2 tekens), energie, tijdsduur. Daarna microstappen ja of nee. Taak toevoegen wordt zichtbaar na het kiezen van de duur."
-                );
-              }}
+              onClick={newTaskInfo.toggle}
             >
               i
             </button>
-            <div
-              className="pointer-events-none absolute top-7 right-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-              role="tooltip"
-            >
-              <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
-              <div className="text-[11px] text-gray-600 leading-relaxed">
-                Energie en duur verschijnen na elkaar. Na de duur kies je of je{' '}
-                <span className="font-semibold">microstappen</span> wilt; daarna activeer je Taak toevoegen.
+            {newTaskInfo.open ? (
+              <div
+                className="absolute top-7 right-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+                role="tooltip"
+              >
+                <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
+                <div className="text-[11px] text-gray-600 leading-relaxed">
+                  Energie en duur verschijnen na elkaar. Na de duur kies je of je{" "}
+                  <span className="font-semibold">microstappen</span> wilt; daarna activeer je Taak toevoegen.
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
 
@@ -977,28 +983,31 @@ export default function TasksOverviewCalm() {
       <section id="alle-open-taken" className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Alle open taken</h2>
-          <div className="group relative flex items-center">
+          <div ref={openTasksInfo.wrapperRef} className="relative flex items-center">
             <button
               type="button"
               aria-label="Uitleg energie-zones"
-              title="Uitleg energie-zones"
+              aria-expanded={openTasksInfo.open}
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+              onClick={openTasksInfo.toggle}
             >
               i
             </button>
-            <div
-              className="pointer-events-none absolute top-7 right-[-120px] z-50 w-56 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-              role="tooltip"
-            >
-              <div className="text-[11px] font-semibold text-gray-900 mb-1">Energie-zones</div>
-              <div className="text-[11px] text-gray-600 leading-relaxed">
-                <span className="font-semibold text-emerald-600">Makkelijk</span>: dit zijn taken die je weinig energie kosten.
-                <br />
-                <span className="font-semibold text-amber-600">Normaal</span>: taken met normale energie-kost.
-                <br />
-                <span className="font-semibold text-red-600">Intensief</span>: taken die je veel energie kosten.
+            {openTasksInfo.open ? (
+              <div
+                className="absolute top-7 right-0 z-50 w-56 max-w-[min(14rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:right-[-120px]"
+                role="tooltip"
+              >
+                <div className="text-[11px] font-semibold text-gray-900 mb-1">Energie-zones</div>
+                <div className="text-[11px] text-gray-600 leading-relaxed">
+                  <span className="font-semibold text-emerald-600">Makkelijk</span>: dit zijn taken die je weinig energie kosten.
+                  <br />
+                  <span className="font-semibold text-amber-600">Normaal</span>: taken met normale energie-kost.
+                  <br />
+                  <span className="font-semibold text-red-600">Intensief</span>: taken die je veel energie kosten.
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
         
@@ -1340,15 +1349,16 @@ export default function TasksOverviewCalm() {
             padding: 16
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                ref={convertTaskInfo.wrapperRef}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}
+              >
                 <div style={{ fontWeight: 700, color: theme.text }}>Omzetten naar taak</div>
                 <button
                   type="button"
                   aria-label="Uitleg omzetten naar taak"
-                  title="Uitleg omzetten naar taak"
-                  onClick={() => {
-                    toast('Vul eerst de duur (minuten) in, daarna kun je omzetten naar taak.');
-                  }}
+                  aria-expanded={convertTaskInfo.open}
+                  onClick={convertTaskInfo.toggle}
                   style={{
                     width: 22,
                     height: 22,
@@ -1366,6 +1376,29 @@ export default function TasksOverviewCalm() {
                 >
                   i
                 </button>
+                {convertTaskInfo.open ? (
+                  <div
+                    role="tooltip"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      marginTop: 8,
+                      zIndex: 10,
+                      maxWidth: 280,
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      border: `1px solid ${theme.line}`,
+                      background: '#fff',
+                      boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
+                      fontSize: 12,
+                      color: theme.sub,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    Vul eerst de duur (minuten) in, daarna kun je omzetten naar taak.
+                  </div>
+                ) : null}
               </div>
               <button
                 onClick={() => setConvertingThought(null)}

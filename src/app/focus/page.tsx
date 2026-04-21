@@ -53,6 +53,7 @@ function FocusContent() {
   const [isAirlockActive, setIsAirlockActive] = useState(false);
   const [microUndoSnapshot, setMicroUndoSnapshot] = useState<MicroStep[] | null>(null);
   const microUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const parkThoughtInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentTask = useMemo(() => {
     const taskParam = searchParams?.get('task');
@@ -877,6 +878,7 @@ function FocusContent() {
                   <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3">
                     <SparklesIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" aria-hidden />
                     <input
+                      ref={parkThoughtInputRef}
                       name="park-thought"
                       type="text"
                       placeholder="Parkeer een gedachte…"
@@ -886,11 +888,15 @@ function FocusContent() {
                 </form>
                 <button
                   type="button"
-                  onClick={() => void completeCurrentTask()}
-                  className="flex shrink-0 items-center gap-2 rounded-xl bg-green-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+                  onClick={() => {
+                    const v = parkThoughtInputRef.current?.value?.trim();
+                    if (!v) return;
+                    void handleParkThought(v);
+                    parkThoughtInputRef.current!.value = "";
+                  }}
+                  className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  <CheckIcon className="h-4 w-4 shrink-0 text-white" aria-hidden />
-                  Klaar
+                  Parkeer
                 </button>
               </div>
               {user?.id && parkedCount > 0 ? (
