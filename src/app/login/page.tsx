@@ -140,8 +140,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col justify-center overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-gray-50 px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl bg-white px-8 pb-8 pt-5 shadow-sm">
+    <div className="flex min-h-screen w-full items-center justify-center overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-[#F4F6FB] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl bg-white p-8 shadow-sm">
         <div className="flex flex-col items-center text-center">
           <div className="flex flex-col items-center gap-2 leading-none">
             {logoError ? (
