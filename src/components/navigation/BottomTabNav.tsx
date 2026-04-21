@@ -52,14 +52,17 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function BottomTabNav() {
+export default function BottomTabNav({ disabled = false }: { disabled?: boolean }) {
   const pathname = usePathname() ?? "";
 
   return (
     <nav
-      className="structuro-bottom-nav flex shrink-0 border-t bg-white px-2.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5"
+      className={`structuro-bottom-nav flex shrink-0 border-t bg-white px-2.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5 ${
+        disabled ? "pointer-events-none opacity-40" : ""
+      }`}
       style={{ borderColor: "var(--structuro-border)" }}
       aria-label="Hoofdnavigatie"
+      aria-disabled={disabled}
     >
       {tabs.map((t) => {
         const active = isActivePath(pathname, t.href);

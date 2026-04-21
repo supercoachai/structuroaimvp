@@ -1850,6 +1850,9 @@ export default function DayStartCheckIn({
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-100">
+        <p className="pb-2 text-center text-xs text-gray-400">
+          Na je dagstart is de rest van de app beschikbaar
+        </p>
         <button
           type="button"
           onClick={handleSubmit}

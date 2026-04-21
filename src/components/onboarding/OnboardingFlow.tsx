@@ -936,6 +936,9 @@ export default function OnboardingFlow() {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Elke dag begint met één vraag</h2>
                 <div className={OB_INTRO_OUTER}>
                   <p className={`${OB_INTRO_P} text-balance`}>Hoe zit je in je energie vandaag?</p>
+                  <p className={`${OB_INTRO_P} text-balance mt-2`}>
+                    Elke ochtend begin je hier, daarna is alles beschikbaar.
+                  </p>
                 </div>
                 <div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-md">
                   {[

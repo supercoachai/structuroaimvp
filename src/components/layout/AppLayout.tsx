@@ -14,7 +14,6 @@ import { performClientLogout } from '@/lib/logoutClient';
 import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
 import {
   FIRST_DAGSTART_AFTER_ONBOARDING_KEY,
-  FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED,
   clearFirstDagstartAfterOnboarding,
 } from '@/lib/firstDagstartSession';
 
@@ -32,7 +31,6 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const [dagstartDone, setDagstartDone] = useState(() =>
     typeof document !== 'undefined' ? isDagstartDoneTodayClient() : false
   );
-  const [minimalFirstDagstart, setMinimalFirstDagstart] = useState(false);
 
   useEffect(() => {
     const prev = appLayoutPreviousPathname;
@@ -46,27 +44,6 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       }
     }
     appLayoutPreviousPathname = pathname;
-  }, [pathname]);
-
-  useLayoutEffect(() => {
-    if (pathname !== '/dagstart') {
-      setMinimalFirstDagstart(false);
-      return;
-    }
-    const readFlag = () => {
-      try {
-        setMinimalFirstDagstart(
-          localStorage.getItem(FIRST_DAGSTART_AFTER_ONBOARDING_KEY) === '1'
-        );
-      } catch {
-        setMinimalFirstDagstart(false);
-      }
-    };
-    readFlag();
-    window.addEventListener(FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED, readFlag);
-    return () => {
-      window.removeEventListener(FIRST_DAGSTART_AFTER_ONBOARDING_CLEARED, readFlag);
-    };
   }, [pathname]);
 
   /** Direct na mount en bij route-wissel: voorkomt dat tab-nav even (of blijvend) verdwijnt op mobiel door useEffect-lat. */
@@ -87,11 +64,10 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   /** Focus: fullscreen donker scherm; geen tab-balk (doctrine). */
   const isFocusRoute = (pathname ?? '').startsWith('/focus');
 
-  const shouldHideChrome =
-    hideSidebar ||
-    !dagstartDone ||
-    (pathname === '/dagstart' && minimalFirstDagstart) ||
-    isFocusRoute;
+  /** Alleen focus / expliciet verbergen: geen shell. Dagstart: shell wél, tabs disabled tot cookie. */
+  const shouldHideChrome = hideSidebar || isFocusRoute;
+
+  const mainNavLocked = !dagstartDone;
 
   const handleLogout = async () => {
     await performClientLogout(router);
@@ -169,7 +145,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
 
       {(pathname ?? '') === '/' ? <TodoParkThoughtBar /> : null}
 
-      <BottomTabNav />
+      <BottomTabNav disabled={mainNavLocked} />
 
       <ToastHost />
     </div>
