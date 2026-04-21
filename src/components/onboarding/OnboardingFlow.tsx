@@ -866,7 +866,7 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                   <div className="flex flex-col items-center text-center">
                   <img
-                    src="/Logo Structuro.png"
+                    src="/logo-structuro.png"
                     alt=""
                     width={112}
                     height={112}
@@ -1291,7 +1291,7 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
-                <img src="/Logo Structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
+                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Hoe mogen we je aanspreken?</h2>
                 <p className="mt-3 text-sm text-gray-600">Alleen je voornaam, voor een persoonlijke begroeting.</p>
                 <input
@@ -1321,7 +1321,7 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
-                <img src="/Logo Structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
+                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
                 <p className="text-2xl sm:text-3xl font-bold text-gray-900">Welkom, {firstName.trim() || "daar"}!</p>
                 <p className="mt-4 text-base leading-relaxed text-gray-700">
                   Structuro helpt je elke dag starten met{" "}

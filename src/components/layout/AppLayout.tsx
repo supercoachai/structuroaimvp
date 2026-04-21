@@ -106,8 +106,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       >
         <div className="flex min-w-0 items-center gap-2">
           <img
-            src="/Logo Structuro.png"
-            alt=""
+            src="/logo-structuro.png"
+            alt="Structuro"
             className="h-9 w-9 shrink-0 rounded-2xl object-contain"
             width={36}
             height={36}

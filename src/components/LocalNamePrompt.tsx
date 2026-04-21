@@ -47,7 +47,7 @@ export default function LocalNamePrompt({ onComplete }: Props) {
             </div>
           ) : (
             <img
-              src="/Logo Structuro.png"
+              src="/logo-structuro.png"
               alt="Structuro"
               width={112}
               height={112}

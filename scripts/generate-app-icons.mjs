@@ -63,7 +63,7 @@ function roundedBackgroundSvg(size, rx) {
 }
 
 async function compositeIcon({ size, rx, logoScalePad = 0.88 }) {
-  const logoPath = path.join(PUBLIC, "Logo Structuro.png");
+  const logoPath = path.join(PUBLIC, "logo-structuro.png");
   const { data, width: lw, height: lh } = await loadLogoRgba(logoPath);
   keyOutDarkBackground(data);
 
@@ -124,7 +124,7 @@ async function compositeIcon({ size, rx, logoScalePad = 0.88 }) {
 async function main() {
   fs.mkdirSync(PUBLIC, { recursive: true });
 
-  const logoSrc = path.join(PUBLIC, "Logo Structuro.png");
+  const logoSrc = path.join(PUBLIC, "logo-structuro.png");
   if (!fs.existsSync(logoSrc)) {
     throw new Error(`Ontbrekend: ${logoSrc}`);
   }

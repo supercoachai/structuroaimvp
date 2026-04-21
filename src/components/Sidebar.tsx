@@ -151,7 +151,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
           >
             <div className="flex-shrink-0">
               <img
-                src="/Logo Structuro.png"
+                src="/logo-structuro.png"
                 alt="Structuro Logo"
                 className={`${collapsed ? 'w-9 h-9' : 'w-11 h-11'} object-contain`}
                 style={{ transition: 'width 0.3s, height 0.3s' }}

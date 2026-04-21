@@ -38,7 +38,7 @@ function notify(payload: any) {
         body: payload.body || "Herinnering",
         tag: payload.id || undefined,
         silent: false,
-        icon: "/Logo Structuro.png",
+        icon: "/logo-structuro.png",
       });
       n.onclick = () => payload.onClick?.();
       

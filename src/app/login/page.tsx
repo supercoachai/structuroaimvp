@@ -150,7 +150,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <img
-                src="/Logo Structuro.png"
+                src="/logo-structuro.png"
                 alt=""
                 width={96}
                 height={96}
