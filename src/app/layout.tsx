@@ -12,6 +12,10 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'Structuro',
   description: 'AI-powered platform voor volwassenen met ADHD-achtige kenmerken',
+  appleWebApp: {
+    statusBarStyle: 'default',
+    title: 'Structuro',
+  },
 }
 
 export const viewport = {
@@ -19,6 +23,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  themeColor: '#2563EB',
   /** Nodig voor env(safe-area-inset-*) op notch-/home-indicator-apparaten */
   viewportFit: 'cover' as const,
 }

@@ -145,7 +145,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
           <img
             src="/Logo Structuro.png"
             alt=""
-            className="h-9 w-9 shrink-0 object-contain"
+            className="h-9 w-9 shrink-0 rounded-2xl object-contain"
             width={36}
             height={36}
           />
