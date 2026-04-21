@@ -11,6 +11,7 @@ import TaskScheduleEditor from "./TaskScheduleEditor";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
 import { isOpenBacklogTask } from "../lib/taskFilters";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import {
   CheckCircleIcon,
   PencilSquareIcon,
@@ -420,10 +421,7 @@ export default function TasksOverviewCalm() {
     try {
       await updateTask(task.id, { started: true });
       
-      const taskDuration =
-        (typeof task?.duration === 'number' && task.duration > 0 ? task.duration : null) ??
-        (typeof task?.estimatedDuration === 'number' && task.estimatedDuration > 0 ? task.estimatedDuration : null) ??
-        15;
+      const taskDuration = getTaskDurationMinutes(task) ?? 15;
 
       const focusUrl = `/focus?task=${encodeURIComponent(task.id)}&duration=${encodeURIComponent(taskDuration)}&energy=${task.energyLevel || 'medium'}`;
       router.push(focusUrl);

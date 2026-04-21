@@ -9,6 +9,7 @@ import {
   PlayIcon,
 } from '@heroicons/react/24/outline';
 import { normalizeMicroSteps, type MicroStep } from '@/lib/microSteps';
+import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import { useRouter } from 'next/navigation';
 import { useTaskContext, Task } from '../context/TaskContext';
 import { designSystem } from '../lib/design-system';
@@ -500,7 +501,11 @@ export default function HomeCalm() {
               type="button"
               onClick={async () => {
                 await updateTask(findLowestEnergyTask.id, { started: true });
-                router.push(`/focus?task=${findLowestEnergyTask.id}`);
+                const mins =
+                  getTaskDurationMinutes(findLowestEnergyTask) ?? 15;
+                router.push(
+                  `/focus?task=${encodeURIComponent(findLowestEnergyTask.id)}&duration=${mins}`
+                );
               }}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--structuro-green)] py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.35)] transition hover:bg-[var(--structuro-green-hover)]"
             >

@@ -15,6 +15,7 @@ import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficu
 import { useUser } from '@/hooks/useUser';
 import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
+import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -82,13 +83,22 @@ function FocusContent() {
   }, [fetchTasks]);
 
   const [duration, setDuration] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const qp = searchParams?.get('duration');
-      if (qp) return parseInt(qp);
-      const saved = localStorage.getItem('focus_duration');
-      if (saved) return parseInt(saved);
+    const qp = searchParams?.get('duration');
+    if (qp) {
+      const n = parseInt(qp, 10);
+      if (Number.isFinite(n) && n > 0) return Math.min(480, n);
     }
-    return parseInt(searchParams?.get('duration') || '15');
+    if (typeof window !== 'undefined') {
+      const hasTaskInUrl = Boolean(searchParams?.get('task'));
+      if (!hasTaskInUrl) {
+        const saved = localStorage.getItem('focus_duration');
+        if (saved) {
+          const n = parseInt(saved, 10);
+          if (Number.isFinite(n) && n > 0) return Math.min(480, n);
+        }
+      }
+    }
+    return 15;
   });
 
   const [timeLeft, setTimeLeft] = useState(duration * 60);
@@ -99,8 +109,9 @@ function FocusContent() {
   const [showCountdown, setShowCountdown] = useState(false);
   /** Na "1": 500ms fade-out voordat de focus-sessie start. */
   const [countdownFadeOut, setCountdownFadeOut] = useState(false);
-  const lastTaskIdRef = useRef<string | null>(null);
   const endAtRef = useRef<number | null>(null);
+  /** Laatste taak waarvan we de geplande minuten naar state hebben gesynchroniseerd (geen overschrijven na verlenging / zelfde sessie). */
+  const lastSyncedTaskIdRef = useRef<string | null>(null);
 
   const [showTimeUpPrompt, setShowTimeUpPrompt] = useState(false);
   const [extendMinutes, setExtendMinutes] = useState<number>(10);
@@ -327,8 +338,13 @@ function FocusContent() {
         const t = tasks.find((x) => x.id === id);
         return t && !t.done;
       });
-      if (nextId) router.replace(`/focus?task=${encodeURIComponent(nextId)}`);
-      else router.push('/');
+      if (nextId) {
+        const nextTask = tasks.find((x) => x.id === nextId);
+        const mins = getTaskDurationMinutes(nextTask ?? null) ?? 15;
+        router.replace(
+          `/focus?task=${encodeURIComponent(nextId)}&duration=${mins}`
+        );
+      } else router.push('/');
     } catch (e) {
       console.error('park focus (nu niet):', e);
     } finally {
@@ -436,19 +452,28 @@ function FocusContent() {
   useEffect(() => {
     if (!currentTask) return;
     setTaskTitle(currentTask.title);
-    const taskDuration =
-      (typeof currentTask.duration === 'number' && currentTask.duration > 0 ? currentTask.duration : null) ??
-      (typeof (currentTask as any).estimatedDuration === 'number' && (currentTask as any).estimatedDuration > 0
-        ? (currentTask as any).estimatedDuration : null);
-    if (!taskDuration) return;
-    const taskId = currentTask.id;
-    const taskChanged = lastTaskIdRef.current !== taskId;
-    if (taskChanged) lastTaskIdRef.current = taskId;
-    if (!isRunning && !showCountdown && (taskChanged || showFocusCard)) {
-      setDuration(taskDuration);
-      setTimeLeft(taskDuration * 60);
-    }
-  }, [currentTask?.id, currentTask?.title, currentTask?.duration, (currentTask as any)?.estimatedDuration, isRunning, showCountdown, showFocusCard]);
+    const taskDuration = getTaskDurationMinutes(currentTask);
+    if (taskDuration == null) return;
+    if (isRunning || isPaused || showCountdown || showTimeUpPrompt) return;
+
+    const tid = currentTask.id;
+    const isNewTask = lastSyncedTaskIdRef.current !== tid;
+    if (!isNewTask && !showFocusCard) return;
+
+    setDuration(taskDuration);
+    setTimeLeft(taskDuration * 60);
+    lastSyncedTaskIdRef.current = tid;
+  }, [
+    currentTask?.id,
+    currentTask?.title,
+    currentTask?.duration,
+    currentTask?.estimatedDuration,
+    isRunning,
+    isPaused,
+    showCountdown,
+    showTimeUpPrompt,
+    showFocusCard,
+  ]);
 
   // ─── Derived data ─────────────────────────────
   const existingMicroSteps = normalizeMicroSteps(currentTask?.microSteps);

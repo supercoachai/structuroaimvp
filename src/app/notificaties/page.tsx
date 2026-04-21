@@ -6,6 +6,7 @@ import { useTaskContext, Task } from "../../context/TaskContext";
 import { requestNotificationPermission, testReminder } from "../../components/ReminderEngine";
 import { toast } from "../../components/Toast";
 import { xpForTask } from "../../lib/xp";
+import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import { useRouter } from "next/navigation";
 import {
   CheckCircleIcon,
@@ -257,9 +258,12 @@ export default function HerinneringenPage() {
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end">
                       <button
                         type="button"
-                        onClick={() =>
-                          router.push(`/focus?task=${task.id}`)
-                        }
+                        onClick={() => {
+                          const mins = getTaskDurationMinutes(task) ?? 15;
+                          router.push(
+                            `/focus?task=${encodeURIComponent(task.id)}&duration=${mins}`
+                          );
+                        }}
                         style={{
                           padding: "10px 14px",
                           borderRadius: 12,
