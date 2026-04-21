@@ -679,6 +679,11 @@ export default function OnboardingFlow() {
 
   const goPrev = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
 
+  const goToStep = useCallback((index: number) => {
+    const i = Math.max(0, Math.min(STEP_COUNT - 1, index));
+    setStep(i);
+  }, []);
+
   const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current == null) return;
@@ -828,10 +833,10 @@ export default function OnboardingFlow() {
     <button
       type="button"
       onClick={goPrev}
-      className="absolute top-5 left-5 z-10 p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-white/70 transition-all duration-[600ms]"
+      className="absolute left-4 top-6 z-30 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-white/70 hover:text-gray-600"
       aria-label="Vorige stap"
     >
-      <ChevronLeft className="w-6 h-6" />
+      <ChevronLeft className="h-5 w-5" strokeWidth={2} aria-hidden />
     </button>
   );
 
@@ -1819,6 +1824,26 @@ export default function OnboardingFlow() {
             </section>
           </div>
         </div>
+
+        <nav
+          className="flex shrink-0 justify-center gap-2 border-t border-slate-200/60 bg-gradient-to-br from-slate-50/95 to-blue-50/95 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
+          aria-label="Onboarding voortgang"
+        >
+          {Array.from({ length: STEP_COUNT }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goToStep(i)}
+              aria-label={`Ga naar stap ${i + 1} van ${STEP_COUNT}`}
+              aria-current={i === step ? "step" : undefined}
+              className={`rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+                i === step
+                  ? "h-2 w-6 bg-blue-600"
+                  : "h-2 w-2 bg-gray-300 hover:bg-gray-400"
+              }`}
+            />
+          ))}
+        </nav>
       </div>
     </div>
   );
