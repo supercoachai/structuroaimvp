@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   estimated_duration INTEGER,
   micro_steps JSONB DEFAULT '[]'::jsonb, -- array van micro-stappen
   not_today BOOLEAN DEFAULT FALSE, -- "niet vandaag" flag
+  postponed_to DATE,
+  postponed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );

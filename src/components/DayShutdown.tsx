@@ -7,8 +7,9 @@ import { toast } from "./Toast";
 import { track } from "../shared/track";
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import { insertDagafsluiterSuggestions } from "@/lib/supabase/parkedThoughtsDb";
+import { postponeTasksToCalendarDay } from "@/lib/supabase/postponeTasksDb";
 import { useCheckIn } from "../hooks/useCheckIn";
-import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -80,6 +81,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
     try {
       const today = todayYmd;
+      const tomorrowYmd = getTomorrowCalendarDateAmsterdam();
       const completedIds = completedTasks.map((t) => t.id);
       const selected = tasksToRemember.filter((t) => t.selected);
 
@@ -88,10 +90,41 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         suggestedTaskEnergy: (["low", "medium", "high"].includes(String(t.energyLevel))
           ? t.energyLevel
           : "medium") as "low" | "medium" | "high",
+        scheduledFor: tomorrowYmd,
       }));
 
       if (suggestionItems.length > 0) {
-        await insertDagafsluiterSuggestions(user.id, suggestionItems);
+        try {
+          await insertDagafsluiterSuggestions(user.id, suggestionItems);
+        } catch (err) {
+          console.error(
+            "[dagafsluiter] insertDagafsluiterSuggestions failed:",
+            err instanceof Error ? err.message : err,
+            err
+          );
+          throw err;
+        }
+      }
+
+      if (selected.length > 0) {
+        try {
+          await postponeTasksToCalendarDay(
+            supabase,
+            user.id,
+            selected.map((t: any) => t.id),
+            tomorrowYmd
+          );
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
+          }
+        } catch (err) {
+          console.error(
+            "[dagafsluiter] postponeTasksToCalendarDay failed:",
+            err instanceof Error ? err.message : err,
+            err
+          );
+          throw err;
+        }
       }
 
       const rememberedTasksPayload =
@@ -102,12 +135,14 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
             }))
           : null;
 
-      const { error } = await supabase.from("daily_shutdowns").upsert(
+      const movedToTomorrowIds = selected.map((t: any) => t.id);
+
+      const { error: shutdownErr } = await supabase.from("daily_shutdowns").upsert(
         {
           user_id: user.id,
           date: today,
           completed_task_ids: completedIds,
-          moved_to_tomorrow_task_ids: [],
+          moved_to_tomorrow_task_ids: movedToTomorrowIds,
           energy_level: null,
           satisfaction_level: satisfactionLevel,
           reflection: reflection.trim() || null,
@@ -118,7 +153,14 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         }
       );
 
-      if (error) throw error;
+      if (shutdownErr) {
+        console.error(
+          "[dagafsluiter] daily_shutdowns upsert failed:",
+          shutdownErr.message,
+          shutdownErr
+        );
+        throw shutdownErr;
+      }
 
       triggerHaptic(HAPTIC_PATTERNS.DAY_DONE);
       toast("✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.");
@@ -129,7 +171,11 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       });
       onComplete();
     } catch (error: unknown) {
-      console.error("Dagafsluiter save error:", error);
+      const detail =
+        error && typeof error === "object" && "message" in error
+          ? String((error as { message: unknown }).message)
+          : String(error);
+      console.error("Dagafsluiter save error:", detail, error);
       const msg = "Kon niet opslaan, probeer opnieuw.";
       setSaveError(msg);
       toast(msg);

@@ -26,6 +26,11 @@ export function getCalendarDateAmsterdam(now: Date = new Date()): string {
   }
 }
 
+/** Morgen-kalenderdag in Europe/Amsterdam (YYYY-MM-DD), benadering via +24 uur. */
+export function getTomorrowCalendarDateAmsterdam(now: Date = new Date()): string {
+  return getCalendarDateAmsterdam(new Date(now.getTime() + 24 * 60 * 60 * 1000));
+}
+
 /** Uur 0–23 in Europe/Amsterdam (zelfde dagafbakening als dagstart). */
 export function getClockHourAmsterdam(now: Date = new Date()): number {
   try {

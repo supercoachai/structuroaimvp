@@ -121,7 +121,12 @@ export async function fetchDagafsluiterSuggestionsForDagstart(
 
 export async function insertDagafsluiterSuggestions(
   userId: string,
-  items: { content: string; suggestedTaskEnergy: "low" | "medium" | "high" }[]
+  items: {
+    content: string;
+    suggestedTaskEnergy: "low" | "medium" | "high";
+    /** Kalenderdag (YYYY-MM-DD) waarop de suggestie bedoeld is, meestal morgen (Amsterdam). */
+    scheduledFor: string;
+  }[]
 ): Promise<void> {
   if (items.length === 0) return;
   const supabase = createClient();
@@ -130,6 +135,7 @@ export async function insertDagafsluiterSuggestions(
     content: i.content,
     thought_type: "dagafsluiter_suggestie" as const,
     suggested_task_energy: i.suggestedTaskEnergy,
+    scheduled_for: i.scheduledFor,
   }));
   const { error } = await supabase.from("parked_thoughts").insert(rows);
   if (error) throw new Error(error.message);
