@@ -12,7 +12,13 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'Structuro',
   description: 'AI-powered platform voor volwassenen met ADHD-achtige kenmerken',
+  manifest: '/manifest.json',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
   appleWebApp: {
+    capable: true,
     statusBarStyle: 'default',
     title: 'Structuro',
   },
@@ -23,7 +29,6 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#2563EB',
   /** Nodig voor env(safe-area-inset-*) op notch-/home-indicator-apparaten */
   viewportFit: 'cover' as const,
 }
@@ -35,6 +40,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl">
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: light)"
+          content="#E8F0FE"
+        />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: dark)"
+          content="#1C2B4A"
+        />
+      </head>
       <body className={`${dmSans.className} min-h-[100dvh] antialiased`}>
         <div className="relative flex min-h-[100dvh] w-full flex-col bg-[var(--structuro-bg)]">
           <AppProviders>{children}</AppProviders>
