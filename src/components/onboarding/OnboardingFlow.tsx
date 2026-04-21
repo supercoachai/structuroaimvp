@@ -30,6 +30,7 @@ import {
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import { getCalendarDateAmsterdam, getTimeOfDayGreetingNl } from "@/lib/dagstartCookie";
 import { markFirstDagstartAfterOnboarding } from "@/lib/firstDagstartSession";
+import { microStepId, type MicroStep } from "@/lib/microSteps";
 import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks";
@@ -115,6 +116,10 @@ export default function OnboardingFlow() {
   const [firstDayEnergy, setFirstDayEnergy] = useState<"low" | "medium" | "high" | null>(null);
   const [firstTaskTitle, setFirstTaskTitle] = useState("");
   const [firstTaskEstimatedMinutes, setFirstTaskEstimatedMinutes] = useState<number | null>(null);
+  /** null = nog niet gekozen op eerste-dag-slide */
+  const [firstDayUseMicroSteps, setFirstDayUseMicroSteps] = useState<boolean | null>(null);
+  const [firstDayMicroTitles, setFirstDayMicroTitles] = useState<string[]>([]);
+  const [firstDayMicroInput, setFirstDayMicroInput] = useState("");
   /** Stap B (taak) pas na korte pauze na energiekeuze, zodat het rustig binnenkomt. */
   const [firstDayTaskPhaseVisible, setFirstDayTaskPhaseVisible] = useState(false);
   /** Minutenblok pas na korte pauze + eigen fade-in (niet “pats” na taak). */
@@ -136,10 +141,15 @@ export default function OnboardingFlow() {
     firstTaskEstimatedMinutes != null &&
     firstTaskEstimatedMinutes >= 1 &&
     firstTaskEstimatedMinutes <= 480;
+  const firstDayMicroStepsResolved =
+    firstDayUseMicroSteps === false ||
+    (firstDayUseMicroSteps === true && firstDayMicroTitles.length > 0);
   const firstDayReady =
     Boolean(firstDayEnergy) &&
     firstTaskTitle.trim().length >= 2 &&
-    firstDayMinutesOk;
+    firstDayMinutesOk &&
+    firstDayUseMicroSteps !== null &&
+    firstDayMicroStepsResolved;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -255,6 +265,15 @@ export default function OnboardingFlow() {
       durationAutoFocusDoneRef.current = false;
     }
   }, [firstTaskTitle]);
+
+  /** Minuten ongeldig: micro-keuze resetten */
+  useEffect(() => {
+    if (step !== FIRST_DAY_SLIDE_INDEX) return;
+    if (firstDayMinutesOk) return;
+    setFirstDayUseMicroSteps(null);
+    setFirstDayMicroTitles([]);
+    setFirstDayMicroInput("");
+  }, [step, firstDayMinutesOk]);
 
   useEffect(() => {
     if (step !== FIRST_DAY_SLIDE_INDEX) durationAutoFocusDoneRef.current = false;
@@ -675,6 +694,18 @@ export default function OnboardingFlow() {
     const energy = firstDayEnergy;
     const mins = firstTaskEstimatedMinutes;
     if (!title || !energy || mins == null || mins < 1 || mins > 480) return;
+    if (firstDayUseMicroSteps !== true && firstDayUseMicroSteps !== false) return;
+    const microSteps: MicroStep[] =
+      firstDayUseMicroSteps === true
+        ? firstDayMicroTitles.map((line) => ({
+            id: microStepId(),
+            title: line.trim(),
+            minutes: null,
+            difficulty: null,
+            done: false,
+          }))
+        : [];
+    if (firstDayUseMicroSteps === true && microSteps.length === 0) return;
     const dateStr = getCalendarDateAmsterdam();
     const energyLevel = energy;
     if (user?.id) {
@@ -691,7 +722,7 @@ export default function OnboardingFlow() {
         impact: "🌱",
         energyLevel,
         estimatedDuration: mins,
-        microSteps: [],
+        microSteps,
         notToday: false,
       });
       await upsertCheckInToSupabase(user.id, dateStr, {
@@ -713,7 +744,7 @@ export default function OnboardingFlow() {
         impact: "🌱",
         energyLevel,
         estimatedDuration: mins,
-        microSteps: [],
+        microSteps,
         notToday: false,
       });
       saveCheckInToStorage({
@@ -731,7 +762,7 @@ export default function OnboardingFlow() {
   const finish = async () => {
     if (!firstDayReady) {
       alert(
-        "Vul op de vorige stap je energie in, je eerste taak, en hoeveel minuten je ongeveer nodig hebt."
+        "Vul op de vorige stap je energie in, je eerste taak, hoeveel minuten je nodig hebt, en of je microstappen wilt (bij ja minstens één stap)."
       );
       return;
     }
@@ -794,7 +825,7 @@ export default function OnboardingFlow() {
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50 pt-[max(0px,env(safe-area-inset-top))] pb-[max(0px,env(safe-area-inset-bottom))]">
       <div className="flex min-h-0 flex-1 flex-col touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="relative min-h-0 flex-1 overflow-hidden">
           {backBtn}
@@ -1468,6 +1499,115 @@ export default function OnboardingFlow() {
                               </span>
                             ) : null}
                           </div>
+                        </div>
+                      ) : null}
+
+                      {firstDayDurationVisible && firstDayMinutesOk ? (
+                        <div className="animate-fade-in mt-8 w-full space-y-4 text-center">
+                          <p className="text-base font-medium text-gray-800">
+                            Wil je microstappen toevoegen?
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Kleine substappen kunnen helpen om te starten.
+                          </p>
+                          <div className="flex justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFirstDayUseMicroSteps(true);
+                              }}
+                              className={`min-w-[5.5rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                                firstDayUseMicroSteps === true
+                                  ? "border-blue-600 bg-blue-600 text-white"
+                                  : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                              }`}
+                            >
+                              Ja
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFirstDayUseMicroSteps(false);
+                                setFirstDayMicroTitles([]);
+                                setFirstDayMicroInput("");
+                              }}
+                              className={`min-w-[5.5rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                                firstDayUseMicroSteps === false
+                                  ? "border-blue-600 bg-blue-600 text-white"
+                                  : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                              }`}
+                            >
+                              Nee
+                            </button>
+                          </div>
+
+                          {firstDayUseMicroSteps === true ? (
+                            <div className="animate-fade-in mt-2 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 text-left">
+                              <p className="mb-3 text-center text-xs font-medium text-violet-900">
+                                Je eerste microstappen
+                              </p>
+                              {firstDayMicroTitles.length > 0 ? (
+                                <ul className="mb-3 space-y-2">
+                                  {firstDayMicroTitles.map((line, idx) => (
+                                    <li
+                                      key={`${idx}-${line.slice(0, 24)}`}
+                                      className="flex items-start gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm text-gray-800 shadow-sm"
+                                    >
+                                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="min-w-0 flex-1 leading-snug">{line}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setFirstDayMicroTitles((prev) =>
+                                            prev.filter((_, i) => i !== idx)
+                                          )
+                                        }
+                                        className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                        aria-label="Stap verwijderen"
+                                      >
+                                        ×
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="mb-2 text-center text-xs text-gray-600">
+                                  Voeg minstens één stap toe.
+                                </p>
+                              )}
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                                <input
+                                  type="text"
+                                  value={firstDayMicroInput}
+                                  onChange={(e) => setFirstDayMicroInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    const t = firstDayMicroInput.trim();
+                                    if (!t) return;
+                                    setFirstDayMicroTitles((prev) => [...prev, t]);
+                                    setFirstDayMicroInput("");
+                                  }}
+                                  placeholder="Bijv. bestand openen…"
+                                  className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const t = firstDayMicroInput.trim();
+                                    if (!t) return;
+                                    setFirstDayMicroTitles((prev) => [...prev, t]);
+                                    setFirstDayMicroInput("");
+                                  }}
+                                  className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+                                >
+                                  Toevoegen
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

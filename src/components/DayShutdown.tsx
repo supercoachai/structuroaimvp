@@ -1,153 +1,185 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useTaskContext } from '../context/TaskContext';
-import { createClient } from '../lib/supabase/client';
-import { toast } from './Toast';
-import { track } from '../shared/track';
-import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
+import { useState, useEffect, useMemo } from "react";
+import { useTaskContext } from "../context/TaskContext";
+import { createClient } from "../lib/supabase/client";
+import { toast } from "./Toast";
+import { track } from "../shared/track";
+import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
+import { insertDagafsluiterSuggestions } from "@/lib/supabase/parkedThoughtsDb";
+import { useCheckIn } from "../hooks/useCheckIn";
+import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
 interface DayShutdownProps {
   onComplete: () => void;
 }
 
+export type SatisfactionLevel = "low" | "good" | "great";
+
 export default function DayShutdown({ onComplete }: DayShutdownProps) {
-  const { tasks, updateTask } = useTaskContext();
-  const [energyLevel, setEnergyLevel] = useState<string | null>(null);
-  const [reflection, setReflection] = useState('');
+  const { tasks } = useTaskContext();
+  const { checkIn, loading: checkInLoading } = useCheckIn();
+  const [satisfactionLevel, setSatisfactionLevel] = useState<SatisfactionLevel | null>(null);
+  const [reflection, setReflection] = useState("");
   const [completedTasks, setCompletedTasks] = useState<any[]>([]);
-  const [tasksToMove, setTasksToMove] = useState<any[]>([]);
+  /** Alleen focus-taken van vandaag (dagstart top 3) die nog niet af zijn, met checkbox-state. */
+  const [tasksToRemember, setTasksToRemember] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Haal voltooide taken van vandaag op
+  const todayYmd = getCalendarDateAmsterdam();
+
+  /** Zelfde bron als dagstart: top3_task_ids van vandaag, open, max 3. */
+  const incompleteDagstartTasks = useMemo(() => {
+    if (!checkIn || checkIn.date !== todayYmd || !checkIn.top3_task_ids?.length) {
+      return [] as any[];
+    }
+    const idOrder = checkIn.top3_task_ids.map(String).slice(0, 3);
+    const byId = new Map(tasks.map((t) => [String(t.id), t]));
+    const out: any[] = [];
+    for (const id of idOrder) {
+      const t = byId.get(id);
+      if (!t) continue;
+      if (t.done) continue;
+      if (t.source === "medication" || t.source === "event") continue;
+      out.push(t);
+    }
+    return out;
+  }, [checkIn, tasks, todayYmd]);
+
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const completed = tasks.filter((t: any) => 
-      t.done && 
-      t.completedAt && 
-      t.completedAt.startsWith(today)
+    const completed = tasks.filter(
+      (t: any) =>
+        t.done && t.completedAt && String(t.completedAt).slice(0, 10) === todayYmd
     );
     setCompletedTasks(completed);
+  }, [tasks, todayYmd]);
 
-    // Haal openstaande taken op die naar morgen kunnen
-    const openTasks = tasks.filter((t: any) =>
-      !t.done &&
-      !t.notToday &&
-      t.source !== 'medication' &&
-      t.source !== 'parked_thought' &&
-      (!t.priority || t.priority > 3)
-    );
-    setTasksToMove(openTasks);
-  }, [tasks]);
+  useEffect(() => {
+    setTasksToRemember(incompleteDagstartTasks.map((t) => ({ ...t, selected: false })));
+  }, [incompleteDagstartTasks]);
 
   const handleSubmit = async () => {
-    if (!energyLevel) {
-      toast('Kies eerst je energie niveau');
+    if (!satisfactionLevel) {
+      toast("Kies hoe voldaan je je voelt na vandaag");
       return;
     }
 
     setIsSubmitting(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      toast('Je moet ingelogd zijn');
+      toast("Je moet ingelogd zijn");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const completedIds = completedTasks.map(t => t.id);
-      const movedIds = tasksToMove.filter(t => t.selected).map(t => t.id);
+      const today = todayYmd;
+      const completedIds = completedTasks.map((t) => t.id);
+      const selected = tasksToRemember.filter((t) => t.selected);
 
-      // Verplaats geselecteerde taken naar morgen (update due_at)
-      for (const taskId of movedIds) {
-        const task = tasks.find((t: any) => t.id === taskId);
-        if (task) {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          tomorrow.setHours(9, 0, 0, 0);
-          await updateTask(taskId, { dueAt: tomorrow.toISOString() });
-        }
+      const suggestionItems = selected.map((t: any) => ({
+        content: String(t.title ?? "").trim() || "Taak",
+        suggestedTaskEnergy: (["low", "medium", "high"].includes(String(t.energyLevel))
+          ? t.energyLevel
+          : "medium") as "low" | "medium" | "high",
+      }));
+
+      if (suggestionItems.length > 0) {
+        await insertDagafsluiterSuggestions(user.id, suggestionItems);
       }
 
-      // Sla shutdown op
-      const { error } = await supabase
-        .from('daily_shutdowns')
-        .upsert({
+      const { error } = await supabase.from("daily_shutdowns").upsert(
+        {
           user_id: user.id,
           date: today,
           completed_task_ids: completedIds,
-          moved_to_tomorrow_task_ids: movedIds,
-          energy_level: energyLevel,
+          moved_to_tomorrow_task_ids: [],
+          energy_level: null,
+          satisfaction_level: satisfactionLevel,
           reflection: reflection.trim() || null,
-        }, {
-          onConflict: 'user_id,date'
-        });
+        },
+        {
+          onConflict: "user_id,date",
+        }
+      );
 
       if (error) throw error;
 
       triggerHaptic(HAPTIC_PATTERNS.DAY_DONE);
-      toast('✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.');
-      track('day_shutdown', { 
-        energyLevel, 
+      toast("✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.");
+      track("day_shutdown", {
+        satisfactionLevel,
         completedCount: completedTasks.length,
-        movedCount: movedIds.length 
+        dagafsluiterSuggestionCount: suggestionItems.length,
       });
       onComplete();
     } catch (error: any) {
-      console.error('Error saving shutdown:', error);
-      toast('Fout bij opslaan van dagafsluiter');
+      console.error("Error saving shutdown:", error);
+      toast("Fout bij opslaan van dagafsluiter");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const toggleTaskMove = (taskId: string) => {
-    setTasksToMove(prev => prev.map(t => 
-      t.id === taskId ? { ...t, selected: !t.selected } : t
-    ));
+  const toggleTaskRemember = (taskId: string) => {
+    setTasksToRemember((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, selected: !t.selected } : t))
+    );
   };
 
-  const energyLevels = [
-    { emoji: "😴", label: "Laag", value: "low" },
-    { emoji: "🙂", label: "Oké", value: "medium" },
-    { emoji: "⚡", label: "Hoog", value: "high" }
+  const satisfactionOptions: {
+    key: SatisfactionLevel;
+    emoji: string;
+    label: string;
+    line: string;
+  }[] = [
+    { key: "low", emoji: "😮‍💨", label: "Beetje", line: "Het was een dag" },
+    { key: "good", emoji: "🙂", label: "Goed", line: "Ik heb gedaan wat ik kon" },
+    { key: "great", emoji: "🌟", label: "Super", line: "Ik ben trots op vandaag" },
   ];
 
   return (
-    <div style={{
-      background: '#FFFFFF',
-      border: '1px solid #E6E8EE',
-      borderRadius: 16,
-      padding: 32,
-      maxWidth: 600,
-      margin: '0 auto'
-    }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+    <div
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E6E8EE",
+        borderRadius: 16,
+        padding: 32,
+        maxWidth: 600,
+        margin: "0 auto",
+      }}
+    >
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
         🌙 Dagafsluiter
       </h2>
-      <p style={{ fontSize: 14, color: 'rgba(47,52,65,0.75)', textAlign: 'center', marginBottom: 32 }}>
+      <p
+        style={{
+          fontSize: 14,
+          color: "rgba(47,52,65,0.75)",
+          textAlign: "center",
+          marginBottom: 32,
+        }}
+      >
         Sluit je dag af met rust en overzicht
       </p>
 
-      {/* Wat is af? */}
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          ✅ Wat is af vandaag?
-        </h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>✅ Wat is af vandaag?</h3>
         {completedTasks.length > 0 ? (
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div style={{ display: "grid", gap: 8 }}>
             {completedTasks.map((task) => (
               <div
                 key={task.id}
                 style={{
                   padding: 12,
-                  background: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
+                  background: "#F0FDF4",
+                  border: "1px solid #BBF7D0",
                   borderRadius: 8,
-                  fontSize: 14
+                  fontSize: 14,
                 }}
               >
                 ✓ {task.title}
@@ -155,99 +187,140 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
             ))}
           </div>
         ) : (
-          <div style={{
-            padding: 16,
-            background: '#F8FAFC',
-            border: '1px dashed #E6E8EE',
-            borderRadius: 8,
-            textAlign: 'center',
-            color: 'rgba(47,52,65,0.75)',
-            fontSize: 14
-          }}>
+          <div
+            style={{
+              padding: 16,
+              background: "#F8FAFC",
+              border: "1px dashed #E6E8EE",
+              borderRadius: 8,
+              textAlign: "center",
+              color: "rgba(47,52,65,0.75)",
+              fontSize: 14,
+            }}
+          >
             Geen taken voltooid vandaag. Dat is oké! Morgen is een nieuwe dag.
           </div>
         )}
       </div>
 
-      {/* Wat neem je mee naar morgen? */}
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          📅 Wat neem je mee naar morgen?
-        </h3>
-        {tasksToMove.length > 0 ? (
-          <div style={{ display: 'grid', gap: 8, maxHeight: 200, overflowY: 'auto' }}>
-            {tasksToMove.map((task) => (
-              <label
-                key={task.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: 12,
-                  background: task.selected ? '#F0F9FF' : '#FFFFFF',
-                  border: `1px solid ${task.selected ? '#BAE6FD' : '#E6E8EE'}`,
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={task.selected || false}
-                  onChange={() => toggleTaskMove(task.id)}
-                  style={{ width: 18, height: 18, cursor: 'pointer' }}
-                />
-                <span style={{ flex: 1, fontSize: 14 }}>{task.title}</span>
-              </label>
-            ))}
+        {checkInLoading ? (
+          <p style={{ fontSize: 14, color: "rgba(47,52,65,0.6)", textAlign: "center" }}>
+            Laden…
+          </p>
+        ) : incompleteDagstartTasks.length === 0 ? (
+          <div
+            style={{
+              padding: 16,
+              background: "#F0FDF4",
+              border: "1px solid #BBF7D0",
+              borderRadius: 12,
+              textAlign: "center",
+              fontSize: 14,
+              color: "rgba(47,52,65,0.85)",
+              lineHeight: 1.5,
+            }}
+          >
+            Alles gedaan vandaag. Goed bezig. ✅
           </div>
         ) : (
-          <div style={{
-            padding: 16,
-            background: '#F8FAFC',
-            border: '1px dashed #E6E8EE',
-            borderRadius: 8,
-            textAlign: 'center',
-            color: 'rgba(47,52,65,0.75)',
-            fontSize: 14
-          }}>
-            Geen taken om naar morgen te verplaatsen.
-          </div>
+          <>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+              📅 Wil je deze morgen oppakken?
+            </h3>
+            <p
+              style={{
+                fontSize: 13,
+                color: "rgba(47,52,65,0.7)",
+                marginBottom: 16,
+                lineHeight: 1.45,
+              }}
+            >
+              Jouw energie bepaalt dan wat je pakt.
+            </p>
+            <div style={{ display: "grid", gap: 8, maxHeight: 200, overflowY: "auto" }}>
+              {tasksToRemember.map((task) => (
+                <label
+                  key={task.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: 12,
+                    background: task.selected ? "#F0F9FF" : "#FFFFFF",
+                    border: `1px solid ${task.selected ? "#BAE6FD" : "#E6E8EE"}`,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={task.selected || false}
+                    onChange={() => toggleTaskRemember(task.id)}
+                    style={{ width: 18, height: 18, cursor: "pointer" }}
+                  />
+                  <span style={{ flex: 1, fontSize: 14 }}>{task.title}</span>
+                </label>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Energie reflectie */}
       <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          💭 Hoe was je energie vandaag?
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+          💭 Hoe voldaan ben je na vandaag?
         </h3>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          {energyLevels.map((level) => (
+        <p
+          style={{
+            fontSize: 13,
+            color: "rgba(47,52,65,0.7)",
+            marginBottom: 16,
+            lineHeight: 1.45,
+          }}
+        >
+          Niet over wat niet lukte. Over wat je hebt gedaan.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          {satisfactionOptions.map((opt) => (
             <button
-              key={level.value}
-              onClick={() => setEnergyLevel(level.value)}
+              key={opt.key}
+              type="button"
+              onClick={() => setSatisfactionLevel(opt.key)}
               style={{
-                flex: 1,
-                padding: 16,
+                flex: "1 1 90px",
+                minWidth: 88,
+                maxWidth: 160,
+                padding: 14,
                 borderRadius: 12,
-                border: `2px solid ${energyLevel === level.value ? '#4A90E2' : '#E6E8EE'}`,
-                background: energyLevel === level.value ? '#F0F9FF' : '#FFFFFF',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 8
+                border: `2px solid ${satisfactionLevel === opt.key ? "#4A90E2" : "#E6E8EE"}`,
+                background: satisfactionLevel === opt.key ? "#F0F9FF" : "#FFFFFF",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              <div style={{ fontSize: 28 }}>{level.emoji}</div>
-              <div style={{ fontWeight: 600, fontSize: 12 }}>{level.label}</div>
+              <div style={{ fontSize: 26, lineHeight: 1 }}>{opt.emoji}</div>
+              <div style={{ fontWeight: 600, fontSize: 12 }}>{opt.label}</div>
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "rgba(47,52,65,0.65)",
+                  textAlign: "center",
+                  lineHeight: 1.35,
+                }}
+              >
+                {opt.line}
+              </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Reflectie */}
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
           💡 1 minuut reflectie (optioneel)
@@ -257,38 +330,37 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
           onChange={(e) => setReflection(e.target.value)}
           placeholder="Hoe voelde je dag? Wat ging goed? Wat kan beter?"
           style={{
-            width: '100%',
+            width: "100%",
             minHeight: 80,
             padding: 12,
             borderRadius: 8,
-            border: '1px solid #E6E8EE',
+            border: "1px solid #E6E8EE",
             fontSize: 14,
-            fontFamily: 'inherit',
-            resize: 'vertical'
+            fontFamily: "inherit",
+            resize: "vertical",
           }}
         />
       </div>
 
-      {/* Submit button */}
       <button
+        type="button"
         onClick={handleSubmit}
-        disabled={!energyLevel || isSubmitting}
+        disabled={!satisfactionLevel || isSubmitting}
         style={{
-          width: '100%',
+          width: "100%",
           padding: 16,
           borderRadius: 12,
-          border: 'none',
-          background: energyLevel && !isSubmitting ? '#4A90E2' : '#E6E8EE',
-          color: energyLevel && !isSubmitting ? 'white' : 'rgba(47,52,65,0.5)',
+          border: "none",
+          background: satisfactionLevel && !isSubmitting ? "#4A90E2" : "#E6E8EE",
+          color: satisfactionLevel && !isSubmitting ? "white" : "rgba(47,52,65,0.5)",
           fontWeight: 600,
           fontSize: 16,
-          cursor: energyLevel && !isSubmitting ? 'pointer' : 'not-allowed',
-          transition: 'all 0.2s ease'
+          cursor: satisfactionLevel && !isSubmitting ? "pointer" : "not-allowed",
+          transition: "all 0.2s ease",
         }}
       >
-        {isSubmitting ? 'Opslaan...' : 'Sluit mijn dag af'}
+        {isSubmitting ? "Opslaan..." : "Sluit mijn dag af"}
       </button>
     </div>
   );
 }
-

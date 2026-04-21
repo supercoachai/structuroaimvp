@@ -10,8 +10,40 @@
 @source "../**/*.js";
 
 :root {
+  /* Mobiel: afstand tot onderkant visual viewport (o.a. virtueel toetsenbord). Gezet door VisualViewportBridge. */
+  --keyboard-inset-bottom: 0px;
+
   --background: #f9fafb;
   --foreground: #111827;
+
+  /* Structuro product redesign (DM Sans + doctrine tokens) */
+  --structuro-bg: #f4f6fb;
+  --structuro-white: #ffffff;
+  --structuro-border: #e2e8f0;
+  --structuro-border-soft: #f1f5f9;
+  --structuro-text: #0f172a;
+  --structuro-sub: #64748b;
+  --structuro-placeholder: #94a3b8;
+  --structuro-blue: #2563eb;
+  --structuro-blue-hover: #1d4ed8;
+  --structuro-blue-soft: #eff6ff;
+  --structuro-blue-ring: #bfdbfe;
+  --structuro-green: #22c55e;
+  --structuro-green-hover: #16a34a;
+  --structuro-green-mid: rgba(34, 197, 94, 0.15);
+  --structuro-green-soft: #ecfdf5;
+  --structuro-dark: #0f172a;
+  --structuro-dark-card: #1e293b;
+  --structuro-dark-sub: #94a3b8;
+  --structuro-tint1-bg: #eff6ff;
+  --structuro-tint1-border: #bfdbfe;
+  --structuro-tint1-num: #1d4ed8;
+  --structuro-tint2-bg: #f0fdfa;
+  --structuro-tint2-border: #99f6e4;
+  --structuro-tint2-num: #0f766e;
+  --structuro-tint3-bg: #f5f3ff;
+  --structuro-tint3-border: #ddd6fe;
+  --structuro-tint3-num: #6d28d9;
 }
 
 @theme inline {
@@ -240,4 +272,32 @@ body {
   font-size: 0.875rem;
   line-height: 1.625;
   color: rgb(100 116 139);
+}
+
+@keyframes structuro-suggesties-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.structuro-suggesties-fade-in {
+  animation: structuro-suggesties-fade-in 300ms ease-out both;
+}
+
+@keyframes structuro-progressive-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: structuro-progressive-fade-in 0.35s ease-out forwards;
 }

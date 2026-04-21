@@ -359,10 +359,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         window.dispatchEvent(new StorageEvent('storage', { key: 'structuro_tasks', newValue: JSON.stringify(updatedTasks), storageArea: window.localStorage }));
       }
       return mappedTask;
-    } catch (err: any) {
-      setError(err?.message);
-      console.error('TaskContext: Error updating task:', err);
-      throw err;
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" &&
+              err !== null &&
+              "message" in err &&
+              typeof (err as { message?: unknown }).message === "string"
+            ? (err as { message: string }).message
+            : String(err);
+      setError(msg);
+      console.error("TaskContext: Error updating task:", err);
+      throw err instanceof Error ? err : new Error(msg || "Onbekende fout bij bijwerken taak");
     }
   }, [user?.id, fetchTasks]);
 

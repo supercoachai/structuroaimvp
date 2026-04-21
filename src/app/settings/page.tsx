@@ -136,8 +136,8 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-gradient-to-br from-slate-50 to-blue-50 text-slate-900">
-        <main className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-14 sm:pt-16 pb-12">
+      <div className="min-h-full bg-[var(--structuro-bg)] text-[var(--structuro-text)]">
+        <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4">
           <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
             <div
               className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-md"
@@ -184,7 +184,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => void handleLogout()}
               disabled={logoutBusy}
-              className="text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 disabled:opacity-50"
+              className="block text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 disabled:opacity-50"
             >
               {logoutBusy ? 'Bezig met uitloggen…' : 'Uitloggen'}
             </button>

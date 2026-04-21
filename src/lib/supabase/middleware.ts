@@ -6,6 +6,7 @@ import {
   getCalendarDateAmsterdam,
 } from "../dagstartCookie";
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
+import { isDagstartNodig } from "../checkDagstart";
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -91,16 +92,31 @@ export async function updateSession(request: NextRequest) {
   }
 
   let onboardingCompleted = true;
+  let profileLastDagstartDate: string | null | undefined = undefined;
+  let profileRowReadOk = false;
   if (user) {
-    const { data, error } = await supabase
+    const { data: obData, error: obError } = await supabase
       .from("profiles")
       .select("onboarding_completed")
       .eq("id", user.id)
       .maybeSingle();
-    if (!error) {
-      onboardingCompleted = data?.onboarding_completed === true;
+    if (!obError) {
+      onboardingCompleted = obData?.onboarding_completed === true;
     } else {
       onboardingCompleted = false;
+    }
+
+    const { data: dsData, error: dsError } = await supabase
+      .from("profiles")
+      .select("last_dagstart_date")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!dsError) {
+      profileRowReadOk = true;
+      profileLastDagstartDate =
+        dsData?.last_dagstart_date != null
+          ? String(dsData.last_dagstart_date).slice(0, 10)
+          : null;
     }
 
     const forceOnboardingDev =
@@ -153,7 +169,61 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && profileRowReadOk) {
+    return applyDagstartDbGate(
+      request,
+      supabaseResponse,
+      pathname,
+      profileLastDagstartDate ?? null
+    );
+  }
+
   return applyDagstartCookieGuard(request, supabaseResponse, pathname);
+}
+
+/** Bron: profiles.last_dagstart_date (Amsterdam-kalenderdag). Cookie wordt gesynchroniseerd als DB vandaag al klaar is. */
+function applyDagstartDbGate(
+  request: NextRequest,
+  response: NextResponse,
+  pathname: string,
+  lastDagstartDate: string | null
+): NextResponse {
+  const needsDagstartPath =
+    !pathname.startsWith("/dagstart") &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/auth") &&
+    !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/api");
+
+  if (!needsDagstartPath) {
+    return response;
+  }
+
+  const today = getCalendarDateAmsterdam();
+  const dbYmd =
+    lastDagstartDate && lastDagstartDate.length >= 10
+      ? lastDagstartDate.slice(0, 10)
+      : null;
+
+  if (dbYmd === today) {
+    const raw = request.cookies.get(STRUCTURO_DAGSTART_COOKIE)?.value;
+    if (decodeDagstartCookieValue(raw) !== today) {
+      response.cookies.set(STRUCTURO_DAGSTART_COOKIE, encodeURIComponent(today), {
+        path: "/",
+        maxAge: 172800,
+        sameSite: "lax",
+      });
+    }
+    return response;
+  }
+
+  if (!isDagstartNodig(dbYmd)) {
+    return response;
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = "/dagstart";
+  return NextResponse.redirect(url);
 }
 
 /** Lokale test zonder account: verplichte /onboarding tot cookie gezet is. */

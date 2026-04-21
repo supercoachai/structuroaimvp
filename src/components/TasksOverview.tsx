@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "../context/TaskContext";
 import { designSystem } from "../lib/design-system";
@@ -10,7 +10,15 @@ import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
 import { isOpenBacklogTask } from "../lib/taskFilters";
-import { PlayIcon, CheckCircleIcon, PlusIcon, PencilSquareIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import {
+  CheckCircleIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  Square2StackIcon,
+} from "@heroicons/react/24/outline";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
@@ -23,14 +31,50 @@ const theme = {
   soft: "rgba(74,144,226,0.06)",
 };
 
+/** Mock Taken-scherm: genummerde kaarten blauw / teal / paars (exact doctrine) */
+const PRIORITY_ROW_TINT: Record<
+  number,
+  { card: string; badge: string; num: string; titleMuted: boolean; timeMuted: boolean }
+> = {
+  1: {
+    card:
+      "border-sky-100 bg-sky-50/40 shadow-[0_2px_16px_rgba(15,23,42,0.05)]",
+    badge: "border-[#BFDBFE] bg-[#EFF6FF]",
+    num: "text-[#1D4ED8]",
+    titleMuted: false,
+    timeMuted: false,
+  },
+  2: {
+    card: "border-gray-100 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.05)]",
+    badge: "border-teal-100 bg-teal-50",
+    num: "text-teal-700",
+    titleMuted: false,
+    timeMuted: false,
+  },
+  3: {
+    card: "border-gray-100 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.05)]",
+    badge: "border-violet-200 bg-violet-50",
+    num: "text-violet-700",
+    titleMuted: true,
+    timeMuted: true,
+  },
+};
+
 /** ---------- Hoofdcomponent ---------- */
 export default function TasksOverviewCalm() {
   const { tasks, loading, addTask, updateTask, deleteTask } = useTaskContext();
   const router = useRouter();
   
   // State voor nieuwe taak input
-  const [newTitle, setNewTitle] = useState("");
-  const [newDuration, setNewDuration] = useState<number | null>(null);
+  const [taskInput, setTaskInput] = useState("");
+  const [energy, setEnergy] = useState<"laag" | "normaal" | "hoog" | null>(null);
+  /** Vaste keuze 15/30/45 of "custom" voor vrij in te vullen minuten (vierde optie). */
+  const [duration, setDuration] = useState<"15 min" | "30 min" | "45 min" | "custom" | null>(null);
+  const [customMinutes, setCustomMinutes] = useState("");
+  /** null = nog niet gekozen; true = ja, microstappen invullen; false = nee */
+  const [newTaskUseMicroSteps, setNewTaskUseMicroSteps] = useState<boolean | null>(null);
+  const [newTaskMicroTitles, setNewTaskMicroTitles] = useState<string[]>([]);
+  const [newTaskMicroInput, setNewTaskMicroInput] = useState("");
   const [showVandaagPrompt, setShowVandaagPrompt] = useState<string | null>(null); // taskId die prompt moet tonen
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [editing, setEditing] = useState<any>(null);
@@ -51,20 +95,39 @@ export default function TasksOverviewCalm() {
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
   /** Pop-animatie op checkbox (task.id) */
   const [checkboxPopId, setCheckboxPopId] = useState<string | null>(null);
+  /** Lege taak: eerst knop "Microstappen toevoegen"; daarna invoer tonen */
+  const [microStepsAddOpenId, setMicroStepsAddOpenId] = useState<string | null>(null);
 
-  // Mobiele kolommen: scroll-snap pager
-  const columnsWrapperRef = useRef<HTMLDivElement | null>(null);
-  const [activeEnergyCol, setActiveEnergyCol] = useState(0);
+  /** Alle open taken: Makkelijk / Normaal / Intensief elk inklapbaar, taken verticaal gestapeld */
+  const [openEnergySections, setOpenEnergySections] = useState<Record<"green" | "yellow" | "red", boolean>>({
+    green: false,
+    yellow: false,
+    red: false,
+  });
 
-  const DEFAULT_NEW_TASK_DURATION_MIN = 15;
+  useEffect(() => {
+    if (taskInput.length <= 2) {
+      setEnergy(null);
+      setDuration(null);
+      setCustomMinutes("");
+      setNewTaskUseMicroSteps(null);
+      setNewTaskMicroTitles([]);
+      setNewTaskMicroInput("");
+    }
+  }, [taskInput]);
 
-  // Duur optioneel: lege invoer → stille standaard (tijdblindheid-vriendelijk).
-  const durationValid =
-    typeof newDuration === 'number' &&
-    Number.isFinite(newDuration) &&
-    newDuration >= 1 &&
-    newDuration <= 480;
-  const canAddNewTask = newTitle.trim().length > 0;
+  useEffect(() => {
+    setDuration(null);
+    setCustomMinutes("");
+    setNewTaskUseMicroSteps(null);
+    setNewTaskMicroTitles([]);
+    setNewTaskMicroInput("");
+  }, [energy]);
+
+  useEffect(() => {
+    setMicroStepDraft({ title: "", minutes: null, difficulty: null });
+    setMicroStepsAddOpenId(null);
+  }, [expandedTaskId]);
 
   useEffect(() => {
     const loadFromDayStart = () => {
@@ -97,49 +160,6 @@ export default function TasksOverviewCalm() {
     
     loadFromDayStart();
   }, [tasks]);
-
-  useEffect(() => {
-    const el = columnsWrapperRef.current;
-    if (!el) return;
-
-    let raf = 0;
-    const updateActive = () => {
-      const cards = Array.from(el.querySelectorAll<HTMLElement>(".tasks-column-card"));
-      if (cards.length === 0) return;
-
-      const center = el.scrollLeft + el.clientWidth / 2;
-      let bestIdx = 0;
-      let bestDist = Number.POSITIVE_INFINITY;
-
-      for (let i = 0; i < cards.length; i++) {
-        const c = cards[i];
-        const cCenter = c.offsetLeft + c.offsetWidth / 2;
-        const d = Math.abs(cCenter - center);
-        if (d < bestDist) {
-          bestDist = d;
-          bestIdx = i;
-        }
-      }
-
-      setActiveEnergyCol((prev) => (prev === bestIdx ? prev : bestIdx));
-    };
-
-    const onScroll = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(updateActive);
-    };
-
-    // Init + listeners
-    updateActive();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      el.removeEventListener("scroll", onScroll as any);
-      window.removeEventListener("resize", onScroll as any);
-    };
-  }, []);
 
   // Bepaal max slots
   const maxSlots = useMemo(() => {
@@ -230,48 +250,124 @@ export default function TasksOverviewCalm() {
     toast('Mini-stap omgezet naar taak', { durationMs: 3000, replace: true });
   };
 
-  // Handle: Nieuwe taak toevoegen
-  const handleAddTaskWithEnergy = async (energyLevel: 'low' | 'medium' | 'high') => {
-    if (!newTitle.trim()) {
-      toast('Voer een taak in');
+  const durationLabelToMinutes = (label: "15 min" | "30 min" | "45 min"): number => {
+    switch (label) {
+      case "15 min":
+        return 15;
+      case "30 min":
+        return 30;
+      case "45 min":
+        return 45;
+      default:
+        return 15;
+    }
+  };
+
+  const parseCustomMinutes = (raw: string): number | null => {
+    const n = parseInt(raw.trim(), 10);
+    if (!Number.isFinite(n) || n < 1 || n > 480) return null;
+    return n;
+  };
+
+  const resolvedDurationMinutes = (): number | null => {
+    if (!duration) return null;
+    if (duration === "custom") return parseCustomMinutes(customMinutes);
+    return durationLabelToMinutes(duration);
+  };
+
+  const durationResolved = resolvedDurationMinutes() !== null;
+
+  const canSubmitNewTask =
+    Boolean(taskInput.trim()) &&
+    Boolean(energy) &&
+    durationResolved &&
+    newTaskUseMicroSteps !== null &&
+    (newTaskUseMicroSteps === false ||
+      (newTaskUseMicroSteps === true && newTaskMicroTitles.length > 0));
+
+  const appendNewTaskMicroStep = () => {
+    const t = newTaskMicroInput.trim();
+    if (!t) {
+      toast("Vul een microstap in");
+      return;
+    }
+    setNewTaskMicroTitles((prev) => [...prev, t]);
+    setNewTaskMicroInput("");
+  };
+
+  const energyUiToLevel = (e: "laag" | "normaal" | "hoog"): "low" | "medium" | "high" => {
+    if (e === "laag") return "low";
+    if (e === "normaal") return "medium";
+    return "high";
+  };
+
+  const handleSaveTask = async () => {
+    const title = taskInput.trim();
+    const minutes = resolvedDurationMinutes();
+    if (!title || !energy || minutes == null) {
+      if (duration === "custom" && minutes == null) {
+        toast("Vul minuten in tussen 1 en 480");
+      }
       return;
     }
 
-    const duration = durationValid ? (newDuration as number) : DEFAULT_NEW_TASK_DURATION_MIN;
+    const energyLevel = energyUiToLevel(energy);
+
+    if (newTaskUseMicroSteps === null) {
+      return;
+    }
+    if (newTaskUseMicroSteps === true && newTaskMicroTitles.length === 0) {
+      toast("Voeg minstens één microstap toe");
+      return;
+    }
+
+    const microSteps: MicroStep[] =
+      newTaskUseMicroSteps === true
+        ? newTaskMicroTitles.map((stepTitle) => ({
+            id: microStepId(),
+            title: stepTitle,
+            minutes: null,
+            difficulty: null,
+            done: false,
+          }))
+        : [];
 
     try {
       const taskData = {
-        title: newTitle.trim(),
+        title,
         done: false,
         started: false,
-        priority: null, // GEEN prioriteit bij toevoegen
-        energyLevel: energyLevel, // KRITIEK: Explicit doorgeven
-        estimatedDuration: duration,
-        duration: duration,
+        priority: null,
+        energyLevel,
+        estimatedDuration: minutes,
+        duration: minutes,
         notToday: false,
-        source: 'regular',
+        source: "regular" as const,
+        microSteps,
       };
-      
+
       const newTask = await addTask(taskData);
 
-      setNewTitle("");
-      setNewDuration(null);
-      
-      // Bevestiging: Taak toegevoegd (inline, subtiel)
+      setTaskInput("");
+      setEnergy(null);
+      setDuration(null);
+      setCustomMinutes("");
+      setNewTaskUseMicroSteps(null);
+      setNewTaskMicroTitles([]);
+      setNewTaskMicroInput("");
+
       toast("✅ Taak toegevoegd → Staat bij Alle open taken");
-      
-      // Toon "Vandaag?" prompt na toevoegen (optioneel)
+
       setShowVandaagPrompt(newTask.id);
-      
-      // Auto-verberg prompt na 5 seconden
+
       setTimeout(() => {
         setShowVandaagPrompt(null);
       }, 5000);
-      
-      track('task_added', { energyLevel });
+
+      track("task_added", { energyLevel });
     } catch (error) {
-      console.error('Error adding task:', error);
-      toast('Fout bij toevoegen van taak');
+      console.error("Error adding task:", error);
+      toast("Fout bij toevoegen van taak");
     }
   };
 
@@ -361,16 +457,6 @@ export default function TasksOverviewCalm() {
     }, 300);
   };
 
-  // Eerste niet-afgeronde focus (prioriteit 1→maxSlots), zelfde volgorde als "Vandaag gekozen".
-  // `prioritySlot` =zelfde nummer als het bolletje bij "Vandaag gekozen".
-  const nuAanZet = useMemo((): { task: any | null; prioritySlot: number | null } => {
-    for (let i = 1; i <= maxSlots; i++) {
-      const t = priorityTasks[i];
-      if (t && !t.done) return { task: t, prioritySlot: i };
-    }
-    return { task: null, prioritySlot: null };
-  }, [priorityTasks, maxSlots]);
-
   /** Taken die al onder "Vandaag gekozen" staan: niet opnieuw in het energie-bord (één plek per scherm). */
   const vandaagFocusIds = useMemo(() => {
     const ids = new Set<string>();
@@ -427,44 +513,192 @@ export default function TasksOverviewCalm() {
       });
   }, [tasks]);
 
-  // Filter: Geparkeerde gedachten
-  const parkedThoughts = useMemo(() => {
+  const completedTodayCount = useMemo(() => {
+    const today = getCalendarDateAmsterdam();
     return tasks.filter((t: any) => {
-      return t.source === 'parked_thought' && !t.done;
-    });
+      if (!t.done || !t.completedAt || t.source === "medication" || t.source === "event") return false;
+      return getCalendarDateAmsterdam(new Date(t.completedAt)) === today;
+    }).length;
+  }, [tasks]);
+
+  const completedTodayTasks = useMemo(() => {
+    const today = getCalendarDateAmsterdam();
+    return tasks
+      .filter((t: any) => {
+        if (!t.done || !t.completedAt || t.source === "medication" || t.source === "event") return false;
+        return getCalendarDateAmsterdam(new Date(t.completedAt)) === today;
+      })
+      .sort((a: any, b: any) => {
+        const da = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const db = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return db - da;
+      });
   }, [tasks]);
 
   return (
-    <div
-      className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
-      style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
-    >
-      <main className="mx-auto w-full max-w-4xl flex flex-col gap-6">
-        <header className="flex w-full flex-col items-start text-left mb-10 sm:mb-12">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full mb-5"
-            style={{
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              boxShadow: '0 4px 14px rgba(34, 197, 94, 0.35)',
-            }}
-          >
-            <CheckCircleIcon className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="structuro-page-title">Taken en Prioriteiten</h1>
-          <p className="structuro-page-subtitle">
-            {loading ? (
-              'Taken laden…'
-            ) : (
-              'Focus op wat nu belangrijk is en begin met je eerste taak.'
-            )}
+    <div className="min-h-full bg-[var(--structuro-bg)] px-5 pb-6 pt-6">
+      <main className="mx-auto flex w-full max-w-lg flex-col">
+        <header className="mb-6 flex w-full flex-col items-start text-left">
+          <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-[#0F172A]">
+            Taken
+          </h1>
+          <p className="mt-2 text-[15px] leading-snug text-gray-400">
+            {loading ? "Taken laden…" : "Maximaal 3. De rest bestaat even niet."}
           </p>
         </header>
 
-        <GeparkeerdeGedachtenSection />
+        {/* Doctrine mock: max 3 focuskaarten */}
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3].map((priority) => {
+            if (priority > maxSlots) return null;
+            const task = priorityTasks[priority];
+            if (!task || task.done) return null;
+            const tint = PRIORITY_ROW_TINT[priority] ?? PRIORITY_ROW_TINT[1];
+            const ms = normalizeMicroSteps(task.microSteps);
+            const msDone = ms.filter((s) => s.done).length;
+            const mins = task.duration ?? task.estimatedDuration ?? 15;
 
-        {/* Content: losse witte kaarten met gelijke afstand */}
-        <div className="flex flex-col gap-8">
-      {/* SECTIE 1: Nieuwe taak toevoegen */}
+            return (
+              <button
+                key={priority}
+                type="button"
+                onClick={() => startFocus(task)}
+                className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left transition active:scale-[0.99] ${tint.card}`}
+              >
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[17px] font-bold leading-none ${tint.badge} ${tint.num}`}
+                  aria-hidden
+                >
+                  {priority}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div
+                    className={`break-words text-[16px] font-bold leading-snug ${
+                      tint.titleMuted ? "text-gray-400" : "text-[#0F172A]"
+                    }`}
+                  >
+                    {task.title}
+                  </div>
+                  <p
+                    className={`mt-1 text-[13px] tabular-nums ${
+                      tint.timeMuted ? "text-gray-300" : "text-[#64748B]"
+                    }`}
+                  >
+                    {mins} min
+                  </p>
+                  {ms.length > 0 ? (
+                    <div className="mt-2.5 flex items-center gap-1.5 text-[12px] font-medium text-violet-600">
+                      <Square2StackIcon className="h-3.5 w-3.5 shrink-0 text-violet-500" aria-hidden />
+                      <span className="tracking-tight">
+                        {msDone} / {ms.length} microstappen
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+                <ChevronRightIcon className="h-5 w-5 shrink-0 text-gray-300" aria-hidden />
+              </button>
+            );
+          })}
+          {!loading &&
+            Object.values(priorityTasks).filter((t) => t !== null && !t?.done).length === 0 && (
+              <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center text-[15px] text-gray-400 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                Geen taken gekozen voor vandaag
+              </div>
+            )}
+        </div>
+
+        <div className="mt-8 border-t border-gray-200" role="presentation" />
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3.5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100"
+              aria-hidden
+            >
+              <CheckCircleIcon className="h-5 w-5 text-gray-400" strokeWidth={1.5} />
+            </div>
+            <span className="text-[15px] text-gray-400">
+              Vandaag voltooid · {completedTodayCount}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCompletedSectionOpen((v) => !v)}
+            className="shrink-0 text-[15px] font-normal lowercase text-gray-400 transition hover:text-gray-500"
+            aria-expanded={completedSectionOpen}
+            aria-label={completedSectionOpen ? "Voltooide taken verbergen" : "Voltooide taken tonen"}
+          >
+            tonen
+          </button>
+        </div>
+
+        {completedSectionOpen ? (
+          <div className="mt-3 space-y-3">
+            {completedTodayTasks.length === 0 ? (
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-400 shadow-sm">
+                Geen voltooide taken vandaag
+              </div>
+            ) : (
+              <>
+                {completedTodayTasks.map((task: any) => (
+                  <div
+                    key={task.id}
+                    className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-colors hover:bg-gray-100/80"
+                  >
+                    <CheckCircleIcon className="h-5 w-5 shrink-0 text-green-600" aria-hidden />
+                    <span className="min-w-0 flex-1 break-words text-sm text-gray-700 line-through">
+                      {task.title}
+                    </span>
+                    {task.completedAt ? (
+                      <span className="text-xs tabular-nums text-gray-400">
+                        {new Date(task.completedAt).toLocaleDateString("nl-NL", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                    ) : null}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await updateTask(task.id, { done: false, completedAt: undefined });
+                          toast("Taak teruggezet bij Alle open taken");
+                        }}
+                        className="rounded-xl bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-300"
+                      >
+                        Terug naar open
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (
+                        !confirm(
+                          `Weet je zeker dat je alle ${completedTodayTasks.length} voltooide taken van vandaag wilt verwijderen? Ze zijn daarna niet meer terug te halen.`
+                        )
+                      )
+                        return;
+                      for (const task of completedTodayTasks) {
+                        await deleteTask(task.id);
+                      }
+                      toast("Voltooide taken van vandaag geleegd");
+                    }}
+                    className="rounded-xl bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
+                  >
+                    Voltooide taken legen
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        <div className="mt-10 flex flex-col gap-8">
+          <GeparkeerdeGedachtenSection />
+
+      {/* SECTIE 1: Nieuwe taak toevoegen (progressive disclosure) */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
@@ -475,7 +709,9 @@ export default function TasksOverviewCalm() {
               title="Uitleg nieuwe taak toevoegen"
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
               onClick={() => {
-                toast('Vul een titel in. Klik op een kleur om toe te voegen. Duur is optioneel (standaard 15 min).');
+                toast(
+                  "Stap voor stap: titel (meer dan 2 tekens), energie, tijdsduur. Daarna microstappen ja of nee. Taak toevoegen wordt zichtbaar na het kiezen van de duur."
+                );
               }}
             >
               i
@@ -486,108 +722,235 @@ export default function TasksOverviewCalm() {
             >
               <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
               <div className="text-[11px] text-gray-600 leading-relaxed">
-                Vul een <span className="font-semibold">titel</span> in. Klik op <span className="font-semibold">een kleur</span> (groen/geel/rood).
-                <br />
-                <span className="font-semibold">Duur</span> is optioneel; zonder invoer gebruiken we 15 min.
+                Energie en duur verschijnen na elkaar. Na de duur kies je of je{' '}
+                <span className="font-semibold">microstappen</span> wilt; daarna activeer je Taak toevoegen.
               </div>
             </div>
           </div>
         </div>
-        
-        <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 mb-4">
-          <div className="flex gap-3 items-center flex-wrap">
+
+        <div className="space-y-4">
+          <div className="space-y-3">
             <input
               type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddTaskWithEnergy('medium');
-              }}
-              placeholder="Nieuwe taak…"
-              className="flex-1 min-w-[200px] px-4 py-3 rounded-2xl shadow-sm bg-white focus:ring-2 focus:ring-gray-200 text-gray-900 placeholder-gray-400"
-            />
-            
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
-            <button
-              onClick={() => handleAddTaskWithEnergy('low')}
-              disabled={!canAddNewTask}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
-              style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                boxShadow: '0 1px 3px rgba(16, 185, 129, 0.2)',
-                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
-              }}
-              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.25)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)')}
-              title="Makkelijk"
-            >
-              <div style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: '#10B981'
-              }} />
-            </button>
-            <button
-              onClick={() => handleAddTaskWithEnergy('medium')}
-              disabled={!canAddNewTask}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
-              style={{
-                background: 'rgba(245, 158, 11, 0.15)',
-                boxShadow: '0 1px 3px rgba(245, 158, 11, 0.2)',
-                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
-              }}
-              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.25)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)')}
-              title="Normaal"
-            >
-              <div style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: '#F59E0B'
-              }} />
-            </button>
-            <button
-              onClick={() => handleAddTaskWithEnergy('high')}
-              disabled={!canAddNewTask}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
-              style={{
-                background: 'rgba(239, 68, 68, 0.15)',
-                boxShadow: '0 1px 3px rgba(239, 68, 68, 0.2)',
-                cursor: canAddNewTask ? 'pointer' : 'not-allowed'
-              }}
-              onMouseEnter={(e) => canAddNewTask && (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
-              title="Moeilijk"
-            >
-              <div style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: '#EF4444'
-              }} />
-            </button>
-          </div>
-          </div>
-          
-          <div className="flex gap-3 items-center mt-3 flex-wrap">
-            <label className="text-sm font-medium text-gray-500">
-              Duur (min): <span className="text-gray-400">(optioneel)</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="480"
-              value={newDuration || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setNewDuration(value === '' ? null : parseInt(value, 10));
-              }}
-              placeholder="15"
-              className="w-24 px-3 py-2 rounded-xl shadow-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-200 text-gray-900 placeholder:text-gray-400"
+              value={taskInput}
+              onChange={(e) => setTaskInput(e.target.value)}
+              className="w-full bg-white rounded-2xl px-4 py-4 text-base text-gray-900 shadow-sm border border-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-300 transition-all"
+              placeholder="Nieuwe taak..."
             />
           </div>
+
+          {taskInput.length > 2 && (
+            <div className="flex gap-2 animate-fade-in">
+              {[
+                { label: "Rustig", emoji: "🌙", value: "laag" as const },
+                { label: "Normaal", emoji: "😊", value: "normaal" as const },
+                { label: "Intensief", emoji: "⚡", value: "hoog" as const },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setEnergy(opt.value)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-1 ${
+                    energy === opt.value
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  <span className="text-lg" aria-hidden>
+                    {opt.emoji}
+                  </span>
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {energy && (
+            <div className="flex flex-col gap-2 animate-fade-in">
+              <div className="flex gap-2">
+                {(["15 min", "30 min", "45 min"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      setDuration(opt);
+                      setCustomMinutes("");
+                    }}
+                    className={`flex-1 min-w-[4rem] py-3 rounded-xl text-sm font-medium transition-all ${
+                      duration === opt
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-600 border border-gray-200"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className={`overflow-hidden rounded-xl border transition-colors ${
+                  duration === "custom"
+                    ? "border-blue-600 ring-2 ring-blue-600/15"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDuration("custom")}
+                  className={`w-full py-3 px-3 text-center transition-all ${
+                    duration === "custom"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="text-sm font-medium">1 uur</span>
+                  <span
+                    className={`mt-0.5 block text-xs font-normal ${
+                      duration === "custom" ? "text-white/90" : "text-gray-500"
+                    }`}
+                  >
+                    of eigen aantal minuten
+                  </span>
+                </button>
+                {duration === "custom" ? (
+                  <div className="border-t border-gray-100 bg-gray-50/80 px-3 py-3 animate-fade-in">
+                    <label htmlFor="custom-task-minutes" className="sr-only">
+                      Minuten
+                    </label>
+                    <input
+                      id="custom-task-minutes"
+                      type="number"
+                      min={1}
+                      max={480}
+                      inputMode="numeric"
+                      value={customMinutes}
+                      onChange={(e) => setCustomMinutes(e.target.value)}
+                      placeholder="Bijv. 60"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {energy && durationResolved && newTaskUseMicroSteps === null ? (
+            <div className="space-y-3 animate-fade-in">
+              <p className="text-sm font-medium text-gray-800">
+                Wil je deze taak onderverdelen in microstappen?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewTaskUseMicroSteps(true)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                >
+                  Ja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewTaskUseMicroSteps(false)}
+                  className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                >
+                  Nee
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {energy && durationResolved && newTaskUseMicroSteps === true ? (
+            <div className="space-y-3 animate-fade-in rounded-2xl border border-violet-200 bg-violet-50/40 px-3 py-3 sm:px-4">
+              <div className="flex items-center gap-2">
+                <Square2StackIcon className="h-4 w-4 shrink-0 text-violet-600" aria-hidden />
+                <span className="text-sm font-semibold text-gray-900">Microstappen</span>
+              </div>
+              {newTaskMicroTitles.length > 0 ? (
+                <ul className="space-y-2">
+                  {newTaskMicroTitles.map((line, idx) => (
+                    <li
+                      key={`${idx}-${line.slice(0, 24)}`}
+                      className="flex items-start gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm text-gray-800 shadow-sm"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
+                        {idx + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 leading-snug">{line}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setNewTaskMicroTitles((prev) => prev.filter((_, i) => i !== idx))
+                        }
+                        className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        aria-label="Stap verwijderen"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-600">
+                  Voeg hieronder je eerste stap toe. Je kunt er meerdere toevoegen.
+                </p>
+              )}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <input
+                  type="text"
+                  value={newTaskMicroInput}
+                  onChange={(e) => setNewTaskMicroInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      appendNewTaskMicroStep();
+                    }
+                  }}
+                  placeholder="Bijv. bestand openen…"
+                  className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => appendNewTaskMicroStep()}
+                  className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+                >
+                  Toevoegen
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewTaskUseMicroSteps(false);
+                  setNewTaskMicroTitles([]);
+                  setNewTaskMicroInput("");
+                }}
+                className="text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
+              >
+                Toch geen microstappen
+              </button>
+            </div>
+          ) : null}
+
+          {durationResolved ? (
+            <div className="animate-fade-in">
+              <button
+                type="button"
+                onClick={() => void handleSaveTask()}
+                disabled={!canSubmitNewTask}
+                title={
+                  canSubmitNewTask
+                    ? undefined
+                    : "Kies of je microstappen wilt en vul ze zo nodig in."
+                }
+                className={`w-full rounded-xl py-4 font-semibold text-white transition-all ${
+                  canSubmitNewTask
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "cursor-not-allowed bg-blue-400/60"
+                }`}
+              >
+                Taak toevoegen
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {/* "Vandaag?" prompt */}
@@ -610,226 +973,6 @@ export default function TasksOverviewCalm() {
             </div>
           </div>
         )}
-      </section>
-
-      {/* SECTIE 2: Nu aan zet */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Nu aan zet</h2>
-          <div className="group relative flex items-center">
-            <button
-              type="button"
-              aria-label="Uitleg nu aan zet"
-              title="Uitleg nu aan zet"
-              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
-              onClick={() =>
-                toast(
-                  'Nu aan zet: je hoofdfocus (eerste prioriteit vandaag). Beginnen of Hervatten opent Focus Modus.'
-                )
-              }
-            >
-              i
-            </button>
-            <div
-              className="pointer-events-none absolute top-7 left-0 z-50 w-56 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-              role="tooltip"
-            >
-              <div className="text-[11px] font-semibold text-gray-900 mb-1">Nu aan zet</div>
-              <div className="text-[11px] text-gray-600 leading-relaxed">
-                Zelfde taak als je eerste vak onder Vandaag gekozen.{' '}
-                <span className="font-semibold">Beginnen</span> of{' '}
-                <span className="font-semibold">Hervatten</span> opent Focus Modus.
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {nuAanZet.task ? (
-          <div className="bg-gray-50 rounded-2xl p-6 hover:shadow-sm transition-shadow">
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
-                {nuAanZet.prioritySlot != null && (
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      background: theme.accent,
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                    aria-hidden
-                  >
-                    {nuAanZet.prioritySlot}
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 600, color: theme.text, marginBottom: 6, lineHeight: 1.35 }}>
-                    {nuAanZet.task.title}
-                  </div>
-                  <div style={{ fontSize: 13, color: theme.sub }}>
-                    {getEnergyLabel(nuAanZet.task.energyLevel || 'medium')}
-                    {(nuAanZet.task.duration ?? nuAanZet.task.estimatedDuration)
-                      ? ` · ${nuAanZet.task.duration ?? nuAanZet.task.estimatedDuration} min`
-                      : ''}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => startFocus(nuAanZet.task)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors flex-shrink-0"
-              >
-                <PlayIcon className="w-4 h-4" aria-hidden />
-                {nuAanZet.task.started ? 'Hervatten' : 'Beginnen'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-6 bg-gray-50 rounded-2xl shadow-sm text-center text-gray-500 text-sm">
-            Geen open focus voor vandaag. Kies eerst taken bij Dagstart of zet ze hieronder op vandaag.
-          </div>
-        )}
-      </section>
-
-      {/* SECTIE 3: Vandaag gekozen – responsief: op mobiel titel boven, knoppen eronder */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">Vandaag gekozen</h2>
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                aria-label="Uitleg vandaag gekozen"
-                title="Uitleg vandaag gekozen"
-                className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
-                onClick={() =>
-                  toast("Dit zijn je focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie. Start per taak met Start Focus.")
-                }
-              >
-                i
-              </button>
-              <div
-                className="pointer-events-none absolute top-7 left-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                role="tooltip"
-              >
-                <div className="text-[11px] font-semibold text-gray-900 mb-1">Vandaag gekozen</div>
-                <div className="text-[11px] text-gray-600 leading-relaxed">
-                  Je focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie. Start per taak met <span className="font-semibold">Start Focus</span>.
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-0.5">(klaargezet voor vandaag)</p>
-        </div>
-        
-        <div className="space-y-4">
-          {[1, 2, 3].map((priority) => {
-            if (priority > maxSlots) return null;
-            
-            const task = priorityTasks[priority];
-            if (!task || task.done) return null;
-            
-            return (
-              <div
-                key={priority}
-                className="bg-gray-50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition-all duration-200 hover:bg-white hover:shadow-md sm:hover:scale-[1.01] cursor-default min-w-0"
-              >
-                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto">
-                  <div style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: theme.accent,
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    flexShrink: 0
-                  }}>
-                    {priority}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm sm:text-base font-medium text-gray-900 break-words" style={{ marginBottom: 4 }}>
-                      {task.title}
-                    </div>
-                    <div className="flex gap-2 sm:gap-3 items-center text-xs sm:text-sm text-gray-500">
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: getEnergyColor(task.energyLevel || 'medium'),
-                          boxShadow: getEnergyGlow(task.energyLevel || 'medium'),
-                          flexShrink: 0
-                        }}
-                        title={getEnergyLabel(task.energyLevel || 'medium')}
-                      />
-                      {(task.duration ?? task.estimatedDuration) != null && (
-                        <span className="tabular-nums">
-                          · {task.duration ?? task.estimatedDuration} min
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Start verborgen als deze taak al in Nu aan zet staat en gestart is (actie zit daar bij Hervatten). */}
-                <div className="flex gap-2 sm:gap-3 flex-shrink-0 justify-end sm:justify-end flex-wrap">
-                  {!(nuAanZet.task?.id === task.id && task.started) && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); startFocus(task); }}
-                      className="px-3 py-2 sm:py-1.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
-                      title="Start Focus voor deze taak"
-                    >
-                      Start
-                    </button>
-                  )}
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      // Zorg dat de taak weer zichtbaar wordt bij "Alle open taken"
-                      await updateTask(task.id, { priority: null, notToday: false });
-                      toast('Taak staat weer bij Alle open taken');
-                    }}
-                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-200 transition-colors"
-                    title="Uit vandaag halen"
-                  >
-                    Uit vandaag
-                  </button>
-
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      if (confirm('Weet je zeker dat je deze taak wilt verwijderen?')) {
-                        await deleteTask(task.id);
-                        toast('Taak verwijderd');
-                      }
-                    }}
-                    className="px-3 py-2 sm:py-1.5 rounded-xl bg-red-50 text-red-600 text-sm font-medium shadow-sm hover:bg-red-100 transition-colors"
-                    title="Taak verwijderen"
-                  >
-                    Verwijderen
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-          
-          {Object.values(priorityTasks).filter(t => t !== null && !t.done).length === 0 && (
-            <div className="p-6 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
-              Geen taken gekozen voor vandaag
-            </div>
-          )}
-        </div>
       </section>
 
       {/* SECTIE 4: Alle open taken – zwevende kaarten */}
@@ -871,34 +1014,50 @@ export default function TasksOverviewCalm() {
           </div>
         ) : (
           <>
-            <div ref={columnsWrapperRef} className="tasks-columns-wrapper grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {[
-                {
-                  key: 'green' as const,
-                  title: 'Makkelijk',
-                },
-                {
-                  key: 'yellow' as const,
-                  title: 'Normaal',
-                },
-                {
-                  key: 'red' as const,
-                  title: 'Intensief',
-                },
-              ].map((col) => {
-                const list = (openByEnergy as any)[col.key] as any[];
+            <div className="flex flex-col gap-3">
+              {(
+                [
+                  { key: "green" as const, title: "Makkelijk", titleClass: "text-emerald-700" },
+                  { key: "yellow" as const, title: "Normaal", titleClass: "text-amber-700" },
+                  { key: "red" as const, title: "Intensief", titleClass: "text-red-700" },
+                ] as const
+              ).map((col) => {
+                const list = (openByEnergy as Record<typeof col.key, any[]>)[col.key];
+                const zoneOpen = openEnergySections[col.key];
                 return (
-                  <div key={col.key} className="tasks-column-card bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="tasks-column-title text-sm font-semibold text-gray-900">{col.title}</div>
-                    <div className="text-xs font-semibold text-gray-500 bg-white border border-gray-200 rounded-lg px-2 py-0.5">
-                      {list.length}
-                    </div>
-                  </div>
-                  {list.length === 0 ? (
-                    <div className="text-xs text-gray-500 italic">Geen taken</div>
-                  ) : (
-                    <div className="space-y-3">
+                  <div
+                    key={col.key}
+                    className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenEnergySections((p) => ({ ...p, [col.key]: !p[col.key] }))
+                      }
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-100/90"
+                      aria-expanded={zoneOpen}
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className={`shrink-0 text-sm font-semibold ${col.titleClass}`}>
+                          {col.title}
+                        </span>
+                        <span className="tabular-nums rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600">
+                          {list.length}
+                        </span>
+                      </div>
+                      <ChevronDownIcon
+                        className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 ${
+                          zoneOpen ? "rotate-180" : ""
+                        }`}
+                        aria-hidden
+                      />
+                    </button>
+                    {zoneOpen ? (
+                      <div className="border-t border-gray-200 bg-white/60 px-3 pb-3 pt-2">
+                        {list.length === 0 ? (
+                          <p className="px-1 py-2 text-xs italic text-gray-500">Geen taken</p>
+                        ) : (
+                          <div className="flex flex-col gap-3">
                       {list.map((task: any) => {
                         const isExpanded = expandedTaskId === task.id;
                         const energyLevel = task.energyLevel || 'medium';
@@ -958,15 +1117,129 @@ export default function TasksOverviewCalm() {
                               )}
                             </div>
 
-                            {isExpanded && (
+                            {isExpanded && (() => {
+                              const ms = normalizeMicroSteps(task.microSteps);
+                              const msDone = ms.filter((s) => s.done).length;
+                              const showMicroPanel =
+                                ms.length > 0 || microStepsAddOpenId === task.id;
+
+                              return (
                               <div
                                 className="pt-5 pb-5 px-5 bg-gray-50/50 border-t border-gray-100"
                                 style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.03)' }}
                               >
                                 <div className="flex flex-col gap-4">
+                                  <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 shadow-sm">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex min-w-0 items-center gap-2">
+                                        <Square2StackIcon
+                                          className="h-4 w-4 shrink-0 text-violet-600"
+                                          aria-hidden
+                                        />
+                                        <span className="text-sm font-semibold text-gray-800">
+                                          Microstappen
+                                        </span>
+                                        {ms.length > 0 ? (
+                                          <span className="text-xs tabular-nums text-gray-500">
+                                            {msDone}/{ms.length}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      {!showMicroPanel ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMicroStepsAddOpenId(task.id);
+                                          }}
+                                          className="shrink-0 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+                                        >
+                                          Microstappen toevoegen
+                                        </button>
+                                      ) : null}
+                                    </div>
+
+                                    {showMicroPanel ? (
+                                      <div className="mt-3 space-y-2">
+                                        {ms.length > 0 ? (
+                                          <ul className="space-y-1.5">
+                                            {ms.map((step) => (
+                                              <li key={step.id} className="flex items-start gap-2">
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void toggleMicroStepDone(task, step.id);
+                                                  }}
+                                                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                                                    step.done
+                                                      ? "border-emerald-500 bg-emerald-500"
+                                                      : "border-gray-300 bg-white hover:border-violet-400"
+                                                  }`}
+                                                  aria-label={step.done ? "Stap ongedaan" : "Stap afvinken"}
+                                                >
+                                                  {step.done ? (
+                                                    <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+                                                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                  ) : null}
+                                                </button>
+                                                <span
+                                                  className={`min-w-0 flex-1 text-sm leading-snug ${
+                                                    step.done
+                                                      ? "text-gray-400 line-through"
+                                                      : "text-gray-800"
+                                                  }`}
+                                                >
+                                                  {step.title}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        ) : null}
+
+                                        <div className="flex gap-2 pt-0.5">
+                                          <input
+                                            type="text"
+                                            value={microStepDraft.title}
+                                            onChange={(e) =>
+                                              setMicroStepDraft((d) => ({
+                                                ...d,
+                                                title: e.target.value,
+                                              }))
+                                            }
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                void addMicroStepToTask(task);
+                                              }
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            placeholder="Nieuwe microstap…"
+                                            className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              void addMicroStepToTask(task);
+                                            }}
+                                            className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+                                          >
+                                            Toevoegen
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
+
                                   <button
                                     type="button"
-                                    onClick={(e) => { e.stopPropagation(); startFocus(task); setExpandedTaskId(null); }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startFocus(task);
+                                      setExpandedTaskId(null);
+                                    }}
                                     className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all text-center"
                                   >
                                     Start Focus
@@ -974,7 +1247,10 @@ export default function TasksOverviewCalm() {
                                   <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
                                     <button
                                       type="button"
-                                      onClick={(e) => { e.stopPropagation(); setEditing(task); }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditing(task);
+                                      }}
                                       className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1.5"
                                     >
                                       <PencilSquareIcon className="w-4 h-4" aria-hidden />
@@ -997,253 +1273,20 @@ export default function TasksOverviewCalm() {
                                   </div>
                                 </div>
                               </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         );
                       })}
-                    </div>
-                  )}
-                </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>
-
-            {/* Mobiele pager dots: Makkelijk / Normaal / Intensief */}
-            <div className="mt-4 flex items-center justify-center gap-2 lg:hidden">
-              {['Makkelijk', 'Normaal', 'Intensief'].map((label, idx) => (
-                <button
-                  key={label}
-                  type="button"
-                  aria-label={`Ga naar ${label}`}
-                  onClick={() => {
-                    const el = columnsWrapperRef.current;
-                    if (!el) return;
-                    const cards = Array.from(el.querySelectorAll<HTMLElement>(".tasks-column-card"));
-                    const card = cards[idx];
-                    card?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-                  }}
-                  className={`h-2.5 w-2.5 rounded-full transition-all ${
-                    activeEnergyCol === idx ? 'bg-slate-700 w-7' : 'bg-slate-300'
-                  }`}
-                />
-              ))}
-            </div>
           </>
-        )}
-      </section>
-
-      {/* SECTIE 4b: Voltooide taken – inklapbaar, legen of terugzetten */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <button
-          type="button"
-          onClick={() => setCompletedSectionOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between gap-3 text-left mb-4 group"
-        >
-          <h2 className="text-lg font-semibold text-gray-900">Voltooide taken</h2>
-          <span className="flex items-center gap-2 text-sm text-gray-500">
-            {completedTasks.length > 0 && (
-              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg font-medium">
-                {completedTasks.length}
-              </span>
-            )}
-            {completedSectionOpen ? (
-              <ChevronDownIcon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" aria-hidden />
-            ) : (
-              <ChevronRightIcon className="w-5 h-5 text-gray-400 group-hover:text-gray-600" aria-hidden />
-            )}
-          </span>
-        </button>
-
-        {completedSectionOpen && (
-          <>
-            {completedTasks.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
-                Geen voltooide taken
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {completedTasks.map((task: any) => (
-                  <div
-                    key={task.id}
-                    className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100/80 transition-colors"
-                  >
-                    <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0" aria-hidden />
-                    <span className="flex-1 min-w-0 text-sm text-gray-700 line-through break-words">{task.title}</span>
-                    {task.completedAt && (
-                      <span className="text-xs text-gray-400 tabular-nums">
-                        {new Date(task.completedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await updateTask(task.id, { done: false, completedAt: undefined });
-                          toast('Taak teruggezet bij Alle open taken');
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300 transition-colors"
-                      >
-                        Terug naar open
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!confirm(`Weet je zeker dat je alle ${completedTasks.length} voltooide taken wilt verwijderen? Ze zijn daarna niet meer terug te halen.`)) return;
-                      for (const task of completedTasks) {
-                        await deleteTask(task.id);
-                      }
-                      toast('Voltooide taken geleegd');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-colors"
-                  >
-                    Voltooide taken legen
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* SECTIE 5: Geparkeerde gedachten */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Geparkeerde gedachten</h2>
-          <div className="group relative flex items-center">
-            <button
-              type="button"
-              aria-label="Uitleg geparkeerde gedachten"
-              title="Uitleg geparkeerde gedachten"
-              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
-              onClick={() =>
-                toast("Geparkeerde gedachten: gedachten die je even niet kunt doen. Je kunt ze later omzetten naar een taak of afhandelen.")
-              }
-            >
-              i
-            </button>
-            <div
-              className="pointer-events-none absolute top-7 left-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-              role="tooltip"
-            >
-              <div className="text-[11px] font-semibold text-gray-900 mb-1">Geparkeerde gedachten</div>
-              <div className="text-[11px] text-gray-600 leading-relaxed">
-                Onderbrekingen die je parkeert, zodat je focus kan blijven. Later kun je ze omzetten naar een taak.
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {parkedThoughts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
-            Geen geparkeerde gedachten
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {parkedThoughts.map((task: any) => {
-              const isExpanded = expandedTaskId === task.id;
-
-              return (
-                <div
-                  key={task.id}
-                  className="bg-amber-50 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all"
-                >
-                  <div
-                    onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                    className="p-4 flex flex-wrap items-center gap-3 cursor-pointer"
-                  >
-                    <span className="text-xl flex-shrink-0">🧠</span>
-                    <span className="flex-1 min-w-0 text-lg font-medium text-gray-900 break-words line-clamp-3">{task.title}</span>
-                    <span className="text-gray-500 text-sm flex-shrink-0">{isExpanded ? '▼' : '›'}</span>
-                  </div>
-                  
-                  {isExpanded && (
-                    <div className="p-4 bg-amber-50/80">
-                      {/* Context (read-only) */}
-                      <div style={{ marginBottom: designSystem.spacing.sm }}>
-                        <div style={{ fontSize: 12, color: theme.sub, fontStyle: 'italic' }}>
-                          Geparkeerde gedachte
-                        </div>
-                      </div>
-                      
-                      {/* Acties direct zichtbaar */}
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              // Eerst vragen: duur + moeilijkheidsgraad
-                              const existingDuration =
-                                (typeof task?.duration === 'number' && task.duration > 0 ? task.duration : null) ??
-                                (typeof task?.estimatedDuration === 'number' && task.estimatedDuration > 0 ? task.estimatedDuration : null) ??
-                                15;
-                              setConvertDuration(existingDuration);
-                              setConvertEnergy((task?.energyLevel as any) || 'medium');
-                              setConvertingThought(task);
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'white',
-                              color: '#0EA5E9',
-                              border: '1px solid #0EA5E9',
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              fontWeight: 400
-                            }}
-                          >
-                            Omzetten naar taak
-                          </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await updateTask(task.id, { done: true });
-                              toast('Gedachte afgehandeld');
-                              setExpandedTaskId(null);
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'white',
-                              color: '#10B981',
-                              border: '1px solid #10B981',
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              fontWeight: 400
-                            }}
-                          >
-                            Afgehandeld
-                          </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm('Weet je zeker dat je deze gedachte wilt verwijderen?')) {
-                                await deleteTask(task.id);
-                                setExpandedTaskId(null);
-                              }
-                            }}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'white',
-                              color: '#EF4444',
-                              border: '1px solid #EF4444',
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              fontWeight: 400
-                            }}
-                        >
-                          Verwijderen
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
         )}
       </section>
 

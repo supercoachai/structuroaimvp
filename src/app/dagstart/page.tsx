@@ -206,31 +206,30 @@ export default function DagStartPage() {
 
   return (
     <AppLayout>
-      <div
-        className="flex min-h-full flex-col items-center px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
-        style={{ background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)' }}
-      >
-        <main className="mx-auto flex w-full max-w-xl flex-col gap-4">
-          <header className="mb-10 flex w-full flex-col items-center text-center sm:mb-12">
-            <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 shadow-sm">
+      <div className="flex w-full flex-col justify-center bg-[var(--structuro-bg)] px-4 py-8 pb-28 min-h-[max(100%,calc(100dvh-10rem))]">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-4">
+          <header className="flex w-full flex-col items-center text-center">
+            <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
               <span className="text-xl" aria-hidden>
                 {'\u{1F305}'}
               </span>
             </div>
-            <h1 className="structuro-page-title">Dagstart</h1>
-            <p className="structuro-page-subtitle mx-auto">Neem even de tijd om je dag te overzien.</p>
+            <h1 className="text-[22px] font-bold tracking-tight text-[var(--structuro-text)]">Dagstart</h1>
+            <p className="structuro-page-subtitle mx-auto mt-1 text-[var(--structuro-sub)]">
+              Neem even de tijd om je dag te overzien.
+            </p>
           </header>
 
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex w-full flex-col gap-4">
             <DayStartCheckIn
               onComplete={handleComplete}
               firstTimeOnboarding={!onboardingCompleted}
             />
-            <p className="text-xs text-gray-400 text-center max-w-md mx-auto italic">
+            <p className="mx-auto max-w-md text-center text-xs italic text-gray-400">
               &ldquo;{quoteRef.current}&rdquo;
             </p>
           </div>
-        </main>
+        </div>
       </div>
     </AppLayout>
   );

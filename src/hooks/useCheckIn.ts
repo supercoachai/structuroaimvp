@@ -8,8 +8,9 @@ import {
   upsertCheckInToSupabase,
   type CheckInPayload,
 } from "@/lib/supabase/checkinsDb";
+import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
-const today = () => new Date().toISOString().split("T")[0];
+const today = () => getCalendarDateAmsterdam();
 
 export type CheckIn = {
   date: string;

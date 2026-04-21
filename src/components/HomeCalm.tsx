@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { CheckCircleIcon, PlayIcon } from '@heroicons/react/24/outline';
-import { SunMedium } from 'lucide-react';
+import {
+  BoltIcon,
+  CheckCircleIcon,
+  FaceSmileIcon,
+  MoonIcon,
+  PlayIcon,
+} from '@heroicons/react/24/outline';
+import { normalizeMicroSteps, type MicroStep } from '@/lib/microSteps';
 import { useRouter } from 'next/navigation';
 import { useTaskContext, Task } from '../context/TaskContext';
 import { designSystem } from '../lib/design-system';
@@ -15,25 +21,12 @@ export default function HomeCalm() {
   const router = useRouter();
   const { tasks, loading } = useTaskContext();
   const { checkIn: todayCheckIn } = useCheckIn();
-  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [newName, setNewName] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const { updateTask, addTask } = useTaskContext();
-  const [dumpInput, setDumpInput] = useState('');
-  const [dumpSubmitting, setDumpSubmitting] = useState(false);
+  const { updateTask } = useTaskContext();
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
-
-  // Huidige kalenderdag – wordt elke minuut geüpdatet zodat "vandaag voltooid" na 0:00 opnieuw op 0 staat
-  const [todayKey, setTodayKey] = useState(() => new Date().toDateString());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const next = new Date().toDateString();
-      setTodayKey((prev) => (next !== prev ? next : prev));
-    }, 60 * 1000); // elke minuut checken
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const checkProtected = async () => {
@@ -65,24 +58,16 @@ export default function HomeCalm() {
     return byPriority[0] ?? null;
   }, [tasks]);
 
-  // Check of laagste-energie-pad actief moet zijn - altijd tonen als er een taak is
-  const shouldShowLowestEnergyPath = useMemo(() => {
-    // Toon altijd als er een taak is om te tonen
-    return true;
-  }, []);
-
-  useEffect(() => {
-    if (loading) return;
-    try {
-      const recentCompleted = tasks
-        .filter(task => task.done && task.completedAt && new Date(task.completedAt).toDateString() === todayKey)
-        .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
-        .slice(0, 3);
-      setRecentTasks(recentCompleted);
-    } catch (error) {
-      console.error('Error building recent tasks:', error);
-    }
-  }, [tasks, loading, todayKey]);
+  const nonMedicationTasks = useMemo(
+    () => tasks.filter((t) => t.source !== 'medication'),
+    [tasks]
+  );
+  const allNonMedicationDone = useMemo(
+    () =>
+      nonMedicationTasks.length > 0 &&
+      nonMedicationTasks.every((t) => t.done),
+    [nonMedicationTasks]
+  );
 
   const getFirstName = (name: string) => {
     const first = name.trim().split(' ')[0];
@@ -180,13 +165,23 @@ export default function HomeCalm() {
     if (!energyLevel) return null;
 
     if (energyLevel === 'low') {
-      return 'Rustige modus';
+      return 'Energie laag';
     } else if (energyLevel === 'medium') {
-      return 'In balans';
-    } else { // high
-      return 'Volle focus';
+      return 'Energie normaal';
     }
+    return 'Energie hoog';
   };
+
+  const energyForPill = getTodayEnergyStatus();
+  /** Doctrine mock: zachte pill, bold label; normaal = amber crème / gouden rand / diep oker */
+  const energyPillClass =
+    energyForPill === 'low'
+      ? 'border-slate-200 bg-slate-50 text-slate-800'
+      : energyForPill === 'high'
+        ? 'border-violet-200 bg-violet-50 text-violet-900'
+        : energyForPill === 'medium'
+          ? 'border-amber-200 bg-amber-50 text-amber-900'
+          : '';
 
   // 15 afwisselende welkomstzinnen (zonder emoji's in de tekst zelf)
   const welcomeMessages = [
@@ -269,6 +264,11 @@ export default function HomeCalm() {
     "Vandaag focus je op wat echt belangrijk is."
   ];
 
+  const heroMicroSteps: MicroStep[] = useMemo(() => {
+    if (!findLowestEnergyTask) return [];
+    return normalizeMicroSteps(findLowestEnergyTask.microSteps);
+  }, [findLowestEnergyTask]);
+
   const getDailyQuote = () => {
     // Gebruik de dag van het jaar als seed voor consistente dagelijkse quotes
     const today = new Date();
@@ -277,15 +277,18 @@ export default function HomeCalm() {
     return adhdQuotes[dayOfYear % adhdQuotes.length];
   };
 
-  // DEBUG: Reset functie (alleen in development)
+  const devResetToolbarOn =
+    process.env.NEXT_PUBLIC_STRUCTURO_DEV_RESET === '1';
+
   const handleReset = () => {
+    if (!devResetToolbarOn || isProtectedAccount) return;
     if (confirm('Weet je zeker dat je alle data wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
       resetAndLoadMockData();
     }
   };
 
-  // Verwijder ALLEEN taken (schone start)
   const handleClearAllTasks = () => {
+    if (!devResetToolbarOn || isProtectedAccount) return;
     if (confirm('Weet je zeker dat je ALLE taken wilt verwijderen? Dit kan niet ongedaan worden gemaakt. Je kunt daarna zelf handmatig taken toevoegen.')) {
       clearAllTasksOnly();
     }
@@ -293,18 +296,20 @@ export default function HomeCalm() {
 
   return (
     <>
-      {/* DEBUG: Reset knoppen (alleen in development, niet voor beschermd testaccount) */}
-      {process.env.NODE_ENV === 'development' && !isProtectedAccount && (
-        <div style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 20,
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8
-        }}>
+      {devResetToolbarOn && !isProtectedAccount && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
           <button
+            type="button"
             onClick={handleClearAllTasks}
             style={{
               padding: '8px 16px',
@@ -315,12 +320,13 @@ export default function HomeCalm() {
               cursor: 'pointer',
               fontSize: 12,
               fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             }}
           >
             🗑️ Verwijder ALLE taken
           </button>
           <button
+            type="button"
             onClick={handleReset}
             style={{
               padding: '8px 16px',
@@ -331,63 +337,41 @@ export default function HomeCalm() {
               fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             }}
-            title="Reset alle data (development only)"
+            title="Reset alle data (alleen development)"
           >
             🔄 Reset Data
           </button>
         </div>
       )}
-    <div
-      className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
-      style={{
-        background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-        color: designSystem.colors.text,
-      }}
-    >
-      <div
-        className="dashboard-inner"
-        style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
-          boxSizing: 'border-box',
-        }}
-      >
-        <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
-          <div
-            className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
-            }}
-          >
-            <SunMedium size={28} strokeWidth={1.5} color="#fff" />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">
-            {getGreeting()}{userName ? `, ${userName}` : ''}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-500">
-            {(() => {
-              const energyStatus = getEnergyStatusLabel();
-              if (energyStatus) {
-                const emoji = energyStatus === 'Volle focus' ? '⚡' : energyStatus === 'Rustige modus' ? '😴' : '🙂';
-                const accentColor = energyStatus === 'Volle focus' ? '#B45309' : energyStatus === 'Rustige modus' ? '#0369A1' : '#15803D';
-                return (
-                  <>
-                    Elke dag telt. Vandaag werk je met{' '}
-                    <span style={{ fontWeight: 700, color: accentColor }}>
-                      {energyStatus} {emoji}
-                    </span>
-                  </>
-                );
-              }
-              return getWelcomeMessage();
-            })()}
+    <div className="min-h-full bg-[var(--structuro-bg)] px-4 pb-28 pt-4 text-[var(--structuro-text)]">
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
+        <header className="flex w-full flex-col items-start text-left">
+          <p className="text-[13px] font-medium leading-tight text-[#6B7280]">
+            {getGreeting()},
           </p>
+          <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-tight text-[#111827]">
+            {userName || 'daar'}
+          </h1>
+          {getEnergyStatusLabel() && energyPillClass ? (
+            <div
+              className={`mt-8 inline-flex items-center gap-2 self-start rounded-full border px-4 py-2 text-sm font-bold ${energyPillClass}`}
+            >
+              {energyForPill === 'low' ? (
+                <MoonIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
+              ) : energyForPill === 'high' ? (
+                <BoltIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
+              ) : (
+                <FaceSmileIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
+              )}
+              <span>{getEnergyStatusLabel()}</span>
+            </div>
+          ) : (
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--structuro-sub)]">
+              {getWelcomeMessage()}
+            </p>
+          )}
         </header>
 
         {/* Naam prompt modal */}
@@ -460,149 +444,90 @@ export default function HomeCalm() {
         )}
 
 
-        {/* Focus kaart – zen, uitnodigend, niet dwingend */}
-        {shouldShowLowestEnergyPath && findLowestEnergyTask && (
-          <section>
-            <div className="bg-white shadow-sm rounded-3xl p-6 sm:p-8">
-              <div className="text-sm font-medium text-slate-500 mb-2" style={{ letterSpacing: '0.3px' }}>
-                Huidige focus
-              </div>
-              <div className="text-lg font-semibold text-slate-800 mb-1" style={{ lineHeight: 1.4 }}>
-                {findLowestEnergyTask.title}
-              </div>
-              <div className="text-sm text-slate-500 mb-5" style={{ lineHeight: 1.5 }}>
-                {findLowestEnergyTask.duration || findLowestEnergyTask.estimatedDuration || 15} min
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  await updateTask(findLowestEnergyTask.id, { started: true });
-                  router.push(`/focus?task=${findLowestEnergyTask.id}`);
-                }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
-              >
-                <PlayIcon className="w-4 h-4 flex-shrink-0" aria-hidden />
-                Start
-              </button>
+        {findLowestEnergyTask && (
+          <section className="rounded-[20px] bg-[var(--structuro-dark)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.2)]">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--structuro-green)]">
+              Nu aan zet
             </div>
-          </section>
-        )}
-
-
-        {/* Recent voltooid */}
-        {recentTasks.length > 0 && (
-          <section className="mt-7">
-            <div style={{ ...designSystem.typography.h3, marginBottom: designSystem.spacing.md }}>Recent voltooid</div>
-            <div style={{ display: "grid", gap: 12 }}>
-              {recentTasks.map((task) => (
-                <div 
-                  key={task.id} 
-                  className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3"
-                >
-                  <CheckCircleIcon style={{ width: designSystem.icon.small, height: designSystem.icon.small, color: designSystem.colors.success, flexShrink: 0 }} />
-                  <div style={{ flex: 1, ...designSystem.typography.body }}>{task.title}</div>
-                  <div style={designSystem.typography.bodySmall}>
-                    {task.completedAt ? new Date(task.completedAt).toLocaleDateString('nl-NL', { 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : ''}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Uit je hoofd – snel noteren */}
-        <section style={designSystem.section}>
-          <div style={{
-            background: '#fff',
-            borderRadius: 24,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            padding: 20,
-          }}>
-            <div style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: '#334155',
-              marginBottom: 4,
-            }}>
-              Uit je hoofd
-            </div>
-            <p style={{
-              fontSize: 13,
-              color: '#64748B',
-              marginBottom: 14,
-              lineHeight: 1.45,
-            }}>
-              Noteer taken of ideeën die nu in je hoofd zitten – je kunt ze later indelen.
+            <h2 className="mb-1 text-[20px] font-bold leading-snug tracking-tight text-white">
+              {findLowestEnergyTask.title}
+            </h2>
+            <p className="text-[13px] text-[var(--structuro-dark-sub)]">
+              Kernfocus · {findLowestEnergyTask.duration || findLowestEnergyTask.estimatedDuration || 15}{' '}
+              min
             </p>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const title = dumpInput.trim();
-                if (!title || dumpSubmitting) return;
-                setDumpSubmitting(true);
-                try {
-                  await addTask({
-                    title,
-                    done: false,
-                    started: false,
-                    priority: null,
-                    notToday: false,
-                    source: 'parked_thought',
-                  });
-                  setDumpInput('');
-                  toast('Toegevoegd bij geparkeerde gedachten');
-                } catch {
-                  toast('Kon niet toevoegen');
-                } finally {
-                  setDumpSubmitting(false);
-                }
-              }}
-              style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}
-            >
-              <input
-                type="text"
-                value={dumpInput}
-                onChange={(e) => setDumpInput(e.target.value)}
-                placeholder="Bijv. boodschappen, mail beantwoorden, …"
-                style={{
-                  flex: 1,
-                  minWidth: 180,
-                  padding: '12px 14px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                  borderRadius: 16,
-                  fontSize: 14,
-                  color: '#334155',
-                  background: 'white',
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                disabled={!dumpInput.trim() || dumpSubmitting}
-                style={{
-                  padding: '12px 24px',
-                  background: dumpInput.trim() && !dumpSubmitting ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#CBD5E1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 16,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: dumpInput.trim() && !dumpSubmitting ? 'pointer' : 'not-allowed',
-                }}
-              >
-                {dumpSubmitting ? 'Bezig…' : 'Toevoegen'}
-              </button>
-            </form>
-          </div>
-        </section>
 
-        {/* Lege staat: altijd concrete suggestie tonen */}
-        {tasks.filter(t => t.source !== 'medication' && !t.done && !t.started).length === 0 && (
+            {heroMicroSteps.length > 0 ? (
+              <div className="mt-4 flex flex-col gap-2.5 border-t border-white/10 pt-3.5">
+                {heroMicroSteps.map((step, idx) => {
+                  const done = step.done;
+                  const active = !done && heroMicroSteps.slice(0, idx).every((s) => s.done);
+                  if (done) {
+                    return (
+                      <div
+                        key={step.id}
+                        className="flex items-center gap-2.5 opacity-90"
+                      >
+                        <CheckCircleIcon className="h-4 w-4 shrink-0 text-[var(--structuro-green)]" aria-hidden />
+                        <span className="text-sm text-[var(--structuro-dark-sub)] line-through">
+                          {step.title}
+                        </span>
+                      </div>
+                    );
+                  }
+                  if (active) {
+                    return (
+                      <div
+                        key={step.id}
+                        className="-mx-1 flex items-center gap-2.5 rounded-[10px] border border-violet-400/30 bg-violet-500/15 px-3 py-2"
+                      >
+                        <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
+                        <span className="text-sm font-semibold text-white">{step.title}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={step.id} className="flex items-center gap-2.5 opacity-40">
+                      <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[var(--structuro-dark-sub)]" />
+                      <span className="text-sm text-[var(--structuro-dark-sub)]">{step.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={async () => {
+                await updateTask(findLowestEnergyTask.id, { started: true });
+                router.push(`/focus?task=${findLowestEnergyTask.id}`);
+              }}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--structuro-green)] py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.35)] transition hover:bg-[var(--structuro-green-hover)]"
+            >
+              <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
+              Start focus →
+            </button>
+          </section>
+        )}
+
+        {!loading && allNonMedicationDone && (
+          <section className="mt-2">
+            <div className="bg-white rounded-2xl p-6 text-center space-y-2 shadow-sm mt-4">
+              <div className="text-3xl">✅</div>
+              <p className="font-semibold text-gray-900">Alles gedaan voor nu.</p>
+              <p className="text-sm text-gray-400">
+                Wil je meer doen? Voeg een taak toe via Taken.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Geen openstaande “stille” taken: eerste stap / backlog leeg (niet hetzelfde als alles klaar) */}
+        {!loading &&
+          !allNonMedicationDone &&
+          tasks.filter(
+            (t) => t.source !== 'medication' && !t.done && !t.started
+          ).length === 0 && (
           <section style={designSystem.section}>
             <div style={{
               background: '#F0F9FF',

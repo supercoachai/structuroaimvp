@@ -8,41 +8,45 @@ import { track } from '../../shared/track';
 import { toast } from '../../components/Toast';
 import { useTaskContext } from '../../context/TaskContext';
 import { useCheckIn } from '../../hooks/useCheckIn';
+import { parkFocusTaskSilently } from '@/lib/parkFocusTask';
 import { getRandomAdhdPlanningQuote } from '../../lib/adhdQuotes';
 import { xpForTask } from '../../lib/xp';
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from '../../lib/microSteps';
-import { parkFocusTaskSilently } from '@/lib/parkFocusTask';
 import { useUser } from '@/hooks/useUser';
 import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
+import {
+  ChevronRightIcon,
+  SparklesIcon,
+  PauseIcon,
+  PlayIcon,
+  CheckIcon,
+  ClockIcon,
+} from '@heroicons/react/24/outline';
+import confetti from 'canvas-confetti';
 
-const CONFETTI_COLORS = ['#10B981', '#F59E0B', '#4A90E2', '#EC4899', '#8B5CF6', '#F97316', '#EAB308', '#22C55E'];
-
-const confettiStyle = `
-  @keyframes confetti-burst {
-    0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-    20% { opacity: 1; }
-    100% { transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(720deg); opacity: 0; }
+const countdownDigitStyle = `
+  @keyframes structuro-countdown-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
   }
-  .confetti-burst {
-    animation: confetti-burst 1.4s ease-out forwards;
-    pointer-events: none;
+  .structuro-countdown-digit {
+    animation: structuro-countdown-pulse 1s ease-in-out forwards;
   }
 `;
 
-const PRIORITY_LABELS: Record<number, string> = { 1: 'KERNFOCUS', 2: 'VERVOLGSTAP', 3: 'BONUSACTIE' };
 const ENERGY_DISPLAY: Record<string, string> = { low: 'Rustig', medium: 'Normaal', high: 'Intens' };
 
 function FocusContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
-  const { user } = useUser();
-  const [taskTitle, setTaskTitle] = useState(searchParams?.get('task') || 'Focus sessie');
   const { checkIn, saveCheckIn } = useCheckIn();
+  const { user } = useUser();
   const [nuNietBusy, setNuNietBusy] = useState(false);
+  const [taskTitle, setTaskTitle] = useState(searchParams?.get('task') || 'Focus sessie');
   const [parkedCount, setParkedCount] = useState(0);
-  const [confettiElements, setConfettiElements] = useState<number[]>([]);
   const [showFocusCard, setShowFocusCard] = useState(true);
   const [inlineNewStep, setInlineNewStep] = useState('');
   const [isAirlockActive, setIsAirlockActive] = useState(false);
@@ -93,7 +97,8 @@ function FocusContent() {
   const [completed, setCompleted] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
-  const [showExtendButton, setShowExtendButton] = useState(false);
+  /** Na "1": 500ms fade-out voordat de focus-sessie start. */
+  const [countdownFadeOut, setCountdownFadeOut] = useState(false);
   const lastTaskIdRef = useRef<string | null>(null);
   const endAtRef = useRef<number | null>(null);
 
@@ -101,22 +106,25 @@ function FocusContent() {
   const [extendMinutes, setExtendMinutes] = useState<number>(10);
   const [timeUpQuote, setTimeUpQuote] = useState<string>('');
 
-  const BackToDashboardButton = () => (
-    <div className="fixed top-4 left-4 z-[10000]">
-      <button
-        onClick={() => {
-          if (isRunning) {
-            const ok = confirm('Je focus sessie loopt nog. Weet je zeker dat je terug wilt naar je dashboard?');
-            if (!ok) return;
-          }
-          router.push('/');
-        }}
-        className="px-3 py-2 rounded-full bg-white/90 border border-slate-200 text-slate-700 shadow-sm hover:bg-white hover:shadow transition-colors text-sm font-semibold"
-        title="Terug naar dashboard"
-      >
-        ← Dashboard
-      </button>
-    </div>
+  const SluitenButton = () => (
+    <button
+      type="button"
+      onClick={() => {
+        if (isRunning) {
+          const ok = confirm(
+            'Je focus sessie loopt nog. Weet je zeker dat je wilt sluiten?'
+          );
+          if (!ok) return;
+        }
+        router.push('/');
+      }}
+      className="flex items-center gap-1.5 py-1.5 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
+    >
+      <span className="inline-flex rotate-180" aria-hidden>
+        <ChevronRightIcon className="h-3.5 w-3.5" />
+      </span>
+      Sluiten
+    </button>
   );
 
   useEffect(() => {
@@ -140,19 +148,42 @@ function FocusContent() {
   }, [duration, isRunning]);
 
   useEffect(() => {
-    if (showCountdown && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (showCountdown && countdown === 0) {
-      setShowCountdown(false);
-      setIsRunning(true);
-      endAtRef.current = Date.now() + (timeLeft * 1000);
-      if (currentTask && !currentTask.started) {
-        updateTask(currentTask.id, { started: true }).catch(console.error);
-      }
-      track("ignite_start", { taskTitle, duration, autoStart: true });
+    if (!showCountdown) return;
+
+    if (countdownFadeOut) {
+      const t = setTimeout(() => {
+        setShowCountdown(false);
+        setCountdownFadeOut(false);
+        setCountdown(3);
+        setIsRunning(true);
+        endAtRef.current = Date.now() + timeLeft * 1000;
+        if (currentTask && !currentTask.started) {
+          updateTask(currentTask.id, { started: true }).catch(console.error);
+        }
+        track('ignite_start', { taskTitle, duration, autoStart: true });
+      }, 500);
+      return () => clearTimeout(t);
     }
-  }, [showCountdown, countdown, taskTitle, duration, currentTask, updateTask]);
+
+    if (countdown > 1) {
+      const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+
+    if (countdown === 1) {
+      const timer = setTimeout(() => setCountdownFadeOut(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    showCountdown,
+    countdown,
+    countdownFadeOut,
+    timeLeft,
+    taskTitle,
+    duration,
+    currentTask,
+    updateTask,
+  ]);
 
   useEffect(() => {
     if (!isRunning || isPaused) return;
@@ -175,10 +206,6 @@ function FocusContent() {
     const timer = setInterval(tick, 250);
     return () => clearInterval(timer);
   }, [isRunning, isPaused, timeLeft, taskTitle, duration]);
-
-  useEffect(() => {
-    setShowExtendButton(isRunning && timeLeft <= 60 && timeLeft > 0);
-  }, [isRunning, timeLeft]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -241,10 +268,11 @@ function FocusContent() {
 
   const startSession = () => {
     setShowFocusCard(false);
+    setCountdownFadeOut(false);
     setShowCountdown(true);
     setCountdown(3);
     setTimeLeft(duration * 60);
-    track("ignite_start", { taskTitle: currentTask?.title || taskTitle, duration });
+    track('ignite_start', { taskTitle: currentTask?.title || taskTitle, duration });
   };
 
   const pauseSession = () => {
@@ -277,6 +305,7 @@ function FocusContent() {
     setIsRunning(false);
     setIsPaused(false);
     setShowCountdown(false);
+    setCountdownFadeOut(false);
     setShowFocusCard(true);
     setCompleted(false);
     setShowTimeUpPrompt(false);
@@ -288,7 +317,10 @@ function FocusContent() {
     setNuNietBusy(true);
     try {
       const { remainingTop3Ids } = await parkFocusTaskSilently(
-        currentTask.id, checkIn ?? null, saveCheckIn, updateTask
+        currentTask.id,
+        checkIn ?? null,
+        saveCheckIn,
+        updateTask
       );
       resetFocusSessionAfterPark();
       const nextId = remainingTop3Ids.find((id) => {
@@ -297,13 +329,16 @@ function FocusContent() {
       });
       if (nextId) router.replace(`/focus?task=${encodeURIComponent(nextId)}`);
       else router.push('/dagstart');
-    } catch (e) { console.error('park focus (nu niet):', e); }
-    finally { setNuNietBusy(false); }
+    } catch (e) {
+      console.error('park focus (nu niet):', e);
+    } finally {
+      setNuNietBusy(false);
+    }
   };
 
   const handleAirlockComplete = useCallback(() => {
     setIsAirlockActive(false);
-    router.push('/shutdown');
+    router.push('/todo');
   }, [router]);
 
   const completeCurrentTask = async () => {
@@ -326,15 +361,33 @@ function FocusContent() {
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
         durationPlanned: duration, xp: gainXp,
       });
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#10B981', '#3B82F6', '#8B5CF6'],
+        disableForReducedMotion: true,
+        zIndex: 10002,
+      });
       setIsAirlockActive(true);
     } catch (err) { console.error('Error completing task:', err); toast('Fout bij voltooien van taak'); }
   };
 
+  const handleVoltooienClick = () => {
+    if (!currentTask?.id) return;
+    if (!confirm('Taak voltooien? De focus stopt.')) return;
+    void completeCurrentTask();
+  };
+
   const extendSession = () => {
-    setTimeLeft(prev => prev + 300);
-    setDuration(prev => prev + 5);
-    toast("Sessie verlengd met 5 minuten!");
-    track("ignite_extend", { taskTitle, duration, extended: true });
+    const addSecs = 5 * 60;
+    setDuration((prev) => prev + 5);
+    setTimeLeft((prev) => prev + addSecs);
+    if (endAtRef.current != null) {
+      endAtRef.current += addSecs * 1000;
+    }
+    toast("5 minuten toegevoegd");
+    track("ignite_extend", { taskTitle, extendedMinutes: 5 });
   };
 
   const handleParkThought = async (thoughtText: string) => {
@@ -401,97 +454,135 @@ function FocusContent() {
   const existingMicroSteps = normalizeMicroSteps(currentTask?.microSteps);
   const completedStepsCount = existingMicroSteps.filter(s => s.done).length;
   const activeStepIdx = existingMicroSteps.findIndex(s => !s.done);
-  const priorityLabel = currentTask?.priority ? PRIORITY_LABELS[currentTask.priority] || 'FOCUS MODUS' : 'FOCUS MODUS';
   const energyLabel = ENERGY_DISPLAY[currentTask?.energyLevel || 'medium'] || 'Normaal';
-  const taskMins = currentTask?.duration ?? (currentTask as any)?.estimatedDuration;
+
+  if (showCountdown) {
+    return (
+      <AppLayout hideSidebar={true}>
+        <style>{countdownDigitStyle}</style>
+        <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--structuro-bg)] px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <div
+            className={`flex w-full max-w-md flex-col items-center text-center transition-opacity duration-500 ease-out ${
+              countdownFadeOut ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <div
+              key={countdown}
+              className="structuro-countdown-digit text-[120px] font-bold leading-none tabular-nums text-[#0F172A]"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {countdown}
+            </div>
+            <div className="mt-6 space-y-1">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+                Nu aan zet
+              </p>
+              <p className="text-2xl font-bold text-[#0F172A]">
+                {currentTask?.title || taskTitle}
+              </p>
+              <p className="text-sm text-gray-400">{energyLabel}</p>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const timerActive = isRunning || isPaused;
   const showTimerInHeader = timerActive || showTimeUpPrompt;
   const preTimerState = !timerActive && !showTimeUpPrompt;
 
-  // ─── Confetti overlay ─────────────────────────
-  const confettiOverlay = confettiElements.length > 0 && confettiElements.map((id, idx) => {
-    const total = confettiElements.length;
-    const angle = (idx / total) * 2 * Math.PI;
-    const tx = Math.cos(angle) * 140;
-    const ty = Math.sin(angle) * 140 + 80;
-    const color = CONFETTI_COLORS[idx % CONFETTI_COLORS.length];
-    const size = 8 + (idx % 4);
-    const isRect = idx % 3 === 0;
-    return (
-      <div key={id} className="confetti-burst" style={{
-        position: 'fixed', top: '50%', left: '50%', width: size,
-        height: isRect ? size * 0.6 : size, background: color,
-        borderRadius: isRect ? 2 : '50%', pointerEvents: 'none', zIndex: 9999,
-        ['--tx' as string]: `${tx}px`, ['--ty' as string]: `${ty}px`,
-      }} />
-    );
-  });
+  const RING_R = 92;
+  const RING_C = 2 * Math.PI * RING_R;
+  const totalSecs = Math.max(1, duration * 60);
+  const progressRatio =
+    showTimerInHeader && !showTimeUpPrompt
+      ? Math.min(1, Math.max(0, timeLeft / totalSecs))
+      : preTimerState
+        ? 1
+        : 0;
+  const ringDashOffset = RING_C * (1 - progressRatio);
 
-  // ─── Shared: Microsteps section ───────────────
+  // ─── Microstappen (donker scherm, zelfde logica als design-mock) ───────────────
   const microStepsSection = (
-    <div className="bg-white p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <svg className="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" />
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-[18px] py-3.5">
+      <div className="mb-3 flex items-center gap-2">
+        <svg className="h-3.5 w-3.5 text-violet-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M12 2 2 7l10 5 10-5-10-5z" />
+          <path d="m2 17 10 5 10-5" />
+          <path d="m2 12 10 5 10-5" />
         </svg>
-        <span className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Microstappen</span>
+        <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
+          Microstappen
+        </span>
       </div>
 
       {existingMicroSteps.length > 0 ? (
-        <div className="space-y-0">
+        <div className="flex flex-col gap-1">
           {existingMicroSteps.map((step, idx) => {
             const isDone = Boolean(step.done);
             const isActive = !isDone && idx === activeStepIdx;
             return (
-              <div
+              <button
                 key={step.id}
-                className={`overflow-hidden transition-all duration-300 ease-out ${
-                  isDone
-                    ? 'max-h-0 opacity-0 mb-0 py-0 pointer-events-none'
-                    : 'max-h-24 opacity-100 mb-1.5 py-0 pointer-events-auto'
+                type="button"
+                onClick={() => handleToggleMicroStep(step.id)}
+                className={`flex w-full items-center gap-2.5 rounded-[10px] px-0 py-1.5 text-left transition-colors ${
+                  isActive
+                    ? 'border border-violet-400/30 bg-violet-500/15 -mx-1 px-3 py-2'
+                    : 'border border-transparent'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => handleToggleMicroStep(step.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors ${
-                    isActive ? 'bg-purple-50 border border-purple-200' : 'border border-transparent hover:bg-slate-50'
-                  }`}
-                >
-                  {isDone ? (
-                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    </div>
-                  ) : isActive ? (
-                    <div className="w-7 h-7 flex-shrink-0 rounded-full bg-purple-100 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </div>
-                  ) : (
-                    <div className="w-7 h-7 flex-shrink-0 rounded-full border-2 border-slate-300" />
-                  )}
-                  <span className={`text-sm ${isActive ? 'text-purple-800 font-medium' : 'text-slate-700'}`}>
-                    {step.title}
-                  </span>
-                </button>
-              </div>
+                {isDone ? (
+                  <>
+                    <svg className="h-4 w-4 shrink-0 text-[#22c55e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    <span className="text-[13.5px] text-[#94A3B8] line-through">{step.title}</span>
+                  </>
+                ) : isActive ? (
+                  <>
+                    <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
+                    <span className="text-[13.5px] font-semibold text-white">{step.title}</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[#64748B]" />
+                    <span className="text-[13.5px] text-[#94A3B8]">{step.title}</span>
+                  </>
+                )}
+              </button>
             );
           })}
         </div>
       ) : (
-        <p className="text-sm text-slate-400 mb-1">Breek deze taak op in kleine stappen</p>
+        <p className="text-sm text-[#64748B]">Breek deze taak op in kleine stappen</p>
       )}
 
       <div className="mt-3 flex items-center gap-2">
         <input
-          type="text" value={inlineNewStep}
+          type="text"
+          value={inlineNewStep}
           onChange={(e) => setInlineNewStep(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleInlineAddStep(); } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleInlineAddStep();
+            }
+          }}
           placeholder="Nieuwe stap toevoegen..."
-          className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-300 text-slate-700"
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
         />
-               <button type="button" onClick={handleInlineAddStep} disabled={!inlineNewStep.trim()}
-          className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 flex items-center justify-center transition-colors disabled:opacity-40 flex-shrink-0 text-lg font-light"
-        >+</button>
+        <button
+          type="button"
+          onClick={handleInlineAddStep}
+          disabled={!inlineNewStep.trim()}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg font-light text-white transition hover:bg-white/15 disabled:opacity-40"
+        >
+          +
+        </button>
       </div>
 
       {microUndoSnapshot && (
@@ -499,7 +590,7 @@ function FocusContent() {
           <button
             type="button"
             onClick={handleUndoMicrostep}
-            className="text-xs font-medium text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+            className="text-xs font-medium text-[#94A3B8] underline decoration-white/20 underline-offset-2 hover:text-white"
           >
             Ongedaan
           </button>
@@ -507,13 +598,18 @@ function FocusContent() {
       )}
 
       {existingMicroSteps.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-          <span className="text-sm text-slate-400">{completedStepsCount} van {existingMicroSteps.length} klaar</span>
+        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
+          <span className="text-sm text-[#64748B]">
+            {completedStepsCount} van {existingMicroSteps.length} klaar
+          </span>
           <div className="flex gap-1.5">
             {existingMicroSteps.map((step, idx) => (
-              <div key={step.id} className={`w-6 h-2 rounded-full transition-colors ${
-                step.done ? 'bg-emerald-400' : idx === activeStepIdx ? 'bg-purple-400' : 'bg-slate-200'
-              }`} />
+              <div
+                key={step.id}
+                className={`h-2 w-6 rounded-full transition-colors ${
+                  step.done ? 'bg-[#22c55e]' : idx === activeStepIdx ? 'bg-violet-500' : 'bg-white/20'
+                }`}
+              />
             ))}
           </div>
         </div>
@@ -521,67 +617,8 @@ function FocusContent() {
     </div>
   );
 
-  // ─── Shared: Thought parking (fixed onderaan viewport) ─────────────
-  const parkThoughtBar = (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-100 bg-white px-4 pt-3 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)]"
-      style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
-    >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const input = e.currentTarget.querySelector('input') as HTMLInputElement;
-          if (input && input.value.trim()) {
-            handleParkThought(input.value.trim());
-            input.value = '';
-          }
-        }}
-        className="mx-auto flex max-w-md gap-2"
-      >
-        <input
-          type="text"
-          placeholder="Parkeer een gedachte..."
-          className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-slate-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-slate-300/40 focus:border-gray-300"
-        />
-        <button
-          type="submit"
-          className="shrink-0 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-        >
-          Parkeer
-        </button>
-      </form>
-      {user?.id && parkedCount > 0 ? (
-        <p
-          className={`mx-auto mt-2 max-w-md text-center text-xs ${
-            parkedCount >= 9 ? 'font-medium text-amber-600' : 'text-slate-400'
-          }`}
-        >
-          {parkedCount}/10 gedachten geparkeerd
-          {parkedCount >= 9 ? ' \u00B7 Na je sessie: omzetten' : ''}
-        </p>
-      ) : null}
-    </div>
-  );
-
-  // ═══════════════════════════════════════════════
-  // ─── COUNTDOWN ────────────────────────────────
-  // ═══════════════════════════════════════════════
-  if (showCountdown) {
-    return (
-      <AppLayout hideSidebar={true}>
-        <style>{confettiStyle}</style>
-        <div className="bg-slate-50 min-h-full flex items-center justify-center p-6">
-          <div className="max-w-md w-full rounded-2xl shadow-lg overflow-hidden">
-            <div className="bg-slate-900 text-white p-10 text-center rounded-2xl">
-              <div className="text-7xl font-medium tabular-nums tracking-tight">{countdown}</div>
-              <p className="text-lg font-medium text-slate-300 mt-4">Focus sessie start over</p>
-              <p className="text-sm text-slate-500 mt-1">{currentTask?.title || taskTitle}</p>
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
+  /** Parkeerbalk alleen tijdens actieve focus (timer) of tijd-voorbij-flow, niet vóór Start. */
+  const showParkBarInFocus = timerActive || showTimeUpPrompt;
 
   // ═══════════════════════════════════════════════
   // ─── NO TASK ──────────────────────────────────
@@ -595,22 +632,22 @@ function FocusContent() {
               <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 shadow-sm">
                 <span className="text-xl">🎯</span>
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-800">Geen focus taak</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
+                Klaar voor de volgende stap?
+              </h1>
               <p className="mt-2 max-w-sm text-sm text-slate-500">
-                Stel je prioriteiten in via de dagstart of kies een taak uit je takenlijst.
+                Kies een taak via Taken om te beginnen.
               </p>
             </header>
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="space-y-4 text-center">
-                <h2 className="text-lg font-bold text-slate-900">Hoe wil je verder?</h2>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
-                  <a href="/dagstart" className="inline-flex items-center justify-center py-3 px-6 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors">
-                    Start dagstart
-                  </a>
-                  <a href="/todo" className="inline-flex items-center justify-center py-3 px-6 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors">
-                    Bekijk takenlijst
-                  </a>
-                </div>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/todo')}
+                  className="inline-flex w-full items-center justify-center py-3 px-6 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors sm:w-auto sm:min-w-[200px]"
+                >
+                  Ga naar Taken
+                </button>
               </div>
             </div>
           </main>
@@ -625,127 +662,236 @@ function FocusContent() {
   // ═══════════════════════════════════════════════
   return (
     <AppLayout hideSidebar={true}>
-      <style>{confettiStyle}</style>
-      {confettiOverlay}
       <DopamineAirlock isActive={isAirlockActive} onAirlockComplete={handleAirlockComplete} />
-      <BackToDashboardButton />
 
-      <div className="bg-slate-50 min-h-full px-4 py-4 sm:py-6 flex flex-col items-center pb-24">
-        {/* ── The Card ── */}
-        <div className="max-w-md w-full rounded-2xl shadow-lg overflow-hidden mt-6 sm:mt-8">
-          {/* Dark Header */}
-          <div className="bg-slate-900 text-white p-5 text-center sm:p-6">
-            <p className="text-xs uppercase tracking-widest text-slate-400 font-semibold">
-              {priorityLabel}
-            </p>
-            <h1 className="text-2xl font-bold mt-2 truncate px-2">
-              {currentTask.title}
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              {taskMins != null && taskMins > 0 ? `${taskMins} min` : ''}
-              {taskMins != null && taskMins > 0 ? ' \u00B7 ' : ''}
-              {energyLabel}
-            </p>
-
-            {showTimerInHeader && (
-              <div className="mt-4">
-                <div className="text-5xl font-medium tabular-nums tracking-tight leading-none">
-                  {formatTime(timeLeft)}
-                </div>
-                {isPaused && (
-                  <p className="text-xs text-amber-400 mt-2 uppercase tracking-wide font-semibold">Gepauzeerd</p>
-                )}
-              </div>
-            )}
-
-            {preTimerState && (
-              <div className="mt-4 text-sm text-slate-400">
-                🕒 {duration} min
-              </div>
+      <div className="flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#0f172a] text-white">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-[430px] flex-col">
+          <div className="flex shrink-0 items-center justify-between px-5 pt-[max(8px,env(safe-area-inset-top))] pb-2">
+            <SluitenButton />
+            {isPaused ? (
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">
+                Gepauzeerd
+              </span>
+            ) : (
+              <span className="w-16" aria-hidden />
             )}
           </div>
 
-          {/* White Body: Microsteps */}
-          {microStepsSection}
-        </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] px-4 pb-4 pt-0 sm:px-6">
+          <div className="mx-auto w-full max-w-md text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
+              Nu aan zet
+            </p>
+            <h1 className="mt-2.5 text-[23px] font-bold leading-tight tracking-tight text-white">
+              {currentTask.title}
+            </h1>
+            <p className="mt-1 text-sm text-[#64748B]">{energyLabel}</p>
+          </div>
 
-        {/* ── Action Buttons (below card) ── */}
-        <div className="max-w-md w-full mt-4 flex flex-col gap-2">
-          {!showTimeUpPrompt ? (
+          <div className="relative mx-auto my-8 h-[210px] w-[210px] shrink-0">
+            <svg className="h-[210px] w-[210px]" viewBox="0 0 210 210" aria-hidden>
+              <circle
+                cx="105"
+                cy="105"
+                r={RING_R}
+                fill="none"
+                stroke="rgba(255,255,255,0.06)"
+                strokeWidth="10"
+              />
+              <circle
+                cx="105"
+                cy="105"
+                r={RING_R}
+                fill="none"
+                stroke="#22c55e"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={RING_C}
+                strokeDashoffset={ringDashOffset}
+                transform="rotate(-90 105 105)"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-[46px] font-bold leading-none tabular-nums tracking-tight text-white">
+                {showTimerInHeader && !showTimeUpPrompt
+                  ? formatTime(timeLeft)
+                  : formatTime(duration * 60)}
+              </div>
+              <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#94A3B8]">
+                van {duration} minuten
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-md flex-1">{microStepsSection}</div>
+
+          {!showTimeUpPrompt && !timerActive ? (
             <button
               type="button"
-              onClick={handleNuNietPark}
+              onClick={() => void handleNuNietPark()}
               disabled={nuNietBusy}
-              className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors disabled:opacity-40"
+              className="mx-auto mt-2 block text-center text-[11px] text-[#64748B] transition hover:text-[#94A3B8] disabled:opacity-40"
             >
               {nuNietBusy ? '…' : 'Nu niet'}
             </button>
           ) : null}
 
-          {showTimeUpPrompt ? (
-            <>
-              <p className="text-center text-slate-500 text-sm mb-1 italic">&ldquo;{timeUpQuote}&rdquo;</p>
-              <button onClick={completeCurrentTask}
-                className="w-full py-2 rounded-xl border-2 border-emerald-200 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors">
-                Ja, taak voltooid
-              </button>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {[5, 10, 15, 25].map((m) => (
-                  <button key={m} onClick={() => setExtendMinutes(m)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                      extendMinutes === m ? 'bg-slate-100 border-slate-300 text-slate-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}>+{m} min</button>
-                ))}
-              </div>
-              <button
-                onClick={() => {
-                  const extra = Math.max(1, Math.min(480, extendMinutes || 10));
-                  setShowTimeUpPrompt(false);
-                  setCompleted(false);
-                  setIsPaused(false);
-                  setIsRunning(true);
-                  setDuration(prev => prev + extra);
-                  setTimeLeft(extra * 60);
-                  endAtRef.current = Date.now() + (extra * 60 * 1000);
-                  track('ignite_extend_after_timeup', { taskTitle, duration, extra });
-                  toast(`Top, nog ${extra} minuten!`);
-                }}
-                className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                Nee, verlengen met {extendMinutes} min
-              </button>
-            </>
-          ) : timerActive ? (
-            <>
-              <button onClick={pauseSession}
-                className={`w-full py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
-                  isPaused ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-amber-200 text-amber-700 hover:bg-amber-50'
-                }`}>
-                {isPaused ? 'Hervatten' : 'Pauzeren'}
-              </button>
-              <button onClick={completeCurrentTask}
-                className="w-full py-2 rounded-xl border-2 border-emerald-200 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors">
-                Taak afgerond
-              </button>
-              {showExtendButton && (
-                <button onClick={extendSession}
-                  className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                  +5 Minuten
+          <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-2">
+            {showTimeUpPrompt ? (
+              <>
+                <p className="mb-1 text-center text-sm italic text-[#94A3B8]">
+                  &ldquo;{timeUpQuote}&rdquo;
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void completeCurrentTask()}
+                  className="w-full rounded-xl border-2 border-emerald-500/40 py-2.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/10"
+                >
+                  Ja, taak voltooid
                 </button>
-              )}
-              <button onClick={stopSession}
-                className="w-full py-2 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-500 hover:bg-slate-50 transition-colors">
-                Stoppen
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {[5, 10, 15, 25].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setExtendMinutes(m)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        extendMinutes === m
+                          ? 'border-white/20 bg-white/10 text-white'
+                          : 'border-white/10 text-[#94A3B8] hover:bg-white/5'
+                      }`}
+                    >
+                      +{m} min
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const extra = Math.max(1, Math.min(480, extendMinutes || 10));
+                    setShowTimeUpPrompt(false);
+                    setCompleted(false);
+                    setIsPaused(false);
+                    setIsRunning(true);
+                    setDuration((prev) => prev + extra);
+                    setTimeLeft(extra * 60);
+                    endAtRef.current = Date.now() + extra * 60 * 1000;
+                    track('ignite_extend_after_timeup', { taskTitle, duration, extra });
+                    toast(`Top, nog ${extra} minuten!`);
+                  }}
+                  className="w-full rounded-xl border-2 border-white/10 py-2.5 text-sm font-semibold text-[#cbd5e1] transition hover:bg-white/5"
+                >
+                  Nee, verlengen met {extendMinutes} min
+                </button>
+              </>
+            ) : timerActive ? (
+              <div className="flex w-full flex-col items-center gap-0">
+                <button
+                  type="button"
+                  onClick={pauseSession}
+                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
+                >
+                  {isPaused ? (
+                    <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  ) : (
+                    <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  )}
+                  {isPaused ? 'Hervatten' : 'Pauzeer'}
+                </button>
+                <button
+                  type="button"
+                  onClick={extendSession}
+                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
+                >
+                  <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  5 minuten toevoegen
+                </button>
+                <button
+                  type="button"
+                  onClick={handleVoltooienClick}
+                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
+                >
+                  <CheckIcon className="h-4 w-4 shrink-0" aria-hidden />
+                  Voltooien
+                </button>
+                <button
+                  type="button"
+                  onClick={stopSession}
+                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
+                >
+                  <svg
+                    className="h-4 w-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <rect x="7" y="7" width="10" height="10" rx="1.5" />
+                  </svg>
+                  Stoppen
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={startSession}
+                className="w-full rounded-xl bg-[#22c55e] py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] transition hover:bg-[#16a34a]"
+              >
+                Start focus sessie
               </button>
-            </>
-          ) : (
-            <button onClick={startSession}
-              className="w-full py-2 rounded-xl bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800 transition-colors">
-              Start Focus Sessie
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
-        {parkThoughtBar}
+          {showParkBarInFocus ? (
+            <div
+              className="flex shrink-0 flex-col border-t border-white/10 bg-[#1a1d24]"
+              style={{
+                paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))',
+              }}
+            >
+              <div className="flex items-center gap-3 px-4 py-3">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const input = e.currentTarget.querySelector('input') as HTMLInputElement;
+                    if (input && input.value.trim()) {
+                      handleParkThought(input.value.trim());
+                      input.value = '';
+                    }
+                  }}
+                  className="min-w-0 flex-1"
+                >
+                  <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3">
+                    <SparklesIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" aria-hidden />
+                    <input
+                      name="park-thought"
+                      type="text"
+                      placeholder="Parkeer een gedachte…"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-[#e2e8f0] placeholder:text-white/40 focus:outline-none"
+                    />
+                  </div>
+                </form>
+                <button
+                  type="button"
+                  onClick={() => void completeCurrentTask()}
+                  className="flex shrink-0 items-center gap-2 rounded-xl bg-green-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+                >
+                  <CheckIcon className="h-4 w-4 shrink-0 text-white" aria-hidden />
+                  Klaar
+                </button>
+              </div>
+              {user?.id && parkedCount > 0 ? (
+                <span className="sr-only">
+                  {parkedCount} van 10 gedachten geparkeerd
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </AppLayout>
   );
@@ -754,7 +900,7 @@ function FocusContent() {
 export default function FocusPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
         <span className="text-slate-400 animate-pulse">Laden...</span>
       </div>
     }>

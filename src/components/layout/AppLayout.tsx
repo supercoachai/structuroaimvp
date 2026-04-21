@@ -1,12 +1,15 @@
 "use client";
 
 import { ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { useSidebar } from '../../contexts/SidebarContext';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
-import Sidebar from '../Sidebar';
+import {
+  ArrowRightOnRectangleIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 import { ToastHost } from '../Toast';
+import BottomTabNav from '../navigation/BottomTabNav';
+import TodoParkThoughtBar from '@/components/TodoParkThoughtBar';
 import { performClientLogout } from '@/lib/logoutClient';
 import {
   STRUCTURO_DAGSTART_COOKIE,
@@ -19,7 +22,6 @@ import {
   clearFirstDagstartAfterOnboarding,
 } from '@/lib/firstDagstartSession';
 
-/** Blijft bestaan over AppLayout-remounts heen (elke pagina heeft eigen AppLayout-instance). */
 let appLayoutPreviousPathname: string | null = null;
 
 function isDagstartDoneToday(): boolean {
@@ -40,16 +42,12 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
-  const { collapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
-  const isMobile = useMediaQuery('(max-width: 768px)');
   const router = useRouter();
   const pathname = usePathname();
 
   const [dagstartDone, setDagstartDone] = useState(false);
-  /** Eerste dagstart na onboarding: geen sidebar op /dagstart (alleen content + uitloggen). */
   const [minimalFirstDagstart, setMinimalFirstDagstart] = useState(false);
 
-  /** Eerste-dagstart-vlag wissen zodra je /dagstart verlaat (focus, taken, …). */
   useEffect(() => {
     const prev = appLayoutPreviousPathname;
     if (prev === '/dagstart' && pathname !== '/dagstart') {
@@ -97,98 +95,94 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     };
   }, []);
 
-  const shouldHideSidebar =
-    hideSidebar || !dagstartDone || (pathname === '/dagstart' && minimalFirstDagstart);
+  /** Focus: fullscreen donker scherm; geen tab-balk (doctrine). */
+  const isFocusRoute = (pathname ?? '').startsWith('/focus');
+
+  const shouldHideChrome =
+    hideSidebar ||
+    !dagstartDone ||
+    (pathname === '/dagstart' && minimalFirstDagstart) ||
+    isFocusRoute;
 
   const handleLogout = async () => {
-    setMobileOpen(false);
     await performClientLogout(router);
   };
 
-  if (shouldHideSidebar) {
+  if (shouldHideChrome) {
     return (
-      <div className="w-full h-[100dvh] flex flex-col overflow-hidden">
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div
+        className={`box-border flex h-[100dvh] w-full flex-col overflow-hidden pb-[var(--keyboard-inset-bottom)] ${isFocusRoute ? 'bg-[var(--structuro-dark)]' : 'bg-[var(--structuro-bg)]'}`}
+      >
+        <main
+          className={
+            isFocusRoute
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+              : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar"
+          }
+        >
           {children}
         </main>
         <ToastHost />
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="fixed bottom-5 right-5 z-50 p-2.5 rounded-xl bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 transition-colors shadow-lg"
-          title="Uitloggen"
-          aria-label="Uitloggen"
-        >
-          <ArrowRightOnRectangleIcon className="w-5 h-5" />
-        </button>
+        {!isFocusRoute ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="fixed right-5 z-50 rounded-xl bg-[var(--structuro-dark)] p-2.5 text-[var(--structuro-dark-sub)] shadow-lg transition-colors hover:bg-slate-800 hover:text-white bottom-[max(1.25rem,calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)))]"
+            title="Uitloggen"
+            aria-label="Uitloggen"
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          </button>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="flex h-[100dvh] w-full bg-gray-50 overflow-hidden">
-      {/* Sidebar: op mobiel als overlay, anders normaal */}
-      <div
-        className={isMobile ? 'fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-out' : 'relative z-10 flex-shrink-0'}
-        style={isMobile ? {
-          width: 'min(280px, 85vw)',
-          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-          boxShadow: mobileOpen ? '4px 0 24px rgba(0,0,0,0.15)' : 'none',
-        } : undefined}
-      >
-        <Sidebar collapsed={isMobile ? false : collapsed} onNavigate={isMobile ? () => setMobileOpen(false) : undefined} />
-      </div>
-
-      {/* Backdrop op mobiel wanneer menu open */}
-      {isMobile && mobileOpen && (
-        <button
-          type="button"
-          aria-label="Menu sluiten"
-          onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-20 bg-black/40 transition-opacity"
-        />
-      )}
-
-      {/* Menu-knop: hamburger op mobiel, pijl op desktop */}
-      <button
-        onClick={() => isMobile ? setMobileOpen(!mobileOpen) : toggleSidebar()}
-        className="fixed top-4 z-40 p-2.5 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow touch-manipulation"
-        style={{
-          left: isMobile ? 16 : collapsed ? '4.5rem' : '17rem',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'left',
-        }}
-        title={isMobile ? (mobileOpen ? 'Menu sluiten' : 'Menu openen') : (collapsed ? 'Menu uitklappen' : 'Menu inklappen')}
-      >
-        {isMobile ? (
-          <span className="block w-5 h-4 flex flex-col justify-between">
-            <span className="block h-0.5 bg-gray-600 rounded-full" />
-            <span className="block h-0.5 bg-gray-600 rounded-full" />
-            <span className="block h-0.5 bg-gray-600 rounded-full" />
+    <div className="box-border flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--structuro-bg)] pb-[var(--keyboard-inset-bottom)]">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm">
+        <div className="flex min-w-0 items-center gap-2">
+          <img
+            src="/Logo Structuro.png"
+            alt=""
+            className="h-9 w-9 shrink-0 object-contain"
+            width={36}
+            height={36}
+          />
+          <span className="truncate text-lg font-semibold tracking-tight text-[var(--structuro-text)]">
+            Structuro
           </span>
-        ) : (
-          <span className="text-gray-600 font-medium">{collapsed ? '→' : '←'}</span>
-        )}
-      </button>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/settings"
+            className="rounded-xl p-2.5 text-[var(--structuro-sub)] transition-colors hover:bg-[var(--structuro-border-soft)] hover:text-[var(--structuro-text)]"
+            aria-label="Instellingen"
+            title="Instellingen"
+          >
+            <Cog6ToothIcon className="h-6 w-6" />
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-xl p-2.5 text-[var(--structuro-sub)] transition-colors hover:bg-[var(--structuro-border-soft)] hover:text-[var(--structuro-text)]"
+            title="Uitloggen"
+            aria-label="Uitloggen"
+          >
+            <ArrowRightOnRectangleIcon className="h-6 w-6" />
+          </button>
+        </div>
+      </header>
 
-      <main
-        className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pt-14 sm:pt-0"
-      >
+      <main className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar">
         {children}
       </main>
 
-      <ToastHost />
+      {(pathname ?? '') === '/' ? <TodoParkThoughtBar /> : null}
 
-      {/* Uitloggen: klein icoon rechtsonder */}
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="fixed bottom-5 right-5 z-50 p-2.5 rounded-xl bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 transition-colors shadow-lg"
-        title="Uitloggen"
-        aria-label="Uitloggen"
-      >
-        <ArrowRightOnRectangleIcon className="w-5 h-5" />
-      </button>
+      <BottomTabNav />
+
+      <ToastHost />
     </div>
   );
 }

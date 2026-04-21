@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { VisualViewportBridge } from "@/components/VisualViewportBridge";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { TaskProvider } from "@/context/TaskContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
@@ -13,7 +14,7 @@ function FullscreenLoading() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         boxSizing: "border-box",
         display: "flex",
         alignItems: "center",
@@ -41,6 +42,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <>
+        <VisualViewportBridge />
         <GoogleAnalytics />
         <TaskProvider>
           <SidebarProvider>

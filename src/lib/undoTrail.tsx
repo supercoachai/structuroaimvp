@@ -105,7 +105,7 @@ export function UndoToast({
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 z-[10002] mx-auto max-w-sm rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg flex items-center justify-between gap-3"
+      className="fixed left-4 right-4 z-[10002] mx-auto max-w-sm rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg flex items-center justify-between gap-3 bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)+0.5rem))]"
     >
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-slate-900">{MESSAGES[action.type]}</p>

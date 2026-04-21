@@ -33,7 +33,7 @@ export default function LocalNamePrompt({ onComplete }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-8 overflow-y-auto">
+    <div className="flex min-h-[100dvh] flex-col justify-center overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-8 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
       <div
         className="max-w-md w-full rounded-3xl shadow-2xl p-8 sm:p-10 border border-gray-100/90"
         style={{

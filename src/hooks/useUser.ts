@@ -26,7 +26,12 @@ export function useUser(): { user: User | null; loading: boolean } {
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("auth_timeout")), AUTH_TIMEOUT_MS)
         );
-        const userPromise = supabase.auth.getUser().then(({ data: { user: u } }) => u ?? null);
+        const userPromise = supabase.auth
+          .getUser()
+          .then(({ data: { user: u } }) => u ?? null, (err: unknown) => {
+            console.warn("useUser: getUser afgewezen", err);
+            return null;
+          });
         const u = await Promise.race([userPromise, timeoutPromise]);
         done(u);
       } catch (err) {
