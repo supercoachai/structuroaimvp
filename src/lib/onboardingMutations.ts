@@ -2,6 +2,46 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { ONBOARDING_VERSION_CURRENT } from "@/lib/onboardingVersion";
+import type { User } from "@supabase/supabase-js";
+
+/**
+ * Afronden intro: onboarding-vlag, versie, en weergavenaam (fallback: Gebruiker).
+ * upsert zodat ontbrekende profile-rij niet blokkeert.
+ */
+export async function completeOnboardingProfile(
+  user: User,
+  displayName: string
+): Promise<{ error: string | null }> {
+  const clean = (displayName.trim() || "Gebruiker").slice(0, 200);
+  try {
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        onboarding_completed: true,
+        onboarding_version: ONBOARDING_VERSION_CURRENT,
+        display_name: clean,
+        preferred_name: clean,
+        ...(user.email ? { email: user.email } : {}),
+      },
+      { onConflict: "id" }
+    );
+    if (error) {
+      return { error: error.message };
+    }
+    await supabase.auth.updateUser({ data: { full_name: clean } });
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("structuro_user_name", clean);
+      }
+    } catch {
+      /* ignore */
+    }
+    return { error: null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Onbekende fout" };
+  }
+}
 
 export async function setProfileOnboardingCompleted(
   completed: boolean

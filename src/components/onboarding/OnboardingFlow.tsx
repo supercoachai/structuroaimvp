@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
-import { setProfileOnboardingCompleted } from "@/lib/onboardingMutations";
+import { completeOnboardingProfile } from "@/lib/onboardingMutations";
 import {
   isLocalOnboardingCompleted,
   setLocalOnboardingCompleted,
@@ -769,45 +769,46 @@ export default function OnboardingFlow() {
   };
 
   const finish = async () => {
-    if (!firstDayReady) {
-      alert(
-        "Vul op de vorige stap je energie in, je eerste taak, hoeveel minuten je nodig hebt, en of je microstappen wilt (bij ja minstens één stap)."
-      );
-      return;
-    }
+    const displayName =
+      firstName.trim().length >= 2 ? firstName.trim().slice(0, 200) : "Gebruiker";
     setFinishing(true);
     try {
-      try {
-        await persistFirstDayTaskAndEnergy();
-      } catch (e) {
-        console.error("Eerste taak opslaan mislukt:", e);
-        alert("Je eerste taak kon niet worden opgeslagen. Probeer het opnieuw of voeg een taak toe in Taken.");
+      if (firstDayReady) {
+        try {
+          await persistFirstDayTaskAndEnergy();
+        } catch (e) {
+          console.error("Eerste taak opslaan mislukt:", e);
+        }
       }
       if (user?.id) {
-        const { error } = await setProfileOnboardingCompleted(true);
-        if (error) {
-          const dbHint = error.includes("onboarding_completed") || error.includes("onboarding_version")
-            ? " Voer in Supabase migration_onboarding_completed.sql en migration_onboarding_version.sql uit (kolommen op profiles)."
-            : "";
-          alert(`Kon intro niet afronden: ${error}.${dbHint}`);
-          setFinishing(false);
-          return;
+        try {
+          const { error } = await completeOnboardingProfile(user, displayName);
+          if (error) console.error("Onboarding finish error:", error);
+        } catch (e) {
+          console.error("Onboarding finish error:", e);
         }
       } else {
         setLocalOnboardingCompleted();
         setLocalOnboardingDoneCookieOnClient();
         clearLocalSessionFresh();
+        try {
+          window.localStorage.setItem("structuro_user_name", displayName);
+        } catch {
+          /* ignore */
+        }
       }
       setDagstartCookieOnClient();
-      if (user?.id && firstDayEnergy) {
+      if (user?.id && firstDayReady && firstDayEnergy) {
         try {
           await updateProfileAfterDagstartComplete(user.id, firstDayEnergy);
         } catch (e) {
           console.warn("Profiel dagstart na onboarding niet gezet:", e);
         }
       }
-      window.location.assign("/");
-    } catch { setFinishing(false); }
+    } catch (e) {
+      console.error("Onboarding finish error:", e);
+    }
+    window.location.assign("/");
   };
 
   if (!isLocalMode && userLoading) {
