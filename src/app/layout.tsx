@@ -30,13 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl">
-      <body
-        className={`${dmSans.className} min-h-[100dvh] antialiased bg-gray-100 text-[var(--structuro-text)]`}
-      >
-        <div className="flex min-h-[100dvh] w-full items-stretch justify-center">
-          <div className="relative flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-[var(--structuro-bg)] shadow-xl">
-            <AppProviders>{children}</AppProviders>
-          </div>
+      <body className={`${dmSans.className} min-h-[100dvh] antialiased`}>
+        <div className="relative flex min-h-[100dvh] w-full flex-col bg-[var(--structuro-bg)]">
+          <AppProviders>{children}</AppProviders>
         </div>
       </body>
     </html>

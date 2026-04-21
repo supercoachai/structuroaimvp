@@ -51,20 +51,26 @@
   --color-foreground: var(--foreground);
 }
 
-html, body {
-  height: 100%;
+/*
+ * Geen height: 100% op html/body: dat breekt min-h-full / %-hoogtes in flex-kinderen (lege schermen).
+ * min-height: 100dvh geeft wel een betrouwbare viewport als basis.
+ */
+html {
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
 }
 
 /*
  * App is light-first. Geen OS-dark flip: die maakte body donker terwijl schermen bg-white gebruiken.
- * Geen font-family hier: die komt van next/font (Inter) op <body className> — Arial overschreef dat en
- * gaf inconsistente typografie.
+ * Geen font-family hier: die komt van next/font op <body className>.
  */
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--structuro-bg);
+  color: var(--structuro-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

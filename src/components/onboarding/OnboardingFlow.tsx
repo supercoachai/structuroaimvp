@@ -35,7 +35,7 @@ import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks";
 
-const STEP_COUNT = 9;
+const STEP_COUNT = 10;
 /** Horizontale slide tussen stappen (bewust rustig). */
 const SLIDE_MS = 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
@@ -1628,7 +1628,78 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 9 — Klaar (aankomst-moment, geen herhaling van uitleg) ── */}
+            {/* ── 9 — Dagafsluiting (uitleg) ── */}
+            <section
+              data-ob-slide
+              className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"
+            >
+              <div className="flex min-h-full w-full flex-col justify-center bg-gradient-to-b from-slate-50/80 via-white to-slate-50/60 px-4 py-8 md:px-6 md:py-10">
+                <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
+                  <div className="flex flex-col items-center space-y-6 text-center">
+                    <div className="text-5xl leading-none" aria-hidden>
+                      {"\u{1F319}"}
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                        Sluit je dag rustig af
+                      </h2>
+                      <p className="text-base text-gray-500">Elke dag eindigt met drie vragen.</p>
+                    </div>
+
+                    <div className="flex w-full flex-col gap-3 text-left">
+                      {(
+                        [
+                          {
+                            emoji: "\u2705",
+                            title: "Wat is af vandaag?",
+                            sub: "Erken wat je hebt gedaan",
+                          },
+                          {
+                            emoji: "\u{1F4C5}",
+                            title: "Wat wil je nog niet vergeten?",
+                            sub: "Komt morgen als suggestie terug",
+                          },
+                          {
+                            emoji: "\u2B50",
+                            title: "Hoe voldaan ben je na vandaag?",
+                            sub: "Geen oordeel, gewoon voelen",
+                          },
+                        ] as const
+                      ).map((row) => (
+                        <div
+                          key={row.title}
+                          className="flex items-center gap-4 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm"
+                        >
+                          <span className="shrink-0 text-2xl leading-none" aria-hidden>
+                            {row.emoji}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{row.title}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">{row.sub}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="w-full rounded-2xl bg-blue-50 px-5 py-4">
+                      <p className="text-center text-sm text-blue-700">
+                        Je vindt de dagafsluiting altijd via &quot;Afsluiten&quot; onderaan.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void goNext()}
+                      className="w-full max-w-md rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.98]"
+                    >
+                      Volgende
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 10 — Klaar (aankomst-moment, geen herhaling van uitleg) ── */}
             <section
               data-ob-slide
               className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"
