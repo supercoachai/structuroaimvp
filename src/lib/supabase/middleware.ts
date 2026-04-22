@@ -40,7 +40,9 @@ export async function updateSession(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.json"
   ) {
     return NextResponse.next({ request });
   }
@@ -294,7 +296,9 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/auth")
+    pathname.startsWith("/api/auth") ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.json"
   ) {
     return NextResponse.next({ request });
   }
