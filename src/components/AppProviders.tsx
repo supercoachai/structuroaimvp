@@ -10,6 +10,8 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { TaskProvider } from "@/context/TaskContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { trackSessionAbandoned } from "@/utils/events";
+import { AnalyticsInternalBridge } from "@/components/AnalyticsInternalBridge";
+import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
 /** Zichtbare fallback zonder Tailwind — voorkomt ‘wit scherm’ bij trage chunks of Suspense. */
 function FullscreenLoading() {
@@ -73,6 +75,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ErrorBoundary>
       <>
         <RemoveLegacyFocusDurationKey />
+        <AnalyticsInternalBridge />
         <Suspense fallback={null}>
           <GaSessionAbandonListener />
         </Suspense>
@@ -83,8 +86,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>
           </SidebarProvider>
         </TaskProvider>
-        <Analytics />
-        <SpeedInsights />
+        <Analytics
+          beforeSend={(event) =>
+            shouldSendProductAnalytics() ? event : null
+          }
+        />
+        <SpeedInsights
+          beforeSend={(event) =>
+            shouldSendProductAnalytics() ? event : null
+          }
+        />
       </>
     </ErrorBoundary>
   );

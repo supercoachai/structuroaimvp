@@ -9,6 +9,8 @@ const GA_MEASUREMENT_ID =
 /**
  * GA4 zonder toestemmingsbanner: meet zodra de tag laadt (standaard gtag-snippet).
  * IP-anonimisering is in GA4 standaard aan.
+ * Automatische page_view gaat voor alle bezoekers mee; custom events worden in code gefilterd
+ * (zie analyticsInternal). Voor teamverkeer: GA4 intern verkeer / IP-filter aanvullen.
  */
 export function GoogleAnalytics() {
   if (!GA_MEASUREMENT_ID) return null;
