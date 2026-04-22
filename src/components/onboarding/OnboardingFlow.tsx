@@ -38,6 +38,7 @@ import { microStepId, type MicroStep } from "@/lib/microSteps";
 import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks";
+import { toast } from "@/components/Toast";
 
 const STEP_COUNT = 10;
 /** Horizontale slide tussen stappen (bewust rustig). */
@@ -667,7 +668,15 @@ export default function OnboardingFlow() {
       if (name.length < 2) return;
       if (user?.id) {
         setSaving(true);
-        try { await persistPreferredDisplayName(user, name); } finally { setSaving(false); }
+        try {
+          const { error } = await persistPreferredDisplayName(user, name);
+          if (error) {
+            toast(`Kon naam niet opslaan: ${error}`);
+            return;
+          }
+        } finally {
+          setSaving(false);
+        }
       } else {
         try { window.localStorage.setItem("structuro_user_name", name); } catch { /* ignore */ }
       }

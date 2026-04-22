@@ -18,6 +18,7 @@ import { useCheckIn } from '../hooks/useCheckIn';
 import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
+import { persistPreferredDisplayName } from '@/lib/accountDisplayName';
 export default function HomeCalm() {
   const router = useRouter();
   const { tasks, loading } = useTaskContext();
@@ -119,30 +120,33 @@ export default function HomeCalm() {
 
   const handleSaveName = async () => {
     if (!newName.trim()) return;
-    
+
     try {
       const trimmed = newName.trim();
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      // Sla naam op in localStorage
-      if (typeof window !== 'undefined') localStorage.setItem('structuro_user_name', trimmed);
+      if (user?.id) {
+        const { error } = await persistPreferredDisplayName(user, trimmed);
+        if (error) {
+          toast(`Kon naam niet opslaan: ${error}`);
+          return;
+        }
+      } else if (typeof window !== 'undefined') {
+        localStorage.setItem('structuro_user_name', trimmed);
+      }
 
-      // UI direct bijwerken
       const first = getFirstName(trimmed);
       if (first) setUserName(first);
       setShowNamePrompt(false);
       setNewName('');
-
-      // Schrijf ook naar Supabase auth metadata zodat het blijft werken over meerdere logins/devices.
-      // Best-effort: als dit faalt, werkt localStorage nog steeds.
-      try {
-        const supabase = createClient();
-        await supabase.auth.updateUser({ data: { full_name: trimmed } });
-      } catch {
-        // ignore
-      }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Unexpected error saving name:', error);
-      alert(`Onverwachte fout: ${error?.message || 'Onbekende fout'}`);
+      toast(
+        `Onverwachte fout: ${error instanceof Error ? error.message : 'Onbekende fout'}`
+      );
     }
   };
 

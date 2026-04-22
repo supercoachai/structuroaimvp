@@ -15,6 +15,10 @@ import {
 } from '@/lib/onboardingProfile';
 import { clearLocalOnboardingDoneCookieOnClient, hasStructuroLocalModeCookieOnClient } from '@/lib/localOnboardingCookie';
 import { performClientLogout } from '@/lib/logoutClient';
+import {
+  clearPreferredDisplayName,
+  persistPreferredDisplayName,
+} from '@/lib/accountDisplayName';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -26,29 +30,55 @@ export default function SettingsPage() {
   const [isProtectedAccount, setIsProtectedAccount] = useState<boolean | null>(null);
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
+  const [nameSaveBusy, setNameSaveBusy] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(NAME_KEY);
-      if (stored) {
-        setNameInput(stored);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const checkProtected = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (cancelled) return;
         setHasSupabaseSession(Boolean(user?.id));
         setIsProtectedAccount(isProtectedTestAccount(user?.email ?? null));
+
+        if (user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, preferred_name')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (cancelled) return;
+          const fromProfile =
+            (typeof profile?.display_name === 'string' && profile.display_name.trim()) ||
+            (typeof profile?.preferred_name === 'string' && profile.preferred_name.trim()) ||
+            '';
+          const fromStorage =
+            typeof window !== 'undefined'
+              ? localStorage.getItem(NAME_KEY)?.trim() || ''
+              : '';
+          const m = user.user_metadata as Record<string, unknown> | undefined;
+          const metaRaw = m?.full_name ?? m?.fullName;
+          const fromMeta = typeof metaRaw === 'string' ? metaRaw.trim() : '';
+          setNameInput(fromProfile || fromStorage || fromMeta);
+        } else if (typeof window !== 'undefined') {
+          setNameInput(localStorage.getItem(NAME_KEY) || '');
+        }
       } catch {
-        setIsProtectedAccount(false);
-        setHasSupabaseSession(false);
+        if (!cancelled) {
+          setHasSupabaseSession(false);
+          setIsProtectedAccount(false);
+          if (typeof window !== 'undefined') {
+            setNameInput(localStorage.getItem(NAME_KEY) || '');
+          }
+        }
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    void checkProtected();
   }, []);
 
   const handleReplayIntro = async () => {
@@ -68,16 +98,42 @@ export default function SettingsPage() {
     window.location.assign(`${window.location.origin}/onboarding`);
   };
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     const value = nameInput.trim();
-    if (typeof window !== 'undefined') {
-      if (value) {
-        localStorage.setItem(NAME_KEY, value);
-        toast('Aanspreeknaam opgeslagen');
-      } else {
-        localStorage.removeItem(NAME_KEY);
-        toast('Aanspreeknaam verwijderd');
+    setNameSaveBusy(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.id) {
+        if (value) {
+          const { error } = await persistPreferredDisplayName(user, value);
+          if (error) {
+            toast(`Kon niet opslaan: ${error}`);
+            return;
+          }
+          toast('Aanspreeknaam opgeslagen');
+        } else {
+          const { error } = await clearPreferredDisplayName(user);
+          if (error) {
+            toast(`Kon niet wissen: ${error}`);
+            return;
+          }
+          toast('Aanspreeknaam verwijderd');
+        }
+      } else if (typeof window !== 'undefined') {
+        if (value) {
+          localStorage.setItem(NAME_KEY, value);
+          toast('Aanspreeknaam opgeslagen');
+        } else {
+          localStorage.removeItem(NAME_KEY);
+          toast('Aanspreeknaam verwijderd');
+        }
       }
+    } finally {
+      setNameSaveBusy(false);
     }
   };
 
@@ -171,16 +227,19 @@ export default function SettingsPage() {
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleSaveName();
+                }}
                 placeholder="Bijvoorbeeld je voornaam"
-                className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-300"
+                className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-300"
               />
               <button
                 type="button"
-                onClick={handleSaveName}
-                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+                onClick={() => void handleSaveName()}
+                disabled={nameSaveBusy}
+                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Opslaan
+                {nameSaveBusy ? 'Bezig…' : 'Opslaan'}
               </button>
             </div>
 
