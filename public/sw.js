@@ -1,22 +1,28 @@
 /* eslint-disable no-restricted-globals */
 self.addEventListener("push", function (event) {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = {};
-  }
+  event.waitUntil(
+    (async function () {
+      let data = {};
+      try {
+        if (event.data) {
+          data = await event.data.json();
+        }
+      } catch {
+        data = {};
+      }
 
-  const title = data.title || "Structuro";
-  const options = {
-    body: data.body || "Je hebt een melding",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
-    data: { url: data.url || "/shutdown" },
-    requireInteraction: false,
-  };
+      const title = data.title || "Structuro";
+      const options = {
+        body: data.body || "Je hebt een melding",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: { url: data.url || "/shutdown" },
+        requireInteraction: false,
+      };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+      await self.registration.showNotification(title, options);
+    })()
+  );
 });
 
 self.addEventListener("notificationclick", function (event) {
