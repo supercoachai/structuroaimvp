@@ -56,7 +56,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${dmSans.className} min-h-[100dvh] antialiased`}>
-        <div className="relative flex min-h-[100dvh] w-full flex-col bg-[var(--structuro-bg)]">
+        <div className="relative flex min-h-[100dvh] w-full min-w-0 max-w-[100vw] flex-col overflow-x-hidden bg-[var(--structuro-bg)]">
           <AppProviders>{children}</AppProviders>
         </div>
       </body>
