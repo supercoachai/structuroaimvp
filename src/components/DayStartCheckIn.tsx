@@ -9,6 +9,7 @@ import {
   trackEnergyChecked,
   trackTaskSelected,
 } from '@/utils/events';
+import { registerPushSubscription } from '@/utils/pushNotifications';
 import { useCheckIn } from '../hooks/useCheckIn';
 import { markOnboardingCompleted } from '@/lib/onboardingProfile';
 import { checkVoorzorgsmodus, resolveVoorzorgsmodus, type EnergyLevel, type VoorzorgsmodusOption } from '@/lib/voorzorgsmodus';
@@ -1349,6 +1350,14 @@ export default function DayStartCheckIn({
 
       if (firstTimeOnboarding) {
         await markOnboardingCompleted();
+      }
+
+      if (authUser?.id) {
+        try {
+          await registerPushSubscription(authUser.id);
+        } catch (e) {
+          console.warn("Push registratie overgeslagen:", e);
+        }
       }
 
       onComplete();
