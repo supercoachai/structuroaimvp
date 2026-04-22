@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect, Suspense, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import {
   clearStructuroLocalModeCookie,
@@ -38,8 +38,9 @@ function emailAllowsLocalTestLogin(emailValue: string): boolean {
   return emailValue.trim().toLowerCase() === owner;
 }
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -48,6 +49,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [localDevHost, setLocalDevHost] = useState(false);
 
   useLayoutEffect(() => {
@@ -57,6 +59,16 @@ export default function LoginPage() {
       setLocalDevHost(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (searchParams?.get('herstel') === '1') {
+      setForgotPassword(true);
+      setIsSignUp(false);
+    }
+    if (searchParams?.get('wachtwoord') === 'bijgewerkt') {
+      setMessage('Je wachtwoord is bijgewerkt. Je kunt nu inloggen.');
+    }
+  }, [searchParams]);
 
   /** Productie: alleen zichtbaar na intypen van allowlisted email (protected testaccount of NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL). */
   const showLocalTest =
@@ -77,12 +89,52 @@ export default function LoginPage() {
     }
   };
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleResetEmail = async () => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setError('Kan geen verbinding maken met de server. Controleer je internetverbinding.');
+      return;
+    }
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError('Vul je e-mailadres in.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setMessage(null);
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const nextPath = '/auth/wachtwoord-instellen';
+      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+        trimmed,
+        { redirectTo }
+      );
+      if (resetErr) throw resetErr;
+      setMessage(
+        'Als dit adres bij ons bekend is, ontvang je zo een mail met een link. Check ook je spam.'
+      );
+      setForgotPassword(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Versturen mislukt.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    if (forgotPassword && !isSignUp) {
+      await handleResetEmail();
+      return;
+    }
+
+    setLoading(true);
     try {
       const supabase = getSupabase();
       if (!supabase) {
@@ -200,6 +252,7 @@ export default function LoginPage() {
               />
             </div>
 
+            {!forgotPassword || isSignUp ? (
             <div className="space-y-1">
               <label htmlFor="password" className="block text-sm font-normal text-gray-500">
                 Wachtwoord
@@ -211,10 +264,16 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 placeholder="••••••••"
-                required
+                required={!forgotPassword || isSignUp}
                 minLength={6}
+                disabled={forgotPassword && !isSignUp}
               />
             </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                We sturen een link naar je e-mailadres om een nieuw wachtwoord te kiezen.
+              </p>
+            )}
           </div>
 
           {error && (
@@ -234,9 +293,59 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Bezig...' : isSignUp ? 'Account aanmaken' : 'Inloggen'}
+            {loading
+              ? 'Bezig...'
+              : forgotPassword && !isSignUp
+                ? 'Stuur herstellink'
+                : isSignUp
+                  ? 'Account aanmaken'
+                  : 'Inloggen'}
           </button>
         </form>
+
+        {!isSignUp ? (
+          <div className="text-center">
+            {forgotPassword ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotPassword(false);
+                  setError(null);
+                }}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Terug naar inloggen
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotPassword(true);
+                  setError(null);
+                  setMessage(null);
+                }}
+                className="text-sm text-gray-600 hover:text-gray-900 hover:underline"
+              >
+                Wachtwoord vergeten?
+              </button>
+            )}
+          </div>
+        ) : null}
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp((v) => !v);
+              setForgotPassword(false);
+              setError(null);
+              setMessage(null);
+            }}
+            className="text-sm text-gray-500 hover:text-gray-800"
+          >
+            {isSignUp ? 'Heb je al een account? Inloggen' : 'Nog geen account? Registreren'}
+          </button>
+        </div>
 
         {showLocalTest && (
           <div className="border-t border-gray-200/80 pt-4 mt-0 space-y-3">
@@ -268,6 +377,20 @@ export default function LoginPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
+          Laden…
+        </div>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }
 

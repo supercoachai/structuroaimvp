@@ -167,7 +167,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (!onboardingCompleted) {
-    if (!pathname.startsWith("/onboarding")) {
+    const onPasswordRecovery =
+      pathname === "/auth/wachtwoord-instellen" ||
+      pathname.startsWith("/auth/wachtwoord-instellen/");
+    if (!pathname.startsWith("/onboarding") && !onPasswordRecovery) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
