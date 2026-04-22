@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { toast } from './Toast';
 import { track } from '../shared/track';
+import {
+  trackDagstartOpened,
+  trackEnergyChecked,
+  trackTaskSelected,
+} from '@/utils/events';
 import { useCheckIn } from '../hooks/useCheckIn';
 import { markOnboardingCompleted } from '@/lib/onboardingProfile';
 import { checkVoorzorgsmodus, resolveVoorzorgsmodus, type EnergyLevel, type VoorzorgsmodusOption } from '@/lib/voorzorgsmodus';
@@ -71,6 +76,7 @@ export default function DayStartCheckIn({
   const [dagafsluiterRows, setDagafsluiterRows] = useState<DagafsluiterSuggestionRow[]>([]);
   /** Na klik op herinnering: koppel nieuwe taak aan parked thought bij snel toevoegen. */
   const [pendingDagafsluiterThoughtId, setPendingDagafsluiterThoughtId] = useState<string | null>(null);
+  const dagstartGaOpenedRef = useRef(false);
 
   const quickAddResolvedMinutes = useMemo(() => {
     const t = quickAddCustomMinutesStr.trim();
@@ -108,6 +114,13 @@ export default function DayStartCheckIn({
       cancelled = true;
     };
   }, [authUser?.id]);
+
+  useEffect(() => {
+    if (dagstartGaOpenedRef.current) return;
+    dagstartGaOpenedRef.current = true;
+    trackDagstartOpened();
+  }, []);
+
   const [energyOnboardingHintHidden, setEnergyOnboardingHintHidden] = useState(false);
   const [voorzorgsmodusState, setVoorzorgsmodusState] = useState<ReturnType<typeof checkVoorzorgsmodus> | null>(null);
   const MAX_DAYSTART_SUGGESTIONS = 40;
@@ -737,6 +750,8 @@ export default function DayStartCheckIn({
         requestAnimationFrame(() => resolve());
       });
       await fetchTasks();
+
+      trackTaskSelected(slotNumber);
 
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
@@ -1438,6 +1453,13 @@ export default function DayStartCheckIn({
                     setEnergyLevel(level.value);
                     setEnergySelected(true);
                     setShowConfirmation(true);
+                    trackEnergyChecked(
+                      level.value === "low"
+                        ? "laag"
+                        : level.value === "high"
+                          ? "hoog"
+                          : "middel"
+                    );
 
                     const vzCheck = checkVoorzorgsmodus(tasks, level.value as EnergyLevel);
                     setVoorzorgsmodusState(vzCheck.shouldShow ? vzCheck : null);

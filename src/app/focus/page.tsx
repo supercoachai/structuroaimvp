@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../../components/layout/AppLayout';
 import { DopamineAirlock } from '@/components/DopamineAirlock';
 import { track } from '../../shared/track';
+import {
+  trackFocusAbandoned,
+  trackFocusCompleted,
+  trackFocusStarted,
+  trackTaskCompleted,
+} from '@/utils/events';
 import { toast } from '../../components/Toast';
 import { useTaskContext } from '../../context/TaskContext';
 import { useCheckIn } from '../../hooks/useCheckIn';
@@ -157,6 +163,7 @@ function FocusContent() {
           updateTask(currentTask.id, { started: true }).catch(console.error);
         }
         track('ignite_start', { taskTitle, duration, autoStart: true });
+        trackFocusStarted();
       }, 500);
       return () => clearTimeout(t);
     }
@@ -196,6 +203,7 @@ function FocusContent() {
         setShowTimeUpPrompt(true);
         setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now()));
         track("ignite_complete", { taskTitle, duration });
+        trackFocusCompleted(duration * 60);
       }
     };
     tick();
@@ -290,6 +298,9 @@ function FocusContent() {
   };
 
   const stopSession = () => {
+    if (isRunning || isPaused) {
+      trackFocusAbandoned(Math.max(0, duration * 60 - timeLeft));
+    }
     setIsRunning(false);
     setIsPaused(false);
     setTimeLeft(duration * 60);
@@ -357,6 +368,8 @@ function FocusContent() {
         microUndoTimerRef.current = null;
       }
       void updateTask(currentTask.id, { done: true, completedAt: new Date().toISOString(), started: false });
+      trackTaskCompleted();
+      trackFocusCompleted(Math.max(0, duration * 60 - timeLeft));
       track('task_completed_early', {
         taskId: currentTask.id,
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),

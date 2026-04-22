@@ -10,6 +10,7 @@ import { insertDagafsluiterSuggestions } from "@/lib/supabase/parkedThoughtsDb";
 import { postponeTasksToCalendarDay } from "@/lib/supabase/postponeTasksDb";
 import { useCheckIn } from "../hooks/useCheckIn";
 import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { trackShutdownCompleted } from "@/utils/events";
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -169,6 +170,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         completedCount: completedTasks.length,
         dagafsluiterSuggestionCount: suggestionItems.length,
       });
+      trackShutdownCompleted();
       onComplete();
     } catch (error: unknown) {
       const detail =

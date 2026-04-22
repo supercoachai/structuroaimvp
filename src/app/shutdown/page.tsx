@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import DayShutdown from "../../components/DayShutdown";
 import AppLayout from "../../components/layout/AppLayout";
 import { createClient } from "../../lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { trackShutdownStarted } from "@/utils/events";
 
 const FADE_MS = 280;
 
@@ -13,6 +14,7 @@ export default function ShutdownPage() {
   const [formExiting, setFormExiting] = useState(false);
   const [completionFadeIn, setCompletionFadeIn] = useState(false);
   const router = useRouter();
+  const shutdownGaStartedRef = useRef(false);
 
   const checkIfAlreadyShutdown = useCallback(async () => {
     try {
@@ -43,6 +45,12 @@ export default function ShutdownPage() {
   useEffect(() => {
     void checkIfAlreadyShutdown();
   }, [checkIfAlreadyShutdown]);
+
+  useEffect(() => {
+    if (view !== "form" || shutdownGaStartedRef.current) return;
+    shutdownGaStartedRef.current = true;
+    trackShutdownStarted();
+  }, [view]);
 
   useEffect(() => {
     if (view !== "complete") return;

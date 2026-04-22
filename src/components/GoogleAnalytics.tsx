@@ -6,13 +6,6 @@ import Script from 'next/script';
 const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? 'G-S21LBEY64B';
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-    dataLayer?: unknown[];
-  }
-}
-
 /**
  * GA4 zonder toestemmingsbanner: meet zodra de tag laadt (standaard gtag-snippet).
  * IP-anonimisering is in GA4 standaard aan.

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
+import { trackTaskCompleted, trackTaskCreated } from "@/utils/events";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "../context/TaskContext";
 import { designSystem } from "../lib/design-system";
@@ -374,6 +375,7 @@ export default function TasksOverviewCalm() {
       }, 5000);
 
       track("task_added", { energyLevel });
+      trackTaskCreated();
     } catch (error) {
       console.error("Error adding task:", error);
       toast("Fout bij toevoegen van taak");
@@ -452,6 +454,7 @@ export default function TasksOverviewCalm() {
     setCheckboxPopId(task.id);
     setTimeout(() => setCheckboxPopId(null), 200);
     setTimeout(() => {
+      trackTaskCompleted();
       updateTask(task.id, { done: true, completedAt: new Date().toISOString() });
       setCompletingTaskIds((prev) => {
         const next = new Set(prev);

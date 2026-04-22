@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -8,6 +9,7 @@ import { VisualViewportBridge } from "@/components/VisualViewportBridge";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { TaskProvider } from "@/context/TaskContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { trackSessionAbandoned } from "@/utils/events";
 
 /** Zichtbare fallback zonder Tailwind — voorkomt ‘wit scherm’ bij trage chunks of Suspense. */
 function FullscreenLoading() {
@@ -50,11 +52,30 @@ function RemoveLegacyFocusDurationKey() {
   return null;
 }
 
+function GaSessionAbandonListener() {
+  const pathname = usePathname();
+  const pathRef = useRef(pathname);
+  pathRef.current = pathname ?? "/";
+
+  useEffect(() => {
+    const onLeave = () => {
+      trackSessionAbandoned(pathRef.current || "/");
+    };
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, []);
+
+  return null;
+}
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <>
         <RemoveLegacyFocusDurationKey />
+        <Suspense fallback={null}>
+          <GaSessionAbandonListener />
+        </Suspense>
         <VisualViewportBridge />
         <GoogleAnalytics />
         <TaskProvider>
