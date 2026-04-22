@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useDeferredValue, startTransition } from "react";
 import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
 import { trackTaskCompleted, trackTaskCreated } from "@/utils/events";
 import { useRouter } from "next/navigation";
@@ -66,6 +66,8 @@ const PRIORITY_ROW_TINT: Record<
 /** ---------- Hoofdcomponent ---------- */
 export default function TasksOverviewCalm() {
   const { tasks, loading, addTask, updateTask, deleteTask } = useTaskContext();
+  /** INP: zware lijst-filters iets uitstellen zodat klikken eerst kunnen painten */
+  const deferredTasks = useDeferredValue(tasks);
   const router = useRouter();
   
   // State voor nieuwe taak input
@@ -427,25 +429,24 @@ export default function TasksOverviewCalm() {
 
   // Handle: Start Focus Mode
   // KRITIEK: Focus duur moet matchen met de ingeschatte taakduur (duration/estimatedDuration)
-  const startFocus = async (task: any) => {
-    try {
-      await updateTask(task.id, { started: true });
-      
-      const taskDuration = getTaskDurationMinutes(task) ?? 15;
-
-      const focusUrl = `/focus?task=${encodeURIComponent(task.id)}&duration=${encodeURIComponent(taskDuration)}&energy=${task.energyLevel || 'medium'}`;
+  const startFocus = (task: any) => {
+    const taskDuration = getTaskDurationMinutes(task) ?? 15;
+    const focusUrl = `/focus?task=${encodeURIComponent(task.id)}&duration=${encodeURIComponent(taskDuration)}&energy=${task.energyLevel || 'medium'}`;
+    startTransition(() => {
       router.push(focusUrl);
-      
-      toast("🚀 Focus sessie gestart!");
-      track("focus_start", { 
-        taskId: task.id, 
-        duration: taskDuration,
-        energyLevel: task.energyLevel || 'medium'
-      });
-    } catch (error) {
+    });
+    void updateTask(task.id, { started: true }).catch((error) => {
       console.error('Error starting focus:', error);
       toast('Fout bij starten van focus sessie');
-    }
+    });
+    queueMicrotask(() => {
+      toast('Focus sessie gestart!');
+      track('focus_start', {
+        taskId: task.id,
+        duration: taskDuration,
+        energyLevel: task.energyLevel || 'medium',
+      });
+    });
   };
 
   // Voltooien vanuit Alle open taken: eerst visueel (line-through, pop), dan na 300ms persist + verhuizing naar Voltooide taken
@@ -455,14 +456,21 @@ export default function TasksOverviewCalm() {
     setTimeout(() => setCheckboxPopId(null), 200);
     setTimeout(() => {
       trackTaskCompleted();
-      updateTask(task.id, { done: true, completedAt: new Date().toISOString() });
-      setCompletingTaskIds((prev) => {
-        const next = new Set(prev);
-        next.delete(task.id);
-        return next;
+      startTransition(() => {
+        void updateTask(task.id, {
+          done: true,
+          completedAt: new Date().toISOString(),
+        });
+        setCompletingTaskIds((prev) => {
+          const next = new Set(prev);
+          next.delete(task.id);
+          return next;
+        });
+        setCompletedSectionOpen(true);
       });
-      setCompletedSectionOpen(true); // Sectie Voltooide taken open zodat de taak daar zichtbaar is
-      toast('Taak afgevinkt!');
+      queueMicrotask(() => {
+        toast('Taak afgevinkt!');
+      });
     }, 300);
   };
 
@@ -483,7 +491,7 @@ export default function TasksOverviewCalm() {
       return typeof d === 'number' && !Number.isNaN(d) ? d : Number.POSITIVE_INFINITY;
     };
 
-    return tasks
+    return deferredTasks
       .filter((t: any) => isOpenBacklogTask(t) && !vandaagFocusIds.has(t.id))
       // Sorteer op ingeschatte duur: kortste eerst, zonder duur onderaan
       .sort((a: any, b: any) => {
@@ -491,7 +499,7 @@ export default function TasksOverviewCalm() {
         if (diff !== 0) return diff;
         return String(a?.title || '').localeCompare(String(b?.title || ''));
       });
-  }, [tasks, vandaagFocusIds]);
+  }, [deferredTasks, vandaagFocusIds]);
 
   // Energy Board (Taken & Prioriteiten): verdeel open taken in 3 kolommen
   const openByEnergy = useMemo(() => {
@@ -513,26 +521,26 @@ export default function TasksOverviewCalm() {
 
   // Filter: Voltooide taken (done, gesorteerd op completedAt nieuwste eerst)
   const completedTasks = useMemo(() => {
-    return tasks
+    return deferredTasks
       .filter((t: any) => t.done && t.source !== 'medication' && t.source !== 'event')
       .sort((a: any, b: any) => {
         const da = a.completedAt ? new Date(a.completedAt).getTime() : 0;
         const db = b.completedAt ? new Date(b.completedAt).getTime() : 0;
         return db - da;
       });
-  }, [tasks]);
+  }, [deferredTasks]);
 
   const completedTodayCount = useMemo(() => {
     const today = getCalendarDateAmsterdam();
-    return tasks.filter((t: any) => {
+    return deferredTasks.filter((t: any) => {
       if (!t.done || !t.completedAt || t.source === "medication" || t.source === "event") return false;
       return getCalendarDateAmsterdam(new Date(t.completedAt)) === today;
     }).length;
-  }, [tasks]);
+  }, [deferredTasks]);
 
   const completedTodayTasks = useMemo(() => {
     const today = getCalendarDateAmsterdam();
-    return tasks
+    return deferredTasks
       .filter((t: any) => {
         if (!t.done || !t.completedAt || t.source === "medication" || t.source === "event") return false;
         return getCalendarDateAmsterdam(new Date(t.completedAt)) === today;
@@ -542,7 +550,7 @@ export default function TasksOverviewCalm() {
         const db = b.completedAt ? new Date(b.completedAt).getTime() : 0;
         return db - da;
       });
-  }, [tasks]);
+  }, [deferredTasks]);
 
   return (
     <div className="min-h-full bg-[var(--structuro-bg)] px-5 pb-6 pt-6">

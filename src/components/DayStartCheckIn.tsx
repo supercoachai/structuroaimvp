@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition, useDeferredValue } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { toast } from './Toast';
 import { track } from '../shared/track';
@@ -10,6 +10,7 @@ import {
   trackTaskSelected,
 } from '@/utils/events';
 import { registerPushSubscription } from '@/utils/pushNotifications';
+import { yieldToMain } from '@/lib/yieldToMain';
 import { useCheckIn } from '../hooks/useCheckIn';
 import { markOnboardingCompleted } from '@/lib/onboardingProfile';
 import { checkVoorzorgsmodus, resolveVoorzorgsmodus, type EnergyLevel, type VoorzorgsmodusOption } from '@/lib/voorzorgsmodus';
@@ -54,6 +55,7 @@ export default function DayStartCheckIn({
   firstTimeOnboarding = false,
 }: DayStartCheckInProps) {
   const { tasks, addTask, fetchTasks, updateTask, loading: tasksContextLoading } = useTaskContext();
+  const deferredTasksForSuggestions = useDeferredValue(tasks);
   const { checkIn: checkInFromDb, saveCheckIn } = useCheckIn();
   const { user: authUser } = useUser();
   const [energyLevel, setEnergyLevel] = useState<string | null>(existingCheckIn?.energy_level ?? checkInFromDb?.energy_level ?? null);
@@ -204,7 +206,7 @@ export default function DayStartCheckIn({
     );
 
     const buildBaseTasks = (relaxedLowIncludeMedium: boolean) =>
-      tasks.filter((t: any) => {
+      deferredTasksForSuggestions.filter((t: any) => {
         if (!t || !t.id || !t.title) return false;
         if (t.done || t.notToday || t.source === 'medication' || t.source === 'event') return false;
         if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
@@ -274,7 +276,7 @@ export default function DayStartCheckIn({
 
   const allRankedSuggestions = useMemo(
     () => getFilteredTasks(),
-    [tasks, top3Tasks, energyLevel]
+    [deferredTasksForSuggestions, top3Tasks, energyLevel]
   );
 
   type MergedSuggestionItem =
@@ -582,6 +584,8 @@ export default function DayStartCheckIn({
         
         return newTop3Tasks;
       });
+
+      await yieldToMain();
       
       // STAP 4: Verwijder de oude taak uit localStorage (priority = null) zodat deze terugkomt in suggesties
       // BELANGRIJK: Dit gebeurt NA de optimistic update, zodat getFilteredTasks de taak direct kan zien
@@ -874,6 +878,8 @@ export default function DayStartCheckIn({
       newTop3Tasks[slotNumber] = null;
       setTop3Tasks(newTop3Tasks);
       setIsUpdating(true);
+
+      await yieldToMain();
 
       // Context + Supabase: prioriteit op null zetten – dan komt de taak terug in suggesties
       await updateTask(task.id, { priority: null });
@@ -1460,25 +1466,32 @@ export default function DayStartCheckIn({
                   onClick={() => {
                     if (firstTimeOnboarding) setEnergyOnboardingHintHidden(true);
                     setEnergyLevel(level.value);
-                    setEnergySelected(true);
-                    setShowConfirmation(true);
-                    trackEnergyChecked(
-                      level.value === "low"
-                        ? "laag"
-                        : level.value === "high"
-                          ? "hoog"
-                          : "middel"
-                    );
-
-                    const vzCheck = checkVoorzorgsmodus(tasks, level.value as EnergyLevel);
-                    setVoorzorgsmodusState(vzCheck.shouldShow ? vzCheck : null);
-
-                    const messages: { [key: string]: string } = {
-                      low: '🌙 Tijd voor een rustige start',
-                      medium: '🙂 Goede balans vandaag',
-                      high: '⚡ Energie geladen!',
-                    };
-                    toast(messages[level.value] || 'Energie gekozen');
+                    startTransition(() => {
+                      setEnergySelected(true);
+                      setShowConfirmation(true);
+                      const vzCheck = checkVoorzorgsmodus(
+                        tasks,
+                        level.value as EnergyLevel
+                      );
+                      setVoorzorgsmodusState(
+                        vzCheck.shouldShow ? vzCheck : null
+                      );
+                    });
+                    queueMicrotask(() => {
+                      trackEnergyChecked(
+                        level.value === "low"
+                          ? "laag"
+                          : level.value === "high"
+                            ? "hoog"
+                            : "middel"
+                      );
+                      const messages: { [key: string]: string } = {
+                        low: '🌙 Tijd voor een rustige start',
+                        medium: '🙂 Goede balans vandaag',
+                        high: '⚡ Energie geladen!',
+                      };
+                      toast(messages[level.value] || 'Energie gekozen');
+                    });
                     setTimeout(() => setEnergySelected(false), 1000);
                     setTimeout(() => setShowConfirmation(false), 2000);
                   }}
