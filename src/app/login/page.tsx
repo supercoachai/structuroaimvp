@@ -22,6 +22,14 @@ const SHOW_LOCAL_TEST_LOGIN =
   process.env.NODE_ENV === "development" ||
   process.env.NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN === "true";
 
+/**
+ * Productie (Vercel build): geen open registratie, alleen inloggen + wachtwoord vergeten.
+ * Tijdelijk weer aanzetten: NEXT_PUBLIC_ALLOW_SIGNUP=true in Vercel.
+ */
+const SIGNUP_ALLOWED =
+  process.env.NODE_ENV !== "production" ||
+  process.env.NEXT_PUBLIC_ALLOW_SIGNUP === "true";
+
 function isLikelyLocalDevHost(hostname: string): boolean {
   if (hostname === "localhost" || hostname === "127.0.0.1") return true;
   // RFC1918 — typisch next dev op LAN (telefoon / ander device)
@@ -57,6 +65,12 @@ function LoginPageInner() {
       setLocalDevHost(isLikelyLocalDevHost(window.location.hostname));
     } catch {
       setLocalDevHost(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!SIGNUP_ALLOWED) {
+      setIsSignUp(false);
     }
   }, []);
 
@@ -139,6 +153,12 @@ function LoginPageInner() {
       const supabase = getSupabase();
       if (!supabase) {
         setError('Kan geen verbinding maken met de server. Controleer je internetverbinding.');
+        setLoading(false);
+        return;
+      }
+
+      if (isSignUp && !SIGNUP_ALLOWED) {
+        setError('Nieuwe accounts zijn op dit moment niet beschikbaar. Neem contact op als je toegang nodig hebt.');
         setLoading(false);
         return;
       }
@@ -332,20 +352,22 @@ function LoginPageInner() {
           </div>
         ) : null}
 
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp((v) => !v);
-              setForgotPassword(false);
-              setError(null);
-              setMessage(null);
-            }}
-            className="text-sm text-gray-500 hover:text-gray-800"
-          >
-            {isSignUp ? 'Heb je al een account? Inloggen' : 'Nog geen account? Registreren'}
-          </button>
-        </div>
+        {SIGNUP_ALLOWED ? (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp((v) => !v);
+                setForgotPassword(false);
+                setError(null);
+                setMessage(null);
+              }}
+              className="text-sm text-gray-500 hover:text-gray-800"
+            >
+              {isSignUp ? 'Heb je al een account? Inloggen' : 'Nog geen account? Registreren'}
+            </button>
+          </div>
+        ) : null}
 
         {showLocalTest && (
           <div className="border-t border-gray-200/80 pt-4 mt-0 space-y-3">
