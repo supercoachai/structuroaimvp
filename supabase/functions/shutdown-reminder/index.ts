@@ -3,7 +3,7 @@
  * wel daily_checkins hebben maar nog geen daily_shutdowns.
  *
  * Secrets (Supabase Dashboard → Edge Functions → Secrets):
- *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:...)
+ *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (bijv. mailto:info@structuro.eu)
  *   SUPABASE_URL en SUPABASE_SERVICE_ROLE_KEY staan meestal al automatisch.
  *
  * Schedule (bijv. 20:30 Amsterdam = 19:30 UTC winter / 18:30 zomer): stel in onder Edge Functions → Schedules.
