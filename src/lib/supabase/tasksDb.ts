@@ -14,6 +14,9 @@ export type TaskRow = {
   duration: number | null;
   source: string;
   postponed_to?: string | null;
+  focus_started_at?: string | null;
+  focus_exited_at?: string | null;
+  focus_attempts?: number;
   completed_at: string | null;
   reminders: number[];
   repeat: string;
@@ -42,6 +45,9 @@ function rowToTask(row: TaskRow): Task {
     duration: row.duration ?? undefined,
     source: row.source,
     postponedTo: row.postponed_to ?? null,
+    focusStartedAt: row.focus_started_at ?? null,
+    focusExitedAt: row.focus_exited_at ?? null,
+    focusAttempts: row.focus_attempts ?? 0,
     completedAt: row.completed_at ?? undefined,
     reminders: row.reminders ?? [],
     repeat: row.repeat,
@@ -71,6 +77,9 @@ function taskToRow(task: Partial<Task>, userId: string): Partial<TaskRow> & { us
     duration: task.duration ?? null,
     source: task.source ?? "regular",
     postponed_to: task.postponedTo ?? null,
+    focus_started_at: task.focusStartedAt ?? null,
+    focus_exited_at: task.focusExitedAt ?? null,
+    focus_attempts: task.focusAttempts ?? 0,
     completed_at: task.completedAt ?? null,
     reminders: task.reminders ?? [],
     repeat: task.repeat ?? "none",
@@ -131,6 +140,9 @@ export async function updateTaskInSupabase(
   if (updates.duration !== undefined) rowUpdates.duration = updates.duration;
   if (updates.source !== undefined) rowUpdates.source = updates.source;
   if (updates.postponedTo !== undefined) rowUpdates.postponed_to = updates.postponedTo;
+  if (updates.focusStartedAt !== undefined) rowUpdates.focus_started_at = updates.focusStartedAt;
+  if (updates.focusExitedAt !== undefined) rowUpdates.focus_exited_at = updates.focusExitedAt;
+  if (updates.focusAttempts !== undefined) rowUpdates.focus_attempts = updates.focusAttempts;
   if (updates.completedAt !== undefined) rowUpdates.completed_at = updates.completedAt;
   if (updates.reminders !== undefined) rowUpdates.reminders = updates.reminders;
   if (updates.repeat !== undefined) rowUpdates.repeat = updates.repeat;

@@ -60,6 +60,9 @@ export interface Task {
   duration?: number | null;
   source?: string;
   postponedTo?: string | null;
+  focusStartedAt?: string | null;
+  focusExitedAt?: string | null;
+  focusAttempts?: number;
   completedAt?: string;
   reminders?: number[];
   repeat?: string;
@@ -99,6 +102,9 @@ function mapLocalTaskToTask(localTask: LocalTask): Task {
     duration: localTask.duration || undefined,
     source: localTask.source,
     postponedTo: (localTask as any).postponedTo ?? null,
+    focusStartedAt: (localTask as any).focusStartedAt ?? null,
+    focusExitedAt: (localTask as any).focusExitedAt ?? null,
+    focusAttempts: (localTask as any).focusAttempts ?? 0,
     completedAt: localTask.completedAt || undefined,
     reminders: localTask.reminders,
     repeat: localTask.repeat,
@@ -138,6 +144,9 @@ function mapTaskToLocalTask(task: Partial<Task>): Partial<LocalTask> {
     duration: task.duration || null,
     source: task.source || 'regular',
     postponedTo: task.postponedTo ?? null,
+    focusStartedAt: task.focusStartedAt ?? null,
+    focusExitedAt: task.focusExitedAt ?? null,
+    focusAttempts: task.focusAttempts ?? 0,
     completedAt: task.completedAt || null,
     reminders: task.reminders || [],
     repeat: task.repeat || 'none',
@@ -170,6 +179,9 @@ function mapTaskUpdatesToLocalTask(updates: Partial<Task>): Partial<LocalTask> {
   if ('estimatedDuration' in updates) local.estimatedDuration = updates.estimatedDuration ?? null;
   if ('source' in updates) local.source = updates.source;
   if ('postponedTo' in updates) (local as any).postponedTo = updates.postponedTo ?? null;
+  if ('focusStartedAt' in updates) (local as any).focusStartedAt = updates.focusStartedAt ?? null;
+  if ('focusExitedAt' in updates) (local as any).focusExitedAt = updates.focusExitedAt ?? null;
+  if ('focusAttempts' in updates) (local as any).focusAttempts = updates.focusAttempts ?? 0;
   if ('completedAt' in updates) local.completedAt = updates.completedAt ?? null;
   if ('reminders' in updates) local.reminders = updates.reminders ?? [];
   if ('repeat' in updates) local.repeat = updates.repeat ?? 'none';

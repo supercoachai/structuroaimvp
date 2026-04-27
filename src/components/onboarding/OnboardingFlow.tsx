@@ -134,8 +134,13 @@ export default function OnboardingFlow() {
   const firstDayBeginCtaRef = useRef<HTMLButtonElement | null>(null);
   const durationAutoFocusDoneRef = useRef(false);
   const reduceMotionRef = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
-  const isLocalMode = hasStructuroLocalModeCookieOnClient();
+  const isLocalMode = hydrated ? hasStructuroLocalModeCookieOnClient() : false;
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   /** Begroeting op basis van actuele tijd in Amsterdam (zelfde als dagstart). Vernieuwt als je deze stap opnieuw opent. */
   const firstDaySlideGreeting = useMemo(
@@ -830,7 +835,7 @@ export default function OnboardingFlow() {
     window.location.assign("/");
   };
 
-  if (!isLocalMode && userLoading) {
+  if (!hydrated || (!isLocalMode && userLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 text-slate-500">
         <div className="animate-pulse text-base">{t("onboarding.loading")}</div>

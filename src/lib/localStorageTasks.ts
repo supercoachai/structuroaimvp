@@ -26,6 +26,9 @@ export interface LocalTask {
   duration: number | null;
   source: string;
   postponedTo?: string | null;
+  focusStartedAt?: string | null;
+  focusExitedAt?: string | null;
+  focusAttempts?: number;
   completedAt: string | null;
   reminders: number[];
   repeat: string;
@@ -232,6 +235,9 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
         duration: updates.duration || null,
         source: updates.source || 'regular',
         completedAt: updates.completedAt || null,
+        focusStartedAt: updates.focusStartedAt ?? null,
+        focusExitedAt: updates.focusExitedAt ?? null,
+        focusAttempts: updates.focusAttempts ?? 0,
         reminders: updates.reminders || [],
         repeat: updates.repeat || 'none',
         impact: updates.impact || '🌱',
@@ -295,6 +301,18 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
     duration: safeUpdates.duration !== undefined ? safeUpdates.duration : (existingTask.duration ?? null),
     source: safeUpdates.source !== undefined ? safeUpdates.source : (existingTask.source || 'regular'),
     completedAt: safeUpdates.completedAt !== undefined ? safeUpdates.completedAt : (existingTask.completedAt ?? null),
+    focusStartedAt:
+      safeUpdates.focusStartedAt !== undefined
+        ? safeUpdates.focusStartedAt
+        : (existingTask.focusStartedAt ?? null),
+    focusExitedAt:
+      safeUpdates.focusExitedAt !== undefined
+        ? safeUpdates.focusExitedAt
+        : (existingTask.focusExitedAt ?? null),
+    focusAttempts:
+      safeUpdates.focusAttempts !== undefined
+        ? safeUpdates.focusAttempts
+        : (existingTask.focusAttempts ?? 0),
     reminders: safeUpdates.reminders !== undefined ? safeUpdates.reminders : (existingTask.reminders || []),
     repeat: safeUpdates.repeat !== undefined ? safeUpdates.repeat : (existingTask.repeat || 'none'),
     repeatUntil: (safeUpdates as any).repeatUntil !== undefined ? (safeUpdates as any).repeatUntil : (existingTask as any).repeatUntil ?? null,
@@ -334,6 +352,9 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
       duration: existingTask.duration ?? null,
       source: existingTask.source || 'regular',
       completedAt: existingTask.completedAt ?? null,
+      focusStartedAt: existingTask.focusStartedAt ?? null,
+      focusExitedAt: existingTask.focusExitedAt ?? null,
+      focusAttempts: existingTask.focusAttempts ?? 0,
       reminders: existingTask.reminders || [],
       repeat: existingTask.repeat || 'none',
       impact: existingTask.impact || '🌱',

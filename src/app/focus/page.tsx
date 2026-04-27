@@ -114,16 +114,41 @@ function FocusContent() {
   const [showTimeUpPrompt, setShowTimeUpPrompt] = useState(false);
   const [extendMinutes, setExtendMinutes] = useState<number>(10);
   const [timeUpQuote, setTimeUpQuote] = useState<string>('');
+  const focusOpenedTaskIdRef = useRef<string | null>(null);
+
+  const markFocusOpened = useCallback(async () => {
+    if (!currentTask?.id) return;
+    await updateTask(currentTask.id, {
+      focusStartedAt: new Date().toISOString(),
+      focusAttempts: (currentTask.focusAttempts ?? 0) + 1,
+    });
+  }, [currentTask, updateTask]);
+
+  const markFocusExitedWithoutCompletion = useCallback(async () => {
+    if (!currentTask?.id) return;
+    if (currentTask.done) return;
+    await updateTask(currentTask.id, {
+      focusExitedAt: new Date().toISOString(),
+    });
+  }, [currentTask, updateTask]);
+
+  useEffect(() => {
+    if (!currentTask?.id) return;
+    if (focusOpenedTaskIdRef.current === currentTask.id) return;
+    focusOpenedTaskIdRef.current = currentTask.id;
+    void markFocusOpened();
+  }, [currentTask?.id, markFocusOpened]);
 
   const SluitenButton = () => (
     <button
       type="button"
-      onClick={() => {
-        if (isRunning) {
+      onClick={async () => {
+        if (isRunning || isPaused || showTimeUpPrompt) {
           const ok = confirm(
             tr("focus.closeConfirm")
           );
           if (!ok) return;
+          await markFocusExitedWithoutCompletion();
         }
         router.push('/');
       }}
@@ -275,7 +300,7 @@ function FocusContent() {
     fetchTasks();
   };
 
-  const startSession = () => {
+  const startSession = async () => {
     setShowFocusCard(false);
     setCountdownFadeOut(false);
     setShowCountdown(true);
@@ -305,6 +330,7 @@ function FocusContent() {
   const stopSession = () => {
     if (isRunning || isPaused) {
       trackFocusAbandoned(Math.max(0, duration * 60 - timeLeft));
+      void markFocusExitedWithoutCompletion();
     }
     setIsRunning(false);
     setIsPaused(false);
@@ -328,6 +354,9 @@ function FocusContent() {
     if (!currentTask?.id || nuNietBusy) return;
     setNuNietBusy(true);
     try {
+      if (isRunning || isPaused || showTimeUpPrompt) {
+        await markFocusExitedWithoutCompletion();
+      }
       const { remainingTop3Ids } = await parkFocusTaskSilently(
         currentTask.id,
         checkIn ?? null,
@@ -379,6 +408,7 @@ function FocusContent() {
         done: true,
         completedAt: new Date().toISOString(),
         started: true,
+        focusExitedAt: null,
         source: "focus_mode",
       });
       trackTaskCompleted(
