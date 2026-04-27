@@ -20,6 +20,7 @@ import {
   persistPreferredDisplayName,
 } from '@/lib/accountDisplayName';
 import { useI18n, type Locale } from '@/lib/i18n';
+import { registerPushSubscription } from '@/utils/pushNotifications';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -33,6 +34,9 @@ export default function SettingsPage() {
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [nameSaveBusy, setNameSaveBusy] = useState(false);
+  const [notificationPermission, setNotificationPermission] =
+    useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [notificationBusy, setNotificationBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +85,19 @@ export default function SettingsPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const supported =
+      'Notification' in window &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window;
+    if (!supported) {
+      setNotificationPermission('unsupported');
+      return;
+    }
+    setNotificationPermission(Notification.permission);
   }, []);
 
   const handleReplayIntro = async () => {
@@ -198,6 +215,41 @@ export default function SettingsPage() {
     }
   };
 
+  const handleEnableNotifications = async () => {
+    if (notificationBusy) return;
+    if (notificationPermission === 'unsupported') {
+      toast(t('settings.notificationsUnsupported'));
+      return;
+    }
+    setNotificationBusy(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        toast(t('settings.notificationsNeedLogin'));
+        return;
+      }
+      const sub = await registerPushSubscription(user.id);
+      const currentPermission =
+        typeof window !== 'undefined' && 'Notification' in window
+          ? Notification.permission
+          : 'default';
+      setNotificationPermission(currentPermission);
+      if (sub) toast(t('settings.notificationsEnabled'));
+      else if (currentPermission === 'denied') {
+        toast(t('settings.notificationsDenied'));
+      } else {
+        toast(t('settings.notificationsNoSubscription'));
+      }
+    } catch (err) {
+      toast(t('settings.notificationsEnableFail', { detail: String(err) }));
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
   const isLocalOnly = hasStructuroLocalModeCookieOnClient() && !hasSupabaseSession;
 
   return (
@@ -241,6 +293,35 @@ export default function SettingsPage() {
                 </button>
               ))}
             </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-1">
+              {t('settings.notificationsTitle')}
+            </h2>
+            <p className="text-sm text-slate-500 mb-4 text-balance">
+              {t('settings.notificationsHint')}
+            </p>
+            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <span className="font-semibold">{t('settings.notificationsStatusLabel')}: </span>
+              {notificationPermission === 'granted'
+                ? t('settings.notificationsStatusOn')
+                : notificationPermission === 'denied'
+                  ? t('settings.notificationsStatusOff')
+                  : notificationPermission === 'unsupported'
+                    ? t('settings.notificationsStatusUnsupported')
+                    : t('settings.notificationsStatusAsk')}
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleEnableNotifications()}
+              disabled={notificationBusy || notificationPermission === 'unsupported'}
+              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+            >
+              {notificationBusy
+                ? t('settings.notificationsBusy')
+                : t('settings.notificationsEnableCta')}
+            </button>
           </section>
 
           {/* Kaart 1: Jouw profiel */}

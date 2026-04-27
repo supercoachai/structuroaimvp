@@ -8,6 +8,8 @@ import { toast } from "../../components/Toast";
 import { xpForTask } from "../../lib/xp";
 import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { registerPushSubscription } from "@/utils/pushNotifications";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -110,13 +112,30 @@ export default function HerinneringenPage() {
       "Wil je herinneringen ontvangen voor taken en afspraken? Je kunt dit later wijzigen in je browser."
     );
     if (!ok) return;
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        toast("Log eerst in om meldingen te koppelen");
+        return;
+      }
+
+      const sub = await registerPushSubscription(user.id);
+      const permission = "Notification" in window ? Notification.permission : "default";
       setNotificationPermission(permission);
-      if (permission === "granted") {
+
+      if (sub) {
         toast("Notificaties ingeschakeld");
         testReminder();
+      } else if (permission === "denied") {
+        toast("Meldingen staan uit in je browser of iPhone instellingen");
+      } else {
+        toast("Kon geen push abonnement opslaan");
       }
+    } catch {
+      toast("Kon meldingen niet activeren");
     }
   };
 

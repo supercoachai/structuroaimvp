@@ -49,6 +49,16 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       languageHint: "Schakel de hele app tussen Nederlands en Engels.",
       languageNl: "Nederlands",
       languageEn: "English",
+      notificationsTitle: "Meldingen",
+      notificationsHint:
+        "Controleer of pushmeldingen op dit apparaat aanstaan.",
+      notificationsStatusLabel: "Status",
+      notificationsStatusOn: "Aan",
+      notificationsStatusOff: "Uit",
+      notificationsStatusUnsupported: "Niet ondersteund op dit apparaat",
+      notificationsStatusAsk: "Nog niet ingesteld",
+      notificationsEnableCta: "Meldingen inschakelen",
+      notificationsBusy: "Bezig…",
       displayNameTitle: "Aanspreeknaam",
       displayNameHint: "Hoe wil je dat we je noemen in de app?",
       displayNamePlaceholder: "Bijvoorbeeld je voornaam",
@@ -89,6 +99,14 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastWiped: "Alle data gewist. Je wordt doorgestuurd.",
       toastWipeError: "Fout bij wissen van data",
       toastExportDone: "Export gedownload",
+      notificationsUnsupported: "Meldingen worden niet ondersteund op dit apparaat.",
+      notificationsNeedLogin: "Log in om meldingen te koppelen.",
+      notificationsEnabled: "Meldingen staan aan.",
+      notificationsDenied:
+        "Meldingen staan uit in je browser/iPhone instellingen.",
+      notificationsNoSubscription:
+        "Toestemming ontvangen, maar geen push-abonnement opgeslagen.",
+      notificationsEnableFail: "Kon meldingen niet inschakelen: {detail}",
     },
     login: {
       taglineBrand: "Structuro",
@@ -213,6 +231,16 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       languageHint: "Switch the whole app between Dutch and English.",
       languageNl: "Nederlands",
       languageEn: "English",
+      notificationsTitle: "Notifications",
+      notificationsHint:
+        "Check whether push notifications are enabled on this device.",
+      notificationsStatusLabel: "Status",
+      notificationsStatusOn: "On",
+      notificationsStatusOff: "Off",
+      notificationsStatusUnsupported: "Not supported on this device",
+      notificationsStatusAsk: "Not configured yet",
+      notificationsEnableCta: "Enable notifications",
+      notificationsBusy: "Working…",
       displayNameTitle: "Display name",
       displayNameHint: "What should we call you in the app?",
       displayNamePlaceholder: "For example your first name",
@@ -252,6 +280,15 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastWiped: "All data deleted. Redirecting.",
       toastWipeError: "Something went wrong while deleting data",
       toastExportDone: "Export downloaded",
+      notificationsUnsupported:
+        "Notifications are not supported on this device.",
+      notificationsNeedLogin: "Sign in to connect notifications.",
+      notificationsEnabled: "Notifications are enabled.",
+      notificationsDenied:
+        "Notifications are disabled in your browser/iPhone settings.",
+      notificationsNoSubscription:
+        "Permission granted, but no push subscription was saved.",
+      notificationsEnableFail: "Could not enable notifications: {detail}",
     },
     login: {
       taglineBrand: "Structuro",
