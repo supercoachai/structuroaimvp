@@ -1,8 +1,46 @@
 "use client";
 
 import AppLayout from "../../components/layout/AppLayout";
+import { useI18n } from "@/lib/i18n";
+import { useMemo } from "react";
 
 export default function UitlegPage() {
+  const { t: tr } = useI18n();
+
+  const routineSteps = useMemo(
+    () => [
+      {
+        n: 1,
+        icon: "📝",
+        title: tr("uitleg.s1t"),
+        text: tr("uitleg.s1x"),
+        bg: "bg-blue-50",
+      },
+      {
+        n: 2,
+        icon: "🔋",
+        title: tr("uitleg.s2t"),
+        text: tr("uitleg.s2x"),
+        bg: "bg-amber-50",
+      },
+      {
+        n: 3,
+        icon: "⏱️",
+        title: tr("uitleg.s3t"),
+        text: tr("uitleg.s3x"),
+        bg: "bg-slate-50",
+      },
+      {
+        n: 4,
+        icon: "🏅",
+        title: tr("uitleg.s4t"),
+        text: tr("uitleg.s4x"),
+        bg: "bg-emerald-50",
+      },
+    ],
+    [tr]
+  );
+
   return (
     <AppLayout>
       <div
@@ -14,46 +52,16 @@ export default function UitlegPage() {
             <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100 shadow-sm">
               <span className="text-xl">🧭</span>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Hoe werkt Structuro?</h1>
-            <p className="mt-2 max-w-md text-sm text-slate-500">
-              Kort en simpel. Geen gedoe, wél doen.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">
+              {tr("uitleg.title")}
+            </h1>
+            <p className="mt-2 max-w-md text-sm text-slate-500">{tr("uitleg.subtitle")}</p>
           </header>
 
-          {/* De core loop (visueel) */}
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Dagelijkse routine</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{tr("uitleg.routineTitle")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  n: 1,
-                  icon: "📝",
-                  title: "Dagstart + focuspunten",
-                  text: "Kies je Kernfocus, Vervolgstap en Bonusactie. Dit zijn je focuspunten.",
-                  bg: "bg-blue-50",
-                },
-                {
-                  n: 2,
-                  icon: "🔋",
-                  title: "Kies je energie",
-                  text: "Laag / normaal / hoog. De app past zich daarop aan.",
-                  bg: "bg-amber-50",
-                },
-                {
-                  n: 3,
-                  icon: "⏱️",
-                  title: "Start Focus Mode",
-                  text: "Eén taak tegelijk. Timer aan. Minder ruis.",
-                  bg: "bg-slate-50",
-                },
-                {
-                  n: 4,
-                  icon: "🏅",
-                  title: "Rond af → XP",
-                  text: "Voltooi taken, verdien XP en ga level omhoog.",
-                  bg: "bg-emerald-50",
-                },
-              ].map((s) => (
+              {routineSteps.map((s) => (
                 <div key={s.n} className={`rounded-2xl p-4 border border-gray-100 ${s.bg}`}>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-lg">
@@ -70,20 +78,28 @@ export default function UitlegPage() {
             </div>
           </section>
 
-          {/* Handige dingen */}
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Handige dingen om te weten</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.tipsTitle")}</h2>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li>
-                    <span className="font-semibold">Afvinken zonder timer:</span> in Taken & Prioriteiten klik je op het gekleurde bolletje.
+                    <span className="font-semibold">{tr("uitleg.tip1a")}</span>
+                    {tr("uitleg.tip1b")}
                   </li>
                   <li>
-                    <span className="font-semibold">Voltooide taken:</span> staan in een inklapbare lijst. Je kunt ze terugzetten of legen.
+                    <span className="font-semibold">{tr("uitleg.tip2a")}</span>
+                    {tr("uitleg.tip2b")}
                   </li>
                   <li>
-                    <span className="font-semibold">Dagstart is je stuur:</span> daar kies je jouw focuspunten voor vandaag: Kernfocus, Vervolgstap en Bonusactie.
+                    <span className="font-semibold">{tr("uitleg.tip3a")}</span>
+                    {tr("uitleg.tip3b")}
+                  </li>
+                  <li>
+                    <span className="font-semibold">{tr("uitleg.tipDoneTitle")}</span> {tr("uitleg.tipDoneBody")}
+                  </li>
+                  <li>
+                    <span className="font-semibold">{tr("uitleg.tipSteerTitle")}</span> {tr("uitleg.tipSteerBody")}
                   </li>
                 </ul>
               </div>
@@ -93,56 +109,52 @@ export default function UitlegPage() {
             </div>
           </section>
 
-          {/* Agenda + Beloningen (2 kolommen op desktop) */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Agenda & Planning</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.agendaTitle")}</h2>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>
-                  <span className="font-semibold">Zet taken op een tijd:</span> je ziet je dag als tijdlijn.
+                  <span className="font-semibold">{tr("uitleg.agenda1a")}</span> {tr("uitleg.agenda1b")}
                 </li>
                 <li>
-                  <span className="font-semibold">Slepen = verplaatsen:</span> pak een taak en sleep ’m naar een andere tijd.
+                  <span className="font-semibold">{tr("uitleg.agenda2a")}</span> {tr("uitleg.agenda2b")}
                 </li>
                 <li>
-                  <span className="font-semibold">Kies je weergave:</span> ochtend/middag/avond of een eigen tijdblok.
+                  <span className="font-semibold">{tr("uitleg.agenda3a")}</span> {tr("uitleg.agenda3b")}
                 </li>
               </ul>
             </div>
             <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Beloningen</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.rewardsTitle")}</h2>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>
-                  <span className="font-semibold">XP per taak:</span> elke afgeronde taak geeft XP.
+                  <span className="font-semibold">{tr("uitleg.rewards1a")}</span> {tr("uitleg.rewards1b")}
                 </li>
                 <li>
-                  <span className="font-semibold">Level omhoog:</span> bij genoeg XP ga je een level omhoog.
+                  <span className="font-semibold">{tr("uitleg.rewards2a")}</span> {tr("uitleg.rewards2b")}
                 </li>
                 <li>
-                  <span className="font-semibold">Streaks & badges:</span> je ziet je voortgang en mijlpalen.
+                  <span className="font-semibold">{tr("uitleg.rewards3a")}</span> {tr("uitleg.rewards3b")}
                 </li>
               </ul>
             </div>
           </section>
 
-          {/* Waarom dit werkt */}
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Waarom dit werkt (ADHD-proof)</h2>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  Structuro houdt het klein: minder keuzes, één volgende stap, en plannen op energie in plaats van alleen op tijd.
-                  Dat maakt starten makkelijker en geeft sneller “klaar”-momenten.
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.whyTitle")}</h2>
+                <p className="text-sm text-gray-700 leading-relaxed">{tr("uitleg.whyBody")}</p>
               </div>
               <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 items-center justify-center text-xl flex-shrink-0">
                 🧠
               </div>
             </div>
           </section>
+
+          <p className="text-center text-sm text-slate-500 pb-4">{tr("uitleg.closing")}</p>
         </main>
       </div>
     </AppLayout>
   );
 }
-

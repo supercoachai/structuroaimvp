@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase/parkedThoughtsDb";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { toast } from "./Toast";
+import { useI18n } from "@/lib/i18n";
 
 const MAX_THOUGHTS = 10;
 
@@ -27,6 +28,7 @@ function dueAtFromDateInput(yyyyMmDd: string): string | null {
 }
 
 export default function GeparkeerdeGedachtenSection() {
+  const { t } = useI18n();
   const { user } = useUser();
   const { tasks, addTask, updateTask, fetchTasks, deleteTask } = useTaskContext();
   const [thoughts, setThoughts] = useState<ParkedThought[]>([]);
@@ -72,9 +74,9 @@ export default function GeparkeerdeGedachtenSection() {
     try {
       await deleteParkedThought(thought.id);
       setThoughts((prev) => prev.filter((t) => t.id !== thought.id));
-      toast("Gedachte verwijderd");
+      toast(t("parkedThoughts.deleted"));
     } catch {
-      toast("Kon gedachte niet verwijderen");
+      toast(t("parkedThoughts.deleteFail"));
     }
   };
 
@@ -107,10 +109,10 @@ export default function GeparkeerdeGedachtenSection() {
         await convertThoughtToTask(thought.id, created.id);
         setThoughts((prev) => prev.filter((t) => t.id !== thought.id));
         await fetchTasks();
-        toast("Taak staat bij Alle open taken");
+        toast(t("parkedThoughts.atOpenTasks"));
         setConvertModal(null);
       } catch {
-        toast("Kon niet omzetten");
+        toast(t("parkedThoughts.convertFail"));
       } finally {
         setConvertingId(null);
       }
@@ -128,10 +130,10 @@ export default function GeparkeerdeGedachtenSection() {
         energyLevel,
       });
       await fetchTasks();
-      toast("Taak staat bij Alle open taken");
+      toast(t("parkedThoughts.atOpenTasks"));
       setConvertModal(null);
     } catch {
-      toast("Kon niet omzetten");
+      toast(t("parkedThoughts.convertFail"));
     } finally {
       setConvertingId(null);
     }
@@ -143,7 +145,9 @@ export default function GeparkeerdeGedachtenSection() {
   if (loading && isSupabase) {
     return (
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-        <p className="text-sm text-slate-400 animate-pulse">Gedachten laden...</p>
+        <p className="text-sm text-slate-400 animate-pulse">
+          {t("parkedThoughts.loading")}
+        </p>
       </div>
     );
   }
@@ -162,7 +166,7 @@ export default function GeparkeerdeGedachtenSection() {
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-800">
-          Geparkeerde gedachten
+          {t("parkedThoughts.sectionTitle")}
         </h3>
         {isSupabase && (
           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">
@@ -217,7 +221,7 @@ export default function GeparkeerdeGedachtenSection() {
                     disabled={isConverting}
                     className="text-xs text-blue-400 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    {isConverting ? "…" : "Maak taak"}
+                    {isConverting ? "…" : t("parkedThoughts.makeTask")}
                   </button>
                 )}
                 {isSupabaseRow && (
@@ -226,25 +230,25 @@ export default function GeparkeerdeGedachtenSection() {
                     onClick={() => handleDelete(item as ParkedThought)}
                     className="text-xs text-gray-400 hover:text-gray-600 ml-2"
                   >
-                    Weg
+                    {t("parkedThoughts.remove")}
                   </button>
                 )}
                 {!isSupabase && localTask && (
                   <button
                     type="button"
                     onClick={async () => {
-                      if (!confirm("Deze gedachte verwijderen?")) return;
+                      if (!confirm(t("parkedThoughts.confirmDelete"))) return;
                       try {
                         await deleteTask(localTask.id);
-                        toast("Verwijderd");
+                        toast(t("parkedThoughts.removed"));
                         await fetchTasks();
                       } catch {
-                        toast("Kon niet verwijderen");
+                        toast(t("parkedThoughts.removeFail"));
                       }
                     }}
                     className="text-xs text-gray-400 hover:text-gray-600 ml-2"
                   >
-                    Weg
+                    {t("parkedThoughts.remove")}
                   </button>
                 )}
               </div>
@@ -256,7 +260,7 @@ export default function GeparkeerdeGedachtenSection() {
       {isSupabase && thoughts.length >= 9 && (
         <div className="mx-5 mb-4 mt-2 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-lg">
           <p className="text-xs text-slate-700 font-medium">
-            Bijna vol. Zet gedachten om naar taken om ruimte vrij te maken.
+            {t("parkedThoughts.almostFull")}
           </p>
         </div>
       )}
@@ -275,12 +279,12 @@ export default function GeparkeerdeGedachtenSection() {
           onClick={(e) => e.stopPropagation()}
         >
           <h3 id="convert-thought-title" className="text-lg font-semibold text-gray-900">
-            Omzetten naar taak
+            {t("parkedThoughts.modalTitle")}
           </h3>
           <p className="mt-2 line-clamp-4 text-sm text-gray-600">{modalTitle}</p>
 
           <label className="mt-4 block text-sm font-semibold text-gray-700" htmlFor="park-convert-due">
-            Deadline (datum)
+            {t("parkedThoughts.dueLabel")}
           </label>
           <input
             id="park-convert-due"
@@ -291,7 +295,7 @@ export default function GeparkeerdeGedachtenSection() {
           />
 
           <label className="mt-4 block text-sm font-semibold text-gray-700" htmlFor="park-convert-dur">
-            Geschatte duur (minuten)
+            {t("parkedThoughts.durLabel")}
           </label>
           <input
             id="park-convert-dur"
@@ -304,7 +308,9 @@ export default function GeparkeerdeGedachtenSection() {
           />
 
           <div className="mt-4">
-            <p className="text-sm font-semibold text-gray-700">Energie</p>
+            <p className="text-sm font-semibold text-gray-700">
+              {t("parkedThoughts.energyLabel")}
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {(["low", "medium", "high"] as const).map((lvl) => (
                 <button
@@ -318,10 +324,10 @@ export default function GeparkeerdeGedachtenSection() {
                   }`}
                 >
                   {lvl === "low"
-                    ? "Laag"
+                    ? t("parkedThoughts.enLow")
                     : lvl === "medium"
-                      ? "Normaal"
-                      : "Intensief"}
+                      ? t("parkedThoughts.enMed")
+                      : t("parkedThoughts.enHigh")}
                 </button>
               ))}
             </div>
@@ -333,7 +339,7 @@ export default function GeparkeerdeGedachtenSection() {
               onClick={() => setConvertModal(null)}
               className="order-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-200 sm:order-1"
             >
-              Annuleren
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -341,7 +347,9 @@ export default function GeparkeerdeGedachtenSection() {
               onClick={() => void runConvert()}
               className="order-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50 sm:order-2"
             >
-              {convertingId ? "Bezig…" : "Omzetten naar taak"}
+              {convertingId
+                ? t("parkedThoughts.convertBusy")
+                : t("parkedThoughts.convertCta")}
             </button>
           </div>
         </div>

@@ -31,6 +31,23 @@ function isSupabaseConfigured(): boolean {
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  /**
+   * PKCE (magic link / wachtwoordherstel): Supabase hangt `?code=` aan de redirect-URL.
+   * Als die URL per ongeluk de site root of /login is, stuurde we door naar /login zonder
+   * query en ging de code verloren. Dan zie je het inlogscherm met een willekeurig
+   * opgeslagen e-mailadres, zonder nieuw-wachtwoord-stap.
+   */
+  const authExchangeCode = request.nextUrl.searchParams.get("code");
+  if (
+    authExchangeCode &&
+    pathname !== "/auth/callback" &&
+    !pathname.startsWith("/auth/callback/")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";

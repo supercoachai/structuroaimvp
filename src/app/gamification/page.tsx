@@ -9,6 +9,7 @@ import { xpForTask, progressWithinLevel, unlockedTrophies, TROPHIES, XP_PER_LEVE
 import { awardBonusXp, loadGamificationMeta, saveGamificationMeta, type GamificationMeta } from '../../lib/gamificationMeta';
 import { getRandomCompletionReward } from '../../lib/completionRewards';
 import confetti from 'canvas-confetti';
+import { useI18n } from '@/lib/i18n';
 
 interface Task {
   id: string;
@@ -48,6 +49,7 @@ interface Badge {
 }
 
 function GamificationContent() {
+  const { t } = useI18n();
   const { tasks, loading } = useTaskContext();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1409,7 +1411,7 @@ function GamificationContent() {
           {gamificationData.badges.length > 0 && (
             <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-                🏅 Verdiende Badges
+                {t("gamification.earnedBadgesTitle")}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
                 {gamificationData.badges.map((badge, index) => (
@@ -1424,14 +1426,14 @@ function GamificationContent() {
 
           {/* 🏆 Structuro Prijzenkast - 50+ Badges - Uitklapbaar */}
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-            <Collapsible title="🏆 Structuro Prijzenkast" defaultOpen={false}>
+            <Collapsible title={t("gamification.trophyCaseCollapsible")} defaultOpen={false}>
             {/* Header - Cleaner versie */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, textAlign: "center", color: "#4A90E2" }}>
-                🏆 Prijzenkast
+                {t("gamification.trophyCaseHeader")}
               </div>
               <div style={{ fontSize: 14, color: "rgba(47,52,65,0.75)", marginBottom: 20, textAlign: "center" }}>
-                Trofee boosters, prestige badges en 50+ achievements – alles op één plek
+                {t("gamification.trophyCaseSub")}
               </div>
               
               {/* XP Progressiebalk */}

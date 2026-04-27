@@ -1,3 +1,6 @@
+import { STRUCTURO_LOCALE_STORAGE_KEY } from "@/lib/i18n/types";
+import type { Locale } from "@/lib/i18n/types";
+
 const ADHD_QUOTES: string[] = [
   "Structuur is geen beperking, het is je superkracht.",
   "Kleine stappen tellen ook. Vooral als ze de juiste richting op gaan.",
@@ -101,9 +104,129 @@ const ADHD_QUOTES: string[] = [
   "Elke ochtend is een herkansing. Gebruik hem.",
 ];
 
-export function getQuoteOfTheDay(visitCount?: number): string {
-  if (visitCount != null && visitCount >= 0 && visitCount < ADHD_QUOTES.length) {
-    return ADHD_QUOTES[visitCount];
+/** Engelstalige varianten (zelfde doel: korte motivatie). */
+const ADHD_QUOTES_EN: string[] = [
+  "Structure is not a cage, it is a superpower.",
+  "Small steps count, especially in the right direction.",
+  "You do not have to do everything at once. You only have to start now.",
+  "Focus is not a talent, it is a choice you remake every day.",
+  "An ADHD brain is a fast engine with weak brakes. Build better brakes.",
+  "The best productivity hack? One thing at a time.",
+  "Chaos is not your character. Structure is a skill you can learn.",
+  "Your brain is not broken. It works differently.",
+  "Forgetting is human. Building systems is smart.",
+  "Perfection is the enemy of progress. Just begin.",
+  "Routine is not boring. Routine is freedom for your brain.",
+  "What you do today shapes who you become tomorrow.",
+  "You do not have to be a hero. Showing up is enough.",
+  "Every big change started with one small moment of action.",
+  "Stop planning forever. Start with the first tiny step.",
+  "Your brain lights up like fireworks. Give it a lighter, not a bucket of water.",
+  "Discipline is choosing what you want over what you feel right now.",
+  "The only bad day is a day without intention.",
+  "You are not lazy. You are missing the right system.",
+  "Structure gives your brain room to be creative.",
+  "Every task you finish is proof that you can.",
+  "Procrastination is not failure. It is information about what you need.",
+  "A little focus beats a mountain of motivation.",
+  "Start with what is easy. Momentum does the rest.",
+  "You do not need motivation to begin. Begin, and motivation often follows.",
+  "The secret of productivity? Knowing when to stop.",
+  "Rest is not a prize. Rest is part of the process.",
+  "A good system always beats a good intention.",
+  "Multitasking is a myth. Single-tasking is reality.",
+  "You are further than you think. Look how far you have come.",
+  "Not every day has to be productive. Some days are for recovery.",
+  "A checklist frees your brain from having to remember everything.",
+  "Focus is not something you have. It is something you build.",
+  "Every time you return after distraction, you train your focus.",
+  "A weak plan beats no plan.",
+  "Your brain is for ideas, not for holding endless to-do lists.",
+  "Give yourself permission not to be perfect.",
+  "The shortest path to success? A little better every day.",
+  "Structure is the canvas where creativity can grow.",
+  "Do not compare yourself to others. Compare yourself to yesterday.",
+  "Managing energy matters more than managing time.",
+  "Fifteen focused minutes beat an hour of half-work.",
+  "You do not have to wait for the perfect moment. This is it.",
+  "Repetition builds habits. Habits build results.",
+  "Make it easier to do the right thing.",
+  "Every day is a new chance to improve your system.",
+  "Complex problems, simple solutions. Step by step.",
+  "Self-discipline is self-love in action.",
+  "You are not late. You are right on time to begin.",
+  "Distractions are not enemies. They are signals from your brain.",
+  "You build your best self day by day.",
+  "Fewer options mean less decision fatigue.",
+  "Focus on progress, not perfection.",
+  "A timer is your friend. Work in blocks, rest in blocks.",
+  "You do not need motivation. You need a first step.",
+  "Some days are harder. That is okay.",
+  "Successful people do not have more willpower. They have better systems.",
+  "Your unique brain is your greatest strength. Learn how it works.",
+  "Breaks are not wasted time. They are fuel.",
+  "Stop punishing yourself for what you did not do. Celebrate what you did.",
+  "The easiest way to keep going? Make the next step tiny.",
+  "Consistency beats intensity. A little every day.",
+  "You do not need to see the whole staircase. Just the next step.",
+  "Writing it down is remembering without overloading your brain.",
+  "Big dreams, small actions. That is the secret.",
+  "You deserve the kindness you give others.",
+  "Starting everywhere is starting nowhere. Pick one thing.",
+  "What if it is easier than you think?",
+  "Your pace is your pace. And that is enough.",
+  "Do less, but do it well.",
+  "Focus is a muscle. Train it daily.",
+  "It is not about how much you do. It is about how intentionally you do it.",
+  "Reward yourself for small wins. They all count.",
+  "A messy desk is fine. A messy system is harder.",
+  "Start where you are. Use what you have. Do what you can.",
+  "Deadlines are not stress. They are structure.",
+  "Your brain loves novelty. Use it as a tool, not an enemy.",
+  "Courage is not the absence of fear. It is starting anyway.",
+  "Every expert was once a beginner who did not quit.",
+  "The best investment? Yourself and your systems.",
+  "Stop waiting for inspiration. Start working and inspiration often follows.",
+  "The most important conversation of the day? The one with yourself.",
+  "Write it down. Your brain is not a storage closet.",
+  "Mistakes are not failures. They are lessons.",
+  "Simplicity is the ultimate sophistication.",
+  "You are more than your productivity.",
+  "What you feed with attention grows.",
+  "Fewer decisions, more energy for what matters.",
+  "Habits shape your future. Choose them on purpose.",
+  "Trust your system, not your memory.",
+  "The day does not start with your alarm. It starts with your intention.",
+  "Success is not linear. It is a zigzag upward.",
+  "Give yourself credit for being here.",
+  "Not everything that counts can be counted.",
+  "You already have what you need. You need the right structure.",
+  "Priorities also mean saying no to good things.",
+  "A full head can mean you care a lot. That is beautiful.",
+  "Today is a good day to do something small and great.",
+  "You are not your thoughts. You are the one noticing them.",
+  "Every morning is another chance. Use it.",
+];
+
+function readLocaleFromStorage(): Locale {
+  if (typeof window === "undefined") return "nl";
+  try {
+    const raw = localStorage.getItem(STRUCTURO_LOCALE_STORAGE_KEY);
+    return raw === "en" ? "en" : "nl";
+  } catch {
+    return "nl";
+  }
+}
+
+function quotesForLocale(locale: Locale): string[] {
+  return locale === "en" ? ADHD_QUOTES_EN : ADHD_QUOTES;
+}
+
+export function getQuoteOfTheDay(visitCount?: number, locale?: Locale): string {
+  const loc = locale ?? readLocaleFromStorage();
+  const pool = quotesForLocale(loc);
+  if (visitCount != null && visitCount >= 0 && visitCount < pool.length) {
+    return pool[visitCount];
   }
 
   const seed = new Date().toISOString().split("T")[0];
@@ -111,27 +234,35 @@ export function getQuoteOfTheDay(visitCount?: number): string {
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   }
-  return ADHD_QUOTES[Math.abs(hash) % ADHD_QUOTES.length];
+  return pool[Math.abs(hash) % pool.length];
 }
 
 const VISIT_COUNT_KEY = "structuro_quote_visit_count";
 
-export function getNextUniqueQuote(): string {
+export function getNextUniqueQuote(localeOverride?: Locale): string {
+  const loc = localeOverride ?? readLocaleFromStorage();
+  const pool = quotesForLocale(loc);
   let count = 0;
   try {
     const stored = localStorage.getItem(VISIT_COUNT_KEY);
     if (stored) count = parseInt(stored, 10) || 0;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
-  const quote = ADHD_QUOTES[count % ADHD_QUOTES.length];
+  const quote = pool[count % pool.length];
 
   try {
     localStorage.setItem(VISIT_COUNT_KEY, String(count + 1));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   return quote;
 }
 
-export function getRandomAdhdPlanningQuote(seed: number): string {
-  return ADHD_QUOTES[Math.abs(seed) % ADHD_QUOTES.length];
+export function getRandomAdhdPlanningQuote(seed: number, locale?: Locale): string {
+  const loc = locale ?? readLocaleFromStorage();
+  const pool = quotesForLocale(loc);
+  return pool[Math.abs(seed) % pool.length];
 }

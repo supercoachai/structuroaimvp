@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useOptionalI18n } from "@/lib/i18n";
 
 export interface DopamineAirlockProps {
   isActive: boolean;
@@ -15,9 +16,12 @@ export interface DopamineAirlockProps {
 export function DopamineAirlock({
   isActive,
   onAirlockComplete,
-  message = "Klaar.",
+  message,
   durationMs = 2000,
 }: DopamineAirlockProps) {
+  const i18n = useOptionalI18n();
+  const resolvedMessage =
+    message ?? i18n?.t("common.airlockDone") ?? "Klaar.";
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export function DopamineAirlock({
           showMessage ? "opacity-100" : "opacity-0"
         }`}
       >
-        {message}
+        {resolvedMessage}
       </p>
     </div>
   );

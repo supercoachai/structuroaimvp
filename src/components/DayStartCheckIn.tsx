@@ -21,7 +21,7 @@ import {
   saveTasksToStorage,
   updateTaskInStorage,
 } from '../lib/localStorageTasks';
-import { setDagstartCookieOnClient } from '../lib/dagstartCookie';
+import { getCalendarDateAmsterdam, setDagstartCookieOnClient } from '../lib/dagstartCookie';
 import { useUser } from '../hooks/useUser';
 import { updateProfileAfterDagstartComplete } from '@/lib/supabase/profileDagstartDb';
 import {
@@ -29,6 +29,7 @@ import {
   convertThoughtToTask,
   type DagafsluiterSuggestionRow,
 } from '@/lib/supabase/parkedThoughtsDb';
+import { useI18n } from '@/lib/i18n';
 
 function localDayStart(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -40,6 +41,13 @@ function isDueDateStrictlyAfterToday(dueAt: string | null | undefined): boolean 
   const due = new Date(dueAt);
   if (Number.isNaN(due.getTime())) return false;
   return localDayStart(due).getTime() > localDayStart(new Date()).getTime();
+}
+
+function isEligibleForTodayTop3(task: any, today: string): boolean {
+  if (!task?.id || task?.done) return false;
+  const createdAt = task.created_at ? getCalendarDateAmsterdam(new Date(task.created_at)) : null;
+  const postponedTo = task.postponedTo ?? task.postponed_to ?? null;
+  return createdAt === today || postponedTo === today;
 }
 
 interface DayStartCheckInProps {
@@ -54,6 +62,7 @@ export default function DayStartCheckIn({
   existingCheckIn,
   firstTimeOnboarding = false,
 }: DayStartCheckInProps) {
+  const { t: tr } = useI18n();
   const { tasks, addTask, fetchTasks, updateTask, loading: tasksContextLoading } = useTaskContext();
   const deferredTasksForSuggestions = useDeferredValue(tasks);
   const { checkIn: checkInFromDb, saveCheckIn } = useCheckIn();
@@ -75,6 +84,7 @@ export default function DayStartCheckIn({
   const [quickAddPresetMinutes, setQuickAddPresetMinutes] = useState<15 | 30 | 45 | null>(null);
   /** Alleen handmatige invoer; leeg betekent: gebruik preset als die gezet is. */
   const [quickAddCustomMinutesStr, setQuickAddCustomMinutesStr] = useState('');
+  const [top3SanitizeNotice, setTop3SanitizeNotice] = useState<string | null>(null);
   /** Herinneringen uit dagafsluiter (parked_thoughts), max 7 dagen, gefilterd op energie in useMemo. */
   const [dagafsluiterRows, setDagafsluiterRows] = useState<DagafsluiterSuggestionRow[]>([]);
   /** Na klik op herinnering: koppel nieuwe taak aan parked thought bij snel toevoegen. */
@@ -169,12 +179,12 @@ export default function DayStartCheckIn({
 
   const taskMatchesDayEnergy = (task: any, day: string | null) => {
     if (!day) return true;
-    const te = String(task.energyLevel || '').toLowerCase();
-    if (te === 'low' || te === 'medium' || te === 'high') return te === day;
-    const { label } = getTaskComplexity(task);
-    if (day === 'low') return label === 'Laag';
-    if (day === 'medium') return label === 'Normaal';
-    if (day === 'high') return label === 'Hoog';
+    const te = String(task.energyLevel || "").toLowerCase();
+    if (te === "low" || te === "medium" || te === "high") return te === day;
+    const { level: clevel } = getTaskComplexity(task);
+    if (day === "low") return clevel <= 2;
+    if (day === "medium") return clevel === 3;
+    if (day === "high") return clevel >= 4;
     return false;
   };
 
@@ -198,6 +208,7 @@ export default function DayStartCheckIn({
   // BELANGRIJK: Dit is ALLEEN voor UI weergave - taken worden NOOIT verwijderd uit de data!
   const getFilteredTasks = () => {
     if (!energyLevel) return [];
+    const today = getCalendarDateAmsterdam();
     
     // Filter: toon alleen taken ZONDER prioriteit (1, 2, 3) - taken met prioriteit staan al in de slots
     // Gebruik expliciete checks: !task.priority || task.priority === 0 || task.priority > 3
@@ -210,6 +221,7 @@ export default function DayStartCheckIn({
         if (!t || !t.id || !t.title) return false;
         if (t.done || t.notToday || t.source === 'medication' || t.source === 'event') return false;
         if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
+        if (!isEligibleForTodayTop3(t, today)) return false;
 
         const hasPriority =
           t.priority != null && t.priority != 0 && (t.priority == 1 || t.priority == 2 || t.priority == 3);
@@ -446,7 +458,7 @@ export default function DayStartCheckIn({
           task = tasks.find((t: any) => t.id === taskId);
         }
         
-        if (task) {
+        if (task && isEligibleForTodayTop3(task, getCalendarDateAmsterdam())) {
           // KRITIEK: Gebruik de volgorde in top3_task_ids array als slot nummer
           // Dit zorgt ervoor dat taken worden getoond in de juiste volgorde, zelfs als priority is gereset
           const slotNumber = index + 1; // 1, 2, of 3 op basis van volgorde in check-in
@@ -771,7 +783,7 @@ export default function DayStartCheckIn({
 
     } catch (error) {
       console.error('❌ Error in handleDrop:', error);
-      toast('Fout bij toevoegen van taak. Probeer het opnieuw.');
+      toast(tr('dayStart.toastAddFail'));
       
       // KRITIEK: Herstel state bij error - haal taken opnieuw op zodat niets verloren gaat
       try {
@@ -801,7 +813,7 @@ export default function DayStartCheckIn({
   const assignTaskToFirstSlot = async (task: any) => {
     const slot = getFirstAvailableSlotNumber();
     if (slot == null) {
-      toast('Alle focusplekken zijn al gevuld');
+      toast(tr('dayStart.toastSlotsFull'));
       return;
     }
     await handleDrop(slot, task);
@@ -815,6 +827,7 @@ export default function DayStartCheckIn({
     Boolean(quickAddTaskEnergy) &&
     quickAddMinutesOk &&
     quickAddTitle.trim().length >= 2;
+  const noAvailableSlot = Boolean(energyLevel) && getFirstAvailableSlotNumber() == null;
 
   const handleQuickAddSubmit = async () => {
     const trimmed = quickAddTitle.trim();
@@ -858,7 +871,7 @@ export default function DayStartCheckIn({
       }
     } catch (e) {
       console.error('quick add daystart:', e);
-      toast('Kon taak niet toevoegen');
+      toast(tr('dayStart.toastCantAdd'));
     } finally {
       setQuickAddBusy(false);
     }
@@ -909,7 +922,7 @@ export default function DayStartCheckIn({
       }, 500);
     } catch (error) {
       console.error('❌ Error in handleRemoveFromSlot:', error);
-      toast('Fout bij verwijderen van prioriteit. Probeer het opnieuw.');
+      toast(tr('dayStart.toastRemoveFail'));
       // Herstel state bij error
       try {
         await fetchTasks();
@@ -952,19 +965,19 @@ export default function DayStartCheckIn({
 
   const handleSubmit = async () => {
     if (!energyLevel) {
-      toast('Kies eerst je energie niveau');
+      toast(tr('dayStart.toastPickEnergy'));
       return;
     }
 
     if (filledSlots < maxSlots) {
       if (filledSlots === 0) {
-        toast('Kies minimaal 1 focuspunt om door te gaan');
+        toast(tr('dayStart.toastPickOne'));
       } else if (energyLevel === 'medium') {
-        toast('Vul nog een taak in: bij normale energie horen 2 focuspunten.');
+        toast(tr('dayStart.toastNeedTwo'));
       } else if (energyLevel === 'high') {
-        toast('Vul nog taken in: bij hoge energie horen 3 focuspunten.');
+        toast(tr('dayStart.toastNeedThree'));
       } else {
-        toast('Vul alle benodigde focuspunten in om door te gaan');
+        toast(tr('dayStart.toastFillAll'));
       }
       return;
     }
@@ -1020,7 +1033,7 @@ export default function DayStartCheckIn({
       }
       
       // KRITIEK: Filter null values en check dat we alleen task IDs hebben, geen slot numbers
-      const top3Ids = Object.entries(tasksToProcess)
+      const selectedIdsBeforeSanitize = Object.entries(tasksToProcess)
         .filter(([slotKey]) => {
           const slot = parseInt(slotKey, 10);
           return !isNaN(slot) && slot >= 1 && slot <= submitMaxSlots;
@@ -1034,11 +1047,32 @@ export default function DayStartCheckIn({
           return true;
         })
         .map((t: any) => String(t.id).trim());
+      const top3Ids = [...selectedIdsBeforeSanitize];
+
+      const eligibleTop3Ids = top3Ids.filter((id) => {
+        const task =
+          tasksBeforeUpdate.find((t: any) => String(t.id) === id) ??
+          Object.values(tasksToProcess).find((t: any) => String(t?.id) === id);
+        return isEligibleForTodayTop3(task, today);
+      });
+      top3Ids.length = 0;
+      top3Ids.push(...eligibleTop3Ids);
+      if (selectedIdsBeforeSanitize.length > eligibleTop3Ids.length) {
+        const removed = selectedIdsBeforeSanitize.length - eligibleTop3Ids.length;
+        const msg =
+          removed === 1
+            ? "1 taak was niet meer geldig voor vandaag en is uit je selectie verwijderd."
+            : `${removed} taken waren niet meer geldig voor vandaag en zijn uit je selectie verwijderd.`;
+        setTop3SanitizeNotice(msg);
+        toast(msg);
+      } else {
+        setTop3SanitizeNotice(null);
+      }
       
       console.log('[DayStart] Top3 task IDs:', top3Ids);
 
       if (top3Ids.length === 0 && filledSlots > 0) {
-        toast('Je focus kon niet worden gelezen. Kies de taken opnieuw of vernieuw de pagina.');
+        toast(tr('dayStart.toastFocusReadError'));
         return;
       }
       
@@ -1299,7 +1333,7 @@ export default function DayStartCheckIn({
       );
       if (stillMissing.length > 0) {
         console.error('❌ KRITIEKE FOUT: Taken verdwenen na directe opslag:', stillMissing);
-        toast(`Fout: ${stillMissing.length} ta(a)k(en) verdwenen na opslaan`);
+        toast(tr('dayStart.toastTasksMissing', { n: String(stillMissing.length) }));
         return;
       }
       
@@ -1319,7 +1353,7 @@ export default function DayStartCheckIn({
           top3_task_ids: top3Ids.length > 0 ? top3Ids : null,
         }),
         25_000,
-        'Opslaan duurt te lang. Controleer je verbinding en probeer opnieuw.'
+        tr('dayStart.saveTimeout')
       );
 
       setDagstartCookieOnClient();
@@ -1341,11 +1375,11 @@ export default function DayStartCheckIn({
 
       // Pas dagindeling aan op basis van energie
       if (energyLevel === 'low') {
-        toast('💚 Rustige dag vandaag - focus op kleine taken');
+        toast(tr('dayStart.toastSaveLow'));
       } else if (energyLevel === 'high') {
-        toast('⚡ Hoge energie! Perfect voor uitdagende taken');
+        toast(tr('dayStart.toastSaveHigh'));
       } else {
-        toast('🙂 Goede balans vandaag');
+        toast(tr('dayStart.toastSaveMed'));
       }
 
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
@@ -1370,47 +1404,68 @@ export default function DayStartCheckIn({
       
     } catch (error: any) {
       console.error('Error saving check-in:', error);
-      toast(`Fout bij opslaan: ${error?.message || 'Onbekende fout'}`);
+      const detail = String(error?.message || tr('passwordSetup.errUnknown'));
+      const invalidTop3Error =
+        detail.includes('niet geldig voor top3') ||
+        detail.includes('top3_task_ids bevat') ||
+        (detail.includes('Max ') && detail.includes('taken toegestaan voor energy level'));
+      if (invalidTop3Error) {
+        const msg =
+          "Een taak uit je selectie voldeed niet meer aan vandaag.\n" +
+          "Dit gebeurde automatisch om je te beschermen tegen chaos van gisteren.\n" +
+          "Herlaad je dagstart om je keuzes opnieuw te maken.";
+        setTop3SanitizeNotice(msg);
+        toast(msg);
+        return;
+      }
+      toast(
+        tr('dayStart.toastSaveErr', {
+          detail,
+        })
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const energyLevels = [
-    {
-      label: 'Laag',
-      value: 'low' as const,
-      sub: '1 taak',
-      emoji: '🌙',
-      idleBorder: 'border-[var(--structuro-border)]',
-      selectedBg: 'bg-slate-50',
-      selectedBorder: 'border-slate-400',
-      selectedRing: 'shadow-[0_0_0_3px_rgba(148,163,184,0.25)]',
-      textSel: 'text-slate-700',
-    },
-    {
-      label: 'Normaal',
-      value: 'medium' as const,
-      sub: '2 taken',
-      emoji: '🙂',
-      idleBorder: 'border-[var(--structuro-border)]',
-      selectedBg: 'bg-amber-50',
-      selectedBorder: 'border-amber-300',
-      selectedRing: 'shadow-[0_0_0_3px_rgba(245,158,11,0.2)]',
-      textSel: 'text-amber-900',
-    },
-    {
-      label: 'Hoog',
-      value: 'high' as const,
-      sub: '3 taken',
-      emoji: '⚡',
-      idleBorder: 'border-[var(--structuro-border)]',
-      selectedBg: 'bg-violet-50',
-      selectedBorder: 'border-violet-300',
-      selectedRing: 'shadow-[0_0_0_3px_rgba(139,92,246,0.2)]',
-      textSel: 'text-violet-900',
-    },
-  ];
+  const energyLevels = useMemo(
+    () => [
+      {
+        label: tr("dayStart.labelLow"),
+        value: "low" as const,
+        sub: tr("dayStart.subLow"),
+        emoji: "🌙",
+        idleBorder: "border-[var(--structuro-border)]",
+        selectedBg: "bg-slate-50",
+        selectedBorder: "border-slate-400",
+        selectedRing: "shadow-[0_0_0_3px_rgba(148,163,184,0.25)]",
+        textSel: "text-slate-700",
+      },
+      {
+        label: tr("dayStart.labelMed"),
+        value: "medium" as const,
+        sub: tr("dayStart.subMed"),
+        emoji: "🙂",
+        idleBorder: "border-[var(--structuro-border)]",
+        selectedBg: "bg-amber-50",
+        selectedBorder: "border-amber-300",
+        selectedRing: "shadow-[0_0_0_3px_rgba(245,158,11,0.2)]",
+        textSel: "text-amber-900",
+      },
+      {
+        label: tr("dayStart.labelHigh"),
+        value: "high" as const,
+        sub: tr("dayStart.subHigh"),
+        emoji: "⚡",
+        idleBorder: "border-[var(--structuro-border)]",
+        selectedBg: "bg-violet-50",
+        selectedBorder: "border-violet-300",
+        selectedRing: "shadow-[0_0_0_3px_rgba(139,92,246,0.2)]",
+        textSel: "text-violet-900",
+      },
+    ],
+    [tr]
+  );
 
   const getEnergyIntensity = (value: string) => {
     if (value === 'low') return 1;
@@ -1418,11 +1473,35 @@ export default function DayStartCheckIn({
     return 3;
   };
 
-  const slotConfig = [
-    { number: 1, label: "KERNFOCUS", description: "De absolute basislijn voor vandaag", color: "#3B82F6", bgColor: "#EFF6FF", borderColor: "#BFDBFE" },
-    { number: 2, label: "VERVOLGSTAP", description: "Zodra de motor draait", color: "#14B8A6", bgColor: "#F0FDFA", borderColor: "#99F6E4" },
-    { number: 3, label: "BONUSACTIE", description: "Beschikbaar bij hoge energie", color: "#8B5CF6", bgColor: "#F5F3FF", borderColor: "#DDD6FE" }
-  ];
+  const slotConfig = useMemo(
+    () => [
+      {
+        number: 1,
+        label: tr("dayStart.slot1Label"),
+        description: tr("dayStart.slot1Desc"),
+        color: "#3B82F6",
+        bgColor: "#EFF6FF",
+        borderColor: "#BFDBFE",
+      },
+      {
+        number: 2,
+        label: tr("dayStart.slot2Label"),
+        description: tr("dayStart.slot2Desc"),
+        color: "#14B8A6",
+        bgColor: "#F0FDFA",
+        borderColor: "#99F6E4",
+      },
+      {
+        number: 3,
+        label: tr("dayStart.slot3Label"),
+        description: tr("dayStart.slot3Desc"),
+        color: "#8B5CF6",
+        bgColor: "#F5F3FF",
+        borderColor: "#DDD6FE",
+      },
+    ],
+    [tr]
+  );
 
   // Als energie nog niet is gekozen, toon alleen energie-selectie
   if (!energyLevel) {
@@ -1433,7 +1512,7 @@ export default function DayStartCheckIn({
             <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
           </div>
           <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
-            Stap 1 van 2
+            {tr("dayStart.stepProgress")}
           </span>
         </div>
 
@@ -1443,16 +1522,16 @@ export default function DayStartCheckIn({
               ☀️
             </div>
             <h2 className="text-[21px] font-bold tracking-tight text-[var(--structuro-text)]">
-              Elke dag begint met één vraag.
+              {tr("dayStart.h2Energy")}
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[var(--structuro-sub)]">
-              Hoe zit je in je energie vandaag?
+              {tr("dayStart.pEnergy")}
             </p>
           </div>
 
           {firstTimeOnboarding && !energyOnboardingHintHidden ? (
             <p className="text-center text-sm leading-snug text-[var(--structuro-sub)]">
-              Kies hoe je je vandaag voelt. De app kiest mee.
+              {tr("dayStart.hintOnboarding")}
             </p>
           ) : null}
 
@@ -1485,12 +1564,12 @@ export default function DayStartCheckIn({
                             ? "hoog"
                             : "middel"
                       );
-                      const messages: { [key: string]: string } = {
-                        low: '🌙 Tijd voor een rustige start',
-                        medium: '🙂 Goede balans vandaag',
-                        high: '⚡ Energie geladen!',
+                      const messages: Record<string, string> = {
+                        low: tr("dayStart.toastPickLow"),
+                        medium: tr("dayStart.toastPickMed"),
+                        high: tr("dayStart.toastPickHigh"),
                       };
-                      toast(messages[level.value] || 'Energie gekozen');
+                      toast(messages[level.value] || tr("dayStart.toastPickDefault"));
                     });
                     setTimeout(() => setEnergySelected(false), 1000);
                     setTimeout(() => setShowConfirmation(false), 2000);
@@ -1517,7 +1596,7 @@ export default function DayStartCheckIn({
 
           {showConfirmation && energyLevel ? (
             <p className="text-center text-sm text-[var(--structuro-blue)] transition-opacity duration-300">
-              Helder. We stemmen je dag hierop af.
+              {tr("dayStart.confirmLine")}
             </p>
           ) : null}
         </div>
@@ -1541,11 +1620,17 @@ export default function DayStartCheckIn({
         result.deferredTaskIds.forEach((id) => {
           updateTask(id, { dueAt: tomorrowStr, notToday: true }).catch(console.error);
         });
-        toast(`${result.deferredTaskIds.length} ${result.deferredTaskIds.length === 1 ? "taak" : "taken"} naar morgen verplaatst`);
+        toast(
+          result.deferredTaskIds.length === 1
+            ? tr("dayStart.movedOne")
+            : tr("dayStart.movedMany", {
+                n: String(result.deferredTaskIds.length),
+              })
+        );
       }
 
       if (option === "push") {
-        toast("Alle deadline-taken staan klaar. Je bent sterk.");
+        toast(tr("dayStart.toastPush"));
       }
 
       setVoorzorgsmodusState(null);
@@ -1584,18 +1669,19 @@ export default function DayStartCheckIn({
             </span>
             <div>
               <p className="text-sm font-bold text-gray-900">
-                {energyLevel === 'low' && 'Rustig aan vandaag, en dat is helemaal prima.'}
-                {energyLevel === 'medium' &&
-                  'Goede balans vandaag. Goed moment om focus te pakken.'}
-                {energyLevel === 'high' && 'Je knalt vandaag de dag door met hoge energie!'}
+                {energyLevel === "low" && tr("dayStart.bannerLowTitle")}
+                {energyLevel === "medium" && tr("dayStart.bannerMedTitle")}
+                {energyLevel === "high" && tr("dayStart.bannerHighTitle")}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {energyLevel === 'low' && 'We houden het licht: 1 focuspunt.'}
-                {energyLevel === 'medium' && 'Mooie balans: 2 focuspunten.'}
-                {energyLevel === 'high' && 'Volle kracht vooruit: 3 focuspunten.'}
+                {energyLevel === "low" && tr("dayStart.bannerLowSub")}
+                {energyLevel === "medium" && tr("dayStart.bannerMedSub")}
+                {energyLevel === "high" && tr("dayStart.bannerHighSub")}
               </p>
               {isStep2LoadingTasks ? (
-                <span className="text-xs text-gray-400 mt-1 block">Taken laden…</span>
+                <span className="text-xs text-gray-400 mt-1 block">
+                  {tr("dayStart.tasksLoading")}
+                </span>
               ) : null}
             </div>
           </div>
@@ -1604,7 +1690,7 @@ export default function DayStartCheckIn({
             onClick={() => setEnergyLevel(null)}
             className="shrink-0 text-xs text-gray-500 hover:text-gray-900 underline underline-offset-2 mt-0.5"
           >
-            Wijzigen
+            {tr("dayStart.changeEnergy")}
           </button>
         </div>
       </div>
@@ -1613,12 +1699,25 @@ export default function DayStartCheckIn({
       <div className="mb-4">
         {firstTimeOnboarding && filledSlots === 0 ? (
           <p className="text-sm text-gray-500 mb-3 leading-snug">
-            Tik één taak aan om te beginnen.
+            {tr("dayStart.hintTapTask")}
           </p>
         ) : null}
         <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-3">
-          Jouw focuspunten
+          {tr("dayStart.focusPoints")}
         </p>
+        {top3SanitizeNotice ? (
+          <div className="mb-3 flex items-start justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <span>{top3SanitizeNotice}</span>
+            <button
+              type="button"
+              onClick={() => setTop3SanitizeNotice(null)}
+              className="shrink-0 rounded px-1 text-amber-700 hover:bg-amber-100"
+              aria-label="Melding sluiten"
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-3">
           {visibleFocusSlots.map((slot) => {
             const task = top3Tasks[slot.number];
@@ -1643,7 +1742,7 @@ export default function DayStartCheckIn({
                         type="button"
                         onClick={() => handleRemoveFromSlot(slot.number)}
                         className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-gray-600 opacity-80 hover:opacity-100 hover:bg-black/5"
-                        aria-label="Verwijder uit focus"
+                        aria-label={tr("dayStart.removeFocusAria")}
                       >
                         ×
                       </button>
@@ -1663,7 +1762,9 @@ export default function DayStartCheckIn({
                         <p className="text-xs text-gray-600 mt-0.5 leading-snug">{slot.description}</p>
                       </div>
                     </div>
-                    <p className="mt-3 text-center text-sm text-gray-500">Selecteer een taak hieronder</p>
+                    <p className="mt-3 text-center text-sm text-gray-500">
+                      {tr("dayStart.selectBelow")}
+                    </p>
                   </>
                 )}
               </div>
@@ -1675,7 +1776,7 @@ export default function DayStartCheckIn({
       {/* Taak toevoegen (eigen energie + duur per taak) */}
       <div className="mb-4">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-          Taak toevoegen
+          {tr("dayStart.addTaskSection")}
         </p>
         <div className="flex gap-2 items-stretch">
           <input
@@ -1685,33 +1786,38 @@ export default function DayStartCheckIn({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                if (quickAddFormReady) void handleQuickAddSubmit();
+                if (quickAddFormReady && !noAvailableSlot) void handleQuickAddSubmit();
               }
             }}
-            placeholder="Nieuwe taak voor vandaag..."
+            placeholder={tr("dayStart.quickAddPh")}
             className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
           />
           <button
             type="button"
             onClick={handleQuickAddSubmit}
-            disabled={quickAddBusy || !energyLevel || !quickAddFormReady}
+            disabled={quickAddBusy || !energyLevel || !quickAddFormReady || noAvailableSlot}
             className="shrink-0 h-10 w-10 rounded-lg bg-gray-900 text-white text-lg font-light leading-none hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Taak toevoegen"
+            aria-label={tr("dayStart.quickAddAria")}
           >
             +
           </button>
         </div>
+        {noAvailableSlot ? (
+          <p className="mt-2 text-xs text-amber-700">{tr("dayStart.capacityReached")}</p>
+        ) : null}
 
         {quickAddTitle.trim().length > 2 ? (
           <div className="mt-3 space-y-3 animate-fade-in">
             <div>
-              <p className="mb-1.5 text-xs font-medium text-gray-600">Energie voor deze taak</p>
+              <p className="mb-1.5 text-xs font-medium text-gray-600">
+                {tr("dayStart.quickEnergy")}
+              </p>
               <div className="grid grid-cols-3 gap-2">
-                {([
-                  { label: 'Rustig', emoji: '🌙', value: 'low' as const },
-                  { label: 'Normaal', emoji: '🙂', value: 'medium' as const },
-                  { label: 'Intensief', emoji: '⚡', value: 'high' as const },
-                ]).map((opt) => (
+                {[
+                  { label: tr("dayStart.quickRustig"), emoji: "🌙", value: "low" as const },
+                  { label: tr("dayStart.quickNormaal"), emoji: "🙂", value: "medium" as const },
+                  { label: tr("dayStart.quickIntensief"), emoji: "⚡", value: "high" as const },
+                ].map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -1733,7 +1839,7 @@ export default function DayStartCheckIn({
 
             {quickAddTaskEnergy ? (
               <div className="space-y-2 animate-fade-in">
-                <p className="text-xs font-medium text-gray-600">Geschatte tijd</p>
+                <p className="text-xs font-medium text-gray-600">{tr("dayStart.quickTime")}</p>
                 <div className="flex gap-2">
                   {([15, 30, 45] as const).map((m) => (
                     <button
@@ -1755,7 +1861,7 @@ export default function DayStartCheckIn({
                 </div>
                 <div>
                   <label htmlFor="daystart-quick-minutes" className="sr-only">
-                    Ander aantal minuten
+                    {tr("dayStart.quickOtherMinutesSr")}
                   </label>
                   <input
                     id="daystart-quick-minutes"
@@ -1781,7 +1887,7 @@ export default function DayStartCheckIn({
                         return String(clamped);
                       });
                     }}
-                    placeholder="Anders: minuten"
+                    placeholder={tr("dayStart.quickMinPh")}
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
@@ -1792,16 +1898,16 @@ export default function DayStartCheckIn({
       </div>
 
       {showNoTasksDayStart && !isStep2LoadingTasks && (
-        <p className="text-sm text-gray-600 mb-4">Je hebt nog geen taken. Voeg er hierboven één toe.</p>
+        <p className="text-sm text-gray-600 mb-4">{tr("dayStart.noTasksYet")}</p>
       )}
 
       {/* Suggesties voor vandaag */}
       {isStep2LoadingTasks ? (
-        <p className="text-sm text-gray-500 mb-6">Taken laden…</p>
+        <p className="text-sm text-gray-500 mb-6">{tr("dayStart.tasksLoading")}</p>
       ) : !showNoTasksDayStart ? (
         <div className="mb-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-            Suggesties voor vandaag
+            {tr("dayStart.suggestionsTitle")}
           </p>
           {mergedSuggestionItems.length > 0 ? (
             <>
@@ -1834,7 +1940,7 @@ export default function DayStartCheckIn({
                             {row.content}
                           </span>
                           <span className="text-[10px] text-gray-400 uppercase tracking-wide shrink-0">
-                            Herinnering
+                            {tr("dayStart.reminderBadge")}
                           </span>
                           <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
                             -
@@ -1882,12 +1988,12 @@ export default function DayStartCheckIn({
                   onClick={() => setShowAllSuggestions((v) => !v)}
                   className="mt-2 text-xs text-gray-500 hover:text-gray-700"
                 >
-                  {showAllSuggestions ? 'Minder tonen' : 'Toon alle taken'}
+                  {showAllSuggestions ? tr("dayStart.showLess") : tr("dayStart.showAll")}
                 </button>
               ) : null}
             </>
           ) : (
-            <p className="text-sm text-gray-500">Geen suggesties. Voeg een taak toe hierboven.</p>
+            <p className="text-sm text-gray-500">{tr("dayStart.noSuggestions")}</p>
           )}
         </div>
       ) : null}
@@ -1896,7 +2002,7 @@ export default function DayStartCheckIn({
 
       <div className="mt-4 pt-3 border-t border-gray-100">
         <p className="pb-2 text-center text-xs text-gray-400">
-          Na je dagstart is de rest van de app beschikbaar
+          {tr("dayStart.footerHint")}
         </p>
         <button
           type="button"
@@ -1909,10 +2015,10 @@ export default function DayStartCheckIn({
           }`}
         >
           {isSubmitting
-            ? 'Opslaan...'
+            ? tr("dayStart.saving")
             : existingCheckIn
-              ? 'Wijzigingen opslaan'
-              : 'Start mijn dag'}
+              ? tr("dayStart.saveChanges")
+              : tr("dayStart.startDay")}
         </button>
       </div>
     </div>

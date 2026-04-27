@@ -11,6 +11,7 @@ import { postponeTasksToCalendarDay } from "@/lib/supabase/postponeTasksDb";
 import { useCheckIn } from "../hooks/useCheckIn";
 import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { trackShutdownCompleted } from "@/utils/events";
+import { useI18n } from "@/lib/i18n";
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -19,6 +20,7 @@ interface DayShutdownProps {
 export type SatisfactionLevel = "low" | "good" | "great";
 
 export default function DayShutdown({ onComplete }: DayShutdownProps) {
+  const { t: tr } = useI18n();
   const { tasks } = useTaskContext();
   const { checkIn, loading: checkInLoading } = useCheckIn();
   const [satisfactionLevel, setSatisfactionLevel] = useState<SatisfactionLevel | null>(null);
@@ -63,7 +65,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
   const handleSubmit = async () => {
     if (!satisfactionLevel) {
-      toast("Kies hoe voldaan je je voelt na vandaag");
+      toast(tr("dayShutdown.toastPickSatisfaction"));
       return;
     }
 
@@ -75,7 +77,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      toast("Je moet ingelogd zijn");
+      toast(tr("dayShutdown.toastNeedLogin"));
       setIsSubmitting(false);
       return;
     }
@@ -85,9 +87,42 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       const tomorrowYmd = getTomorrowCalendarDateAmsterdam();
       const completedIds = completedTasks.map((t) => t.id);
       const selected = tasksToRemember.filter((t) => t.selected);
+      const unselected = tasksToRemember.filter((t) => !t.selected);
+
+      // "Not today" is expliciet tijdelijk. Bij dagafsluiting verwijderen we die taken.
+      const { error: removeNotTodayErr } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("not_today", true);
+      if (removeNotTodayErr) {
+        console.error(
+          "[dagafsluiter] not_today cleanup failed:",
+          removeNotTodayErr.message,
+          removeNotTodayErr
+        );
+        throw removeNotTodayErr;
+      }
+
+      // Open, niet geselecteerde focus-taken expliciet wegzetten uit "morgen".
+      if (unselected.length > 0) {
+        const { error: archiveUnselectedErr } = await supabase
+          .from("tasks")
+          .update({ not_today: true })
+          .in("id", unselected.map((t: any) => t.id))
+          .eq("user_id", user.id);
+        if (archiveUnselectedErr) {
+          console.error(
+            "[dagafsluiter] archive unselected failed:",
+            archiveUnselectedErr.message,
+            archiveUnselectedErr
+          );
+          throw archiveUnselectedErr;
+        }
+      }
 
       const suggestionItems = selected.map((t: any) => ({
-        content: String(t.title ?? "").trim() || "Taak",
+        content: String(t.title ?? "").trim() || tr("common.taskFallback"),
         suggestedTaskEnergy: (["low", "medium", "high"].includes(String(t.energyLevel))
           ? t.energyLevel
           : "medium") as "low" | "medium" | "high",
@@ -132,7 +167,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         selected.length > 0
           ? selected.map((t: any) => ({
               id: String(t.id),
-              title: String(t.title ?? "").trim() || "Taak",
+              title: String(t.title ?? "").trim() || tr("common.taskFallback"),
             }))
           : null;
 
@@ -164,13 +199,16 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       }
 
       triggerHaptic(HAPTIC_PATTERNS.DAY_DONE);
-      toast("✨ Dagafsluiter voltooid! Goede nacht en rust goed uit.");
+      toast(tr("dayShutdown.toastDone"));
       track("day_shutdown", {
         satisfactionLevel,
         completedCount: completedTasks.length,
         dagafsluiterSuggestionCount: suggestionItems.length,
       });
-      trackShutdownCompleted();
+      trackShutdownCompleted(
+        movedToTomorrowIds.length,
+        satisfactionLevel
+      );
       onComplete();
     } catch (error: unknown) {
       const detail =
@@ -178,7 +216,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
           ? String((error as { message: unknown }).message)
           : String(error);
       console.error("Dagafsluiter save error:", detail, error);
-      const msg = "Kon niet opslaan, probeer opnieuw.";
+      const msg = tr("dayShutdown.saveError");
       setSaveError(msg);
       toast(msg);
     } finally {
@@ -197,11 +235,29 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     emoji: string;
     label: string;
     line: string;
-  }[] = [
-    { key: "low", emoji: "😮‍💨", label: "Beetje", line: "Het was een dag" },
-    { key: "good", emoji: "🙂", label: "Goed", line: "Ik heb gedaan wat ik kon" },
-    { key: "great", emoji: "🌟", label: "Super", line: "Ik ben trots op vandaag" },
-  ];
+  }[] = useMemo(
+    () => [
+      {
+        key: "low" as const,
+        emoji: "😮‍💨",
+        label: tr("dayShutdown.satLowLabel"),
+        line: tr("dayShutdown.satLowLine"),
+      },
+      {
+        key: "good" as const,
+        emoji: "🙂",
+        label: tr("dayShutdown.satGoodLabel"),
+        line: tr("dayShutdown.satGoodLine"),
+      },
+      {
+        key: "great" as const,
+        emoji: "🌟",
+        label: tr("dayShutdown.satGreatLabel"),
+        line: tr("dayShutdown.satGreatLine"),
+      },
+    ],
+    [tr]
+  );
 
   return (
     <div
@@ -215,7 +271,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       }}
     >
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
-        🌙 Dagafsluiter
+        {tr("dayShutdown.title")}
       </h2>
       <p
         style={{
@@ -225,12 +281,12 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
           marginBottom: 32,
         }}
       >
-        Sluit je dag af met rust en overzicht
+        {tr("dayShutdown.subtitle")}
       </p>
 
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          ✅ Wat heb je vandaag voor elkaar gekregen?
+          {tr("dayShutdown.completedTitle")}
         </h3>
         {completedTasks.length > 0 ? (
           <div style={{ display: "grid", gap: 8 }}>
@@ -261,7 +317,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
               fontSize: 14,
             }}
           >
-            Geen taken voltooid vandaag. Dat is oké! Morgen is een nieuwe dag.
+            {tr("dayShutdown.noCompleted")}
           </div>
         )}
       </div>
@@ -269,7 +325,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       <div style={{ marginBottom: 32 }}>
         {checkInLoading ? (
           <p style={{ fontSize: 14, color: "rgba(47,52,65,0.6)", textAlign: "center" }}>
-            Laden…
+            {tr("common.loading")}
           </p>
         ) : incompleteDagstartTasks.length === 0 ? (
           <div
@@ -284,12 +340,12 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
               lineHeight: 1.5,
             }}
           >
-            Alles gedaan vandaag. Goed bezig. ✅
+            {tr("dayShutdown.allDoneToday")}
           </div>
         ) : (
           <>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-              📅 Wil je deze morgen oppakken?
+              {tr("dayShutdown.tomorrowTitle")}
             </h3>
             <p
               style={{
@@ -299,7 +355,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
                 lineHeight: 1.45,
               }}
             >
-              Jouw energie bepaalt dan wat je pakt.
+              {tr("dayShutdown.tomorrowHint")}
             </p>
             <div style={{ display: "grid", gap: 8, maxHeight: 200, overflowY: "auto" }}>
               {tasksToRemember.map((task) => (
@@ -333,7 +389,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-          💭 Hoe voldaan ben je na vandaag?
+          {tr("dayShutdown.satisfactionTitle")}
         </h3>
         <p
           style={{
@@ -343,7 +399,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
             lineHeight: 1.45,
           }}
         >
-          Niet over wat niet lukte. Over wat je hebt gedaan.
+          {tr("dayShutdown.satisfactionHint")}
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           {satisfactionOptions.map((opt) => (
@@ -386,12 +442,12 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
       <div style={{ marginBottom: 32 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-          💡 1 minuut reflectie (optioneel)
+          {tr("dayShutdown.reflectionTitle")}
         </h3>
         <textarea
           value={reflection}
           onChange={(e) => setReflection(e.target.value)}
-          placeholder="Hoe voelde je dag? Wat ging goed? Wat kan beter?"
+          placeholder={tr("dayShutdown.reflectionPh")}
           style={{
             width: "100%",
             minHeight: 80,
@@ -436,7 +492,7 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
           transition: "all 0.2s ease",
         }}
       >
-        {isSubmitting ? "Opslaan..." : "Sluit mijn dag af"}
+        {isSubmitting ? tr("dayShutdown.submitting") : tr("dayShutdown.submit")}
       </button>
     </div>
   );

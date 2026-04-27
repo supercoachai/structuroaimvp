@@ -13,6 +13,7 @@ import TodoParkThoughtBar from '@/components/TodoParkThoughtBar';
 import DagstartOverlay from '@/components/DagstartOverlay';
 import { performClientLogout } from '@/lib/logoutClient';
 import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
+import { useI18n } from '@/lib/i18n';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -22,6 +23,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
 
   const [dagstartDone, setDagstartDone] = useState(() =>
     typeof document !== 'undefined' ? isDagstartDoneTodayClient() : false
@@ -79,8 +81,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
             type="button"
             onClick={handleLogout}
             className="fixed right-5 z-50 rounded-xl bg-[var(--structuro-dark)] p-2.5 text-[var(--structuro-dark-sub)] shadow-lg transition-colors hover:bg-slate-800 hover:text-white bottom-[max(1.25rem,calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)))]"
-            title="Uitloggen"
-            aria-label="Uitloggen"
+            title={t('layout.logout')}
+            aria-label={t('layout.logout')}
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5" />
           </button>
@@ -99,6 +101,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         <DagstartOverlay onComplete={handleDagstartComplete} />
       ) : null}
 
+      {/** Geen aparte app-header boven de dagstart: die overlay is zelfstandig; anders valt de titel visueel achter de balk. */}
+      {!showDagstartOverlay ? (
       <header
         className={`flex shrink-0 items-center justify-between gap-3 border-b bg-white px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-sm ${
           mainNavLocked ? 'relative z-[110] pointer-events-none opacity-50' : ''
@@ -120,8 +124,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
           <Link
             href="/settings"
             className="rounded-xl p-2.5 text-[var(--structuro-sub)] transition-colors hover:bg-[var(--structuro-border-soft)] hover:text-[var(--structuro-text)]"
-            aria-label="Instellingen"
-            title="Instellingen"
+            aria-label={t('layout.settings')}
+            title={t('layout.settings')}
           >
             <Cog6ToothIcon className="h-6 w-6" />
           </Link>
@@ -129,13 +133,14 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
             type="button"
             onClick={handleLogout}
             className="rounded-xl p-2.5 text-[var(--structuro-sub)] transition-colors hover:bg-[var(--structuro-border-soft)] hover:text-[var(--structuro-text)]"
-            title="Uitloggen"
-            aria-label="Uitloggen"
+            title={t('layout.logout')}
+            aria-label={t('layout.logout')}
           >
             <ArrowRightOnRectangleIcon className="h-6 w-6" />
           </button>
         </div>
       </header>
+      ) : null}
 
       <div
         className={`flex min-h-0 flex-1 flex-col ${mainNavLocked ? "relative z-[5]" : ""}`}

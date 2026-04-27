@@ -30,9 +30,10 @@ import {
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import {
   getCalendarDateAmsterdam,
-  getTimeOfDayGreetingNl,
+  getTimeOfDayGreeting,
   setDagstartCookieOnClient,
 } from "@/lib/dagstartCookie";
+import { useI18n } from "@/lib/i18n";
 import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
 import { microStepId, type MicroStep } from "@/lib/microSteps";
 import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
@@ -50,14 +51,6 @@ const MICRO_MERGED_SLIDE_INDEX = 4;
 const NAME_SLIDE_INDEX = 5;
 const FIRST_DAY_SLIDE_INDEX = 7;
 
-const MICRO_DEMO_STEPS = [
-  "Bureau leegmaken",
-  "Kleding in de kast",
-  "Vloer stofzuigen",
-] as const;
-
-const PARKEREN_TEXT = "Bel mama terug...";
-
 /** Parkeren-demo: korte pauzes, rustigere typing, daarna klik → toast. */
 /** Eerst H2 + uitleg lezen, daarna pas voorbeeldzin "Bel mama terug" en demo. */
 const PARKEREN_READ_INTRO_MS = 2000;
@@ -69,12 +62,8 @@ const PARKEREN_AFTER_TYPE_BEFORE_CLICK_MS = 220;
 /** Tijd tussen knop-highlight en toast (+1,5 s t.o.v. korte variant). */
 const PARKEREN_CLICK_TO_TOAST_MS = 1860;
 
-/** Eerste zin van de tagline (letter voor letter, rustig tempo). */
-const WELCOME_TAGLINE_TYPED = "De app voor mensen die anders denken.";
 /** Ms tussen tekens tagline (2x sneller t.o.v. eerdere 142ms). */
-const WELCOME_TAGLINE_CHAR_MS = 71;
-/** Na kernwoorden: spatie + slot met punt (letter voor letter). */
-const WELCOME_TYPING_SUFFIX = " op jouw energie.";
+const WELCOME_TAGLINE_CHAR_MS = 44;
 
 /** Bodycopy onder H2: zelfde opmaak als designref (regulier, #4A5568, vaste regelafstand). */
 const OB_INTRO_OUTER =
@@ -83,12 +72,21 @@ const OB_INTRO_P =
   "font-normal text-[#4A5568] text-base leading-[1.65] tracking-normal";
 
 export default function OnboardingFlow() {
+  const { t, locale } = useI18n();
+  const welcomeTaglineTyped = useMemo(() => t("onboarding.welcomeTagline"), [t]);
+  const welcomeSuffix = useMemo(() => t("onboarding.welcomeSuffix"), [t]);
+  const microDemoSteps = useMemo(
+    () => [t("onboarding.microStep1"), t("onboarding.microStep2"), t("onboarding.microStep3")],
+    [t]
+  );
+  const parkDemoText = useMemo(() => t("onboarding.parkDemoTyping"), [t]);
   const { user, loading: userLoading } = useUser();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   /**
    * Demo-animatie microstappen: 0 = eerste actief, 1..3 = zoveel stappen afgerond, 4 = afronding getoond.
    * Loopt alleen op het microstappen-scherm; reset bij verlaten van die stap.
@@ -140,7 +138,10 @@ export default function OnboardingFlow() {
   const isLocalMode = hasStructuroLocalModeCookieOnClient();
 
   /** Begroeting op basis van actuele tijd in Amsterdam (zelfde als dagstart). Vernieuwt als je deze stap opnieuw opent. */
-  const firstDaySlideGreeting = useMemo(() => getTimeOfDayGreetingNl(), [step]);
+  const firstDaySlideGreeting = useMemo(
+    () => getTimeOfDayGreeting(locale),
+    [locale, step]
+  );
 
   const firstDayMinutesOk =
     firstTaskEstimatedMinutes != null &&
@@ -357,7 +358,7 @@ export default function OnboardingFlow() {
     if (reduceMotion) {
       setMicroDemoStage(4);
       setParkerenStage(4);
-      setParkerenTypedChars(PARKEREN_TEXT.length);
+      setParkerenTypedChars(parkDemoText.length);
       setParkerenSectionInView(true);
       return;
     }
@@ -386,7 +387,7 @@ export default function OnboardingFlow() {
     return () => {
       [t1, t2, t3, t4].forEach(clearTimeout);
     };
-  }, [step]);
+  }, [step, parkDemoText.length]);
 
   /** Dopamine-moment: confetti wanneer alle microstappen klaar zijn (ADHD-vriendelijke beloning). */
   useEffect(() => {
@@ -428,7 +429,7 @@ export default function OnboardingFlow() {
       PARKEREN_STAGE2_DELAY_MS;
     const stage3At =
       stage2At +
-      PARKEREN_TEXT.length * PARKEREN_TYPE_CHAR_MS +
+      parkDemoText.length * PARKEREN_TYPE_CHAR_MS +
       PARKEREN_AFTER_TYPE_BEFORE_CLICK_MS;
     const stage4At = stage3At + PARKEREN_CLICK_TO_TOAST_MS;
     const t5 = window.setTimeout(() => setParkerenStage(1), PARKEREN_READ_INTRO_MS);
@@ -439,7 +440,7 @@ export default function OnboardingFlow() {
       [t5, t6, t7, t8].forEach(clearTimeout);
       parkerenAnimStartedRef.current = false;
     };
-  }, [step, parkerenSectionInView, microDemoStage]);
+  }, [step, parkerenSectionInView, microDemoStage, parkDemoText]);
 
   /** Intersection Observer: parkeren-sectie in beeld (animatie start pas dan). */
   useEffect(() => {
@@ -508,9 +509,9 @@ export default function OnboardingFlow() {
     if (rm) {
       setWelcomeShowLogo(true);
       setWelcomeShowTitle(true);
-      setWelcomeTaglineCharCount(WELCOME_TAGLINE_TYPED.length);
+      setWelcomeTaglineCharCount(welcomeTaglineTyped.length);
       setWelcomeBlueStep(3);
-      setWelcomeTypingChars(WELCOME_TYPING_SUFFIX.length);
+      setWelcomeTypingChars(welcomeSuffix.length);
       setWelcomeShowSubtitle(true);
       setWelcomeShowCta(true);
       return;
@@ -528,56 +529,56 @@ export default function OnboardingFlow() {
     const pushTimeout = (fn: () => void, ms: number) => {
       timers.push(window.setTimeout(fn, ms) as unknown as number);
     };
-    let at = 280;
+    let at = 180;
     pushTimeout(() => setWelcomeShowLogo(true), at);
-    at += 720;
+    at += 460;
     pushTimeout(() => setWelcomeShowTitle(true), at);
-    at += 980;
+    at += 460;
     pushTimeout(() => {
       let c = 0;
       welcomeTaglineIntervalRef.current = window.setInterval(() => {
         c += 1;
         setWelcomeTaglineCharCount(c);
-        if (c >= WELCOME_TAGLINE_TYPED.length) {
+        if (c >= welcomeTaglineTyped.length) {
           if (welcomeTaglineIntervalRef.current != null) {
             clearInterval(welcomeTaglineIntervalRef.current as unknown as number);
             welcomeTaglineIntervalRef.current = null;
           }
-          let delay = 620;
+          let delay = 320;
           extraTimers.push(
             window.setTimeout(() => {
               setWelcomeBlueStep(1);
               triggerHaptic(HAPTIC_PATTERNS.MICROSTEP_DONE);
             }, delay) as unknown as number
           );
-          delay += 820;
+          delay += 380;
           extraTimers.push(
             window.setTimeout(() => {
               setWelcomeBlueStep(2);
               triggerHaptic(HAPTIC_PATTERNS.MICROSTEP_DONE);
             }, delay) as unknown as number
           );
-          delay += 920;
+          delay += 420;
           extraTimers.push(
             window.setTimeout(() => {
               setWelcomeBlueStep(3);
               triggerHaptic(HAPTIC_PATTERNS.MICROSTEP_DONE);
             }, delay) as unknown as number
           );
-          delay += 640;
+          delay += 300;
           extraTimers.push(
             window.setTimeout(() => {
               let sc = 0;
               welcomeTypingIntervalRef.current = window.setInterval(() => {
                 sc += 1;
                 setWelcomeTypingChars(sc);
-                if (sc >= WELCOME_TYPING_SUFFIX.length) {
+                if (sc >= welcomeSuffix.length) {
                   if (welcomeTypingIntervalRef.current != null) {
                     clearInterval(welcomeTypingIntervalRef.current as unknown as number);
                     welcomeTypingIntervalRef.current = null;
                   }
-                  const subtitleDelay = 1400;
-                  const ctaAfterSubtitle = 1100;
+                  const subtitleDelay = 520;
+                  const ctaAfterSubtitle = 340;
                   extraTimers.push(
                     window.setTimeout(() => setWelcomeShowSubtitle(true), subtitleDelay) as unknown as number
                   );
@@ -588,7 +589,7 @@ export default function OnboardingFlow() {
                     ) as unknown as number
                   );
                 }
-              }, 76) as unknown as number;
+              }, 42) as unknown as number;
             }, delay) as unknown as number
           );
         }
@@ -607,7 +608,7 @@ export default function OnboardingFlow() {
         welcomeTaglineIntervalRef.current = null;
       }
     };
-  }, [step]);
+  }, [step, welcomeTaglineTyped, welcomeSuffix]);
 
   useEffect(() => {
     if (step !== 1) { setEnergyStage(0); return; }
@@ -650,10 +651,10 @@ export default function OnboardingFlow() {
     const interval = setInterval(() => {
       i++;
       setParkerenTypedChars(i);
-      if (i >= PARKEREN_TEXT.length) clearInterval(interval);
+      if (i >= parkDemoText.length) clearInterval(interval);
     }, PARKEREN_TYPE_CHAR_MS);
     return () => clearInterval(interval);
-  }, [parkerenStage]);
+  }, [parkerenStage, parkDemoText]);
 
   const goNext = useCallback(async () => {
     if (step >= STEP_COUNT - 1) return;
@@ -671,7 +672,7 @@ export default function OnboardingFlow() {
         try {
           const { error } = await persistPreferredDisplayName(user, name);
           if (error) {
-            toast(`Kon naam niet opslaan: ${error}`);
+            toast(t("onboarding.toastNameErr", { detail: String(error) }));
             return;
           }
         } finally {
@@ -684,7 +685,7 @@ export default function OnboardingFlow() {
       return;
     }
     setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
-  }, [step, firstName, user, firstDayReady, parkerenStage]);
+  }, [step, firstName, user, firstDayReady, parkerenStage, t]);
 
   const goPrev = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
 
@@ -693,18 +694,25 @@ export default function OnboardingFlow() {
     setStep(i);
   }, []);
 
-  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
+    if (touchStartX.current == null || touchStartY.current == null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
     touchStartX.current = null;
-    if (dx < -50) {
+    touchStartY.current = null;
+    const horizontalSwipe = Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.35;
+    if (!horizontalSwipe) return;
+    if (dx < -56) {
       if (step === NAME_SLIDE_INDEX && firstName.trim().length < 2) return;
       if (step === MICRO_MERGED_SLIDE_INDEX && parkerenStage < 4) return;
       if (step === FIRST_DAY_SLIDE_INDEX && !firstDayReady) return;
       void goNext();
     }
-    else if (dx > 50) goPrev();
+    else if (dx > 56) goPrev();
   };
 
   const persistFirstDayTaskAndEnergy = async () => {
@@ -779,7 +787,9 @@ export default function OnboardingFlow() {
 
   const finish = async () => {
     const displayName =
-      firstName.trim().length >= 2 ? firstName.trim().slice(0, 200) : "Gebruiker";
+      firstName.trim().length >= 2
+        ? firstName.trim().slice(0, 200)
+        : t("onboarding.defaultUser");
     setFinishing(true);
     try {
       if (firstDayReady) {
@@ -823,7 +833,7 @@ export default function OnboardingFlow() {
   if (!isLocalMode && userLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 text-slate-500">
-        <div className="animate-pulse text-base">Structuro laden…</div>
+        <div className="animate-pulse text-base">{t("onboarding.loading")}</div>
       </div>
     );
   }
@@ -831,8 +841,8 @@ export default function OnboardingFlow() {
   if (!isLocalMode && !user?.id) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-50 to-blue-50 px-6 text-center text-slate-500">
-        <div className="animate-pulse text-base">Je wordt doorgestuurd naar inloggen…</div>
-        <p className="text-sm text-slate-400">Geen actieve sessie. Even geduld.</p>
+        <div className="animate-pulse text-base">{t("onboarding.redirectLogin")}</div>
+        <p className="text-sm text-slate-400">{t("onboarding.noSession")}</p>
       </div>
     );
   }
@@ -844,7 +854,7 @@ export default function OnboardingFlow() {
       type="button"
       onClick={goPrev}
       className="absolute left-4 top-6 z-30 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-white/70 hover:text-gray-600"
-      aria-label="Vorige stap"
+      aria-label={t("onboarding.navPrev")}
     >
       <ChevronLeft className="h-5 w-5" strokeWidth={2} aria-hidden />
     </button>
@@ -894,38 +904,44 @@ export default function OnboardingFlow() {
                       welcomeShowTitle ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                     }`}
                   >
-                    Welkom bij Structuro
+                    {t("onboarding.welcomeH1")}
                   </h1>
                   <p className="mt-6 flex min-h-[5.5rem] max-w-full flex-wrap items-baseline justify-center gap-x-2.5 gap-y-2 text-center text-base leading-[1.55] tracking-[0.01em] text-gray-700 sm:text-lg">
                     {welcomeTaglineCharCount > 0 ? (
                       <span className="inline-block text-gray-700">
-                        {WELCOME_TAGLINE_TYPED.slice(0, welcomeTaglineCharCount)}
+                        {welcomeTaglineTyped.slice(0, welcomeTaglineCharCount)}
                         <span
                           className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
-                            welcomeTaglineCharCount < WELCOME_TAGLINE_TYPED.length ? "animate-pulse" : "opacity-0"
+                            welcomeTaglineCharCount < welcomeTaglineTyped.length ? "animate-pulse" : "opacity-0"
                           }`}
                           aria-hidden
                         />
                       </span>
                     ) : null}
                     {welcomeBlueStep >= 1 ? (
-                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">Rust,</span>
+                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                        {t("onboarding.welcomeWordRust")}
+                      </span>
                     ) : null}
                     {welcomeBlueStep >= 2 ? (
-                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">focus</span>
+                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                        {t("onboarding.welcomeWordFocus")}
+                      </span>
                     ) : null}
                     {welcomeBlueStep >= 3 ? (
                       <span className="ob-welcome-blue-in inline-flex flex-wrap items-baseline justify-center">
-                        <span className="text-gray-600">en</span>
-                        <span className="font-semibold text-blue-600 pl-[0.45em]">structuur</span>
+                        <span className="text-gray-600">{t("onboarding.welcomeWordAnd")}</span>
+                        <span className="font-semibold text-blue-600 pl-[0.45em]">
+                          {t("onboarding.welcomeWordStructure")}
+                        </span>
                       </span>
                     ) : null}
                     {welcomeTypingChars > 0 ? (
                       <span className="inline-block min-w-[1ch] text-gray-700">
-                        {WELCOME_TYPING_SUFFIX.slice(0, welcomeTypingChars)}
+                        {welcomeSuffix.slice(0, welcomeTypingChars)}
                         <span
                           className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
-                            welcomeTypingChars < WELCOME_TYPING_SUFFIX.length ? "animate-pulse" : "opacity-0"
+                            welcomeTypingChars < welcomeSuffix.length ? "animate-pulse" : "opacity-0"
                           }`}
                           aria-hidden
                         />
@@ -937,7 +953,7 @@ export default function OnboardingFlow() {
                       welcomeShowSubtitle ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
                     }`}
                   >
-                    Even een korte rondleiding, duurt 30 seconden.
+                    {t("onboarding.welcomeSubtitle")}
                   </p>
                   <button
                     type="button"
@@ -946,7 +962,7 @@ export default function OnboardingFlow() {
                       welcomeShowCta ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
                     }`}
                   >
-                    Laten zien
+                    {t("onboarding.welcomeCta")}
                   </button>
                   </div>
                 </div>
@@ -959,25 +975,23 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
                 <Sun className="w-14 h-14 text-amber-500 mb-4" strokeWidth={1.75} aria-hidden />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Elke dag begint met één vraag</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.energyTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
-                  <p className={`${OB_INTRO_P} text-balance`}>Hoe zit je in je energie vandaag?</p>
-                  <p className={`${OB_INTRO_P} text-balance mt-2`}>
-                    Elke ochtend begin je hier, daarna is alles beschikbaar.
-                  </p>
+                  <p className={`${OB_INTRO_P} text-balance`}>{t("onboarding.energyIntro1")}</p>
+                  <p className={`${OB_INTRO_P} text-balance mt-2`}>{t("onboarding.energyIntro2")}</p>
                 </div>
                 <div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-md">
                   {[
-                    { icon: <Moon className="w-10 h-10 text-slate-500" strokeWidth={1.5} />, label: "Laag", sub: "1 rustige taak", idx: 1 },
-                    { icon: <Smile className="w-10 h-10 text-amber-500" strokeWidth={1.5} />, label: "Normaal", sub: "2 taken", idx: 2 },
-                    { icon: <Zap className="w-10 h-10 text-violet-600" strokeWidth={1.75} />, label: "Hoog", sub: "3 taken", idx: 3 },
+                    { icon: <Moon className="w-10 h-10 text-slate-500" strokeWidth={1.5} />, label: t("onboarding.energyLowLabel"), sub: t("onboarding.energyLowSub"), idx: 1 },
+                    { icon: <Smile className="w-10 h-10 text-amber-500" strokeWidth={1.5} />, label: t("onboarding.energyNormalLabel"), sub: t("onboarding.energyNormalSub"), idx: 2 },
+                    { icon: <Zap className="w-10 h-10 text-violet-600" strokeWidth={1.75} />, label: t("onboarding.energyHighLabel"), sub: t("onboarding.energyHighSub"), idx: 3 },
                   ].map((c) => (
                     <div
-                      key={c.label}
+                      key={c.idx}
                       className={`rounded-2xl border bg-white p-4 text-center shadow-sm cursor-default transition-all duration-[1000ms] ease-out ${
                         energyStage >= c.idx ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                       } ${
-                        energyStage >= 4 && c.label === "Normaal"
+                        energyStage >= 4 && c.idx === 2
                           ? "border-blue-400 ring-2 ring-blue-200 shadow-md scale-105"
                           : "border-slate-200"
                       }`}
@@ -989,7 +1003,7 @@ export default function OnboardingFlow() {
                   ))}
                 </div>
                 <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  Volgende
+                  {t("onboarding.next")}
                 </button>
                 </div>
                 </div>
@@ -1002,17 +1016,15 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
                 <Check className="w-14 h-14 text-emerald-600 mb-4" strokeWidth={2} aria-hidden />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Kies wat echt telt vandaag</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.focusPointsTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
-                  <p className={OB_INTRO_P}>
-                    Geen lange lijsten. Jij kiest maximaal 3 focuspunten, afhankelijk van je energie. Wij passen ons aan op wat werkt voor jouw brein. De rest bestaat even niet.
-                  </p>
+                  <p className={OB_INTRO_P}>{t("onboarding.focusPointsBody")}</p>
                 </div>
                 <ul className="mt-8 w-full max-w-md space-y-3 text-left">
                   {[
-                    { n: "1", label: "Kernfocus", sub: "De basislijn voor vandaag", bg: "bg-blue-50", border: "border-blue-100", numColor: "text-blue-700", textColor: "text-blue-900", subColor: "text-blue-600", idx: 1 },
-                    { n: "2", label: "Vervolgstap", sub: "Zodra de motor draait", bg: "bg-teal-50", border: "border-teal-100", numColor: "text-teal-700", textColor: "text-teal-900", subColor: "text-teal-600", idx: 2 },
-                    { n: "3", label: "Bonusactie", sub: "Beschikbaar bij hoge energie", bg: "bg-violet-50", border: "border-violet-100", numColor: "text-violet-700", textColor: "text-violet-900", subColor: "text-violet-600", idx: 3 },
+                    { n: "1", label: t("onboarding.fp1Label"), sub: t("onboarding.fp1Sub"), bg: "bg-blue-50", border: "border-blue-100", numColor: "text-blue-700", textColor: "text-blue-900", subColor: "text-blue-600", idx: 1 },
+                    { n: "2", label: t("onboarding.fp2Label"), sub: t("onboarding.fp2Sub"), bg: "bg-teal-50", border: "border-teal-100", numColor: "text-teal-700", textColor: "text-teal-900", subColor: "text-teal-600", idx: 2 },
+                    { n: "3", label: t("onboarding.fp3Label"), sub: t("onboarding.fp3Sub"), bg: "bg-violet-50", border: "border-violet-100", numColor: "text-violet-700", textColor: "text-violet-900", subColor: "text-violet-600", idx: 3 },
                   ].map((r) => (
                     <li
                       key={r.n}
@@ -1029,7 +1041,7 @@ export default function OnboardingFlow() {
                   ))}
                 </ul>
                 <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  Volgende
+                  {t("onboarding.next")}
                 </button>
                 </div>
                 </div>
@@ -1042,20 +1054,20 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
                 <Target className="w-14 h-14 text-blue-600 mb-4" strokeWidth={1.75} aria-hidden />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Eén taak tegelijk</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.focusModeTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
-                  <p className={OB_INTRO_P}>
-                    Structuro heeft een Focus modus. Geen afleiding, geen keuzes. Gewoon beginnen en stap voor stap verder.
-                  </p>
+                  <p className={OB_INTRO_P}>{t("onboarding.focusModeBody")}</p>
                 </div>
 
                 <div className={`mt-8 w-full max-w-sm rounded-2xl overflow-hidden shadow-lg transition-all duration-[700ms] ease-out ${
                   focusModeStage >= 1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
                 }`}>
                   <div className="bg-slate-800 text-white px-5 pt-4 pb-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Nu aan zet</p>
-                    <p className="text-base font-bold mt-1">Boodschappenlijst maken</p>
-                    <p className="text-xs text-slate-400 mt-0.5">10 min · Rustig</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                      {t("onboarding.focusModeNowOn")}
+                    </p>
+                    <p className="text-base font-bold mt-1">{t("onboarding.focusModeDemoTask")}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{t("onboarding.focusModeDemoMeta")}</p>
                   </div>
                   <div className={`bg-white border border-t-0 border-slate-200 px-5 py-4 transition-all duration-[1000ms] ease-out ${
                     focusModeStage >= 2 ? "opacity-100" : "opacity-0"
@@ -1063,7 +1075,7 @@ export default function OnboardingFlow() {
                     <div className={`w-full py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm text-center transition-all duration-[1000ms] ${
                       focusModeStage >= 3 ? "animate-pulse shadow-lg shadow-emerald-200" : ""
                     }`}>
-                      Start focus sessie
+                      {t("onboarding.focusModeStartCta")}
                     </div>
                   </div>
                 </div>
@@ -1071,11 +1083,11 @@ export default function OnboardingFlow() {
                 <p className={`mt-5 text-xs text-blue-600 font-medium transition-all duration-[1000ms] ease-out ${
                   focusModeStage >= 3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 }`}>
-                  Zodra je begint, verdwijnt de rest. Je ziet alleen de taak, een timer en je voortgang.
+                  {t("onboarding.focusModeHint")}
                 </p>
 
                 <button type="button" onClick={() => void goNext()} className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  Volgende
+                  {t("onboarding.next")}
                 </button>
                 </div>
                 </div>
@@ -1106,11 +1118,9 @@ export default function OnboardingFlow() {
                   {/* Sectie 1: microstappen */}
                   <div className="flex w-full flex-col items-center justify-center py-6">
                     <Layers className="w-14 h-14 text-violet-600 mb-4" strokeWidth={1.75} aria-hidden />
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Groot project? Breek op.</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.microTitle")}</h2>
                     <div className={OB_INTRO_OUTER}>
-                      <p className={OB_INTRO_P}>
-                        Deel grote dingen in microstappen. Zo breek je een grote taak op in kleine, haalbare stukken.
-                      </p>
+                      <p className={OB_INTRO_P}>{t("onboarding.microBody")}</p>
                     </div>
 
                     {(() => {
@@ -1124,23 +1134,27 @@ export default function OnboardingFlow() {
                           aria-live="polite"
                         >
                           <div className="rounded-t-2xl bg-slate-800 text-white px-5 pt-4 pb-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Focus modus</p>
-                            <p className="text-base font-bold mt-1">Kamer opruimen</p>
-                            <p className="text-xs text-slate-400 mt-0.5">15 min · Normaal</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                              {t("onboarding.microDemoHeader")}
+                            </p>
+                            <p className="text-base font-bold mt-1">{t("onboarding.microDemoParentTask")}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{t("onboarding.microDemoMeta")}</p>
                           </div>
 
                           <div className="rounded-b-2xl bg-white border border-t-0 border-slate-200 px-5 py-4">
                             <div className="flex items-center gap-2 mb-3">
                               <Layers className="w-3.5 h-3.5 text-violet-600" aria-hidden />
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Microstappen</p>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                {t("onboarding.microStepsLabel")}
+                              </p>
                             </div>
                             <ul className="space-y-0">
-                              {MICRO_DEMO_STEPS.map((label, i) => {
+                              {microDemoSteps.map((label, i) => {
                                 const isDone = i < microDemoStage;
                                 const isActive = activeRow === i;
                                 return (
                                   <li
-                                    key={label}
+                                    key={`${i}-${label.slice(0, 12)}`}
                                     className={`overflow-hidden rounded-lg transition-all duration-[720ms] ease-out motion-reduce:transition-none ${
                                       isDone ? "max-h-0 opacity-0 py-0 my-0" : "max-h-14 opacity-100 py-0.5 my-0.5"
                                     } ${isActive && !isDone ? "bg-violet-50 -mx-2 px-2 py-1.5 ring-1 ring-violet-200" : ""}`}
@@ -1171,7 +1185,7 @@ export default function OnboardingFlow() {
 
                             <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
                               <span className="text-xs text-gray-400 tabular-nums">
-                                {doneCount} van 3 klaar
+                                {t("onboarding.microProgress", { done: String(doneCount) })}
                               </span>
                               <div className="flex gap-1 shrink-0" aria-hidden>
                                 {[0, 1, 2].map((j) => {
@@ -1198,7 +1212,7 @@ export default function OnboardingFlow() {
                                 className="mt-4 text-center text-base font-medium text-slate-500"
                                 style={{ animation: "ob-micro-done-banner 1.2s ease-out both" }}
                               >
-                                Klaar.
+                                {t("onboarding.microDone")}
                               </p>
                             ) : null}
                           </div>
@@ -1215,11 +1229,9 @@ export default function OnboardingFlow() {
                     id="onboarding-parkeren-section"
                     className="scroll-mt-8 flex w-full flex-col items-center pb-8 sm:scroll-mt-12"
                   >
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Gedachte tussendoor?</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.parkTitle")}</h2>
                     <div className={OB_INTRO_OUTER}>
-                      <p className={OB_INTRO_P}>
-                        Komt er iets tussendoor? Parkeer het even. Zo blijf je in flow, zonder chaos en zonder je hoofdtaak te verliezen.
-                      </p>
+                      <p className={OB_INTRO_P}>{t("onboarding.parkBody")}</p>
                     </div>
 
                     <p
@@ -1227,13 +1239,15 @@ export default function OnboardingFlow() {
                         parkerenStage >= 1 ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      &ldquo;Bel mama terug&rdquo;
+                      &ldquo;{t("onboarding.parkExampleQuote")}&rdquo;
                     </p>
 
                     <div className="mt-6 w-full max-w-sm rounded-2xl overflow-hidden shadow-lg">
                       <div className="bg-slate-800 text-white px-5 pt-4 pb-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Focus modus</p>
-                        <p className="text-base font-bold mt-1">Projectplanning opstellen</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                          {t("onboarding.parkDemoHeader")}
+                        </p>
+                        <p className="text-base font-bold mt-1">{t("onboarding.parkDemoTaskTitle")}</p>
                       </div>
                       <div className="bg-white border border-t-0 border-slate-200 px-5 py-4">
                         <div
@@ -1241,14 +1255,16 @@ export default function OnboardingFlow() {
                             parkerenStage >= 1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                           }`}
                         >
-                          <p className="text-xs font-medium text-gray-800 mb-3">Parkeer een gedachte</p>
+                          <p className="text-xs font-medium text-gray-800 mb-3">{t("onboarding.parkFormLabel")}</p>
                           <div
                             className={`w-full px-2.5 py-2 border rounded-lg text-xs bg-gray-50 mb-3 text-left min-h-[1.75rem] transition-colors duration-[600ms] ${
                               parkerenStage >= 2 ? "border-blue-300" : "border-slate-200"
                             }`}
                           >
                             {parkerenStage >= 2 && (
-                              <span className="text-gray-800">{PARKEREN_TEXT.substring(0, parkerenTypedChars)}</span>
+                              <span className="text-gray-800">
+                                {parkDemoText.substring(0, parkerenTypedChars)}
+                              </span>
                             )}
                             {parkerenStage >= 1 && parkerenStage < 3 && (
                               <span className="inline-block w-0.5 h-3.5 bg-blue-500 animate-pulse align-middle" />
@@ -1256,7 +1272,7 @@ export default function OnboardingFlow() {
                           </div>
                           <div className="flex gap-2">
                             <div className="flex-1 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs text-center text-gray-500">
-                              Annuleer
+                              {t("onboarding.parkBtnCancel")}
                             </div>
                             <div
                               className={`flex-1 px-2.5 py-1.5 rounded-lg text-xs text-center font-medium transition-all duration-[600ms] ${
@@ -1265,7 +1281,7 @@ export default function OnboardingFlow() {
                                   : "bg-blue-600 text-white"
                               }`}
                             >
-                              Parkeer dit even
+                              {t("onboarding.parkBtnSubmit")}
                             </div>
                           </div>
                         </div>
@@ -1276,17 +1292,13 @@ export default function OnboardingFlow() {
                             style={{ animation: "ob-micro-done-banner 0.5s ease-out both" }}
                           >
                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden />
-                            <p className="text-xs font-medium text-emerald-800">
-                              Opgeslagen voor later. Focus blijft intact.
-                            </p>
+                            <p className="text-xs font-medium text-emerald-800">{t("onboarding.parkSavedToast")}</p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <p className="mt-5 text-xs text-gray-500 leading-relaxed max-w-sm">
-                      Later zet je geparkeerde gedachten om naar echte taken.
-                    </p>
+                    <p className="mt-5 text-xs text-gray-500 leading-relaxed max-w-sm">{t("onboarding.parkFooter")}</p>
 
                     <button
                       type="button"
@@ -1294,7 +1306,7 @@ export default function OnboardingFlow() {
                       onClick={() => void goNext()}
                       className="mt-10 w-full max-w-sm rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-md transition-all duration-[700ms] hover:bg-blue-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
                     >
-                      Volgende
+                      {t("onboarding.next")}
                     </button>
                   </div>
                 </div>
@@ -1307,15 +1319,15 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
                 <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Hoe mogen we je aanspreken?</h2>
-                <p className="mt-3 text-sm text-gray-600">Alleen je voornaam, voor een persoonlijke begroeting.</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.nameTitle")}</h2>
+                <p className="mt-3 text-sm text-gray-600">{t("onboarding.nameSubtitle")}</p>
                 <input
                   type="text"
                   autoComplete="given-name"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && nameOk && !saving) void goNext(); }}
-                  placeholder="Voornaam"
+                  placeholder={t("onboarding.namePh")}
                   className="mt-8 w-full max-w-sm px-4 py-3.5 rounded-xl border border-gray-200 text-center text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                 />
                 <button
@@ -1324,7 +1336,7 @@ export default function OnboardingFlow() {
                   onClick={() => void goNext()}
                   className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-[700ms]"
                 >
-                  {saving ? "Opslaan…" : "Verder"}
+                  {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
                 </button>
                 </div>
                 </div>
@@ -1337,15 +1349,21 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
                 <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">Welkom, {firstName.trim() || "daar"}!</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {t("onboarding.welcomePersonalGreeting", {
+                    name: firstName.trim() || t("onboarding.welcomePersonalFallback"),
+                  })}
+                </p>
                 <p className="mt-4 text-base leading-relaxed text-gray-700">
-                  Structuro helpt je elke dag starten met{" "}
-                  <span className="font-semibold text-blue-600">rust</span>,{" "}
-                  <span className="font-semibold text-blue-600">focus</span> en{" "}
-                  <span className="font-semibold text-blue-600">structuur</span>, op jouw tempo en met jouw energie.
+                  {t("onboarding.personalBodyStart")}
+                  <span className="font-semibold text-blue-600">{t("onboarding.personalCalm")}</span>,{" "}
+                  <span className="font-semibold text-blue-600">{t("onboarding.personalFocus")}</span>
+                  {t("onboarding.personalBetweenFocusStruct")}
+                  <span className="font-semibold text-blue-600">{t("onboarding.personalStructure")}</span>
+                  {t("onboarding.personalBodyEnd")}
                 </p>
                 <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  Verder
+                  {t("onboarding.continue")}
                 </button>
                 </div>
                 </div>
@@ -1397,24 +1415,24 @@ export default function OnboardingFlow() {
                     ) : null}
                     .
                   </h2>
-                  <p className="mt-3 max-w-md text-base text-gray-500">Hoe zit je in je energie?</p>
+                  <p className="mt-3 max-w-md text-base text-gray-500">{t("onboarding.firstDayEnergyHelp")}</p>
 
                   <div className="mt-10 w-full max-w-md">
                     <div className="grid grid-cols-3 gap-3">
                       {([
                         {
                           key: "low" as const,
-                          label: "Laag",
+                          label: t("onboarding.energyLowLabel"),
                           icon: <Moon className="h-10 w-10 text-slate-500" strokeWidth={1.5} aria-hidden />,
                         },
                         {
                           key: "medium" as const,
-                          label: "Normaal",
+                          label: t("onboarding.energyNormalLabel"),
                           icon: <Smile className="h-10 w-10 text-amber-500" strokeWidth={1.5} aria-hidden />,
                         },
                         {
                           key: "high" as const,
-                          label: "Hoog",
+                          label: t("onboarding.energyHighLabel"),
                           icon: <Zap className="h-10 w-10 text-violet-600" strokeWidth={1.75} aria-hidden />,
                         },
                       ]).map((c) => (
@@ -1437,10 +1455,8 @@ export default function OnboardingFlow() {
 
                   {firstDayEnergy ? (
                     <div className="ob-first-day-bridge-in mt-10 w-full max-w-md space-y-1 text-center">
-                      <p className="text-base font-medium text-gray-900">
-                        Goed. Laten we je eerste taak instellen.
-                      </p>
-                      <p className="text-sm text-gray-400">Wat wil je vandaag als eerste doen?</p>
+                      <p className="text-base font-medium text-gray-900">{t("onboarding.firstDayBridge1")}</p>
+                      <p className="text-sm text-gray-400">{t("onboarding.firstDayBridge2")}</p>
                     </div>
                   ) : null}
 
@@ -1465,7 +1481,7 @@ export default function OnboardingFlow() {
                               firstTaskDurationInputRef.current?.focus();
                             }
                           }}
-                          placeholder="Bijv. mail beantwoorden, even bellen met..."
+                          placeholder={t("onboarding.firstDayTaskPh")}
                           autoComplete="off"
                           className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-gray-900 shadow-md outline-none ring-1 ring-slate-200/90 transition-all placeholder:text-gray-400 focus:shadow-lg focus:ring-2 focus:ring-blue-400/40"
                         />
@@ -1484,9 +1500,7 @@ export default function OnboardingFlow() {
                           ref={firstDayDurationBlockRef}
                           className="ob-first-day-duration-in space-y-3 pt-2 text-center"
                         >
-                          <p className="text-base font-medium text-gray-700">
-                            Hoeveel minuten denk je ongeveer nodig te hebben?
-                          </p>
+                          <p className="text-base font-medium text-gray-700">{t("onboarding.firstDayMinutesQ")}</p>
                           <div className="relative">
                             <input
                               ref={firstTaskDurationInputRef}
@@ -1514,8 +1528,8 @@ export default function OnboardingFlow() {
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && firstDayReady) void goNext();
                               }}
-                              placeholder="Bijv. 15 of 45"
-                              aria-label="Geschatte duur in minuten"
+                              placeholder={t("onboarding.firstDayMinutesPh")}
+                              aria-label={t("onboarding.firstDayMinutesAria")}
                               autoComplete="off"
                               className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-gray-900 shadow-md outline-none ring-1 ring-slate-200/90 transition-all placeholder:text-gray-400 focus:shadow-lg focus:ring-2 focus:ring-blue-400/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
@@ -1533,12 +1547,8 @@ export default function OnboardingFlow() {
 
                       {firstDayDurationVisible && firstDayMinutesOk ? (
                         <div className="animate-fade-in mt-8 w-full space-y-4 text-center">
-                          <p className="text-base font-medium text-gray-800">
-                            Wil je microstappen toevoegen?
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Kleine substappen kunnen helpen om te starten.
-                          </p>
+                          <p className="text-base font-medium text-gray-800">{t("onboarding.firstDayMicroQ")}</p>
+                          <p className="text-sm text-gray-500">{t("onboarding.firstDayMicroHint")}</p>
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
@@ -1551,7 +1561,7 @@ export default function OnboardingFlow() {
                                   : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
                               }`}
                             >
-                              Ja
+                              {t("common.yes")}
                             </button>
                             <button
                               type="button"
@@ -1566,14 +1576,14 @@ export default function OnboardingFlow() {
                                   : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
                               }`}
                             >
-                              Nee
+                              {t("common.no")}
                             </button>
                           </div>
 
                           {firstDayUseMicroSteps === true ? (
                             <div className="animate-fade-in mt-2 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 text-left">
                               <p className="mb-3 text-center text-xs font-medium text-violet-900">
-                                Je eerste microstappen
+                                {t("onboarding.firstDayMicroSection")}
                               </p>
                               {firstDayMicroTitles.length > 0 ? (
                                 <ul className="mb-3 space-y-2">
@@ -1594,7 +1604,7 @@ export default function OnboardingFlow() {
                                           )
                                         }
                                         className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
-                                        aria-label="Stap verwijderen"
+                                        aria-label={t("onboarding.firstDayMicroRemoveAria")}
                                       >
                                         ×
                                       </button>
@@ -1603,7 +1613,7 @@ export default function OnboardingFlow() {
                                 </ul>
                               ) : (
                                 <p className="mb-2 text-center text-xs text-gray-600">
-                                  Voeg minstens één stap toe.
+                                  {t("onboarding.firstDayMicroNeedOne")}
                                 </p>
                               )}
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
@@ -1614,25 +1624,25 @@ export default function OnboardingFlow() {
                                   onKeyDown={(e) => {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
-                                    const t = firstDayMicroInput.trim();
-                                    if (!t) return;
-                                    setFirstDayMicroTitles((prev) => [...prev, t]);
+                                    const microLine = firstDayMicroInput.trim();
+                                    if (!microLine) return;
+                                    setFirstDayMicroTitles((prev) => [...prev, microLine]);
                                     setFirstDayMicroInput("");
                                   }}
-                                  placeholder="Bijv. bestand openen…"
+                                  placeholder={t("onboarding.firstDayMicroInputPh")}
                                   className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
                                 />
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const t = firstDayMicroInput.trim();
-                                    if (!t) return;
-                                    setFirstDayMicroTitles((prev) => [...prev, t]);
+                                    const microLine = firstDayMicroInput.trim();
+                                    if (!microLine) return;
+                                    setFirstDayMicroTitles((prev) => [...prev, microLine]);
                                     setFirstDayMicroInput("");
                                   }}
                                   className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
                                 >
-                                  Toevoegen
+                                  {t("onboarding.firstDayMicroAdd")}
                                 </button>
                               </div>
                             </div>
@@ -1649,7 +1659,7 @@ export default function OnboardingFlow() {
                       onClick={() => void goNext()}
                       className="ob-first-day-task-in mt-10 w-full max-w-md rounded-xl bg-blue-600 py-4 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.99]"
                     >
-                      Begin mijn dag →
+                      {t("onboarding.firstDayCta")}
                     </button>
                   ) : null}
                 </div>
@@ -1670,9 +1680,9 @@ export default function OnboardingFlow() {
                     </div>
                     <div className="space-y-2">
                       <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                        Sluit je dag rustig af
+                        {t("onboarding.shutdownTitle")}
                       </h2>
-                      <p className="text-base text-gray-500">Elke dag eindigt met drie vragen.</p>
+                      <p className="text-base text-gray-500">{t("onboarding.shutdownSubtitle")}</p>
                     </div>
 
                     <div className="flex w-full flex-col gap-3 text-left">
@@ -1680,18 +1690,18 @@ export default function OnboardingFlow() {
                         [
                           {
                             emoji: "\u2705",
-                            title: "Wat heb je vandaag voor elkaar gekregen?",
-                            sub: "Erken wat je hebt gedaan",
+                            title: t("onboarding.shutdownQ1Title"),
+                            sub: t("onboarding.shutdownQ1Sub"),
                           },
                           {
                             emoji: "\u{1F4C5}",
-                            title: "Wat wil je nog niet vergeten?",
-                            sub: "Komt morgen als suggestie terug",
+                            title: t("onboarding.shutdownQ2Title"),
+                            sub: t("onboarding.shutdownQ2Sub"),
                           },
                           {
                             emoji: "\u2B50",
-                            title: "Hoe voldaan ben je na vandaag?",
-                            sub: "Geen oordeel, gewoon voelen",
+                            title: t("onboarding.shutdownQ3Title"),
+                            sub: t("onboarding.shutdownQ3Sub"),
                           },
                         ] as const
                       ).map((row) => (
@@ -1711,9 +1721,7 @@ export default function OnboardingFlow() {
                     </div>
 
                     <div className="w-full rounded-2xl bg-blue-50 px-5 py-4">
-                      <p className="text-center text-sm text-blue-700">
-                        Je vindt de dagafsluiting altijd via &quot;Afsluiten&quot; onderaan.
-                      </p>
+                      <p className="text-center text-sm text-blue-700">{t("onboarding.shutdownTip")}</p>
                     </div>
 
                     <button
@@ -1721,7 +1729,7 @@ export default function OnboardingFlow() {
                       onClick={() => void goNext()}
                       className="w-full max-w-md rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.98]"
                     >
-                      Volgende
+                      {t("onboarding.next")}
                     </button>
                   </div>
                 </div>
@@ -1750,10 +1758,10 @@ export default function OnboardingFlow() {
                       readySlidePhase >= 2 ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                     }`}
                   >
-                    <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Je bent klaar.</h2>
-                    <p className="text-base leading-relaxed text-gray-500">
-                      Structuro staat klaar. Elke dag begin je rustig, op jouw energie en jouw tempo.
-                    </p>
+                    <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                      {t("onboarding.readyHeadline")}
+                    </h2>
+                    <p className="text-base leading-relaxed text-gray-500">{t("onboarding.readySub")}</p>
                   </div>
 
                   <div className="flex w-full flex-col gap-3 text-left">
@@ -1761,18 +1769,18 @@ export default function OnboardingFlow() {
                       [
                         {
                           emoji: "\u{1F305}",
-                          title: "Dagstart",
-                          sub: "Hoe zit je in je energie?",
+                          title: t("onboarding.readyRoutine1Title"),
+                          sub: t("onboarding.readyRoutine1Sub"),
                         },
                         {
                           emoji: "\u{1F3AF}",
-                          title: "Focus modus",
-                          sub: "Één stap tegelijk, geen afleiding",
+                          title: t("onboarding.readyRoutine2Title"),
+                          sub: t("onboarding.readyRoutine2Sub"),
                         },
                         {
                           emoji: "\u{1F319}",
-                          title: "Dagafsluiting",
-                          sub: "Morgen begint opnieuw",
+                          title: t("onboarding.readyRoutine3Title"),
+                          sub: t("onboarding.readyRoutine3Sub"),
                         },
                       ] as const
                     ).map((row, idx) => (
@@ -1798,9 +1806,7 @@ export default function OnboardingFlow() {
                       readySlidePhase >= 6 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                     }`}
                   >
-                    <p className="text-sm font-medium leading-relaxed text-green-800">
-                      Geen druk, geen vergelijking, geen race. Jij bepaalt je ritme.
-                    </p>
+                    <p className="text-sm font-medium leading-relaxed text-green-800">{t("onboarding.readyCalmBanner")}</p>
                   </div>
 
                   <div
@@ -1814,7 +1820,9 @@ export default function OnboardingFlow() {
                       onClick={() => void finish()}
                       className="w-full rounded-xl bg-green-600 py-4 text-base font-semibold text-white shadow-md transition-all duration-500 hover:bg-green-700 active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                     >
-                      {finishing ? "Bezig…" : "Let's do it the Structuro way →"}
+                      {finishing
+                        ? t("onboarding.readyPrimaryBusy")
+                        : t("onboarding.readyPrimary")}
                     </button>
                     <button
                       type="button"
@@ -1825,7 +1833,7 @@ export default function OnboardingFlow() {
                       }}
                       className="w-full rounded-xl border border-slate-200/90 bg-white py-3.5 text-base font-semibold text-gray-700 shadow-sm transition-all duration-500 hover:bg-slate-50 active:scale-[0.99] disabled:opacity-50 motion-reduce:transition-none"
                     >
-                      Instructies herhalen
+                      {t("onboarding.readyRepeat")}
                     </button>
                   </div>
                   </div>
@@ -1837,14 +1845,17 @@ export default function OnboardingFlow() {
 
         <nav
           className="flex shrink-0 justify-center gap-2 border-t border-slate-200/60 bg-gradient-to-br from-slate-50/95 to-blue-50/95 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
-          aria-label="Onboarding voortgang"
+          aria-label={t("onboarding.navProgress")}
         >
           {Array.from({ length: STEP_COUNT }, (_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => goToStep(i)}
-              aria-label={`Ga naar stap ${i + 1} van ${STEP_COUNT}`}
+              aria-label={t("onboarding.navStep", {
+                n: String(i + 1),
+                total: String(STEP_COUNT),
+              })}
               aria-current={i === step ? "step" : undefined}
               className={`rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
                 i === step

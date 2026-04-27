@@ -8,6 +8,7 @@ import { track } from '../../shared/track';
 import {
   trackFocusAbandoned,
   trackFocusCompleted,
+  trackFocusModeStarted,
   trackFocusStarted,
   trackTaskCompleted,
 } from '@/utils/events';
@@ -22,6 +23,7 @@ import { useUser } from '@/hooks/useUser';
 import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
 import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
+import { useI18n } from '@/lib/i18n';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -43,16 +45,15 @@ const countdownDigitStyle = `
   }
 `;
 
-const ENERGY_DISPLAY: Record<string, string> = { low: 'Rustig', medium: 'Normaal', high: 'Intens' };
-
 function FocusContent() {
+  const { locale, t: tr } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
   const { checkIn, saveCheckIn } = useCheckIn();
   const { user } = useUser();
   const [nuNietBusy, setNuNietBusy] = useState(false);
-  const [taskTitle, setTaskTitle] = useState(searchParams?.get('task') || 'Focus sessie');
+  const [taskTitle, setTaskTitle] = useState(searchParams?.get("task") || "");
   const [parkedCount, setParkedCount] = useState(0);
   const [showFocusCard, setShowFocusCard] = useState(true);
   const [inlineNewStep, setInlineNewStep] = useState('');
@@ -120,7 +121,7 @@ function FocusContent() {
       onClick={() => {
         if (isRunning) {
           const ok = confirm(
-            'Je focus sessie loopt nog. Weet je zeker dat je wilt sluiten?'
+            tr("focus.closeConfirm")
           );
           if (!ok) return;
         }
@@ -131,7 +132,7 @@ function FocusContent() {
       <span className="inline-flex rotate-180" aria-hidden>
         <ChevronRightIcon className="h-3.5 w-3.5" />
       </span>
-      Sluiten
+      {tr("common.close")}
     </button>
   );
 
@@ -140,10 +141,10 @@ function FocusContent() {
     if (!isRunning || isPaused) { document.title = 'Structuro'; return; }
     const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
     const ss = String(timeLeft % 60).padStart(2, '0');
-    const name = (currentTask?.title || taskTitle || 'Focus').trim();
+    const name = (currentTask?.title || taskTitle || tr("focus.sessionDefault")).trim();
     document.title = `(${mm}:${ss}) ${name} | Structuro`;
     return () => { document.title = 'Structuro'; };
-  }, [isRunning, isPaused, timeLeft, currentTask?.title, taskTitle]);
+  }, [isRunning, isPaused, timeLeft, currentTask?.title, taskTitle, tr]);
 
   useEffect(() => {
     if (!isRunning) setTimeLeft(duration * 60);
@@ -164,6 +165,10 @@ function FocusContent() {
         }
         track('ignite_start', { taskTitle, duration, autoStart: true });
         trackFocusStarted();
+        trackFocusModeStarted(
+          (currentTask?.energyLevel as "low" | "medium" | "high") ?? "medium",
+          getTaskDurationMinutes(currentTask ?? null) ?? duration
+        );
       }, 500);
       return () => clearTimeout(t);
     }
@@ -201,7 +206,7 @@ function FocusContent() {
         setIsRunning(false);
         setCompleted(false);
         setShowTimeUpPrompt(true);
-        setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now()));
+        setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now(), locale));
         track("ignite_complete", { taskTitle, duration });
         trackFocusCompleted(duration * 60);
       }
@@ -209,7 +214,7 @@ function FocusContent() {
     tick();
     const timer = setInterval(tick, 250);
     return () => clearInterval(timer);
-  }, [isRunning, isPaused, timeLeft, taskTitle, duration]);
+  }, [isRunning, isPaused, timeLeft, taskTitle, duration, locale]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -354,7 +359,10 @@ function FocusContent() {
   }, [router]);
 
   const completeCurrentTask = async () => {
-    if (!currentTask?.id) { toast('Geen taak om te voltooien'); return; }
+    if (!currentTask?.id) {
+      toast(tr("focus.noTaskToast"));
+      return;
+    }
     try {
       const gainXp = xpForTask(currentTask);
       triggerHaptic(HAPTIC_PATTERNS.TASK_DONE);
@@ -367,8 +375,16 @@ function FocusContent() {
         clearTimeout(microUndoTimerRef.current);
         microUndoTimerRef.current = null;
       }
-      void updateTask(currentTask.id, { done: true, completedAt: new Date().toISOString(), started: false });
-      trackTaskCompleted();
+      void updateTask(currentTask.id, {
+        done: true,
+        completedAt: new Date().toISOString(),
+        started: true,
+        source: "focus_mode",
+      });
+      trackTaskCompleted(
+        "focus_mode",
+        (currentTask.energyLevel as "low" | "medium" | "high") ?? "medium"
+      );
       trackFocusCompleted(Math.max(0, duration * 60 - timeLeft));
       track('task_completed_early', {
         taskId: currentTask.id,
@@ -384,12 +400,15 @@ function FocusContent() {
         zIndex: 10002,
       });
       setIsAirlockActive(true);
-    } catch (err) { console.error('Error completing task:', err); toast('Fout bij voltooien van taak'); }
+    } catch (err) {
+      console.error("Error completing task:", err);
+      toast(tr("focus.completeErr"));
+    }
   };
 
   const handleVoltooienClick = () => {
     if (!currentTask?.id) return;
-    if (!confirm('Taak voltooien? De focus stopt.')) return;
+    if (!confirm(tr("focus.completeConfirm"))) return;
     void completeCurrentTask();
   };
 
@@ -400,7 +419,7 @@ function FocusContent() {
     if (endAtRef.current != null) {
       endAtRef.current += addSecs * 1000;
     }
-    toast("5 minuten toegevoegd");
+    toast(tr("focus.extendToast"));
     track("ignite_extend", { taskTitle, extendedMinutes: 5 });
   };
 
@@ -408,15 +427,15 @@ function FocusContent() {
     try {
       if (user?.id) {
         if (parkedCount >= 10) {
-          toast("Je hebt al 10 geparkeerde gedachten. Zet er eerst een paar om naar taken.");
+          toast(tr("focus.parkMax"));
           return;
         }
         await insertParkedThought(user.id, thoughtText);
         setParkedCount((c) => c + 1);
         if (parkedCount + 1 >= 9) {
-          toast("Bijna vol (9/10). Na je sessie: omzetten naar taken.");
+          toast(tr("focus.parkWarn"));
         } else {
-          toast("Gedachte geparkeerd!");
+          toast(tr("focus.parkOk"));
         }
       } else {
         await addTask({
@@ -424,16 +443,20 @@ function FocusContent() {
           dueAt: null, reminders: [], repeat: "none", impact: "🧠",
           source: "parked_thought", energyLevel: 'low', estimatedDuration: null,
         });
-        toast("Gedachte geparkeerd!");
+        toast(tr("focus.parkOk"));
       }
       track("interruption_parked", { taskTitle, duration, thought: thoughtText });
     } catch (error: any) {
       if (error.message === "max_reached") {
-        toast("Maximum 10 gedachten bereikt. Zet ze om naar taken.");
+        toast(tr("focus.parkMaxErr"));
         return;
       }
       console.error('Failed to park thought:', error);
-      toast("Fout bij parkeren: " + (error.message || 'Onbekende fout'));
+      toast(
+        tr("focus.parkErr", {
+          detail: error.message || tr("passwordSetup.errUnknown"),
+        })
+      );
     }
   };
 
@@ -477,7 +500,13 @@ function FocusContent() {
   const existingMicroSteps = normalizeMicroSteps(currentTask?.microSteps);
   const completedStepsCount = existingMicroSteps.filter(s => s.done).length;
   const activeStepIdx = existingMicroSteps.findIndex(s => !s.done);
-  const energyLabel = ENERGY_DISPLAY[currentTask?.energyLevel || 'medium'] || 'Normaal';
+  const el = currentTask?.energyLevel || "medium";
+  const energyLabel =
+    el === "low"
+      ? tr("focus.energyLow")
+      : el === "high"
+        ? tr("focus.energyHigh")
+        : tr("focus.energyMed");
 
   if (showCountdown) {
     return (
@@ -499,10 +528,10 @@ function FocusContent() {
             </div>
             <div className="mt-6 space-y-1">
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-400">
-                Nu aan zet
+                {tr("focus.countdownUp")}
               </p>
               <p className="text-2xl font-bold text-[#0F172A]">
-                {currentTask?.title || taskTitle}
+                {currentTask?.title || taskTitle || tr("focus.sessionDefault")}
               </p>
               <p className="text-sm text-gray-400">{energyLabel}</p>
             </div>
@@ -537,7 +566,7 @@ function FocusContent() {
           <path d="m2 12 10 5 10-5" />
         </svg>
         <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
-          Microstappen
+          {tr("focus.microTitle")}
         </span>
       </div>
 
@@ -581,7 +610,7 @@ function FocusContent() {
           })}
         </div>
       ) : (
-        <p className="text-sm text-[#64748B]">Breek deze taak op in kleine stappen</p>
+        <p className="text-sm text-[#64748B]">{tr("focus.microEmpty")}</p>
       )}
 
       <div className="mt-3 flex items-center gap-2">
@@ -595,7 +624,7 @@ function FocusContent() {
               handleInlineAddStep();
             }
           }}
-          placeholder="Nieuwe stap toevoegen..."
+          placeholder={tr("focus.microPh")}
           className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
         />
         <button
@@ -615,7 +644,7 @@ function FocusContent() {
             onClick={handleUndoMicrostep}
             className="text-xs font-medium text-[#94A3B8] underline decoration-white/20 underline-offset-2 hover:text-white"
           >
-            Ongedaan
+            {tr("focus.undo")}
           </button>
         </div>
       )}
@@ -623,7 +652,10 @@ function FocusContent() {
       {existingMicroSteps.length > 0 && (
         <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
           <span className="text-sm text-[#64748B]">
-            {completedStepsCount} van {existingMicroSteps.length} klaar
+            {tr("focus.stepsProgress", {
+              done: String(completedStepsCount),
+              total: String(existingMicroSteps.length),
+            })}
           </span>
           <div className="flex gap-1.5">
             {existingMicroSteps.map((step, idx) => (
@@ -656,10 +688,10 @@ function FocusContent() {
                 <span className="text-xl">🎯</span>
               </div>
               <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
-                Klaar voor de volgende stap?
+                {tr("focus.noTaskTitle")}
               </h1>
               <p className="mt-2 max-w-sm text-sm text-slate-500">
-                Kies een taak via Taken om te beginnen.
+                {tr("focus.noTaskBody")}
               </p>
             </header>
             <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -669,7 +701,7 @@ function FocusContent() {
                   onClick={() => router.push('/todo')}
                   className="inline-flex w-full items-center justify-center py-3 px-6 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors sm:w-auto sm:min-w-[200px]"
                 >
-                  Ga naar Taken
+                  {tr("focus.goTasks")}
                 </button>
               </div>
             </div>
@@ -693,7 +725,7 @@ function FocusContent() {
             <SluitenButton />
             {isPaused ? (
               <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">
-                Gepauzeerd
+                {tr("focus.paused")}
               </span>
             ) : (
               <span className="w-16" aria-hidden />
@@ -703,7 +735,7 @@ function FocusContent() {
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] px-4 pb-4 pt-0 sm:px-6">
           <div className="mx-auto w-full max-w-md text-center">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
-              Nu aan zet
+              {tr("focus.nuAanZet")}
             </p>
             <h1 className="mt-2.5 text-[23px] font-bold leading-tight tracking-tight text-white">
               {currentTask.title}
@@ -741,7 +773,7 @@ function FocusContent() {
                   : formatTime(duration * 60)}
               </div>
               <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#94A3B8]">
-                van {duration} minuten
+                {tr("focus.ofTotalMins", { n: String(duration) })}
               </div>
             </div>
           </div>
@@ -755,7 +787,7 @@ function FocusContent() {
               disabled={nuNietBusy}
               className="mx-auto mt-2 block text-center text-[11px] text-[#64748B] transition hover:text-[#94A3B8] disabled:opacity-40"
             >
-              {nuNietBusy ? '…' : 'Nu niet'}
+              {nuNietBusy ? "…" : tr("focus.nuNiet")}
             </button>
           ) : null}
 
@@ -770,7 +802,7 @@ function FocusContent() {
                   onClick={() => void completeCurrentTask()}
                   className="w-full rounded-xl border-2 border-emerald-500/40 py-2.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/10"
                 >
-                  Ja, taak voltooid
+                  {tr("focus.yesTaskDone")}
                 </button>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {[5, 10, 15, 25].map((m) => (
@@ -800,11 +832,11 @@ function FocusContent() {
                     setTimeLeft(extra * 60);
                     endAtRef.current = Date.now() + extra * 60 * 1000;
                     track('ignite_extend_after_timeup', { taskTitle, duration, extra });
-                    toast(`Top, nog ${extra} minuten!`);
+                    toast(tr("focus.extendCheer", { n: String(extra) }));
                   }}
                   className="w-full rounded-xl border-2 border-white/10 py-2.5 text-sm font-semibold text-[#cbd5e1] transition hover:bg-white/5"
                 >
-                  Nee, verlengen met {extendMinutes} min
+                  {tr("focus.extendWith", { n: String(extendMinutes) })}
                 </button>
               </>
             ) : timerActive ? (
@@ -819,7 +851,7 @@ function FocusContent() {
                   ) : (
                     <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
                   )}
-                  {isPaused ? 'Hervatten' : 'Pauzeer'}
+                  {isPaused ? tr("focus.resume") : tr("focus.pause")}
                 </button>
                 <button
                   type="button"
@@ -827,7 +859,7 @@ function FocusContent() {
                   className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
                 >
                   <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  5 minuten toevoegen
+                  {tr("focus.addFiveMin")}
                 </button>
                 <button
                   type="button"
@@ -835,7 +867,7 @@ function FocusContent() {
                   className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
                 >
                   <CheckIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  Voltooien
+                  {tr("focus.finish")}
                 </button>
                 <button
                   type="button"
@@ -854,7 +886,7 @@ function FocusContent() {
                   >
                     <rect x="7" y="7" width="10" height="10" rx="1.5" />
                   </svg>
-                  Stoppen
+                  {tr("focus.stop")}
                 </button>
               </div>
             ) : (
@@ -863,7 +895,7 @@ function FocusContent() {
                 onClick={startSession}
                 className="w-full rounded-xl bg-[#22c55e] py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] transition hover:bg-[#16a34a]"
               >
-                Start focus sessie
+                {tr("focus.startSession")}
               </button>
             )}
           </div>
@@ -894,7 +926,7 @@ function FocusContent() {
                       ref={parkThoughtInputRef}
                       name="park-thought"
                       type="text"
-                      placeholder="Parkeer een gedachte…"
+                      placeholder={tr("focus.parkPlaceholder")}
                       className="min-w-0 flex-1 bg-transparent text-sm text-[#e2e8f0] placeholder:text-white/40 focus:outline-none"
                     />
                   </div>
@@ -909,12 +941,12 @@ function FocusContent() {
                   }}
                   className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
-                  Parkeer
+                  {tr("focus.parkAction")}
                 </button>
               </div>
               {user?.id && parkedCount > 0 ? (
                 <span className="sr-only">
-                  {parkedCount} van 10 gedachten geparkeerd
+                  {tr("focus.parkedCountSr", { n: String(parkedCount) })}
                 </span>
               ) : null}
             </div>
@@ -925,13 +957,18 @@ function FocusContent() {
   );
 }
 
+function FocusPageFallback() {
+  const { t: tr } = useI18n();
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
+      <span className="text-slate-400 animate-pulse">{tr("focus.pageLoading")}</span>
+    </div>
+  );
+}
+
 export default function FocusPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
-        <span className="text-slate-400 animate-pulse">Laden...</span>
-      </div>
-    }>
+    <Suspense fallback={<FocusPageFallback />}>
       <FocusContent />
     </Suspense>
   );

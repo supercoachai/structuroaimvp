@@ -6,10 +6,12 @@ import AppLayout from "../../components/layout/AppLayout";
 import { createClient } from "../../lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { trackShutdownStarted } from "@/utils/events";
+import { useI18n } from "@/lib/i18n";
 
 const FADE_MS = 280;
 
 export default function ShutdownPage() {
+  const { t } = useI18n();
   const [view, setView] = useState<"loading" | "form" | "complete">("loading");
   const [formExiting, setFormExiting] = useState(false);
   const [completionFadeIn, setCompletionFadeIn] = useState(false);
@@ -77,7 +79,7 @@ export default function ShutdownPage() {
     return (
       <AppLayout>
         <div className="flex min-h-[100dvh] items-center justify-center">
-          <p className="text-base text-slate-500">Laden...</p>
+          <p className="text-base text-slate-500">{t("common.loadingDots")}</p>
         </div>
       </AppLayout>
     );
@@ -95,9 +97,11 @@ export default function ShutdownPage() {
           <div
             className={`max-w-md text-center transition-opacity ease-out ${completionFadeIn ? "opacity-100 duration-300" : "opacity-0 duration-0"}`}
           >
-            <p className="text-2xl font-bold text-slate-900">Dagafsluiter voltooid!</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {t("shutdownPage.doneTitle")}
+            </p>
             <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-              Rust goed uit. Tot morgen!
+              {t("shutdownPage.doneSubtitle")}
             </p>
           </div>
         </div>

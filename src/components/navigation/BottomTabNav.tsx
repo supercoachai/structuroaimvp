@@ -2,13 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const tabs = [
-  { id: "home", href: "/", label: "Start", Icon: IconSun },
-  { id: "taken", href: "/todo", label: "Taken", Icon: IconTasks },
-  { id: "focus", href: "/focus", label: "Focus", Icon: IconTarget },
-  { id: "shutdown", href: "/shutdown", label: "Afsluiten", Icon: IconShutdown },
-] as const;
+import { useMemo } from "react";
+import { useI18n } from "@/lib/i18n";
 
 function IconSun({ className }: { className?: string }) {
   return (
@@ -54,6 +49,23 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export default function BottomTabNav({ disabled = false }: { disabled?: boolean }) {
   const pathname = usePathname() ?? "";
+  const { t } = useI18n();
+
+  const tabs = useMemo(
+    () =>
+      [
+        { id: "home", href: "/", label: t("tabs.home"), Icon: IconSun },
+        { id: "taken", href: "/todo", label: t("tabs.tasks"), Icon: IconTasks },
+        { id: "focus", href: "/focus", label: t("tabs.focus"), Icon: IconTarget },
+        {
+          id: "shutdown",
+          href: "/shutdown",
+          label: t("tabs.shutdown"),
+          Icon: IconShutdown,
+        },
+      ],
+    [t]
+  );
 
   return (
     <nav
@@ -61,21 +73,22 @@ export default function BottomTabNav({ disabled = false }: { disabled?: boolean 
         disabled ? "relative z-[110] pointer-events-none opacity-50" : ""
       }`}
       style={{ borderColor: "var(--structuro-border)" }}
-      aria-label="Hoofdnavigatie"
+      aria-label={t("layout.mainNavAria")}
       aria-disabled={disabled}
     >
-      {tabs.map((t) => {
-        const active = isActivePath(pathname, t.href);
+      {tabs.map((tab) => {
+        const active = isActivePath(pathname, tab.href);
         const color = active ? "var(--structuro-blue)" : "var(--structuro-sub)";
+        const Icon = tab.Icon;
         return (
           <Link
-            key={t.id}
-            href={t.href}
+            key={tab.id}
+            href={tab.href}
             className="flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1 transition-colors"
             style={{ color }}
           >
-            <t.Icon className="shrink-0" />
-            <span className="max-w-full truncate text-[10px] font-semibold tracking-wide">{t.label}</span>
+            <Icon className="shrink-0" />
+            <span className="max-w-full truncate text-[10px] font-semibold tracking-wide">{tab.label}</span>
           </Link>
         );
       })}

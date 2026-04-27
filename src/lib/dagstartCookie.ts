@@ -1,3 +1,5 @@
+import type { Locale } from '@/lib/i18n/types';
+
 /**
  * Dagstart-afgerond signaal voor middleware (Edge + browser).
  * Kalenderdag in Europe/Amsterdam zodat client en server dezelfde "vandaag" gebruiken.
@@ -58,6 +60,19 @@ export function getTimeOfDayGreetingNl(now: Date = new Date()): string {
   if (h >= 12 && h < 18) return 'Goedemiddag';
   if (h >= 18 && h < 23) return 'Goedenavond';
   return 'Goedenacht';
+}
+
+/** Korte begroeting voor UI (NL of EN), zelfde uurregels als dagstart (Amsterdam). */
+export function getTimeOfDayGreeting(
+  locale: Locale,
+  now: Date = new Date()
+): string {
+  if (locale !== 'en') return getTimeOfDayGreetingNl(now);
+  const h = getClockHourAmsterdam(now);
+  if (h >= 5 && h < 12) return 'Good morning';
+  if (h >= 12 && h < 18) return 'Good afternoon';
+  if (h >= 18 && h < 23) return 'Good evening';
+  return 'Good night';
 }
 
 /** Client-only: zet cookie na geslaagde dagstart (niet httpOnly; middleware leest mee). */

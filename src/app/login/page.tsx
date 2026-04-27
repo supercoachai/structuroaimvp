@@ -16,6 +16,7 @@ import {
   clearLocalOnboardingDoneCookieOnClient,
   markEnteringLocalOnboardingSession,
 } from '@/lib/localOnboardingCookie';
+import { useI18n } from '@/lib/i18n';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -46,7 +47,19 @@ function emailAllowsLocalTestLogin(emailValue: string): boolean {
   return emailValue.trim().toLowerCase() === owner;
 }
 
+function mapPasswordResetError(message: string, t: (k: string) => string): string {
+  const m = message.toLowerCase();
+  if (m.includes('rate limit') && m.includes('email')) {
+    return t('login.errRateLimitEmail');
+  }
+  if (m.includes('rate limit')) {
+    return t('login.errRateLimit');
+  }
+  return message;
+}
+
 function LoginPageInner() {
+  const { t, locale, setLocale } = useI18n();
   const [isSignUp, setIsSignUp] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -80,9 +93,9 @@ function LoginPageInner() {
       setIsSignUp(false);
     }
     if (searchParams?.get('wachtwoord') === 'bijgewerkt') {
-      setMessage('Je wachtwoord is bijgewerkt. Je kunt nu inloggen.');
+      setMessage(t('login.passwordUpdated'));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   /** Productie: alleen zichtbaar na intypen van allowlisted email (protected testaccount of NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL). */
   const showLocalTest =
@@ -106,12 +119,12 @@ function LoginPageInner() {
   const handleResetEmail = async () => {
     const supabase = getSupabase();
     if (!supabase) {
-      setError('Kan geen verbinding maken met de server. Controleer je internetverbinding.');
+      setError(t('login.noServer'));
       return;
     }
     const trimmed = email.trim();
     if (!trimmed) {
-      setError('Vul je e-mailadres in.');
+      setError(t('login.emailRequired'));
       return;
     }
     setLoading(true);
@@ -126,13 +139,11 @@ function LoginPageInner() {
         { redirectTo }
       );
       if (resetErr) throw resetErr;
-      setMessage(
-        'Als dit adres bij ons bekend is, ontvang je zo een mail met een link. Check ook je spam.'
-      );
+      setMessage(t('login.resetSent'));
       setForgotPassword(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Versturen mislukt.';
-      setError(msg);
+      const raw = err instanceof Error ? err.message : t('login.sendFailed');
+      setError(mapPasswordResetError(raw, t));
     } finally {
       setLoading(false);
     }
@@ -152,13 +163,13 @@ function LoginPageInner() {
     try {
       const supabase = getSupabase();
       if (!supabase) {
-        setError('Kan geen verbinding maken met de server. Controleer je internetverbinding.');
+        setError(t('login.noServer'));
         setLoading(false);
         return;
       }
 
       if (isSignUp && !SIGNUP_ALLOWED) {
-        setError('Nieuwe accounts zijn op dit moment niet beschikbaar. Neem contact op als je toegang nodig hebt.');
+        setError(t('login.signupDisabled'));
         setLoading(false);
         return;
       }
@@ -177,7 +188,7 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
-          setMessage('Account aangemaakt! Check je email voor verificatie (als email verificatie is ingeschakeld).');
+          setMessage(t('login.signupDone'));
           // Auto login na signup
           setTimeout(() => {
             clearStructuroLocalModeCookie();
@@ -199,14 +210,13 @@ function LoginPageInner() {
         }
       }
     } catch (err: any) {
-      // Vertaal error messages naar Nederlands
-      let errorMessage = err.message || 'Er is iets misgegaan';
+      let errorMessage = err.message || t('login.errGeneric');
       if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('Invalid credentials')) {
-        errorMessage = 'Ongeldige inloggegevens. Controleer je email en wachtwoord.';
+        errorMessage = t('login.errInvalidCreds');
       } else if (errorMessage.includes('Email not confirmed')) {
-        errorMessage = 'Email nog niet bevestigd. Check je inbox.';
+        errorMessage = t('login.errEmailConfirm');
       } else if (errorMessage.includes('User already registered')) {
-        errorMessage = 'Dit email adres is al geregistreerd.';
+        errorMessage = t('login.errAlreadyRegistered');
       }
       setError(errorMessage);
     } finally {
@@ -215,7 +225,27 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-x-hidden overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-[#F4F6FB] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+    <div className="relative flex min-h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-x-hidden overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-[#F4F6FB] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+      <div
+        className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-0.5 text-xs font-semibold shadow-sm backdrop-blur-sm sm:right-6"
+        role="group"
+        aria-label={t('settings.languageTitle')}
+      >
+        <button
+          type="button"
+          onClick={() => setLocale('nl')}
+          className={`rounded-md px-2 py-1 ${locale === 'nl' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+        >
+          NL
+        </button>
+        <button
+          type="button"
+          onClick={() => setLocale('en')}
+          className={`rounded-md px-2 py-1 ${locale === 'en' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+        >
+          EN
+        </button>
+      </div>
       <div className="w-full min-w-0 max-w-sm space-y-6 rounded-2xl bg-white p-8 shadow-sm">
         <div className="flex flex-col items-center text-center">
           <div className="flex flex-col items-center gap-2 leading-none">
@@ -233,9 +263,9 @@ function LoginPageInner() {
                 onError={() => setLogoError(true)}
               />
             )}
-            <span className="text-lg font-semibold tracking-tight text-slate-800">Structuro</span>
+            <span className="text-lg font-semibold tracking-tight text-slate-800">{t('login.taglineBrand')}</span>
           </div>
-          <p className="mt-1 text-xs leading-tight text-gray-400">Jouw houvast in chaos.</p>
+          <p className="mt-1 text-xs leading-tight text-gray-400">{t('brand.tagline')}</p>
         </div>
 
         <form onSubmit={handleAuth} className="space-y-6">
@@ -243,7 +273,7 @@ function LoginPageInner() {
             {isSignUp && (
               <div className="space-y-1">
                 <label htmlFor="fullName" className="block text-sm font-normal text-gray-500">
-                  Volledige naam
+                  {t('login.fullName')}
                 </label>
                 <input
                   id="fullName"
@@ -251,7 +281,7 @@ function LoginPageInner() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="Je naam"
+                  placeholder={t('login.fullNamePh')}
                   required={isSignUp}
                 />
               </div>
@@ -259,7 +289,7 @@ function LoginPageInner() {
 
             <div className="space-y-1">
               <label htmlFor="email" className="block text-sm font-normal text-gray-500">
-                Email
+                {t('login.email')}
               </label>
               <input
                 id="email"
@@ -267,7 +297,7 @@ function LoginPageInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="je@email.com"
+                placeholder={t('login.emailPh')}
                 required
               />
             </div>
@@ -275,7 +305,7 @@ function LoginPageInner() {
             {!forgotPassword || isSignUp ? (
             <div className="space-y-1">
               <label htmlFor="password" className="block text-sm font-normal text-gray-500">
-                Wachtwoord
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -291,7 +321,7 @@ function LoginPageInner() {
             </div>
             ) : (
               <p className="text-sm text-gray-600">
-                We sturen een link naar je e-mailadres om een nieuw wachtwoord te kiezen.
+                {t('login.forgotHelp')}
               </p>
             )}
           </div>
@@ -314,12 +344,12 @@ function LoginPageInner() {
             className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
-              ? 'Bezig...'
+              ? t('login.busy')
               : forgotPassword && !isSignUp
-                ? 'Stuur herstellink'
+                ? t('login.sendReset')
                 : isSignUp
-                  ? 'Account aanmaken'
-                  : 'Inloggen'}
+                  ? t('login.signUp')
+                  : t('login.signIn')}
           </button>
         </form>
 
@@ -334,7 +364,7 @@ function LoginPageInner() {
                 }}
                 className="text-sm text-blue-600 hover:underline"
               >
-                Terug naar inloggen
+                {t('login.backSignIn')}
               </button>
             ) : (
               <button
@@ -346,7 +376,7 @@ function LoginPageInner() {
                 }}
                 className="text-sm text-gray-600 hover:text-gray-900 hover:underline"
               >
-                Wachtwoord vergeten?
+                {t('login.forgot')}
               </button>
             )}
           </div>
@@ -364,7 +394,7 @@ function LoginPageInner() {
               }}
               className="text-sm text-gray-500 hover:text-gray-800"
             >
-              {isSignUp ? 'Heb je al een account? Inloggen' : 'Nog geen account? Registreren'}
+              {isSignUp ? t('login.toggleSignIn') : t('login.toggleSignUp')}
             </button>
           </div>
         ) : null}
@@ -372,7 +402,7 @@ function LoginPageInner() {
         {showLocalTest && (
           <div className="border-t border-gray-200/80 pt-4 mt-0 space-y-3">
             <p className="text-center text-xs text-gray-500">
-              Lokaal testen zonder Supabase-account (taken in deze browser).
+              {t('login.localTestHint')}
             </p>
             <button
               type="button"
@@ -392,7 +422,7 @@ function LoginPageInner() {
               }}
               className="w-full py-3 rounded-xl text-sm font-medium border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
             >
-              Doorgaan als lokale test
+              {t('login.localTestCta')}
             </button>
           </div>
         )}

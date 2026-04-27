@@ -1,0 +1,36 @@
+/** Welkomstregels op de homepagina (per dag hetzelfde via day-of-year index). */
+export const homeWelcomeNl: string[] = [
+  "Fijn dat je er bent. Klaar om rustig aan de dag te beginnen?",
+  "Welkom terug. Kleine stappen brengen grote rust.",
+  "Mooi dat je er weer bent. Vandaag telt elk moment.",
+  "Tijd om structuur te brengen in de chaos.",
+  "Goed dat je inlogt. Vandaag doen we het stap voor stap.",
+  "Rustig hoofd, helder plan. Laten we beginnen.",
+  "Vandaag is een nieuwe kans om het overzicht te pakken.",
+  "Je doet het goed. Vandaag is weer een stap vooruit.",
+  "Klaar om wat meer structuur te vinden?",
+  "Goed bezig dat je weer start. Dat is al een overwinning.",
+  "Samen maken we er een georganiseerde dag van.",
+  "Even op adem komen, dan gefocust verder.",
+  "Elke dag telt. Ook de kleine stappen vandaag.",
+  "Jij bepaalt het tempo, Structuro helpt je op koers.",
+  "Rust. Ritme. Structuur. Vandaag begint weer rustig.",
+];
+
+export const homeWelcomeEn: string[] = [
+  "Good to have you here. Ready to ease into the day?",
+  "Welcome back. Small steps bring a lot of calm.",
+  "Nice to see you again. Today, every moment counts.",
+  "Time to bring a little structure to the chaos.",
+  "Good that you showed up. Today we go step by step.",
+  "Calm mind, clear plan. Let us begin.",
+  "Today is another chance to get a clear overview.",
+  "You are doing fine. Today is another step forward.",
+  "Ready to find a bit more structure?",
+  "Great that you are starting again. That already counts as a win.",
+  "Let us make today a more organized day together.",
+  "Take a breath, then continue with focus.",
+  "Every day counts. Including the small steps today.",
+  "You set the pace, Structuro helps you stay on course.",
+  "Calm. Rhythm. Structure. Today begins gently again.",
+];

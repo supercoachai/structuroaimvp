@@ -25,6 +25,7 @@ export interface LocalTask {
   dueAt: string | null;
   duration: number | null;
   source: string;
+  postponedTo?: string | null;
   completedAt: string | null;
   reminders: number[];
   repeat: string;

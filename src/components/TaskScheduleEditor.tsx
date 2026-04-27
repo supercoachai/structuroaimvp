@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export interface TaskScheduleEditorTask {
   id: string;
@@ -20,6 +21,7 @@ interface TaskScheduleEditorProps {
 }
 
 export default function TaskScheduleEditor({ task, onSave, onClose }: TaskScheduleEditorProps) {
+  const { t } = useI18n();
   const [title, setTitle] = useState(task?.title ?? "");
   const [duration, setDuration] = useState<number | null>(task?.duration ?? task?.estimatedDuration ?? null);
   const [energyLevel, setEnergyLevel] = useState<string>(task?.energyLevel ?? "medium");
@@ -40,46 +42,52 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
   return (
     <div className="w-full max-w-lg bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-200/80">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Taak bewerken</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t("taskEditor.title")}</h2>
         <button
           type="button"
           onClick={onClose}
           className="px-3 py-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
         >
-          Sluiten
+          {t("taskEditor.close")}
         </button>
       </div>
 
       <div className="space-y-5">
         {/* Titel */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Titel</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            {t("taskEditor.labelTitle")}
+          </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Naam van de taak"
+            placeholder={t("taskEditor.titlePh")}
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-shadow"
           />
         </div>
 
         {/* Duur */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Duur (minuten)</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            {t("taskEditor.labelDuration")}
+          </label>
           <input
             type="number"
             min={1}
             max={480}
             value={duration ?? ""}
             onChange={(e) => setDuration(e.target.value ? parseInt(e.target.value, 10) : null)}
-            placeholder="Minuten, bijv. 15"
+            placeholder={t("taskEditor.durationPh")}
             className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
           />
         </div>
 
         {/* Energie */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Energie</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            {t("taskEditor.labelEnergy")}
+          </label>
           <div className="flex gap-2 flex-wrap">
             {(["low", "medium", "high"] as const).map((level) => (
               <button
@@ -92,7 +100,11 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {level === "low" ? "Laag" : level === "medium" ? "Gemiddeld" : "Hoog"}
+                {level === "low"
+                  ? t("taskEditor.enLow")
+                  : level === "medium"
+                    ? t("taskEditor.enMed")
+                    : t("taskEditor.enHigh")}
               </button>
             ))}
           </div>
@@ -106,14 +118,14 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
           onClick={handleSave}
           className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-colors"
         >
-          Opslaan
+          {t("taskEditor.save")}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="py-3 px-4 rounded-2xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors"
         >
-          Annuleren
+          {t("taskEditor.cancel")}
         </button>
       </div>
     </div>

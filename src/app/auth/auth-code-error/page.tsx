@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 
 function AuthCodeErrorContent() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const errorCode =
     searchParams?.get("error_code") ?? searchParams?.get("error") ?? null;
@@ -13,31 +15,27 @@ function AuthCodeErrorContent() {
   const { title, body } = useMemo(() => {
     if (errorCode === "otp_expired") {
       return {
-        title: "Deze link is verlopen",
-        body: "Wachtwoordlinks zijn maar kort geldig. Vraag hieronder een nieuwe aan en open de mail zo snel mogelijk.",
+        title: t("authError.otpTitle"),
+        body: t("authError.otpBody"),
       };
     }
     if (errorCode === "exchange_failed") {
       return {
-        title: "Inloggen via de link lukte niet",
-        body:
-          errorDescription ||
-          "De code werd al gebruikt of is ongeldig. Vraag zo nodig een nieuwe herstellink aan.",
+        title: t("authError.exchangeTitle"),
+        body: errorDescription || t("authError.exchangeBody"),
       };
     }
     if (errorCode === "missing_code") {
       return {
-        title: "Ongeldige of incomplete link",
-        body: "Open de link uit je mail opnieuw, of vraag een nieuw wachtwoord aan.",
+        title: t("authError.missingTitle"),
+        body: t("authError.missingBody"),
       };
     }
     return {
-      title: "Er ging iets mis met inloggen",
-      body:
-        errorDescription ||
-        "Probeer opnieuw of vraag een nieuw wachtwoord aan via het inlogscherm.",
+      title: t("authError.genericTitle"),
+      body: errorDescription || t("authError.genericBody"),
     };
-  }, [errorCode, errorDescription]);
+  }, [errorCode, errorDescription, t]);
 
   return (
     <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[#F4F6FB] px-4 py-8">
@@ -54,13 +52,13 @@ function AuthCodeErrorContent() {
             href="/login?herstel=1"
             className="block w-full rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
           >
-            Nieuw wachtwoord aanvragen
+            {t("authError.ctaReset")}
           </Link>
           <Link
             href="/login"
             className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Terug naar inloggen
+            {t("authError.ctaLogin")}
           </Link>
         </div>
       </div>
@@ -68,15 +66,18 @@ function AuthCodeErrorContent() {
   );
 }
 
+function AuthCodeErrorFallback() {
+  const { t } = useI18n();
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
+      {t("common.loading")}
+    </div>
+  );
+}
+
 export default function AuthCodeErrorPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
-          Laden…
-        </div>
-      }
-    >
+    <Suspense fallback={<AuthCodeErrorFallback />}>
       <AuthCodeErrorContent />
     </Suspense>
   );

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '@/lib/i18n';
 import {
   HomeIcon,
   ClipboardDocumentCheckIcon,
@@ -28,33 +29,91 @@ type MenuItem = {
   accent: string;
 };
 
-/** Kern-loop: dagstart, taken, focus. Beloningen staat onder “Meer opties”. */
-const primaryNavItems: MenuItem[] = [
-  { name: 'Dagstart', href: '/', icon: '🌅', description: 'Begin je dag', accent: '#f59e0b' },
-  { name: 'Taken & Prioriteiten', href: '/todo', icon: ClipboardDocumentCheckIcon, description: 'Slimme takenlijst', accent: '#22c55e' },
-  { name: 'Focus Modus', href: '/focus', icon: FireIcon, description: 'Concentratie hulp', accent: '#ea580c' },
-];
-
-const settingsNavItem: MenuItem = {
-  name: 'Instellingen',
-  href: '/settings',
-  icon: Cog6ToothIcon,
-  description: 'Persoonlijk',
-  accent: '#6366f1',
-};
-
-/** Ondersteunend: standaard ingeklapt onder “Meer opties” (expanded sidebar). */
-const secondaryNavItems: MenuItem[] = [
-  { name: 'Beloningen', href: '/gamification', icon: TrophyIcon, description: 'Motivatie & beloningen', accent: '#d97706' },
-  { name: 'Overzicht', href: '/', icon: HomeIcon, description: 'Dagelijkse planning', accent: '#3b82f6' },
-  { name: 'Agenda & Planning', href: '/agenda', icon: CalendarIcon, description: 'Dagplanner', accent: '#6366f1' },
-  { name: 'Herinneringen', href: '/notificaties', icon: BellIcon, description: 'Slimme alerts', accent: '#8b5cf6' },
-  { name: 'Uitleg', href: '/uitleg', icon: InformationCircleIcon, description: 'Hoe werkt het?', accent: '#3b82f6' },
-];
-
 export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [secondaryOpen, setSecondaryOpen] = useState(false);
+
+  /** Kern-loop: dagstart, taken, focus. Beloningen staat onder “Meer opties”. */
+  const primaryNavItems: MenuItem[] = useMemo(
+    () => [
+      {
+        name: t('sidebar.nav.dagstart'),
+        href: '/',
+        icon: '🌅',
+        description: t('sidebar.nav.dagstartDesc'),
+        accent: '#f59e0b',
+      },
+      {
+        name: t('sidebar.nav.tasks'),
+        href: '/todo',
+        icon: ClipboardDocumentCheckIcon,
+        description: t('sidebar.nav.tasksDesc'),
+        accent: '#22c55e',
+      },
+      {
+        name: t('sidebar.nav.focus'),
+        href: '/focus',
+        icon: FireIcon,
+        description: t('sidebar.nav.focusDesc'),
+        accent: '#ea580c',
+      },
+    ],
+    [t]
+  );
+
+  const settingsNavItem: MenuItem = useMemo(
+    () => ({
+      name: t('sidebar.nav.settings'),
+      href: '/settings',
+      icon: Cog6ToothIcon,
+      description: t('sidebar.nav.settingsDesc'),
+      accent: '#6366f1',
+    }),
+    [t]
+  );
+
+  /** Ondersteunend: standaard ingeklapt onder “Meer opties” (expanded sidebar). */
+  const secondaryNavItems: MenuItem[] = useMemo(
+    () => [
+      {
+        name: t('sidebar.nav.rewards'),
+        href: '/gamification',
+        icon: TrophyIcon,
+        description: t('sidebar.nav.rewardsDesc'),
+        accent: '#d97706',
+      },
+      {
+        name: t('sidebar.nav.overview'),
+        href: '/',
+        icon: HomeIcon,
+        description: t('sidebar.nav.overviewDesc'),
+        accent: '#3b82f6',
+      },
+      {
+        name: t('sidebar.nav.agenda'),
+        href: '/agenda',
+        icon: CalendarIcon,
+        description: t('sidebar.nav.agendaDesc'),
+        accent: '#6366f1',
+      },
+      {
+        name: t('sidebar.nav.reminders'),
+        href: '/notificaties',
+        icon: BellIcon,
+        description: t('sidebar.nav.remindersDesc'),
+        accent: '#8b5cf6',
+      },
+      {
+        name: t('sidebar.nav.explain'),
+        href: '/uitleg',
+        icon: InformationCircleIcon,
+        description: t('sidebar.nav.explainDesc'),
+        accent: '#3b82f6',
+      },
+    ],
+    [t]
+  );
 
   const isSecondaryRoute = secondaryNavItems.some((item) => item.href === pathname);
 
@@ -168,7 +227,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
               }}
             >
               <h1 className="text-lg font-semibold text-white">Structuro</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Jouw houvast in chaos</p>
+              <p className="text-xs text-slate-400 mt-0.5">{t('brand.tagline')}</p>
             </div>
           </div>
         </div>
@@ -179,7 +238,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
         >
           {!collapsed && (
             <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-              Vandaag
+              {t('sidebar.today')}
             </p>
           )}
           <div className="space-y-1 flex-shrink-0">{primaryNavItems.map(renderItem)}</div>
@@ -207,7 +266,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
                 <ChevronDownIcon
                   className={`w-4 h-4 flex-shrink-0 transition-transform ${secondaryOpen ? 'rotate-180' : ''}`}
                 />
-                <span>{secondaryOpen ? 'Minder opties' : 'Meer opties'}</span>
+                <span>{secondaryOpen ? t('sidebar.fewerOptions') : t('sidebar.moreOptions')}</span>
               </button>
               {secondaryOpen && (
                 <div className="space-y-1 mt-2 pl-0.5">{secondaryNavItems.map(renderItem)}</div>
@@ -221,7 +280,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
           style={{ transition: 'padding 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
         >
           {!collapsed && (
-            <p className="text-xs text-slate-500 text-center">Structuro AI v0.1.0</p>
+            <p className="text-xs text-slate-500 text-center">{t('sidebar.version')}</p>
           )}
         </div>
       </div>

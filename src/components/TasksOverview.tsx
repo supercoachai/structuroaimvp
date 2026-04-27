@@ -2,7 +2,12 @@
 
 import React, { useMemo, useState, useEffect, useDeferredValue, startTransition } from "react";
 import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
-import { trackTaskCompleted, trackTaskCreated } from "@/utils/events";
+import {
+  trackFocusModeStarted,
+  trackQuickCompleteTriggered,
+  trackTaskCompleted,
+  trackTaskCreated,
+} from "@/utils/events";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "../context/TaskContext";
 import { designSystem } from "../lib/design-system";
@@ -23,6 +28,7 @@ import {
   Square2StackIcon,
 } from "@heroicons/react/24/outline";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
+import { useI18n } from "@/lib/i18n";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
   bg: designSystem.colors.background,
@@ -65,6 +71,8 @@ const PRIORITY_ROW_TINT: Record<
 
 /** ---------- Hoofdcomponent ---------- */
 export default function TasksOverviewCalm() {
+  const { t: tr, locale } = useI18n();
+  const dateLocale = locale === "en" ? "en-US" : "nl-NL";
   const { tasks, loading, addTask, updateTask, deleteTask } = useTaskContext();
   /** INP: zware lijst-filters iets uitstellen zodat klikken eerst kunnen painten */
   const deferredTasks = useDeferredValue(tasks);
@@ -205,17 +213,21 @@ export default function TasksOverviewCalm() {
   // Helper: Get energie label
   const getEnergyLabel = (level: string) => {
     switch (level) {
-      case 'low': return 'Makkelijk';
-      case 'medium': return 'Normaal';
-      case 'high': return 'Moeilijk';
-      default: return 'Onbekend';
+      case "low":
+        return tr("tasks.energyEasy");
+      case "medium":
+        return tr("tasks.energyNormal");
+      case "high":
+        return tr("tasks.energyHard");
+      default:
+        return tr("tasks.energyUnknown");
     }
   };
 
   const addMicroStepToTask = async (task: any) => {
     const title = microStepDraft.title.trim();
     if (!title) {
-      toast('Vul een mini-stap in');
+      toast(tr("tasks.toastMiniFill"));
       return;
     }
     const existing = normalizeMicroSteps(task.microSteps);
@@ -231,7 +243,7 @@ export default function TasksOverviewCalm() {
     ];
     await updateTask(task.id, { microSteps: next });
     setMicroStepDraft({ title: '', minutes: null, difficulty: null });
-    toast('Mini-stap toegevoegd');
+    toast(tr("tasks.toastMiniAdded"));
   };
 
   const toggleMicroStepDone = async (task: any, stepId: string) => {
@@ -259,7 +271,7 @@ export default function TasksOverviewCalm() {
     });
 
     await updateTask(task.id, { microSteps: nextSteps });
-    toast('Mini-stap omgezet naar taak', { durationMs: 3000, replace: true });
+    toast(tr("tasks.toastMiniToTask"), { durationMs: 3000, replace: true });
   };
 
   const durationLabelToMinutes = (label: "15 min" | "30 min" | "45 min"): number => {
@@ -300,7 +312,7 @@ export default function TasksOverviewCalm() {
   const appendNewTaskMicroStep = () => {
     const t = newTaskMicroInput.trim();
     if (!t) {
-      toast("Vul een microstap in");
+      toast(tr("tasks.toastMicroFill"));
       return;
     }
     setNewTaskMicroTitles((prev) => [...prev, t]);
@@ -318,7 +330,7 @@ export default function TasksOverviewCalm() {
     const minutes = resolvedDurationMinutes();
     if (!title || !energy || minutes == null) {
       if (duration === "custom" && minutes == null) {
-        toast("Vul minuten in tussen 1 en 480");
+        toast(tr("tasks.toastMicroMinutes"));
       }
       return;
     }
@@ -329,7 +341,7 @@ export default function TasksOverviewCalm() {
       return;
     }
     if (newTaskUseMicroSteps === true && newTaskMicroTitles.length === 0) {
-      toast("Voeg minstens één microstap toe");
+      toast(tr("tasks.toastMicroNeedOne"));
       return;
     }
 
@@ -368,7 +380,7 @@ export default function TasksOverviewCalm() {
       setNewTaskMicroTitles([]);
       setNewTaskMicroInput("");
 
-      toast("✅ Taak toegevoegd → Staat bij Alle open taken");
+      toast(tr("tasks.toastAdded"));
 
       setShowVandaagPrompt(newTask.id);
 
@@ -380,7 +392,7 @@ export default function TasksOverviewCalm() {
       trackTaskCreated();
     } catch (error) {
       console.error("Error adding task:", error);
-      toast("Fout bij toevoegen van taak");
+      toast(tr("tasks.toastAddErr"));
     }
   };
 
@@ -390,7 +402,7 @@ export default function TasksOverviewCalm() {
     const currentVandaagCount = Object.values(priorityTasks).filter(t => t !== null).length;
     
     if (currentVandaagCount >= maxSlots) {
-      toast(`Je focus voor vandaag is al gekozen`);
+      toast(tr("tasks.toastFocusChosen"));
       setShowVandaagPrompt(null);
       return;
     }
@@ -414,11 +426,11 @@ export default function TasksOverviewCalm() {
         energyLevel: preservedEnergyLevel // Behoud bestaande energyLevel
       });
       setShowVandaagPrompt(null);
-      toast('Taak toegevoegd aan vandaag');
+      toast(tr("tasks.toastAddedToday"));
       track('task_added_to_vandaag', { taskId, priority: targetPriority });
     } catch (error) {
       console.error('Error adding to vandaag:', error);
-      toast('Fout bij toevoegen aan vandaag');
+      toast(tr("tasks.toastAddTodayErr"));
     }
   };
 
@@ -431,16 +443,19 @@ export default function TasksOverviewCalm() {
   // KRITIEK: Focus duur moet matchen met de ingeschatte taakduur (duration/estimatedDuration)
   const startFocus = (task: any) => {
     const taskDuration = getTaskDurationMinutes(task) ?? 15;
+    const energy =
+      (task.energyLevel as "low" | "medium" | "high") ?? "medium";
     const focusUrl = `/focus?task=${encodeURIComponent(task.id)}&duration=${encodeURIComponent(taskDuration)}&energy=${task.energyLevel || 'medium'}`;
     startTransition(() => {
       router.push(focusUrl);
     });
     void updateTask(task.id, { started: true }).catch((error) => {
       console.error('Error starting focus:', error);
-      toast('Fout bij starten van focus sessie');
+      toast(tr("tasks.toastFocusErr"));
     });
     queueMicrotask(() => {
-      toast('Focus sessie gestart!');
+      toast(tr("tasks.toastFocusStarted"));
+      trackFocusModeStarted(energy, taskDuration);
       track('focus_start', {
         taskId: task.id,
         duration: taskDuration,
@@ -455,10 +470,15 @@ export default function TasksOverviewCalm() {
     setCheckboxPopId(task.id);
     setTimeout(() => setCheckboxPopId(null), 200);
     setTimeout(() => {
-      trackTaskCompleted();
+      trackTaskCompleted(
+        "manual",
+        (task.energyLevel as "low" | "medium" | "high") ?? "medium"
+      );
       startTransition(() => {
         void updateTask(task.id, {
           done: true,
+          started: true,
+          source: "manual",
           completedAt: new Date().toISOString(),
         });
         setCompletingTaskIds((prev) => {
@@ -469,9 +489,24 @@ export default function TasksOverviewCalm() {
         setCompletedSectionOpen(true);
       });
       queueMicrotask(() => {
-        toast('Taak afgevinkt!');
+        toast(tr("tasks.toastChecked"));
       });
     }, 300);
+  };
+
+  const handleQuickCompleteFromCard = async (task: any) => {
+    const taskDuration = getTaskDurationMinutes(task) ?? 15;
+    const energy =
+      (task.energyLevel as "low" | "medium" | "high") ?? "medium";
+    await updateTask(task.id, {
+      done: true,
+      started: true,
+      source: "quick_complete",
+      completedAt: new Date().toISOString(),
+    });
+    trackQuickCompleteTriggered(energy, taskDuration);
+    trackTaskCompleted("quick_complete", energy);
+    toast(tr("tasks.toastChecked"));
   };
 
   /** Taken die al onder "Vandaag gekozen" staan: niet opnieuw in het energie-bord (één plek per scherm). */
@@ -557,10 +592,10 @@ export default function TasksOverviewCalm() {
       <main className="mx-auto flex w-full max-w-lg flex-col">
         <header className="mb-6 flex w-full flex-col items-start text-left">
           <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-[#0F172A]">
-            Taken
+            {tr("tasks.titlePage")}
           </h1>
           <p className="mt-2 text-[15px] leading-snug text-gray-400">
-            {loading ? "Taken laden…" : "Maximaal 3. De rest bestaat even niet."}
+            {loading ? tr("tasks.subtitleLoading") : tr("tasks.subtitleIdle")}
           </p>
         </header>
 
@@ -607,7 +642,10 @@ export default function TasksOverviewCalm() {
                     <div className="mt-2.5 flex items-center gap-1.5 text-[12px] font-medium text-violet-600">
                       <Square2StackIcon className="h-3.5 w-3.5 shrink-0 text-violet-500" aria-hidden />
                       <span className="tracking-tight">
-                        {msDone} / {ms.length} microstappen
+                        {tr("tasks.microStepsBadge", {
+                          done: String(msDone),
+                          total: String(ms.length),
+                        })}
                       </span>
                     </div>
                   ) : null}
@@ -619,7 +657,7 @@ export default function TasksOverviewCalm() {
           {!loading &&
             Object.values(priorityTasks).filter((t) => t !== null && !t?.done).length === 0 && (
               <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center text-[15px] text-gray-400 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                Geen taken gekozen voor vandaag
+                {tr("tasks.noTodayChosen")}
               </div>
             )}
         </div>
@@ -634,7 +672,7 @@ export default function TasksOverviewCalm() {
               <CheckCircleIcon className="h-5 w-5 text-gray-400" strokeWidth={1.5} />
             </div>
             <span className="text-[15px] text-gray-400">
-              Vandaag voltooid · {completedTodayCount}
+              {tr("tasks.todayDone", { n: String(completedTodayCount) })}
             </span>
           </div>
           <button
@@ -642,9 +680,13 @@ export default function TasksOverviewCalm() {
             onClick={() => setCompletedSectionOpen((v) => !v)}
             className="shrink-0 text-[15px] font-normal lowercase text-gray-400 transition hover:text-gray-500"
             aria-expanded={completedSectionOpen}
-            aria-label={completedSectionOpen ? "Voltooide taken verbergen" : "Voltooide taken tonen"}
+            aria-label={
+              completedSectionOpen
+                ? tr("tasks.ariaHideCompleted")
+                : tr("tasks.ariaShowCompleted")
+            }
           >
-            tonen
+            {completedSectionOpen ? tr("tasks.hideCompleted") : tr("tasks.showCompleted")}
           </button>
         </div>
 
@@ -652,7 +694,7 @@ export default function TasksOverviewCalm() {
           <div className="mt-3 space-y-3">
             {completedTodayTasks.length === 0 ? (
               <div className="rounded-2xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-400 shadow-sm">
-                Geen voltooide taken vandaag
+                {tr("tasks.noCompletedToday")}
               </div>
             ) : (
               <>
@@ -667,7 +709,7 @@ export default function TasksOverviewCalm() {
                     </span>
                     {task.completedAt ? (
                       <span className="text-xs tabular-nums text-gray-400">
-                        {new Date(task.completedAt).toLocaleDateString("nl-NL", {
+                        {new Date(task.completedAt).toLocaleDateString(dateLocale, {
                           day: "numeric",
                           month: "short",
                         })}
@@ -678,11 +720,11 @@ export default function TasksOverviewCalm() {
                         type="button"
                         onClick={async () => {
                           await updateTask(task.id, { done: false, completedAt: undefined });
-                          toast("Taak teruggezet bij Alle open taken");
+                          toast(tr("tasks.toastReopened"));
                         }}
                         className="rounded-xl bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-300"
                       >
-                        Terug naar open
+                        {tr("tasks.backToOpen")}
                       </button>
                     </div>
                   </div>
@@ -693,18 +735,20 @@ export default function TasksOverviewCalm() {
                     onClick={async () => {
                       if (
                         !confirm(
-                          `Weet je zeker dat je alle ${completedTodayTasks.length} voltooide taken van vandaag wilt verwijderen? Ze zijn daarna niet meer terug te halen.`
+                          tr("tasks.confirmClear", {
+                            n: String(completedTodayTasks.length),
+                          })
                         )
                       )
                         return;
                       for (const task of completedTodayTasks) {
                         await deleteTask(task.id);
                       }
-                      toast("Voltooide taken van vandaag geleegd");
+                      toast(tr("tasks.toastCleared"));
                     }}
                     className="rounded-xl bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
                   >
-                    Voltooide taken legen
+                    {tr("tasks.clearCompleted")}
                   </button>
                 </div>
               </>
@@ -718,11 +762,11 @@ export default function TasksOverviewCalm() {
       {/* SECTIE 1: Nieuwe taak toevoegen (progressive disclosure) */}
       <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Nieuwe taak toevoegen</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionNew")}</h2>
           <div ref={newTaskInfo.wrapperRef} className="relative flex items-center">
             <button
               type="button"
-              aria-label="Uitleg nieuwe taak toevoegen"
+              aria-label={tr("tasks.newInfoAria")}
               aria-expanded={newTaskInfo.open}
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
               onClick={newTaskInfo.toggle}
@@ -734,10 +778,13 @@ export default function TasksOverviewCalm() {
                 className="absolute top-7 right-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
                 role="tooltip"
               >
-                <div className="text-[11px] font-semibold text-gray-900 mb-1">Zo werkt het</div>
+                <div className="text-[11px] font-semibold text-gray-900 mb-1">
+                  {tr("tasks.newInfoTitle")}
+                </div>
                 <div className="text-[11px] text-gray-600 leading-relaxed">
-                  Energie en duur verschijnen na elkaar. Na de duur kies je of je{" "}
-                  <span className="font-semibold">microstappen</span> wilt; daarna activeer je Taak toevoegen.
+                  {tr("tasks.newInfoBodyBefore")}{" "}
+                  <span className="font-semibold">{tr("tasks.newInfoBold")}</span>{" "}
+                  {tr("tasks.newInfoBodyAfter")}
                 </div>
               </div>
             ) : null}
@@ -751,16 +798,16 @@ export default function TasksOverviewCalm() {
               value={taskInput}
               onChange={(e) => setTaskInput(e.target.value)}
               className="w-full bg-white rounded-2xl px-4 py-4 text-base text-gray-900 shadow-sm border border-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-300 transition-all"
-              placeholder="Nieuwe taak..."
+              placeholder={tr("tasks.phNewTask")}
             />
           </div>
 
           {taskInput.length > 2 && (
             <div className="flex gap-2 animate-fade-in">
               {[
-                { label: "Rustig", emoji: "🌙", value: "laag" as const },
-                { label: "Normaal", emoji: "😊", value: "normaal" as const },
-                { label: "Intensief", emoji: "⚡", value: "hoog" as const },
+                { label: tr("tasks.enCalm"), emoji: "🌙", value: "laag" as const },
+                { label: tr("tasks.enNormal"), emoji: "😊", value: "normaal" as const },
+                { label: tr("tasks.enIntense"), emoji: "⚡", value: "hoog" as const },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -819,19 +866,19 @@ export default function TasksOverviewCalm() {
                       : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  <span className="text-sm font-medium">1 uur</span>
+                  <span className="text-sm font-medium">{tr("tasks.durCustomLine1")}</span>
                   <span
                     className={`mt-0.5 block text-xs font-normal ${
                       duration === "custom" ? "text-white/90" : "text-gray-500"
                     }`}
                   >
-                    of eigen aantal minuten
+                    {tr("tasks.durCustomLine2")}
                   </span>
                 </button>
                 {duration === "custom" ? (
                   <div className="border-t border-gray-100 bg-gray-50/80 px-3 py-3 animate-fade-in">
                     <label htmlFor="custom-task-minutes" className="sr-only">
-                      Minuten
+                      {tr("tasks.customMinSr")}
                     </label>
                     <input
                       id="custom-task-minutes"
@@ -841,7 +888,7 @@ export default function TasksOverviewCalm() {
                       inputMode="numeric"
                       value={customMinutes}
                       onChange={(e) => setCustomMinutes(e.target.value)}
-                      placeholder="Bijv. 60"
+                      placeholder={tr("tasks.customPh")}
                       className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     />
                   </div>
@@ -852,23 +899,21 @@ export default function TasksOverviewCalm() {
 
           {energy && durationResolved && newTaskUseMicroSteps === null ? (
             <div className="space-y-3 animate-fade-in">
-              <p className="text-sm font-medium text-gray-800">
-                Wil je deze taak onderverdelen in microstappen?
-              </p>
+              <p className="text-sm font-medium text-gray-800">{tr("tasks.microQ")}</p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setNewTaskUseMicroSteps(true)}
                   className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                 >
-                  Ja
+                  {tr("common.yes")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setNewTaskUseMicroSteps(false)}
                   className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
                 >
-                  Nee
+                  {tr("common.no")}
                 </button>
               </div>
             </div>
@@ -878,7 +923,7 @@ export default function TasksOverviewCalm() {
             <div className="space-y-3 animate-fade-in rounded-2xl border border-violet-200 bg-violet-50/40 px-3 py-3 sm:px-4">
               <div className="flex items-center gap-2">
                 <Square2StackIcon className="h-4 w-4 shrink-0 text-violet-600" aria-hidden />
-                <span className="text-sm font-semibold text-gray-900">Microstappen</span>
+                <span className="text-sm font-semibold text-gray-900">{tr("tasks.microTitle")}</span>
               </div>
               {newTaskMicroTitles.length > 0 ? (
                 <ul className="space-y-2">
@@ -897,7 +942,7 @@ export default function TasksOverviewCalm() {
                           setNewTaskMicroTitles((prev) => prev.filter((_, i) => i !== idx))
                         }
                         className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label="Stap verwijderen"
+                        aria-label={tr("tasks.microRemoveStepAria")}
                       >
                         ×
                       </button>
@@ -905,9 +950,7 @@ export default function TasksOverviewCalm() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-gray-600">
-                  Voeg hieronder je eerste stap toe. Je kunt er meerdere toevoegen.
-                </p>
+                <p className="text-xs text-gray-600">{tr("tasks.microEmpty")}</p>
               )}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                 <input
@@ -920,7 +963,7 @@ export default function TasksOverviewCalm() {
                       appendNewTaskMicroStep();
                     }
                   }}
-                  placeholder="Bijv. bestand openen…"
+                  placeholder={tr("tasks.microPh")}
                   className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
                 />
                 <button
@@ -928,7 +971,7 @@ export default function TasksOverviewCalm() {
                   onClick={() => appendNewTaskMicroStep()}
                   className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
                 >
-                  Toevoegen
+                  {tr("tasks.microAdd")}
                 </button>
               </div>
               <button
@@ -940,7 +983,7 @@ export default function TasksOverviewCalm() {
                 }}
                 className="text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
               >
-                Toch geen microstappen
+                {tr("tasks.microSkip")}
               </button>
             </div>
           ) : null}
@@ -952,9 +995,7 @@ export default function TasksOverviewCalm() {
                 onClick={() => void handleSaveTask()}
                 disabled={!canSubmitNewTask}
                 title={
-                  canSubmitNewTask
-                    ? undefined
-                    : "Kies of je microstappen wilt en vul ze zo nodig in."
+                  canSubmitNewTask ? undefined : tr("tasks.addTaskTitleDisabled")
                 }
                 className={`w-full rounded-xl py-4 font-semibold text-white transition-all ${
                   canSubmitNewTask
@@ -962,7 +1003,7 @@ export default function TasksOverviewCalm() {
                     : "cursor-not-allowed bg-blue-400/60"
                 }`}
               >
-                Taak toevoegen
+                {tr("tasks.addTaskCta")}
               </button>
             </div>
           ) : null}
@@ -971,19 +1012,19 @@ export default function TasksOverviewCalm() {
         {/* "Vandaag?" prompt */}
         {showVandaagPrompt && (
           <div className="mt-3 p-4 bg-gray-50 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span className="text-gray-600">Wil je dit vandaag oppakken?</span>
+            <span className="text-gray-600">{tr("tasks.pickTodayQ")}</span>
             <div className="flex gap-2">
               <button
                 onClick={() => handleAddToVandaag(showVandaagPrompt)}
                 className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
               >
-                Vandaag
+                {tr("tasks.todayBtn")}
               </button>
               <button
                 onClick={handleAddToLater}
                 className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
               >
-                Later
+                {tr("tasks.laterBtn")}
               </button>
             </div>
           </div>
@@ -993,11 +1034,11 @@ export default function TasksOverviewCalm() {
       {/* SECTIE 4: Alle open taken – zwevende kaarten */}
       <section id="alle-open-taken" className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Alle open taken</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionOpen")}</h2>
           <div ref={openTasksInfo.wrapperRef} className="relative flex items-center">
             <button
               type="button"
-              aria-label="Uitleg energie-zones"
+              aria-label={tr("tasks.openInfoAria")}
               aria-expanded={openTasksInfo.open}
               className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
               onClick={openTasksInfo.toggle}
@@ -1009,13 +1050,18 @@ export default function TasksOverviewCalm() {
                 className="absolute top-7 right-0 z-50 w-56 max-w-[min(14rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:right-[-120px]"
                 role="tooltip"
               >
-                <div className="text-[11px] font-semibold text-gray-900 mb-1">Energie-zones</div>
+                <div className="text-[11px] font-semibold text-gray-900 mb-1">
+                  {tr("tasks.zonesTitle")}
+                </div>
                 <div className="text-[11px] text-gray-600 leading-relaxed">
-                  <span className="font-semibold text-emerald-600">Makkelijk</span>: dit zijn taken die je weinig energie kosten.
+                  <span className="font-semibold text-emerald-600">{tr("tasks.zoneEasy")}</span>:{" "}
+                  {tr("tasks.zoneEasyDesc")}
                   <br />
-                  <span className="font-semibold text-amber-600">Normaal</span>: taken met normale energie-kost.
+                  <span className="font-semibold text-amber-600">{tr("tasks.zoneNormal")}</span>:{" "}
+                  {tr("tasks.zoneNormalDesc")}
                   <br />
-                  <span className="font-semibold text-red-600">Intensief</span>: taken die je veel energie kosten.
+                  <span className="font-semibold text-red-600">{tr("tasks.zoneHard")}</span>:{" "}
+                  {tr("tasks.zoneHardDesc")}
                 </div>
               </div>
             ) : null}
@@ -1024,20 +1070,20 @@ export default function TasksOverviewCalm() {
         
         {loading ? (
           <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm animate-pulse">
-            Taken laden…
+            {tr("tasks.loadingOpen")}
           </div>
         ) : openTasks.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
-            Geen openstaande taken
+            {tr("tasks.noOpen")}
           </div>
         ) : (
           <>
             <div className="flex flex-col gap-3">
               {(
                 [
-                  { key: "green" as const, title: "Makkelijk", titleClass: "text-emerald-700" },
-                  { key: "yellow" as const, title: "Normaal", titleClass: "text-amber-700" },
-                  { key: "red" as const, title: "Intensief", titleClass: "text-red-700" },
+                  { key: "green" as const, title: tr("tasks.colEasy"), titleClass: "text-emerald-700" },
+                  { key: "yellow" as const, title: tr("tasks.colNormal"), titleClass: "text-amber-700" },
+                  { key: "red" as const, title: tr("tasks.colIntense"), titleClass: "text-red-700" },
                 ] as const
               ).map((col) => {
                 const list = (openByEnergy as Record<typeof col.key, any[]>)[col.key];
@@ -1073,7 +1119,7 @@ export default function TasksOverviewCalm() {
                     {zoneOpen ? (
                       <div className="border-t border-gray-200 bg-white/60 px-3 pb-3 pt-2">
                         {list.length === 0 ? (
-                          <p className="px-1 py-2 text-xs italic text-gray-500">Geen taken</p>
+                          <p className="px-1 py-2 text-xs italic text-gray-500">{tr("tasks.noInCol")}</p>
                         ) : (
                           <div className="flex flex-col gap-3">
                       {list.map((task: any) => {
@@ -1095,8 +1141,10 @@ export default function TasksOverviewCalm() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); handleCompleteFromList(task); }}
-                                  aria-label="Taak afvinken"
-                                  title={`${getEnergyLabel(energyLevel)} – klik om af te vinken`}
+                                  aria-label={tr("tasks.completeAria")}
+                                  title={tr("tasks.checkOffHint", {
+                                    label: getEnergyLabel(energyLevel),
+                                  })}
                                   className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full transition-transform duration-200 cursor-pointer ${isPop ? 'scale-125' : 'scale-100'}`}
                                   style={{
                                     background: getEnergyColor(energyLevel),
@@ -1122,13 +1170,25 @@ export default function TasksOverviewCalm() {
                               </div>
 
                               {!isExpanded && (
-                                <div className="flex items-center justify-end gap-3 pt-2">
+                                <div className="flex items-center justify-end gap-2 pt-2">
+                                  {energyLevel === "low" ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handleQuickCompleteFromCard(task);
+                                      }}
+                                      className="px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors border border-gray-200 text-gray-700 hover:bg-gray-50"
+                                      title={tr("tasks.quickDoneTitle")}
+                                    >
+                                      {tr("tasks.quickDone")}
+                                    </button>
+                                  ) : null}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); startFocus(task); }}
                                     className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                                    title="Start deze taak"
+                                    title={tr("tasks.startThis")}
                                   >
-                                    Start
+                                    {tr("tasks.start")}
                                   </button>
                                   <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
                                 </div>
@@ -1155,7 +1215,7 @@ export default function TasksOverviewCalm() {
                                           aria-hidden
                                         />
                                         <span className="text-sm font-semibold text-gray-800">
-                                          Microstappen
+                                          {tr("tasks.microPanelTitle")}
                                         </span>
                                         {ms.length > 0 ? (
                                           <span className="text-xs tabular-nums text-gray-500">
@@ -1172,7 +1232,7 @@ export default function TasksOverviewCalm() {
                                           }}
                                           className="shrink-0 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
                                         >
-                                          Microstappen toevoegen
+                                          {tr("tasks.addMicro")}
                                         </button>
                                       ) : null}
                                     </div>
@@ -1194,7 +1254,11 @@ export default function TasksOverviewCalm() {
                                                       ? "border-emerald-500 bg-emerald-500"
                                                       : "border-gray-300 bg-white hover:border-violet-400"
                                                   }`}
-                                                  aria-label={step.done ? "Stap ongedaan" : "Stap afvinken"}
+                                                  aria-label={
+                                                    step.done
+                                                      ? tr("tasks.stepUndoAria")
+                                                      : tr("tasks.stepCheckAria")
+                                                  }
                                                 >
                                                   {step.done ? (
                                                     <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
@@ -1233,7 +1297,7 @@ export default function TasksOverviewCalm() {
                                               }
                                             }}
                                             onClick={(e) => e.stopPropagation()}
-                                            placeholder="Nieuwe microstap…"
+                                            placeholder={tr("tasks.newMicroPh")}
                                             className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
                                           />
                                           <button
@@ -1244,24 +1308,39 @@ export default function TasksOverviewCalm() {
                                             }}
                                             className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
                                           >
-                                            Toevoegen
+                                            {tr("tasks.microAdd")}
                                           </button>
                                         </div>
                                       </div>
                                     ) : null}
                                   </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startFocus(task);
-                                      setExpandedTaskId(null);
-                                    }}
-                                    className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all text-center"
-                                  >
-                                    Start Focus
-                                  </button>
+                                  <div className={`grid gap-2 ${energyLevel === "low" ? "grid-cols-2" : "grid-cols-1"}`}>
+                                    {energyLevel === "low" ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void handleQuickCompleteFromCard(task);
+                                          setExpandedTaskId(null);
+                                        }}
+                                        className="w-full py-3 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all text-center"
+                                      >
+                                        {tr("tasks.quickDone")}
+                                      </button>
+                                    ) : null}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startFocus(task);
+                                        setExpandedTaskId(null);
+                                      }}
+                                      className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all text-center"
+                                    >
+                                      {tr("tasks.startFocus")}
+                                    </button>
+                                  </div>
                                   <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
                                     <button
                                       type="button"
@@ -1272,19 +1351,19 @@ export default function TasksOverviewCalm() {
                                       className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1.5"
                                     >
                                       <PencilSquareIcon className="w-4 h-4" aria-hidden />
-                                      Bewerken
+                                      {tr("tasks.edit")}
                                     </button>
                                     <button
                                       type="button"
                                       onClick={async (e) => {
                                         e.stopPropagation();
-                                        if (confirm('Weet je zeker dat je deze taak wilt verwijderen?')) {
+                                        if (confirm(tr("tasks.deleteConfirm"))) {
                                           await deleteTask(task.id);
                                           setExpandedTaskId(null);
                                         }
                                       }}
                                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title="Verwijderen"
+                                      title={tr("tasks.deleteTitle")}
                                     >
                                       <TrashIcon className="w-5 h-5" aria-hidden />
                                     </button>
@@ -1364,10 +1443,12 @@ export default function TasksOverviewCalm() {
                 ref={convertTaskInfo.wrapperRef}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}
               >
-                <div style={{ fontWeight: 700, color: theme.text }}>Omzetten naar taak</div>
+                <div style={{ fontWeight: 700, color: theme.text }}>
+                  {tr("tasks.convertModalTitle")}
+                </div>
                 <button
                   type="button"
-                  aria-label="Uitleg omzetten naar taak"
+                  aria-label={tr("tasks.convertInfoAria")}
                   aria-expanded={convertTaskInfo.open}
                   onClick={convertTaskInfo.toggle}
                   style={{
@@ -1407,7 +1488,7 @@ export default function TasksOverviewCalm() {
                       lineHeight: 1.45,
                     }}
                   >
-                    Vul eerst de duur (minuten) in, daarna kun je omzetten naar taak.
+                    {tr("tasks.convertInfo")}
                   </div>
                 ) : null}
               </div>
@@ -1424,17 +1505,18 @@ export default function TasksOverviewCalm() {
                   fontWeight: 500
                 }}
               >
-                Sluiten
+                {tr("common.close")}
               </button>
             </div>
 
             <div style={{ marginBottom: 12, color: theme.sub, fontSize: 13 }}>
-              Taak: <span style={{ color: theme.text, fontWeight: 600 }}>{convertingThought.title}</span>
+              {tr("tasks.taskPrefix")}{" "}
+              <span style={{ color: theme.text, fontWeight: 600 }}>{convertingThought.title}</span>
             </div>
 
             {/* Duration */}
             <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 10, alignItems: 'center', marginTop: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Duur (min)</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{tr("tasks.durMinLabel")}</div>
               <input
                 type="number"
                 min="1"
@@ -1444,7 +1526,7 @@ export default function TasksOverviewCalm() {
                   const val = e.target.value ? parseInt(e.target.value, 10) : null;
                   setConvertDuration(Number.isFinite(val as any) ? val : null);
                 }}
-                placeholder="Minuten, bijv. 15"
+                placeholder={tr("tasks.durPh")}
                 style={{
                   padding: '10px 12px',
                   border: `1px solid ${theme.line}`,
@@ -1458,13 +1540,13 @@ export default function TasksOverviewCalm() {
 
             {/* Difficulty / energy */}
             <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 10, alignItems: 'center', marginTop: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Moeilijkheid</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{tr("tasks.difficulty")}</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {([
-                  { key: 'low', label: 'Makkelijk', color: '#10B981' },
-                  { key: 'medium', label: 'Normaal', color: '#F59E0B' },
-                  { key: 'high', label: 'Moeilijk', color: '#EF4444' },
-                ] as const).map((opt) => (
+                  { key: 'low' as const, label: tr('tasks.diffEasy'), color: '#10B981' },
+                  { key: 'medium' as const, label: tr('tasks.diffNormal'), color: '#F59E0B' },
+                  { key: 'high' as const, label: tr('tasks.diffHard'), color: '#EF4444' },
+                ]).map((opt) => (
                   <button
                     key={opt.key}
                     onClick={() => setConvertEnergy(opt.key)}
@@ -1499,7 +1581,7 @@ export default function TasksOverviewCalm() {
                   fontWeight: 600
                 }}
               >
-                Annuleren
+                {tr("tasks.cancel")}
               </button>
               <button
                 onClick={async () => {
@@ -1513,7 +1595,7 @@ export default function TasksOverviewCalm() {
                         : null;
 
                     if (!duration) {
-                      toast('Vul eerst de duur (minuten) in (minimaal 1).');
+                      toast(tr('tasks.toastNeedDur'));
                       return;
                     }
 
@@ -1524,12 +1606,12 @@ export default function TasksOverviewCalm() {
                       estimatedDuration: duration,
                       energyLevel: convertEnergy,
                     });
-                    toast('Gedachte omgezet naar taak (bij Alle open taken)');
+                    toast(tr('tasks.toastConverted'));
                     setExpandedTaskId(null);
                     setConvertingThought(null);
                   } catch (err) {
                     console.error('Error converting thought:', err);
-                    toast('Fout bij omzetten naar taak');
+                    toast(tr('tasks.toastConvertErr'));
                   }
                 }}
                 style={{
@@ -1543,7 +1625,7 @@ export default function TasksOverviewCalm() {
                   fontWeight: 700
                 }}
               >
-                Omzetten
+                {tr("tasks.convert")}
               </button>
             </div>
           </div>

@@ -13,6 +13,7 @@ export type TaskRow = {
   due_at: string | null;
   duration: number | null;
   source: string;
+  postponed_to?: string | null;
   completed_at: string | null;
   reminders: number[];
   repeat: string;
@@ -40,6 +41,7 @@ function rowToTask(row: TaskRow): Task {
     dueAt: row.due_at ?? undefined,
     duration: row.duration ?? undefined,
     source: row.source,
+    postponedTo: row.postponed_to ?? null,
     completedAt: row.completed_at ?? undefined,
     reminders: row.reminders ?? [],
     repeat: row.repeat,
@@ -68,6 +70,7 @@ function taskToRow(task: Partial<Task>, userId: string): Partial<TaskRow> & { us
     due_at: task.dueAt ?? null,
     duration: task.duration ?? null,
     source: task.source ?? "regular",
+    postponed_to: task.postponedTo ?? null,
     completed_at: task.completedAt ?? null,
     reminders: task.reminders ?? [],
     repeat: task.repeat ?? "none",
@@ -127,6 +130,7 @@ export async function updateTaskInSupabase(
   if (updates.dueAt !== undefined) rowUpdates.due_at = updates.dueAt;
   if (updates.duration !== undefined) rowUpdates.duration = updates.duration;
   if (updates.source !== undefined) rowUpdates.source = updates.source;
+  if (updates.postponedTo !== undefined) rowUpdates.postponed_to = updates.postponedTo;
   if (updates.completedAt !== undefined) rowUpdates.completed_at = updates.completedAt;
   if (updates.reminders !== undefined) rowUpdates.reminders = updates.reminders;
   if (updates.repeat !== undefined) rowUpdates.repeat = updates.repeat;

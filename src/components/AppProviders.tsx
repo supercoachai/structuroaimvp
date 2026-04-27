@@ -11,6 +11,8 @@ import { TaskProvider } from "@/context/TaskContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { trackSessionAbandoned } from "@/utils/events";
 import { AnalyticsInternalBridge } from "@/components/AnalyticsInternalBridge";
+import { PasswordRecoveryRedirect } from "@/components/PasswordRecoveryRedirect";
+import { I18nProvider } from "@/lib/i18n";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
 /** Zichtbare fallback zonder Tailwind — voorkomt ‘wit scherm’ bij trage chunks of Suspense. */
@@ -73,8 +75,9 @@ function GaSessionAbandonListener() {
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
-      <>
+      <I18nProvider>
         <RemoveLegacyFocusDurationKey />
+        <PasswordRecoveryRedirect />
         <AnalyticsInternalBridge />
         <Suspense fallback={null}>
           <GaSessionAbandonListener />
@@ -96,7 +99,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             shouldSendProductAnalytics() ? event : null
           }
         />
-      </>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

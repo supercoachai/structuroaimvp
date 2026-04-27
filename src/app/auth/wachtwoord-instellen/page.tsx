@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 export default function WachtwoordInstellenPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -38,11 +40,11 @@ export default function WachtwoordInstellenPage() {
     e.preventDefault();
     setError(null);
     if (password.length < 6) {
-      setError("Wachtwoord moet minimaal 6 tekens zijn.");
+      setError(t("passwordSetup.errShort"));
       return;
     }
     if (password !== confirm) {
-      setError("Wachtwoorden komen niet overeen.");
+      setError(t("passwordSetup.errMismatch"));
       return;
     }
     setBusy(true);
@@ -52,14 +54,16 @@ export default function WachtwoordInstellenPage() {
         password,
       });
       if (upErr) {
-        setError(upErr.message || "Opslaan mislukt.");
+        setError(upErr.message || t("passwordSetup.errSave"));
         return;
       }
       await supabase.auth.signOut();
       router.push("/login?wachtwoord=bijgewerkt");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Onbekende fout.");
+      setError(
+        err instanceof Error ? err.message : t("passwordSetup.errUnknown")
+      );
     } finally {
       setBusy(false);
     }
@@ -68,7 +72,7 @@ export default function WachtwoordInstellenPage() {
   if (checking) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
-        Bezig met laden…
+        {t("passwordSetup.checking")}
       </div>
     );
   }
@@ -78,23 +82,22 @@ export default function WachtwoordInstellenPage() {
       <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[#F4F6FB] px-4 py-8">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <h1 className="text-xl font-semibold text-slate-900">
-            Geen geldige sessie
+            {t("passwordSetup.noSessionTitle")}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            Open eerst de link uit je mail, of vraag een nieuw wachtwoord aan.
-            Oude links werken niet meer.
+            {t("passwordSetup.noSessionBody")}
           </p>
           <Link
             href="/login?herstel=1"
             className="mt-6 block w-full rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
           >
-            Nieuw wachtwoord aanvragen
+            {t("passwordSetup.ctaReset")}
           </Link>
           <Link
             href="/login"
             className="mt-3 block w-full text-center text-sm text-slate-600 underline"
           >
-            Naar inloggen
+            {t("passwordSetup.ctaLogin")}
           </Link>
         </div>
       </div>
@@ -105,10 +108,10 @@ export default function WachtwoordInstellenPage() {
     <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[#F4F6FB] px-4 py-8">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">
-          Nieuw wachtwoord
+          {t("passwordSetup.title")}
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          Kies een nieuw wachtwoord voor je account.
+          {t("passwordSetup.subtitle")}
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
@@ -116,7 +119,7 @@ export default function WachtwoordInstellenPage() {
               htmlFor="np"
               className="block text-sm font-medium text-slate-700"
             >
-              Nieuw wachtwoord
+              {t("passwordSetup.labelNew")}
             </label>
             <input
               id="np"
@@ -134,7 +137,7 @@ export default function WachtwoordInstellenPage() {
               htmlFor="npc"
               className="block text-sm font-medium text-slate-700"
             >
-              Bevestigen
+              {t("passwordSetup.labelConfirm")}
             </label>
             <input
               id="npc"
@@ -157,7 +160,7 @@ export default function WachtwoordInstellenPage() {
             disabled={busy}
             className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {busy ? "Opslaan…" : "Wachtwoord opslaan"}
+            {busy ? t("passwordSetup.saving") : t("passwordSetup.submit")}
           </button>
         </form>
       </div>

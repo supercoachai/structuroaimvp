@@ -19,7 +19,11 @@ import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { persistPreferredDisplayName } from '@/lib/accountDisplayName';
+import { useI18n } from '@/lib/i18n';
+import { homeWelcomeEn, homeWelcomeNl } from '@/lib/i18n/homeCopy';
+
 export default function HomeCalm() {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const { tasks, loading } = useTaskContext();
   const { checkIn: todayCheckIn } = useCheckIn();
@@ -131,7 +135,7 @@ export default function HomeCalm() {
       if (user?.id) {
         const { error } = await persistPreferredDisplayName(user, trimmed);
         if (error) {
-          toast(`Kon naam niet opslaan: ${error}`);
+          toast(t('home.toastNameFail', { detail: String(error) }));
           return;
         }
       } else if (typeof window !== 'undefined') {
@@ -145,16 +149,19 @@ export default function HomeCalm() {
     } catch (error: unknown) {
       console.error('Unexpected error saving name:', error);
       toast(
-        `Onverwachte fout: ${error instanceof Error ? error.message : 'Onbekende fout'}`
+        t('home.toastUnexpected', {
+          detail:
+            error instanceof Error ? error.message : t('home.toastUnknown'),
+        })
       );
     }
   };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Goedemorgen";
-    if (hour < 18) return "Goedemiddag";
-    return "Goedenavond";
+    if (hour < 12) return t('home.greetingMorning');
+    if (hour < 18) return t('home.greetingAfternoon');
+    return t('home.greetingEvening');
   };
 
   // Helper: Haal energie-status op van vandaag (useCheckIn levert al vandaag)
@@ -170,11 +177,11 @@ export default function HomeCalm() {
     if (!energyLevel) return null;
 
     if (energyLevel === 'low') {
-      return 'Energie laag';
+      return t('home.energyLow');
     } else if (energyLevel === 'medium') {
-      return 'Energie normaal';
+      return t('home.energyMedium');
     }
-    return 'Energie hoog';
+    return t('home.energyHigh');
   };
 
   const energyForPill = getTodayEnergyStatus();
@@ -188,113 +195,33 @@ export default function HomeCalm() {
           ? 'border-amber-200 bg-amber-50 text-amber-900'
           : '';
 
-  // 15 afwisselende welkomstzinnen (zonder emoji's in de tekst zelf)
-  const welcomeMessages = [
-    "Fijn dat je er bent. Klaar om rustig aan de dag te beginnen?",
-    "Welkom terug. Kleine stappen brengen grote rust.",
-    "Mooi dat je er weer bent. Vandaag telt elk moment.",
-    "Tijd om structuur te brengen in de chaos.",
-    "Goed dat je inlogt. Vandaag doen we het stap voor stap.",
-    "Rustig hoofd, helder plan. Laten we beginnen.",
-    "Vandaag is een nieuwe kans om het overzicht te pakken.",
-    "Je doet het goed. Vandaag is weer een stap vooruit.",
-    "Klaar om wat meer structuur te vinden?",
-    "Goed bezig dat je weer start. Dat is al een overwinning.",
-    "Samen maken we er een georganiseerde dag van.",
-    "Even op adem komen, dan gefocust verder.",
-    "Elke dag telt. Ook de kleine stappen vandaag.",
-    "Jij bepaalt het tempo, Structuro helpt je op koers.",
-    "Rust. Ritme. Structuur. Vandaag begint weer rustig."
-  ];
+  const welcomeMessages = locale === 'en' ? homeWelcomeEn : homeWelcomeNl;
 
   const getWelcomeMessage = () => {
-    // Gebruik de dag van het jaar als seed voor consistente dagelijkse welkomstzin
     const today = new Date();
     const startOfYear = new Date(today.getFullYear(), 0, 0).getTime();
     const dayOfYear = Math.floor((today.getTime() - startOfYear) / (1000 * 60 * 60 * 24));
     return welcomeMessages[dayOfYear % welcomeMessages.length];
   };
 
-  // 50 ADHD-gerelateerde motivatie quotes
-  const adhdQuotes = [
-    "Rustige stappen, helder hoofd.",
-    "Eén ding tegelijk is genoeg.",
-    "Perfectie is niet het doel, vooruitgang wel.",
-    "Kleine stappen zijn ook stappen.",
-    "Focus op wat je nu doet, niet op wat nog komt.",
-    "Je bent niet te laat, je bent precies op tijd.",
-    "Vandaag is een nieuwe kans.",
-    "Elke taak begint met één stap.",
-    "Rust is ook productiviteit.",
-    "Je doet het goed, precies zoals je bent.",
-    "Kleine overwinningen tellen mee.",
-    "Het is oké om het rustig aan te doen.",
-    "Focus op je eigen tempo.",
-    "Elke dag is een nieuw begin.",
-    "Je bent genoeg, precies zoals je bent.",
-    "Kleine stappen leiden tot grote doelen.",
-    "Het is oké om pauze te nemen.",
-    "Vandaag focus je op wat belangrijk is.",
-    "Rust en structuur gaan hand in hand.",
-    "Je bent op de goede weg.",
-    "Eén taak afmaken is een overwinning.",
-    "Kalmte is kracht.",
-    "Je doet het in jouw eigen tempo.",
-    "Kleine stappen, grote impact.",
-    "Focus op het nu, niet op morgen.",
-    "Rust is onderdeel van productiviteit.",
-    "Je bent precies waar je hoort te zijn.",
-    "Elke stap telt, hoe klein ook.",
-    "Kalmte helpt je helder te denken.",
-    "Je bent niet alleen in deze reis.",
-    "Kleine stappen zijn de weg naar succes.",
-    "Het is oké om hulp te vragen.",
-    "Vandaag doe je wat je kunt.",
-    "Rust en focus zijn je vrienden.",
-    "Je bent sterker dan je denkt.",
-    "Kleine stappen, grote vooruitgang.",
-    "Focus op wat je nu kunt doen.",
-    "Het is oké om het anders te doen.",
-    "Rustige stappen leiden tot resultaten.",
-    "Je bent waardevol, precies zoals je bent.",
-    "Eén ding tegelijk is de sleutel.",
-    "Kalmte helpt je betere keuzes te maken.",
-    "Je doet het op jouw manier, en dat is goed.",
-    "Kleine stappen, heldere doelen.",
-    "Rust is een vorm van zelfzorg.",
-    "Focus op vooruitgang, niet op perfectie.",
-    "Je bent op je eigen pad, en dat is mooi.",
-    "Kleine stappen, grote rust.",
-    "Het is oké om het rustig aan te doen.",
-    "Vandaag focus je op wat echt belangrijk is."
-  ];
-
   const heroMicroSteps: MicroStep[] = useMemo(() => {
     if (!findLowestEnergyTask) return [];
     return normalizeMicroSteps(findLowestEnergyTask.microSteps);
   }, [findLowestEnergyTask]);
-
-  const getDailyQuote = () => {
-    // Gebruik de dag van het jaar als seed voor consistente dagelijkse quotes
-    const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 0).getTime();
-    const dayOfYear = Math.floor((today.getTime() - startOfYear) / (1000 * 60 * 60 * 24));
-    return adhdQuotes[dayOfYear % adhdQuotes.length];
-  };
 
   const devResetToolbarOn =
     process.env.NEXT_PUBLIC_STRUCTURO_DEV_RESET === '1';
 
   const handleReset = () => {
     if (!devResetToolbarOn || isProtectedAccount) return;
-    if (confirm('Weet je zeker dat je alle data wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
+    if (confirm(t('home.devConfirmWipe'))) {
       resetAndLoadMockData();
     }
   };
 
   const handleClearAllTasks = () => {
     if (!devResetToolbarOn || isProtectedAccount) return;
-    if (confirm('Weet je zeker dat je ALLE taken wilt verwijderen? Dit kan niet ongedaan worden gemaakt. Je kunt daarna zelf handmatig taken toevoegen.')) {
+    if (confirm(t('home.devConfirmTasks'))) {
       clearAllTasksOnly();
     }
   };
@@ -328,7 +255,7 @@ export default function HomeCalm() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             }}
           >
-            🗑️ Verwijder ALLE taken
+            🗑️ {t('home.devClearTasks')}
           </button>
           <button
             type="button"
@@ -344,9 +271,9 @@ export default function HomeCalm() {
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             }}
-            title="Reset alle data (alleen development)"
+            title={t('home.devResetTitle')}
           >
-            🔄 Reset Data
+            🔄 {t('home.devResetData')}
           </button>
         </div>
       )}
@@ -357,7 +284,7 @@ export default function HomeCalm() {
             {getGreeting()},
           </p>
           <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-tight text-[#111827]">
-            {userName || 'daar'}
+            {userName || t('home.guestFallback')}
           </h1>
           {getEnergyStatusLabel() && energyPillClass ? (
             <div
@@ -402,10 +329,10 @@ export default function HomeCalm() {
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
             }}>
               <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-                Welkom bij Structuro! 👋
+                {t('home.nameModalTitle')}
               </h3>
               <p style={{ fontSize: 14, color: 'rgba(47,52,65,0.75)', marginBottom: 20 }}>
-                Hoe wil je dat we je aanspreken?
+                {t('home.nameModalBody')}
               </p>
               <input
                 type="text"
@@ -414,7 +341,7 @@ export default function HomeCalm() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveName();
                 }}
-                placeholder="Je voornaam..."
+                placeholder={t('home.nameModalPh')}
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -442,7 +369,7 @@ export default function HomeCalm() {
                   boxShadow: newName.trim() ? '0 2px 8px rgba(59, 130, 246, 0.3)' : 'none'
                 }}
               >
-                Opslaan
+                {t('home.nameSave')}
               </button>
             </div>
           </div>
@@ -452,14 +379,14 @@ export default function HomeCalm() {
         {findLowestEnergyTask && (
           <section className="rounded-[20px] bg-[var(--structuro-dark)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.2)]">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--structuro-green)]">
-              Nu aan zet
+              {t('home.nowUp')}
             </div>
             <h2 className="mb-1 text-[20px] font-bold leading-snug tracking-tight text-white">
               {findLowestEnergyTask.title}
             </h2>
             <p className="text-[13px] text-[var(--structuro-dark-sub)]">
-              Kernfocus · {findLowestEnergyTask.duration || findLowestEnergyTask.estimatedDuration || 15}{' '}
-              min
+              {t('home.coreFocus')} · {findLowestEnergyTask.duration || findLowestEnergyTask.estimatedDuration || 15}{' '}
+              {t('home.min')}
             </p>
 
             {heroMicroSteps.length > 0 ? (
@@ -514,7 +441,7 @@ export default function HomeCalm() {
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--structuro-green)] py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.35)] transition hover:bg-[var(--structuro-green-hover)]"
             >
               <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
-              Start focus →
+              {t('home.startFocus')}
             </button>
           </section>
         )}
@@ -523,9 +450,9 @@ export default function HomeCalm() {
           <section className="mt-2">
             <div className="bg-white rounded-2xl p-6 text-center space-y-2 shadow-sm mt-4">
               <div className="text-3xl">✅</div>
-              <p className="font-semibold text-gray-900">Alles gedaan voor nu.</p>
+              <p className="font-semibold text-gray-900">{t('home.allDoneTitle')}</p>
               <p className="text-sm text-gray-400">
-                Wil je meer doen? Voeg een taak toe via Taken.
+                {t('home.allDoneHint')}
               </p>
             </div>
           </section>
@@ -552,14 +479,14 @@ export default function HomeCalm() {
                 color: '#111827',
                 marginBottom: 8
               }}>
-                Doe dit nu. Klein is genoeg.
+                {t('home.emptyTitle')}
               </div>
               <div style={{ 
                 fontSize: 14, 
                 color: '#6B7280',
                 marginBottom: 20
               }}>
-                Voeg een kleine taak toe om vandaag te beginnen
+                {t('home.emptyHint')}
               </div>
               <button
                 onClick={() => router.push('/todo')}
@@ -585,7 +512,7 @@ export default function HomeCalm() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                + Voeg je eerste taak toe
+                {t('home.emptyCta')}
               </button>
             </div>
           </section>

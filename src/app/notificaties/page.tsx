@@ -93,7 +93,8 @@ export default function HerinneringenPage() {
       await updateTask(task.id, {
         done: true,
         completedAt: new Date().toISOString(),
-        started: false,
+        started: true,
+        source: "quick_complete",
       });
       await fetchTasks();
       toast(`Taak voltooid! +${xp} XP`, { durationMs: 3000 });

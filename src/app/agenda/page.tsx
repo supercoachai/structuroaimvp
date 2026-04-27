@@ -20,6 +20,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useTaskContext } from '../../context/TaskContext';
 import { toast } from '../../components/Toast';
+import { useI18n } from '@/lib/i18n';
 import { getCategoryColor, CATEGORIES } from '../../lib/categoryColors';
 
 type TimeRange = '24h' | 'work' | 'morning' | 'afternoon' | 'evening' | 'custom';
@@ -145,6 +146,7 @@ function getInstanceStartTime(originalDueAt: Date, instanceDate: Date): Date {
 }
 
 export default function AgendaPage() {
+  const { t } = useI18n();
   const { tasks, addTask: addTaskToDatabase, updateTask: updateTaskInDatabase, deleteTask: deleteTaskInDatabase, fetchTasks } = useTaskContext();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedView, setSelectedView] = useState<'day' | 'week' | 'month' | 'workweek'>('day');
@@ -1526,19 +1528,19 @@ export default function AgendaPage() {
                                       data-resize-handle
                                       className="absolute left-0 right-0 top-0 h-2 cursor-n-resize flex-shrink-0 z-10 rounded-t-lg hover:bg-black/10"
                                       onMouseDown={(e) => handleResizeStart(item, 'top', e)}
-                                      title="Sleep om starttijd te wijzigen"
+                                      title={t("agenda.tooltipDragStart")}
                                     />
                                     <div
                                       data-resize-handle
                                       className="absolute left-0 right-0 bottom-0 h-2 cursor-n-resize flex-shrink-0 z-10 rounded-b-lg hover:bg-black/10"
                                       onMouseDown={(e) => handleResizeStart(item, 'bottom', e)}
-                                      title="Sleep om eindtijd te wijzigen"
+                                      title={t("agenda.tooltipDragEnd")}
                                     />
                                   </>
                                 )}
                                 <div className={`flex items-center gap-2 h-full min-h-0 overflow-hidden ${heightPx < 36 ? 'p-1.5' : 'p-2'}`}>
                                   {item.completed ? (
-                                    <CheckCircleIcon className={`flex-shrink-0 text-green-600 ${heightPx < 36 ? 'w-4 h-4' : 'w-5 h-5'}`} title="Voltooid" />
+                                    <CheckCircleIcon className={`flex-shrink-0 text-green-600 ${heightPx < 36 ? 'w-4 h-4' : 'w-5 h-5'}`} title={t("agenda.tooltipCompleted")} />
                                   ) : (
                                     item.icon && <span className={`flex-shrink-0 ${heightPx < 36 ? 'text-sm' : 'text-base'}`}>{item.icon}</span>
                                   )}
@@ -1572,7 +1574,7 @@ export default function AgendaPage() {
                                         e.stopPropagation();
                                         window.location.href = `/focus?task=${encodeURIComponent(item.title)}&duration=${item.type === 'medication' ? 5 : (item.duration || 15)}`;
                                       }}
-                                      title="Start focus"
+                                      title={t("agenda.tooltipStartFocus")}
                                     >
                                       <PlayIcon className="w-4 h-4 mr-1" />
                                       Start
@@ -2084,7 +2086,7 @@ export default function AgendaPage() {
                           }
                         }}
                         className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Verwijderen"
+                        title={t("agenda.tooltipDelete")}
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>

@@ -19,10 +19,12 @@ import {
   clearPreferredDisplayName,
   persistPreferredDisplayName,
 } from '@/lib/accountDisplayName';
+import { useI18n, type Locale } from '@/lib/i18n';
 
 const NAME_KEY = 'structuro_user_name';
 
 export default function SettingsPage() {
+  const { t, locale, setLocale } = useI18n();
   const router = useRouter();
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
@@ -85,7 +87,7 @@ export default function SettingsPage() {
     if (hasSupabaseSession) {
       const { error } = await setProfileOnboardingCompleted(false);
       if (error) {
-        toast(`Kon intro niet heropenen: ${error}`);
+        toast(t('settings.toastReplayFail', { detail: String(error) }));
         return;
       }
     } else {
@@ -111,25 +113,25 @@ export default function SettingsPage() {
         if (value) {
           const { error } = await persistPreferredDisplayName(user, value);
           if (error) {
-            toast(`Kon niet opslaan: ${error}`);
+            toast(t('settings.toastSaveFail', { detail: String(error) }));
             return;
           }
-          toast('Aanspreeknaam opgeslagen');
+          toast(t('settings.toastNameSaved'));
         } else {
           const { error } = await clearPreferredDisplayName(user);
           if (error) {
-            toast(`Kon niet wissen: ${error}`);
+            toast(t('settings.toastClearFail', { detail: String(error) }));
             return;
           }
-          toast('Aanspreeknaam verwijderd');
+          toast(t('settings.toastNameCleared'));
         }
       } else if (typeof window !== 'undefined') {
         if (value) {
           localStorage.setItem(NAME_KEY, value);
-          toast('Aanspreeknaam opgeslagen');
+          toast(t('settings.toastNameSaved'));
         } else {
           localStorage.removeItem(NAME_KEY);
-          toast('Aanspreeknaam verwijderd');
+          toast(t('settings.toastNameCleared'));
         }
       }
     } finally {
@@ -137,9 +139,11 @@ export default function SettingsPage() {
     }
   };
 
+  const wipeWord = t('settings.wipeWord');
+
   const handleWipeData = () => {
     if (isProtectedAccount) {
-      toast('Dit is een beschermd testaccount. Data wordt niet gewist.');
+      toast(t('settings.toastProtected'));
       return;
     }
     if (!confirmWipe) {
@@ -147,13 +151,13 @@ export default function SettingsPage() {
       setConfirmText('');
       return;
     }
-    if (confirmText.toLowerCase() !== 'wissen') {
-      toast('Typ WISSEN om te bevestigen');
+    if (confirmText.toLowerCase() !== wipeWord.toLowerCase()) {
+      toast(t('settings.toastTypeConfirm', { word: wipeWord }));
       return;
     }
     const ok = wipeAllUserData();
-    if (ok) toast('Alle data gewist. Je wordt doorgestuurd.');
-    else toast('Fout bij wissen van data');
+    if (ok) toast(t('settings.toastWiped'));
+    else toast(t('settings.toastWipeError'));
   };
 
   const cancelWipe = () => {
@@ -181,7 +185,7 @@ export default function SettingsPage() {
     a.download = `structuro-data-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast('Export gedownload');
+    toast(t('settings.toastExportDone'));
   };
 
   const handleLogout = async () => {
@@ -210,17 +214,40 @@ export default function SettingsPage() {
             >
               <Settings className="h-7 w-7 text-white" strokeWidth={2} aria-hidden />
             </div>
-            <h1 className="structuro-page-title">Instellingen</h1>
+            <h1 className="structuro-page-title">{t('settings.title')}</h1>
             <p className="structuro-page-subtitle">
-              Persoonlijke voorkeuren en beheer
+              {t('settings.subtitle')}
             </p>
           </header>
 
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.languageTitle')}</h2>
+            <p className="text-sm text-slate-500 mb-4 text-balance">
+              {t('settings.languageHint')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(['nl', 'en'] as Locale[]).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setLocale(code)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-all active:scale-[0.98] ${
+                    locale === code
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {code === 'nl' ? t('settings.languageNl') : t('settings.languageEn')}
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Kaart 1: Jouw profiel */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">Aanspreeknaam</h2>
+            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.displayNameTitle')}</h2>
             <p className="text-sm text-slate-500 mb-4 text-balance">
-              Hoe wil je dat we je noemen in de app?
+              {t('settings.displayNameHint')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
@@ -230,7 +257,7 @@ export default function SettingsPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void handleSaveName();
                 }}
-                placeholder="Bijvoorbeeld je voornaam"
+                placeholder={t('settings.displayNamePlaceholder')}
                 className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-300"
               />
               <button
@@ -239,7 +266,7 @@ export default function SettingsPage() {
                 disabled={nameSaveBusy}
                 className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {nameSaveBusy ? 'Bezig…' : 'Opslaan'}
+                {nameSaveBusy ? t('settings.saving') : t('settings.save')}
               </button>
             </div>
 
@@ -251,54 +278,54 @@ export default function SettingsPage() {
               disabled={logoutBusy}
               className="block text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 disabled:opacity-50"
             >
-              {logoutBusy ? 'Bezig met uitloggen…' : 'Uitloggen'}
+              {logoutBusy ? t('settings.logoutBusy') : t('settings.logout')}
             </button>
             {isLocalOnly ? (
               <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                Je test lokaal zonder account. Uitloggen brengt je terug naar het inlogscherm en wist de lokale sessie.
+                {t('settings.localOnlyHint')}
               </p>
             ) : null}
           </section>
 
           {/* Kaart 2: App-ervaring */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">Rondleiding</h2>
+            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.tourTitle')}</h2>
             <p className="text-sm text-slate-500 mb-4 text-balance">
-              Bekijk de korte introductie van Structuro opnieuw.
+              {t('settings.tourHint')}
             </p>
             <button
               type="button"
               onClick={() => void handleReplayIntro()}
               className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 active:scale-[0.98]"
             >
-              Introductie opnieuw bekijken
+              {t('settings.tourCta')}
             </button>
           </section>
 
           {/* Kaart 3: Data & privacy */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">Data exporteren</h2>
+            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.exportTitle')}</h2>
             <p className="text-sm text-slate-500 mb-4 text-balance">
-              Download een kopie van al je persoonlijke gegevens en taken (GDPR).
+              {t('settings.exportHint')}
             </p>
             <button
               type="button"
               onClick={handleDownloadData}
               className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 active:scale-[0.98]"
             >
-              Exporteer mijn data
+              {t('settings.exportCta')}
             </button>
           </section>
 
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">Account & gegevens verwijderen</h2>
+            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.wipeTitle')}</h2>
             <p className="text-sm text-slate-500 mb-4 text-balance leading-relaxed">
-              Wis al je taken en check-ins permanent. Dit kan niet ongedaan worden gemaakt.
+              {t('settings.wipeHint')}
             </p>
 
             {isProtectedAccount ? (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
-                Dit is een beschermd testaccount. Wissen is uitgeschakeld tijdens development.
+                {t('settings.wipeProtected')}
               </div>
             ) : null}
 
@@ -309,18 +336,18 @@ export default function SettingsPage() {
                 disabled={isProtectedAccount === true}
                 className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
               >
-                Alle gegevens wissen
+                {t('settings.wipeCta')}
               </button>
             ) : (
               <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                 <p className="text-sm text-slate-600 text-balance">
-                  Weet je het zeker? Typ <span className="font-semibold text-slate-800">WISSEN</span> om te bevestigen.
+                  {t('settings.wipeConfirmLine', { word: wipeWord })}
                 </p>
                 <input
                   type="text"
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="WISSEN"
+                  placeholder={t('settings.wipePlaceholder')}
                   className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-200"
                 />
                 <div className="flex flex-wrap gap-2">
@@ -329,14 +356,14 @@ export default function SettingsPage() {
                     onClick={handleWipeData}
                     className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 active:scale-[0.98]"
                   >
-                    Definitief wissen
+                    {t('settings.wipeFinal')}
                   </button>
                   <button
                     type="button"
                     onClick={cancelWipe}
                     className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 transition-colors hover:bg-slate-50 active:scale-[0.98]"
                   >
-                    Annuleren
+                    {t('settings.cancel')}
                   </button>
                 </div>
               </div>
@@ -344,7 +371,7 @@ export default function SettingsPage() {
           </section>
 
           <p className="mt-8 text-center text-xs text-slate-400 leading-relaxed text-balance">
-            Structuro is privacy-by-design. Je data is alleen voor jou inzichtelijk.
+            {t('settings.footerPrivacy')}
           </p>
         </main>
       </div>

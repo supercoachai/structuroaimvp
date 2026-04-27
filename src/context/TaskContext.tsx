@@ -59,6 +59,7 @@ export interface Task {
   dueAt?: string | null;
   duration?: number | null;
   source?: string;
+  postponedTo?: string | null;
   completedAt?: string;
   reminders?: number[];
   repeat?: string;
@@ -97,6 +98,7 @@ function mapLocalTaskToTask(localTask: LocalTask): Task {
     dueAt: localTask.dueAt || undefined,
     duration: localTask.duration || undefined,
     source: localTask.source,
+    postponedTo: (localTask as any).postponedTo ?? null,
     completedAt: localTask.completedAt || undefined,
     reminders: localTask.reminders,
     repeat: localTask.repeat,
@@ -135,6 +137,7 @@ function mapTaskToLocalTask(task: Partial<Task>): Partial<LocalTask> {
     dueAt: task.dueAt || null,
     duration: task.duration || null,
     source: task.source || 'regular',
+    postponedTo: task.postponedTo ?? null,
     completedAt: task.completedAt || null,
     reminders: task.reminders || [],
     repeat: task.repeat || 'none',
@@ -166,6 +169,7 @@ function mapTaskUpdatesToLocalTask(updates: Partial<Task>): Partial<LocalTask> {
   if ('duration' in updates) local.duration = updates.duration ?? null;
   if ('estimatedDuration' in updates) local.estimatedDuration = updates.estimatedDuration ?? null;
   if ('source' in updates) local.source = updates.source;
+  if ('postponedTo' in updates) (local as any).postponedTo = updates.postponedTo ?? null;
   if ('completedAt' in updates) local.completedAt = updates.completedAt ?? null;
   if ('reminders' in updates) local.reminders = updates.reminders ?? [];
   if ('repeat' in updates) local.repeat = updates.repeat ?? 'none';
@@ -195,6 +199,17 @@ function mapTaskUpdatesToLocalTask(updates: Partial<Task>): Partial<LocalTask> {
   }
 
   return local;
+}
+
+function applyCompletionDefaultsToUpdates(updates: Partial<Task>): Partial<Task> {
+  if (updates.done !== true) return updates;
+  const normalized: Partial<Task> = { ...updates };
+  if (normalized.started !== true) normalized.started = true;
+  if (!normalized.completedAt) normalized.completedAt = new Date().toISOString();
+  if (!normalized.source || normalized.source === "regular") {
+    normalized.source = "quick_complete";
+  }
+  return normalized;
 }
 
 interface TaskContextType {
@@ -325,6 +340,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const updateTask = useCallback(async (id: string, updates: Partial<Task>) => {
     try {
+      const normalizedUpdates = applyCompletionDefaultsToUpdates(updates);
       if (user) {
         if (id.startsWith(OPTIMISTIC_TASK_ID_PREFIX)) {
           throw new Error(
@@ -334,11 +350,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         setTasks((prev) => {
           const t = prev.find((x) => x.id === id);
           if (!t) return prev;
-          return prev.map((x) => (x.id === id ? { ...t, ...updates } : x));
+          return prev.map((x) => (x.id === id ? { ...t, ...normalizedUpdates } : x));
         });
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
         try {
-          const updated = await updateTaskInSupabase(user.id, id, updates);
+          const updated = await updateTaskInSupabase(user.id, id, normalizedUpdates);
           setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
           if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
           return updated;
@@ -348,7 +364,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           throw syncErr;
         }
       }
-      const localUpdates = mapTaskUpdatesToLocalTask(updates);
+      const localUpdates = mapTaskUpdatesToLocalTask(normalizedUpdates);
       const updatedTask = updateTaskInStorage(id, localUpdates as Partial<LocalTask>);
       if (!updatedTask) throw new Error('Task not found');
       const mappedTask = mapLocalTaskToTask(updatedTask);
