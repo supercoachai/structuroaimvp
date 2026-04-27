@@ -12,6 +12,25 @@ ALTER TABLE public.tasks
 ALTER TABLE public.tasks
   DROP CONSTRAINT IF EXISTS tasks_source_allowed_chk;
 
+-- Bestaande legacy/source-varianten normaliseren voordat de CHECK actief wordt.
+UPDATE public.tasks
+SET source = CASE
+  WHEN source IS NULL OR btrim(source) = '' THEN NULL
+  WHEN source IN (
+    'regular',
+    'focus_remainder',
+    'medication',
+    'event',
+    'focus_mode',
+    'quick_complete',
+    'manual'
+  ) THEN source
+  WHEN source IN ('focus', 'focus-session', 'focus_session', 'ignite') THEN 'focus_mode'
+  WHEN source IN ('quick', 'quick_done', 'quick-done', 'checkbox', 'checkoff') THEN 'quick_complete'
+  WHEN source IN ('direct', 'manual_done', 'manual-done') THEN 'manual'
+  ELSE 'regular'
+END;
+
 ALTER TABLE public.tasks
   ADD CONSTRAINT tasks_source_allowed_chk
   CHECK (

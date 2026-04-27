@@ -1506,18 +1506,18 @@ export default function DayStartCheckIn({
   // Als energie nog niet is gekozen, toon alleen energie-selectie
   if (!energyLevel) {
     return (
-      <div className="mx-auto mb-4 w-full max-w-lg rounded-2xl border border-[var(--structuro-border)] bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
-            <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md space-y-8 rounded-2xl border border-[var(--structuro-border)] bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
+              <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
+            </div>
+            <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
+              {tr("dayStart.stepProgress")}
+            </span>
           </div>
-          <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
-            {tr("dayStart.stepProgress")}
-          </span>
-        </div>
 
-        <div className="space-y-6">
-          <div className="text-center">
+          <div className="space-y-6 text-center">
             <div className="mx-auto mb-3.5 flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-[26px]">
               ☀️
             </div>
@@ -1658,7 +1658,8 @@ export default function DayStartCheckIn({
   const visibleFocusSlots = slotConfig.filter((s) => s.number <= maxSlots);
 
   return (
-    <div className="w-full max-w-xl mx-auto rounded-3xl bg-white text-gray-900 shadow-sm border border-gray-100 p-4 sm:p-6 mb-4 [contain:layout]">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md rounded-3xl border border-gray-100 bg-white p-4 text-gray-900 shadow-sm [contain:layout] sm:p-6">
       <div className="min-w-0">
       {/* Energie: motiverende feedback na keuze */}
       <div className="mb-4 rounded-2xl p-3 sm:p-4" style={{ backgroundColor: `${energyInfo?.value === 'low' ? '#EFF6FF' : energyInfo?.value === 'high' ? '#F0FDF4' : '#FFFBEB'}` }}>
@@ -2020,6 +2021,7 @@ export default function DayStartCheckIn({
               ? tr("dayStart.saveChanges")
               : tr("dayStart.startDay")}
         </button>
+      </div>
       </div>
     </div>
   );
