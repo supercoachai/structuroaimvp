@@ -32,6 +32,7 @@ function endpointKind(endpoint: string): EndpointKind {
 }
 
 Deno.serve(async (req) => {
+  try {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -104,17 +105,27 @@ Deno.serve(async (req) => {
     .select("user_id")
     .eq("date", today);
 
-  if (sentErr) {
+  const sentTableMissing =
+    Boolean(sentErr?.message) &&
+    sentErr.message.toLowerCase().includes("shutdown_reminder_sends");
+  if (sentErr && !sentTableMissing) {
     console.error("shutdown-reminder already-sent:", sentErr);
     return new Response(JSON.stringify({ error: sentErr.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  if (sentTableMissing) {
+    console.warn(
+      "[shutdown-reminder] shutdown_reminder_sends ontbreekt. Dedupe tijdelijk uit."
+    );
+  }
 
   const shutdownUserIds = new Set((shutdowns ?? []).map((s) => s.user_id));
   const checkinUserIds = new Set((checkins ?? []).map((c) => c.user_id));
-  const alreadySentUserIds = new Set((alreadySentRows ?? []).map((s) => s.user_id));
+  const alreadySentUserIds = new Set(
+    sentTableMissing ? [] : (alreadySentRows ?? []).map((s) => s.user_id)
+  );
 
   // Stuur naar iedereen met push subscriptions die nog geen dagafsluiting heeft
   // en vandaag nog geen shutdown-reminder heeft ontvangen.
@@ -212,7 +223,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (userHadSuccessfulPush) {
+    if (userHadSuccessfulPush && !sentTableMissing) {
       const { error: markSentErr } = await supabase
         .from("shutdown_reminder_sends")
         .upsert(
@@ -245,4 +256,12 @@ Deno.serve(async (req) => {
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[shutdown-reminder] uncaught_error", err);
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 });

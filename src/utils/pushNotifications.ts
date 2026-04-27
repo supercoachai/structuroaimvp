@@ -85,3 +85,33 @@ export async function registerPushSubscription(userId: string): Promise<PushSubs
   await saveSubscriptionToSupabase(userId, subscription);
   return subscription;
 }
+
+export async function unregisterPushSubscription(userId: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return false;
+  }
+
+  let removedAny = false;
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const subscription = await registration?.pushManager.getSubscription();
+
+  if (subscription) {
+    const endpoint = subscription.endpoint;
+    const unsubscribed = await subscription.unsubscribe();
+    removedAny = removedAny || unsubscribed;
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .delete()
+      .eq("user_id", userId)
+      .eq("endpoint", endpoint);
+    if (error) {
+      console.error("push: verwijderen subscription mislukt:", error.message);
+      throw error;
+    }
+  }
+
+  return removedAny;
+}

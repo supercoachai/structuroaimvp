@@ -20,7 +20,10 @@ import {
   persistPreferredDisplayName,
 } from '@/lib/accountDisplayName';
 import { useI18n, type Locale } from '@/lib/i18n';
-import { registerPushSubscription } from '@/utils/pushNotifications';
+import {
+  registerPushSubscription,
+  unregisterPushSubscription,
+} from '@/utils/pushNotifications';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -250,6 +253,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDisableNotifications = async () => {
+    if (notificationBusy) return;
+    setNotificationBusy(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user?.id) {
+        toast(t('settings.notificationsNeedLogin'));
+        return;
+      }
+      await unregisterPushSubscription(user.id);
+      setNotificationPermission('default');
+      toast(t('settings.notificationsDisabled'));
+    } catch (err) {
+      toast(t('settings.notificationsDisableFail', { detail: String(err) }));
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
   const isLocalOnly = hasStructuroLocalModeCookieOnClient() && !hasSupabaseSession;
 
   return (
@@ -312,16 +337,26 @@ export default function SettingsPage() {
                     ? t('settings.notificationsStatusUnsupported')
                     : t('settings.notificationsStatusAsk')}
             </div>
-            <button
-              type="button"
-              onClick={() => void handleEnableNotifications()}
-              disabled={notificationBusy || notificationPermission === 'unsupported'}
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-            >
-              {notificationBusy
-                ? t('settings.notificationsBusy')
-                : t('settings.notificationsEnableCta')}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleEnableNotifications()}
+                disabled={notificationBusy || notificationPermission === 'unsupported'}
+                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+              >
+                {notificationBusy
+                  ? t('settings.notificationsBusy')
+                  : t('settings.notificationsEnableCta')}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDisableNotifications()}
+                disabled={notificationBusy || notificationPermission !== 'granted'}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+              >
+                {t('settings.notificationsDisableCta')}
+              </button>
+            </div>
           </section>
 
           {/* Kaart 1: Jouw profiel */}

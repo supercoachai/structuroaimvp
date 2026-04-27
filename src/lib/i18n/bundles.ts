@@ -58,6 +58,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsStatusUnsupported: "Niet ondersteund op dit apparaat",
       notificationsStatusAsk: "Nog niet ingesteld",
       notificationsEnableCta: "Meldingen inschakelen",
+      notificationsDisableCta: "Meldingen uitschakelen",
       notificationsBusy: "Bezig…",
       displayNameTitle: "Aanspreeknaam",
       displayNameHint: "Hoe wil je dat we je noemen in de app?",
@@ -107,6 +108,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsNoSubscription:
         "Toestemming ontvangen, maar geen push-abonnement opgeslagen.",
       notificationsEnableFail: "Kon meldingen niet inschakelen: {detail}",
+      notificationsDisabled: "Push-abonnement verwijderd.",
+      notificationsDisableFail: "Kon meldingen niet uitschakelen: {detail}",
     },
     login: {
       taglineBrand: "Structuro",
@@ -240,6 +243,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsStatusUnsupported: "Not supported on this device",
       notificationsStatusAsk: "Not configured yet",
       notificationsEnableCta: "Enable notifications",
+      notificationsDisableCta: "Disable notifications",
       notificationsBusy: "Working…",
       displayNameTitle: "Display name",
       displayNameHint: "What should we call you in the app?",
@@ -289,6 +293,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsNoSubscription:
         "Permission granted, but no push subscription was saved.",
       notificationsEnableFail: "Could not enable notifications: {detail}",
+      notificationsDisabled: "Push subscription removed.",
+      notificationsDisableFail: "Could not disable notifications: {detail}",
     },
     login: {
       taglineBrand: "Structuro",
