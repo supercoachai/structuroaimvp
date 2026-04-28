@@ -512,7 +512,8 @@ export default function DayStartCheckIn({
       return;
     }
     
-    // Filter taken met prioriteit 1, 2 of 3
+    const today = getCalendarDateAmsterdam();
+    // Filter taken met prioriteit 1, 2 of 3, maar alléén als ze expliciet voor vandaag staan.
     const top3 = tasks
       .filter((t: any) => 
         t && 
@@ -523,7 +524,8 @@ export default function DayStartCheckIn({
         t.priority <= 3 && 
         !t.done && 
         !t.notToday && 
-        t.source !== 'medication'
+        t.source !== 'medication' &&
+        (t.postponedTo ?? t.postponed_to ?? null) === today
       )
       .sort((a: any, b: any) => a.priority - b.priority);
     
@@ -547,7 +549,7 @@ export default function DayStartCheckIn({
       setTop3Tasks(slots);
       hasInitializedRef.current = true;
     }
-  }, [tasks, isUpdating, existingCheckIn]);
+  }, [tasks, isUpdating, existingCheckIn, checkInFromDb]);
 
   const handleDrop = async (slotNumber: number, taskToUse: any) => {
     if (!taskToUse || !taskToUse.id) {
@@ -1506,109 +1508,99 @@ export default function DayStartCheckIn({
   // Als energie nog niet is gekozen, toon alleen energie-selectie
   if (!energyLevel) {
     return (
-      <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50">
-        <div className="flex shrink-0 flex-col items-center pb-3 pt-6 sm:pb-4 sm:pt-8 lg:pt-10">
-          <img src="/logo-structuro.png" alt="" className="mb-2 h-9 w-9 sm:h-10 sm:w-10 lg:h-11 lg:w-11" />
-          <h1 className="text-lg font-bold text-gray-900 sm:text-xl lg:text-2xl">Day start</h1>
-          <p className="text-center text-sm text-gray-500">
-            Take a moment to look at your day.
-          </p>
-        </div>
-
-        <div className="flex flex-1 items-center justify-center px-4 pb-6 sm:pb-8">
-          <div className="w-full max-w-lg space-y-5 rounded-2xl bg-white p-4 shadow-sm sm:space-y-6 sm:p-6 lg:p-8">
-            <div className="flex items-center gap-3">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
-                <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
-              </div>
-              <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
-                {tr("dayStart.stepProgress")}
-              </span>
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="w-full max-w-lg space-y-8 rounded-2xl border border-[var(--structuro-border)] bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
+              <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
             </div>
-
-            <div className="space-y-6 text-center">
-              <div className="mx-auto mb-3.5 flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-[26px]">
-                ☀️
-              </div>
-              <h2 className="text-[21px] font-bold tracking-tight text-[var(--structuro-text)]">
-                {tr("dayStart.h2Energy")}
-              </h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[var(--structuro-sub)]">
-                {tr("dayStart.pEnergy")}
-              </p>
-            </div>
-
-            {firstTimeOnboarding && !energyOnboardingHintHidden ? (
-              <p className="text-center text-sm leading-snug text-[var(--structuro-sub)]">
-                {tr("dayStart.hintOnboarding")}
-              </p>
-            ) : null}
-
-            <div className="grid w-full grid-cols-3 gap-2.5">
-              {energyLevels.map((level) => {
-                const highlighted = hoveredEnergyLevel === level.value;
-                return (
-                  <button
-                    key={level.value}
-                    type="button"
-                    onClick={() => {
-                      if (firstTimeOnboarding) setEnergyOnboardingHintHidden(true);
-                      setEnergyLevel(level.value);
-                      startTransition(() => {
-                        setEnergySelected(true);
-                        setShowConfirmation(true);
-                        const vzCheck = checkVoorzorgsmodus(
-                          tasks,
-                          level.value as EnergyLevel
-                        );
-                        setVoorzorgsmodusState(
-                          vzCheck.shouldShow ? vzCheck : null
-                        );
-                      });
-                      queueMicrotask(() => {
-                        trackEnergyChecked(
-                          level.value === "low"
-                            ? "laag"
-                            : level.value === "high"
-                              ? "hoog"
-                              : "middel"
-                        );
-                        const messages: Record<string, string> = {
-                          low: tr("dayStart.toastPickLow"),
-                          medium: tr("dayStart.toastPickMed"),
-                          high: tr("dayStart.toastPickHigh"),
-                        };
-                        toast(messages[level.value] || tr("dayStart.toastPickDefault"));
-                      });
-                      setTimeout(() => setEnergySelected(false), 1000);
-                      setTimeout(() => setShowConfirmation(false), 2000);
-                    }}
-                    className={`flex min-h-[118px] flex-col items-center justify-center rounded-2xl border-[1.5px] px-2.5 pb-3.5 pt-4 text-center transition-all duration-200 ${
-                      highlighted
-                        ? `${level.selectedBg} ${level.selectedBorder} ${level.selectedRing} -translate-y-px`
-                        : `border bg-white ${level.idleBorder} shadow-sm hover:bg-[var(--structuro-bg)]`
-                    }`}
-                    onMouseEnter={() => setHoveredEnergyLevel(level.value)}
-                    onMouseLeave={() => setHoveredEnergyLevel(null)}
-                  >
-                    <span className="text-2xl leading-none">{level.emoji}</span>
-                    <span
-                      className={`mt-2 text-sm font-bold ${highlighted ? level.textSel : 'text-[var(--structuro-text)]'}`}
-                    >
-                      {level.label}
-                    </span>
-                    <span className="mt-0.5 text-[11.5px] text-[var(--structuro-sub)]">{level.sub}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {showConfirmation && energyLevel ? (
-              <p className="text-center text-sm text-[var(--structuro-blue)] transition-opacity duration-300">
-                {tr("dayStart.confirmLine")}
-              </p>
-            ) : null}
+            <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
+              {tr("dayStart.stepProgress")}
+            </span>
           </div>
+
+          <div className="space-y-6 text-center">
+            <div className="mx-auto mb-3.5 flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-[26px]">
+              ☀️
+            </div>
+            <h2 className="text-[21px] font-bold tracking-tight text-[var(--structuro-text)]">
+              {tr("dayStart.h2Energy")}
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[var(--structuro-sub)]">
+              {tr("dayStart.pEnergy")}
+            </p>
+          </div>
+
+          {firstTimeOnboarding && !energyOnboardingHintHidden ? (
+            <p className="text-center text-sm leading-snug text-[var(--structuro-sub)]">
+              {tr("dayStart.hintOnboarding")}
+            </p>
+          ) : null}
+
+          <div className="grid w-full grid-cols-3 gap-2.5">
+            {energyLevels.map((level) => {
+              const highlighted = hoveredEnergyLevel === level.value;
+              return (
+                <button
+                  key={level.value}
+                  type="button"
+                  onClick={() => {
+                    if (firstTimeOnboarding) setEnergyOnboardingHintHidden(true);
+                    setEnergyLevel(level.value);
+                    startTransition(() => {
+                      setEnergySelected(true);
+                      setShowConfirmation(true);
+                      const vzCheck = checkVoorzorgsmodus(
+                        tasks,
+                        level.value as EnergyLevel
+                      );
+                      setVoorzorgsmodusState(
+                        vzCheck.shouldShow ? vzCheck : null
+                      );
+                    });
+                    queueMicrotask(() => {
+                      trackEnergyChecked(
+                        level.value === "low"
+                          ? "laag"
+                          : level.value === "high"
+                            ? "hoog"
+                            : "middel"
+                      );
+                      const messages: Record<string, string> = {
+                        low: tr("dayStart.toastPickLow"),
+                        medium: tr("dayStart.toastPickMed"),
+                        high: tr("dayStart.toastPickHigh"),
+                      };
+                      toast(messages[level.value] || tr("dayStart.toastPickDefault"));
+                    });
+                    setTimeout(() => setEnergySelected(false), 1000);
+                    setTimeout(() => setShowConfirmation(false), 2000);
+                  }}
+                  className={`flex min-h-[118px] flex-col items-center justify-center rounded-2xl border-[1.5px] px-2.5 pb-3.5 pt-4 text-center transition-all duration-200 ${
+                    highlighted
+                      ? `${level.selectedBg} ${level.selectedBorder} ${level.selectedRing} -translate-y-px`
+                      : `border bg-white ${level.idleBorder} shadow-sm hover:bg-[var(--structuro-bg)]`
+                  }`}
+                  onMouseEnter={() => setHoveredEnergyLevel(level.value)}
+                  onMouseLeave={() => setHoveredEnergyLevel(null)}
+                >
+                  <span className="text-2xl leading-none">{level.emoji}</span>
+                  <span
+                    className={`mt-2 text-sm font-bold ${highlighted ? level.textSel : 'text-[var(--structuro-text)]'}`}
+                  >
+                    {level.label}
+                  </span>
+                  <span className="mt-0.5 text-[11.5px] text-[var(--structuro-sub)]">{level.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {showConfirmation && energyLevel ? (
+            <p className="text-center text-sm text-[var(--structuro-blue)] transition-opacity duration-300">
+              {tr("dayStart.confirmLine")}
+            </p>
+          ) : null}
         </div>
       </div>
     );
@@ -1668,26 +1660,9 @@ export default function DayStartCheckIn({
   const visibleFocusSlots = slotConfig.filter((s) => s.number <= maxSlots);
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50">
-      <div className="flex shrink-0 flex-col items-center pb-3 pt-6 sm:pb-4 sm:pt-8 lg:pt-10">
-        <img src="/logo-structuro.png" alt="" className="mb-2 h-9 w-9 sm:h-10 sm:w-10 lg:h-11 lg:w-11" />
-        <h1 className="text-lg font-bold text-gray-900 sm:text-xl lg:text-2xl">Day start</h1>
-        <p className="text-center text-sm text-gray-500">
-          Take a moment to look at your day.
-        </p>
-      </div>
-
-      <div className="flex flex-1 items-center justify-center px-4 pb-6 sm:pb-8">
-        <div className="w-full max-w-lg rounded-2xl bg-white p-4 text-gray-900 shadow-sm [contain:layout] sm:p-6 lg:p-8">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
-              <div className="h-full w-full rounded-full bg-amber-400/90 transition-all duration-300" />
-            </div>
-            <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
-              Step 2 of 2
-            </span>
-          </div>
-          <div className="min-w-0">
+    <div className="w-full">
+      <div className="mx-auto flex w-full max-w-lg flex-col rounded-3xl border border-gray-100 bg-white p-4 text-gray-900 shadow-sm [contain:layout] sm:p-6">
+      <div className="min-w-0">
       {/* Energie: motiverende feedback na keuze */}
       <div className="mb-4 rounded-2xl p-3 sm:p-4" style={{ backgroundColor: `${energyInfo?.value === 'low' ? '#EFF6FF' : energyInfo?.value === 'high' ? '#F0FDF4' : '#FFFBEB'}` }}>
         <div className="flex items-start justify-between gap-3">
@@ -2028,7 +2003,7 @@ export default function DayStartCheckIn({
 
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100">
+      <div className="mt-4 border-t border-gray-100 pt-3">
         <p className="pb-2 text-center text-xs text-gray-400">
           {tr("dayStart.footerHint")}
         </p>
@@ -2048,7 +2023,6 @@ export default function DayStartCheckIn({
               ? tr("dayStart.saveChanges")
               : tr("dayStart.startDay")}
         </button>
-      </div>
       </div>
       </div>
     </div>
