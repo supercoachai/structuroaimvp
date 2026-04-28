@@ -61,6 +61,9 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
   const today = todayAmsterdamYmd();
+  const reqUrl = new URL(req.url);
+  const targetEmail = reqUrl.searchParams.get("email")?.trim().toLowerCase() || null;
+  const forceSend = reqUrl.searchParams.get("force") === "1";
 
   const { data: checkins, error: checkErr } = await supabase
     .from("daily_checkins")
@@ -129,7 +132,7 @@ Deno.serve(async (req) => {
 
   // Stuur naar iedereen met push subscriptions die nog geen dagafsluiting heeft
   // en vandaag nog geen shutdown-reminder heeft ontvangen.
-  const userIds = [
+  let userIds = [
     ...new Set(
       (allSubs ?? [])
         .map((s) => s.user_id)
@@ -139,6 +142,36 @@ Deno.serve(async (req) => {
         )
     ),
   ];
+
+  if (targetEmail) {
+    const { data: usersData, error: usersErr } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (usersErr) {
+      console.error("[shutdown-reminder] listUsers failed:", usersErr);
+      return new Response(JSON.stringify({ error: usersErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const matchedUser = (usersData?.users ?? []).find(
+      (u) => (u.email ?? "").toLowerCase() === targetEmail
+    );
+    if (!matchedUser?.id) {
+      return new Response(
+        JSON.stringify({ error: `No user found for email ${targetEmail}` }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const dedupedAllSubUserIds = [
+      ...new Set((allSubs ?? []).map((s) => s.user_id).filter((id): id is string => Boolean(id))),
+    ];
+    userIds = (forceSend ? dedupedAllSubUserIds : userIds).filter((id) => id === matchedUser.id);
+    console.log(
+      `[shutdown-reminder] email-filter active email=${targetEmail} matched_user=${matchedUser.id} force=${forceSend} target_users=${userIds.length}`
+    );
+  }
 
   let sent = 0;
   const errors: string[] = [];
@@ -175,8 +208,8 @@ Deno.serve(async (req) => {
       );
 
       const payload = JSON.stringify({
-        title: "Dag afsluiten",
-        body: "Neem even 2 minuten. Sluit je dag af en maak je hoofd leeg.",
+        title: "Dagafsluiting",
+        body: "Neem even 1 minuut. Sluit je dag af en maak je hoofd leeg.",
         url: "/shutdown",
       });
 
