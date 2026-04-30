@@ -15,8 +15,8 @@ export function AnalyticsInternalBridge() {
       syncAnalyticsExclusionFromSessionEmail(email ?? null);
     };
 
-    void supabase.auth.getUser().then(({ data }) => {
-      apply(data.user?.email ?? null);
+    void supabase.auth.getSession().then(({ data }) => {
+      apply(data.session?.user?.email ?? null);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {

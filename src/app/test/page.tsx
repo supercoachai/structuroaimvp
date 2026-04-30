@@ -1,4 +1,10 @@
+import { redirect } from "next/navigation";
+
 export default function TestPage() {
+  if (process.env.NODE_ENV === "production") {
+    redirect("/");
+  }
+
   return (
     <html>
       <body style={{ padding: "40px", backgroundColor: "#f0f0f0", fontFamily: "Arial" }}>

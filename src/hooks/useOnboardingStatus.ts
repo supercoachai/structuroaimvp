@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "./useUser";
 import { isLocalOnboardingCompleted } from "@/lib/onboardingProfile";
@@ -41,6 +41,8 @@ export function useOnboardingStatus(): {
   refresh: () => Promise<void>;
 } {
   const { user, loading: userLoading } = useUser();
+  const userRef = useRef(user);
+  userRef.current = user;
   /** Alleen id in deps: het hele `user`-object wisselt van referentie bij elk auth-event → anders eindeloze refresh-lus. */
   const userId = user?.id ?? null;
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
@@ -64,8 +66,7 @@ export function useOnboardingStatus(): {
     setProfileLoading(true);
     try {
       const supabase = createClient();
-      const { data: authData } = await supabase.auth.getUser();
-      const sessionUser = authData?.user ?? null;
+      const sessionUser = userRef.current ?? null;
       const fromMeta = sessionUser ? firstNameFromUserMetadata(sessionUser) : null;
 
       const { data, error } = await supabase
@@ -100,14 +101,9 @@ export function useOnboardingStatus(): {
         fromProfile ?? localFirst ?? fromMeta
       );
     } catch {
-      const supabase = createClient();
       let fromMeta: string | null = null;
-      try {
-        const { data: authData } = await supabase.auth.getUser();
-        if (authData?.user) fromMeta = firstNameFromUserMetadata(authData.user);
-      } catch {
-        /* ignore */
-      }
+      const u = userRef.current;
+      if (u) fromMeta = firstNameFromUserMetadata(u);
       setOnboardingCompleted(isLocalOnboardingCompleted());
       setWelcomeFirstName(localFirst ?? fromMeta);
       setNeedsAccountDisplayName(!fromMeta);

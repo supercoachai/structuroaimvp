@@ -9,10 +9,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { ToastHost } from '../Toast';
 import BottomTabNav from '../navigation/BottomTabNav';
-import TodoParkThoughtBar from '@/components/TodoParkThoughtBar';
+import QuickTaskInput from '@/components/QuickTaskInput';
 import DagstartOverlay from '@/components/DagstartOverlay';
 import { performClientLogout } from '@/lib/logoutClient';
-import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
+import { getClockHourAmsterdam, isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
 import { useI18n } from '@/lib/i18n';
 
 interface AppLayoutProps {
@@ -25,9 +25,19 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const pathname = usePathname();
   const { t } = useI18n();
 
-  const [dagstartDone, setDagstartDone] = useState(() =>
-    typeof document !== 'undefined' ? isDagstartDoneTodayClient() : false
-  );
+  /** Altijd false bij eerste render (SSR + hydrate): geen document/cookie-branch, anders hydration mismatch. Sync in useLayoutEffect. */
+  const [dagstartDone, setDagstartDone] = useState(false);
+  const [showWindDownBanner, setShowWindDownBanner] = useState(false);
+
+  useEffect(() => {
+    const tick = () => {
+      const h = getClockHourAmsterdam();
+      setShowWindDownBanner(h >= 17 && h < 24);
+    };
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   /** Direct na mount en bij route-wissel: voorkomt dat tab-nav even (of blijvend) verdwijnt op mobiel door useEffect-lat. */
   useLayoutEffect(() => {
@@ -145,11 +155,23 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       <div
         className={`flex min-h-0 flex-1 flex-col ${mainNavLocked ? "relative z-[5]" : ""}`}
       >
+        {showWindDownBanner && !mainNavLocked && (pathname ?? "") !== "/shutdown" ? (
+          <div className="shrink-0 border-b border-amber-200/80 bg-amber-50 px-4 py-2.5 text-center">
+            <Link
+              href="/shutdown"
+              className="inline-flex flex-wrap items-center justify-center gap-x-1.5 text-sm font-medium text-amber-950 underline-offset-2 hover:underline"
+            >
+              <span>{t('layout.windDownBanner')}</span>
+              <span aria-hidden>→</span>
+              <span className="font-semibold">{t('layout.windDownBannerCta')}</span>
+            </Link>
+          </div>
+        ) : null}
         <main className="mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar">
           {children}
         </main>
 
-        {(pathname ?? "") === "/" ? <TodoParkThoughtBar /> : null}
+        {!mainNavLocked ? <QuickTaskInput /> : null}
       </div>
 
       <BottomTabNav disabled={mainNavLocked} />

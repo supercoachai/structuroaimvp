@@ -43,11 +43,11 @@ function isDueDateStrictlyAfterToday(dueAt: string | null | undefined): boolean 
   return localDayStart(due).getTime() > localDayStart(new Date()).getTime();
 }
 
-function isEligibleForTodayTop3(task: any, today: string): boolean {
+/** Taak bestaat en is kandidaat voor top3-opslag (open, niet "niet vandaag"). Geen filter op created_at: backlog moet mee. */
+function isExistingOpenTaskForTop3Save(task: any): boolean {
   if (!task?.id || task?.done) return false;
-  const createdAt = task.created_at ? getCalendarDateAmsterdam(new Date(task.created_at)) : null;
-  const postponedTo = task.postponedTo ?? task.postponed_to ?? null;
-  return createdAt === today || postponedTo === today;
+  if (task.notToday || task.not_today) return false;
+  return true;
 }
 
 interface DayStartCheckInProps {
@@ -55,19 +55,26 @@ interface DayStartCheckInProps {
   existingCheckIn?: any; // Bestaande check-in data om te bewerken (overschreven door useCheckIn)
   /** Eerste dagstart ooit: subtiele coachingregels tot eerste interactie / afronding */
   firstTimeOnboarding?: boolean;
+  /** Bij lunch-push: geen opgeslagen energie uit check-in tonen; gebruiker kiest zelf opnieuw. */
+  ignoreStoredSessionEnergy?: boolean;
 }
 
 export default function DayStartCheckIn({
   onComplete,
   existingCheckIn,
   firstTimeOnboarding = false,
+  ignoreStoredSessionEnergy = false,
 }: DayStartCheckInProps) {
   const { t: tr } = useI18n();
   const { tasks, addTask, fetchTasks, updateTask, loading: tasksContextLoading } = useTaskContext();
   const deferredTasksForSuggestions = useDeferredValue(tasks);
   const { checkIn: checkInFromDb, saveCheckIn } = useCheckIn();
   const { user: authUser } = useUser();
-  const [energyLevel, setEnergyLevel] = useState<string | null>(existingCheckIn?.energy_level ?? checkInFromDb?.energy_level ?? null);
+  const [energyLevel, setEnergyLevel] = useState<string | null>(() =>
+    ignoreStoredSessionEnergy
+      ? null
+      : existingCheckIn?.energy_level ?? checkInFromDb?.energy_level ?? null
+  );
   const [hoveredEnergyLevel, setHoveredEnergyLevel] = useState<string | null>(null);
   const [top3Tasks, setTop3Tasks] = useState<{ [key: number]: any }>({ 1: null, 2: null, 3: null });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,6 +97,10 @@ export default function DayStartCheckIn({
   /** Na klik op herinnering: koppel nieuwe taak aan parked thought bij snel toevoegen. */
   const [pendingDagafsluiterThoughtId, setPendingDagafsluiterThoughtId] = useState<string | null>(null);
   const dagstartGaOpenedRef = useRef(false);
+  /** Scroll-doel + animatie na kiezen uit suggesties */
+  const focusSlotElRef = useRef<Record<number, HTMLDivElement | null>>({});
+  const [suggestionPickingId, setSuggestionPickingId] = useState<string | null>(null);
+  const [slotPickAnim, setSlotPickAnim] = useState<number | null>(null);
 
   const quickAddResolvedMinutes = useMemo(() => {
     const t = quickAddCustomMinutesStr.trim();
@@ -208,8 +219,6 @@ export default function DayStartCheckIn({
   // BELANGRIJK: Dit is ALLEEN voor UI weergave - taken worden NOOIT verwijderd uit de data!
   const getFilteredTasks = () => {
     if (!energyLevel) return [];
-    const today = getCalendarDateAmsterdam();
-    
     // Filter: toon alleen taken ZONDER prioriteit (1, 2, 3) - taken met prioriteit staan al in de slots
     // Gebruik expliciete checks: !task.priority || task.priority === 0 || task.priority > 3
     const inFocusIds = new Set(
@@ -221,7 +230,6 @@ export default function DayStartCheckIn({
         if (!t || !t.id || !t.title) return false;
         if (t.done || t.notToday || t.source === 'medication' || t.source === 'event') return false;
         if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
-        if (!isEligibleForTodayTop3(t, today)) return false;
 
         const hasPriority =
           t.priority != null && t.priority != 0 && (t.priority == 1 || t.priority == 2 || t.priority == 3);
@@ -415,13 +423,14 @@ export default function DayStartCheckIn({
   const userHasInteractedRef = React.useRef(false); // Track of gebruiker heeft gesleept
   const lastReplacedTaskRef = React.useRef<any>(null); // Taak die uit een slot is vervangen (voor terugzetten naar suggesties)
 
-  // Sync energyLevel wanneer check-in uit DB/lokalStorage binnenkomt
+  // Sync energyLevel wanneer check-in uit DB/lokalStorage binnenkomt (niet bij lunch-heropen zonder keuze)
   useEffect(() => {
+    if (ignoreStoredSessionEnergy) return;
     const source = checkInFromDb ?? existingCheckIn;
     if (source?.energy_level && energyLevel === null) {
       setEnergyLevel(source.energy_level);
     }
-  }, [checkInFromDb?.energy_level, existingCheckIn?.energy_level]);
+  }, [checkInFromDb?.energy_level, existingCheckIn?.energy_level, ignoreStoredSessionEnergy]);
 
   // Laad bestaande check-in data bij mount (uit useCheckIn of existingCheckIn)
   useEffect(() => {
@@ -458,7 +467,8 @@ export default function DayStartCheckIn({
           task = tasks.find((t: any) => t.id === taskId);
         }
         
-        if (task && isEligibleForTodayTop3(task, getCalendarDateAmsterdam())) {
+        // Top3 na dagstart is bevroren: toon elke id in arrayvolgorde, ook afgerond (grijs in taken-overzicht).
+        if (task) {
           // KRITIEK: Gebruik de volgorde in top3_task_ids array als slot nummer
           // Dit zorgt ervoor dat taken worden getoond in de juiste volgorde, zelfs als priority is gereset
           const slotNumber = index + 1; // 1, 2, of 3 op basis van volgorde in check-in
@@ -498,58 +508,6 @@ export default function DayStartCheckIn({
         console.log('✅ fetchTasks completed after loading existing check-in');
       });
   }, [checkInFromDb, existingCheckIn, tasks, fetchTasks]);
-  
-  // BELANGRIJK: Sync top3Tasks met tasks array ALLEEN bij eerste load
-  // Zodra de gebruiker een taak heeft gesleept, is top3Tasks de bron van waarheid
-  // en wordt deze useEffect NIET MEER uitgevoerd
-  useEffect(() => {
-    // Skip als:
-    // 1. We aan het updaten zijn (tijdens drag & drop operatie)
-    // 2. De gebruiker heeft geïnterageerd (gesleept) - dan is top3Tasks de bron van waarheid
-    // 3. Er is al een bestaande check-in geladen (die wordt in een andere useEffect geladen)
-    // 4. We al geïnitialiseerd zijn
-    if (isUpdating || userHasInteractedRef.current || existingCheckIn || checkInFromDb || hasInitializedRef.current) {
-      return;
-    }
-    
-    const today = getCalendarDateAmsterdam();
-    // Filter taken met prioriteit 1, 2 of 3, maar alléén als ze expliciet voor vandaag staan.
-    const top3 = tasks
-      .filter((t: any) => 
-        t && 
-        t.id &&
-        t.title &&
-        t.priority != null && 
-        t.priority >= 1 &&
-        t.priority <= 3 && 
-        !t.done && 
-        !t.notToday && 
-        t.source !== 'medication' &&
-        (t.postponedTo ?? t.postponed_to ?? null) === today
-      )
-      .sort((a: any, b: any) => a.priority - b.priority);
-    
-    // Vul slots op basis van priority - ELKE slot krijgt alleen taken met exact die priority
-    const slots: { [key: number]: any } = { 1: null, 2: null, 3: null };
-    top3.forEach((task) => {
-      if (task && task.priority && task.priority >= 1 && task.priority <= 3 && task.id && task.title) {
-        // Prioriteit 1 zone: alleen task.priority === 1
-        if (task.priority === 1) slots[1] = task;
-        // Prioriteit 2 zone: alleen task.priority === 2
-        if (task.priority === 2) slots[2] = task;
-        // Prioriteit 3 zone: alleen task.priority === 3
-        if (task.priority === 3) slots[3] = task;
-      }
-    });
-    
-    // Update top3Tasks ALLEEN bij eerste load (als nog niet geïnitialiseerd)
-    // Dit voorkomt dat we top3Tasks overschrijven tijdens de sessie
-    const hasTasks = Object.values(slots).some(t => t !== null);
-    if (hasTasks) {
-      setTop3Tasks(slots);
-      hasInitializedRef.current = true;
-    }
-  }, [tasks, isUpdating, existingCheckIn, checkInFromDb]);
 
   const handleDrop = async (slotNumber: number, taskToUse: any) => {
     if (!taskToUse || !taskToUse.id) {
@@ -821,6 +779,30 @@ export default function DayStartCheckIn({
     await handleDrop(slot, task);
   };
 
+  const pickTaskFromSuggestions = async (task: any) => {
+    if (!task?.id) return;
+    const alreadyFocused = [1, 2, 3].some((n) => top3Tasks[n]?.id === task.id);
+    if (alreadyFocused) return;
+    const slot = getFirstAvailableSlotNumber();
+    if (slot == null) {
+      toast(tr('dayStart.toastSlotsFull'));
+      return;
+    }
+    setSuggestionPickingId(task.id);
+    await new Promise<void>((r) => setTimeout(r, 300));
+    focusSlotElRef.current[slot]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    try {
+      await handleDrop(slot, task);
+    } catch (e) {
+      console.error('pickTaskFromSuggestions:', e);
+    } finally {
+      setSuggestionPickingId(null);
+      setSlotPickAnim(slot);
+      window.setTimeout(() => setSlotPickAnim(null), 320);
+    }
+  };
+
   const quickAddMinutesOk =
     quickAddResolvedMinutes != null &&
     quickAddResolvedMinutes >= 1 &&
@@ -997,10 +979,50 @@ export default function DayStartCheckIn({
       ]);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Eerst: VERIFICATIE - controleer of taken bestaan in localStorage
-      const tasksBeforeUpdate = getTasksFromStorage();
+      // Merge localStorage + Supabase-context: ingelogde users hebben vaak geen lokale kopie;
+      // zonder merge worden alle top3 als "missing" gezien en dubbel in localStorage gezet.
+      const tasksBeforeUpdate = (() => {
+        const merged = new Map<string, any>();
+        for (const lt of getTasksFromStorage()) {
+          if (lt?.id) merged.set(String(lt.id), lt);
+        }
+        if (authUser?.id) {
+          for (const t of tasks) {
+            const id = String(t.id);
+            if (!id || merged.has(id)) continue;
+            merged.set(id, {
+              id: t.id,
+              title: t.title,
+              done: t.done,
+              started: t.started ?? false,
+              priority: t.priority ?? null,
+              dueAt: t.dueAt ?? null,
+              duration: t.duration ?? null,
+              source: t.source ?? "regular",
+              postponedTo: t.postponedTo ?? null,
+              focusStartedAt: t.focusStartedAt ?? null,
+              focusExitedAt: t.focusExitedAt ?? null,
+              focusAttempts: t.focusAttempts ?? 0,
+              completedAt: t.completedAt ?? null,
+              reminders: t.reminders ?? [],
+              repeat: t.repeat ?? "none",
+              repeatUntil: t.repeatUntil ?? null,
+              repeatWeekdays: t.repeatWeekdays ?? "all",
+              repeatExcludeDates: t.repeatExcludeDates ?? undefined,
+              impact: t.impact ?? "🌱",
+              energyLevel: t.energyLevel ?? "medium",
+              estimatedDuration: t.estimatedDuration ?? null,
+              microSteps: t.microSteps ?? [],
+              notToday: t.notToday ?? false,
+              isDeadline: t.isDeadline,
+              category: t.category,
+              created_at: t.created_at || new Date().toISOString(),
+              updated_at: t.updated_at || new Date().toISOString(),
+            });
+          }
+        }
+        return Array.from(merged.values());
+      })();
       
       console.log('🔍 VOOR UPDATE - Taken in localStorage:', tasksBeforeUpdate.length);
       console.log('🔍 VOOR UPDATE - Top3Tasks state:', top3Tasks);
@@ -1012,50 +1034,23 @@ export default function DayStartCheckIn({
         tasksToProcess[n] = null;
       }
 
-      // Check of top3Tasks leeg is
-      const hasTasksInState = Object.values(top3Tasks).some(t => t !== null && t !== undefined);
-      
-      if (!hasTasksInState && tasksBeforeUpdate.length > 0) {
-        console.warn('⚠️ top3Tasks is leeg, probeer taken uit localStorage te halen met priority 1-3');
-        // Haal taken uit localStorage met priority 1-3
-        const tasksWithPriority = tasksBeforeUpdate.filter((t: any) => {
-          const priorityNum = Number(t.priority);
-          return !isNaN(priorityNum) && priorityNum >= 1 && priorityNum <= 3;
-        });
-        
-        // Vul tasksToProcess met taken uit localStorage
-        tasksWithPriority.forEach((task: any) => {
-          const priorityNum = Number(task.priority);
-          if (priorityNum >= 1 && priorityNum <= submitMaxSlots) {
-            tasksToProcess[priorityNum] = task;
-          }
-        });
-        
-        console.log('🔍 Herstelde tasksToProcess uit localStorage:', tasksToProcess);
+      // Exacte slotvolgorde 1..max: nooit Object.entries-volgorde of backfill uit andere priority-taken
+      const selectedIdsBeforeSanitize: string[] = [];
+      for (let slot = 1; slot <= submitMaxSlots; slot++) {
+        const t = tasksToProcess[slot];
+        if (!t || typeof t !== "object") continue;
+        const idStr = t.id != null ? String(t.id).trim() : "";
+        if (!idStr || /^[1-3]$/.test(idStr)) continue;
+        selectedIdsBeforeSanitize.push(idStr);
       }
-      
-      // KRITIEK: Filter null values en check dat we alleen task IDs hebben, geen slot numbers
-      const selectedIdsBeforeSanitize = Object.entries(tasksToProcess)
-        .filter(([slotKey]) => {
-          const slot = parseInt(slotKey, 10);
-          return !isNaN(slot) && slot >= 1 && slot <= submitMaxSlots;
-        })
-        .map(([, t]) => t)
-        .filter((t: any) => {
-          if (!t || typeof t !== 'object') return false;
-          const idStr = t.id != null ? String(t.id).trim() : '';
-          if (!idStr) return false;
-          if (/^[1-3]$/.test(idStr)) return false;
-          return true;
-        })
-        .map((t: any) => String(t.id).trim());
       const top3Ids = [...selectedIdsBeforeSanitize];
 
       const eligibleTop3Ids = top3Ids.filter((id) => {
         const task =
           tasksBeforeUpdate.find((t: any) => String(t.id) === id) ??
+          tasks.find((t: any) => String(t.id) === id) ??
           Object.values(tasksToProcess).find((t: any) => String(t?.id) === id);
-        return isEligibleForTodayTop3(task, today);
+        return isExistingOpenTaskForTop3Save(task);
       });
       top3Ids.length = 0;
       top3Ids.push(...eligibleTop3Ids);
@@ -1063,8 +1058,8 @@ export default function DayStartCheckIn({
         const removed = selectedIdsBeforeSanitize.length - eligibleTop3Ids.length;
         const msg =
           removed === 1
-            ? "1 taak was niet meer geldig voor vandaag en is uit je selectie verwijderd."
-            : `${removed} taken waren niet meer geldig voor vandaag en zijn uit je selectie verwijderd.`;
+            ? "1 taak bestaat niet meer of is afgerond en is uit je selectie gehaald."
+            : `${removed} taken bestaan niet meer of zijn afgerond en zijn uit je selectie gehaald.`;
         setTop3SanitizeNotice(msg);
         toast(msg);
       } else {
@@ -1163,7 +1158,8 @@ export default function DayStartCheckIn({
       
       // KRITIEK: DIRECTE OPSLAG in localStorage - dit is de ENIGE manier om zeker te zijn dat taken blijven bestaan
       // Gebruik NIET updateTask omdat die async is en race conditions kan veroorzaken
-      const allTasks = getTasksFromStorage();
+      // Gebruik merge-bron (niet alleen getTasksFromStorage): ingelogde users hebben taken vooral in Supabase-context.
+      const allTasks = tasksBeforeUpdate;
       
       console.log('🔍 handleSubmit: Starting direct save. Total tasks in storage:', allTasks.length);
       console.log('🔍 handleSubmit: Top3 tasks to save:', top3Ids);
@@ -1505,10 +1501,28 @@ export default function DayStartCheckIn({
     [tr]
   );
 
+  const dagstartHeaderBar = (
+    <div className="flex items-center justify-center gap-2.5" role="banner">
+      <img
+        src="/logo-structuro.png"
+        alt="Structuro"
+        className="h-8 w-8 shrink-0 rounded-2xl object-contain sm:h-9 sm:w-9"
+        width={36}
+        height={36}
+      />
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--structuro-sub)]">
+        {tr("dagstart.title")}
+      </span>
+    </div>
+  );
+
   // Als energie nog niet is gekozen, toon alleen energie-selectie
   if (!energyLevel) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-4">
+        <div className="mb-3 flex w-full max-w-lg shrink-0 justify-center">
+          {dagstartHeaderBar}
+        </div>
         <div className="w-full max-w-lg space-y-8 rounded-2xl border border-[var(--structuro-border)] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center gap-3">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
@@ -1660,29 +1674,58 @@ export default function DayStartCheckIn({
   const visibleFocusSlots = slotConfig.filter((s) => s.number <= maxSlots);
 
   return (
-    <div className="w-full">
-      <div className="mx-auto flex w-full max-w-lg flex-col rounded-3xl border border-gray-100 bg-white p-4 text-gray-900 shadow-sm [contain:layout] sm:p-6">
-      <div className="min-w-0">
-      {/* Energie: motiverende feedback na keuze */}
-      <div className="mb-4 rounded-2xl p-3 sm:p-4" style={{ backgroundColor: `${energyInfo?.value === 'low' ? '#EFF6FF' : energyInfo?.value === 'high' ? '#F0FDF4' : '#FFFBEB'}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl leading-none mt-0.5" aria-hidden>
+    <div className="flex w-full max-h-[min(720px,88dvh)] min-h-0 flex-col items-center">
+      <div className="mb-3 flex w-full max-w-lg shrink-0 justify-center">
+        {dagstartHeaderBar}
+      </div>
+      <div className="flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white text-gray-900 shadow-sm [contain:layout]">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+      <style>{`
+        @keyframes daystart-slot-bounce {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        .daystart-slot-bounce {
+          animation: daystart-slot-bounce 150ms ease-out;
+        }
+        @keyframes daystart-slot-task-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .daystart-slot-task-fade-in {
+          animation: daystart-slot-task-fade-in 300ms ease-out;
+        }
+      `}</style>
+      {/* Energie-banner met titel + subtitel (compact, max 60px) */}
+      <div
+        className="mb-3 max-h-[60px] overflow-hidden rounded-2xl px-3 py-2 sm:px-3 sm:py-2"
+        style={{
+          backgroundColor:
+            energyInfo?.value === "low"
+              ? "#EFF6FF"
+              : energyInfo?.value === "high"
+                ? "#F0FDF4"
+                : "#FFFBEB",
+        }}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <span className="shrink-0 text-xl leading-none" aria-hidden>
               {energyInfo?.emoji}
             </span>
-            <div>
-              <p className="text-sm font-bold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-900 sm:text-[13px]">
                 {energyLevel === "low" && tr("dayStart.bannerLowTitle")}
                 {energyLevel === "medium" && tr("dayStart.bannerMedTitle")}
                 {energyLevel === "high" && tr("dayStart.bannerHighTitle")}
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="line-clamp-1 text-[11px] text-gray-500">
                 {energyLevel === "low" && tr("dayStart.bannerLowSub")}
                 {energyLevel === "medium" && tr("dayStart.bannerMedSub")}
                 {energyLevel === "high" && tr("dayStart.bannerHighSub")}
               </p>
               {isStep2LoadingTasks ? (
-                <span className="text-xs text-gray-400 mt-1 block">
+                <span className="mt-0.5 block text-[10px] text-gray-400">
                   {tr("dayStart.tasksLoading")}
                 </span>
               ) : null}
@@ -1691,7 +1734,7 @@ export default function DayStartCheckIn({
           <button
             type="button"
             onClick={() => setEnergyLevel(null)}
-            className="shrink-0 text-xs text-gray-500 hover:text-gray-900 underline underline-offset-2 mt-0.5"
+            className="shrink-0 text-[11px] text-gray-500 underline underline-offset-2 hover:text-gray-900"
           >
             {tr("dayStart.changeEnergy")}
           </button>
@@ -1725,11 +1768,15 @@ export default function DayStartCheckIn({
           {visibleFocusSlots.map((slot) => {
             const task = top3Tasks[slot.number];
             const hasTask = Boolean(task?.id && task?.title);
+            const runSlotAnim = slotPickAnim === slot.number;
 
             return (
               <div
                 key={slot.number}
-                className="rounded-2xl border-[1.5px] border-dashed border-gray-200 bg-white px-3 py-3 sm:px-4 sm:py-4"
+                ref={(el) => {
+                  focusSlotElRef.current[slot.number] = el;
+                }}
+                className={`rounded-2xl border-[1.5px] border-dashed border-gray-200 bg-white px-3 py-3 sm:px-4 sm:py-4 ${runSlotAnim ? "daystart-slot-bounce" : ""}`}
               >
                 {hasTask ? (
                   <div className="flex items-center gap-3">
@@ -1739,7 +1786,9 @@ export default function DayStartCheckIn({
                     >
                       {slot.number}
                     </div>
-                    <div className="min-w-0 flex-1 flex h-10 items-center gap-2 rounded-lg border border-gray-200/90 border-l-[3px] border-l-[#3B82F6] bg-[#EFF6FF] px-3 text-sm text-gray-900">
+                    <div
+                      className={`min-w-0 flex-1 flex h-10 items-center gap-2 rounded-lg border border-gray-200/90 border-l-[3px] border-l-[#3B82F6] bg-[#EFF6FF] px-3 text-sm text-gray-900 ${runSlotAnim ? "daystart-slot-task-fade-in" : ""}`}
+                    >
                       <span className="min-w-0 flex-1 truncate font-medium">{task.title}</span>
                       <button
                         type="button"
@@ -1762,10 +1811,10 @@ export default function DayStartCheckIn({
                       </div>
                       <div className="min-w-0 flex-1 pt-0.5">
                         <p className="text-sm font-bold uppercase tracking-wide text-gray-900">{slot.label}</p>
-                        <p className="text-xs text-gray-600 mt-0.5 leading-snug">{slot.description}</p>
+                        <p className="text-xs leading-snug text-gray-600">{slot.description}</p>
                       </div>
                     </div>
-                    <p className="mt-3 text-center text-sm text-gray-500">
+                    <p className="mt-1.5 text-center text-sm text-gray-500">
                       {tr("dayStart.selectBelow")}
                     </p>
                   </>
@@ -1775,6 +1824,113 @@ export default function DayStartCheckIn({
           })}
         </div>
       </div>
+
+      {/* Suggesties voor vandaag (direct onder focus-slots, geen scroll nodig voor eerste suggesties) */}
+      {isStep2LoadingTasks ? (
+        <p className="mb-4 text-sm text-gray-500">{tr("dayStart.tasksLoading")}</p>
+      ) : showNoTasksDayStart ? (
+        <p className="mb-4 text-sm text-gray-600">{tr("dayStart.noTasksYet")}</p>
+      ) : (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            {tr("dayStart.suggestionsTitle")}
+          </p>
+          {mergedSuggestionItems.length > 0 ? (
+            <>
+              <ul className="space-y-2">
+                {suggestionsToRender.map((item) => {
+                  if (item.kind === 'dagafsluiter') {
+                    const row = item.row;
+                    const e = row.suggestedTaskEnergy || 'medium';
+                    return (
+                      <li key={`dagafsluiter-${row.id}`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickAddTitle(row.content);
+                            setQuickAddTaskEnergy(
+                              e === 'low' || e === 'medium' || e === 'high' ? e : 'medium'
+                            );
+                            setQuickAddPresetMinutes(15);
+                            setQuickAddCustomMinutesStr('');
+                            setPendingDagafsluiterThoughtId(row.id);
+                          }}
+                          className="flex w-full items-center gap-3 rounded-lg border border-[#E5E7EB] bg-white p-3 text-left transition-colors hover:bg-[#F9FAFB] active:bg-[#F3F4F6]"
+                        >
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: getEnergyColor(e) }}
+                            aria-hidden
+                          />
+                          <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">
+                            {row.content}
+                          </span>
+                          <span className="text-[10px] text-gray-400 uppercase tracking-wide shrink-0">
+                            {tr("dayStart.reminderBadge")}
+                          </span>
+                          <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
+                            -
+                          </span>
+                          <span className="shrink-0 text-sm text-gray-400" aria-hidden>
+                            ›
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  }
+                  const task = item.task;
+                  const isPicked = focusTaskIds.has(task.id);
+                  const dur = task.duration || task.estimatedDuration;
+
+                  return (
+                    <li key={task.id}>
+                      <button
+                        type="button"
+                        disabled={isPicked}
+                        onClick={() => {
+                          if (isPicked) return;
+                          void pickTaskFromSuggestions(task);
+                        }}
+                        className={`flex w-full items-center gap-3 rounded-lg border border-[#E5E7EB] bg-white p-3 text-left transition-colors ${
+                          isPicked
+                            ? 'cursor-default opacity-40 text-gray-500'
+                            : 'hover:bg-[#F9FAFB] active:bg-[#F3F4F6]'
+                        } ${
+                          suggestionPickingId === task.id ? 'opacity-0' : 'opacity-100'
+                        }`}
+                      >
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ background: getEnergyColor(task.energyLevel || 'medium') }}
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">{task.title}</span>
+                        <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
+                          {dur ? `${dur}m` : '-'}
+                        </span>
+                        <span className="shrink-0 text-sm text-gray-400" aria-hidden>
+                          ›
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {hasMoreSuggestions ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllSuggestions((v) => !v)}
+                  className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+                >
+                  {showAllSuggestions ? tr("dayStart.showLess") : tr("dayStart.showAll")}
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-gray-500">{tr("dayStart.noSuggestions")}</p>
+          )}
+        </div>
+      )}
 
       {/* Taak toevoegen (eigen energie + duur per taak) */}
       <div className="mb-4">
@@ -1805,7 +1961,7 @@ export default function DayStartCheckIn({
             +
           </button>
         </div>
-        {noAvailableSlot ? (
+        {noAvailableSlot && quickAddTitle.trim().length > 2 ? (
           <p className="mt-2 text-xs text-amber-700">{tr("dayStart.capacityReached")}</p>
         ) : null}
 
@@ -1900,129 +2056,31 @@ export default function DayStartCheckIn({
         ) : null}
       </div>
 
-      {showNoTasksDayStart && !isStep2LoadingTasks && (
-        <p className="text-sm text-gray-600 mb-4">{tr("dayStart.noTasksYet")}</p>
-      )}
-
-      {/* Suggesties voor vandaag */}
-      {isStep2LoadingTasks ? (
-        <p className="text-sm text-gray-500 mb-6">{tr("dayStart.tasksLoading")}</p>
-      ) : !showNoTasksDayStart ? (
-        <div className="mb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-            {tr("dayStart.suggestionsTitle")}
-          </p>
-          {mergedSuggestionItems.length > 0 ? (
-            <>
-              <ul className="divide-y divide-gray-100">
-                {suggestionsToRender.map((item) => {
-                  if (item.kind === 'dagafsluiter') {
-                    const row = item.row;
-                    const e = row.suggestedTaskEnergy || 'medium';
-                    return (
-                      <li key={`dagafsluiter-${row.id}`}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickAddTitle(row.content);
-                            setQuickAddTaskEnergy(
-                              e === 'low' || e === 'medium' || e === 'high' ? e : 'medium'
-                            );
-                            setQuickAddPresetMinutes(15);
-                            setQuickAddCustomMinutesStr('');
-                            setPendingDagafsluiterThoughtId(row.id);
-                          }}
-                          className="flex w-full items-center gap-3 py-2.5 text-left rounded-lg hover:bg-gray-50 active:bg-gray-100/80"
-                        >
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ background: getEnergyColor(e) }}
-                            aria-hidden
-                          />
-                          <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">
-                            {row.content}
-                          </span>
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wide shrink-0">
-                            {tr("dayStart.reminderBadge")}
-                          </span>
-                          <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
-                            -
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  }
-                  const task = item.task;
-                  const isPicked = focusTaskIds.has(task.id);
-                  const dur = task.duration || task.estimatedDuration;
-
-                  return (
-                    <li key={task.id}>
-                      <button
-                        type="button"
-                        disabled={isPicked}
-                        onClick={() => {
-                          if (isPicked) return;
-                          void assignTaskToFirstSlot(task);
-                        }}
-                        className={`flex w-full items-center gap-3 py-2.5 text-left rounded-lg ${
-                          isPicked
-                            ? 'cursor-default opacity-40 text-gray-500'
-                            : 'hover:bg-gray-50 active:bg-gray-100/80'
-                        }`}
-                      >
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: getEnergyColor(task.energyLevel || 'medium') }}
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">{task.title}</span>
-                        <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
-                          {dur ? `${dur}m` : '-'}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              {hasMoreSuggestions ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllSuggestions((v) => !v)}
-                  className="mt-2 text-xs text-gray-500 hover:text-gray-700"
-                >
-                  {showAllSuggestions ? tr("dayStart.showLess") : tr("dayStart.showAll")}
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">{tr("dayStart.noSuggestions")}</p>
-          )}
-        </div>
-      ) : null}
-
       </div>
 
-      <div className="mt-4 border-t border-gray-100 pt-3">
-        <p className="pb-2 text-center text-xs text-gray-400">
-          {tr("dayStart.footerHint")}
-        </p>
+      <div className="shrink-0 border-t border-gray-100 bg-white px-4 py-3 sm:px-6">
+        {(() => {
+          const hasAtLeastOne = filledSlots > 0;
+          const hasAllRequired = filledSlots >= maxSlots;
+          const canSubmit = Boolean(energyLevel) && !isSubmitting && hasAllRequired;
+          const ctaText = hasAtLeastOne
+            ? (existingCheckIn ? tr("dayStart.saveChanges") : tr("dayStart.startDay"))
+            : tr("dayStart.pickTasksFirst");
+          return (
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!energyLevel || isSubmitting || filledSlots < maxSlots}
-          className={`w-full py-3.5 px-6 rounded-xl font-semibold text-base ${
-            energyLevel && filledSlots >= maxSlots && !isSubmitting
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          disabled={!canSubmit}
+          className={`w-full rounded-xl px-6 py-3.5 text-base font-semibold transition-colors ${
+            hasAtLeastOne
+              ? "bg-[#3B82F6] text-white shadow-sm hover:bg-blue-700"
+              : "cursor-not-allowed bg-gray-200 text-gray-500"
           }`}
         >
-          {isSubmitting
-            ? tr("dayStart.saving")
-            : existingCheckIn
-              ? tr("dayStart.saveChanges")
-              : tr("dayStart.startDay")}
+          {isSubmitting ? tr("dayStart.saving") : ctaText}
         </button>
+          );
+        })()}
       </div>
       </div>
     </div>

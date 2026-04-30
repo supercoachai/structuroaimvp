@@ -73,8 +73,9 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     setSaveError(null);
     const supabase = createClient();
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
 
     if (!user) {
       toast(tr("dayShutdown.toastNeedLogin"));
@@ -351,11 +352,21 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
               style={{
                 fontSize: 13,
                 color: "rgba(47,52,65,0.7)",
-                marginBottom: 16,
+                marginBottom: 8,
                 lineHeight: 1.45,
               }}
             >
               {tr("dayShutdown.tomorrowHint")}
+            </p>
+            <p
+              style={{
+                fontSize: 12,
+                color: "rgba(47,52,65,0.65)",
+                marginBottom: 16,
+                lineHeight: 1.45,
+              }}
+            >
+              {tr("dayShutdown.tomorrowLegend")}
             </p>
             <div style={{ display: "grid", gap: 8, maxHeight: 200, overflowY: "auto" }}>
               {tasksToRemember.map((task) => (

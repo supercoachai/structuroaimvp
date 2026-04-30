@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase/authStorage";
 import {
   STRUCTURO_DAGSTART_COOKIE,
   decodeDagstartCookieValue,
@@ -12,9 +13,16 @@ import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const projectRef = url.replace(/^https:\/\//, "").split(".")[0];
-  if (!projectRef) return false;
-  const cookieName = `sb-${projectRef}-auth-token`;
-  return Boolean(request.cookies.get(cookieName)?.value);
+  const legacyName = projectRef ? `sb-${projectRef}-auth-token` : null;
+  const all = request.cookies.getAll();
+  return all.some((c) => {
+    if (!c.value) return false;
+    if (c.name === STRUCTURO_SUPABASE_AUTH_STORAGE_KEY) return true;
+    if (c.name.startsWith(`${STRUCTURO_SUPABASE_AUTH_STORAGE_KEY}.`)) return true;
+    if (legacyName && (c.name === legacyName || c.name.startsWith(`${legacyName}.`)))
+      return true;
+    return false;
+  });
 }
 
 function isSupabaseConfigured(): boolean {
@@ -90,6 +98,9 @@ export async function updateSession(request: NextRequest) {
             supabaseResponse.cookies.set(name, value, options)
           );
         },
+      },
+      auth: {
+        storageKey: STRUCTURO_SUPABASE_AUTH_STORAGE_KEY,
       },
     }
   );

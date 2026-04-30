@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useClientSearchParams } from '@/hooks/useClientSearchParams';
 import AppLayout from '../../components/layout/AppLayout';
 import { DopamineAirlock } from '@/components/DopamineAirlock';
 import { track } from '../../shared/track';
@@ -31,6 +32,7 @@ import {
   PlayIcon,
   CheckIcon,
   ClockIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import confetti from 'canvas-confetti';
 
@@ -48,7 +50,7 @@ const countdownDigitStyle = `
 function FocusContent() {
   const { locale, t: tr } = useI18n();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useClientSearchParams();
   const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
   const { checkIn, saveCheckIn } = useCheckIn();
   const { user } = useUser();
@@ -590,14 +592,22 @@ function FocusContent() {
   const microStepsSection = (
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-[18px] py-3.5">
       <div className="mb-3 flex items-center gap-2">
-        <svg className="h-3.5 w-3.5 text-violet-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <svg className="h-3.5 w-3.5 shrink-0 text-violet-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M12 2 2 7l10 5 10-5-10-5z" />
           <path d="m2 17 10 5 10-5" />
           <path d="m2 12 10 5 10-5" />
         </svg>
-        <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
+        <span className="min-w-0 flex-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
           {tr("focus.microTitle")}
         </span>
+        <button
+          type="button"
+          className="shrink-0 rounded-lg p-1 text-[#64748B] transition-colors hover:bg-white/5 hover:text-[#94A3B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
+          title={tr("focus.microHint")}
+          aria-label={tr("focus.microHint")}
+        >
+          <InformationCircleIcon className="h-4 w-4" aria-hidden />
+        </button>
       </div>
 
       {existingMicroSteps.length > 0 ? (
@@ -639,9 +649,7 @@ function FocusContent() {
             );
           })}
         </div>
-      ) : (
-        <p className="text-sm text-[#64748B]">{tr("focus.microEmpty")}</p>
-      )}
+      ) : null}
 
       <div className="mt-3 flex items-center gap-2">
         <input
@@ -987,19 +995,6 @@ function FocusContent() {
   );
 }
 
-function FocusPageFallback() {
-  const { t: tr } = useI18n();
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
-      <span className="text-slate-400 animate-pulse">{tr("focus.pageLoading")}</span>
-    </div>
-  );
-}
-
 export default function FocusPage() {
-  return (
-    <Suspense fallback={<FocusPageFallback />}>
-      <FocusContent />
-    </Suspense>
-  );
+  return <FocusContent />;
 }

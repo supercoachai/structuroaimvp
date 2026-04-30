@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from '@/lib/supabase/authStorage'
 
 const PLACEHOLDER_URL = 'https://placeholder.supabase.co'
 const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTk1NzM0NTYwMH0.placeholder'
@@ -25,6 +26,9 @@ export async function createClient() {
           // Ignore in Server Component context
         }
       },
+    },
+    auth: {
+      storageKey: STRUCTURO_SUPABASE_AUTH_STORAGE_KEY,
     },
   })
 }

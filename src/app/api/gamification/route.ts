@@ -1,7 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+function notInMvp() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  return null
+}
+
 export async function GET() {
+  const blocked = notInMvp()
+  if (blocked) return blocked
+
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -36,6 +46,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const blocked = notInMvp()
+  if (blocked) return blocked
+
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()

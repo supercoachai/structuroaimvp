@@ -109,7 +109,6 @@ export default function TasksOverviewCalm() {
   const [convertDuration, setConvertDuration] = useState<number | null>(null);
   const [convertEnergy, setConvertEnergy] = useState<'low' | 'medium' | 'high'>('medium');
   const { checkIn: todayCheckIn } = useCheckIn();
-  const [priorityTasks, setPriorityTasks] = useState<{ [key: number]: any }>({ 1: null, 2: null, 3: null });
   const [completedSectionOpen, setCompletedSectionOpen] = useState(false);
   /** Taak net aangevinkt: line-through + opacity, na 300ms echte update + verhuizing naar Voltooide taken */
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
@@ -149,38 +148,6 @@ export default function TasksOverviewCalm() {
     setMicroStepsAddOpenId(null);
   }, [expandedTaskId]);
 
-  useEffect(() => {
-    const loadFromDayStart = () => {
-      if (typeof window === 'undefined') return;
-      
-      try {
-        // Taken uit context (Supabase of localStorage)
-        const allTasks = tasks;
-        
-        // BELANGRIJK: Toon ALLE taken met priority 1, 2 of 3, ongeacht maxSlots
-        const priorities: { [key: number]: any } = { 1: null, 2: null, 3: null };
-        
-        for (let i = 1; i <= 3; i++) {
-          const task = allTasks.find((t: any) => {
-            if (!t || !t.id || !t.title || t.done || t.source === 'medication' || t.source === 'event') {
-              return false;
-            }
-            return t.priority == i;
-          });
-          if (task) {
-            priorities[i] = task;
-          }
-        }
-        
-        setPriorityTasks(priorities);
-      } catch (error) {
-        console.error('❌ Error loading from DayStart:', error);
-      }
-    };
-    
-    loadFromDayStart();
-  }, [tasks]);
-
   // Bepaal max slots
   const maxSlots = useMemo(() => {
     if (!todayCheckIn) return 3;
@@ -189,6 +156,29 @@ export default function TasksOverviewCalm() {
     if (energyLevel === 'medium') return 2;
     return 3;
   }, [todayCheckIn]);
+
+  /**
+   * Alleen taken uit daily_checkins.top3_task_ids, in exacte arrayvolgorde (niet priority-veld, geen backfill).
+   * Afronding: zelfde slot, grijs + vinkje; geen vervanging door andere open taken.
+   */
+  const priorityTasks = useMemo(() => {
+    const out: { [key: number]: any } = { 1: null, 2: null, 3: null };
+    const rawIds = todayCheckIn?.top3_task_ids;
+    if (!Array.isArray(rawIds) || rawIds.length === 0) return out;
+    const ids = rawIds.slice(0, maxSlots);
+    ids.forEach((taskId, index) => {
+      const slot = index + 1;
+      const task = deferredTasks.find(
+        (t: any) =>
+          t &&
+          String(t.id) === String(taskId) &&
+          t.source !== "medication" &&
+          t.source !== "event"
+      );
+      if (task) out[slot] = task;
+    });
+    return out;
+  }, [todayCheckIn?.top3_task_ids, maxSlots, deferredTasks]);
 
   // Helper: Get energie kleur
   const getEnergyColor = (level: string) => {
@@ -446,9 +436,8 @@ export default function TasksOverviewCalm() {
     const energy =
       (task.energyLevel as "low" | "medium" | "high") ?? "medium";
     const focusUrl = `/focus?task=${encodeURIComponent(task.id)}&duration=${encodeURIComponent(taskDuration)}&energy=${task.energyLevel || 'medium'}`;
-    startTransition(() => {
-      router.push(focusUrl);
-    });
+    // Geen startTransition: die kan samen met useSearchParams/Suspense op /focus tot vastlopende navigatie leiden
+    router.push(focusUrl);
     void updateTask(task.id, { started: true }).catch((error) => {
       console.error('Error starting focus:', error);
       toast(tr("tasks.toastFocusErr"));
@@ -464,21 +453,21 @@ export default function TasksOverviewCalm() {
     });
   };
 
-  // Voltooien vanuit Alle open taken: eerst visueel (line-through, pop), dan na 300ms persist + verhuizing naar Voltooide taken
-  const handleCompleteFromList = (task: any) => {
+  const handleQuickCompleteFromCard = (task: any) => {
+    const taskDuration = getTaskDurationMinutes(task) ?? 15;
+    const energy =
+      (task.energyLevel as "low" | "medium" | "high") ?? "medium";
     setCompletingTaskIds((prev) => new Set(prev).add(task.id));
     setCheckboxPopId(task.id);
     setTimeout(() => setCheckboxPopId(null), 200);
     setTimeout(() => {
-      trackTaskCompleted(
-        "manual",
-        (task.energyLevel as "low" | "medium" | "high") ?? "medium"
-      );
+      trackQuickCompleteTriggered(energy, taskDuration);
+      trackTaskCompleted("quick_complete", energy);
       startTransition(() => {
         void updateTask(task.id, {
           done: true,
           started: true,
-          source: "manual",
+          source: "quick_complete",
           completedAt: new Date().toISOString(),
         });
         setCompletingTaskIds((prev) => {
@@ -486,27 +475,13 @@ export default function TasksOverviewCalm() {
           next.delete(task.id);
           return next;
         });
+        setExpandedTaskId((id) => (id === task.id ? null : id));
         setCompletedSectionOpen(true);
       });
       queueMicrotask(() => {
         toast(tr("tasks.toastChecked"));
       });
     }, 300);
-  };
-
-  const handleQuickCompleteFromCard = async (task: any) => {
-    const taskDuration = getTaskDurationMinutes(task) ?? 15;
-    const energy =
-      (task.energyLevel as "low" | "medium" | "high") ?? "medium";
-    await updateTask(task.id, {
-      done: true,
-      started: true,
-      source: "quick_complete",
-      completedAt: new Date().toISOString(),
-    });
-    trackQuickCompleteTriggered(energy, taskDuration);
-    trackTaskCompleted("quick_complete", energy);
-    toast(tr("tasks.toastChecked"));
   };
 
   /** Taken die al onder "Vandaag gekozen" staan: niet opnieuw in het energie-bord (één plek per scherm). */
@@ -604,11 +579,34 @@ export default function TasksOverviewCalm() {
           {[1, 2, 3].map((priority) => {
             if (priority > maxSlots) return null;
             const task = priorityTasks[priority];
-            if (!task || task.done) return null;
+            if (!task) return null;
+            const isDone = Boolean(task.done);
             const tint = PRIORITY_ROW_TINT[priority] ?? PRIORITY_ROW_TINT[1];
             const ms = normalizeMicroSteps(task.microSteps);
             const msDone = ms.filter((s) => s.done).length;
             const mins = task.duration ?? task.estimatedDuration ?? 15;
+
+            if (isDone) {
+              return (
+                <div
+                  key={priority}
+                  className="flex w-full items-center gap-4 rounded-3xl border border-gray-200 bg-gray-50/90 p-5 text-left opacity-80"
+                >
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-gray-200 bg-white text-[17px] font-bold leading-none text-gray-400"
+                    aria-hidden
+                  >
+                    <CheckCircleIcon className="h-6 w-6 text-emerald-500" aria-hidden />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="break-words text-[16px] font-bold leading-snug text-gray-500 line-through">
+                      {task.title}
+                    </div>
+                    <p className="mt-1 text-[13px] tabular-nums text-gray-400">{mins} min</p>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <button
@@ -655,7 +653,7 @@ export default function TasksOverviewCalm() {
             );
           })}
           {!loading &&
-            Object.values(priorityTasks).filter((t) => t !== null && !t?.done).length === 0 && (
+            !Object.values(priorityTasks).some(Boolean) && (
               <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center text-[15px] text-gray-400 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                 {tr("tasks.noTodayChosen")}
               </div>
@@ -1033,39 +1031,58 @@ export default function TasksOverviewCalm() {
 
       {/* SECTIE 4: Alle open taken – zwevende kaarten */}
       <section id="alle-open-taken" className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionOpen")}</h2>
-          <div ref={openTasksInfo.wrapperRef} className="relative flex items-center">
+        <div ref={openTasksInfo.wrapperRef} className="relative mb-4 w-full min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionOpen")}</h2>
             <button
               type="button"
               aria-label={tr("tasks.openInfoAria")}
               aria-expanded={openTasksInfo.open}
-              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white/70 text-[12px] leading-none text-slate-600 transition-colors hover:bg-white"
               onClick={openTasksInfo.toggle}
             >
               i
             </button>
-            {openTasksInfo.open ? (
-              <div
-                className="absolute top-7 right-0 z-50 w-56 max-w-[min(14rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:right-[-120px]"
-                role="tooltip"
-              >
-                <div className="text-[11px] font-semibold text-gray-900 mb-1">
-                  {tr("tasks.zonesTitle")}
+          </div>
+          {openTasksInfo.open ? (
+            <div
+              className="absolute left-0 right-0 top-full z-50 mt-2 w-full max-w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-lg sm:p-5"
+              role="tooltip"
+            >
+              <div className="mb-2 text-xs font-semibold text-gray-900 sm:text-sm">
+                {tr("tasks.zonesTitle")}
+              </div>
+              <p className="mb-4 text-xs leading-relaxed text-gray-700 sm:text-sm">
+                {tr("tasks.zonesIntro")}
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                <div className="min-w-0 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                  <div className="mb-1.5 text-xs font-semibold text-emerald-700 sm:text-sm">
+                    {tr("tasks.zoneEasy")}
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-700">
+                    {tr("tasks.zoneEasyDesc")}
+                  </p>
                 </div>
-                <div className="text-[11px] text-gray-600 leading-relaxed">
-                  <span className="font-semibold text-emerald-600">{tr("tasks.zoneEasy")}</span>:{" "}
-                  {tr("tasks.zoneEasyDesc")}
-                  <br />
-                  <span className="font-semibold text-amber-600">{tr("tasks.zoneNormal")}</span>:{" "}
-                  {tr("tasks.zoneNormalDesc")}
-                  <br />
-                  <span className="font-semibold text-red-600">{tr("tasks.zoneHard")}</span>:{" "}
-                  {tr("tasks.zoneHardDesc")}
+                <div className="min-w-0 rounded-xl border border-amber-100 bg-amber-50/40 p-3">
+                  <div className="mb-1.5 text-xs font-semibold text-amber-700 sm:text-sm">
+                    {tr("tasks.zoneNormal")}
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-700">
+                    {tr("tasks.zoneNormalDesc")}
+                  </p>
+                </div>
+                <div className="min-w-0 rounded-xl border border-red-100 bg-red-50/40 p-3">
+                  <div className="mb-1.5 text-xs font-semibold text-red-700 sm:text-sm">
+                    {tr("tasks.zoneHard")}
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-700">
+                    {tr("tasks.zoneHardDesc")}
+                  </p>
                 </div>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
         
         {loading ? (
@@ -1127,72 +1144,112 @@ export default function TasksOverviewCalm() {
                         const energyLevel = task.energyLevel || 'medium';
                         const isCompleting = completingTaskIds.has(task.id);
                         const isPop = checkboxPopId === task.id;
+                        const isEasyColumn = col.key === "green";
+                        const microCount = normalizeMicroSteps(task.microSteps).length;
 
                         return (
                           <div
                             key={task.id}
-                            className="group bg-white rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-sm border border-gray-100"
+                            className="group overflow-hidden rounded-2xl border border-gray-100 bg-white transition-all duration-200 hover:border-gray-200 hover:shadow-sm"
                           >
                             <div
                               onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                              className="p-4 flex flex-col gap-2 cursor-pointer min-w-0"
+                              className="flex min-w-0 cursor-pointer flex-col gap-2 rounded-2xl p-4 transition-colors hover:bg-gray-50/90"
                             >
-                              <div className="flex items-start gap-3 min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); handleCompleteFromList(task); }}
-                                  aria-label={tr("tasks.completeAria")}
-                                  title={tr("tasks.checkOffHint", {
-                                    label: getEnergyLabel(energyLevel),
-                                  })}
-                                  className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full transition-transform duration-200 cursor-pointer ${isPop ? 'scale-125' : 'scale-100'}`}
-                                  style={{
-                                    background: getEnergyColor(energyLevel),
-                                    boxShadow: getEnergyGlow(energyLevel)
-                                  }}
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div
-                                    className={`text-sm font-medium break-words transition-all duration-200 ${
-                                      isCompleting ? 'text-gray-500 opacity-50 line-through' : 'text-gray-900'
-                                    }`}
+                              <div className="flex min-w-0 items-start gap-2 sm:gap-3">
+                                {isEasyColumn ? (
+                                  <button
+                                    type="button"
+                                    disabled={isCompleting}
+                                    aria-busy={isCompleting}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickCompleteFromCard(task);
+                                    }}
+                                    aria-label={tr("tasks.quickDoneTitle")}
+                                    title={tr("tasks.quickDoneTitle")}
+                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 transition-transform duration-200 disabled:pointer-events-none ${
+                                      isCompleting ? "bg-emerald-500" : "bg-white hover:bg-emerald-50"
+                                    } ${isPop ? "scale-125" : "scale-100"}`}
                                   >
-                                    {task.title}
+                                    {isCompleting ? (
+                                      <svg
+                                        className="h-3 w-3 text-white"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="3"
+                                        aria-hidden
+                                      >
+                                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                    ) : null}
+                                  </button>
+                                ) : (
+                                  <div
+                                    className="pointer-events-none mt-0.5 h-5 w-5 shrink-0 rounded-full"
+                                    style={{
+                                      background: getEnergyColor(energyLevel),
+                                      boxShadow: getEnergyGlow(energyLevel),
+                                    }}
+                                    role="img"
+                                    aria-label={tr("tasks.energyDotAria", {
+                                      label: getEnergyLabel(energyLevel),
+                                    })}
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex min-w-0 items-start justify-between gap-2">
+                                    <div
+                                      className={`min-w-0 flex-1 text-sm font-medium break-words transition-all duration-200 ${
+                                        isCompleting ? "text-gray-500 opacity-50 line-through" : "text-gray-900"
+                                      }`}
+                                    >
+                                      {task.title}
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      {!isExpanded ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            startFocus(task);
+                                          }}
+                                          className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                                          title={tr("tasks.startThis")}
+                                        >
+                                          {tr("tasks.start")}
+                                        </button>
+                                      ) : null}
+                                      <ChevronDownIcon
+                                        className={`h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ${
+                                          isExpanded ? "rotate-0" : "-rotate-90"
+                                        }`}
+                                        aria-hidden
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="mt-1 flex items-center gap-2 flex-wrap">
-                                    {(task.duration || task.estimatedDuration) && (
-                                      <span className="text-[11px] text-gray-400 tabular-nums">
+                                  <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
+                                    {(task.duration || task.estimatedDuration) ? (
+                                      <span className="tabular-nums text-gray-400">
                                         {task.duration || task.estimatedDuration} min
                                       </span>
-                                    )}
+                                    ) : null}
+                                    {(task.duration || task.estimatedDuration) && microCount > 0 ? (
+                                      <span className="text-gray-300" aria-hidden>
+                                        ·
+                                      </span>
+                                    ) : null}
+                                    {microCount > 0 ? (
+                                      <span className="tabular-nums text-[#6B7280]">
+                                        {tr("tasks.microStepsCollapsed", {
+                                          n: String(microCount),
+                                        })}
+                                      </span>
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>
-
-                              {!isExpanded && (
-                                <div className="flex items-center justify-end gap-2 pt-2">
-                                  {energyLevel === "low" ? (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        void handleQuickCompleteFromCard(task);
-                                      }}
-                                      className="px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors border border-gray-200 text-gray-700 hover:bg-gray-50"
-                                      title={tr("tasks.quickDoneTitle")}
-                                    >
-                                      {tr("tasks.quickDone")}
-                                    </button>
-                                  ) : null}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); startFocus(task); }}
-                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                                    title={tr("tasks.startThis")}
-                                  >
-                                    {tr("tasks.start")}
-                                  </button>
-                                  <span className="text-gray-400 text-sm">{isExpanded ? '▼' : '›'}</span>
-                                </div>
-                              )}
                             </div>
 
                             {isExpanded && (() => {
@@ -1315,33 +1372,7 @@ export default function TasksOverviewCalm() {
                                     ) : null}
                                   </div>
 
-                                  <div className={`grid gap-2 ${energyLevel === "low" ? "grid-cols-2" : "grid-cols-1"}`}>
-                                    {energyLevel === "low" ? (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          void handleQuickCompleteFromCard(task);
-                                          setExpandedTaskId(null);
-                                        }}
-                                        className="w-full py-3 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold transition-all text-center"
-                                      >
-                                        {tr("tasks.quickDone")}
-                                      </button>
-                                    ) : null}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        startFocus(task);
-                                        setExpandedTaskId(null);
-                                      }}
-                                      className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all text-center"
-                                    >
-                                      {tr("tasks.startFocus")}
-                                    </button>
-                                  </div>
-                                  <div className="flex items-center justify-between pt-2 border-t border-gray-200/80">
+                                  <div className="flex items-center justify-between border-t border-gray-200/80 pt-3">
                                     <button
                                       type="button"
                                       onClick={(e) => {

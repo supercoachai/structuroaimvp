@@ -68,7 +68,7 @@ src/
 │   ├── login/        # Login/registratie pagina
 │   └── ...
 ├── components/        # React components
-├── hooks/            # Custom React hooks (useTasks, etc.)
+├── hooks/            # Custom React hooks (useUser, useCheckIn, …)
 ├── lib/              # Utilities
 │   └── supabase/     # Supabase client configuratie
 └── contexts/         # React contexts

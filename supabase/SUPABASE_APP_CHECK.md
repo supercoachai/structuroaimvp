@@ -15,7 +15,9 @@ Deze checklist bevestigt dat de app correct met Supabase is gekoppeld.
 
 | Onderdeel | Werking |
 |-----------|--------|
-| **Gebruiker** | `useUser()` (src/hooks/useUser.ts) haalt huidige user op via `createClient().auth.getUser()` en `onAuthStateChange`. |
+| **Gebruiker** | `useUser()` (src/hooks/useUser.ts) leest de sessie lokaal via `getSession()` en luistert naar `onAuthStateChange` (geen herhaalde `/user`-storm). |
+| **JWT-levensduur** | Dashboard: **Authentication → Settings → JWT expiry** (bijv. `604800` = 7 dagen). Of CLI: `supabase auth config --jwt-expiry 604800` (ingelogd bij Supabase CLI). Langere sessie = minder gedwongen re-login. |
+| **Auth storage key** | Client + server + middleware gebruiken dezelfde `storageKey` (`structuro-auth` in `src/lib/supabase/authStorage.ts`) zodat sessiecookies overal matchen. Middleware herkent ook nog legacy `sb-<project>-auth-token` cookies. |
 | **Taken per user** | TaskContext gebruikt `user?.id`; bij user → Supabase (fetchTasksFromSupabase, add/update/delete); zonder user → localStorage. |
 | **Dagstart per user** | useCheckIn gebruikt `user?.id`; bij user → Supabase (getCheckInFromSupabase, upsertCheckInToSupabase); zonder user → localStorage. |
 | **Middleware** | Zonder sessie én zonder cookie `structuro_local_mode` → redirect naar `/login`. Routes zoals /overzicht, /dagstart, /focus zijn daarmee beschermd. |

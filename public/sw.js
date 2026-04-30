@@ -20,7 +20,14 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   const raw = event.notification.data && event.notification.data.url;
-  const urlToOpen = typeof raw === "string" && raw.startsWith("/") ? raw : "/shutdown";
+  let urlToOpen = "/shutdown";
+  if (typeof raw === "string" && raw.startsWith("/")) {
+    if (raw.startsWith("/shutdown")) {
+      urlToOpen = raw.split("#")[0];
+    } else if (raw.startsWith("/dagstart")) {
+      urlToOpen = raw.split("#")[0];
+    }
+  }
   const fullUrl = new URL(urlToOpen, self.location.origin).href;
 
   event.waitUntil(

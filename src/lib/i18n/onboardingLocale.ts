@@ -128,8 +128,8 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
   },
   en: {
     welcomeH1: "Welcome to Structuro",
-    welcomeTagline: "The app for minds that work differently.",
-    welcomeSuffix: " to your energy.",
+    welcomeTagline: "Daily planning for brains that need a gentler rhythm.",
+    welcomeSuffix: " tuned to your energy.",
     welcomeWordRust: "Calm,",
     welcomeWordFocus: "focus",
     welcomeWordAnd: "and",

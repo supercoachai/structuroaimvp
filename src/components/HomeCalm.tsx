@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   BoltIcon,
-  CheckCircleIcon,
   FaceSmileIcon,
+  InformationCircleIcon,
   MoonIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
-import { normalizeMicroSteps, type MicroStep } from '@/lib/microSteps';
+import { normalizeMicroSteps, microStepId, type MicroStep } from '@/lib/microSteps';
 import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import { useRouter } from 'next/navigation';
 import { useTaskContext, Task } from '../context/TaskContext';
@@ -25,21 +25,24 @@ import { homeWelcomeEn, homeWelcomeNl } from '@/lib/i18n/homeCopy';
 export default function HomeCalm() {
   const { t, locale } = useI18n();
   const router = useRouter();
-  const { tasks, loading } = useTaskContext();
+  const { tasks, loading, updateTask } = useTaskContext();
   const { checkIn: todayCheckIn } = useCheckIn();
   const [userName, setUserName] = useState<string | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [newName, setNewName] = useState('');
   const [isClient, setIsClient] = useState(false);
-  const { updateTask } = useTaskContext();
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
+  const [heroMicroDraft, setHeroMicroDraft] = useState('');
+  const [heroMicroSaving, setHeroMicroSaving] = useState(false);
 
   useEffect(() => {
     const checkProtected = async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsProtectedAccount(isProtectedTestAccount(user?.email ?? null));
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setIsProtectedAccount(isProtectedTestAccount(session?.user?.email ?? null));
       } catch {
         setIsProtectedAccount(false);
       }
@@ -98,11 +101,13 @@ export default function HomeCalm() {
     (async () => {
       try {
         const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const metaFullName =
-          (data?.user?.user_metadata as any)?.full_name ??
-          (data?.user?.user_metadata as any)?.fullName ??
-          (data?.user?.user_metadata as any)?.full_name_string;
+          (session?.user?.user_metadata as any)?.full_name ??
+          (session?.user?.user_metadata as any)?.fullName ??
+          (session?.user?.user_metadata as any)?.full_name_string;
 
         if (typeof metaFullName === 'string' && metaFullName.trim()) {
           const trimmed = metaFullName.trim();
@@ -129,8 +134,9 @@ export default function HomeCalm() {
       const trimmed = newName.trim();
       const supabase = createClient();
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
 
       if (user?.id) {
         const { error } = await persistPreferredDisplayName(user, trimmed);
@@ -208,6 +214,54 @@ export default function HomeCalm() {
     if (!findLowestEnergyTask) return [];
     return normalizeMicroSteps(findLowestEnergyTask.microSteps);
   }, [findLowestEnergyTask]);
+
+  const heroMicroActiveIdx = useMemo(() => {
+    const i = heroMicroSteps.findIndex((s) => !s.done);
+    return i === -1 ? heroMicroSteps.length : i;
+  }, [heroMicroSteps]);
+
+  const addHeroMicroStep = async () => {
+    if (!findLowestEnergyTask) return;
+    const title = heroMicroDraft.trim();
+    if (!title) {
+      toast(t('tasks.toastMiniFill'));
+      return;
+    }
+    setHeroMicroSaving(true);
+    try {
+      const existing = normalizeMicroSteps(findLowestEnergyTask.microSteps);
+      const next: MicroStep[] = [
+        ...existing,
+        {
+          id: microStepId(),
+          title,
+          minutes: null,
+          difficulty: null,
+          done: false,
+        },
+      ];
+      await updateTask(findLowestEnergyTask.id, { microSteps: next });
+      setHeroMicroDraft('');
+      toast(t('tasks.toastMiniAdded'));
+    } catch (e) {
+      console.error(e);
+      toast(t('tasks.toastAddErr'));
+    } finally {
+      setHeroMicroSaving(false);
+    }
+  };
+
+  const toggleHeroMicroStep = async (stepId: string) => {
+    if (!findLowestEnergyTask) return;
+    const steps = normalizeMicroSteps(findLowestEnergyTask.microSteps);
+    const next = steps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s));
+    try {
+      await updateTask(findLowestEnergyTask.id, { microSteps: next });
+    } catch (e) {
+      console.error(e);
+      toast(t('tasks.toastAddErr'));
+    }
+  };
 
   const devResetToolbarOn =
     process.env.NEXT_PUBLIC_STRUCTURO_DEV_RESET === '1';
@@ -389,44 +443,117 @@ export default function HomeCalm() {
               {t('home.min')}
             </p>
 
-            {heroMicroSteps.length > 0 ? (
-              <div className="mt-4 flex flex-col gap-2.5 border-t border-white/10 pt-3.5">
-                {heroMicroSteps.map((step, idx) => {
-                  const done = step.done;
-                  const active = !done && heroMicroSteps.slice(0, idx).every((s) => s.done);
-                  if (done) {
-                    return (
-                      <div
-                        key={step.id}
-                        className="flex items-center gap-2.5 opacity-90"
-                      >
-                        <CheckCircleIcon className="h-4 w-4 shrink-0 text-[var(--structuro-green)]" aria-hidden />
-                        <span className="text-sm text-[var(--structuro-dark-sub)] line-through">
-                          {step.title}
-                        </span>
-                      </div>
-                    );
-                  }
-                  if (active) {
-                    return (
-                      <div
-                        key={step.id}
-                        className="-mx-1 flex items-center gap-2.5 rounded-[10px] border border-violet-400/30 bg-violet-500/15 px-3 py-2"
-                      >
-                        <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
-                        <span className="text-sm font-semibold text-white">{step.title}</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div key={step.id} className="flex items-center gap-2.5 opacity-40">
-                      <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[var(--structuro-dark-sub)]" />
-                      <span className="text-sm text-[var(--structuro-dark-sub)]">{step.title}</span>
-                    </div>
-                  );
-                })}
+            <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.04] px-[18px] py-3.5">
+              <div className="mb-3 flex items-center gap-2">
+                <svg
+                  className="h-3.5 w-3.5 shrink-0 text-violet-400/90"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 2 2 7l10 5 10-5-10-5z" />
+                  <path d="m2 17 10 5 10-5" />
+                  <path d="m2 12 10 5 10-5" />
+                </svg>
+                <span className="min-w-0 flex-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
+                  {t('focus.microTitle')}
+                </span>
+                <button
+                  type="button"
+                  className="shrink-0 rounded-lg p-1 text-[#64748B] transition-colors hover:bg-white/5 hover:text-[#94A3B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
+                  title={t('focus.microHint')}
+                  aria-label={t('focus.microHint')}
+                >
+                  <InformationCircleIcon className="h-4 w-4" aria-hidden />
+                </button>
               </div>
-            ) : null}
+
+              {heroMicroSteps.length > 0 ? (
+                <div className="flex flex-col gap-1">
+                  {heroMicroSteps.map((step, idx) => {
+                    const isDone = Boolean(step.done);
+                    const isActive = !isDone && idx === heroMicroActiveIdx;
+                    return (
+                      <button
+                        key={step.id}
+                        type="button"
+                        onClick={() => void toggleHeroMicroStep(step.id)}
+                        className={`flex w-full items-center gap-2.5 rounded-[10px] px-0 py-1.5 text-left transition-colors ${
+                          isActive
+                            ? 'border border-violet-400/30 bg-violet-500/15 -mx-1 px-3 py-2'
+                            : 'border border-transparent'
+                        }`}
+                      >
+                        {isDone ? (
+                          <>
+                            <svg
+                              className="h-4 w-4 shrink-0 text-[#22c55e]"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden
+                            >
+                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                              <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                            <span className="text-[13.5px] text-[#94A3B8] line-through">{step.title}</span>
+                          </>
+                        ) : isActive ? (
+                          <>
+                            <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
+                            <span className="text-[13.5px] font-semibold text-white">{step.title}</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[#64748B]" />
+                            <span className="text-[13.5px] text-[#94A3B8]">{step.title}</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              <div className="mt-3 flex items-center gap-2">
+                <label htmlFor="home-hero-micro" className="sr-only">
+                  {t('focus.microPh')}
+                </label>
+                <input
+                  id="home-hero-micro"
+                  type="text"
+                  value={heroMicroDraft}
+                  onChange={(e) => setHeroMicroDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void addHeroMicroStep();
+                    }
+                  }}
+                  disabled={heroMicroSaving}
+                  placeholder={t('focus.microPh')}
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 disabled:opacity-50"
+                  autoComplete="off"
+                  enterKeyHint="done"
+                />
+                <button
+                  type="button"
+                  onClick={() => void addHeroMicroStep()}
+                  disabled={heroMicroSaving || !heroMicroDraft.trim()}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg font-light text-white transition hover:bg-white/15 disabled:opacity-40"
+                  aria-label={t('tasks.microAdd')}
+                >
+                  +
+                </button>
+              </div>
+            </div>
 
             <button
               type="button"

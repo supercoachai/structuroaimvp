@@ -96,6 +96,15 @@ export function useCheckIn(): {
     load();
   }, [userLoading, load]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onCheckIn = () => {
+      void load();
+    };
+    window.addEventListener("structuro_checkin_updated", onCheckIn);
+    return () => window.removeEventListener("structuro_checkin_updated", onCheckIn);
+  }, [load]);
+
   const saveCheckIn = useCallback(
     async (payload: { energy_level: string; top3_task_ids: string[] | null }) => {
       const date = today();
@@ -109,6 +118,9 @@ export function useCheckIn(): {
             user_id: user.id,
             created_at: new Date().toISOString(),
           });
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
+          }
         } catch (err: any) {
           const msg = err?.message ?? "";
           if (msg.includes("schema cache") || msg.includes("does not exist") || msg.includes("daily_checkins") || msg.includes("Could not find table")) {
@@ -126,6 +138,9 @@ export function useCheckIn(): {
               user_id: user.id,
               created_at: new Date().toISOString(),
             });
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
+            }
           } else {
             throw err;
           }
@@ -144,6 +159,9 @@ export function useCheckIn(): {
           user_id: "local_user",
           created_at: new Date().toISOString(),
         });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
+        }
       }
     },
     [user?.id]

@@ -911,9 +911,9 @@ export default function OnboardingFlow() {
                   >
                     {t("onboarding.welcomeH1")}
                   </h1>
-                  <p className="mt-6 flex min-h-[5.5rem] max-w-full flex-wrap items-baseline justify-center gap-x-2.5 gap-y-2 text-center text-base leading-[1.55] tracking-[0.01em] text-gray-700 sm:text-lg">
+                  <div className="mt-6 flex min-h-[5.5rem] max-w-full flex-col items-center gap-3 text-center text-base leading-[1.55] tracking-[0.01em] text-gray-700 sm:text-lg">
                     {welcomeTaglineCharCount > 0 ? (
-                      <span className="inline-block text-gray-700">
+                      <p className="text-balance text-gray-700">
                         {welcomeTaglineTyped.slice(0, welcomeTaglineCharCount)}
                         <span
                           className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
@@ -921,38 +921,40 @@ export default function OnboardingFlow() {
                           }`}
                           aria-hidden
                         />
-                      </span>
+                      </p>
                     ) : null}
-                    {welcomeBlueStep >= 1 ? (
-                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
-                        {t("onboarding.welcomeWordRust")}
-                      </span>
-                    ) : null}
-                    {welcomeBlueStep >= 2 ? (
-                      <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
-                        {t("onboarding.welcomeWordFocus")}
-                      </span>
-                    ) : null}
-                    {welcomeBlueStep >= 3 ? (
-                      <span className="ob-welcome-blue-in inline-flex flex-wrap items-baseline justify-center">
-                        <span className="text-gray-600">{t("onboarding.welcomeWordAnd")}</span>
-                        <span className="font-semibold text-blue-600 pl-[0.45em]">
-                          {t("onboarding.welcomeWordStructure")}
+                    <p className="flex max-w-md flex-wrap items-baseline justify-center gap-x-2 gap-y-1">
+                      {welcomeBlueStep >= 1 ? (
+                        <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                          {t("onboarding.welcomeWordRust")}
                         </span>
-                      </span>
-                    ) : null}
-                    {welcomeTypingChars > 0 ? (
-                      <span className="inline-block min-w-[1ch] text-gray-700">
-                        {welcomeSuffix.slice(0, welcomeTypingChars)}
-                        <span
-                          className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
-                            welcomeTypingChars < welcomeSuffix.length ? "animate-pulse" : "opacity-0"
-                          }`}
-                          aria-hidden
-                        />
-                      </span>
-                    ) : null}
-                  </p>
+                      ) : null}
+                      {welcomeBlueStep >= 2 ? (
+                        <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                          {t("onboarding.welcomeWordFocus")}
+                        </span>
+                      ) : null}
+                      {welcomeBlueStep >= 3 ? (
+                        <span className="ob-welcome-blue-in inline-flex flex-wrap items-baseline justify-center gap-x-1">
+                          <span className="text-gray-600">{t("onboarding.welcomeWordAnd")}</span>
+                          <span className="font-semibold text-blue-600">
+                            {t("onboarding.welcomeWordStructure")}
+                          </span>
+                        </span>
+                      ) : null}
+                      {welcomeTypingChars > 0 ? (
+                        <span className="inline-block min-w-[1ch] text-gray-700">
+                          {welcomeSuffix.slice(0, welcomeTypingChars)}
+                          <span
+                            className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
+                              welcomeTypingChars < welcomeSuffix.length ? "animate-pulse" : "opacity-0"
+                            }`}
+                            aria-hidden
+                          />
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
                   <p
                     className={`mt-5 max-w-md text-sm leading-relaxed text-gray-500 transition-all duration-[780ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       welcomeShowSubtitle ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"

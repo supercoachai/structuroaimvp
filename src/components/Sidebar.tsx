@@ -10,7 +10,6 @@ import {
   CalendarIcon,
   BellIcon,
   FireIcon,
-  TrophyIcon,
   Cog6ToothIcon,
   InformationCircleIcon,
   ChevronDownIcon,
@@ -34,7 +33,7 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
   const pathname = usePathname();
   const [secondaryOpen, setSecondaryOpen] = useState(false);
 
-  /** Kern-loop: dagstart, taken, focus. Beloningen staat onder “Meer opties”. */
+  /** Kern-loop: dagstart, taken, focus. Overige routes onder “Meer opties”. */
   const primaryNavItems: MenuItem[] = useMemo(
     () => [
       {
@@ -76,13 +75,6 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
   /** Ondersteunend: standaard ingeklapt onder “Meer opties” (expanded sidebar). */
   const secondaryNavItems: MenuItem[] = useMemo(
     () => [
-      {
-        name: t('sidebar.nav.rewards'),
-        href: '/gamification',
-        icon: TrophyIcon,
-        description: t('sidebar.nav.rewardsDesc'),
-        accent: '#d97706',
-      },
       {
         name: t('sidebar.nav.overview'),
         href: '/',

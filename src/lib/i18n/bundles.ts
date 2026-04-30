@@ -36,11 +36,14 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       tasks: "Taken",
       focus: "Focus",
       shutdown: "Afsluiten",
+      shutdownEvening: "Afsluiter",
     },
     layout: {
       settings: "Instellingen",
       logout: "Uitloggen",
       mainNavAria: "Hoofdnavigatie",
+      windDownBanner: "Klaar voor vandaag? Sluit je dag af",
+      windDownBannerCta: "Open afsluiter",
     },
     settings: {
       title: "Instellingen",
@@ -221,11 +224,14 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       tasks: "Tasks",
       focus: "Focus",
       shutdown: "Wind down",
+      shutdownEvening: "Wind down",
     },
     layout: {
       settings: "Settings",
       logout: "Log out",
       mainNavAria: "Main navigation",
+      windDownBanner: "Done for today? Wind down your day",
+      windDownBannerCta: "Open wind down",
     },
     settings: {
       title: "Settings",
