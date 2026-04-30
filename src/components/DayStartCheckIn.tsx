@@ -188,110 +188,52 @@ export default function DayStartCheckIn({
     }
   };
 
-  const taskMatchesDayEnergy = (task: any, day: string | null) => {
-    if (!day) return true;
-    const te = String(task.energyLevel || "").toLowerCase();
-    if (te === "low" || te === "medium" || te === "high") return te === day;
-    const { level: clevel } = getTaskComplexity(task);
-    if (day === "low") return clevel <= 2;
-    if (day === "medium") return clevel === 3;
-    if (day === "high") return clevel >= 4;
-    return false;
+  const getEnergyRankForSuggestions = (task: any): number => {
+    const e = String(task?.energyLevel || "").toLowerCase();
+    if (e === "high") return 0;
+    if (e === "medium") return 1;
+    if (e === "low") return 2;
+    return 3;
   };
 
-  /** Suggesties voor dagstart: laag = vooral makkelijk; normaal = makkelijk + normaal; hoog = alles. */
-  const suggestionTaskAllowedForDayEnergy = (task: any, day: string | null) => {
-    if (!day) return true;
-    if (day === 'high') return true;
-    if (day === 'low') return taskMatchesDayEnergy(task, 'low');
-    return taskMatchesDayEnergy(task, 'low') || taskMatchesDayEnergy(task, 'medium');
-  };
-
-  /** Bij lage dag-energie: als er geen strikt 'lage' taken zijn, ook normale energie-tonen tonen. */
-  const suggestionTaskAllowedForDayEnergyLowWithFallback = (task: any, relaxedIncludeMedium: boolean) => {
-    if (relaxedIncludeMedium) {
-      return taskMatchesDayEnergy(task, 'low') || taskMatchesDayEnergy(task, 'medium');
-    }
-    return suggestionTaskAllowedForDayEnergy(task, 'low');
+  const getImpactRankForSuggestions = (task: any): number => {
+    const impact = String(task?.impact || "").trim();
+    // Hoge impact eerst
+    if (impact === "🚀" || impact === "🔥" || impact === "🎯") return 0;
+    if (impact === "💪" || impact === "⚡" || impact === "✅") return 1;
+    if (impact === "🌱" || impact === "🧩" || impact === "📝") return 2;
+    return 3;
   };
 
   // Filter taken op basis van energie-niveau (PRIMAIR op energy_level veld)
   // BELANGRIJK: Dit is ALLEEN voor UI weergave - taken worden NOOIT verwijderd uit de data!
   const getFilteredTasks = () => {
     if (!energyLevel) return [];
-    // Filter: toon alleen taken ZONDER prioriteit (1, 2, 3) - taken met prioriteit staan al in de slots
-    // Gebruik expliciete checks: !task.priority || task.priority === 0 || task.priority > 3
-    const inFocusIds = new Set(
+    // Alleen open + actieve taken. Sluit alleen taken uit die al in today's focus-slots zitten.
+    const selectedIds = new Set(
       [1, 2, 3].map((n) => top3Tasks[n]?.id).filter(Boolean) as string[]
     );
 
-    const buildBaseTasks = (relaxedLowIncludeMedium: boolean) =>
-      deferredTasksForSuggestions.filter((t: any) => {
-        if (!t || !t.id || !t.title) return false;
-        if (t.done || t.notToday || t.source === 'medication' || t.source === 'event') return false;
-        if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
-
-        const hasPriority =
-          t.priority != null && t.priority != 0 && (t.priority == 1 || t.priority == 2 || t.priority == 3);
-        if (hasPriority && !inFocusIds.has(t.id)) return false;
-
-        const energyOk =
-          energyLevel === 'low'
-            ? suggestionTaskAllowedForDayEnergyLowWithFallback(t, relaxedLowIncludeMedium)
-            : suggestionTaskAllowedForDayEnergy(t, energyLevel);
-        if (!energyOk) return false;
-
-        return true;
-      });
-
-    let baseTasks = buildBaseTasks(false);
-    if (energyLevel === 'low' && baseTasks.length === 0) {
-      baseTasks = buildBaseTasks(true);
-    }
-
-    // Alle taken zijn altijd zichtbaar en selecteerbaar – alleen de volgorde hangt af van energie
-    const withComplexity = baseTasks.map((t: any) => ({
-      task: t,
-      complexity: getTaskComplexity(t),
-    }));
-
-    if (energyLevel === 'low') {
-      // Lage energie: makkelijke eerst, moeilijke onderaan (allemaal selecteerbaar)
-      const sorted = withComplexity.sort((a: any, b: any) => {
-        if (a.complexity.level !== b.complexity.level) {
-          return a.complexity.level - b.complexity.level;
-        }
-        const durA = a.task.duration || a.task.estimatedDuration || 999;
-        const durB = b.task.duration || b.task.estimatedDuration || 999;
-        return durA - durB;
-      });
-      return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
-    }
-
-    if (energyLevel === 'high') {
-      // Hoge energie: moeilijk eerst, dan makkelijk
-      const sorted = withComplexity.sort((a: any, b: any) => {
-        if (a.complexity.level !== b.complexity.level) {
-          return b.complexity.level - a.complexity.level;
-        }
-        const durA = a.task.duration || a.task.estimatedDuration || 0;
-        const durB = b.task.duration || b.task.estimatedDuration || 0;
-        return durB - durA;
-      });
-      return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
-    }
-
-    // Medium: eerst medium (oranje/geel), dan makkelijk (groen), dan moeilijk (rood) – allemaal zichtbaar
-    const sortOrder = (level: string) => (level === 'medium' || !level ? 0 : level === 'low' ? 1 : 2);
-    const sorted = withComplexity.sort((a: any, b: any) => {
-      const orderA = sortOrder(a.task.energyLevel || '');
-      const orderB = sortOrder(b.task.energyLevel || '');
-      if (orderA !== orderB) return orderA - orderB;
-      const durA = a.task.duration || a.task.estimatedDuration || 999;
-      const durB = b.task.duration || b.task.estimatedDuration || 999;
-      return durA - durB;
+    const baseTasks = deferredTasksForSuggestions.filter((t: any) => {
+      if (!t || !t.id || !t.title) return false;
+      if (t.done || t.notToday || t.not_today) return false;
+      if (t.source === "medication" || t.source === "event") return false;
+      if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
+      if (selectedIds.has(t.id)) return false;
+      return true;
     });
-    return sorted.map((item) => item.task).slice(0, MAX_DAYSTART_SUGGESTIONS);
+
+    const sorted = [...baseTasks].sort((a: any, b: any) => {
+      const energyDiff = getEnergyRankForSuggestions(a) - getEnergyRankForSuggestions(b);
+      if (energyDiff !== 0) return energyDiff;
+      const impactDiff = getImpactRankForSuggestions(a) - getImpactRankForSuggestions(b);
+      if (impactDiff !== 0) return impactDiff;
+      const durA = a.duration || a.estimatedDuration || 999;
+      const durB = b.duration || b.estimatedDuration || 999;
+      if (durA !== durB) return durA - durB;
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
+    return sorted.slice(0, MAX_DAYSTART_SUGGESTIONS);
   };
 
   const allRankedSuggestions = useMemo(
@@ -305,21 +247,14 @@ export default function DayStartCheckIn({
 
   const mergedSuggestionItems = useMemo((): MergedSuggestionItem[] => {
     if (!energyLevel) return [];
-    const synthetic = (energy: string | null) => ({ energyLevel: energy || 'medium' });
-    let dagFiltered = dagafsluiterRows.filter((d) =>
-      suggestionTaskAllowedForDayEnergy(synthetic(d.suggestedTaskEnergy), energyLevel)
+    const dagTitles = new Set(
+      dagafsluiterRows.map((d) => String(d.content || "").trim().toLowerCase())
     );
-    if (energyLevel === 'low' && dagFiltered.length === 0) {
-      dagFiltered = dagafsluiterRows.filter((d) =>
-        suggestionTaskAllowedForDayEnergyLowWithFallback(synthetic(d.suggestedTaskEnergy), true)
-      );
-    }
-    const dagTitles = new Set(dagFiltered.map((d) => d.content.trim().toLowerCase()));
     const tasksPart = allRankedSuggestions.filter(
       (t) => !dagTitles.has(String(t.title ?? '').trim().toLowerCase())
     );
     const items: MergedSuggestionItem[] = [
-      ...dagFiltered.map((row) => ({ kind: 'dagafsluiter' as const, row })),
+      ...dagafsluiterRows.map((row) => ({ kind: 'dagafsluiter' as const, row })),
       ...tasksPart.map((task) => ({ kind: 'task' as const, task })),
     ];
     return items.slice(0, MAX_DAYSTART_SUGGESTIONS);

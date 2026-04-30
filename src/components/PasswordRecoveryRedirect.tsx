@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 /**
  * Na een reset-link in de mail: implicit flow zet soms tokens in de hash op /login.
@@ -19,7 +18,8 @@ export function PasswordRecoveryRedirect() {
   }, [pathname]);
 
   useEffect(() => {
-    const supabase = createClient();
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
     const goToWachtwoordInstellen = () => {
       const p = pathnameRef.current ?? "";
@@ -29,35 +29,45 @@ export function PasswordRecoveryRedirect() {
       router.replace("/auth/wachtwoord-instellen");
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        goToWachtwoordInstellen();
+    void import("@/lib/supabase/client").then(({ createClient }) => {
+      if (cancelled) return;
+      const supabase = createClient();
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          goToWachtwoordInstellen();
+        }
+      });
+      unsubscribe = () => subscription.unsubscribe();
+
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      if (hash.includes("type=recovery")) {
+        requestAnimationFrame(() => {
+          void supabase.auth.getSession().then(({ data }) => {
+            if (cancelled) return;
+            if (data.session) {
+              goToWachtwoordInstellen();
+              try {
+                window.history.replaceState(
+                  null,
+                  "",
+                  window.location.pathname + window.location.search
+                );
+              } catch {
+                /* ignore */
+              }
+            }
+          });
+        });
       }
     });
 
-    const hash = typeof window !== "undefined" ? window.location.hash : "";
-    if (hash.includes("type=recovery")) {
-      requestAnimationFrame(() => {
-        void supabase.auth.getSession().then(({ data }) => {
-          if (data.session) {
-            goToWachtwoordInstellen();
-            try {
-              window.history.replaceState(
-                null,
-                "",
-                window.location.pathname + window.location.search
-              );
-            } catch {
-              /* ignore */
-            }
-          }
-        });
-      });
-    }
-
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [router]);
 
   return null;

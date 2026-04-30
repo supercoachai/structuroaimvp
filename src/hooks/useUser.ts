@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 const AUTH_TIMEOUT_MS = 8000;
@@ -11,8 +10,8 @@ export function useUser(): { user: User | null; loading: boolean } {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
     const done = (u: User | null) => {
       if (!cancelled) {
@@ -23,6 +22,10 @@ export function useUser(): { user: User | null; loading: boolean } {
 
     const getInitial = async () => {
       try {
+        const { createClient } = await import("@/lib/supabase/client");
+        if (cancelled) return;
+        const supabase = createClient();
+
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("auth_timeout")), AUTH_TIMEOUT_MS)
         );
@@ -35,6 +38,14 @@ export function useUser(): { user: User | null; loading: boolean } {
           });
         const u = await Promise.race([userPromise, timeoutPromise]);
         done(u);
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (!cancelled) {
+            setUser(session?.user ?? null);
+            setLoading(false);
+          }
+        });
+        unsubscribe = () => subscription.unsubscribe();
       } catch (err) {
         console.warn("useUser: auth check failed or timed out, continuing without user", err);
         done(null);
@@ -43,16 +54,9 @@ export function useUser(): { user: User | null; loading: boolean } {
 
     getInitial();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
-
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, []);
 

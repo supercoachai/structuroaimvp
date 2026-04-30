@@ -34,7 +34,6 @@ import {
   ClockIcon,
   InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import confetti from 'canvas-confetti';
 
 const countdownDigitStyle = `
   @keyframes structuro-countdown-pulse {
@@ -48,6 +47,23 @@ const countdownDigitStyle = `
 `;
 
 function FocusContent() {
+  const fireCompletionConfetti = useCallback(() => {
+    void import('canvas-confetti')
+      .then(({ default: confetti }) => {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#3B82F6', '#8B5CF6'],
+          disableForReducedMotion: true,
+          zIndex: 10002,
+        });
+      })
+      .catch((err) => {
+        console.warn('confetti import failed', err);
+      });
+  }, []);
+
   const { locale, t: tr } = useI18n();
   const router = useRouter();
   const searchParams = useClientSearchParams();
@@ -423,14 +439,7 @@ function FocusContent() {
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
         durationPlanned: duration, xp: gainXp,
       });
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.6 },
-        colors: ['#10B981', '#3B82F6', '#8B5CF6'],
-        disableForReducedMotion: true,
-        zIndex: 10002,
-      });
+      fireCompletionConfetti();
       setIsAirlockActive(true);
     } catch (err) {
       console.error("Error completing task:", err);

@@ -1,4 +1,5 @@
-import { createServerClient } from "@supabase/ssr";
+// Direct server-entry import voorkomt dat browser-client code in Edge-bundel meegetrokken wordt.
+import { createServerClient } from "@supabase/ssr/dist/module/createServerClient";
 import { NextResponse, type NextRequest } from "next/server";
 import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase/authStorage";
 import {

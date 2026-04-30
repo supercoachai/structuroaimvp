@@ -83,7 +83,7 @@ export default function HomeCalm() {
     return first || null;
   };
 
-  // Haal gebruikersnaam op bij mount (uit localStorage, fallback naar Supabase auth metadata)
+  // Haal gebruikersnaam op bij mount (localStorage -> profiles.display_name -> auth metadata)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -97,13 +97,39 @@ export default function HomeCalm() {
       return;
     }
 
-    // Fallback: naam uit Supabase user_metadata (zodat je na opnieuw inloggen niet opnieuw hoeft in te vullen).
+    // Fallback: naam uit Supabase profile, daarna user_metadata.
     (async () => {
       try {
         const supabase = createClient();
         const {
           data: { session },
         } = await supabase.auth.getSession();
+        const userId = session?.user?.id ?? null;
+
+        if (userId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name, preferred_name, full_name')
+            .eq('id', userId)
+            .maybeSingle();
+
+          const profileName =
+            (typeof profile?.display_name === 'string' && profile.display_name.trim()) ||
+            (typeof profile?.preferred_name === 'string' && profile.preferred_name.trim()) ||
+            (typeof (profile as any)?.full_name === 'string' && (profile as any).full_name.trim()) ||
+            null;
+
+          if (profileName) {
+            localStorage.setItem('structuro_user_name', profileName);
+            const first = getFirstName(profileName);
+            if (first) {
+              setUserName(first);
+              setShowNamePrompt(false);
+              return;
+            }
+          }
+        }
+
         const metaFullName =
           (session?.user?.user_metadata as any)?.full_name ??
           (session?.user?.user_metadata as any)?.fullName ??

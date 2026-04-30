@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { syncAnalyticsExclusionFromSessionEmail } from "@/lib/analyticsInternal";
 
 /**
@@ -9,22 +8,30 @@ import { syncAnalyticsExclusionFromSessionEmail } from "@/lib/analyticsInternal"
  */
 export function AnalyticsInternalBridge() {
   useEffect(() => {
-    const supabase = createClient();
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
     const apply = (email: string | null | undefined) => {
       syncAnalyticsExclusionFromSessionEmail(email ?? null);
     };
 
-    void supabase.auth.getSession().then(({ data }) => {
-      apply(data.session?.user?.email ?? null);
-    });
+    void import("@/lib/supabase/client").then(({ createClient }) => {
+      if (cancelled) return;
+      const supabase = createClient();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      apply(session?.user?.email ?? null);
+      void supabase.auth.getSession().then(({ data }) => {
+        if (!cancelled) apply(data.session?.user?.email ?? null);
+      });
+
+      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!cancelled) apply(session?.user?.email ?? null);
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
     });
 
     return () => {
-      sub.subscription.unsubscribe();
+      cancelled = true;
+      unsubscribe?.();
     };
   }, []);
 
