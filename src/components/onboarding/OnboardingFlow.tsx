@@ -72,7 +72,7 @@ const OB_INTRO_P =
   "font-normal text-[#4A5568] text-base leading-[1.65] tracking-normal";
 
 export default function OnboardingFlow() {
-  const { t, locale } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const welcomeTaglineTyped = useMemo(() => t("onboarding.welcomeTagline"), [t]);
   const welcomeSuffix = useMemo(() => t("onboarding.welcomeSuffix"), [t]);
   const microDemoSteps = useMemo(
@@ -680,6 +680,13 @@ export default function OnboardingFlow() {
             toast(t("onboarding.toastNameErr", { detail: String(error) }));
             return;
           }
+        } catch (e) {
+          toast(
+            t("onboarding.toastNameErr", {
+              detail: e instanceof Error ? e.message : String(e),
+            })
+          );
+          return;
         } finally {
           setSaving(false);
         }
@@ -835,9 +842,33 @@ export default function OnboardingFlow() {
     window.location.assign("/");
   };
 
+  const obLanguageToggle = (
+    <div
+      className="absolute right-4 top-6 z-30 flex gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-0.5 text-xs font-semibold shadow-sm backdrop-blur-sm"
+      role="group"
+      aria-label={t("settings.languageTitle")}
+    >
+      <button
+        type="button"
+        onClick={() => setLocale("nl")}
+        className={`rounded-md px-2 py-1 ${locale === "nl" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+      >
+        NL
+      </button>
+      <button
+        type="button"
+        onClick={() => setLocale("en")}
+        className={`rounded-md px-2 py-1 ${locale === "en" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+      >
+        EN
+      </button>
+    </div>
+  );
+
   if (!hydrated || (!isLocalMode && userLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 text-slate-500">
+      <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 pt-[max(0px,env(safe-area-inset-top))] text-slate-500">
+        {obLanguageToggle}
         <div className="animate-pulse text-base">{t("onboarding.loading")}</div>
       </div>
     );
@@ -845,7 +876,8 @@ export default function OnboardingFlow() {
 
   if (!isLocalMode && !user?.id) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-50 to-blue-50 px-6 text-center text-slate-500">
+      <div className="relative min-h-screen flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-50 to-blue-50 px-6 pt-[max(3.5rem,env(safe-area-inset-top))] text-center text-slate-500">
+        {obLanguageToggle}
         <div className="animate-pulse text-base">{t("onboarding.redirectLogin")}</div>
         <p className="text-sm text-slate-400">{t("onboarding.noSession")}</p>
       </div>
@@ -869,6 +901,7 @@ export default function OnboardingFlow() {
     <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50 pt-[max(0px,env(safe-area-inset-top))] pb-[max(0px,env(safe-area-inset-bottom))]">
       <div className="flex min-h-0 flex-1 flex-col touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="relative min-h-0 flex-1 overflow-hidden">
+          {obLanguageToggle}
           {backBtn}
           <div
             className="flex h-full min-h-0"

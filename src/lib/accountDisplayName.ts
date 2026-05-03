@@ -16,33 +16,37 @@ export async function persistPreferredDisplayName(
     return { error: "Vul een naam in" };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      display_name: trimmed,
-      preferred_name: trimmed,
-      ...(user.email ? { email: user.email } : {}),
-    },
-    { onConflict: "id" }
-  );
-  if (error) {
-    return { error: error.message };
-  }
-
-  const { error: authError } = await supabase.auth.updateUser({
-    data: { full_name: trimmed },
-  });
-  if (authError) {
-    return { error: authError.message };
-  }
-
   try {
-    window.localStorage.setItem("structuro_user_name", trimmed);
-  } catch {
-    /* ignore */
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        display_name: trimmed,
+        preferred_name: trimmed,
+        ...(user.email ? { email: user.email } : {}),
+      },
+      { onConflict: "id" }
+    );
+    if (error) {
+      return { error: error.message };
+    }
+
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { full_name: trimmed },
+    });
+    if (authError) {
+      return { error: authError.message };
+    }
+
+    try {
+      window.localStorage.setItem("structuro_user_name", trimmed);
+    } catch {
+      /* ignore */
+    }
+    return { error: null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
   }
-  return { error: null };
 }
 
 /** Wis aanspreeknaam in profile, auth-metadata en localStorage. */

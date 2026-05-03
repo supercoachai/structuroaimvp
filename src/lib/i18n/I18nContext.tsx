@@ -25,10 +25,11 @@ function interpolate(
   template: string,
   vars?: Record<string, string>
 ): string {
-  if (!vars) return template;
-  let out = template;
+  const base = typeof template === "string" ? template : String(template ?? "");
+  if (!vars) return base;
+  let out = base;
   for (const [k, v] of Object.entries(vars)) {
-    out = out.split(`{${k}}`).join(v);
+    out = out.split(`{${k}}`).join(v == null ? "" : String(v));
   }
   return out;
 }
