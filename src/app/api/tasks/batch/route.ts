@@ -1,5 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { takeRateToken } from '@/lib/simpleRateBucket'
 import { NextResponse } from 'next/server'
+
+/** Per warme instance; echte KV-ratelimits volgen bij wachtlijst/OG. */
+const BATCH_MAX_PER_USER_PER_MIN = Number(
+  process.env.STRUCTURO_BATCH_RATE_MAX_PER_MIN ?? '40'
+)
 
 // Batch update voor het synchroniseren van meerdere taken tegelijk
 export async function POST(request: Request) {
@@ -8,6 +14,16 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (
+    !takeRateToken(
+      `tasks_batch:${user.id}`,
+      BATCH_MAX_PER_USER_PER_MIN,
+      60_000
+    )
+  ) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const { tasks } = await request.json()
@@ -69,7 +85,24 @@ export async function POST(request: Request) {
     return dbTask;
   })
 
-  // Upsert alle taken (insert of update)
+  const incomingIds = dbTasks.flatMap((t) => (t.id ? [t.id] : []))
+  if (incomingIds.length > 0) {
+    const { data: owned, error: ownErr } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('id', incomingIds)
+
+    if (ownErr) {
+      return NextResponse.json({ error: ownErr.message }, { status: 500 })
+    }
+
+    const ownedSet = new Set((owned ?? []).map((r) => r.id as string))
+    if (!incomingIds.every((id) => ownedSet.has(id))) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+    }
+  }
+
   const { data, error } = await supabase
     .from('tasks')
     .upsert(dbTasks, { onConflict: 'id' })
@@ -81,4 +114,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json(data)
 }
-

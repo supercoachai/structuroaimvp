@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useLayoutEffect, Suspense, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { migrateLocalStorageAfterSignup } from '@/lib/migrateLocalStorageAfterSignup';
+import { toast } from '@/components/Toast';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import {
   clearStructuroLocalModeCookie,
@@ -56,6 +59,22 @@ function mapPasswordResetError(message: string, t: (k: string) => string): strin
     return t('login.errRateLimit');
   }
   return message;
+}
+
+function migrateToastMessage(
+  t: (key: string, vars?: Record<string, string>) => string,
+  mig: { tasks: number; didCheckIn: boolean }
+): string | null {
+  if (mig.tasks > 0 && mig.didCheckIn) {
+    return t('login.migrateTasksAndDayToast', { n: String(mig.tasks) });
+  }
+  if (mig.tasks > 0) {
+    return t('login.migrateTasksToast', { n: String(mig.tasks) });
+  }
+  if (mig.didCheckIn) {
+    return t('login.migrateDayOnlyToast');
+  }
+  return null;
 }
 
 function LoginPageInner() {
@@ -188,8 +207,10 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
+          const mig = await migrateLocalStorageAfterSignup(data.user.id);
+          const notice = migrateToastMessage(t, mig);
+          if (notice) toast(notice);
           setMessage(t('login.signupDone'));
-          // Auto login na signup
           setTimeout(() => {
             clearStructuroLocalModeCookie();
             router.push('/');
@@ -204,6 +225,9 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
+          const mig = await migrateLocalStorageAfterSignup(data.user.id);
+          const notice = migrateToastMessage(t, mig);
+          if (notice) toast(notice);
           clearStructuroLocalModeCookie();
           router.push('/');
           router.refresh();
@@ -427,6 +451,14 @@ function LoginPageInner() {
           </div>
         )}
 
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-gray-100 pt-4 text-center text-xs text-slate-500">
+          <Link href="/privacy" className="font-medium text-blue-600 underline-offset-2 hover:underline">
+            {t('settings.legalPrivacy')}
+          </Link>
+          <Link href="/terms" className="font-medium text-blue-600 underline-offset-2 hover:underline">
+            {t('settings.legalTerms')}
+          </Link>
+        </div>
       </div>
     </div>
   );

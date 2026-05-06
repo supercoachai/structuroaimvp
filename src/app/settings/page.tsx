@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
@@ -24,6 +25,7 @@ import {
   registerPushSubscription,
   unregisterPushSubscription,
 } from '@/utils/pushNotifications';
+import { clearStoredConsent, hasAnalyticsConsent } from '@/lib/consentStorage';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -40,6 +42,18 @@ export default function SettingsPage() {
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission | 'unsupported'>('unsupported');
   const [notificationBusy, setNotificationBusy] = useState(false);
+  const [consentSnapshot, setConsentSnapshot] = useState(false);
+  const [confirmAccountDelete, setConfirmAccountDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [accountDeleteBusy, setAccountDeleteBusy] = useState(false);
+
+  useEffect(() => {
+    const syncConsent = () => setConsentSnapshot(hasAnalyticsConsent());
+    syncConsent();
+    window.addEventListener('structuro_consent_changed', syncConsent as EventListener);
+    return () =>
+      window.removeEventListener('structuro_consent_changed', syncConsent as EventListener);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +232,51 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetCookieChoice = () => {
+    clearStoredConsent();
+    toast(t('settings.toastConsentReset'));
+  };
+
+  const accountDeleteWord = t('settings.accountDeleteWord');
+
+  const cancelAccountDelete = () => {
+    setConfirmAccountDelete(false);
+    setDeleteConfirmText('');
+  };
+
+  const handleAccountDelete = async () => {
+    if (!hasSupabaseSession) return;
+    if (isProtectedAccount) {
+      toast(t('settings.toastProtected'));
+      return;
+    }
+    if (!confirmAccountDelete) {
+      setConfirmAccountDelete(true);
+      setDeleteConfirmText('');
+      return;
+    }
+    if (deleteConfirmText.trim().toLowerCase() !== accountDeleteWord.trim().toLowerCase()) {
+      toast(t('settings.toastTypeConfirm', { word: accountDeleteWord }));
+      return;
+    }
+    setAccountDeleteBusy(true);
+    try {
+      const res = await fetch('/api/account/delete', { method: 'POST', credentials: 'include' });
+      if (res.status === 204) {
+        toast(t('settings.accountDeleteDone'));
+        await performClientLogout(router);
+        return;
+      }
+      if (res.status === 503) {
+        toast(t('settings.accountDeleteUnavailable'));
+        return;
+      }
+      toast(t('settings.accountDeleteFail'));
+    } finally {
+      setAccountDeleteBusy(false);
+    }
+  };
+
   const handleEnableNotifications = async () => {
     if (notificationBusy) return;
     if (notificationPermission === 'unsupported') {
@@ -359,6 +418,27 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          <section className="mb-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+            <h2 className="mb-1 text-base font-semibold text-slate-800">
+              {t('settings.analyticsConsentTitle')}
+            </h2>
+            <p className="mb-4 text-balance text-sm text-slate-500">{t('settings.analyticsConsentHint')}</p>
+            <p className="mb-4 text-sm text-slate-700">
+              {t('settings.analyticsConsentStatus', {
+                status: consentSnapshot
+                  ? t('settings.analyticsConsentStatusOn')
+                  : t('settings.analyticsConsentStatusOff'),
+              })}
+            </p>
+            <button
+              type="button"
+              onClick={handleResetCookieChoice}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-[0.98]"
+            >
+              {t('settings.analyticsConsentResetCta')}
+            </button>
+          </section>
+
           {/* Kaart 1: Jouw profiel */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
             <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.displayNameTitle')}</h2>
@@ -486,9 +566,76 @@ export default function SettingsPage() {
             )}
           </section>
 
+          {hasSupabaseSession ? (
+            <section className="mb-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+              <h2 className="mb-1 text-base font-semibold text-slate-800">
+                {t('settings.accountDeleteTitle')}
+              </h2>
+              <p className="mb-4 text-balance text-sm leading-relaxed text-slate-500">
+                {t('settings.accountDeleteHint')}
+              </p>
+              {isProtectedAccount ? (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+                  {t('settings.wipeProtected')}
+                </div>
+              ) : null}
+              {!confirmAccountDelete ? (
+                <button
+                  type="button"
+                  onClick={handleAccountDelete}
+                  disabled={
+                    isProtectedAccount === true || accountDeleteBusy || !hasSupabaseSession
+                  }
+                  className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {t('settings.accountDeleteCta')}
+                </button>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="text-sm text-balance text-slate-600">
+                    {t('settings.accountDeleteConfirmLine', { word: accountDeleteWord })}
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder={accountDeleteWord}
+                    className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleAccountDelete()}
+                      disabled={accountDeleteBusy}
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+                    >
+                      {accountDeleteBusy ? t('settings.accountDeleteBusy') : t('settings.accountDeleteCta')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelAccountDelete}
+                      disabled={accountDeleteBusy}
+                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.98]"
+                    >
+                      {t('settings.cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+          ) : null}
+
           <p className="mt-8 text-center text-xs text-slate-400 leading-relaxed text-balance">
             {t('settings.footerPrivacy')}
           </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium">
+            <Link href="/privacy" className="text-blue-600 underline-offset-2 hover:underline">
+              {t('settings.legalPrivacy')}
+            </Link>
+            <Link href="/terms" className="text-blue-600 underline-offset-2 hover:underline">
+              {t('settings.legalTerms')}
+            </Link>
+          </div>
         </main>
       </div>
     </AppLayout>

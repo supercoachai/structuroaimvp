@@ -2,17 +2,19 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { ONBOARDING_VERSION_CURRENT } from "@/lib/onboardingVersion";
+import type { Locale } from "@/lib/i18n/types";
+import { resolveOnboardingDisplayName } from "@/lib/user";
 import type { User } from "@supabase/supabase-js";
 
 /**
- * Afronden intro: onboarding-vlag, versie, en weergavenaam (fallback: Gebruiker).
- * upsert zodat ontbrekende profile-rij niet blokkeert.
+ * Afronden intro: onboarding-vlag, versie, en weergavenaam (fallback via resolveOnboardingDisplayName).
  */
 export async function completeOnboardingProfile(
   user: User,
-  displayName: string
+  displayName: string,
+  locale: Locale = "nl"
 ): Promise<{ error: string | null }> {
-  const clean = (displayName.trim() || "Gebruiker").slice(0, 200);
+  const clean = resolveOnboardingDisplayName(user, displayName, locale).slice(0, 200);
   try {
     const supabase = createClient();
     const { error } = await supabase.from("profiles").upsert(

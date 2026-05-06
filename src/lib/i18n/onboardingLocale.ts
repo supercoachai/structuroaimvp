@@ -124,7 +124,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     redirectLogin: "Je wordt doorgestuurd naar inloggen…",
     noSession: "Geen actieve sessie. Even geduld.",
     toastNameErr: "Kon naam niet opslaan: {detail}",
-    defaultUser: "Gebruiker",
+    defaultUser: "daar",
   },
   en: {
     welcomeH1: "Welcome to Structuro",
@@ -248,6 +248,6 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     redirectLogin: "Redirecting you to sign in…",
     noSession: "No active session. One moment.",
     toastNameErr: "Could not save name: {detail}",
-    defaultUser: "User",
+    defaultUser: "there",
   },
 };

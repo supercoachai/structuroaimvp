@@ -1,6 +1,7 @@
 // LocalStorage helpers voor taken opslag (tijdelijk zonder Supabase)
 import { mockTasks, MockTask } from './mockData';
 import { notifyTaskUpdate } from './taskSync';
+import { getCalendarDateAmsterdam } from '@/lib/dagstartCookie';
 
 const STORAGE_KEY = 'structuro_tasks';
 const STORAGE_KEY_CHECKINS = 'structuro_daily_checkins';
@@ -445,7 +446,7 @@ export function saveCheckInToStorage(checkIn: any): void {
   
   try {
     const checkIns = getCheckInsFromStorage();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getCalendarDateAmsterdam();
     
     // Vervang bestaande check-in voor vandaag
     const filtered = checkIns.filter((ci: any) => ci.date !== today);
@@ -464,7 +465,7 @@ export function saveCheckInToStorage(checkIn: any): void {
 // Haal check-in voor vandaag op
 export function getTodayCheckIn(): any | null {
   const checkIns = getCheckInsFromStorage();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCalendarDateAmsterdam();
   return checkIns.find((ci: any) => ci.date === today) || null;
 }
 

@@ -11,6 +11,15 @@ import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 
+function isPublicLegalDocsPath(pathname: string): boolean {
+  return (
+    pathname === "/privacy" ||
+    pathname.startsWith("/privacy/") ||
+    pathname === "/terms" ||
+    pathname.startsWith("/terms/")
+  );
+}
+
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const projectRef = url.replace(/^https:\/\//, "").split(".")[0];
@@ -119,7 +128,7 @@ export async function updateSession(request: NextRequest) {
    * voortgang via cookie (middleware leest geen localStorage).
    */
   if (hasLocalMode && !user) {
-    if (isLoginPath || isAuthPath) {
+    if (isLoginPath || isAuthPath || isPublicLegalDocsPath(pathname)) {
       return supabaseResponse;
     }
     return applyLocalAnonymousOnboardingGuard(
@@ -133,31 +142,26 @@ export async function updateSession(request: NextRequest) {
   let profileLastDagstartDate: string | null | undefined = undefined;
   let profileRowReadOk = false;
   if (user) {
-    const { data: obData, error: obError } = await supabase
+    const { data: profileRow, error: profileErr } = await supabase
       .from("profiles")
-      .select("onboarding_completed, onboarding_version")
+      .select(
+        "onboarding_completed, onboarding_version, last_dagstart_date"
+      )
       .eq("id", user.id)
       .maybeSingle();
-    if (!obError) {
-      onboardingCompleted = isProfileOnboardingUpToDate(
-        obData?.onboarding_completed,
-        obData?.onboarding_version as number | null | undefined
-      );
-    } else {
-      onboardingCompleted = false;
-    }
 
-    const { data: dsData, error: dsError } = await supabase
-      .from("profiles")
-      .select("last_dagstart_date")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (!dsError) {
+    if (!profileErr && profileRow) {
+      onboardingCompleted = isProfileOnboardingUpToDate(
+        profileRow.onboarding_completed,
+        profileRow.onboarding_version as number | null | undefined
+      );
       profileRowReadOk = true;
       profileLastDagstartDate =
-        dsData?.last_dagstart_date != null
-          ? String(dsData.last_dagstart_date).slice(0, 10)
+        profileRow.last_dagstart_date != null
+          ? String(profileRow.last_dagstart_date).slice(0, 10)
           : null;
+    } else if (profileErr) {
+      onboardingCompleted = false;
     }
 
     const forceOnboardingDev =
@@ -182,7 +186,7 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
 
   if (!hasSession) {
-    if (isLoginPath || isAuthPath) {
+    if (isLoginPath || isAuthPath || isPublicLegalDocsPath(pathname)) {
       return supabaseResponse;
     }
     const url = request.nextUrl.clone();
@@ -199,7 +203,11 @@ export async function updateSession(request: NextRequest) {
     const onPasswordRecovery =
       pathname === "/auth/wachtwoord-instellen" ||
       pathname.startsWith("/auth/wachtwoord-instellen/");
-    if (!pathname.startsWith("/onboarding") && !onPasswordRecovery) {
+    if (
+      !pathname.startsWith("/onboarding") &&
+      !onPasswordRecovery &&
+      !isPublicLegalDocsPath(pathname)
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
@@ -277,7 +285,7 @@ function applyLocalAnonymousOnboardingGuard(
   const isLoginPath = pathname.startsWith("/login");
   const isAuthPath = pathname.startsWith("/auth");
 
-  if (isLoginPath || isAuthPath) {
+  if (isLoginPath || isAuthPath || isPublicLegalDocsPath(pathname)) {
     return response;
   }
 
@@ -327,6 +335,8 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/sw.js" ||

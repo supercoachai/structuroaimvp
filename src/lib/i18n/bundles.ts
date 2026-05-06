@@ -5,6 +5,17 @@ import { localeAddons } from "./localeAddons";
 export const BUNDLES: Record<Locale, Record<string, unknown>> = {
   nl: {
     brand: { tagline: "Jouw houvast in chaos." },
+    consent: {
+      title: "Cookies en statistiek",
+      body:
+        "Google Analytics gebruiken we alleen als je akkoord geeft. Je kiest nu of later in het menu.",
+      acceptAll: "Accepteer alles",
+      essentialOnly: "Alleen noodzakelijk",
+      adjust: "Aanpassen",
+      onlyAnalytics: "Alleen statistiek",
+      onlyMarketing: "Alleen marketing (nu niet actief)",
+      closeAdjust: "Klaar met aanpassen",
+    },
     sidebar: {
       today: "Vandaag",
       moreOptions: "Meer opties",
@@ -113,6 +124,30 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsEnableFail: "Kon meldingen niet inschakelen: {detail}",
       notificationsDisabled: "Push-abonnement verwijderd.",
       notificationsDisableFail: "Kon meldingen niet uitschakelen: {detail}",
+      analyticsConsentTitle: "Statistiek en cookies",
+      analyticsConsentHint:
+        "Google Analytics gebruiken we alleen na je akkoord. Je eerste keuze zie je in de banner onderaan.",
+      analyticsConsentStatus: "Huidige keuze: {status}",
+      analyticsConsentStatusOn: "statistiek toegestaan",
+      analyticsConsentStatusOff: "alleen noodzakelijke opslag op dit apparaat",
+      analyticsConsentResetCta: "Cookiekeuze opnieuw instellen",
+      accountDeleteTitle: "Account volledig verwijderen",
+      accountDeleteHint:
+        "Alle taken, dagstarts, afsluiters, parked thoughts en je profiel worden uit onze database verwijderd. Je kunt niet terug.",
+      accountDeleteCta: "Account verwijderen",
+      accountDeleteWord: "VERWIJDER",
+      accountDeleteConfirmLine:
+        "Typ {word} om te bevestigen. Dit wist je hele account bij de verwerker.",
+      accountDeleteBusy: "Verwijderen…",
+      accountDeleteDone: "Je account is verwijderd.",
+      accountDeleteFail:
+        "Kon account niet verwijderen. Probeer later opnieuw of neem contact op.",
+      accountDeleteUnavailable:
+        "Account verwijderen is nu niet beschikbaar. Controleer de serverconfiguratie of probeer later opnieuw.",
+      toastConsentReset:
+        "Cookiekeuze gereset. De banner verschijnt weer zodra je de pagina opnieuw laadt.",
+      legalPrivacy: "Privacybeleid",
+      legalTerms: "Algemene voorwaarden",
     },
     login: {
       taglineBrand: "Structuro",
@@ -145,6 +180,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Nieuwe accounts zijn op dit moment niet beschikbaar. Neem contact op als je toegang nodig hebt.",
       signupDone:
         "Account aangemaakt! Check je email voor verificatie (als email verificatie is ingeschakeld).",
+      migrateTasksToast: "We hebben {n} taken meegenomen naar je account.",
+      migrateTasksAndDayToast:
+        "We hebben {n} taken meegenomen en je lokale dagstart gezet voor vandaag.",
+      migrateDayOnlyToast:
+        "Je lokale dagstart voor vandaag staat nu in je account.",
       errInvalidCreds:
         "Ongeldige inloggegevens. Controleer je email en wachtwoord.",
       errEmailConfirm: "Email nog niet bevestigd. Check je inbox.",
@@ -171,6 +211,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emptyTitle: "Doe dit nu. Klein is genoeg.",
       emptyHint: "Voeg een kleine taak toe om vandaag te beginnen",
       emptyCta: "+ Voeg je eerste taak toe",
+      parkFabAria: "Gedachte parkeren",
       nameModalTitle: "Welkom bij Structuro!",
       nameModalBody: "Hoe wil je dat we je aanspreken?",
       nameModalPh: "Je voornaam...",
@@ -193,6 +234,17 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
   },
   en: {
     brand: { tagline: "Your anchor in the chaos." },
+    consent: {
+      title: "Cookies and analytics",
+      body:
+        "We only load Google Analytics if you opt in. Your choice is saved on this device.",
+      acceptAll: "Accept all",
+      essentialOnly: "Essential only",
+      adjust: "Adjust",
+      onlyAnalytics: "Analytics only",
+      onlyMarketing: "Marketing only (inactive today)",
+      closeAdjust: "Done adjusting",
+    },
     sidebar: {
       today: "Today",
       moreOptions: "More options",
@@ -301,6 +353,30 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsEnableFail: "Could not enable notifications: {detail}",
       notificationsDisabled: "Push subscription removed.",
       notificationsDisableFail: "Could not disable notifications: {detail}",
+      analyticsConsentTitle: "Statistics and cookies",
+      analyticsConsentHint:
+        "We load Google Analytics only after you consent. Your first choice appears in the banner at the bottom.",
+      analyticsConsentStatus: "Current choice: {status}",
+      analyticsConsentStatusOn: "analytics allowed",
+      analyticsConsentStatusOff: "essential storage on this device only",
+      analyticsConsentResetCta: "Reset cookie choice",
+      accountDeleteTitle: "Delete my account completely",
+      accountDeleteHint:
+        "This removes tasks, day starts, shutdowns, parked thoughts, and your profile from our systems. You cannot undo this.",
+      accountDeleteCta: "Delete account",
+      accountDeleteWord: "DELETE",
+      accountDeleteConfirmLine:
+        "Type {word} to confirm. This erases your entire account at the processor.",
+      accountDeleteBusy: "Deleting…",
+      accountDeleteDone: "Your account has been removed.",
+      accountDeleteFail:
+        "Could not delete the account. Try again later or contact support.",
+      accountDeleteUnavailable:
+        "Account deletion is not available right now. Check server configuration or try again later.",
+      toastConsentReset:
+        "Cookie choice cleared. Reload the page to see the banner again.",
+      legalPrivacy: "Privacy policy",
+      legalTerms: "Terms of use",
     },
     login: {
       taglineBrand: "Structuro",
@@ -333,6 +409,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "New accounts are not available right now. Contact us if you need access.",
       signupDone:
         "Account created! Check your email for verification (if verification is enabled).",
+      migrateTasksToast: "We carried {n} tasks into your account.",
+      migrateTasksAndDayToast:
+        "We carried {n} tasks into your account and kept your local day start for today.",
+      migrateDayOnlyToast:
+        "Your local day start for today is now saved to your account.",
       errInvalidCreds: "Invalid sign-in details. Check your email and password.",
       errEmailConfirm: "Email not confirmed yet. Check your inbox.",
       errAlreadyRegistered: "This email is already registered.",
@@ -358,6 +439,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emptyTitle: "Do this now. Small is enough.",
       emptyHint: "Add a small task to get started today",
       emptyCta: "+ Add your first task",
+      parkFabAria: "Park a thought",
       nameModalTitle: "Welcome to Structuro!",
       nameModalBody: "How should we address you?",
       nameModalPh: "Your first name...",

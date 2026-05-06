@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { VisualViewportBridge } from "@/components/VisualViewportBridge";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import ConsentBanner from "@/components/ConsentBanner";
 import { TaskProvider } from "@/context/TaskContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { trackSessionAbandoned } from "@/utils/events";
@@ -84,6 +85,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         </Suspense>
         <VisualViewportBridge />
         <GoogleAnalytics />
+        <ConsentBanner />
         <TaskProvider>
           <SidebarProvider>
             <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>

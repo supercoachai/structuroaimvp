@@ -109,6 +109,17 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       enHigh: "Intensief",
       convertBusy: "Bezig…",
       convertCta: "Omzetten naar taak",
+      quickParkTitle: "Park een gedachte",
+      quickParkBody:
+        "Wil je deze gedachte even parkeren voor later?",
+      quickParkPlaceholder: "Wat hoofd je?",
+      quickParkCancel: "Annuleren",
+      quickParkPark: "Parkeren",
+      quickParkBusy: "Parken…",
+      quickParkCharCount: "{n} / 240 tekens",
+      pageEmptyTitle: "Nog niets geparkeerd",
+      pageEmptyHint:
+        "Tik op het blauwe plus-icoon op je startscherm, of parkeer vanuit focus.",
     },
     voorzorgs: {
       title: "Je hebt veel vandaag",
@@ -214,6 +225,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       quickOtherMinutesSr: "Ander aantal minuten",
       noTasksYet: "Je hebt nog geen taken. Voeg er hieronder één toe.",
       suggestionsTitle: "Suggesties voor vandaag",
+      suggestionsFiveContext:
+        "Vijf voorstellen die aansluiten bij je {energy} energie.",
+      openAllTasksModal: "Alle taken zien →",
+      allTasksModalTitle: "Alle taken",
+      allTasksModalClose: "Sluiten",
       reminderBadge: "Herinnering",
       showLess: "Minder tonen",
       showAll: "Toon alle taken",
@@ -243,6 +259,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       toastFocusErr: "Fout bij starten van focus sessie",
       toastFocusStarted: "Focus sessie gestart!",
       toastChecked: "Taak afgevinkt!",
+      quickCompleteImpactConfirm:
+        "Deze taak heeft veel impact of is je derde focuspunt. Wil je die nu afvinken zonder focusmodus?",
+      quickCompleteConfirmProceed: "Ja, afvinken",
+      quickCompleteFailed: "Geen internet of serverfout. Probeer het zo opnieuw.",
       toastReopened: "Taak teruggezet bij Alle open taken",
       toastCleared: "Voltooide taken van vandaag geleegd",
       confirmClear: "Weet je zeker dat je alle {n} voltooide taken van vandaag wilt verwijderen? Ze zijn daarna niet meer terug te halen.",
@@ -288,17 +308,17 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       openInfoAria: "Uitleg energie-zones en afvinken",
       zonesTitle: "Energie-zones",
       zonesIntro:
-        "Alleen bij Makkelijk kun je een taak in de lijst meteen afvinken. Bij Normaal en Intensief niet: daar rond je af via Start → (focus) of door de taak te openen.",
+        "Links vink je meteen af zonder focus. Tik op de rij voor details; Start start focusmodus.",
       zoneEasy: "Makkelijk",
       zoneEasyDesc:
-        "Het groene ringetje vinkt direct af, zonder focus. Tik op de rij voor details.",
+        "Het groene vink links rond af. Tik op de taaktekst voor details.",
       zoneNormal: "Normaal",
       zoneNormalDesc:
-        "Het oranje bolletje is alleen een kleurhint. Gebruik Start → of open de taak om af te ronden.",
+        "Oranje tint: middel intens. Vink links af of gebruik Start → voor focusmodus.",
       zoneHard: "Intensief",
       zoneHardDesc:
-        "Het rode bolletje is alleen een kleurhint. Gebruik Start → of open de taak om af te ronden.",
-      energyDotAria: "Kleur voor energieniveau {label}. Geen snel afvinken in deze kolom.",
+        "Rode tint: zwaarder werk. Bij hoge impact of je derde punt vragen we even om een bevestiging.",
+      energyDotAria: "Kleur voor energieniveau {label}.",
       loadingOpen: "Taken laden…",
       noOpen: "Geen openstaande taken",
       colEasy: "Makkelijk",
@@ -461,6 +481,17 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       tooltipDelete: "Verwijderen",
       tooltipStartFocus: "Start focus",
     },
+    legal: {
+      backLogin: "Terug naar inloggen",
+      privacyTitle: "Privacybeleid",
+      privacyUpdated: "Structuro MVP, voor jou als gebruiker van de webapp. Laatste update: mei 2026.",
+      privacyBody:
+        "Wij verwerken accountgegevens (zoals je e-mailadres en profielinstellingen) en je planning: taken, dagstarts, dagafsluitingen, optional geparkeerde gedachten en gerelateerde notificatie-instellingen. De basis is uitvoeren van de app en het geven van persoonlijke planning bij jou.\n\nJe gegevens worden opgeslagen bij onze infrastructuurpartner (database en authenticatie via Supabase) en wordt de app geleverd via Vercel. Verwerking vindt plaats in lijn met je account en de instellingen in de app.\n\nGoogle Analytics (optioneel) wordt alleen geladen nadat je in de banner toestemming geeft. Zonder akkoord blijven er geen analytische scripts actief zoals ingesteld.\n\nJe gegevens blijven bij je account tot je verwijdert. Volledige accountverwijdering vind je onder Instellingen en wist gebruikersrecords bij de aanbieder, voor zover beschikbaar binnen deze MVP.\n\nJe kunt recht hebben om in te zien te corrigeren of te laten wissen; export en wissen in de app zijn hiervoor startpunten. Vragen over privacy kun je richten aan het supportkanaal van je organisatie of beheerder van deze applicatie.",
+      termsTitle: "Algemene voorwaarden",
+      termsUpdated: "Structuro MVP. Laatste update: mei 2026.",
+      termsBody:
+        "Structuro wordt aangeboden als plan- en focushulpmiddel. Gebruik is op eigen verantwoordelijkheid. Wij streven naar betrouwbare werking maar geven geen garantie op ononderbroken beschikbaarheid of foutloze werking in deze MVP-fase.\n\nJe verbindt je tot geen misbruik van de dienst (zoals het ontwijken van beveiliging of overbelasting). Inhoud die je invoert blijft van jou; je geeft aan dat je over de benodigde rechten beschikt.\n\nWijzigingen in deze voorwaarden kunnen gebeuren; controleer het document af en toe. Blijf je gebruiken na wijziging, dan ga je akkoord met de versie die in de app staat.\n\nVoor gegevensverwerking zie het privacybeleid.",
+    },
     onboarding: onboardingLocale.nl,
   },
   en: {
@@ -566,6 +597,15 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       enHigh: "Intense",
       convertBusy: "Working…",
       convertCta: "Convert to task",
+      quickParkTitle: "Park a thought",
+      quickParkBody: "Park this thought for later?",
+      quickParkPlaceholder: "What is on your mind?",
+      quickParkCancel: "Cancel",
+      quickParkPark: "Park",
+      quickParkBusy: "Parking…",
+      quickParkCharCount: "{n} / 240 characters",
+      pageEmptyTitle: "Nothing parked yet",
+      pageEmptyHint: "Tap the blue plus on home, or park from focus mode.",
     },
     voorzorgs: {
       title: "You have a lot on your plate",
@@ -670,6 +710,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       quickOtherMinutesSr: "Custom minutes",
       noTasksYet: "No tasks yet. Add one below.",
       suggestionsTitle: "Suggestions for today",
+      suggestionsFiveContext:
+        "Five picks that fit your {energy} energy.",
+      openAllTasksModal: "See all tasks →",
+      allTasksModalTitle: "All tasks",
+      allTasksModalClose: "Close",
       reminderBadge: "Reminder",
       showLess: "Show less",
       showAll: "Show all tasks",
@@ -699,6 +744,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       toastFocusErr: "Could not start focus session",
       toastFocusStarted: "Focus session started!",
       toastChecked: "Task checked off!",
+      quickCompleteImpactConfirm:
+        "This task has high impact or is your third focus slot. Complete it now without focus mode?",
+      quickCompleteConfirmProceed: "Yes, complete",
+      quickCompleteFailed: "No connection or server error. Try again in a moment.",
       toastReopened: "Task moved back to All open tasks",
       toastCleared: "Today’s completed tasks cleared",
       confirmClear:
@@ -745,17 +794,17 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       openInfoAria: "About energy zones and check-off",
       zonesTitle: "Energy zones",
       zonesIntro:
-        "Only Easy tasks can be checked off directly in the list. For Normal and Intense, finish via Start → (focus) or by opening the task.",
+        "Left: check off without focus. Tap the row for details; Start opens focus mode.",
       zoneEasy: "Easy",
       zoneEasyDesc:
-        "The green circle marks the task done right away, without focus. Tap the row for details.",
+        "Green outline: shortest path. Tap the checkbox to complete; tap text for details.",
       zoneNormal: "Normal",
       zoneNormalDesc:
-        "The orange dot is only a colour cue. Use Start → or open the task to complete.",
+        "Orange zone: moderate load. Checkbox or Start → for focus.",
       zoneHard: "Intense",
       zoneHardDesc:
-        "The red dot is only a colour cue. Use Start → or open the task to complete.",
-      energyDotAria: "Colour for energy level ({label}). No quick check-off in this column.",
+        "Red zone: heavier work. High impact or your third slot gets a brief confirmation.",
+      energyDotAria: "Colour cue for energy level ({label}).",
       loadingOpen: "Loading tasks…",
       noOpen: "No open tasks",
       colEasy: "Easy",
@@ -916,6 +965,17 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       tooltipCompleted: "Completed",
       tooltipDelete: "Delete",
       tooltipStartFocus: "Start focus",
+    },
+    legal: {
+      backLogin: "Back to sign in",
+      privacyTitle: "Privacy policy",
+      privacyUpdated: "Structuro MVP, for you as the user of the web app. Last updated: May 2026.",
+      privacyBody:
+        "We process account data (such as email and profile preferences) and your planning data: tasks, day starts, wind-downs, optional parked thoughts, and notification settings. This supports running the app and giving you personalised planning.\n\nData is hosted with Supabase (database and auth) and delivered through Vercel. Processing follows your account and in-app preferences.\n\nGoogle Analytics loads only after you accept it in the cookie banner; without consent we do not run those analytics scripts as configured.\n\nWe keep information until you delete your account or data. Full account deletion is available under Settings where supported in this MVP and removes stored user-facing records.\n\nYou may have rights to access, rectify, or erase data; export and in-app wiping are practical starting points. For privacy requests, reach your organisation admin or Structuro operators for this deployment.",
+      termsTitle: "Terms of use",
+      termsUpdated: "Structuro MVP. Last updated: May 2026.",
+      termsBody:
+        "Structuro is offered as planning and focus support software. Use is at your own risk. We aim for resilient operation without promising uninterrupted uptime or flawless behaviour during this MVP stage.\n\nYou agree not to misuse the service (for example circumventing safeguards or stressing systems). Content you submit remains yours; you confirm you hold the necessary rights.\n\nWe may change these terms periodically; revisit this document from time to time. Continued use after changes constitutes acceptance.\n\nFor data handling, see the privacy policy.",
     },
     onboarding: onboardingLocale.en,
   },

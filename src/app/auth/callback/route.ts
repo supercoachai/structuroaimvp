@@ -9,10 +9,21 @@ function redirectToAuthError(
   return NextResponse.redirect(`${origin}/auth/auth-code-error?${q}`)
 }
 
+/** Open-redirect hardened: alleen relatieve paths op de eigen origin. */
+function safeRelativeNext(raw: string | null): string {
+  const fallback = '/'
+  const n = (raw ?? '').trim() || fallback
+  if (!n.startsWith('/') || n.startsWith('//')) return fallback
+  if (n.includes('://')) return fallback
+  if (n.includes('\\')) return fallback
+  return n
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
+  const url = new URL(request.url)
+  const { origin, searchParams } = url
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const nextRaw = searchParams.get('next') ?? '/'
 
   const authError = searchParams.get('error')
   const authErrorCode = searchParams.get('error_code')
@@ -31,13 +42,8 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const forwardedHost = request.headers.get('x-forwarded-host') // original origin before reverse proxy
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      const target = isLocalEnv
-        ? `${origin}${next}`
-        : forwardedHost
-          ? `https://${forwardedHost}${next}`
-          : `${origin}${next}`
+      const safePath = safeRelativeNext(nextRaw)
+      const target = `${origin}${safePath}`
       const res = NextResponse.redirect(target)
       res.cookies.set('structuro_local_mode', '', {
         path: '/',
@@ -54,4 +60,3 @@ export async function GET(request: Request) {
 
   return redirectToAuthError(origin, { error_code: 'missing_code' })
 }
-
