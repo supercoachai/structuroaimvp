@@ -39,7 +39,10 @@ export function GoogleAnalytics() {
             gtag('consent','default',{'analytics_storage':'denied','ad_storage':'denied'});
             gtag('consent','update',{'analytics_storage':'granted'});
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
+            gtag('config', '${GA_MEASUREMENT_ID}', {
+              anonymize_ip: true,
+              cookie_flags: 'SameSite=None;Secure'
+            });
           `,
         }}
       />

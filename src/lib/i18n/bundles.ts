@@ -9,11 +9,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Cookies en statistiek",
       body:
         "Google Analytics gebruiken we alleen als je akkoord geeft. Je kiest nu of later in het menu.",
+      readMore: "Lees ons privacybeleid",
       acceptAll: "Accepteer alles",
       essentialOnly: "Alleen noodzakelijk",
       adjust: "Aanpassen",
       onlyAnalytics: "Alleen statistiek",
-      onlyMarketing: "Alleen marketing (nu niet actief)",
       closeAdjust: "Klaar met aanpassen",
     },
     sidebar: {
@@ -238,11 +238,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Cookies and analytics",
       body:
         "We only load Google Analytics if you opt in. Your choice is saved on this device.",
+      readMore: "Read our privacy policy",
       acceptAll: "Accept all",
       essentialOnly: "Essential only",
       adjust: "Adjust",
       onlyAnalytics: "Analytics only",
-      onlyMarketing: "Marketing only (inactive today)",
       closeAdjust: "Done adjusting",
     },
     sidebar: {

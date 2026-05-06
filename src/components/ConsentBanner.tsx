@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { readStoredConsent, writeConsent } from "@/lib/consentStorage";
 import { useI18n } from "@/lib/i18n";
@@ -37,7 +38,15 @@ export default function ConsentBanner() {
         <p id="consent-banner-title" className="text-sm font-semibold text-slate-900">
           {t("consent.title")}
         </p>
-        <p className="mt-1 text-xs leading-snug text-slate-600">{t("consent.body")}</p>
+        <p className="mt-1 text-xs leading-snug text-slate-600">
+          {t("consent.body")}{" "}
+          <Link
+            href="/privacy"
+            className="font-medium text-[#2C5BFF] underline-offset-2 hover:underline"
+          >
+            {t("consent.readMore")}
+          </Link>
+        </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <button
             type="button"
@@ -70,13 +79,6 @@ export default function ConsentBanner() {
                 onClick={() => writeConsent({ analytics: true, marketing: false })}
               >
                 {t("consent.onlyAnalytics")}
-              </button>
-              <button
-                type="button"
-                className="min-h-[40px] rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
-                onClick={() => writeConsent({ analytics: false, marketing: true })}
-              >
-                {t("consent.onlyMarketing")}
               </button>
               <button
                 type="button"

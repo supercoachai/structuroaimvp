@@ -271,7 +271,10 @@ export default function SettingsPage() {
         toast(t('settings.accountDeleteUnavailable'));
         return;
       }
+      // 401, 500, of andere fout: data kan al deels gewist zijn (al voorkomt de RPC dat).
+      // Sessie alsnog killen om "half ingelogd zonder data"-state te voorkomen.
       toast(t('settings.accountDeleteFail'));
+      await performClientLogout(router);
     } finally {
       setAccountDeleteBusy(false);
     }
