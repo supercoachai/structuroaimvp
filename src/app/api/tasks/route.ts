@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { buildTaskPutDbUpdates } from '@/lib/buildTaskPutDbUpdates'
+import {
+  LENGTH_LIMITS,
+  firstLengthError,
+  validateLength,
+} from '@/lib/validateLength'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -32,18 +37,33 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  
-  // Validate required fields
-  if (!body.title || body.title.trim() === '') {
+
+  if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return NextResponse.json({ error: 'Titel is verplicht' }, { status: 400 })
   }
-  
+
+  const trimmedTitle = body.title.trim()
+  const postLenErr = firstLengthError([
+    validateLength('title', trimmedTitle, LENGTH_LIMITS.TASK_TITLE),
+    body.notes !== undefined &&
+      body.notes !== null &&
+      typeof body.notes !== 'string'
+      ? 'notes moet een tekst zijn'
+      : null,
+    typeof body.notes === 'string'
+      ? validateLength('notes', body.notes, LENGTH_LIMITS.TASK_NOTES)
+      : null,
+  ])
+  if (postLenErr) {
+    return NextResponse.json({ error: postLenErr }, { status: 400 })
+  }
+
   try {
     const { data, error } = await supabase
       .from('tasks')
       .insert({
         user_id: user.id,
-        title: body.title.trim(),
+        title: trimmedTitle,
         done: body.done || false,
         priority: body.priority || null,
         due_at: body.dueAt || null,
@@ -95,7 +115,46 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Task ID required' }, { status: 400 })
   }
 
-  const dbUpdates = buildTaskPutDbUpdates(updates)
+  if (updates.title !== undefined) {
+    if (typeof updates.title !== 'string') {
+      return NextResponse.json(
+        { error: 'title moet een tekst zijn' },
+        { status: 400 }
+      )
+    }
+    const t = updates.title.trim()
+    if (!t) {
+      return NextResponse.json(
+        { error: 'title mag niet leeg zijn' },
+        { status: 400 }
+      )
+    }
+    const titleErr = validateLength('title', t, LENGTH_LIMITS.TASK_TITLE)
+    if (titleErr) {
+      return NextResponse.json({ error: titleErr }, { status: 400 })
+    }
+  }
+
+  const putLenErr = firstLengthError([
+    updates.notes !== undefined &&
+      updates.notes !== null &&
+      typeof updates.notes !== 'string'
+      ? 'notes moet een tekst zijn'
+      : null,
+    typeof updates.notes === 'string'
+      ? validateLength('notes', updates.notes, LENGTH_LIMITS.TASK_NOTES)
+      : null,
+  ])
+  if (putLenErr) {
+    return NextResponse.json({ error: putLenErr }, { status: 400 })
+  }
+
+  const updatesForPut =
+    updates.title !== undefined
+      ? { ...updates, title: (updates.title as string).trim() }
+      : updates
+
+  const dbUpdates = buildTaskPutDbUpdates(updatesForPut)
 
   const { data, error } = await supabase
     .from('tasks')

@@ -12,6 +12,7 @@ import { useCheckIn } from "../hooks/useCheckIn";
 import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { trackShutdownCompleted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
+import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -66,6 +67,17 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
   const handleSubmit = async () => {
     if (!satisfactionLevel) {
       toast(tr("dayShutdown.toastPickSatisfaction"));
+      return;
+    }
+
+    const reflectionErr = validateLength(
+      "reflection",
+      reflection,
+      LENGTH_LIMITS.SHUTDOWN_REFLECTION
+    );
+    if (reflectionErr) {
+      toast(reflectionErr);
+      setSaveError(reflectionErr);
       return;
     }
 

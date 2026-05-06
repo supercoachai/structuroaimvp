@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { LENGTH_LIMITS, firstLengthError, validateLength } from '@/lib/validateLength'
 import { NextResponse } from 'next/server'
 
 // Batch update voor het synchroniseren van meerdere taken tegelijk
@@ -14,6 +15,30 @@ export async function POST(request: Request) {
 
   if (!Array.isArray(tasks)) {
     return NextResponse.json({ error: 'Tasks must be an array' }, { status: 400 })
+  }
+
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i]
+    const prefix = `tasks[${i}]`
+    if (!task || typeof task.title !== 'string' || task.title.trim() === '') {
+      return NextResponse.json(
+        { error: `${prefix}: title is verplicht` },
+        { status: 400 }
+      )
+    }
+    const trimmed = task.title.trim()
+    const err = firstLengthError([
+      validateLength(`${prefix}.title`, trimmed, LENGTH_LIMITS.TASK_TITLE),
+      task.notes !== undefined &&
+        task.notes !== null &&
+        typeof task.notes !== 'string'
+        ? `${prefix}.notes moet een tekst zijn`
+        : null,
+      typeof task.notes === 'string'
+        ? validateLength(`${prefix}.notes`, task.notes, LENGTH_LIMITS.TASK_NOTES)
+        : null,
+    ])
+    if (err) return NextResponse.json({ error: err }, { status: 400 })
   }
 
   // Map tasks to database format
@@ -49,7 +74,7 @@ export async function POST(request: Request) {
       id?: string;
     } = {
       user_id: user.id,
-      title: task.title,
+      title: task.title.trim(),
       done: task.done || false,
       priority: task.priority,
       due_at: task.dueAt || null,

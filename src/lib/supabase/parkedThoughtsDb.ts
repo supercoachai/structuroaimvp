@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
 
 export type ParkedThoughtType = "focus_park" | "dagafsluiter_suggestie";
 
@@ -48,6 +49,12 @@ export async function insertParkedThought(
   userId: string,
   content: string
 ): Promise<ParkedThought> {
+  const lengthErr = validateLength(
+    "content",
+    content,
+    LENGTH_LIMITS.PARKED_CONTENT
+  );
+  if (lengthErr) throw new Error(lengthErr);
   const supabase = createClient();
   const { data, error } = await supabase
     .from("parked_thoughts")
@@ -129,6 +136,14 @@ export async function insertDagafsluiterSuggestions(
   }[]
 ): Promise<void> {
   if (items.length === 0) return;
+  for (const item of items) {
+    const lengthErr = validateLength(
+      "content",
+      item.content,
+      LENGTH_LIMITS.PARKED_CONTENT
+    );
+    if (lengthErr) throw new Error(lengthErr);
+  }
   const supabase = createClient();
   const rows = items.map((i) => ({
     user_id: userId,
