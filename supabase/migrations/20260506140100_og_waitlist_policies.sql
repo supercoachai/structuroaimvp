@@ -1,5 +1,5 @@
 -- =============================================================================
--- TAAK 4: og_waitlist RLS – insert voor anon + authenticated, geen publieke read
+-- TAAK 4 (UITGESTELD TOT OG LIVE): og_waitlist RLS – niet draaien tot de actie aan gaat.
 -- =============================================================================
 -- Service role blijft alles kunnen (RLS bypass). Geen SELECT/UPDATE/DELETE voor
 -- client-rollen: wachtlijst is append-only vanuit de app.
