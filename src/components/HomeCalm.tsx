@@ -50,22 +50,31 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
-  // Huidige focus: toon altijd Prioriteit 1 (Kernfocus) als die bestaat
+  // Huidige focus: eerste open taak in daily_checkins.top3_task_ids (zelfde volgorde als /todo)
   const findLowestEnergyTask = useMemo(() => {
-    const fromDayStart = tasks.filter(task =>
-      task.source !== 'medication' &&
-      !task.done &&
-      task.priority != null &&
-      task.priority >= 1 &&
-      task.priority <= 3
-    );
-    if (fromDayStart.length === 0) return null;
-    const priority1 = fromDayStart.find(t => t.priority === 1);
-    if (priority1) return priority1;
-    // Fallback: kleinste prioriteit (1->3) als er iets mis is met data
-    const byPriority = [...fromDayStart].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99));
-    return byPriority[0] ?? null;
-  }, [tasks]);
+    const rawIds = todayCheckIn?.top3_task_ids;
+    if (!Array.isArray(rawIds) || rawIds.length === 0) return null;
+
+    const energyLevel = todayCheckIn?.energy_level || "medium";
+    const maxSlots =
+      energyLevel === "low" ? 1 : energyLevel === "medium" ? 2 : 3;
+    const ids = rawIds.slice(0, maxSlots);
+
+    for (const taskId of ids) {
+      const idStr = String(taskId).trim();
+      if (!idStr) continue;
+      const task = tasks.find(
+        (t) =>
+          t &&
+          String(t.id) === idStr &&
+          t.source !== "medication" &&
+          t.source !== "event" &&
+          !t.done
+      );
+      if (task) return task;
+    }
+    return null;
+  }, [tasks, todayCheckIn?.top3_task_ids, todayCheckIn?.energy_level]);
 
   const nonMedicationTasks = useMemo(
     () => tasks.filter((t) => t.source !== 'medication'),
