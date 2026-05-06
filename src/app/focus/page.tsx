@@ -24,6 +24,7 @@ import { useUser } from '@/hooks/useUser';
 import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
 import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
 import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
+import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
 import { useI18n } from '@/lib/i18n';
 import {
   ChevronRightIcon,
@@ -87,11 +88,8 @@ function FocusContent() {
       if (!task) task = tasks.find(t => t.title === taskParam);
       if (task) return task;
     }
-    const priority1Task = tasks.find((t: any) =>
-      t && t.id && t.title && t.priority === 1 && !t.done && t.source !== 'medication'
-    );
-    return priority1Task || null;
-  }, [tasks, searchParams]);
+    return getFirstOpenTop3Task(tasks, checkIn);
+  }, [tasks, searchParams, checkIn]);
 
   useEffect(() => {
     if (!user?.id) return;

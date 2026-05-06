@@ -20,6 +20,7 @@ import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { persistPreferredDisplayName } from '@/lib/accountDisplayName';
 import { useI18n } from '@/lib/i18n';
+import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
 import { homeWelcomeEn, homeWelcomeNl } from '@/lib/i18n/homeCopy';
 
 export default function HomeCalm() {
@@ -50,31 +51,11 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
-  // Huidige focus: eerste open taak in daily_checkins.top3_task_ids (zelfde volgorde als /todo)
-  const findLowestEnergyTask = useMemo(() => {
-    const rawIds = todayCheckIn?.top3_task_ids;
-    if (!Array.isArray(rawIds) || rawIds.length === 0) return null;
-
-    const energyLevel = todayCheckIn?.energy_level || "medium";
-    const maxSlots =
-      energyLevel === "low" ? 1 : energyLevel === "medium" ? 2 : 3;
-    const ids = rawIds.slice(0, maxSlots);
-
-    for (const taskId of ids) {
-      const idStr = String(taskId).trim();
-      if (!idStr) continue;
-      const task = tasks.find(
-        (t) =>
-          t &&
-          String(t.id) === idStr &&
-          t.source !== "medication" &&
-          t.source !== "event" &&
-          !t.done
-      );
-      if (task) return task;
-    }
-    return null;
-  }, [tasks, todayCheckIn?.top3_task_ids, todayCheckIn?.energy_level]);
+  // Huidige focus: eerste open taak in daily_checkins.top3_task_ids (zelfde bron als /todo)
+  const findLowestEnergyTask = useMemo(
+    () => getFirstOpenTop3Task(tasks, todayCheckIn),
+    [tasks, todayCheckIn]
+  );
 
   const nonMedicationTasks = useMemo(
     () => tasks.filter((t) => t.source !== 'medication'),

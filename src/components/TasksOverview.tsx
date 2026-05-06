@@ -19,6 +19,7 @@ import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficu
 import { isOpenBacklogTask } from "../lib/taskFilters";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
+import { maxSlotsForEnergy } from "@/lib/top3CurrentTask";
 import {
   CheckCircleIcon,
   PencilSquareIcon,
@@ -148,13 +149,10 @@ export default function TasksOverviewCalm() {
     setMicroStepsAddOpenId(null);
   }, [expandedTaskId]);
 
-  // Bepaal max slots
+  // Bepaal max slots (zelfde regels als HomeCalm / getFirstOpenTop3Task)
   const maxSlots = useMemo(() => {
     if (!todayCheckIn) return 3;
-    const energyLevel = todayCheckIn.energy_level || 'medium';
-    if (energyLevel === 'low') return 1;
-    if (energyLevel === 'medium') return 2;
-    return 3;
+    return maxSlotsForEnergy(todayCheckIn.energy_level);
   }, [todayCheckIn]);
 
   /**
