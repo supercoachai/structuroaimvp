@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { buildTaskPutDbUpdates } from '@/lib/buildTaskPutDbUpdates'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -90,25 +91,11 @@ export async function PUT(request: Request) {
   const body = await request.json()
   const { id, ...updates } = body
 
-  // Map camelCase to snake_case
-  const dbUpdates: any = {}
-  if (updates.dueAt !== undefined) dbUpdates.due_at = updates.dueAt
-  if (updates.completedAt !== undefined) dbUpdates.completed_at = updates.completedAt
-  if (updates.energyLevel !== undefined) dbUpdates.energy_level = updates.energyLevel
-  if (updates.estimatedDuration !== undefined) dbUpdates.estimated_duration = updates.estimatedDuration
-  if (updates.microSteps !== undefined) dbUpdates.micro_steps = updates.microSteps
-  if (updates.notToday !== undefined) dbUpdates.not_today = updates.notToday
-  if (updates.started !== undefined) dbUpdates.started = updates.started
-  Object.assign(dbUpdates, {
-    title: updates.title,
-    done: updates.done,
-    priority: updates.priority,
-    duration: updates.duration,
-    source: updates.source,
-    reminders: updates.reminders,
-    repeat: updates.repeat,
-    impact: updates.impact,
-  })
+  if (!id) {
+    return NextResponse.json({ error: 'Task ID required' }, { status: 400 })
+  }
+
+  const dbUpdates = buildTaskPutDbUpdates(updates)
 
   const { data, error } = await supabase
     .from('tasks')
