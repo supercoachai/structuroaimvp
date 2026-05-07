@@ -4,9 +4,13 @@ let push;
 export function useToast() {
   const [q, setQ] = useState([]);
   push = (msg, opts = {}) => {
-    const { durationMs = 3000, replace = false } = opts || {};
+    const { durationMs = 3000, replace = false, tone = "neutral" } = opts || {};
     const id = Math.random();
-    setQ((s) => (replace ? [{ id, msg, durationMs, fading: false }] : [...s, { id, msg, durationMs, fading: false }]));
+    setQ((s) =>
+      replace
+        ? [{ id, msg, durationMs, fading: false, tone }]
+        : [...s, { id, msg, durationMs, fading: false, tone }]
+    );
     if (typeof durationMs === "number" && durationMs > 0) {
       // Fade-out net voor removal
       const fadeMs = 250;
@@ -39,13 +43,13 @@ export function ToastHost() {
     }}>
       {q.map(t=>(
         <div key={t.id} style={{ 
-          background:"#fff", 
-          border:"1px solid #E6E8EE", 
+          background: t.tone === "error" ? "#fef2f2" : "#fff", 
+          border: t.tone === "error" ? "1px solid #fecaca" : "1px solid #E6E8EE", 
           borderRadius:10, 
           padding:"8px 12px", 
           boxShadow:"0 2px 8px rgba(0,0,0,0.04)",
           fontSize: '14px',
-          color: '#374151',
+          color: t.tone === "error" ? "#b91c1c" : "#374151",
           opacity: t.fading ? 0 : 1,
           transition: 'opacity 250ms ease'
         }}>
@@ -72,3 +76,4 @@ export function ToastHost() {
 
 // Backwards-compatible: toast("msg") and toast("msg", { durationMs, replace })
 export const toast = (m, opts) => push?.(m, opts);
+toast.error = (m, opts) => push?.(m, { ...opts, tone: "error" });

@@ -747,22 +747,32 @@ export default function OnboardingFlow() {
     const dateStr = getCalendarDateAmsterdam();
     const energyLevel = energy;
     if (user?.id) {
-      const task = await addTaskToSupabase(user.id, {
-        title,
-        done: false,
-        started: false,
-        priority: 1,
-        dueAt: null,
-        duration: mins,
-        source: "regular",
-        reminders: [],
-        repeat: "none",
-        impact: "🌱",
-        energyLevel,
-        estimatedDuration: mins,
-        microSteps,
-        notToday: false,
-      });
+      let task;
+      try {
+        task = await addTaskToSupabase(user.id, {
+          title,
+          done: false,
+          started: false,
+          priority: 1,
+          dueAt: null,
+          duration: mins,
+          source: "regular",
+          reminders: [],
+          repeat: "none",
+          impact: "🌱",
+          energyLevel,
+          estimatedDuration: mins,
+          microSteps,
+          notToday: false,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('mag maximaal')) {
+          toast.error(err.message);
+        } else {
+          toast.error('Er ging iets mis');
+        }
+        throw err;
+      }
       await upsertCheckInToSupabase(user.id, dateStr, {
         energy_level: energyLevel,
         top3_task_ids: [task.id],

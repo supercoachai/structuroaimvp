@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { Task } from "@/context/TaskContext";
+import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
 
 export type TaskRow = {
   id: string;
@@ -115,6 +116,13 @@ export async function addTaskToSupabase(
 ): Promise<Task> {
   const supabase = createClient();
   const insert = taskToRow(task, userId);
+  const titleErr = validateLength(
+    "title",
+    insert.title,
+    LENGTH_LIMITS.TASK_TITLE
+  );
+  if (titleErr) throw new Error(titleErr);
+
   const { data, error } = await supabase
     .from("tasks")
     .insert(insert as Record<string, unknown>)
@@ -130,6 +138,15 @@ export async function updateTaskInSupabase(
   taskId: string,
   updates: Partial<Task>
 ): Promise<Task> {
+  if (updates.title !== undefined) {
+    const titleErr = validateLength(
+      "title",
+      updates.title,
+      LENGTH_LIMITS.TASK_TITLE
+    );
+    if (titleErr) throw new Error(titleErr);
+  }
+
   const supabase = createClient();
   const rowUpdates: Record<string, unknown> = {};
   if (updates.title !== undefined) rowUpdates.title = updates.title;

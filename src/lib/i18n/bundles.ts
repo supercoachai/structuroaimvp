@@ -93,6 +93,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cancel: "Annuleren",
       footerPrivacy:
         "Structuro is privacy-by-design. Je data is alleen voor jou inzichtelijk.",
+      legalPrivacy: "Privacybeleid",
+      legalTerms: "Algemene voorwaarden",
       toastReplayFail: "Kon intro niet heropenen: {detail}",
       toastSaveFail: "Kon niet opslaan: {detail}",
       toastClearFail: "Kon niet wissen: {detail}",
@@ -280,6 +282,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cancel: "Cancel",
       footerPrivacy:
         "Structuro is privacy-first. Your data is only visible to you.",
+      legalPrivacy: "Privacy policy",
+      legalTerms: "Terms of use",
       toastReplayFail: "Could not reopen intro: {detail}",
       toastSaveFail: "Could not save: {detail}",
       toastClearFail: "Could not clear: {detail}",

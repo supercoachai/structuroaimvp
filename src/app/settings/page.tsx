@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Settings } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import { wipeAllUserData, STRUCTURO_STORAGE_KEYS } from '../../lib/resetStorage';
@@ -489,6 +490,14 @@ export default function SettingsPage() {
           <p className="mt-8 text-center text-xs text-slate-400 leading-relaxed text-balance">
             {t('settings.footerPrivacy')}
           </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium">
+            <Link href="/privacy" className="text-blue-600 underline-offset-2 hover:underline">
+              {t('settings.legalPrivacy')}
+            </Link>
+            <Link href="/terms" className="text-blue-600 underline-offset-2 hover:underline">
+              {t('settings.legalTerms')}
+            </Link>
+          </div>
         </main>
       </div>
     </AppLayout>

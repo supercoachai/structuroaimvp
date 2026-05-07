@@ -17,6 +17,7 @@ import {
   deleteTaskFromSupabase,
   subscribeToTasks,
 } from '../lib/supabase/tasksDb';
+import { toast } from '@/components/Toast';
 
 /** Tijdelijke id tijdens optimistic add; wordt vervangen zodra Supabase insert klaar is. */
 export const OPTIMISTIC_TASK_ID_PREFIX = 'structuro-pending:';
@@ -326,6 +327,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
           return newTask;
         } catch (syncErr) {
+          if (syncErr instanceof Error && syncErr.message.includes('mag maximaal')) {
+            toast.error(syncErr.message);
+          } else {
+            toast.error('Er ging iets mis');
+          }
           console.error('TaskContext: addTask Supabase sync failed, rollback', syncErr);
           setTasks((prev) => prev.filter((t) => t.id !== tempId));
           if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
@@ -371,6 +377,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
           return updated;
         } catch (syncErr) {
+          if (syncErr instanceof Error && syncErr.message.includes('mag maximaal')) {
+            toast.error(syncErr.message);
+          } else {
+            toast.error('Er ging iets mis');
+          }
           console.error('TaskContext: Supabase sync failed, refetching', syncErr);
           await fetchTasks();
           throw syncErr;
@@ -434,7 +445,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     try {
       if (user) {
         for (const task of newTasks) {
-          await updateTaskInSupabase(user.id, task.id, task);
+          try {
+            await updateTaskInSupabase(user.id, task.id, task);
+          } catch (err) {
+            if (err instanceof Error && err.message.includes('mag maximaal')) {
+              toast.error(err.message);
+            } else {
+              toast.error('Er ging iets mis');
+            }
+            throw err;
+          }
         }
         setTasks(newTasks);
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));

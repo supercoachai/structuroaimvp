@@ -1,4 +1,5 @@
 import type { Locale } from "./types";
+import { legalLocaleBundles } from "./legalLocale";
 import { onboardingLocale } from "./onboardingLocale";
 
 /**
@@ -461,6 +462,7 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       tooltipDelete: "Verwijderen",
       tooltipStartFocus: "Start focus",
     },
+    ...legalLocaleBundles.nl,
     onboarding: onboardingLocale.nl,
   },
   en: {
@@ -917,6 +919,7 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       tooltipDelete: "Delete",
       tooltipStartFocus: "Start focus",
     },
+    ...legalLocaleBundles.en,
     onboarding: onboardingLocale.en,
   },
 };

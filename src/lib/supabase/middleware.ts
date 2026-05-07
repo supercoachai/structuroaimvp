@@ -11,6 +11,15 @@ import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 
+function isPublicLegalPage(pathname: string): boolean {
+  return (
+    pathname === "/privacy" ||
+    pathname.startsWith("/privacy/") ||
+    pathname === "/terms" ||
+    pathname.startsWith("/terms/")
+  );
+}
+
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const projectRef = url.replace(/^https:\/\//, "").split(".")[0];
@@ -119,7 +128,7 @@ export async function updateSession(request: NextRequest) {
    * voortgang via cookie (middleware leest geen localStorage).
    */
   if (hasLocalMode && !user) {
-    if (isLoginPath || isAuthPath) {
+    if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
       return supabaseResponse;
     }
     return applyLocalAnonymousOnboardingGuard(
@@ -182,7 +191,7 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
 
   if (!hasSession) {
-    if (isLoginPath || isAuthPath) {
+    if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
       return supabaseResponse;
     }
     const url = request.nextUrl.clone();
@@ -277,7 +286,7 @@ function applyLocalAnonymousOnboardingGuard(
   const isLoginPath = pathname.startsWith("/login");
   const isAuthPath = pathname.startsWith("/auth");
 
-  if (isLoginPath || isAuthPath) {
+  if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
     return response;
   }
 
@@ -327,6 +336,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
+    isPublicLegalPage(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/sw.js" ||
