@@ -243,277 +243,139 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
     );
   };
 
-  const satisfactionOptions: {
-    key: SatisfactionLevel;
-    emoji: string;
-    label: string;
-    line: string;
-  }[] = useMemo(
+  const satisfactionOptions: { key: SatisfactionLevel; emoji: string; label: string }[] = useMemo(
     () => [
-      {
-        key: "low" as const,
-        emoji: "😮‍💨",
-        label: tr("dayShutdown.satLowLabel"),
-        line: tr("dayShutdown.satLowLine"),
-      },
-      {
-        key: "good" as const,
-        emoji: "🙂",
-        label: tr("dayShutdown.satGoodLabel"),
-        line: tr("dayShutdown.satGoodLine"),
-      },
-      {
-        key: "great" as const,
-        emoji: "🌟",
-        label: tr("dayShutdown.satGreatLabel"),
-        line: tr("dayShutdown.satGreatLine"),
-      },
+      { key: "low" as const, emoji: "😮‍💨", label: tr("dayShutdown.satLowLabel") },
+      { key: "good" as const, emoji: "🙂", label: tr("dayShutdown.satGoodLabel") },
+      { key: "great" as const, emoji: "🌟", label: tr("dayShutdown.satGreatLabel") },
     ],
     [tr]
   );
 
   return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #E6E8EE",
-        borderRadius: 16,
-        padding: 32,
-        maxWidth: 600,
-        margin: "0 auto",
-      }}
-    >
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
-        {tr("dayShutdown.title")}
-      </h2>
-      <p
-        style={{
-          fontSize: 14,
-          color: "rgba(47,52,65,0.75)",
-          textAlign: "center",
-          marginBottom: 32,
-        }}
-      >
+    <div className="w-full max-w-xl rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+      <h2 className="structuro-page-title text-center">{tr("dayShutdown.title")}</h2>
+      <p className="structuro-page-subtitle mx-auto mt-2 max-w-md text-center text-balance">
         {tr("dayShutdown.subtitle")}
       </p>
 
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+      {/* 1. Vandaag (afgeronde taken) */}
+      <section className="mt-8">
+        <h3 className="mb-3 text-base font-semibold text-slate-800">
           {tr("dayShutdown.completedTitle")}
         </h3>
         {completedTasks.length > 0 ? (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className="grid gap-2">
             {completedTasks.map((task) => (
               <div
                 key={task.id}
-                style={{
-                  padding: 12,
-                  background: "#F0FDF4",
-                  border: "1px solid #BBF7D0",
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
+                className="rounded-lg border border-green-200 bg-green-50 px-3 py-3 text-sm text-slate-800"
               >
                 ✓ {task.title}
               </div>
             ))}
           </div>
         ) : (
-          <div
-            style={{
-              padding: 16,
-              background: "#F8FAFC",
-              border: "1px dashed #E6E8EE",
-              borderRadius: 8,
-              textAlign: "center",
-              color: "rgba(47,52,65,0.75)",
-              fontSize: 14,
-            }}
-          >
+          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm text-slate-600">
             {tr("dayShutdown.noCompleted")}
           </div>
         )}
-      </div>
+      </section>
 
-      <div style={{ marginBottom: 32 }}>
-        {checkInLoading ? (
-          <p style={{ fontSize: 14, color: "rgba(47,52,65,0.6)", textAlign: "center" }}>
-            {tr("common.loading")}
-          </p>
-        ) : incompleteDagstartTasks.length === 0 ? (
-          <div
-            style={{
-              padding: 16,
-              background: "#F0FDF4",
-              border: "1px solid #BBF7D0",
-              borderRadius: 12,
-              textAlign: "center",
-              fontSize: 14,
-              color: "rgba(47,52,65,0.85)",
-              lineHeight: 1.5,
-            }}
-          >
-            {tr("dayShutdown.allDoneToday")}
-          </div>
-        ) : (
-          <>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-              {tr("dayShutdown.tomorrowTitle")}
-            </h3>
-            <p
-              style={{
-                fontSize: 13,
-                color: "rgba(47,52,65,0.7)",
-                marginBottom: 8,
-                lineHeight: 1.45,
-              }}
-            >
-              {tr("dayShutdown.tomorrowHint")}
-            </p>
-            <p
-              style={{
-                fontSize: 12,
-                color: "rgba(47,52,65,0.65)",
-                marginBottom: 16,
-                lineHeight: 1.45,
-              }}
-            >
-              {tr("dayShutdown.tomorrowLegend")}
-            </p>
-            <div style={{ display: "grid", gap: 8, maxHeight: 200, overflowY: "auto" }}>
-              {tasksToRemember.map((task) => (
-                <label
-                  key={task.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 12,
-                    background: task.selected ? "#F0F9FF" : "#FFFFFF",
-                    border: `1px solid ${task.selected ? "#BAE6FD" : "#E6E8EE"}`,
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={task.selected || false}
-                    onChange={() => toggleTaskRemember(task.id)}
-                    style={{ width: 18, height: 18, cursor: "pointer" }}
-                  />
-                  <span style={{ flex: 1, fontSize: 14 }}>{task.title}</span>
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+      {/* 2. Hoe voelt het? */}
+      <section className="mt-8">
+        <h3 className="mb-4 text-base font-semibold text-slate-800">
           {tr("dayShutdown.satisfactionTitle")}
         </h3>
-        <p
-          style={{
-            fontSize: 13,
-            color: "rgba(47,52,65,0.7)",
-            marginBottom: 16,
-            lineHeight: 1.45,
-          }}
-        >
-          {tr("dayShutdown.satisfactionHint")}
-        </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <div className="flex flex-wrap justify-center gap-3">
           {satisfactionOptions.map((opt) => (
             <button
               key={opt.key}
               type="button"
               onClick={() => setSatisfactionLevel(opt.key)}
-              style={{
-                flex: "1 1 90px",
-                minWidth: 88,
-                maxWidth: 160,
-                padding: 14,
-                borderRadius: 12,
-                border: `2px solid ${satisfactionLevel === opt.key ? "#4A90E2" : "#E6E8EE"}`,
-                background: satisfactionLevel === opt.key ? "#F0F9FF" : "#FFFFFF",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-              }}
+              className={`flex min-w-[88px] max-w-[160px] flex-1 flex-col items-center gap-1.5 rounded-xl border-2 p-3.5 transition-all active:scale-[0.98] ${
+                satisfactionLevel === opt.key
+                  ? "border-blue-600 bg-sky-50"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
             >
-              <div style={{ fontSize: 26, lineHeight: 1 }}>{opt.emoji}</div>
-              <div style={{ fontWeight: 600, fontSize: 12 }}>{opt.label}</div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "rgba(47,52,65,0.65)",
-                  textAlign: "center",
-                  lineHeight: 1.35,
-                }}
-              >
-                {opt.line}
-              </div>
+              <span className="text-[26px] leading-none" aria-hidden>
+                {opt.emoji}
+              </span>
+              <span className="text-sm font-semibold text-slate-800">{opt.label}</span>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-          {tr("dayShutdown.reflectionTitle")}
+      {/* 3. Morgen */}
+      <section className="mt-8">
+        {checkInLoading ? (
+          <p className="text-center text-sm text-slate-500">{tr("common.loading")}</p>
+        ) : incompleteDagstartTasks.length === 0 ? (
+          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-center text-sm leading-snug text-slate-700">
+            {tr("dayShutdown.allDoneToday")}
+          </div>
+        ) : (
+          <>
+            <h3 className="mb-3 text-base font-semibold text-slate-800">
+              {tr("dayShutdown.tomorrowTitle")}
+            </h3>
+            <div className="grid max-h-[200px] gap-2 overflow-y-auto">
+              {tasksToRemember.map((task) => (
+                <label
+                  key={task.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                    task.selected
+                      ? "border-sky-300 bg-sky-50"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={task.selected || false}
+                    onChange={() => toggleTaskRemember(task.id)}
+                    className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-blue-600"
+                  />
+                  <span className="min-w-0 flex-1 text-sm text-slate-800">{task.title}</span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* 4. Reflectie (optioneel, afgekaderd) */}
+      <section className="mt-8 border-t border-slate-100 pt-8">
+        <h3 className="mb-3 text-base font-semibold text-slate-800">
+          {tr("dayShutdown.reflectionTitle")}{" "}
+          <span className="text-xs font-normal italic text-slate-500">
+            {tr("dayShutdown.reflectionOptional")}
+          </span>
         </h3>
         <textarea
           value={reflection}
           onChange={(e) => setReflection(e.target.value)}
           placeholder={tr("dayShutdown.reflectionPh")}
-          style={{
-            width: "100%",
-            minHeight: 80,
-            padding: 12,
-            borderRadius: 8,
-            border: "1px solid #E6E8EE",
-            fontSize: 14,
-            fontFamily: "inherit",
-            resize: "vertical",
-          }}
+          className="min-h-[80px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
         />
-      </div>
+      </section>
 
       {saveError ? (
-        <p
-          style={{
-            marginBottom: 12,
-            fontSize: 14,
-            color: "#b91c1c",
-            textAlign: "center",
-            lineHeight: 1.45,
-          }}
-          role="alert"
-        >
+        <p className="mb-3 mt-6 text-center text-sm leading-snug text-red-700" role="alert">
           {saveError}
         </p>
       ) : null}
+
       <button
         type="button"
         onClick={handleSubmit}
         disabled={!satisfactionLevel || isSubmitting}
-        style={{
-          width: "100%",
-          padding: 16,
-          borderRadius: 12,
-          border: "none",
-          background: satisfactionLevel && !isSubmitting ? "#4A90E2" : "#E6E8EE",
-          color: satisfactionLevel && !isSubmitting ? "white" : "rgba(47,52,65,0.5)",
-          fontWeight: 600,
-          fontSize: 16,
-          cursor: satisfactionLevel && !isSubmitting ? "pointer" : "not-allowed",
-          transition: "all 0.2s ease",
-        }}
+        className={`mt-6 w-full rounded-xl px-4 py-4 text-base font-semibold transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 ${
+          satisfactionLevel && !isSubmitting
+            ? "bg-blue-600 text-white hover:bg-blue-700"
+            : "bg-slate-200 text-slate-500"
+        }`}
       >
         {isSubmitting ? tr("dayShutdown.submitting") : tr("dayShutdown.submit")}
       </button>
