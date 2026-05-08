@@ -1459,19 +1459,62 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
     </div>
 
-    <!-- ROI — korte versie -->
+    <!-- ROI card, visuele rekening (afgestemd op structurowebsite 43b5537, CTA monorepo) -->
     <div class="roi-card">
       <div class="roi-card-inner">
-        <h3 data-i18n="roi_h3">Wat kost Structuro?</h3>
+        <h3 data-i18n="roi_h3">Wat kost Structuro echt?</h3>
+        <p class="roi-subtitle" data-i18n="roi_subtitle">Eén ongebruikt abonnement opzeggen dekt het al.</p>
+
+        <div class="roi-block roi-block--pay">
+          <div class="roi-block-row">
+            <div>
+              <div class="roi-muted-label" data-i18n="roi_pay_label">Wat je betaalt</div>
+              <div class="roi-muted-small" data-i18n="roi_pay_context">Structuro maandabonnement</div>
+            </div>
+            <div class="roi-amount" data-i18n="roi_pay_amount">€12,99</div>
+          </div>
+        </div>
+        <div class="roi-rule"></div>
+
+        <div class="roi-block">
+          <div class="roi-recover-title" data-i18n="roi_recover_heading">Wat ADHD'ers vaak vergeten op te zeggen</div>
+          <div class="roi-line-row"><span data-i18n="roi_line1_label">Sportschool die je nooit bezoekt</span><span data-i18n="roi_line1_amount">€30</span></div>
+          <div class="roi-line-row"><span data-i18n="roi_line2_label">Streaming-dienst die je niet meer gebruikt</span><span data-i18n="roi_line2_amount">€13</span></div>
+          <div class="roi-line-row"><span data-i18n="roi_line3_label">Software-tool die je éénmaal probeerde</span><span data-i18n="roi_line3_amount">€15</span></div>
+        </div>
+        <div class="roi-rule"></div>
+
+        <div class="roi-block roi-block--conclusion">
+          <div class="roi-block-row" style="align-items:center;">
+            <div>
+              <div class="roi-conclusion-title" data-i18n="roi_conclusion_title">Eén opzegging dekt Structuro al</div>
+              <div class="roi-muted-small" data-i18n="roi_conclusion_sub">De rest van de besparing houd je over</div>
+            </div>
+            <div class="roi-check" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#10B981"/><path d="M7 12l3 3 7-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="roi-rule roi-rule--margin"></div>
         <div class="roi-explain">
-          <p data-i18n="roi_p1">€12,99 per maand. Eén ongebruikt abonnement opzeggen dekt het al. En dat is precies de eerste taak waar Structuro je mee helpt.</p>
-          <p data-i18n="roi_p2">91% van de Nederlandse huishoudens onderschat hoeveel abonnementen ze hebben (Nibud). Niet uit nalatigheid, opzeggen vraagt executie, en daar loopt het ADHD-brein vast.</p>
-          <p data-i18n="roi_p3">Schrijf je in. Na onboarding krijg je een suggestie om mee te beginnen.</p>
+          <p data-i18n="roi_p1">Volgens het Nibud onderschat 91% van de Nederlandse huishoudens hoeveel abonnementen ze hebben. Niet uit nalatigheid, opzeggen vraagt executie en daar loopt het brein vast.</p>
+          <p data-i18n="roi_p2">Je eerste taak in Structuro mag dat ene abonnement zijn. Dan betaalt de app zichzelf terug op dag één.</p>
         </div>
-        <div style="margin-top:22px;text-align:center;">
-          <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="roi_cta_click" data-ph-cta="roi"><span data-i18n="cta_try">Probeer Structuro</span></a>
+
+        <div class="roi-rule roi-rule--margin"></div>
+        <div class="roi-help">
+          <div class="roi-help-line1" data-i18n="roi_help_l1">Schrijf je in, dan helpen we je op gang.</div>
+          <div class="roi-help-line2" data-i18n="roi_help_l2">Na je onboarding krijg je een suggestie om mee te beginnen.</div>
         </div>
-        <p class="roi-source" style="display:block;text-align:center;margin-top:16px;margin-bottom:0;font-size:11.5px;color:var(--place);" data-i18n="roi_source">Bron: Nibud</p>
+
+        <div class="roi-rule roi-rule--margin"></div>
+        <div class="roi-footer-row">
+          <span class="roi-source" data-i18n="roi_source">Bron: Nibud · richtprijzen marktconform</span>
+          <a href="https://www.structuro.ai/registreren" class="btn-primary" style="font-size:14px;padding:11px 18px;flex-shrink:0;" data-event="roi_cta_click" data-ph-cta="roi">
+            <span data-i18n="cta_try">Probeer Structuro</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -1689,11 +1732,25 @@ const TRANSLATIONS = {
     price_yearly_feat1: 'Alles uit het maandabonnement',
     price_yearly_feat2: '2,8 maanden gratis effectief',
     price_yearly_feat3: 'Jij bepaalt wat we bouwen',
-    roi_h3: 'Wat kost Structuro?',
-    roi_p1: '€12,99 per maand. Eén ongebruikt abonnement opzeggen dekt het al. En dat is precies de eerste taak waar Structuro je mee helpt.',
-    roi_p2: '91% van de Nederlandse huishoudens onderschat hoeveel abonnementen ze hebben (Nibud). Niet uit nalatigheid, opzeggen vraagt executie, en daar loopt het ADHD-brein vast.',
-    roi_p3: 'Schrijf je in. Na onboarding krijg je een suggestie om mee te beginnen.',
-    roi_source: 'Bron: Nibud',
+    roi_h3: 'Wat kost Structuro echt?',
+    roi_subtitle: 'Eén ongebruikt abonnement opzeggen dekt het al.',
+    roi_pay_label: 'Wat je betaalt',
+    roi_pay_context: 'Structuro maandabonnement',
+    roi_pay_amount: '€12,99',
+    roi_recover_heading: 'Wat ADHD\'ers vaak vergeten op te zeggen',
+    roi_line1_label: 'Sportschool die je nooit bezoekt',
+    roi_line1_amount: '€30',
+    roi_line2_label: 'Streaming-dienst die je niet meer gebruikt',
+    roi_line2_amount: '€13',
+    roi_line3_label: 'Software-tool die je éénmaal probeerde',
+    roi_line3_amount: '€15',
+    roi_conclusion_title: 'Eén opzegging dekt Structuro al',
+    roi_conclusion_sub: 'De rest van de besparing houd je over',
+    roi_p1: 'Volgens het Nibud onderschat 91% van de Nederlandse huishoudens hoeveel abonnementen ze hebben. Niet uit nalatigheid, opzeggen vraagt executie en daar loopt het brein vast.',
+    roi_p2: 'Je eerste taak in Structuro mag dat ene abonnement zijn. Dan betaalt de app zichzelf terug op dag één.',
+    roi_help_l1: 'Schrijf je in, dan helpen we je op gang.',
+    roi_help_l2: 'Na je onboarding krijg je een suggestie om mee te beginnen.',
+    roi_source: 'Bron: Nibud · richtprijzen marktconform',
     faq_eyebrow: 'Vragen die je waarschijnlijk hebt', faq_h2: 'Eerlijke antwoorden.',
     faq1_q: 'Hoe werkt de 14-dagen-garantie?',
     faq1_a: 'Niet tevreden? Binnen 14 dagen na aankoop vraag je je geld terug met één klik in de app (Instellingen). Geen mail, geen formulier, geen weken wachten.',
@@ -1784,11 +1841,25 @@ const TRANSLATIONS = {
     price_yearly_feat1: 'Everything in monthly',
     price_yearly_feat2: '2.8 months free effectively',
     price_yearly_feat3: 'You shape what we build',
-    roi_h3: 'What does Structuro cost?',
-    roi_p1: '€12.99 per month. Cancelling one unused subscription already covers it. And that is exactly the first task Structuro helps you with.',
-    roi_p2: '91% of Dutch households underestimate how many subscriptions they have (Nibud). Not out of carelessness, cancelling takes execution, and that is where the ADHD brain gets stuck.',
-    roi_p3: 'Sign up. After onboarding you get a suggestion to start with.',
-    roi_source: 'Source: Nibud',
+    roi_h3: 'What does Structuro really cost?',
+    roi_subtitle: 'Cancelling one subscription you do not use already covers it.',
+    roi_pay_label: 'What you pay',
+    roi_pay_context: 'Structuro monthly subscription',
+    roi_pay_amount: '€12.99',
+    roi_recover_heading: 'What people with ADHD often forget to cancel',
+    roi_line1_label: 'Gym you never visit',
+    roi_line1_amount: '€30',
+    roi_line2_label: 'Streaming service you no longer use',
+    roi_line2_amount: '€13',
+    roi_line3_label: 'Software you only tried once',
+    roi_line3_amount: '€15',
+    roi_conclusion_title: 'One cancellation covers Structuro',
+    roi_conclusion_sub: 'You keep the rest of the savings',
+    roi_p1: 'According to Nibud, 91% of Dutch households underestimate how many subscriptions they have. Not out of carelessness, cancelling takes executive effort, and that is where the brain gets stuck.',
+    roi_p2: 'Your first task in Structuro can be that one subscription. Then the app pays for itself on day one.',
+    roi_help_l1: 'Sign up and we help you get started.',
+    roi_help_l2: 'After onboarding you get a suggestion to begin with.',
+    roi_source: 'Source: Nibud · indicative market rates',
     faq_eyebrow: 'Questions you probably have', faq_h2: 'Honest answers.',
     faq1_q: 'How does the 14-day guarantee work?',
     faq1_a: 'Not satisfied? Within 14 days of purchase, request a refund with one click in the app (Settings). No email, no form, no weeks of waiting.',
