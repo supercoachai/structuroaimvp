@@ -23,7 +23,8 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
-    "supabase:reset": "supabase db reset"
+    "supabase:reset": "supabase db reset",
+    "posthog:wizard:ci": "bash scripts/run-posthog-wizard-ci.sh"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
