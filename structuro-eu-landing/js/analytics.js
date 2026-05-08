@@ -152,7 +152,20 @@
     obs.observe(prijs);
   }
 
+  function onWaitlistPage() {
+    var p = "";
+    try {
+      p = (location.pathname || "").replace(/^\/+|\/+$/g, "");
+    } catch (e2) {}
+    return p === "wachtlijst";
+  }
+
   function bootstrap() {
+    if (onWaitlistPage()) {
+      var g = consentRead();
+      if (g === "granted") loadPosthog(attachProductEvents);
+      return;
+    }
     var c = consentRead();
     if (!c) {
       injectBanner(function (choice) {

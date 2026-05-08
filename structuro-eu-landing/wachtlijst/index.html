@@ -10,10 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<script>
-  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
 <style>
 :root {
   --bg:#F4F6FB;--white:#FFF;--border:#E2E8F0;--text:#0F172A;--sub:#64748B;--place:#94A3B8;--blue:#2563EB;--blue-h:#1D4ED8;
@@ -24,7 +20,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 a{color:inherit;text-decoration:none;}
 .wl-shell{position:relative;isolation:isolate;padding:max(12px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom));}
 .wl-shell::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(37,99,235,.14),transparent);z-index:-1;}
-.wl-inner{max-width:520px;margin:0 auto;}
+.wl-inner{max-width:520px;margin:0 auto;position:relative;z-index:1;}
 .wl-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:8px 0 28px;border-bottom:1px solid var(--border);margin-bottom:28px;}
 .wl-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--text);}
 .wl-brand img{height:36px;width:auto;display:block;}
@@ -87,138 +83,8 @@ input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,9
   </div>
 </div>
 
-<script src="/js/ph-config.js"></script>
-<script defer src="/js/analytics.js"></script>
 
-<script type="module">
-  const SUPABASE_URL = 'https://oapnsywlmdmqgmfwiojy.supabase.co';
-  const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';
-
-  const T = {
-    nl: {
-      wl_h1: 'Wachtlijst',
-      wl_lede: 'Laat je gegevens achter. Als Structuro voor jou live gaat, hoor je van ons. Geen nieuwsbrieven, geen gedoe.',
-      wl_name: 'Naam',
-      wl_email: 'E-mailadres',
-      wl_ph_name: 'Jouw naam',
-      wl_ph_email: 'jouw@email.nl',
-      wl_submit: 'Zet me op de lijst',
-      wl_success: 'Gelukt! Je hoort van ons zodra Structuro live gaat op 26 mei.',
-      wl_dup: 'Dit e-mailadres staat al op de lijst.',
-      wl_err: 'Er ging iets mis. Probeer het opnieuw.',
-      wl_back: '← Terug naar de landingspagina',
-    },
-    en: {
-      wl_h1: 'Waitlist',
-      wl_lede: 'Leave your details. When Structuro is live for you, you will hear from us. No newsletters, no fuss.',
-      wl_name: 'Name',
-      wl_email: 'Email',
-      wl_ph_name: 'Your name',
-      wl_ph_email: 'your@email.com',
-      wl_submit: 'Join the waitlist',
-      wl_success: 'Done! You will hear from us when Structuro goes live on 26 May.',
-      wl_dup: 'This email address is already on the list.',
-      wl_err: 'Something went wrong. Please try again.',
-      wl_back: '← Back to the landing page',
-    },
-  };
-
-  function supabaseAnonKeyReady() {
-    var k = (SUPABASE_ANON_KEY || '').trim();
-    if (!k) return false;
-    if (k.indexOf('__SUPABASE_ANON_KEY__') !== -1) return false;
-    return k.length >= 40;
-  }
-
-  function lang() {
-    var s = '';
-    try { s = localStorage.getItem('structuro_lang') || ''; } catch (e) {}
-    return s === 'en' ? 'en' : 'nl';
-  }
-  function setLang(l) {
-    try { localStorage.setItem('structuro_lang', l); } catch (e) {}
-    document.documentElement.lang = l === 'en' ? 'en' : 'nl';
-    document.querySelectorAll('[data-i18n]').forEach(function (el) {
-      var k = el.getAttribute('data-i18n');
-      if (T[l][k]) el.textContent = T[l][k];
-    });
-    document.getElementById('btnNL').classList.toggle('active', l === 'nl');
-    document.getElementById('btnEN').classList.toggle('active', l === 'en');
-    document.getElementById('wl-name').placeholder = T[l].wl_ph_name;
-    document.getElementById('wl-email').placeholder = T[l].wl_ph_email;
-    var okEl = document.getElementById('wl-success-msg');
-    if (okEl && okEl.dataset.i18nKey === '1' && T[l].wl_success) okEl.textContent = T[l].wl_success;
-  }
-
-  document.getElementById('btnNL').onclick = function () { setLang('nl'); };
-  document.getElementById('btnEN').onclick = function () { setLang('en'); };
-  setLang(lang());
-
-  var supabaseJsPromise = null;
-  function loadCreateClient() {
-    if (!supabaseJsPromise) {
-      supabaseJsPromise = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    }
-    return supabaseJsPromise.then(function (m) {
-      return m.createClient;
-    });
-  }
-
-  const form = document.getElementById('wl-form');
-  const btn = document.getElementById('wl-submit');
-  const boxDup = document.getElementById('wl-dup');
-  const boxErr = document.getElementById('wl-err');
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    boxDup.hidden = true;
-    boxErr.hidden = true;
-    if (!supabaseAnonKeyReady()) {
-      boxErr.textContent = T[lang()].wl_err;
-      boxErr.hidden = false;
-      return;
-    }
-    btn.disabled = true;
-    const nameVal = document.getElementById('wl-name').value.trim();
-    const emailVal = document.getElementById('wl-email').value.trim().toLowerCase();
-    try {
-      const createClient = await loadCreateClient();
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY.trim());
-      const { error } = await supabase.from('waitlist_subscribers').insert({
-        name: nameVal,
-        email: emailVal,
-        source: 'eu_wachtlijst',
-      });
-      if (!error) {
-        form.classList.add('hidden');
-        var okEl = document.getElementById('wl-success-msg');
-        if (!okEl) {
-          okEl = document.createElement('p');
-          okEl.id = 'wl-success-msg';
-          okEl.className = 'wl-msg ok show';
-          okEl.setAttribute('role', 'status');
-          okEl.dataset.i18nKey = '1';
-          document.getElementById('wl-card').appendChild(okEl);
-        }
-        okEl.textContent = T[lang()].wl_success;
-        return;
-      }
-      var code = error.code || '';
-      var msg = (error.message || '') + '';
-      if (code === '23505' || /duplicate|unique/i.test(msg)) {
-        boxDup.textContent = T[lang()].wl_dup;
-        boxDup.hidden = false;
-      } else {
-        boxErr.textContent = T[lang()].wl_err;
-        boxErr.hidden = false;
-      }
-    } catch (err) {
-      boxErr.textContent = T[lang()].wl_err;
-      boxErr.hidden = false;
-    } finally {
-      btn.disabled = false;
-    }
-  });
-</script>
+<script>window.__STRUCTURO_EU_SB_ANON__='__SUPABASE_ANON_KEY__';</script>
+<script type="module" src="/js/wachtlijst-form.js"></script>
 </body>
 </html>
