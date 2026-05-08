@@ -13,6 +13,15 @@ import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 import { profileHasAppAccess } from "../subscriptionAccess";
 import { isProtectedTestAccount } from "../protectedTestAccount";
 
+/**
+ * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
+ * Zet op productie STRUCTURO_MIDDLEWARE_PAYWALL=1 wanneer Stripe live is én bestaande gebruikers
+ * een grace-period hebben gekregen.
+ */
+function isMiddlewareSubscriptionPaywallEnabled(): boolean {
+  return process.env.STRUCTURO_MIDDLEWARE_PAYWALL === "1";
+}
+
 /** Routes die zichtbaar zijn zonder betaald abonnement (na onboarding). */
 function canAccessWithoutActiveSubscription(pathname: string): boolean {
   if (pathname.startsWith("/login")) return true;
@@ -251,6 +260,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && onboardingCompleted && profileRowReadOk) {
     const skipPaidGate =
+      !isMiddlewareSubscriptionPaywallEnabled() ||
       process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1" ||
       isProtectedTestAccount(user.email ?? null) ||
       canAccessWithoutActiveSubscription(pathname);
