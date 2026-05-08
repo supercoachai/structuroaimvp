@@ -88,7 +88,10 @@
     if (!key) return;
     if (key.indexOf("__STRUCTURO_PH_PROJECT_KEY__") !== -1) return;
 
-    var existing = document.querySelector('script[src="/ph/static/array.js"]');
+    var PH_API_HOST = "https://eu.i.posthog.com";
+    var PH_ARRAY_SRC = "https://eu-assets.i.posthog.com/static/array.js";
+
+    var existing = document.querySelector('script[src="' + PH_ARRAY_SRC + '"]');
     if (existing && window.posthog && typeof window.posthog.init === "function") {
       initDone();
       return;
@@ -96,11 +99,11 @@
 
     var s = document.createElement("script");
     s.async = true;
-    s.src = "/ph/static/array.js";
+    s.src = PH_ARRAY_SRC;
     s.onload = function () {
       if (!window.posthog || typeof window.posthog.init !== "function") return;
       window.posthog.init(key, {
-        api_host: window.location.origin + "/ph",
+        api_host: PH_API_HOST,
         ui_host: "https://eu.posthog.com",
         capture_pageview: false,
         autocapture: false,
