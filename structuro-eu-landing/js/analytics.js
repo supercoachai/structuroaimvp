@@ -5,7 +5,7 @@
     nl: {
       bannerTitle: "Anonieme productstatistieken",
       bannerText:
-        "Met jouw toestemming meten we paginaweergaves en klikken om Structuro te verbeteren. Je IP-adres sturen we niet naar PostHog.",
+        "Met jouw toestemming meten we paginaweergaves en klikken om Structuro te verbeteren.",
       accept: "Sta toe",
       deny: "Weigeren",
       privacy: "Privacybeleid",
@@ -14,7 +14,7 @@
     en: {
       bannerTitle: "Anonymous product analytics",
       bannerText:
-        "With your consent we measure page views and clicks to improve Structuro. We do not send your IP address to PostHog.",
+        "With your consent we measure page views and clicks to improve Structuro.",
       accept: "Allow",
       deny: "Decline",
       privacy: "Privacy policy",
