@@ -49,9 +49,9 @@
     var wrap = document.createElement("div");
     wrap.id = "structuro-ph-banner";
     wrap.style.cssText =
-      "position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:16px;background:rgba(15,23,42,.94);color:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.45;box-shadow:0 -8px 30px rgba(0,0,0,.18);";
+      "position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:16px;background:rgba(15,23,42,.94);color:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.45;box-shadow:0 -8px 30px rgba(0,0,0,.18);pointer-events:none;";
     wrap.innerHTML =
-      '<div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 20px;justify-content:space-between;">' +
+      '<div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 20px;justify-content:space-between;pointer-events:auto;">' +
       '<div style="flex:1;min-width:240px;max-width:720px;">' +
       "<strong style=\"display:block;margin-bottom:6px;font-weight:700;\">" +
       L.bannerTitle +
