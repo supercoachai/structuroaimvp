@@ -7,6 +7,15 @@ import { useConsent } from "./ConsentContext";
 
 let posthogInitOnce = false;
 
+function registerSiteGroup(): void {
+  if (typeof window === "undefined") return;
+  const hostname = window.location.hostname;
+  let site = "dev";
+  if (hostname.includes("structuro.eu")) site = "eu";
+  else if (hostname.includes("structuro.ai")) site = "ai";
+  posthog.register({ site });
+}
+
 /** Zet NEXT_PUBLIC_POSTHOG_HOST (bijv. https://eu.i.posthog.com) voor directe EU API; leeg = first-party proxy `${origin}/ph`. */
 function clientApiHost(): string {
   const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
@@ -43,6 +52,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         persistence: "localStorage+cookie",
         cross_subdomain_cookie: false,
       });
+      registerSiteGroup();
       posthog.opt_in_capturing();
       posthogInitOnce = true;
     }

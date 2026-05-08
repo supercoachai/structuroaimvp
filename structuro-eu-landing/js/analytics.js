@@ -107,6 +107,15 @@
         cross_subdomain_cookie: false,
         respect_dnt: true,
       });
+      var hn = window.location.hostname || "";
+      var siteProp = "dev";
+      if (hn.indexOf("structuro.eu") !== -1) siteProp = "eu";
+      else if (hn.indexOf("structuro.ai") !== -1) siteProp = "ai";
+      window.posthog.register({ site: siteProp });
+      window.posthog.opt_in_capturing();
+      window.posthog.capture("$pageview", {
+        $current_url: window.location.href,
+      });
       initDone();
     };
     document.head.appendChild(s);
