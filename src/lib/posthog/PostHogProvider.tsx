@@ -7,6 +7,14 @@ import { useConsent } from "./ConsentContext";
 
 let posthogInitOnce = false;
 
+/** Zet NEXT_PUBLIC_POSTHOG_HOST (bijv. https://eu.i.posthog.com) voor directe EU API; leeg = first-party proxy `${origin}/ph`. */
+function clientApiHost(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
+  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  if (typeof window !== "undefined") return `${window.location.origin}/ph`;
+  return "";
+}
+
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const { consent } = useConsent();
   const prevConsentRef = useRef<typeof consent>(consent);
@@ -19,8 +27,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     if (!key) return;
 
     if (!posthogInitOnce) {
+      const apiHost = clientApiHost();
+      if (!apiHost) return;
       posthog.init(key, {
-        api_host: `${window.location.origin}/ph`,
+        api_host: apiHost,
         ui_host: "https://eu.posthog.com",
         person_profiles: "identified_only",
         capture_pageview: false,
@@ -33,6 +43,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         persistence: "localStorage+cookie",
         cross_subdomain_cookie: false,
       });
+      posthog.opt_in_capturing();
       posthogInitOnce = true;
     }
   }, [consent]);
