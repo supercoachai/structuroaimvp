@@ -34,7 +34,12 @@ function isAnonymousPublicPage(pathname: string): boolean {
   ) {
     return true;
   }
-  return pathname === "/wachtlijst" || pathname.startsWith("/wachtlijst/");
+  return (
+    pathname === "/wachtlijst" ||
+    pathname.startsWith("/wachtlijst/") ||
+    pathname === "/inschrijven" ||
+    pathname.startsWith("/inschrijven/")
+  );
 }
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {

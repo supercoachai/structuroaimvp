@@ -29,7 +29,37 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/waitlist",
+        destination: "/inschrijven",
+        permanent: true,
+      },
+      {
+        source: "/Wachtlijst",
         destination: "/wachtlijst",
+        permanent: false,
+      },
+      {
+        source: "/Wachtlijst/:path*",
+        destination: "/wachtlijst/:path*",
+        permanent: false,
+      },
+      {
+        source: "/Inschrijven",
+        destination: "/inschrijven",
+        permanent: false,
+      },
+      {
+        source: "/Inschrijven/:path*",
+        destination: "/inschrijven/:path*",
+        permanent: false,
+      },
+      {
+        source: "/wachtlijst",
+        destination: "/inschrijven",
+        permanent: true,
+      },
+      {
+        source: "/wachtlijst/",
+        destination: "/inschrijven",
         permanent: true,
       },
       {

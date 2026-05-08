@@ -1,5 +1,5 @@
 /**
- * Tracking voor wachtlijst-aanmelding (?source= in URL naar /wachtlijst).
+ * Tracking voor wachtlijst-aanmelding (?source= in URL naar /inschrijven of /wachtlijst).
  */
 export function sanitizeWaitlistSourceParam(raw: string | undefined | null): string {
   const t = (raw ?? "").trim().slice(0, 64);

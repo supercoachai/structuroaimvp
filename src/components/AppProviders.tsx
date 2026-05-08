@@ -77,6 +77,30 @@ function GaSessionAbandonListener() {
   return null;
 }
 
+/**
+ * Wachtlijst-/inschrijfpagina: geen TaskProvider (geen sync met ingelogde app-state).
+ * Voorkomt dat anonieme bezoekers onnodig de volledige app-shell laden.
+ */
+function isWaitlistMarketingPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (pathname === "/wachtlijst" || pathname === "/wachtlijst/") return true;
+  return pathname === "/inschrijven" || pathname.startsWith("/inschrijven/");
+}
+
+function ConditionalAppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  if (isWaitlistMarketingPath(pathname)) {
+    return <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>;
+  }
+  return (
+    <TaskProvider>
+      <SidebarProvider>
+        <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>
+      </SidebarProvider>
+    </TaskProvider>
+  );
+}
+
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
@@ -95,11 +119,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             </Suspense>
             <VisualViewportBridge />
             <GoogleAnalytics />
-            <TaskProvider>
-              <SidebarProvider>
-                <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>
-              </SidebarProvider>
-            </TaskProvider>
+            <ConditionalAppShell>{children}</ConditionalAppShell>
             <Analytics
               beforeSend={(event) =>
                 shouldSendProductAnalytics() ? event : null

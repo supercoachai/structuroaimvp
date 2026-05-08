@@ -2,12 +2,17 @@
   "redirects": [
     {
       "source": "/wachtlijst",
-      "destination": "https://www.structuro.ai/wachtlijst",
+      "destination": "https://www.structuro.ai/inschrijven",
       "permanent": false
     },
     {
       "source": "/waitlist",
-      "destination": "https://www.structuro.ai/wachtlijst",
+      "destination": "https://www.structuro.ai/inschrijven",
+      "permanent": false
+    },
+    {
+      "source": "/inschrijven",
+      "destination": "https://www.structuro.ai/inschrijven",
       "permanent": false
     }
   ],
