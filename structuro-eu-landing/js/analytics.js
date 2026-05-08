@@ -83,8 +83,10 @@
   }
 
   function loadPosthog(initDone) {
-    var key = window.__STRUCTURO_PH_KEY__;
+    var raw = typeof window.__STRUCTURO_PH_KEY__ === "string" ? window.__STRUCTURO_PH_KEY__ : "";
+    var key = raw.trim();
     if (!key) return;
+    if (key.indexOf("__STRUCTURO_PH_PROJECT_KEY__") !== -1) return;
 
     var existing = document.querySelector('script[src="/ph/static/array.js"]');
     if (existing && window.posthog && typeof window.posthog.init === "function") {
