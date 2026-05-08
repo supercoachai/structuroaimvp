@@ -17,6 +17,12 @@ export async function performClientLogout(router: RouterLike): Promise<void> {
   } catch {
     /* geen actieve sessie, bijv. lokale modus */
   }
+  try {
+    const { default: posthog } = await import("posthog-js");
+    posthog.reset();
+  } catch {
+    /* ignore */
+  }
   document.cookie = "structuro_local_mode=; path=/; max-age=0";
   clearLocalOnboardingDoneCookieOnClient();
   clearDagstartCookieOnClient();

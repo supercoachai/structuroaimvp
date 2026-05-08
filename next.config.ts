@@ -11,8 +11,27 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_STRUCTURO_DEV_RESET: devResetToolbarEnabled ? "1" : "0",
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/ph/static/:path*",
+          destination: "https://eu-assets.i.posthog.com/static/:path*",
+        },
+        {
+          source: "/ph/:path*",
+          destination: "https://eu.i.posthog.com/:path*",
+        },
+      ],
+    };
+  },
   async redirects() {
     return [
+      {
+        source: "/waitlist",
+        destination: "/wachtlijst",
+        permanent: true,
+      },
       {
         source: "/:path*",
         has: [

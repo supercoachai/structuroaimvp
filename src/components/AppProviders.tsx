@@ -14,6 +14,11 @@ import { AnalyticsInternalBridge } from "@/components/AnalyticsInternalBridge";
 import { PasswordRecoveryRedirect } from "@/components/PasswordRecoveryRedirect";
 import { I18nProvider } from "@/lib/i18n";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
+import { ConsentProvider } from "@/lib/posthog/ConsentContext";
+import { PostHogProvider } from "@/lib/posthog/PostHogProvider";
+import { PostHogPageviews } from "@/components/posthog/PostHogPageviews";
+import { PostHogAuthEffects } from "@/components/posthog/PostHogAuthEffects";
+import { CookieBanner } from "@/components/posthog/CookieBanner";
 
 /** Zichtbare fallback zonder Tailwind — voorkomt ‘wit scherm’ bij trage chunks of Suspense. */
 function FullscreenLoading() {
@@ -76,29 +81,38 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <I18nProvider>
-        <RemoveLegacyFocusDurationKey />
-        <PasswordRecoveryRedirect />
-        <AnalyticsInternalBridge />
-        <Suspense fallback={null}>
-          <GaSessionAbandonListener />
-        </Suspense>
-        <VisualViewportBridge />
-        <GoogleAnalytics />
-        <TaskProvider>
-          <SidebarProvider>
-            <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>
-          </SidebarProvider>
-        </TaskProvider>
-        <Analytics
-          beforeSend={(event) =>
-            shouldSendProductAnalytics() ? event : null
-          }
-        />
-        <SpeedInsights
-          beforeSend={(event) =>
-            shouldSendProductAnalytics() ? event : null
-          }
-        />
+        <ConsentProvider>
+          <PostHogProvider>
+            <Suspense fallback={null}>
+              <PostHogPageviews />
+            </Suspense>
+            <PostHogAuthEffects />
+            <RemoveLegacyFocusDurationKey />
+            <PasswordRecoveryRedirect />
+            <AnalyticsInternalBridge />
+            <Suspense fallback={null}>
+              <GaSessionAbandonListener />
+            </Suspense>
+            <VisualViewportBridge />
+            <GoogleAnalytics />
+            <TaskProvider>
+              <SidebarProvider>
+                <Suspense fallback={<FullscreenLoading />}>{children}</Suspense>
+              </SidebarProvider>
+            </TaskProvider>
+            <Analytics
+              beforeSend={(event) =>
+                shouldSendProductAnalytics() ? event : null
+              }
+            />
+            <SpeedInsights
+              beforeSend={(event) =>
+                shouldSendProductAnalytics() ? event : null
+              }
+            />
+          </PostHogProvider>
+          <CookieBanner />
+        </ConsentProvider>
       </I18nProvider>
     </ErrorBoundary>
   );

@@ -17,6 +17,10 @@ import {
   markEnteringLocalOnboardingSession,
 } from '@/lib/localOnboardingCookie';
 import { useI18n } from '@/lib/i18n';
+import {
+  persistSignupSourceFromUrl,
+  queueSignupCompletedForAnalytics,
+} from '@/lib/posthog/signupAttribution';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -86,6 +90,13 @@ function LoginPageInner() {
       setIsSignUp(false);
     }
   }, []);
+
+  useEffect(() => {
+    persistSignupSourceFromUrl(searchParams?.get("source") ?? undefined);
+    if (SIGNUP_ALLOWED && searchParams?.get("signup") === "1") {
+      setIsSignUp(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams?.get('herstel') === '1') {
@@ -188,6 +199,7 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
+          queueSignupCompletedForAnalytics();
           setMessage(t('login.signupDone'));
           // Auto login na signup
           setTimeout(() => {

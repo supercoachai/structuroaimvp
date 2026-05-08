@@ -7,6 +7,7 @@ import { createClient } from "../../lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { trackShutdownStarted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
+import { captureProductEvent } from "@/lib/posthog/track";
 
 const FADE_MS = 280;
 
@@ -53,6 +54,7 @@ export default function ShutdownPage() {
     if (view !== "form" || shutdownGaStartedRef.current) return;
     shutdownGaStartedRef.current = true;
     trackShutdownStarted();
+    captureProductEvent("shutdown_started");
   }, [view]);
 
   useEffect(() => {

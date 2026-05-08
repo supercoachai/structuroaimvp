@@ -40,6 +40,8 @@ import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks";
 import { toast } from "@/components/Toast";
+import { captureProductEvent } from "@/lib/posthog/track";
+import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
 
 const STEP_COUNT = 10;
 /** Horizontale slide tussen stappen (bewust rustig). */
@@ -83,6 +85,7 @@ export default function OnboardingFlow() {
   const { user, loading: userLoading } = useUser();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
+  const onboardingStartedAtRef = useRef<number>(Date.now());
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -849,6 +852,11 @@ export default function OnboardingFlow() {
     } catch (e) {
       console.error("Onboarding finish error:", e);
     }
+    captureProductEvent("onboarding_completed", {
+      duration_bucket: onboardingDurationBucket(
+        Date.now() - onboardingStartedAtRef.current
+      ),
+    });
     window.location.assign("/");
   };
 

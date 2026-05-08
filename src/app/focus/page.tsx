@@ -26,6 +26,8 @@ import { triggerHaptic, HAPTIC_PATTERNS } from '@/lib/haptics';
 import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
 import { useI18n } from '@/lib/i18n';
+import { captureProductEvent } from '@/lib/posthog/track';
+import { focusPlannedMinutesBucket } from '@/lib/posthog/durationBuckets';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -210,6 +212,7 @@ function FocusContent() {
           (currentTask?.energyLevel as "low" | "medium" | "high") ?? "medium",
           getTaskDurationMinutes(currentTask ?? null) ?? duration
         );
+        captureProductEvent("focus_session_started");
       }, 500);
       return () => clearTimeout(t);
     }
@@ -250,6 +253,10 @@ function FocusContent() {
         setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now(), locale));
         track("ignite_complete", { taskTitle, duration });
         trackFocusCompleted(duration * 60);
+        captureProductEvent("focus_session_completed", {
+          duration_bucket: focusPlannedMinutesBucket(duration),
+          completed_normally: true,
+        });
       }
     };
     tick();
@@ -432,6 +439,10 @@ function FocusContent() {
         (currentTask.energyLevel as "low" | "medium" | "high") ?? "medium"
       );
       trackFocusCompleted(Math.max(0, duration * 60 - timeLeft));
+      captureProductEvent("focus_session_completed", {
+        duration_bucket: focusPlannedMinutesBucket(duration),
+        completed_normally: false,
+      });
       track('task_completed_early', {
         taskId: currentTask.id,
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
@@ -484,6 +495,7 @@ function FocusContent() {
         });
         toast(tr("focus.parkOk"));
       }
+      captureProductEvent("parked_thought_added");
       track("interruption_parked", { taskTitle, duration, thought: thoughtText });
     } catch (error: any) {
       if (error.message === "max_reached") {

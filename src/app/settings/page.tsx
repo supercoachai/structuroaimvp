@@ -25,12 +25,15 @@ import {
   registerPushSubscription,
   unregisterPushSubscription,
 } from '@/utils/pushNotifications';
+import { useConsent } from '@/lib/posthog/ConsentContext';
+import posthog from 'posthog-js';
 
 const NAME_KEY = 'structuro_user_name';
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useI18n();
   const router = useRouter();
+  const { consent, grant, deny } = useConsent();
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState('');
@@ -41,6 +44,12 @@ export default function SettingsPage() {
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission | 'unsupported'>('unsupported');
   const [notificationBusy, setNotificationBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [subscriptionPeriodEnd, setSubscriptionPeriodEnd] = useState<string | null>(null);
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +66,7 @@ export default function SettingsPage() {
         if (user?.id) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('display_name, preferred_name')
+            .select('display_name, preferred_name, subscription_status, subscription_current_period_end, stripe_subscription_id')
             .eq('id', user.id)
             .maybeSingle();
           if (cancelled) return;
@@ -65,6 +74,19 @@ export default function SettingsPage() {
             (typeof profile?.display_name === 'string' && profile.display_name.trim()) ||
             (typeof profile?.preferred_name === 'string' && profile.preferred_name.trim()) ||
             '';
+          setSubscriptionStatus(
+            typeof profile?.subscription_status === 'string' ? profile.subscription_status : null
+          );
+          setSubscriptionPeriodEnd(
+            profile?.subscription_current_period_end != null
+              ? String(profile.subscription_current_period_end)
+              : null
+          );
+          setStripeSubscriptionId(
+            typeof profile?.stripe_subscription_id === 'string'
+              ? profile.stripe_subscription_id
+              : null
+          );
           const fromStorage =
             typeof window !== 'undefined'
               ? localStorage.getItem(NAME_KEY)?.trim() || ''
@@ -276,6 +298,70 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (cancelBusy) return;
+    if (!window.confirm(t('settings.cancelConfirm'))) return;
+    setCancelBusy(true);
+    try {
+      const res = await fetch('/api/stripe/subscription/cancel', { method: 'POST' });
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        toast(t('settings.cancelFail', { detail: body.error ?? String(res.status) }));
+        return;
+      }
+      toast(t('settings.cancelDone'));
+      setSubscriptionStatus('cancelled');
+    } catch (err) {
+      toast(t('settings.cancelFail', { detail: String(err) }));
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  const confirmSelfServiceRefund = async () => {
+    if (refundSubmitting) return;
+    setRefundSubmitting(true);
+    try {
+      const res = await fetch('/api/stripe/refund/self-service', { method: 'POST' });
+      const data = (await res.json()) as {
+        success?: boolean;
+        reason?: string;
+        refund_id?: string;
+      };
+      if (res.ok && data.success) {
+        toast(t('settings.refundDoneToast'));
+        setRefundModalOpen(false);
+        setSubscriptionStatus('refunded');
+        setStripeSubscriptionId(null);
+        return;
+      }
+      if (data.reason === 'previous_refund_exists') {
+        toast(t('settings.refundPreviouslyRefunded'));
+        setRefundModalOpen(false);
+        return;
+      }
+      toast(t('settings.refundFailToast', { detail: data.reason ?? String(res.status) }));
+    } catch (err) {
+      toast(t('settings.refundFailToast', { detail: String(err) }));
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
+
+  const formatPeriodEnd = (iso: string | null) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-NL', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   const isLocalOnly = hasStructuroLocalModeCookieOnClient() && !hasSupabaseSession;
 
   return (
@@ -318,6 +404,39 @@ export default function SettingsPage() {
                   {code === 'nl' ? t('settings.languageNl') : t('settings.languageEn')}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-1">
+              {t('settings.analyticsTitle')}
+            </h2>
+            <p className="text-sm text-slate-500 mb-4 text-balance">
+              {t('settings.analyticsHint')}
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">
+                {consent === 'granted'
+                  ? t('settings.analyticsStatusOn')
+                  : t('settings.analyticsStatusOff')}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (consent === 'granted') {
+                    deny();
+                    posthog.opt_out_capturing();
+                    posthog.reset();
+                  } else {
+                    grant();
+                  }
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                {consent === 'granted'
+                  ? t('settings.analyticsDisable')
+                  : t('settings.analyticsEnable')}
+              </button>
             </div>
           </section>
 
@@ -403,6 +522,57 @@ export default function SettingsPage() {
               </p>
             ) : null}
           </section>
+
+          {hasSupabaseSession && !isLocalOnly ? (
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+              <h2 className="text-base font-semibold text-slate-800 mb-1">
+                {t('settings.subscriptionTitle')}
+              </h2>
+              <p className="text-sm text-slate-500 mb-4 text-balance">
+                {t('settings.subscriptionHint')}
+              </p>
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
+                {subscriptionStatus === 'active' ? (
+                  <span>{t('settings.subscriptionStatusActive')}</span>
+                ) : subscriptionStatus === 'cancelled' ? (
+                  <span>
+                    {t('settings.subscriptionStatusCancelledEnd', {
+                      date: formatPeriodEnd(subscriptionPeriodEnd),
+                    })}
+                  </span>
+                ) : subscriptionStatus === 'past_due' ? (
+                  <span>{t('settings.subscriptionStatusPastDue')}</span>
+                ) : subscriptionStatus === 'refunded' ? (
+                  <span>{t('settings.subscriptionStatusRefunded')}</span>
+                ) : subscriptionStatus === 'expired' ? (
+                  <span>{t('settings.subscriptionStatusExpired')}</span>
+                ) : (
+                  <span>{t('settings.subscriptionUnknown')}</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {subscriptionStatus === 'active' && stripeSubscriptionId ? (
+                  <button
+                    type="button"
+                    onClick={() => setRefundModalOpen(true)}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-800 text-left"
+                  >
+                    {t('settings.refundSelfCta')}
+                  </button>
+                ) : null}
+                {subscriptionStatus === 'active' && stripeSubscriptionId ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleCancelSubscription()}
+                    disabled={cancelBusy}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {cancelBusy ? t('settings.cancelBusy') : t('settings.cancelCta')}
+                  </button>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           {/* Kaart 2: App-ervaring */}
           <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
@@ -500,6 +670,40 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
+
+      {refundModalOpen ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="refund-modal-title"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 id="refund-modal-title" className="mb-4 text-base font-semibold text-slate-900">
+              {t('settings.refundSelfCta')}
+            </h3>
+            <p className="text-sm text-slate-700 text-balance mb-6">{t('settings.refundModalBody')}</p>
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => !refundSubmitting && setRefundModalOpen(false)}
+                disabled={refundSubmitting}
+              >
+                {t('settings.refundModalCancel')}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => void confirmSelfServiceRefund()}
+                disabled={refundSubmitting}
+              >
+                {refundSubmitting ? t('settings.refundBusy') : t('settings.refundModalConfirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AppLayout>
   );
 }

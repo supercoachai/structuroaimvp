@@ -10,14 +10,31 @@ import {
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
+import { profileHasAppAccess } from "../subscriptionAccess";
+import { isProtectedTestAccount } from "../protectedTestAccount";
 
-function isPublicLegalPage(pathname: string): boolean {
-  return (
+/** Routes die zichtbaar zijn zonder betaald abonnement (na onboarding). */
+function canAccessWithoutActiveSubscription(pathname: string): boolean {
+  if (pathname.startsWith("/login")) return true;
+  if (pathname.startsWith("/auth")) return true;
+  if (isAnonymousPublicPage(pathname)) return true;
+  if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
+  if (pathname.startsWith("/api/stripe/webhook")) return true;
+  if (pathname.startsWith("/api/stripe/checkout")) return true;
+  return false;
+}
+
+/** Routes zonder sessie die geen redirect naar login krijgen (legal, launch-wachtlijst). */
+function isAnonymousPublicPage(pathname: string): boolean {
+  if (
     pathname === "/privacy" ||
     pathname.startsWith("/privacy/") ||
     pathname === "/terms" ||
     pathname.startsWith("/terms/")
-  );
+  ) {
+    return true;
+  }
+  return pathname === "/wachtlijst" || pathname.startsWith("/wachtlijst/");
 }
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
@@ -128,7 +145,7 @@ export async function updateSession(request: NextRequest) {
    * voortgang via cookie (middleware leest geen localStorage).
    */
   if (hasLocalMode && !user) {
-    if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
+    if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname)) {
       return supabaseResponse;
     }
     return applyLocalAnonymousOnboardingGuard(
@@ -141,32 +158,37 @@ export async function updateSession(request: NextRequest) {
   let onboardingCompleted = true;
   let profileLastDagstartDate: string | null | undefined = undefined;
   let profileRowReadOk = false;
+  let subscriptionStatus: string | null | undefined;
+  let subscriptionPeriodEnd: string | null | undefined;
+
   if (user) {
-    const { data: obData, error: obError } = await supabase
+    const { data: prof, error: profError } = await supabase
       .from("profiles")
-      .select("onboarding_completed, onboarding_version")
+      .select(
+        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end"
+      )
       .eq("id", user.id)
       .maybeSingle();
-    if (!obError) {
+    if (!profError && prof) {
+      profileRowReadOk = true;
       onboardingCompleted = isProfileOnboardingUpToDate(
-        obData?.onboarding_completed,
-        obData?.onboarding_version as number | null | undefined
+        prof.onboarding_completed,
+        prof.onboarding_version as number | null | undefined
       );
+      profileLastDagstartDate =
+        prof.last_dagstart_date != null
+          ? String(prof.last_dagstart_date).slice(0, 10)
+          : null;
+      subscriptionStatus =
+        typeof prof.subscription_status === "string" ? prof.subscription_status : null;
+      subscriptionPeriodEnd =
+        typeof prof.subscription_current_period_end === "string"
+          ? prof.subscription_current_period_end
+          : prof.subscription_current_period_end != null
+            ? String(prof.subscription_current_period_end)
+            : null;
     } else {
       onboardingCompleted = false;
-    }
-
-    const { data: dsData, error: dsError } = await supabase
-      .from("profiles")
-      .select("last_dagstart_date")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (!dsError) {
-      profileRowReadOk = true;
-      profileLastDagstartDate =
-        dsData?.last_dagstart_date != null
-          ? String(dsData.last_dagstart_date).slice(0, 10)
-          : null;
     }
 
     const forceOnboardingDev =
@@ -191,7 +213,7 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
 
   if (!hasSession) {
-    if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
+    if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname)) {
       return supabaseResponse;
     }
     const url = request.nextUrl.clone();
@@ -220,6 +242,24 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  if (user && onboardingCompleted && profileRowReadOk) {
+    const skipPaidGate =
+      process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1" ||
+      isProtectedTestAccount(user.email ?? null) ||
+      canAccessWithoutActiveSubscription(pathname);
+    if (!skipPaidGate) {
+      const ok = profileHasAppAccess({
+        subscription_status: subscriptionStatus,
+        subscription_current_period_end: subscriptionPeriodEnd,
+      });
+      if (!ok) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/abonnement";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   if (user && profileRowReadOk) {
@@ -286,7 +326,7 @@ function applyLocalAnonymousOnboardingGuard(
   const isLoginPath = pathname.startsWith("/login");
   const isAuthPath = pathname.startsWith("/auth");
 
-  if (isLoginPath || isAuthPath || isPublicLegalPage(pathname)) {
+  if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname)) {
     return response;
   }
 
@@ -336,7 +376,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
-    isPublicLegalPage(pathname) ||
+    isAnonymousPublicPage(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/sw.js" ||

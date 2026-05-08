@@ -5,6 +5,14 @@ import { localeAddons } from "./localeAddons";
 export const BUNDLES: Record<Locale, Record<string, unknown>> = {
   nl: {
     brand: { tagline: "Jouw houvast in chaos." },
+    cookie: {
+      aria: "Cookie-toestemming",
+      message:
+        "We meten anoniem hoe Structuro wordt gebruikt om het product te verbeteren. Geen advertenties, geen tracking buiten Structuro.",
+      acceptAll: "Akkoord",
+      necessaryOnly: "Alleen noodzakelijk",
+      moreInfo: "Meer info",
+    },
     sidebar: {
       today: "Vandaag",
       moreOptions: "Meer opties",
@@ -115,6 +123,39 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsEnableFail: "Kon meldingen niet inschakelen: {detail}",
       notificationsDisabled: "Push-abonnement verwijderd.",
       notificationsDisableFail: "Kon meldingen niet uitschakelen: {detail}",
+      subscriptionTitle: "Abonnement",
+      subscriptionHint:
+        "Opzeggen geldt vanaf het einde van de lopende betaalperiode. Tot die tijd blijf je toegang houden.",
+      refundLink: "Geld terug binnen 14 dagen?",
+      cancelCta: "Abonnement opzeggen",
+      cancelConfirm:
+        "We zetten opzeggen aan op het einde van de huidige betaalperiode. Nu doorgaan?",
+      cancelBusy: "Bezig…",
+      cancelDone: "Opzeggen staat aan. Je houdt toegang tot het einde van de periode.",
+      cancelFail: "Kon niet opzeggen: {detail}",
+      subscriptionStatusActive: "Actief",
+      subscriptionStatusCancelledEnd: "Opgezegd, toegang tot {date}",
+      subscriptionStatusPastDue: "Betaling open",
+      subscriptionStatusRefunded: "Terugbetaald",
+      subscriptionStatusExpired: "Verlopen",
+      subscriptionUnknown: "Onbekend",
+      refundSelfCta: "Geld terug binnen 14 dagen",
+      refundModalBody:
+        "Je krijgt het volledige bedrag binnen 5-10 werkdagen terug op je rekening. Je toegang stopt direct. Doorgaan?",
+      refundModalConfirm: "Ja, terugbetalen",
+      refundModalCancel: "Annuleren",
+      refundBusy: "Bezig…",
+      refundDoneToast: "Terugbetaling gestart. Je ontvangt een mail.",
+      refundFailToast: "Kon geen terugbetaling starten: {detail}",
+      refundPreviouslyRefunded:
+        "Voor een nieuw refund-verzoek, mail info@structuro.eu",
+      analyticsTitle: "Anonieme productanalyse",
+      analyticsHint:
+        "Optionele meetgegevens (PostHog, EU) om de app te verbeteren. Geen inhoud van je taken of gedachten.",
+      analyticsStatusOn: "Aan",
+      analyticsStatusOff: "Uit",
+      analyticsEnable: "Aanzetten",
+      analyticsDisable: "Uitzetten",
     },
     login: {
       taglineBrand: "Structuro",
@@ -191,10 +232,55 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Dagstart",
       subtitle: "Neem even de tijd om je dag te overzien.",
     },
+    subscriptionPage: {
+      title: "Kies je abonnement",
+      subtitle:
+        "€12,99 per maand of €119 per jaar. Je kunt een promotiecode invoeren op de Stripe-betaalpagina.",
+      monthlyTitle: "Maandelijks",
+      monthlyPrice: "€12,99",
+      monthlyPeriod: "per maand",
+      yearlyTitle: "Jaarlijks",
+      yearlyPrice: "€119",
+      yearlyPeriod: "per jaar",
+      yearlyEquiv: "effectief €9,92 per maand",
+      yearlyBadge: "Beste deal",
+      cta: "Kies dit abonnement",
+      guarantee:
+        "14 dagen geld-terug-garantie. Niet tevreden? Mail ons en je krijgt het volledige bedrag terug.",
+      notConfigured: "Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw.",
+      checkoutFail: "Kon de betaalpagina niet openen. Probeer het opnieuw.",
+      waitingStripe: "Je betaling wordt verwerkt…",
+      openApp: "Open de app",
+      needLogin: "Log in om een abonnement te kiezen.",
+      refundMail: "Mail voor geld terug",
+      stripePendingBody:
+        "Je betaling is in behandeling. We sturen je binnen enkele minuten een bevestigingsmail. Je kunt deze pagina nu sluiten.",
+      refreshStatus: "Ververs status",
+    },
+    subscription: {
+      moneyBackTitle:
+        "14 dagen geld terug, geen vragen. Eén klik in de app.",
+      moneyBackBody:
+        "Niet tevreden? Vraag binnen 14 dagen je geld terug. Geen mail, geen formulier, geen weken wachten.",
+      moneyBackHowLink: "Hoe werkt dit?",
+      moneyBackHowDetail:
+        "Na je aankoop vind je in Instellingen de knop om binnen 14 dagen het volledige bedrag terug te vragen.",
+      paymentTrustLabel: "Veilig betalen via Stripe",
+      checkoutServiceRoleError:
+        "Er ging iets mis aan onze kant. Probeer het over een paar minuten opnieuw of mail info@structuro.eu.",
+    },
     ...localeAddons.nl,
   },
   en: {
     brand: { tagline: "Your anchor in the chaos." },
+    cookie: {
+      aria: "Cookie consent",
+      message:
+        "We collect anonymous usage data to improve Structuro. No ads and no tracking outside Structuro.",
+      acceptAll: "Accept",
+      necessaryOnly: "Essential only",
+      moreInfo: "Learn more",
+    },
     sidebar: {
       today: "Today",
       moreOptions: "More options",
@@ -305,6 +391,39 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       notificationsEnableFail: "Could not enable notifications: {detail}",
       notificationsDisabled: "Push subscription removed.",
       notificationsDisableFail: "Could not disable notifications: {detail}",
+      subscriptionTitle: "Subscription",
+      subscriptionHint:
+        "Cancellation applies at the end of the current billing period. You keep access until then.",
+      refundLink: "Refund within 14 days?",
+      cancelCta: "Cancel subscription",
+      cancelConfirm:
+        "We will cancel at the end of the current billing period. Continue now?",
+      cancelBusy: "Working…",
+      cancelDone: "Cancellation is scheduled. You keep access until the period ends.",
+      cancelFail: "Could not cancel: {detail}",
+      subscriptionStatusActive: "Active",
+      subscriptionStatusCancelledEnd: "Cancelling, access until {date}",
+      subscriptionStatusPastDue: "Payment past due",
+      subscriptionStatusRefunded: "Refunded",
+      subscriptionStatusExpired: "Expired",
+      subscriptionUnknown: "Unknown",
+      refundSelfCta: "Refund within 14 days",
+      refundModalBody:
+        "You will receive the full amount back within 5-10 business days. Your access ends immediately. Continue?",
+      refundModalConfirm: "Yes, refund me",
+      refundModalCancel: "Cancel",
+      refundBusy: "Working…",
+      refundDoneToast: "Refund initiated. You will receive an email.",
+      refundFailToast: "Could not start refund: {detail}",
+      refundPreviouslyRefunded:
+        "For a new refund request, email info@structuro.eu",
+      analyticsTitle: "Anonymous product analytics",
+      analyticsHint:
+        "Optional usage metrics (PostHog, EU region) to improve the app. Never the text of your tasks or parked thoughts.",
+      analyticsStatusOn: "On",
+      analyticsStatusOff: "Off",
+      analyticsEnable: "Turn on",
+      analyticsDisable: "Turn off",
     },
     login: {
       taglineBrand: "Structuro",
@@ -380,6 +499,42 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     dagstart: {
       title: "Day start",
       subtitle: "Take a moment to look at your day.",
+    },
+    subscriptionPage: {
+      title: "Choose your plan",
+      subtitle:
+        "€12.99 per month or €119 per year. You can enter a promotion code on the Stripe checkout page.",
+      monthlyTitle: "Monthly",
+      monthlyPrice: "€12.99",
+      monthlyPeriod: "per month",
+      yearlyTitle: "Yearly",
+      yearlyPrice: "€119",
+      yearlyPeriod: "per year",
+      yearlyEquiv: "effectively €9.92 per month",
+      yearlyBadge: "Best deal",
+      cta: "Choose this plan",
+      guarantee:
+        "14-day money-back guarantee. Not satisfied? Email us for a full refund.",
+      notConfigured: "Payments are not configured yet. Please try again later.",
+      checkoutFail: "Could not open checkout. Please try again.",
+      waitingStripe: "Processing your payment…",
+      openApp: "Open the app",
+      needLogin: "Sign in to choose a subscription.",
+      refundMail: "Email for refund",
+      stripePendingBody:
+        "Your payment is being processed. We will send a confirmation email within a few minutes. You can close this page now.",
+      refreshStatus: "Refresh status",
+    },
+    subscription: {
+      moneyBackTitle: "14-day money back, no questions. One tap in the app.",
+      moneyBackBody:
+        "Not satisfied? Request a refund within 14 days. No email, no form, no weeks of waiting.",
+      moneyBackHowLink: "How does this work?",
+      moneyBackHowDetail:
+        "After you subscribe, you will find a button in Settings to request a full refund within 14 days.",
+      paymentTrustLabel: "Secure checkout with Stripe",
+      checkoutServiceRoleError:
+        "Something went wrong on our end. Please try again in a few minutes or email info@structuro.eu.",
     },
     ...localeAddons.en,
   },

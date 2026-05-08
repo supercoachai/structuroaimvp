@@ -19,6 +19,33 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       taskFallback: "Taak",
       airlockDone: "Klaar.",
     },
+    waitlist: {
+      eyebrow: "Structuro gaat live",
+      titleWord: "Wachtlijst",
+      titleAccent: ", geen gedoe.",
+      subtitle:
+        "We lanceren op 26 mei. Laat hier je naam en e-mail achter: je hoort bij de eersten als de app live gaat.",
+      point1: "Één gerichte mail rond launch. Daarna hou je rustig je inbox.",
+      point2: "Gebouwd voor mensen die wél weten wat ze moeten doen, maar moeite hebben om te beginnen.",
+      point3: "Jouw aanmelding slaan we zo min mogelijk gedetailleerd op, in lijn met ons privacybeleid.",
+      fnLabel: "Voornaam",
+      emailLabel: "E-mailadres",
+      submit: "Zet me op de lijst",
+      submitting: "Bezig…",
+      cardLead: "Even je naam en mail. Dat is genoeg.",
+      disclaimer:
+        "Geen spam. Geen automatische drip. Als je wilt, meld je later af met één reply.",
+      successTitle: "Je staat erop, {name}.",
+      successLine: "Je krijgt een mail van ons op of vlak voor 26 mei.",
+      alreadyExists:
+        "Je staat al op de lijst, daar hoef je niets meer voor te doen.",
+      errorGeneric: "Er ging iets mis. Probeer het zo nog eens.",
+      tryAgain: "Probeer het opnieuw",
+      validationName: "Vul je voornaam in.",
+      validationEmail: "Vul een geldig e-mailadres in.",
+      backToSite: "Terug naar structuro.eu",
+      footerPrivacy: "Privacy",
+    },
     shutdownPage: {
       doneTitle: "Dagafsluiter voltooid!",
       doneSubtitle: "Rust goed uit. Tot morgen!",
@@ -471,6 +498,34 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       add: "Add",
       taskFallback: "Task",
       airlockDone: "Done.",
+    },
+    waitlist: {
+      eyebrow: "Structuro is launching soon",
+      titleWord: "Waitlist",
+      titleAccent: ", no fuss.",
+      subtitle:
+        "We launch on 26 May. Leave your first name and email here: you'll be among the first to know when the app goes live.",
+      point1: "One focused launch email. Your inbox stays calm after that.",
+      point2: "Built for brains that know exactly what to do, but struggle to begin.",
+      point3: "We collect only what's needed here, aligned with our privacy policy.",
+      fnLabel: "First name",
+      emailLabel: "Email address",
+      submit: "Put me on the list",
+      submitting: "Working…",
+      cardLead: "Just your first name and email.",
+      disclaimer:
+        "No spam. No drip campaign. Reply once if you want out later.",
+      successTitle: "You are on the list, {name}.",
+      successLine:
+        "You’ll hear from us on or shortly before 26 May.",
+      alreadyExists:
+        "You are already on the list. Nothing left to do here.",
+      errorGeneric: "Something went wrong. Please try again in a moment.",
+      tryAgain: "Try again",
+      validationName: "Enter your first name.",
+      validationEmail: "Enter a valid email address.",
+      backToSite: "Back to structuro.eu",
+      footerPrivacy: "Privacy policy",
     },
     shutdownPage: {
       doneTitle: "Day closed!",

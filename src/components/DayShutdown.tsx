@@ -13,6 +13,7 @@ import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/li
 import { trackShutdownCompleted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
 import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
+import { captureProductEvent } from "@/lib/posthog/track";
 
 interface DayShutdownProps {
   onComplete: () => void;
@@ -222,6 +223,10 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
         movedToTomorrowIds.length,
         satisfactionLevel
       );
+      captureProductEvent("shutdown_completed", {
+        tasks_completed_count: completedTasks.length,
+        tasks_moved_count: movedToTomorrowIds.length,
+      });
       onComplete();
     } catch (error: unknown) {
       const detail =

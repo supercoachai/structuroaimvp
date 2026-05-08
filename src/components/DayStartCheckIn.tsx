@@ -30,6 +30,7 @@ import {
   type DagafsluiterSuggestionRow,
 } from '@/lib/supabase/parkedThoughtsDb';
 import { useI18n } from '@/lib/i18n';
+import { captureProductEvent } from '@/lib/posthog/track';
 
 function localDayStart(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -143,6 +144,7 @@ export default function DayStartCheckIn({
     if (dagstartGaOpenedRef.current) return;
     dagstartGaOpenedRef.current = true;
     trackDagstartOpened();
+    captureProductEvent("dagstart_started");
   }, []);
 
   const [energyOnboardingHintHidden, setEnergyOnboardingHintHidden] = useState(false);
@@ -1316,6 +1318,10 @@ export default function DayStartCheckIn({
       }
 
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
+
+      captureProductEvent("dagstart_completed", {
+        tasks_selected_count: filledSlots,
+      });
       
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
