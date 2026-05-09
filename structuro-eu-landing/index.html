@@ -74,6 +74,11 @@ img{max-width:100%;height:auto;}
 
 .container{max-width:1100px;margin:0 auto;padding:0 24px;}
 
+/* Scroll offset for sticky nav */
+#loop, #voor-vrouwen, #waarom, #prijs, #faq, #verhalen, #wachtlijst, #eu-sluitstuk, #waarom-nodig {
+  scroll-margin-top: 88px;
+}
+
 /* ── Launch banner ── */
 .launch-banner{
   background:var(--text);color:#fff;
@@ -696,7 +701,186 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   pointer-events: none;
 }
 
-/* ── Footer CTA 3D text ── */
+/* Burn-out onderzoeks-callout (95%) */
+.empathy-stat-callout {
+  margin: 44px 0 36px;
+  padding: 32px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}
+.empathy-stat-num {
+  font-size: clamp(60px, 10vw, 88px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(145deg, #ffffff 15%, #93C5FD 55%, #60A5FA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(96,165,250,.5));
+  flex-shrink: 0;
+}
+.empathy-stat-text {
+  font-size: 17px;
+  line-height: 1.65;
+  color: rgba(255,255,255,.60);
+  font-weight: 300;
+  padding-top: 10px;
+  margin: 0;
+}
+@media(max-width:600px) {
+  .empathy-stat-callout { flex-direction: column; gap: 10px; }
+  .empathy-stat-text { padding-top: 0; }
+}
+
+/* ── Cyclus-sectie (menstruatie & ADHD) ── */
+.voor-vrouwen {
+  background: var(--bg);
+  padding: 100px 0;
+  position: relative;
+}
+.voor-vrouwen-head {
+  text-align: center;
+  margin-bottom: 64px;
+}
+.voor-vrouwen-head h2 {
+  max-width: 640px;
+  margin: 0 auto 14px;
+}
+.voor-vrouwen-head .lede-2 {
+  max-width: 560px;
+  margin: 0 auto;
+}
+.cycle-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 72px;
+  align-items: start;
+}
+@media(max-width:860px) { .cycle-layout { grid-template-columns: 1fr; gap: 40px; } }
+.cycle-svg-wrap { display: flex; justify-content: center; align-items: center; }
+.cycle-svg {
+  width: 360px;
+  height: 360px;
+  transform: perspective(900px) rotateX(12deg) rotateY(-6deg);
+  filter: drop-shadow(0 28px 56px rgba(15,23,42,.20)) drop-shadow(0 4px 12px rgba(15,23,42,.10));
+  transition: transform 0.5s cubic-bezier(0.23,1,0.32,1), filter 0.5s;
+}
+.cycle-svg:hover {
+  transform: perspective(900px) rotateX(5deg) rotateY(-2deg) translateY(-6px);
+  filter: drop-shadow(0 40px 72px rgba(15,23,42,.28)) drop-shadow(0 6px 16px rgba(15,23,42,.12));
+}
+@media(max-width:860px) {
+  .cycle-svg { width: 260px; height: 260px; transform: perspective(600px) rotateX(6deg) rotateY(-3deg); }
+  .cycle-svg:hover { transform: perspective(600px) rotateX(3deg) rotateY(-1deg) translateY(-3px); }
+}
+.cycle-info { display: flex; flex-direction: column; gap: 10px; }
+.cycle-phase-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.23,1,0.32,1);
+  position: relative;
+  overflow: hidden;
+}
+.cycle-phase-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--phase-color, #2563EB);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+.cycle-phase-card.active {
+  border-color: var(--phase-color, #2563EB);
+  background: var(--phase-light, #EFF6FF);
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(15,23,42,.07);
+}
+.cycle-phase-card.active::before { opacity: 1; }
+.cycle-phase-card:hover:not(.active) { box-shadow: 0 2px 10px rgba(15,23,42,.06); transform: translateX(2px); }
+.cycle-phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.cycle-phase-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--phase-color, #2563EB);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--phase-color, #2563EB);
+}
+.cycle-phase-name { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.cycle-phase-days { font-size: 11px; color: var(--sub); font-weight: 500; }
+.cycle-phase-sub { font-size: 12.5px; color: var(--sub); line-height: 1.5; padding-left: 16px; }
+.cycle-phase-structuro { font-size: 11.5px; font-weight: 600; color: var(--blue); margin-top: 3px; padding-left: 16px; }
+.cycle-disclaimer { margin-top: 32px; font-size: 12.5px; color: var(--place); font-style: italic; text-align: center; }
+@media(max-width:720px) { .voor-vrouwen { padding: 72px 0; } .cycle-disclaimer { text-align: left; } }
+.cycle-info-btn {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--sub);
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms;
+  flex-shrink: 0;
+  font-family: inherit;
+  line-height: 1;
+  padding: 0;
+}
+.cycle-info-btn:hover,
+.cycle-info-btn[aria-expanded="true"] {
+  background: var(--phase-color, #2563EB);
+  color: white;
+  border-color: var(--phase-color, #2563EB);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--phase-color, #2563EB) 50%, transparent);
+}
+.cycle-phase-detail {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cycle-phase-detail[hidden] { display: none; }
+.cycle-detail-block { display: flex; flex-direction: column; gap: 3px; }
+.cycle-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .10em;
+  color: var(--phase-color, #2563EB);
+}
+.cycle-detail-text {
+  font-size: 12.5px;
+  color: var(--sub);
+  line-height: 1.6;
+}
+.cycle-detail-disclaimer {
+  font-size: 11px;
+  color: var(--place);
+  font-style: italic;
+  margin-top: 4px;
+}
+@keyframes cycleIndicatorPulse {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.55; }
+}
+#cycleIndicator > circle:first-child { animation: cycleIndicatorPulse 1.8s ease-in-out infinite; }
+@media(prefers-reduced-motion: reduce) {
+  .cycle-svg, .cycle-svg:hover { transform: none !important; filter: none !important; }
+  #cycleIndicator > circle:first-child { animation: none !important; opacity: 0.3; }
+}
 .footer-cta-inner {
   position: relative;
 }
@@ -1121,7 +1305,9 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     </a>
     <div class="nav-links">
       <a href="#loop" data-ph-cta="nav_loop" data-i18n="nav_how">Hoe het werkt</a>
-      <a href="#waarom" data-ph-cta="nav_waarom" data-i18n="nav_why">Waarom anders</a>
+      <a href="#waarom-nodig" data-ph-cta="nav_waarom_nodig" data-i18n="nav_waarom">Waarom</a>
+      <a href="#voor-vrouwen" data-ph-cta="nav_voor_vrouwen" data-i18n="nav_vrouwen">Cyclus</a>
+      <a href="#waarom" data-ph-cta="nav_waarom_anders" data-i18n="nav_why">Waarom anders</a>
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
@@ -1243,6 +1429,22 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   </div>
 </div>
 
+<!-- Empathy / burn-out (95%) -->
+<section class="empathy reveal" id="waarom-nodig">
+  <div class="container">
+    <div class="empathy-eyebrow" data-i18n="empathy_eyebrow">Klinkt dit bekend?</div>
+    <div class="empathy-body">
+      <p data-i18n="empathy_p1">Je hebt een to-do lijst van 47 items die je al drie weken niet aanraakt. Je weet precies wat je moet doen. Maar je begint niet.</p>
+      <p data-i18n="empathy_p2">En aan het einde van de dag voel je je schuldig, niet omdat je lui bent, maar omdat je brein gewoon niet meewerkte.</p>
+      <div class="empathy-stat-callout">
+        <div class="empathy-stat-num">95%</div>
+        <p class="empathy-stat-text" data-i18n="waarom_sub">Van de 50 ADHD'ers die we spraken voor Structuro,<br/>noemde 95% burn-out, of stond er tegenaan.</p>
+      </div>
+      <p class="empathy-close" data-i18n="empathy_p4">Structuro lost geen burn-out op, maar het geeft je één werkbare dag tegelijk zonder het gevoel dat je de rest ook al had moeten doen.</p>
+    </div>
+  </div>
+</section>
+
 <!-- Loop / How it works -->
 <section class="how reveal" id="loop">
   <div class="container">
@@ -1302,18 +1504,71 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   </div>
 </section>
 
-
-
-<!-- Empathy -->
-<section class="empathy reveal">
+<!-- Cyclus / voor vrouwen -->
+<section class="voor-vrouwen reveal" id="voor-vrouwen">
   <div class="container">
-    <div class="empathy-eyebrow" data-i18n="empathy_eyebrow">Klinkt dit bekend?</div>
-    <div class="empathy-body">
-      <p data-i18n="empathy_p1">Je hebt een to-do lijst van 47 items die je al drie weken niet aanraakt. Je weet precies wat je moet doen. Maar je begint niet.</p>
-      <p data-i18n="empathy_p2">En aan het einde van de dag voel je je schuldig, niet omdat je lui bent, maar omdat je brein gewoon niet meewerkte.</p>
-      <p class="empathy-soft" data-i18n="empathy_p3">Voor veel mensen die Structuro gebruiken was dit het punt waarop ze stopten met vertrouwen in zichzelf. Sommigen noemden het ADHD. Anderen een burn-out. Velen noemden het allebei.</p>
-      <p class="empathy-close" data-i18n="empathy_p4">Structuro lost geen burn-out op, maar het geeft je één werkbare dag tegelijk zonder het gevoel dat je de rest ook al had moeten doen.</p>
+    <div class="voor-vrouwen-head">
+      <div class="section-eyebrow" data-i18n="vrouwen_eyebrow">Voor vrouwen</div>
+      <h2 data-i18n="vrouwen_h2">ADHD werkt anders bij vrouwen.</h2>
+      <p class="lede-2" data-i18n="vrouwen_lede">Hormonen sturen dopamine, focus en emotieregulatie, en dus ook hoe ADHD zich elke dag uit. Structuro houdt daar rekening mee.</p>
     </div>
+    <div class="cycle-layout">
+      <div class="cycle-svg-wrap">
+        <svg id="cycleSvg" class="cycle-svg" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" aria-label="Cyclus-fase visualisatie">
+          <defs>
+            <radialGradient id="grad0" cx="55%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#FCA5A5"></stop>
+              <stop offset="100%" stop-color="#DC2626"></stop>
+            </radialGradient>
+            <radialGradient id="grad1" cx="55%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#86EFAC"></stop>
+              <stop offset="100%" stop-color="#15803D"></stop>
+            </radialGradient>
+            <radialGradient id="grad2" cx="55%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#FDE68A"></stop>
+              <stop offset="100%" stop-color="#B45309"></stop>
+            </radialGradient>
+            <radialGradient id="grad3" cx="55%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#C4B5FD"></stop>
+              <stop offset="100%" stop-color="#6D28D9"></stop>
+            </radialGradient>
+            <filter id="segGlow0" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+            <filter id="segGlow1" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+            <filter id="segGlow2" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+            <filter id="segGlow3" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+            <filter id="dotGlow" x="-150%" y="-150%" width="400%" height="400%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"></feGaussianBlur>
+              <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+            </filter>
+          </defs>
+          <g id="cycleSegments"></g>
+          <circle cx="180" cy="180" r="80" fill="white" stroke="#E2E8F0" stroke-width="1"></circle>
+          <circle cx="180" cy="180" r="73" fill="#F8FAFC" opacity="0.9"></circle>
+          <text id="cycleCenter1" x="180" y="175" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="700" fill="#0F172A">…</text>
+          <text id="cycleCenter2" x="180" y="193" text-anchor="middle" dominant-baseline="middle" font-family="DM Sans, sans-serif" font-size="10" fill="#64748B">28 dagen</text>
+          <g id="cycleIndicator" style="pointer-events:none;">
+            <circle r="12" fill="none" stroke="#2563EB" stroke-width="2" opacity="0.25"></circle>
+            <circle r="8" fill="#2563EB" filter="url(#dotGlow)"></circle>
+            <circle r="4" fill="white" opacity="0.9"></circle>
+            <circle r="2" fill="#2563EB"></circle>
+          </g>
+        </svg>
+      </div>
+      <div class="cycle-info" id="cycleInfo"></div>
+    </div>
+    <p class="cycle-disclaimer" data-i18n="vrouwen_disclaimer">Cycli verschillen per persoon. In Structuro stuur jij zelf: geen algoritme.</p>
   </div>
 </section>
 
@@ -1568,7 +1823,9 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </a>
       <div class="footer-links">
         <a href="#loop" data-ph-cta="footer_loop" data-i18n="nav_how">Hoe het werkt</a>
-        <a href="#waarom" data-ph-cta="footer_waarom" data-i18n="nav_why">Waarom anders</a>
+        <a href="#waarom-nodig" data-ph-cta="footer_waarom_nodig" data-i18n="nav_waarom">Waarom</a>
+        <a href="#voor-vrouwen" data-ph-cta="footer_voor_vrouwen" data-i18n="nav_vrouwen">Cyclus</a>
+        <a href="#waarom" data-ph-cta="footer_waarom_anders" data-i18n="nav_why">Waarom anders</a>
         <a href="#prijs" data-ph-cta="footer_prijs" data-i18n="nav_price">Prijs</a>
         <a href="#faq" data-ph-cta="footer_faq">FAQ</a>
         <a href="https://www.structuro.ai/login" data-ph-cta="footer_login_ai" data-i18n="nav_login">Inloggen</a>
@@ -1661,14 +1918,14 @@ const childObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.10 });
 
-document.querySelectorAll('.step, .quote-card, .pricing-card, .faq-item, .trust-grid > div').forEach(el => {
+document.querySelectorAll('.step, .quote-card, .pricing-card, .faq-item, .trust-grid > div, .cycle-phase-card').forEach(el => {
   childObserver.observe(el);
 });
 
 // ── i18n ──────────────────────────────────────────────────────────
 const TRANSLATIONS = {
   nl: {
-    nav_how: 'Hoe het werkt', nav_why: 'Waarom anders', nav_price: 'Prijs',
+    nav_how: 'Hoe het werkt', nav_waarom: 'Waarom', nav_vrouwen: 'Cyclus', nav_why: 'Waarom anders', nav_price: 'Prijs',
     nav_login: 'Inloggen', nav_cta: 'Zet me op de lijst',
     cta_try: 'Zet me op de lijst',
     payment_trust_label: 'Veilig betalen via Stripe',
@@ -1693,7 +1950,12 @@ const TRANSLATIONS = {
     empathy_p1: 'Je hebt een to-do lijst van 47 items die je al drie weken niet aanraakt. Je weet precies wat je moet doen. Maar je begint niet.',
     empathy_p2: 'En aan het einde van de dag voel je je schuldig, niet omdat je lui bent, maar omdat je brein gewoon niet meewerkte.',
     empathy_p3: 'Voor veel mensen die Structuro gebruiken was dit het punt waarop ze stopten met vertrouwen in zichzelf. Sommigen noemden het ADHD. Anderen een burn-out. Velen noemden het allebei.',
+    waarom_sub: "Van de 50 ADHD'ers die we spraken voor Structuro,<br/>noemde 95% burn-out, of stond er tegenaan.",
     empathy_p4: 'Structuro lost geen burn-out op, maar het geeft je één werkbare dag tegelijk zonder het gevoel dat je de rest ook al had moeten doen.',
+    vrouwen_eyebrow: 'Voor vrouwen',
+    vrouwen_h2: 'ADHD werkt anders bij vrouwen.',
+    vrouwen_lede: 'Hormonen sturen dopamine, focus en emotieregulatie, en dus ook hoe ADHD zich elke dag uit. Structuro houdt daar rekening mee.',
+    vrouwen_disclaimer: 'Cycli verschillen per persoon. In Structuro stuur jij zelf: geen algoritme.',
     quotes_eyebrow: 'Echte verhalen', quotes_h2: 'Geen reviews. Mensen.',
     quote1_name: 'Mila',
     quote1_text: 'De dagstart met energie voelt eindelijk eerlijk: lage dag, één taak. Geen schaamte over wat ik níet in mijn weekplan pas.',
@@ -1777,7 +2039,7 @@ const TRANSLATIONS = {
     footer_privacy: 'Privacy policy', footer_terms: 'Algemene voorwaarden',
   },
   en: {
-    nav_how: 'How it works', nav_why: 'Why different', nav_price: 'Pricing',
+    nav_how: 'How it works', nav_waarom: 'Why', nav_vrouwen: 'Cycle', nav_why: 'Why different', nav_price: 'Pricing',
     nav_login: 'Log in', nav_cta: 'Join the waitlist',
     cta_try: 'Join the waitlist',
     payment_trust_label: 'Secure checkout with Stripe',
@@ -1802,7 +2064,12 @@ const TRANSLATIONS = {
     empathy_p1: 'You have a to-do list of 47 items you haven\'t touched in three weeks. You know exactly what to do. But you don\'t start.',
     empathy_p2: 'And at the end of the day you feel guilty, not because you\'re lazy, but because your brain just wouldn\'t cooperate.',
     empathy_p3: 'For many people who use Structuro, this was the point where they stopped trusting themselves. Some called it ADHD. Others called it burnout. Many called it both.',
+    waarom_sub: 'Of the 50 people with ADHD we interviewed for Structuro,<br/>95% mentioned burnout, or were heading there.',
     empathy_p4: 'Structuro doesn\'t fix burnout, but it gives you one workable day at a time, without the feeling that you should have done the rest already.',
+    vrouwen_eyebrow: 'For women',
+    vrouwen_h2: 'ADHD works differently for women.',
+    vrouwen_lede: 'Hormones drive dopamine, focus and emotional regulation, so ADHD shows up differently each day too. Structuro takes that into account.',
+    vrouwen_disclaimer: 'Cycles vary per person. You call the shots in Structuro: not an algorithm.',
     quotes_eyebrow: 'Real stories', quotes_h2: 'Not reviews. People.',
     quote1_name: 'Mila',
     quote1_text: 'The day-start with energy finally feels honest: low day, one task. Less shame about what I cannot fit into my week.',
@@ -1888,11 +2155,14 @@ const TRANSLATIONS = {
 };
 
 let currentLang = localStorage.getItem('structuro_lang') || 'nl';
+window.currentLang = currentLang;
 
 function setLang(lang) {
   currentLang = lang;
+  window.currentLang = lang;
   localStorage.setItem('structuro_lang', lang);
   applyTranslations();
+  if (typeof window.updateCycleText === 'function') window.updateCycleText(lang);
   document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
   document.getElementById('btnEN').classList.toggle('active', lang === 'en');
   document.documentElement.lang = lang;
@@ -1919,5 +2189,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 </script>
+<script src="/js/landing-cycle.js"></script>
 </body>
 </html>
