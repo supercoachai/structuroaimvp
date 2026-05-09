@@ -22,6 +22,8 @@ import { completeOnboardingProfile } from "@/lib/onboardingMutations";
 import CycleAboutModal from "@/components/cycle/CycleAboutModal";
 import CycleSetupForm from "@/components/cycle/CycleSetupForm";
 import { saveCycleConsent } from "@/lib/cycle/cycleProfileDb";
+import { calculateCyclePhase } from "@/lib/cycle/calculatePhase";
+import type { CyclePhase } from "@/lib/cycle/types";
 import {
   isLocalOnboardingCompleted,
   setLocalOnboardingCompleted,
@@ -198,6 +200,9 @@ export default function OnboardingFlow() {
   /** Cyclus-stap (optioneel, alle gebruikers): 'intro' = drie keuzes, 'setup' = datum + lengte. */
   const [cycleStage, setCycleStage] = useState<"intro" | "setup">("intro");
   const [cycleAboutOpen, setCycleAboutOpen] = useState(false);
+  /** Onthoudt setup-input van deze sessie zodat fase 1 silent-storage in eerste dagstart mee kan. */
+  const [cyclePeriodStart, setCyclePeriodStart] = useState<string | null>(null);
+  const [cycleAverageLength, setCycleAverageLength] = useState<number | null>(null);
 
   /** Laatste slide: stap voor stap opbouwen tot de CTA zichtbaar is. */
   const [readySlidePhase, setReadySlidePhase] = useState(0);
@@ -766,6 +771,13 @@ export default function OnboardingFlow() {
     if (firstDayUseMicroSteps === true && microSteps.length === 0) return;
     const dateStr = getCalendarDateAmsterdam();
     const energyLevel = energy;
+    let cyclePhaseToday: CyclePhase | null = null;
+    if (cyclePeriodStart && cycleAverageLength) {
+      const startDate = new Date(`${cyclePeriodStart}T00:00:00`);
+      if (!Number.isNaN(startDate.getTime())) {
+        cyclePhaseToday = calculateCyclePhase(startDate, cycleAverageLength);
+      }
+    }
     if (user?.id) {
       let task;
       try {
@@ -796,6 +808,7 @@ export default function OnboardingFlow() {
       await upsertCheckInToSupabase(user.id, dateStr, {
         energy_level: energyLevel,
         top3_task_ids: [task.id],
+        cycle_phase: cyclePhaseToday,
       });
     } else {
       const created = addTaskToStorage({
@@ -1482,6 +1495,8 @@ export default function OnboardingFlow() {
                               if (user?.id) {
                                 await saveCycleConsent(user.id, periodStart, length);
                               }
+                              setCyclePeriodStart(periodStart);
+                              setCycleAverageLength(length);
                               setCycleStage("intro");
                               setStep((s) =>
                                 Math.min(s + 1, STEP_COUNT - 1)

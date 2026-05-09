@@ -8,6 +8,7 @@ import {
   upsertCheckInToSupabase,
   type CheckInPayload,
 } from "@/lib/supabase/checkinsDb";
+import type { CyclePhase } from "@/lib/cycle/types";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
 const today = () => getCalendarDateAmsterdam();
@@ -16,13 +17,20 @@ export type CheckIn = {
   date: string;
   energy_level: string;
   top3_task_ids: string[] | null;
+  cycle_phase?: CyclePhase | null;
   user_id?: string;
   created_at?: string;
 };
 
+export type SaveCheckInPayload = {
+  energy_level: string;
+  top3_task_ids: string[] | null;
+  cycle_phase?: CyclePhase | null;
+};
+
 export function useCheckIn(): {
   checkIn: CheckIn | null;
-  saveCheckIn: (payload: { energy_level: string; top3_task_ids: string[] | null }) => Promise<void>;
+  saveCheckIn: (payload: SaveCheckInPayload) => Promise<void>;
   hasCheckedIn: boolean;
   loading: boolean;
 } {
@@ -42,6 +50,7 @@ export function useCheckIn(): {
               date: row.date,
               energy_level: row.energy_level ?? "",
               top3_task_ids: row.top3_task_ids ?? null,
+              cycle_phase: row.cycle_phase ?? null,
               user_id: row.user_id,
               created_at: row.created_at,
             });
@@ -106,7 +115,7 @@ export function useCheckIn(): {
   }, [load]);
 
   const saveCheckIn = useCallback(
-    async (payload: { energy_level: string; top3_task_ids: string[] | null }) => {
+    async (payload: SaveCheckInPayload) => {
       const date = today();
       if (user?.id) {
         try {
@@ -115,6 +124,7 @@ export function useCheckIn(): {
             date,
             energy_level: payload.energy_level,
             top3_task_ids: payload.top3_task_ids,
+            cycle_phase: payload.cycle_phase ?? null,
             user_id: user.id,
             created_at: new Date().toISOString(),
           });
@@ -135,6 +145,7 @@ export function useCheckIn(): {
               date,
               energy_level: payload.energy_level,
               top3_task_ids: payload.top3_task_ids,
+              cycle_phase: payload.cycle_phase ?? null,
               user_id: user.id,
               created_at: new Date().toISOString(),
             });

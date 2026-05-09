@@ -31,6 +31,9 @@ import {
 } from '@/lib/supabase/parkedThoughtsDb';
 import { useI18n } from '@/lib/i18n';
 import { captureProductEvent } from '@/lib/posthog/track';
+import { useCycleProfile } from '@/hooks/useCycleProfile';
+import { cycleSuggestionsEnabled } from '@/lib/cycle/featureFlags';
+import CyclePhaseHint from './cycle/CyclePhaseHint';
 
 function localDayStart(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -71,6 +74,9 @@ export default function DayStartCheckIn({
   const deferredTasksForSuggestions = useDeferredValue(tasks);
   const { checkIn: checkInFromDb, saveCheckIn } = useCheckIn();
   const { user: authUser } = useUser();
+  const { consentOn: cycleConsentOn, computePhaseToday: computeCyclePhaseToday } =
+    useCycleProfile();
+  const cycleHintsEnabled = useMemo(() => cycleSuggestionsEnabled(), []);
   const [energyLevel, setEnergyLevel] = useState<string | null>(() =>
     ignoreStoredSessionEnergy
       ? null
@@ -1281,11 +1287,14 @@ export default function DayStartCheckIn({
       // Wacht nog even zodat fetchTasks volledig is doorgevoerd
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Sla check-in op (Supabase bij ingelogde user, anders localStorage) — met timeout tegen eeuwig hangen
+      // Sla check-in op (Supabase bij ingelogde user, anders localStorage) — met timeout tegen eeuwig hangen.
+      // Stille opslag van cyclus-fase als gebruiker consent heeft (geen UI-impact in fase 1).
+      const cyclePhaseToday = cycleConsentOn ? computeCyclePhaseToday() : null;
       await withTimeout(
         saveCheckIn({
           energy_level: energyLevel,
           top3_task_ids: top3Ids.length > 0 ? top3Ids : null,
+          cycle_phase: cyclePhaseToday,
         }),
         25_000,
         tr('dayStart.saveTimeout')
@@ -1681,6 +1690,10 @@ export default function DayStartCheckIn({
           </button>
         </div>
       </div>
+
+      {cycleHintsEnabled && cycleConsentOn ? (
+        <CyclePhaseHint phase={computeCyclePhaseToday()} />
+      ) : null}
 
       {/* Jouw focuspunten per slot (aantal afhankelijk van energie) */}
       <div className="mb-4">

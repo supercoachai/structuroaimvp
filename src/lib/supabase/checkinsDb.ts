@@ -1,10 +1,16 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import type { CyclePhase } from "@/lib/cycle/types";
 
 export type CheckInPayload = {
   energy_level: string;
   top3_task_ids: string[] | null;
+  /**
+   * Optioneel: huidige cyclusfase volgens calculateCyclePhase().
+   * Alleen gevuld als de gebruiker consent heeft gegeven voor cyclus-tracking.
+   */
+  cycle_phase?: CyclePhase | null;
 };
 
 export type CheckInRow = {
@@ -13,6 +19,7 @@ export type CheckInRow = {
   date: string;
   energy_level: string | null;
   top3_task_ids: string[] | null;
+  cycle_phase: CyclePhase | null;
   created_at: string;
 };
 
@@ -50,17 +57,35 @@ export async function upsertCheckInToSupabase(
   );
 
   const supabase = createClient();
-  const { error } = await supabase.from("daily_checkins").upsert(
-    {
-      user_id: userId,
-      date,
-      energy_level: payload.energy_level,
-      top3_task_ids: ids.length > 0 ? ids : null,
-    },
-    { onConflict: "user_id,date" }
-  );
+  const includeCyclePhase = payload.cycle_phase !== undefined;
+  const baseRow: Record<string, unknown> = {
+    user_id: userId,
+    date,
+    energy_level: payload.energy_level,
+    top3_task_ids: ids.length > 0 ? ids : null,
+  };
+  if (includeCyclePhase) {
+    baseRow.cycle_phase = payload.cycle_phase ?? null;
+  }
+  const { error } = await supabase
+    .from("daily_checkins")
+    .upsert(baseRow, { onConflict: "user_id,date" });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message ?? "";
+    if (
+      includeCyclePhase &&
+      (msg.includes("cycle_phase") || msg.includes("schema cache"))
+    ) {
+      delete baseRow.cycle_phase;
+      const { error: retryErr } = await supabase
+        .from("daily_checkins")
+        .upsert(baseRow, { onConflict: "user_id,date" });
+      if (retryErr) throw new Error(retryErr.message);
+      return;
+    }
+    throw new Error(error.message);
+  }
 }
 
 /**
