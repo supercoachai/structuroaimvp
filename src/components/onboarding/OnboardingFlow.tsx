@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import {
+  Activity,
   Check,
   CheckCircle2,
   ChevronLeft,
@@ -18,6 +19,9 @@ import {
 import { useUser } from "@/hooks/useUser";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { completeOnboardingProfile } from "@/lib/onboardingMutations";
+import CycleAboutModal from "@/components/cycle/CycleAboutModal";
+import CycleSetupForm from "@/components/cycle/CycleSetupForm";
+import { saveCycleConsent } from "@/lib/cycle/cycleProfileDb";
 import {
   isLocalOnboardingCompleted,
   setLocalOnboardingCompleted,
@@ -43,7 +47,7 @@ import { toast } from "@/components/Toast";
 import { captureProductEvent } from "@/lib/posthog/track";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
 
-const STEP_COUNT = 10;
+const STEP_COUNT = 11;
 /** Horizontale slide tussen stappen (bewust rustig). */
 const SLIDE_MS = 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
@@ -51,7 +55,8 @@ const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 /** Gecombineerde microstappen + parkeren-demo (0-based stap-index). */
 const MICRO_MERGED_SLIDE_INDEX = 4;
 const NAME_SLIDE_INDEX = 5;
-const FIRST_DAY_SLIDE_INDEX = 7;
+const CYCLE_OPT_IN_SLIDE_INDEX = 6;
+const FIRST_DAY_SLIDE_INDEX = 8;
 
 /** Parkeren-demo: korte pauzes, rustigere typing, daarna klik → toast. */
 /** Eerst H2 + uitleg lezen, daarna pas voorbeeldzin "Bel mama terug" en demo. */
@@ -189,6 +194,10 @@ export default function OnboardingFlow() {
     if (userLoading) return;
     if (!user?.id) window.location.replace("/login");
   }, [isLocalMode, userLoading, user?.id]);
+
+  /** Cyclus-stap (optioneel, alle gebruikers): 'intro' = drie keuzes, 'setup' = datum + lengte. */
+  const [cycleStage, setCycleStage] = useState<"intro" | "setup">("intro");
+  const [cycleAboutOpen, setCycleAboutOpen] = useState(false);
 
   /** Laatste slide: stap voor stap opbouwen tot de CTA zichtbaar is. */
   const [readySlidePhase, setReadySlidePhase] = useState(0);
@@ -619,6 +628,13 @@ export default function OnboardingFlow() {
   }, [step, welcomeTaglineTyped, welcomeSuffix]);
 
   useEffect(() => {
+    if (step !== CYCLE_OPT_IN_SLIDE_INDEX) {
+      setCycleStage("intro");
+      setCycleAboutOpen(false);
+    }
+  }, [step]);
+
+  useEffect(() => {
     if (step !== 1) { setEnergyStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setEnergyStage(4); return; }
@@ -724,6 +740,7 @@ export default function OnboardingFlow() {
     if (dx < -56) {
       if (step === NAME_SLIDE_INDEX && firstName.trim().length < 2) return;
       if (step === MICRO_MERGED_SLIDE_INDEX && parkerenStage < 4) return;
+      if (step === CYCLE_OPT_IN_SLIDE_INDEX) return;
       if (step === FIRST_DAY_SLIDE_INDEX && !firstDayReady) return;
       void goNext();
     }
@@ -1401,7 +1418,98 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 7 — Persoonlijk welkom ── */}
+            {/* ── 7 — Cyclus-tracking (optioneel, alle gebruikers) ── */}
+            <section
+              data-ob-slide
+              className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"
+            >
+              <div className="flex min-h-full w-full flex-col justify-center px-5 py-8 md:px-4">
+                <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
+                  <div className="flex flex-col items-center text-center">
+                    {cycleStage === "intro" ? (
+                      <>
+                        <span
+                          className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"
+                          aria-hidden
+                        >
+                          <Activity className="h-6 w-6" strokeWidth={1.75} />
+                        </span>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                          {t("cycle.optInTitle")}
+                        </h2>
+                        <div className={OB_INTRO_OUTER}>
+                          <p className={`${OB_INTRO_P} text-balance`}>
+                            {t("cycle.optInBody")}
+                          </p>
+                        </div>
+                        <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setCycleStage("setup")}
+                            className="w-full rounded-xl bg-amber-400 py-3.5 text-base font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-amber-500 active:scale-[0.99]"
+                          >
+                            {t("cycle.optInYes")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void goNext()}
+                            className="w-full rounded-xl border border-slate-200 bg-white py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.99]"
+                          >
+                            {t("cycle.optInNo")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCycleAboutOpen(true)}
+                            className="mt-1 self-center text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700"
+                          >
+                            {t("cycle.optInLearnMore")}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                          {t("cycle.setupTitle")}
+                        </h2>
+                        <div className={OB_INTRO_OUTER}>
+                          <p className={`${OB_INTRO_P} text-balance`}>
+                            {t("cycle.setupSub")}
+                          </p>
+                        </div>
+                        <div className="mt-6 w-full max-w-sm">
+                          <CycleSetupForm
+                            onSubmit={async (periodStart, length) => {
+                              if (user?.id) {
+                                await saveCycleConsent(user.id, periodStart, length);
+                              }
+                              setCycleStage("intro");
+                              setStep((s) =>
+                                Math.min(s + 1, STEP_COUNT - 1)
+                              );
+                            }}
+                            secondaryAction={{
+                              label: t("cycle.optInNo"),
+                              onClick: () => {
+                                setCycleStage("intro");
+                                void goNext();
+                              },
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <CycleAboutModal
+                open={cycleAboutOpen}
+                onClose={() => setCycleAboutOpen(false)}
+                onYes={() => setCycleStage("setup")}
+                onNo={() => void goNext()}
+              />
+            </section>
+
+            {/* ── 8 — Persoonlijk welkom ── */}
             <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
@@ -1428,7 +1536,7 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 8 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
+            {/* ── 9 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
             <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
               <style>{`
                 @keyframes ob-first-day-bridge-in {
@@ -1725,7 +1833,7 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 9 — Dagafsluiting (uitleg) ── */}
+            {/* ── 10 — Dagafsluiting (uitleg) ── */}
             <section
               data-ob-slide
               className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"
@@ -1794,7 +1902,7 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 10 — Klaar (aankomst-moment, geen herhaling van uitleg) ── */}
+            {/* ── 11 — Klaar (aankomst-moment, geen herhaling van uitleg) ── */}
             <section
               data-ob-slide
               className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"

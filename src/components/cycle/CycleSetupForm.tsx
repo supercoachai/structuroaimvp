@@ -1,0 +1,175 @@
+"use client";
+
+import { useMemo, useState, type CSSProperties } from "react";
+import { Minus, Plus } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+import {
+  CYCLE_LENGTH_DEFAULT,
+  CYCLE_LENGTH_MAX,
+  CYCLE_LENGTH_MIN,
+  CYCLE_SETUP_MAX_DAYS_BACK,
+  clampCycleLength,
+} from "@/lib/cycle/types";
+
+const PRIMARY_BUTTON_BASE =
+  "w-full rounded-xl bg-amber-400 py-3.5 text-base font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-amber-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
+
+function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function todayIso(): string {
+  return isoDate(new Date());
+}
+
+function maxBackIso(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - CYCLE_SETUP_MAX_DAYS_BACK);
+  return isoDate(d);
+}
+
+export type CycleSetupFormProps = {
+  initialLastPeriodStart?: string | null;
+  initialAverageLength?: number | null;
+  /** Resolves wanneer opslaan klaar is. Als de promise rejects, blijft de UI in busy=false. */
+  onSubmit: (lastPeriodStart: string, averageLength: number) => Promise<void>;
+  /** Optionele knop linksonder (bv. "Annuleren") in modals. */
+  secondaryAction?: { label: string; onClick: () => void; disabled?: boolean };
+  submitLabelOverride?: string;
+};
+
+export default function CycleSetupForm({
+  initialLastPeriodStart,
+  initialAverageLength,
+  onSubmit,
+  secondaryAction,
+  submitLabelOverride,
+}: CycleSetupFormProps) {
+  const { t } = useI18n();
+  const todayStr = useMemo(todayIso, []);
+  const minBack = useMemo(maxBackIso, []);
+  const [periodStart, setPeriodStart] = useState<string>(
+    initialLastPeriodStart && initialLastPeriodStart >= minBack
+      ? initialLastPeriodStart
+      : todayStr
+  );
+  const [length, setLength] = useState<number>(
+    typeof initialAverageLength === "number"
+      ? clampCycleLength(initialAverageLength)
+      : CYCLE_LENGTH_DEFAULT
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const decrease = () => setLength((v) => clampCycleLength(v - 1));
+  const increase = () => setLength((v) => clampCycleLength(v + 1));
+
+  const submit = async () => {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await onSubmit(periodStart, clampCycleLength(length));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-6 text-left">
+      <div className="space-y-2">
+        <label
+          htmlFor="cycle-period-start"
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {t("cycle.setupPeriodLabel")}
+        </label>
+        <input
+          id="cycle-period-start"
+          type="date"
+          value={periodStart}
+          min={minBack}
+          max={todayStr}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (!v) return;
+            setPeriodStart(v);
+          }}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+          style={{ colorScheme: "light" } as CSSProperties}
+        />
+        <p className="text-xs text-slate-500">{t("cycle.setupPeriodHint")}</p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">
+          {t("cycle.setupLengthLabel")}
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <button
+            type="button"
+            onClick={decrease}
+            disabled={length <= CYCLE_LENGTH_MIN || busy}
+            aria-label={t("cycle.setupLengthDecreaseAria")}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Minus className="h-4 w-4" aria-hidden />
+          </button>
+          <div className="flex flex-1 flex-col items-center">
+            <span className="text-2xl font-semibold tabular-nums text-slate-900">
+              {length}
+            </span>
+            <span className="text-xs text-slate-500">
+              {t("cycle.setupLengthDays")}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={increase}
+            disabled={length >= CYCLE_LENGTH_MAX || busy}
+            aria-label={t("cycle.setupLengthIncreaseAria")}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">{t("cycle.setupLengthHint")}</p>
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {t("cycle.setupSaveError", { detail: error })}
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-2 pt-1">
+        <button
+          type="button"
+          onClick={() => void submit()}
+          disabled={busy}
+          className={PRIMARY_BUTTON_BASE}
+        >
+          {busy
+            ? t("cycle.setupSaving")
+            : (submitLabelOverride ?? t("cycle.setupSubmit"))}
+        </button>
+        {secondaryAction ? (
+          <button
+            type="button"
+            onClick={secondaryAction.onClick}
+            disabled={secondaryAction.disabled || busy}
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {secondaryAction.label}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}

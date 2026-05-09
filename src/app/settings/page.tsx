@@ -27,6 +27,7 @@ import {
 } from '@/utils/pushNotifications';
 import { useConsent } from '@/lib/posthog/ConsentContext';
 import posthog from 'posthog-js';
+import CycleSettingsSection from '@/components/cycle/CycleSettingsSection';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -522,6 +523,8 @@ export default function SettingsPage() {
               </p>
             ) : null}
           </section>
+
+          {hasSupabaseSession && !isLocalOnly ? <CycleSettingsSection /> : null}
 
           {hasSupabaseSession && !isLocalOnly ? (
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
