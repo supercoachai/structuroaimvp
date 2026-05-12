@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties } from "react";
-import { Minus, Plus } from "lucide-react";
+import { MinusIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useI18n } from "@/lib/i18n";
 import {
   CYCLE_LENGTH_DEFAULT,
@@ -119,7 +119,7 @@ export default function CycleSetupForm({
             aria-label={t("cycle.setupLengthDecreaseAria")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Minus className="h-4 w-4" aria-hidden />
+            <MinusIcon className="h-4 w-4" aria-hidden />
           </button>
           <div className="flex flex-1 flex-col items-center">
             <span className="text-2xl font-semibold tabular-nums text-slate-900">
@@ -136,7 +136,7 @@ export default function CycleSetupForm({
             aria-label={t("cycle.setupLengthIncreaseAria")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Plus className="h-4 w-4" aria-hidden />
+            <PlusIcon className="h-4 w-4" aria-hidden />
           </button>
         </div>
         <p className="text-xs text-slate-500">{t("cycle.setupLengthHint")}</p>

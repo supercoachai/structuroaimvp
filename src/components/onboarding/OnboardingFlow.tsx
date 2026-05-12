@@ -3,19 +3,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import {
-  Activity,
-  Check,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Circle,
-  Layers,
-  Moon,
-  Smile,
-  Sun,
-  Target,
-  Zap,
-} from "lucide-react";
+  ArrowPathIcon,
+  BoltIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FaceSmileIcon,
+  MoonIcon,
+  RocketLaunchIcon,
+  Squares2X2Icon,
+  SunIcon,
+} from "@heroicons/react/24/outline";
 import { useUser } from "@/hooks/useUser";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { completeOnboardingProfile } from "@/lib/onboardingMutations";
@@ -48,6 +47,16 @@ import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks"
 import { toast } from "@/components/Toast";
 import { captureProductEvent } from "@/lib/posthog/track";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
+
+/** Lege cirkel voor microstep-indicator (één lightweight DOM-node). */
+function MicroStepCircleOutline({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-block h-5 w-5 shrink-0 rounded-full border-2 border-current ${className ?? ""}`}
+      aria-hidden
+    />
+  );
+}
 
 const STEP_COUNT = 11;
 /** Horizontale slide tussen stappen (bewust rustig). */
@@ -941,7 +950,7 @@ export default function OnboardingFlow() {
       className="absolute left-4 top-6 z-30 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-white/70 hover:text-gray-600"
       aria-label={t("onboarding.navPrev")}
     >
-      <ChevronLeft className="h-5 w-5" strokeWidth={2} aria-hidden />
+      <ChevronLeftIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
     </button>
   );
 
@@ -1062,7 +1071,7 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
-                <Sun className="w-14 h-14 text-amber-500 mb-4" strokeWidth={1.75} aria-hidden />
+                <SunIcon className="w-14 h-14 text-amber-500 mb-4" strokeWidth={1.75} aria-hidden />
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.energyTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
                   <p className={`${OB_INTRO_P} text-balance`}>{t("onboarding.energyIntro1")}</p>
@@ -1070,9 +1079,9 @@ export default function OnboardingFlow() {
                 </div>
                 <div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-md">
                   {[
-                    { icon: <Moon className="w-10 h-10 text-slate-500" strokeWidth={1.5} />, label: t("onboarding.energyLowLabel"), sub: t("onboarding.energyLowSub"), idx: 1 },
-                    { icon: <Smile className="w-10 h-10 text-amber-500" strokeWidth={1.5} />, label: t("onboarding.energyNormalLabel"), sub: t("onboarding.energyNormalSub"), idx: 2 },
-                    { icon: <Zap className="w-10 h-10 text-violet-600" strokeWidth={1.75} />, label: t("onboarding.energyHighLabel"), sub: t("onboarding.energyHighSub"), idx: 3 },
+                    { icon: <MoonIcon className="w-10 h-10 text-slate-500" strokeWidth={1.5} />, label: t("onboarding.energyLowLabel"), sub: t("onboarding.energyLowSub"), idx: 1 },
+                    { icon: <FaceSmileIcon className="w-10 h-10 text-amber-500" strokeWidth={1.5} />, label: t("onboarding.energyNormalLabel"), sub: t("onboarding.energyNormalSub"), idx: 2 },
+                    { icon: <BoltIcon className="w-10 h-10 text-violet-600" strokeWidth={1.75} />, label: t("onboarding.energyHighLabel"), sub: t("onboarding.energyHighSub"), idx: 3 },
                   ].map((c) => (
                     <div
                       key={c.idx}
@@ -1103,7 +1112,7 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
-                <Check className="w-14 h-14 text-emerald-600 mb-4" strokeWidth={2} aria-hidden />
+                <CheckIcon className="w-14 h-14 text-emerald-600 mb-4" strokeWidth={2} aria-hidden />
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.focusPointsTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
                   <p className={OB_INTRO_P}>{t("onboarding.focusPointsBody")}</p>
@@ -1141,7 +1150,7 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
                 <div className="flex flex-col items-center text-center">
-                <Target className="w-14 h-14 text-blue-600 mb-4" strokeWidth={1.75} aria-hidden />
+                <RocketLaunchIcon className="w-14 h-14 text-blue-600 mb-4" strokeWidth={1.75} aria-hidden />
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.focusModeTitle")}</h2>
                 <div className={OB_INTRO_OUTER}>
                   <p className={OB_INTRO_P}>{t("onboarding.focusModeBody")}</p>
@@ -1205,7 +1214,7 @@ export default function OnboardingFlow() {
 
                   {/* Sectie 1: microstappen */}
                   <div className="flex w-full flex-col items-center justify-center py-6">
-                    <Layers className="w-14 h-14 text-violet-600 mb-4" strokeWidth={1.75} aria-hidden />
+                    <Squares2X2Icon className="w-14 h-14 text-violet-600 mb-4" strokeWidth={1.75} aria-hidden />
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.microTitle")}</h2>
                     <div className={OB_INTRO_OUTER}>
                       <p className={OB_INTRO_P}>{t("onboarding.microBody")}</p>
@@ -1231,7 +1240,7 @@ export default function OnboardingFlow() {
 
                           <div className="rounded-b-2xl bg-white border border-t-0 border-slate-200 px-5 py-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <Layers className="w-3.5 h-3.5 text-violet-600" aria-hidden />
+                              <Squares2X2Icon className="w-3.5 h-3.5 text-violet-600" aria-hidden />
                               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                 {t("onboarding.microStepsLabel")}
                               </p>
@@ -1249,14 +1258,14 @@ export default function OnboardingFlow() {
                                   >
                                     <div className="flex items-center gap-3">
                                       {isDone ? (
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" aria-hidden />
+                                        <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0" aria-hidden />
                                       ) : isActive ? (
-                                        <div className="relative shrink-0" aria-hidden>
-                                          <Circle className="w-5 h-5 text-violet-500" />
-                                          <ChevronRight className="absolute top-0.5 left-0.5 w-4 h-4 text-violet-500" />
+                                        <div className="relative shrink-0 text-violet-500" aria-hidden>
+                                          <MicroStepCircleOutline />
+                                          <ChevronRightIcon className="absolute left-0.5 top-0.5 h-4 w-4" />
                                         </div>
                                       ) : (
-                                        <Circle className="w-5 h-5 text-gray-300 shrink-0" aria-hidden />
+                                        <MicroStepCircleOutline className="text-gray-300" />
                                       )}
                                       <span
                                         className={`text-sm text-left transition-colors duration-[600ms] ${
@@ -1379,7 +1388,7 @@ export default function OnboardingFlow() {
                             className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/95 px-4 py-2.5 flex items-center gap-2.5"
                             style={{ animation: "ob-micro-done-banner 0.5s ease-out both" }}
                           >
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden />
+                            <CheckCircleIcon className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden />
                             <p className="text-xs font-medium text-emerald-800">{t("onboarding.parkSavedToast")}</p>
                           </div>
                         )}
@@ -1445,7 +1454,7 @@ export default function OnboardingFlow() {
                           className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500"
                           aria-hidden
                         >
-                          <Activity className="h-6 w-6" strokeWidth={1.75} />
+                          <ArrowPathIcon className="h-6 w-6" strokeWidth={1.75} />
                         </span>
                         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                           {t("cycle.optInTitle")}
@@ -1604,17 +1613,17 @@ export default function OnboardingFlow() {
                         {
                           key: "low" as const,
                           label: t("onboarding.energyLowLabel"),
-                          icon: <Moon className="h-10 w-10 text-slate-500" strokeWidth={1.5} aria-hidden />,
+                          icon: <MoonIcon className="h-10 w-10 text-slate-500" strokeWidth={1.5} aria-hidden />,
                         },
                         {
                           key: "medium" as const,
                           label: t("onboarding.energyNormalLabel"),
-                          icon: <Smile className="h-10 w-10 text-amber-500" strokeWidth={1.5} aria-hidden />,
+                          icon: <FaceSmileIcon className="h-10 w-10 text-amber-500" strokeWidth={1.5} aria-hidden />,
                         },
                         {
                           key: "high" as const,
                           label: t("onboarding.energyHighLabel"),
-                          icon: <Zap className="h-10 w-10 text-violet-600" strokeWidth={1.75} aria-hidden />,
+                          icon: <BoltIcon className="h-10 w-10 text-violet-600" strokeWidth={1.75} aria-hidden />,
                         },
                       ]).map((c) => (
                         <button

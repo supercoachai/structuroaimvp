@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Settings } from 'lucide-react';
+import { Cog6ToothIcon } from "@heroicons/react/24/outline";
 import AppLayout from '../../components/layout/AppLayout';
 import { wipeAllUserData, STRUCTURO_STORAGE_KEYS } from '../../lib/resetStorage';
 import { toast } from '../../components/Toast';
@@ -377,7 +377,7 @@ export default function SettingsPage() {
                 boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
               }}
             >
-              <Settings className="h-7 w-7 text-white" strokeWidth={2} aria-hidden />
+              <Cog6ToothIcon className="h-7 w-7 text-white" aria-hidden />
             </div>
             <h1 className="structuro-page-title">{t('settings.title')}</h1>
             <p className="structuro-page-subtitle">

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useI18n } from "@/lib/i18n";
 
 export type CycleAboutModalProps = {
@@ -57,7 +57,7 @@ export default function CycleAboutModal({
             className="-mr-1 -mt-1 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             aria-label={t("common.close")}
           >
-            <X className="h-5 w-5" aria-hidden />
+            <XMarkIcon className="h-5 w-5" aria-hidden />
           </button>
         </div>
         <div className="flex flex-col gap-3 overflow-y-auto px-6 py-5 text-sm leading-relaxed text-slate-700">

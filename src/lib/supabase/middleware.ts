@@ -106,6 +106,8 @@ export async function updateSession(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/posthog-otel-logs-test") ||
+    pathname.startsWith("/api/stripe/webhook") ||
     pathname === "/favicon.ico" ||
     pathname === "/sw.js" ||
     pathname === "/manifest.json"
@@ -398,6 +400,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     isAnonymousPublicPage(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/posthog-otel-logs-test") ||
     pathname === "/sw.js" ||
     pathname === "/manifest.json"
   ) {

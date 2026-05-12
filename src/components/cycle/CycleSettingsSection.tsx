@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Activity, X } from "lucide-react";
+import { ArrowPathIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "@/components/Toast";
 import { createClient } from "@/lib/supabase/client";
@@ -156,7 +156,7 @@ export default function CycleSettingsSection() {
     <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-500">
-          <Activity className="h-4 w-4" aria-hidden />
+          <ArrowPathIcon className="h-4 w-4" aria-hidden />
         </span>
         <h2 className="text-base font-semibold text-slate-800">
           {t("cycle.settingsTitle")}
@@ -385,7 +385,7 @@ function CycleSetupModal({
             className="-mr-1 -mt-1 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             aria-label={t("common.close")}
           >
-            <X className="h-5 w-5" aria-hidden />
+            <XMarkIcon className="h-5 w-5" aria-hidden />
           </button>
         </div>
         <div className="flex flex-col overflow-y-auto px-6 py-5">

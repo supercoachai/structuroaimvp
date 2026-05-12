@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useI18n } from "@/lib/i18n";
 import type { CyclePhase } from "@/lib/cycle/types";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
@@ -67,7 +67,7 @@ export default function CyclePhaseHint({ phase }: CyclePhaseHintProps) {
         className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white hover:text-slate-600"
         aria-label={t("cycle.hintDismissAria")}
       >
-        <X className="h-4 w-4" aria-hidden />
+        <XMarkIcon className="h-4 w-4" aria-hidden />
       </button>
     </div>
   );

@@ -2,9 +2,8 @@
 
 import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { DeferredVercelObservability } from "@/components/DeferredVercelObservability";
 import { VisualViewportBridge } from "@/components/VisualViewportBridge";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { TaskProvider } from "@/context/TaskContext";
@@ -13,7 +12,6 @@ import { trackSessionAbandoned } from "@/utils/events";
 import { AnalyticsInternalBridge } from "@/components/AnalyticsInternalBridge";
 import { PasswordRecoveryRedirect } from "@/components/PasswordRecoveryRedirect";
 import { I18nProvider } from "@/lib/i18n";
-import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 import { ConsentProvider } from "@/lib/posthog/ConsentContext";
 import { PostHogProvider } from "@/lib/posthog/PostHogProvider";
 import { PostHogPageviews } from "@/components/posthog/PostHogPageviews";
@@ -120,16 +118,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <VisualViewportBridge />
             <GoogleAnalytics />
             <ConditionalAppShell>{children}</ConditionalAppShell>
-            <Analytics
-              beforeSend={(event) =>
-                shouldSendProductAnalytics() ? event : null
-              }
-            />
-            <SpeedInsights
-              beforeSend={(event) =>
-                shouldSendProductAnalytics() ? event : null
-              }
-            />
+            <DeferredVercelObservability />
           </PostHogProvider>
           <CookieBanner />
         </ConsentProvider>
