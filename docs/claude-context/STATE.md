@@ -15,6 +15,13 @@
 - Positionering: ADHD-first, niet ADHD-only (Frank's vraag over ASS)
 - SOCIAL_TEMPLATE: twee vaste formats, altijd Structuro visuele stijl
 
+## Overwegingen (nog geen beslissing)
+
+- Shutdown verrijken met één positieve evaluatievraag ("Wat is één ding
+  dat vandaag wél gelukt is?"): Frank's feedback 12 mei, onderbouwd
+  door positieve psychologie (Achor/Seligman). Nog niet besloten of/hoe
+  dit past zonder Progressive Visual Silence te schenden.
+
 ## Open vragen / vervolgstappen
 
 - Hoe bouw je de 'waarom'-laag in de app zonder
