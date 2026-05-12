@@ -1,92 +1,67 @@
 (function () {
-  var CONSENT_KEY = "structuro_analytics_consent";
+  var GA_MEASUREMENT_ID = "G-26Q9L72S3P";
 
-  var COPY = {
-    nl: {
-      bannerTitle: "Anonieme productstatistieken",
-      bannerText:
-        "Met jouw toestemming meten we paginaweergaves en klikken om Structuro te verbeteren.",
-      accept: "Sta toe",
-      deny: "Weigeren",
-      privacy: "Privacybeleid",
-      privacyHref: "/privacy/",
-    },
-    en: {
-      bannerTitle: "Anonymous product analytics",
-      bannerText:
-        "With your consent we measure page views and clicks to improve Structuro.",
-      accept: "Allow",
-      deny: "Decline",
-      privacy: "Privacy policy",
-      privacyHref: "/privacy/",
-    },
-  };
+  /** Sectie-id's voor zichtbaarheid (waar gebruikers naar scrollen). */
+  var EU_SECTION_IDS = [
+    "hero",
+    "waarom-nodig",
+    "loop",
+    "voor-vrouwen",
+    "verhalen",
+    "waarom",
+    "prijs",
+    "faq",
+    "eu-sluitstuk",
+  ];
 
-  function lang() {
-    var fromHtml = document.documentElement && document.documentElement.lang;
-    if (fromHtml === "en") return "en";
-    return "nl";
-  }
+  var SCROLL_MILESTONES_PCT = [25, 50, 75, 100];
 
-  function consentRead() {
+  function capturePh(event, props) {
     try {
-      var v = localStorage.getItem(CONSENT_KEY);
-      if (v === "granted" || v === "denied") return v;
-    } catch (e) {}
-    return null;
-  }
-
-  function consentWrite(v) {
-    try {
-      localStorage.setItem(CONSENT_KEY, v);
+      if (window.posthog && typeof window.posthog.capture === "function") {
+        window.posthog.capture(event, props || {});
+      }
     } catch (e) {}
   }
 
-  function injectBanner(onChoice) {
-    if (document.getElementById("structuro-ph-banner")) return;
+  function captureGa(name, props) {
+    try {
+      if (window.gtag && typeof window.gtag === "function") {
+        window.gtag("event", name, props || {});
+      }
+    } catch (e) {}
+  }
 
-    var L = COPY[lang()];
-    var wrap = document.createElement("div");
-    wrap.id = "structuro-ph-banner";
-    wrap.style.cssText =
-      "position:fixed;left:0;right:0;bottom:0;z-index:9999;padding:16px;background:rgba(15,23,42,.94);color:#f8fafc;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.45;box-shadow:0 -8px 30px rgba(0,0,0,.18);pointer-events:none;";
-    wrap.innerHTML =
-      '<div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 20px;justify-content:space-between;pointer-events:auto;">' +
-      '<div style="flex:1;min-width:240px;max-width:720px;">' +
-      "<strong style=\"display:block;margin-bottom:6px;font-weight:700;\">" +
-      L.bannerTitle +
-      '</strong><span style="opacity:.92;">' +
-      L.bannerText +
-      '</span> <a href="' +
-      L.privacyHref +
-      "\" style=\"color:#93c5fd;text-decoration:underline;text-underline-offset:2px;font-weight:600;\">" +
-      L.privacy +
-      '</a></div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:10px;">' +
-      '<button type="button" id="structuro-ph-deny" style="cursor:pointer;border-radius:10px;border:1px solid rgba(148,163,184,.5);background:transparent;color:#e2e8f0;padding:10px 18px;font-weight:600;font-size:14px;">' +
-      L.deny +
-      '</button><button type="button" id="structuro-ph-accept" style="cursor:pointer;border-radius:10px;border:none;background:#2563eb;color:#fff;padding:10px 18px;font-weight:700;font-size:14px;">' +
-      L.accept +
-      "</button></div></div>";
+  /**
+   * GA4: dataLayer-queue tot gtag.js geladen is (zelfde gedrag als Google's snippet).
+   */
+  function loadGoogleAnalytics() {
+    if (window.__structuroGa4Loaded) return;
+    window.__structuroGa4Loaded = true;
 
-    document.body.appendChild(wrap);
-    document.getElementById("structuro-ph-accept").onclick = function () {
-      consentWrite("granted");
-      wrap.remove();
-      onChoice("granted");
-    };
-    document.getElementById("structuro-ph-deny").onclick = function () {
-      consentWrite("denied");
-      wrap.remove();
-      onChoice("denied");
-    };
+    window.dataLayer = window.dataLayer || [];
+    window.gtag =
+      window.gtag ||
+      function () {
+        window.dataLayer.push(arguments);
+      };
+    window.gtag("js", new Date());
+    window.gtag("config", GA_MEASUREMENT_ID);
+
+    var s = document.createElement("script");
+    s.async = true;
+    s.src =
+      "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(GA_MEASUREMENT_ID);
+    document.head.appendChild(s);
   }
 
   function loadPosthog(initDone) {
     var raw = typeof window.__STRUCTURO_PH_KEY__ === "string" ? window.__STRUCTURO_PH_KEY__ : "";
     var key = raw.trim();
-    if (!key) return;
-    if (key.indexOf("__STRUCTURO_PH_PROJECT_KEY__") !== -1) return;
+    if (!key || key.indexOf("__STRUCTURO_PH_PROJECT_KEY__") !== -1) {
+      if (typeof initDone === "function") initDone();
+      return;
+    }
 
     var PH_API_HOST = "https://eu.i.posthog.com";
     var PH_ARRAY_SRC = "https://eu-assets.i.posthog.com/static/array.js";
@@ -101,12 +76,16 @@
     s.async = true;
     s.src = PH_ARRAY_SRC;
     s.onload = function () {
-      if (!window.posthog || typeof window.posthog.init !== "function") return;
+      if (!window.posthog || typeof window.posthog.init !== "function") {
+        if (typeof initDone === "function") initDone();
+        return;
+      }
       window.posthog.init(key, {
         api_host: PH_API_HOST,
         ui_host: "https://eu.posthog.com",
-        capture_pageview: false,
-        autocapture: false,
+        capture_pageview: true,
+        capture_pageleave: true,
+        autocapture: true,
         disable_session_recording: true,
         persistence: "localStorage+cookie",
         cross_subdomain_cookie: false,
@@ -118,27 +97,118 @@
       else if (hn.indexOf("structuro.ai") !== -1) siteProp = "ai";
       window.posthog.register({ site: siteProp });
       window.posthog.opt_in_capturing();
-      window.posthog.capture("$pageview", {
-        $current_url: window.location.href,
-      });
-      initDone();
+      if (typeof initDone === "function") initDone();
     };
     document.head.appendChild(s);
   }
 
-  function attachProductEvents() {
-    if (!window.posthog) return;
+  /**
+   * Scroll-diepte (eenmalig per drempel), PostHog + GA4.
+   */
+  function attachScrollDepthMilestones() {
+    if (window.__structuroEuScrollMilestones) return;
+    window.__structuroEuScrollMilestones = true;
 
-    document.addEventListener("click", function (e) {
-      var t = e.target && e.target.closest && e.target.closest("[data-ph-cta]");
-      if (!t) return;
-      var loc = t.getAttribute("data-ph-cta");
-      if (!loc) return;
-      window.posthog.capture("cta_clicked", { location: loc });
-    });
+    var fired = {};
+    var ticking = false;
 
+    function pctScrolled() {
+      var el = document.documentElement;
+      var h = el.scrollHeight - el.clientHeight;
+      if (h <= 0) return 100;
+      return Math.min(100, Math.round((el.scrollTop / h) * 100));
+    }
+
+    function flush() {
+      ticking = false;
+      var p = pctScrolled();
+      for (var i = 0; i < SCROLL_MILESTONES_PCT.length; i++) {
+        var m = SCROLL_MILESTONES_PCT[i];
+        if (p < m || fired[m]) continue;
+        fired[m] = true;
+        var props = { percent: m, page_path: window.location.pathname || "/" };
+        capturePh("eu_scroll_depth", props);
+        captureGa("scroll_depth", { percent: m });
+      }
+      if (fired[100]) {
+        window.removeEventListener("scroll", onScroll);
+      }
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        if (window.requestAnimationFrame) {
+          window.requestAnimationFrame(flush);
+        } else {
+          setTimeout(flush, 100);
+        }
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    flush();
+  }
+
+  /**
+   * Eerste keer dat een hoofdsectie zichtbaar wordt (scroll-pad).
+   */
+  function attachSectionVisibility() {
+    if (!("IntersectionObserver" in window) || window.__structuroEuSectionIO) return;
+    window.__structuroEuSectionIO = true;
+
+    var seen = {};
+
+    var obs = new IntersectionObserver(
+      function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var en = entries[i];
+          if (!en.isIntersecting || en.target.id === "") continue;
+          var id = en.target.id;
+          if (seen[id]) continue;
+          seen[id] = true;
+          var props = { section_id: id, page_path: window.location.pathname || "/" };
+          capturePh("eu_section_viewed", props);
+          captureGa("section_view", { section_id: id });
+        }
+      },
+      { root: null, threshold: 0.2, rootMargin: "0px 0px -8% 0px" }
+    );
+
+    for (var j = 0; j < EU_SECTION_IDS.length; j++) {
+      var el = document.getElementById(EU_SECTION_IDS[j]);
+      if (el) obs.observe(el);
+    }
+  }
+
+  /** FAQ <details> open (uitklappen). */
+  function attachFaqToggle() {
+    if (window.__structuroEuFaqToggle) return;
+    window.__structuroEuFaqToggle = true;
+
+    document.addEventListener(
+      "toggle",
+      function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== "DETAILS") return;
+        if (!t.open) return;
+        if (!t.classList || !t.classList.contains("faq-item")) return;
+        var faqId = t.getAttribute("data-faq-id");
+        if (!faqId) return;
+        var props = { faq_id: faqId, page_path: window.location.pathname || "/" };
+        capturePh("eu_faq_opened", props);
+        captureGa("faq_open", { faq_id: faqId });
+      },
+      true
+    );
+  }
+
+  /** Prijsblok eenmalig zichtbaar (bestaande funnel). */
+  function attachPricingViewed() {
     var prijs = document.getElementById("prijs");
-    if (!prijs || !("IntersectionObserver" in window)) return;
+    if (!prijs || !("IntersectionObserver" in window) || window.__structuroEuPricingIO) return;
+    window.__structuroEuPricingIO = true;
+
     var fired = false;
     var obs = new IntersectionObserver(
       function (entries) {
@@ -146,7 +216,9 @@
         for (var i = 0; i < entries.length; i++) {
           if (entries[i].isIntersecting) {
             fired = true;
-            window.posthog.capture("pricing_viewed", { location: "eu_landing_pricing" });
+            var props = { location: "eu_landing_pricing", page_path: window.location.pathname || "/" };
+            capturePh("pricing_viewed", props);
+            captureGa("pricing_view", { location: "eu_landing_pricing" });
             obs.disconnect();
             return;
           }
@@ -157,32 +229,16 @@
     obs.observe(prijs);
   }
 
-  function onWaitlistPage() {
-    var p = "";
-    try {
-      p = (location.pathname || "").replace(/^\/+|\/+$/g, "");
-    } catch (e2) {}
-    return p === "wachtlijst";
+  function attachLandingMeasurement() {
+    attachScrollDepthMilestones();
+    attachSectionVisibility();
+    attachFaqToggle();
+    attachPricingViewed();
   }
 
   function bootstrap() {
-    if (onWaitlistPage()) {
-      var g = consentRead();
-      if (g === "granted") loadPosthog(attachProductEvents);
-      return;
-    }
-    var c = consentRead();
-    if (!c) {
-      injectBanner(function (choice) {
-        if (choice === "granted") {
-          loadPosthog(attachProductEvents);
-        }
-      });
-      return;
-    }
-    if (c === "granted") {
-      loadPosthog(attachProductEvents);
-    }
+    loadGoogleAnalytics();
+    loadPosthog(attachLandingMeasurement);
   }
 
   if (document.readyState === "loading") {
