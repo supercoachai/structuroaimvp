@@ -224,3 +224,16 @@ npm run build
 Geen vervanging van de echte code: types, edge cases en alle props staan in de bronbestanden. Gebruik dit als **landkaart**; bij twijfel altijd het genoemde pad openen.
 
 **Laatste tip voor uploads:** voor Claude volstaat vaak alleen dit **`README.md`**-bestand; het bevat de structuur en flow. Voeg desgewenst `DATABASE_SETUP.md` uit de root toe voor DB-stappen.
+
+---
+
+## 19. Optionele bestanden voor Claude Project Knowledge
+
+Naast dit `README.md` liggen vier platte Markdown-bestanden in deze map. Bewerk ze lokaal en upload losse bestanden naar **Claude Project → Project Knowledge** (de mapstructuur van je machine zit daar niet in; plat houden scheelt klikwerk).
+
+| Bestand | Doel |
+|---------|------|
+| `STATE.md` | Waar je staat, laatste beslissing, open vragen |
+| `SOCIAL_TEMPLATE.md` | Vaste social-opmaak + voorbeeldpost |
+| `SCHEMA.md` | DB-samenvatting (detail blijft in `supabase/`) |
+| `CURSOR_PROMPTS.md` | Vaste prompts voor Cursor (meestal niet nodig in Claude) |
