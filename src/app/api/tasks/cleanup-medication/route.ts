@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
+import { withApiErrorTracking } from '@/lib/posthog/withApiErrorTracking'
 import { NextResponse } from 'next/server'
 
-export async function DELETE() {
+async function deleteMedicationTasks(_request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -28,3 +29,7 @@ export async function DELETE() {
   })
 }
 
+export const DELETE = withApiErrorTracking(
+  "DELETE /api/tasks/cleanup-medication",
+  deleteMedicationTasks
+);

@@ -16,6 +16,7 @@ import { ConsentProvider } from "@/lib/posthog/ConsentContext";
 import { PostHogProvider } from "@/lib/posthog/PostHogProvider";
 import { PostHogPageviews } from "@/components/posthog/PostHogPageviews";
 import { PostHogAuthEffects } from "@/components/posthog/PostHogAuthEffects";
+import { SignupAttributionCapture } from "@/components/SignupAttributionCapture";
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 
 /** Zichtbare fallback zonder Tailwind — voorkomt ‘wit scherm’ bij trage chunks of Suspense. */
@@ -109,6 +110,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
               <PostHogPageviews />
             </Suspense>
             <PostHogAuthEffects />
+            <SignupAttributionCapture />
             <RemoveLegacyFocusDurationKey />
             <PasswordRecoveryRedirect />
             <AnalyticsInternalBridge />

@@ -12,6 +12,11 @@ import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 import { profileHasAppAccess } from "../subscriptionAccess";
 import { isProtectedTestAccount } from "../protectedTestAccount";
+import {
+  isRegistrationAppRoute,
+  isRegistrationCheckoutApiRoute,
+  isRegistrationCheckoutEnabled,
+} from "../stripe/registrationLaunch";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -26,10 +31,13 @@ function isMiddlewareSubscriptionPaywallEnabled(): boolean {
 function canAccessWithoutActiveSubscription(pathname: string): boolean {
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/auth")) return true;
+  if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
+  if (pathname === "/welkom" || pathname.startsWith("/welkom/")) return true;
   if (isAnonymousPublicPage(pathname)) return true;
   if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
   if (pathname.startsWith("/api/stripe/webhook")) return true;
   if (pathname.startsWith("/api/stripe/checkout")) return true;
+  if (pathname.startsWith("/api/checkout/create-session")) return true;
   return false;
 }
 
@@ -47,7 +55,11 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/wachtlijst" ||
     pathname.startsWith("/wachtlijst/") ||
     pathname === "/inschrijven" ||
-    pathname.startsWith("/inschrijven/")
+    pathname.startsWith("/inschrijven/") ||
+    pathname === "/registreren" ||
+    pathname.startsWith("/registreren/") ||
+    pathname === "/welkom" ||
+    pathname.startsWith("/welkom/")
   );
 }
 
@@ -103,10 +115,23 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (!isRegistrationCheckoutEnabled()) {
+    if (isRegistrationAppRoute(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    if (isRegistrationCheckoutApiRoute(pathname)) {
+      return NextResponse.json({ error: "not_available" }, { status: 404 });
+    }
+  }
+
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/posthog-otel-logs-test") ||
+    pathname.startsWith("/api/posthog-error-test") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname === "/favicon.ico" ||
     pathname === "/sw.js" ||
@@ -305,6 +330,8 @@ function applyDagstartDbGate(
   const needsDagstartPath =
     !pathname.startsWith("/dagstart") &&
     !pathname.startsWith("/login") &&
+    !pathname.startsWith("/registreren") &&
+    !pathname.startsWith("/welkom") &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/onboarding") &&
     !pathname.startsWith("/api");
@@ -394,6 +421,18 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     return NextResponse.redirect(url);
   }
 
+  if (!isRegistrationCheckoutEnabled()) {
+    if (isRegistrationAppRoute(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    if (isRegistrationCheckoutApiRoute(pathname)) {
+      return NextResponse.json({ error: "not_available" }, { status: 404 });
+    }
+  }
+
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth") ||
@@ -401,6 +440,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/posthog-otel-logs-test") ||
+    pathname.startsWith("/api/posthog-error-test") ||
     pathname === "/sw.js" ||
     pathname === "/manifest.json"
   ) {

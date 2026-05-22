@@ -28,6 +28,15 @@ export function getCalendarDateAmsterdam(now: Date = new Date()): string {
   }
 }
 
+/** Dag van het jaar (1–366) in Europe/Amsterdam, voor deterministische dagelijkse rotatie. */
+export function getDayOfYearAmsterdam(now: Date = new Date()): number {
+  const cal = getCalendarDateAmsterdam(now);
+  const [y, m, d] = cal.split("-").map(Number);
+  const start = new Date(y, 0, 0);
+  const current = new Date(y, m - 1, d);
+  return Math.floor((current.getTime() - start.getTime()) / 86_400_000);
+}
+
 /** Morgen-kalenderdag in Europe/Amsterdam (YYYY-MM-DD), benadering via +24 uur. */
 export function getTomorrowCalendarDateAmsterdam(now: Date = new Date()): string {
   return getCalendarDateAmsterdam(new Date(now.getTime() + 24 * 60 * 60 * 1000));

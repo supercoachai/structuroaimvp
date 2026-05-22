@@ -102,7 +102,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     shutdownQ3Title: "Hoe voldaan ben je na vandaag?",
     shutdownQ3Sub: "Geen oordeel, gewoon voelen",
     shutdownTip:
-      "Je vindt de dagafsluiting altijd via \"Afsluiten\" onderaan.",
+      "Je vindt de dagafsluiting altijd via \"Dagafsluiting\" onderaan.",
     readyHeadline: "Je bent klaar.",
     readySub:
       "Structuro staat klaar. Elke dag begin je rustig, op jouw energie en jouw tempo.",

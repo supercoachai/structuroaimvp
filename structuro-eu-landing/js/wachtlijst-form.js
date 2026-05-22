@@ -30,6 +30,25 @@ const T = {
   },
 };
 
+function sanitizeWaitlistSource(raw) {
+  var t = String(raw || '').trim().slice(0, 64);
+  if (!t) return '';
+  var cleaned = t.replace(/[^a-zA-Z0-9_-]/g, '');
+  return cleaned;
+}
+
+/** utm_source (of ?source=) uit landing-URL; anders 'direct'. */
+function resolveWaitlistSource() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var fromUtm = sanitizeWaitlistSource(params.get('utm_source'));
+    if (fromUtm) return fromUtm;
+    var fromSource = sanitizeWaitlistSource(params.get('source'));
+    if (fromSource) return fromSource;
+  } catch (e) {}
+  return 'direct';
+}
+
 function supabaseAnonKeyReady() {
   var k = (SUPABASE_ANON_KEY || '').trim();
   if (!k) return false;
@@ -95,6 +114,11 @@ form.addEventListener('submit', async function (e) {
     return;
   }
   btn.disabled = true;
+  if (typeof window.posthog !== 'undefined') {
+    window.posthog.capture('waitlist_signup_started', {
+      source: resolveWaitlistSource(),
+    });
+  }
   const nameVal = document.getElementById('wl-name').value.trim();
   const emailVal = document.getElementById('wl-email').value.trim().toLowerCase();
   try {
@@ -103,10 +127,19 @@ form.addEventListener('submit', async function (e) {
     const { error } = await supabase.from('waitlist_subscribers').insert({
       name: nameVal,
       email: emailVal,
-      source: 'eu_wachtlijst',
+      source: resolveWaitlistSource(),
     });
     if (!error) {
       form.classList.add('hidden');
+      if (typeof window.posthog !== 'undefined') {
+        var params = new URLSearchParams(window.location.search);
+        window.posthog.capture('waitlist_signup_completed', {
+          source: resolveWaitlistSource(),
+          utm_source: params.get('utm_source') || null,
+          utm_medium: params.get('utm_medium') || null,
+          utm_campaign: params.get('utm_campaign') || null,
+        });
+      }
       var okEl = document.getElementById('wl-success-msg');
       if (!okEl) {
         okEl = document.createElement('p');

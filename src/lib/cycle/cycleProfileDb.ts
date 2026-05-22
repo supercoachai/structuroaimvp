@@ -112,6 +112,7 @@ export async function clearAllCycleData(userId: string): Promise<void> {
     .eq("id", userId);
   if (profileErr) throw new Error(profileErr.message);
 
+  // cycle_phase wissen op alle check-ins (trigger valideert top3 alleen bij wijziging top3/energie)
   const { error: checkinErr } = await supabase
     .from("daily_checkins")
     .update({ cycle_phase: null })

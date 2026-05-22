@@ -16,6 +16,7 @@ import { designSystem } from '../lib/design-system';
 import { toast } from './Toast';
 import { useCheckIn } from '../hooks/useCheckIn';
 import { resetAndLoadMockData, clearAllTasksOnly } from '../lib/resetStorage';
+import { restartDagstartForDev } from '@/lib/devRestartDagstart';
 import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { persistPreferredDisplayName } from '@/lib/accountDisplayName';
@@ -296,9 +297,14 @@ export default function HomeCalm() {
     }
   };
 
+  const handleRestartDagstart = () => {
+    if (!devResetToolbarOn) return;
+    void restartDagstartForDev();
+  };
+
   return (
     <>
-      {devResetToolbarOn && !isProtectedAccount && (
+      {devResetToolbarOn && (
         <div
           style={{
             position: 'fixed',
@@ -311,6 +317,26 @@ export default function HomeCalm() {
           }}
         >
           <button
+            type="button"
+            onClick={handleRestartDagstart}
+            style={{
+              padding: '8px 16px',
+              background: '#2563EB',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            }}
+            title={t('home.devRestartDagstartTitle')}
+          >
+            ☀️ {t('home.devRestartDagstart')}
+          </button>
+          {!isProtectedAccount ? (
+            <>
+              <button
             type="button"
             onClick={handleClearAllTasks}
             style={{
@@ -345,6 +371,8 @@ export default function HomeCalm() {
           >
             🔄 {t('home.devResetData')}
           </button>
+            </>
+          ) : null}
         </div>
       )}
     <div className="min-h-full bg-[var(--structuro-bg)] px-4 pb-28 pt-4 text-[var(--structuro-text)]">

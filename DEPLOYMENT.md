@@ -109,7 +109,6 @@ Je vindt deze in Supabase:
    - [ ] Taken toevoegen
    - [ ] Agenda items
    - [ ] Focus modus
-   - [ ] Gamification
 
 2. Check console voor errors (F12 in browser)
 
@@ -129,6 +128,57 @@ Volg de prompts en voeg environment variables toe.
 
 ---
 
-**Veel succes met je deployment! 🚀**
+## 🔒 Registratie + Stripe verbergen (pre-launch)
 
+Standaard zijn `/registreren`, `/welkom`, `/abonnement` en checkout-API's **niet bereikbaar** op productie. Bezoekers worden doorgestuurd naar `/login`. Het abonnementsblok in Instellingen is verborgen.
+
+| Variabele | Wanneer |
+|-----------|---------|
+| *(niet zetten)* | **Pre-launch push**: laat beide variabelen weg op Vercel |
+| `STRUCTURO_PUBLIC_REGISTRATION=1` | Server/middleware: registratie-routes open |
+| `NEXT_PUBLIC_STRUCTURO_PUBLIC_REGISTRATION=1` | Client: Instellingen-abonnement + registratie-UI |
+
+Lokaal (`next dev`): registratie staat **aan** tenzij je `STRUCTURO_PUBLIC_REGISTRATION=0` en `NEXT_PUBLIC_STRUCTURO_PUBLIC_REGISTRATION=0` zet.
+
+Webhook (`/api/stripe/webhook`) blijft bereikbaar voor wanneer je later live gaat; gebruikers zien geen Stripe-UI.
+
+---
+
+## 💳 Stripe live launch (Model B: signup → app → betalen)
+
+Flow: gebruiker registreert, gebruikt de app, betaalt via `/abonnement`. Geen guest checkout, geen Stripe Trial.
+
+### Vercel environment variables (live)
+
+| Variabele | Waarde / opmerking |
+|-----------|-------------------|
+| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_…`), niet test |
+| `STRIPE_WEBHOOK_SECRET` | **Live** webhook signing secret uit Stripe Dashboard → Developers → Webhooks (endpoint op jouw productie-URL). Niet de sandbox secret hergebruiken. |
+| `STRIPE_PRICE_ID_MONTHLY` | `price_1TZpgcV05ARLhkqludSsZ0P5` |
+| `STRIPE_PRICE_ID_YEARLY` | `price_1TZpgeV05ARLhkqluF7sX6EZ` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Voor checkout prior-refund check en webhook profile updates |
+| `STRUCTURO_MIDDLEWARE_PAYWALL` | `1` pas zetten wanneer je hard paywall wilt (zie middleware). Standaard uit. |
+
+Prijzen staan op `tax_behavior: inclusive` (€12,99 / €119 all-in voor de klant). Geen Stripe Tax (`automatic_tax`) in MVP.
+
+### Stripe Dashboard
+
+- [ ] Webhook endpoint: `https://<jouw-domein>/api/stripe/webhook` (live mode)
+- [ ] Events: o.a. `checkout.session.completed`, `customer.subscription.*`, `invoice.payment_*`, `charge.refunded`
+- [ ] **Customer Portal** aan (Settings → Billing → Customer Portal) voor self-service opzeggen
+- [ ] Migratie `supabase/migration_stripe_subscription.sql` gedraaid op productie-DB
+
+### PostHog error smoke-test (preview, vóór 31 mei)
+
+- `POSTHOG_TEST_ENDPOINT=true` + `POSTHOG_ERROR_TEST_SECRET=<random>` alleen op preview
+- Eén keer: `GET /api/posthog-error-test?secret=…`
+- Daarna flag uit of route verwijderen
+
+### Paywall inschakelen
+
+Middleware redirect naar `/abonnement` staat achter `STRUCTURO_MIDDLEWARE_PAYWALL=1`. Geef bestaande testers eerst een grace-period (handmatig `subscription_status` of tijdelijk paywall uit) vóór je dit op productie zet.
+
+---
+
+**Veel succes met je deployment! 🚀**
 

@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
-import { getClockHourAmsterdam } from "@/lib/dagstartCookie";
 
 function IconSun({ className }: { className?: string }) {
   return (
@@ -51,13 +50,6 @@ function isActivePath(pathname: string, href: string): boolean {
 export default function BottomTabNav({ disabled = false }: { disabled?: boolean }) {
   const pathname = usePathname() ?? "";
   const { t } = useI18n();
-  const [eveningNav, setEveningNav] = useState(false);
-  useEffect(() => {
-    const tick = () => setEveningNav(getClockHourAmsterdam() >= 17);
-    tick();
-    const id = window.setInterval(tick, 60_000);
-    return () => window.clearInterval(id);
-  }, []);
 
   const tabs = useMemo(
     () =>
@@ -68,12 +60,11 @@ export default function BottomTabNav({ disabled = false }: { disabled?: boolean 
         {
           id: "shutdown",
           href: "/shutdown",
-          label: eveningNav ? t("tabs.shutdownEvening") : t("tabs.shutdown"),
+          label: t("tabs.shutdown"),
           Icon: IconShutdown,
-          emphasize: eveningNav,
         },
       ],
-    [t, eveningNav]
+    [t]
   );
 
   return (
@@ -87,26 +78,17 @@ export default function BottomTabNav({ disabled = false }: { disabled?: boolean 
     >
       {tabs.map((tab) => {
         const active = isActivePath(pathname, tab.href);
-        const emphasize = "emphasize" in tab && tab.emphasize;
         const color = active ? "var(--structuro-blue)" : "var(--structuro-sub)";
         const Icon = tab.Icon;
         return (
           <Link
             key={tab.id}
             href={tab.href}
-            className={`flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1 transition-colors ${
-              emphasize && !active
-                ? "ring-2 ring-amber-400/80 ring-offset-2 ring-offset-white"
-                : ""
-            }`}
+            className="flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl py-1 transition-colors"
             style={{ color }}
           >
             <Icon className="shrink-0" />
-            <span
-              className={`max-w-full truncate text-[10px] font-semibold tracking-wide ${
-                emphasize && !active ? "text-amber-900" : ""
-              }`}
-            >
+            <span className="max-w-full truncate text-[10px] font-semibold tracking-wide">
               {tab.label}
             </span>
           </Link>

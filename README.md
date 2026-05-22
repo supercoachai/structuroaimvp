@@ -1,6 +1,6 @@
 # StructuroAI MVP
 
-Een AI-powered platform voor volwassenen met ADHD-achtige kenmerken. Dit project helpt gebruikers met takenbeheer, planning, focus en gamification.
+Een platform voor volwassenen met ADHD-achtige kenmerken: takenbeheer, planning, focus en een vaste dagelijkse loop (dagstart en afsluiten).
 
 ## Features
 
@@ -8,8 +8,7 @@ Een AI-powered platform voor volwassenen met ADHD-achtige kenmerken. Dit project
 - ✅ **Takenbeheer**: Slimme takenlijst met prioriteiten en deadlines
 - ✅ **Agenda & Planning**: Dagplanner met herinneringen
 - ✅ **Focus Modus**: Concentratie hulp met timers
-- ✅ **Gamification**: Beloningen, badges en streaks
-- ✅ **Dashboard**: Overzicht van voortgang en statistieken
+- ✅ **Dashboard**: Overzicht van voortgang
 
 ## Database Setup
 

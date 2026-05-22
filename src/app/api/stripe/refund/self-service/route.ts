@@ -6,13 +6,14 @@ import {
   captureServerEvent,
   daysSinceSignupFromIso,
 } from "@/lib/posthog/server";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
-export async function POST() {
+async function postSelfServiceRefund(_request: Request) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
     return NextResponse.json({ success: false, reason: "stripe_not_configured" }, { status: 503 });
@@ -140,3 +141,8 @@ export async function POST() {
 
   return NextResponse.json({ success: true, refund_id: refund.id });
 }
+
+export const POST = withApiErrorTracking(
+  "POST /api/stripe/refund/self-service",
+  postSelfServiceRefund
+);

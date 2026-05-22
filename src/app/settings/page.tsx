@@ -26,8 +26,8 @@ import {
   unregisterPushSubscription,
 } from '@/utils/pushNotifications';
 import { useConsent } from '@/lib/posthog/ConsentContext';
-import posthog from 'posthog-js';
 import CycleSettingsSection from '@/components/cycle/CycleSettingsSection';
+import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [subscriptionPeriodEnd, setSubscriptionPeriodEnd] = useState<string | null>(null);
   const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
+  const [subscriptionSyncBusy, setSubscriptionSyncBusy] = useState(false);
   const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [refundSubmitting, setRefundSubmitting] = useState(false);
 
@@ -319,6 +320,68 @@ export default function SettingsPage() {
     }
   };
 
+  const reloadSubscriptionFromProfile = async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) return;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_status, subscription_current_period_end, stripe_subscription_id')
+      .eq('id', user.id)
+      .maybeSingle();
+    setSubscriptionStatus(
+      typeof profile?.subscription_status === 'string' ? profile.subscription_status : null
+    );
+    setSubscriptionPeriodEnd(
+      profile?.subscription_current_period_end != null
+        ? String(profile.subscription_current_period_end)
+        : null
+    );
+    setStripeSubscriptionId(
+      typeof profile?.stripe_subscription_id === 'string'
+        ? profile.stripe_subscription_id
+        : null
+    );
+  };
+
+  const handleSyncSubscription = async () => {
+    if (subscriptionSyncBusy) return;
+    setSubscriptionSyncBusy(true);
+    try {
+      const res = await fetch('/api/stripe/sync-subscription', { method: 'POST' });
+      const body = (await res.json()) as { error?: string; detail?: string };
+      if (res.ok) {
+        toast(t('settings.subscriptionSyncOk'));
+        await reloadSubscriptionFromProfile();
+        return;
+      }
+      if (body.error === 'subscription_not_found') {
+        toast(t('settings.subscriptionSyncNotFound'));
+        return;
+      }
+      if (body.error === 'service_role_key_missing') {
+        toast(t('subscription.checkoutServiceRoleError'));
+        return;
+      }
+      toast(
+        t('settings.subscriptionSyncFail', {
+          detail: body.error ?? String(res.status),
+        })
+      );
+    } catch (err) {
+      toast(t('settings.subscriptionSyncFail', { detail: String(err) }));
+    } finally {
+      setSubscriptionSyncBusy(false);
+    }
+  };
+
+  const subscriptionNeedsLink =
+    !subscriptionStatus ||
+    subscriptionStatus === 'none' ||
+    subscriptionStatus === 'unknown';
+
   const confirmSelfServiceRefund = async () => {
     if (refundSubmitting) return;
     setRefundSubmitting(true);
@@ -426,8 +489,6 @@ export default function SettingsPage() {
                 onClick={() => {
                   if (consent === 'granted') {
                     deny();
-                    posthog.opt_out_capturing();
-                    posthog.reset();
                   } else {
                     grant();
                   }
@@ -526,7 +587,7 @@ export default function SettingsPage() {
 
           {hasSupabaseSession && !isLocalOnly ? <CycleSettingsSection /> : null}
 
-          {hasSupabaseSession && !isLocalOnly ? (
+          {hasSupabaseSession && !isLocalOnly && isRegistrationCheckoutEnabledClient() ? (
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
               <h2 className="text-base font-semibold text-slate-800 mb-1">
                 {t('settings.subscriptionTitle')}
@@ -550,10 +611,37 @@ export default function SettingsPage() {
                 ) : subscriptionStatus === 'expired' ? (
                   <span>{t('settings.subscriptionStatusExpired')}</span>
                 ) : (
-                  <span>{t('settings.subscriptionUnknown')}</span>
+                  <div className="space-y-2">
+                    <p className="font-medium text-slate-800">
+                      {t('settings.subscriptionUnknown')}
+                    </p>
+                    <p className="text-slate-600 leading-relaxed">
+                      {t('settings.subscriptionUnknownHint')}
+                    </p>
+                  </div>
                 )}
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {subscriptionNeedsLink ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void handleSyncSubscription()}
+                      disabled={subscriptionSyncBusy}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {subscriptionSyncBusy
+                        ? t('settings.subscriptionSyncBusy')
+                        : t('settings.subscriptionSyncCta')}
+                    </button>
+                    <Link
+                      href="/abonnement"
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      {t('settings.subscriptionGoAbonnement')}
+                    </Link>
+                  </>
+                ) : null}
                 {subscriptionStatus === 'active' && stripeSubscriptionId ? (
                   <button
                     type="button"

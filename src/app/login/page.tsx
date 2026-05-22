@@ -19,6 +19,7 @@ import {
 import { useI18n } from '@/lib/i18n';
 import {
   persistSignupSourceFromUrl,
+  persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
 } from '@/lib/posthog/signupAttribution';
 
@@ -199,6 +200,7 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
+          await persistSignupAttributionToProfile(data.user.id);
           queueSignupCompletedForAnalytics();
           setMessage(t('login.signupDone'));
           // Auto login na signup

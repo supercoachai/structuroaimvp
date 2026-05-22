@@ -18,7 +18,6 @@ import { useTaskContext } from '../../context/TaskContext';
 import { useCheckIn } from '../../hooks/useCheckIn';
 import { parkFocusTaskSilently } from '@/lib/parkFocusTask';
 import { getRandomAdhdPlanningQuote } from '../../lib/adhdQuotes';
-import { xpForTask } from '../../lib/xp';
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from '../../lib/microSteps';
 import { useUser } from '@/hooks/useUser';
 import { insertParkedThought, countActiveParkedThoughts } from '@/lib/supabase/parkedThoughtsDb';
@@ -416,7 +415,6 @@ function FocusContent() {
       return;
     }
     try {
-      const gainXp = xpForTask(currentTask);
       triggerHaptic(HAPTIC_PATTERNS.TASK_DONE);
       setIsRunning(false);
       setIsPaused(false);
@@ -446,7 +444,7 @@ function FocusContent() {
       track('task_completed_early', {
         taskId: currentTask.id,
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),
-        durationPlanned: duration, xp: gainXp,
+        durationPlanned: duration,
       });
       fireCompletionConfetti();
       setIsAirlockActive(true);

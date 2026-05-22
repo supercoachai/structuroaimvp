@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../../lib/supabase/server';
+import { withApiErrorTracking } from '@/lib/posthog/withApiErrorTracking';
 
-export async function POST() {
+async function postTestData(_request: Request) {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -149,3 +150,5 @@ export async function POST() {
     }, { status: 500 });
   }
 }
+
+export const POST = withApiErrorTracking("POST /api/tasks/test-data", postTestData);

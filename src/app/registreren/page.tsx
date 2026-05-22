@@ -1,13 +1,11 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import RegistrerenAccountClient from "@/components/registreren/RegistrerenAccountClient";
 
-type Props = { searchParams?: Promise<{ source?: string }> };
+export const metadata: Metadata = {
+  title: "Account aanmaken | Structuro",
+  description: "Maak je Structuro-account aan. Daarna kies je je abonnement.",
+};
 
-/** Publieke registratie-URL: structuro.eu-CTA's wijzen hierheen. Doorstuur naar login met bron voor analytics. */
-export default async function RegistrerenPage({ searchParams }: Props) {
-  const sp = (await searchParams) ?? {};
-  const raw = typeof sp.source === "string" ? sp.source : "";
-  const allowed = ["landing", "direct", "linkedin"];
-  const s =
-    raw && allowed.includes(raw.toLowerCase()) ? raw.toLowerCase() : "direct";
-  redirect(`/login?signup=1&source=${encodeURIComponent(s)}`);
+export default function RegistrerenPage() {
+  return <RegistrerenAccountClient />;
 }

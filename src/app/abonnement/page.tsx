@@ -21,6 +21,16 @@ async function pollStripeReturnSession(
   await sleep(2000);
   for (let i = 0; i < 15; i++) {
     if (shouldAbort()) return false;
+    if (i === 0) {
+      try {
+        await fetch("/api/stripe/sync-subscription", {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        /* webhook/sync best-effort */
+      }
+    }
     const res = await fetch("/api/profile/subscription-status", {
       credentials: "include",
     });

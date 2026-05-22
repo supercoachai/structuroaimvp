@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 export const runtime = "nodejs";
 
 /** Polling na Stripe-checkout: laatste subscription state voor ingelogde gebruiker. */
-export async function GET() {
+async function getSubscriptionStatus(_request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,3 +35,8 @@ export async function GET() {
 
   return NextResponse.json({ status, current_period_end });
 }
+
+export const GET = withApiErrorTracking(
+  "GET /api/profile/subscription-status",
+  getSubscriptionStatus
+);

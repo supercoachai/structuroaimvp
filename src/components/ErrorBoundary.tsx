@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { captureClientException } from '@/lib/posthog/captureExceptionClient';
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Structuro Error:', error, errorInfo);
+    captureClientException(error, {
+      route: 'react-error-boundary',
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   render() {

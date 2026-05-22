@@ -9,7 +9,7 @@ type SaveCheckInFn = (payload: {
 
 /**
  * Parkeert een focustaak geruisloos: uit dagstart-top3, prioriteiten opnieuw 1..n, taak terug naar backlog.
- * Geen XP/gamification — alleen task + optioneel check-in updates.
+ * Geen punten of meta-progressie — alleen task + optioneel check-in updates.
  */
 export async function parkFocusTaskSilently(
   taskId: string,

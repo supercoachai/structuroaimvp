@@ -5,9 +5,10 @@ import {
   firstLengthError,
   validateLength,
 } from '@/lib/validateLength'
+import { withApiErrorTracking } from '@/lib/posthog/withApiErrorTracking'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+async function getTasks(_request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -28,7 +29,7 @@ export async function GET() {
   return NextResponse.json(data)
 }
 
-export async function POST(request: Request) {
+async function postTask(request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+async function putTask(request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -171,7 +172,7 @@ export async function PUT(request: Request) {
   return NextResponse.json(data)
 }
 
-export async function DELETE(request: Request) {
+async function deleteTask(request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -199,3 +200,7 @@ export async function DELETE(request: Request) {
   return NextResponse.json({ success: true })
 }
 
+export const GET = withApiErrorTracking("GET /api/tasks", getTasks);
+export const POST = withApiErrorTracking("POST /api/tasks", postTask);
+export const PUT = withApiErrorTracking("PUT /api/tasks", putTask);
+export const DELETE = withApiErrorTracking("DELETE /api/tasks", deleteTask);

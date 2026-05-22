@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { createStripeServerClient } from "@/lib/stripeServer";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+async function postCancelSubscription(_request: Request) {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
     return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
@@ -40,3 +41,8 @@ export async function POST() {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = withApiErrorTracking(
+  "POST /api/stripe/subscription/cancel",
+  postCancelSubscription
+);

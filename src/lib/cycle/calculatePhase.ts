@@ -17,16 +17,26 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
  *
  * Disclaimer: dit is een algemene benadering. De gebruiker kan altijd zelf overrulen.
  */
-export function calculateCyclePhase(
+/** Trim tijdcomponenten zodat we vergelijken op lokale kalenderdag. */
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+type CycleDayState = {
+  dayInCycle: number;
+  ovulationDay: number;
+};
+
+function computeCycleDayState(
   lastPeriodStart: Date,
   averageLength: number,
   today: Date = new Date()
-): CyclePhase {
+): CycleDayState | null {
   if (!(lastPeriodStart instanceof Date) || Number.isNaN(lastPeriodStart.getTime())) {
-    return "unknown";
+    return null;
   }
   if (!Number.isFinite(averageLength) || averageLength < 14) {
-    return "unknown";
+    return null;
   }
 
   const startMidnight = startOfLocalDay(lastPeriodStart);
@@ -35,11 +45,33 @@ export function calculateCyclePhase(
     (todayMidnight.getTime() - startMidnight.getTime()) / MS_PER_DAY
   );
 
-  if (daysSinceStart < 0) return "unknown";
-  if (daysSinceStart > averageLength * CYCLE_STALE_AFTER_CYCLES) return "unknown";
+  if (daysSinceStart < 0) return null;
+  if (daysSinceStart > averageLength * CYCLE_STALE_AFTER_CYCLES) return null;
 
-  const dayInCycle = (daysSinceStart % averageLength) + 1;
-  const ovulationDay = averageLength - 14;
+  return {
+    dayInCycle: (daysSinceStart % averageLength) + 1,
+    ovulationDay: averageLength - 14,
+  };
+}
+
+/** Cyclusdag 1-based, of null bij ongeldige/stale input. */
+export function calculateDayInCycle(
+  lastPeriodStart: Date,
+  averageLength: number,
+  today: Date = new Date()
+): number | null {
+  return computeCycleDayState(lastPeriodStart, averageLength, today)?.dayInCycle ?? null;
+}
+
+export function calculateCyclePhase(
+  lastPeriodStart: Date,
+  averageLength: number,
+  today: Date = new Date()
+): CyclePhase {
+  const state = computeCycleDayState(lastPeriodStart, averageLength, today);
+  if (!state) return "unknown";
+
+  const { dayInCycle, ovulationDay } = state;
 
   if (dayInCycle <= 5) return "menstrual";
   if (
@@ -51,9 +83,4 @@ export function calculateCyclePhase(
   }
   if (dayInCycle < ovulationDay) return "follicular";
   return "luteal";
-}
-
-/** Trim tijdcomponenten zodat we vergelijken op lokale kalenderdag. */
-function startOfLocalDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }

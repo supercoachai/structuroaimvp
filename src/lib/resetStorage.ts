@@ -10,7 +10,6 @@ export const STRUCTURO_STORAGE_KEYS = [
   'structuro_daily_checkins',
   'structuro_user_name',
   'structuro_analytics_consent',
-  'structuro_gamification_meta',
   'structuro_theme',
   LOCAL_ONBOARDING_COMPLETED_KEY,
   LOCAL_ONBOARDING_VERSION_KEY,

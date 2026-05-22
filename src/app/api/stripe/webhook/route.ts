@@ -2,22 +2,31 @@ import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { createStripeServerClient, subscriptionCurrentPeriodEndUnix } from "@/lib/stripeServer";
 import {
   captureServerEvent,
+  captureServerException,
   daysSinceSignupFromIso,
 } from "@/lib/posthog/server";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-function planFromPriceId(priceId: string): "monthly" | "yearly" | null {
-  const m = process.env.STRIPE_PRICE_ID_MONTHLY;
-  const y = process.env.STRIPE_PRICE_ID_YEARLY;
-  if (m && priceId === m) return "monthly";
-  if (y && priceId === y) return "yearly";
-  return null;
+import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
+
+/** PostHog is best-effort: mag geen Stripe-retry triggeren na geslaagde DB-write. */
+async function safeCapture(
+  distinctId: string,
+  event: string,
+  properties?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await captureServerEvent(distinctId, event, properties);
+  } catch (phErr) {
+    console.error("[stripe-webhook] PostHog capture failed (non-fatal)", phErr);
+  }
 }
 
-export async function POST(request: Request) {
+async function postStripeWebhook(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const key = process.env.STRIPE_SECRET_KEY;
   if (!webhookSecret || !key) {
@@ -46,14 +55,22 @@ export async function POST(request: Request) {
 
   const sb = admin as unknown as {
     from: (name: string) => {
-      insert: (row: { id: string }) => Promise<{ error: { code?: string; message: string } | null }>;
+      insert: (row: {
+        event_id: string;
+        event_type: string;
+        processed_at: string;
+      }) => Promise<{ error: { code?: string; message: string } | null }>;
       delete: () => {
         eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>;
       };
     };
   };
 
-  const { error: insErr } = await sb.from("stripe_processed_events").insert({ id: event.id });
+  const { error: insErr } = await sb.from("stripe_processed_events").insert({
+    event_id: event.id,
+    event_type: event.type,
+    processed_at: new Date().toISOString(),
+  });
   if (insErr) {
     if (insErr.code === "23505") {
       return NextResponse.json({ received: true, duplicate: true });
@@ -80,11 +97,12 @@ export async function POST(request: Request) {
         }
         const subscription = await stripe.subscriptions.retrieve(subId);
         const priceId = subscription.items.data[0]?.price?.id;
-        const plan = planFromPriceId(priceId ?? "");
+        const plan = planFromStripePriceId(priceId ?? "");
         const periodEnd = new Date(
           subscriptionCurrentPeriodEndUnix(subscription) * 1000
         ).toISOString();
         const cancelAtEnd = Boolean(subscription.cancel_at_period_end);
+        const startedAt = new Date(subscription.created * 1000).toISOString();
 
         await profileDb
           .from("profiles")
@@ -93,11 +111,23 @@ export async function POST(request: Request) {
             subscription_plan: plan,
             stripe_customer_id: customerId,
             stripe_subscription_id: subId,
-            subscription_started_at: new Date().toISOString(),
+            subscription_started_at: startedAt,
             subscription_current_period_end: periodEnd,
             cancel_at_period_end: cancelAtEnd,
           })
           .eq("id", userId);
+
+        const { data: startedProf } = await profileDb
+          .from("profiles")
+          .select("created_at")
+          .eq("id", userId)
+          .maybeSingle();
+        await safeCapture(userId, "subscription_started", {
+          plan: plan ?? null,
+          days_since_signup: daysSinceSignupFromIso(
+            (startedProf as { created_at?: string | null } | null)?.created_at
+          ),
+        });
         break;
       }
 
@@ -114,14 +144,14 @@ export async function POST(request: Request) {
           status = "past_due";
         } else if (subscription.status === "canceled" || subscription.status === "unpaid") {
           status = "cancelled";
-        } else if (subscription.status === "active" || subscription.status === "trialing") {
+        } else if (subscription.status === "active") {
           status = subscription.cancel_at_period_end ? "cancelled" : "active";
         } else {
           status = "none";
         }
 
         const priceId = subscription.items.data[0]?.price?.id;
-        const plan = planFromPriceId(priceId ?? "");
+        const plan = planFromStripePriceId(priceId ?? "");
 
         const { error: upErr } = await profileDb
           .from("profiles")
@@ -171,7 +201,7 @@ export async function POST(request: Request) {
 
         const delRow = deletedProf as { id: string; created_at: string | null } | null;
         if (delRow?.id) {
-          await captureServerEvent(delRow.id, "subscription_cancelled", {
+          await safeCapture(delRow.id, "subscription_cancelled", {
             days_since_signup: daysSinceSignupFromIso(delRow.created_at ?? undefined),
           });
         }
@@ -216,6 +246,18 @@ export async function POST(request: Request) {
 
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
+
+        // Partial refund → subscription blijft actief, niks updaten
+        const chargeAmount = charge.amount ?? 0;
+        const refundedAmount = charge.amount_refunded ?? 0;
+        if (refundedAmount < chargeAmount) {
+          console.log(
+            `[stripe-webhook] Partial refund ignored for charge ${charge.id} ` +
+              `(${refundedAmount}/${chargeAmount})`
+          );
+          break;
+        }
+
         const customerId =
           typeof charge.customer === "string"
             ? charge.customer
@@ -236,9 +278,19 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("stripe webhook handler", event.type, err);
-    await sb.from("stripe_processed_events").delete().eq("id", event.id);
+    try {
+      await captureServerException(err, {
+        route: "POST /api/stripe/webhook",
+        extra: { stripe_event_type: event.type },
+      });
+    } catch (phErr) {
+      console.error("[stripe-webhook] PostHog exception capture failed (non-fatal)", phErr);
+    }
+    await sb.from("stripe_processed_events").delete().eq("event_id", event.id);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
 }
+
+export const POST = withApiErrorTracking("POST /api/stripe/webhook", postStripeWebhook);

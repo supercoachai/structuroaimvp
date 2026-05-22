@@ -4,8 +4,9 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.stripe_processed_events (
-  id TEXT PRIMARY KEY,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc', NOW())
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc', NOW())
 );
 
 ALTER TABLE public.stripe_processed_events ENABLE ROW LEVEL SECURITY;

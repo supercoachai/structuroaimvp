@@ -1,16 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAppOrigin } from "@/lib/appUrl";
 import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteServiceRole";
+import {
+  STRIPE_PRICE_ID_MONTHLY,
+  STRIPE_PRICE_ID_YEARLY,
+} from "@/lib/stripe/registerPlans";
 import { createStripeServerClient } from "@/lib/stripeServer";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
+import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+async function postCheckout(request: Request) {
+  if (!isRegistrationCheckoutEnabled()) {
+    return NextResponse.json({ error: "not_available" }, { status: 404 });
+  }
+
   const key = process.env.STRIPE_SECRET_KEY;
-  const monthly = process.env.STRIPE_PRICE_ID_MONTHLY;
-  const yearly = process.env.STRIPE_PRICE_ID_YEARLY;
-  if (!key || !monthly || !yearly) {
+  const monthly = STRIPE_PRICE_ID_MONTHLY;
+  const yearly = STRIPE_PRICE_ID_YEARLY;
+  if (!key) {
     return NextResponse.json(
       { error: "Stripe is not configured on the server." },
       { status: 503 }
@@ -88,3 +98,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ url: session.url });
 }
+
+export const POST = withApiErrorTracking("POST /api/stripe/checkout", postCheckout);

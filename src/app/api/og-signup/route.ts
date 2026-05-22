@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
+import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
-/** OG-wachtlijst: pas activeren wanneer OG-actie live is + migratie og_waitlist draaien. */
-export async function POST() {
+async function postOgSignup(_request: Request) {
   return NextResponse.json(
     { error: "Wachtlijst nog niet geopend" },
     { status: 503 }
   );
 }
 
-export async function GET() {
+async function getOgSignup(_request: Request) {
   return NextResponse.json(
     { error: "Wachtlijst nog niet geopend" },
     { status: 503 }
   );
 }
+
+export const POST = withApiErrorTracking("POST /api/og-signup", postOgSignup);
+export const GET = withApiErrorTracking("GET /api/og-signup", getOgSignup);

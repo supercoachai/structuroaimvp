@@ -5,7 +5,7 @@ import AppLayout from "../../components/layout/AppLayout";
 import { useTaskContext, Task } from "../../context/TaskContext";
 import { requestNotificationPermission, testReminder } from "../../components/ReminderEngine";
 import { toast } from "../../components/Toast";
-import { xpForTask } from "../../lib/xp";
+import { useI18n } from "@/lib/i18n";
 import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -69,6 +69,7 @@ function formatAgendaDate(date: Date): string {
 
 export default function HerinneringenPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const { tasks, loading, updateTask, fetchTasks } = useTaskContext();
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission>("default");
@@ -91,7 +92,6 @@ export default function HerinneringenPage() {
     if (completingId) return;
     setCompletingId(task.id);
     try {
-      const xp = xpForTask(task);
       await updateTask(task.id, {
         done: true,
         completedAt: new Date().toISOString(),
@@ -99,7 +99,7 @@ export default function HerinneringenPage() {
         source: "quick_complete",
       });
       await fetchTasks();
-      toast(`Taak voltooid! +${xp} XP`, { durationMs: 3000 });
+      toast(t("notificaties.toastDone"), { durationMs: 3000 });
     } catch {
       toast("Kon taak niet voltooien");
     } finally {
@@ -271,7 +271,7 @@ export default function HerinneringenPage() {
                           {task.title}
                         </p>
                         <p className="text-xs text-slate-500 mt-1 m-0 break-words">
-                          Gestart in focus · +{xpForTask(task)} XP bij afronden
+                          {t("notificaties.focusStartedHint")}
                         </p>
                       </div>
                     </div>

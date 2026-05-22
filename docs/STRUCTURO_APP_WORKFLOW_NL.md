@@ -108,7 +108,7 @@ Zichtbaar op de meeste pagina’s via **`AppLayout`** + **`BottomTabNav`**:
 | Focus | `/focus` | Focusmodus (fullscreen donker, geen tab-balk) |
 | Afsluiten | `/shutdown` | Dagafsluiting, tevredenheid, geparkeerde gedachten |
 
-Extra: **Instellingen** `/settings` via icoon in header; **gamification** `/gamification`, **agenda** `/agenda`, **notificaties** `/notificaties`, **uitleg** `/uitleg` (vaak via submenu of links, niet altijd in bottom tabs).
+Extra: **Instellingen** `/settings` via icoon in header; **agenda** `/agenda` (redirect naar home in deze build), **notificaties** `/notificaties`, **uitleg** `/uitleg` (vaak via submenu of links, niet altijd in bottom tabs).
 
 Op **home** (`/`): **`TodoParkThoughtBar`** onder de content, boven de tabs: snel een gedachte parkeren.
 
@@ -194,9 +194,9 @@ Custom event **`structuro_tasks_updated`** wordt o.a. gefired na dagstart opslaa
 
 ---
 
-## 12. Gamification en XP
+## 12. Gamification en XP (niet meer in de app)
 
-**`/gamification`**: badges, XP (`xp.ts`), koppeling aan acties (focus, taken voltooien, enz.). Geen kern van de dagelijkse flow maar wel onderdeel van de app.
+Eerdere versies hadden een aparte route en XP; dat is **verwijderd**. Afsluiten en taak afronden blijven zonder punten of badges.
 
 ---
 

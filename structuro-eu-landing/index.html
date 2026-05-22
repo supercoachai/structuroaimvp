@@ -254,7 +254,10 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .price-amount{font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:10px;}
 .price-amount span{font-size:16px;font-weight:500;color:var(--sub);margin-left:4px;}
 .price-sub{font-size:14px;color:var(--sub);margin-top:4px;}
+.price-sub-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;}
+.price-sub-row .price-sub{margin-top:0;}
 .price-save{display:inline-block;background:var(--green-s);color:#047857;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-top:10px;}
+.price-sub-row .price-save{margin-top:0;}
 .price-includes{margin:22px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
 .price-includes li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);}
 .price-includes svg{color:var(--green);flex-shrink:0;}
@@ -1687,9 +1690,11 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <div class="price-amount">€12,99<span data-i18n="price_monthly_period">/ maand</span></div>
         <div class="price-sub" data-i18n="price_monthly_sub">Maandelijks opzegbaar</div>
         <ul class="price-includes">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat1">Alle features, geen limieten</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat2">Onbeperkt taken en sessies</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat3">Dagelijkse afsluitroutine</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat1">Eén dagelijkse loop, geen systeem om bij te houden</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat2">Micro-stappen die het blokkeren doorbreken</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat3">Taken gefilterd op jouw energie van vandaag</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat4">Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat5">Eindelijk rust in je hoofd. Elke dag opnieuw.</span></li>
         </ul>
         <a href="/wachtlijst/" class="btn-secondary" style="display:block;text-align:center;margin-top:24px;box-sizing:border-box;" data-event="pricing_monthly_click" data-ph-cta="pricing_monthly" data-i18n="cta_try">Zet me op de lijst</a>
         <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:8px;" data-i18n="price_available">Beschikbaar vanaf 31 mei</p>
@@ -1701,12 +1706,16 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <div class="pricing-inner-hover">
         <div class="price-label" data-i18n="price_yearly_label">Jaarlijks</div>
         <div class="price-amount">€119<span data-i18n="price_yearly_period">/ jaar</span></div>
-        <div class="price-sub" data-i18n="price_yearly_sub">€9,92/mnd effectief</div>
-        <div class="price-save" data-i18n="price_yearly_save">24% korting, 2,8 maanden gratis</div>
+        <div class="price-sub-row">
+          <div class="price-sub" data-i18n="price_yearly_sub">€9,92/mnd effectief</div>
+          <div class="price-save" data-i18n="price_yearly_save">24% korting</div>
+        </div>
         <ul class="price-includes">
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat1">Alles uit het maandabonnement</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat2">2,8 maanden gratis effectief</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat3">Jij bepaalt wat we bouwen</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat2">Bijna 3 maanden gratis effectief</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat3">Prijs staat vast, ook als Structuro groeit</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat4">Eén jaarlijkse keuze, één ding minder om aan te denken</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat5">Als eerste toegang tot nieuwe functies, jij test wat anderen nog niet zien</span></li>
         </ul>
         <a href="/wachtlijst/" class="btn-primary" style="display:flex;justify-content:center;margin-top:24px;" data-event="pricing_yearly_click" data-ph-cta="pricing_yearly"><span data-i18n="cta_try">Zet me op de lijst</span></a>
         <p style="font-size:11.5px;color:rgba(255,255,255,.5);text-align:center;margin-top:8px;" data-i18n="price_available">Beschikbaar vanaf 31 mei</p>
@@ -1984,16 +1993,19 @@ const TRANSLATIONS = {
     money_back_body: 'Niet tevreden? Vraag binnen 14 dagen je geld terug. Geen mail, geen formulier, geen weken wachten.',
     price_monthly_label: 'Maandelijks', price_monthly_period: '/ maand',
     price_monthly_sub: 'Maandelijks opzegbaar',
-    price_feat1: 'Alle features, geen limieten', price_feat2: 'Onbeperkt taken en sessies',
-    price_feat3: 'Dagelijkse afsluitroutine',
+    price_feat1: 'Eén dagelijkse loop, geen systeem om bij te houden', price_feat2: 'Micro-stappen die het blokkeren doorbreken',
+    price_feat3: 'Taken gefilterd op jouw energie van vandaag', price_feat4: 'Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus',
+    price_feat5: 'Eindelijk rust in je hoofd. Elke dag opnieuw.',
     price_available: 'Beschikbaar vanaf 31 mei',
     price_best_badge: 'Beste deal',
     price_yearly_label: 'Jaarlijks', price_yearly_period: '/ jaar',
     price_yearly_sub: '€9,92/mnd effectief',
-    price_yearly_save: '24% korting, 2,8 maanden gratis',
+    price_yearly_save: '24% korting',
     price_yearly_feat1: 'Alles uit het maandabonnement',
-    price_yearly_feat2: '2,8 maanden gratis effectief',
-    price_yearly_feat3: 'Jij bepaalt wat we bouwen',
+    price_yearly_feat2: 'Bijna 3 maanden gratis effectief',
+    price_yearly_feat3: 'Prijs staat vast, ook als Structuro groeit',
+    price_yearly_feat4: 'Eén jaarlijkse keuze, één ding minder om aan te denken',
+    price_yearly_feat5: 'Als eerste toegang tot nieuwe functies, jij test wat anderen nog niet zien',
     roi_h3: 'Wat kost Structuro echt?',
     roi_subtitle: 'Eén ongebruikt abonnement opzeggen dekt het al.',
     roi_pay_label: 'Wat je betaalt',
@@ -2098,16 +2110,19 @@ const TRANSLATIONS = {
     money_back_body: 'Not happy? Request a refund within 14 days. No email, no form, no weeks of waiting.',
     price_monthly_label: 'Monthly', price_monthly_period: '/ month',
     price_monthly_sub: 'Cancel any time',
-    price_feat1: 'All features, no limits', price_feat2: 'Unlimited tasks and sessions',
-    price_feat3: 'Daily close-out routine',
+    price_feat1: 'One daily loop, no system to maintain', price_feat2: 'Micro-steps that break through what\'s blocking you',
+    price_feat3: 'Tasks filtered to your energy today', price_feat4: 'Tuned for the ADHD brain, including the female cycle',
+    price_feat5: 'Finally quiet in your head. Every day anew.',
     price_available: 'Available from May 31',
     price_best_badge: 'Best deal',
     price_yearly_label: 'Yearly', price_yearly_period: '/ year',
     price_yearly_sub: '€9.92/mo effective',
-    price_yearly_save: '24% off, 2.8 months free',
+    price_yearly_save: '24% off',
     price_yearly_feat1: 'Everything in monthly',
-    price_yearly_feat2: '2.8 months free effectively',
-    price_yearly_feat3: 'You shape what we build',
+    price_yearly_feat2: 'Almost 3 months free effectively',
+    price_yearly_feat3: 'Price locked in, even as Structuro grows',
+    price_yearly_feat4: 'One yearly choice, one less thing on your mind',
+    price_yearly_feat5: 'Early access to new features, you test what others don\'t see yet',
     roi_h3: 'What does Structuro really cost?',
     roi_subtitle: 'Cancelling one subscription you do not use already covers it.',
     roi_pay_label: 'What you pay',

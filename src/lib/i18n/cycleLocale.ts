@@ -51,6 +51,37 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     settingsToastEnabled: "Cyclus-tracking staat aan.",
     settingsToastUpdated: "Cyclus bijgewerkt.",
     settingsToastDisabled: "Cyclus-tracking staat uit.",
+    energyContextHeadline: "Cyclus dag {day} · {phase}",
+    energyContextTrackingActive: "Cyclus-tracking actief",
+    energyContextPhase_menstrual: "Menstruatie",
+    energyContextPhase_follicular: "Folliculair",
+    energyContextPhase_ovulation: "Ovulatie",
+    energyContextPhase_luteal_early: "Luteaal (vroeg)",
+    energyContextPhase_luteal_late: "Luteaal (laat)",
+    energyContextBody_menstrual:
+      "Veel vrouwen met ADHD ervaren in deze fase lagere energie en concentratie.",
+    energyContextBody_follicular:
+      "Energie en focus nemen vaak geleidelijk toe in deze fase.",
+    energyContextBody_ovulation:
+      "Veel vrouwen met ADHD ervaren rond ovulatie hun hoogste cognitieve helderheid.",
+    energyContextBody_luteal_early:
+      "Energie kan in deze fase nog stabiel zijn, maar fluctuaties zijn normaal.",
+    energyContextBody_luteal_late:
+      "In deze fase rapporteren veel vrouwen met ADHD een tijdelijke dip in focus en stemming (luteale crash). Lage energie kiezen is hier vaak realistisch.",
+    energyContextExpandAria: "Toon cyclus-uitleg",
+    energyContextCollapseAria: "Verberg cyclus-uitleg",
+    energyContextTip_active_only:
+      "Vul je laatste menstruatie in bij instellingen om fase-info te zien die je kan helpen bij je energiekeuze.",
+    energyContextTip_menstrual:
+      "Voel je je vermoeid of wazig? Laag past vaak. Voel je je toch redelijk? Kies wat klopt voor jou vandaag.",
+    energyContextTip_follicular:
+      "Merkt je een opleving? Middel of hoog kan passen. Nog niet fris? Laag is ook oké.",
+    energyContextTip_ovulation:
+      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Middel of laag is prima.",
+    energyContextTip_luteal_early:
+      "Energie kan nog wisselen. Kies wat je nu voelt: stabiel voelt vaak als middel, moe als laag.",
+    energyContextTip_luteal_late:
+      "Brain fog of prikkelbaarheid? Laag is vaak realistisch. Goede dag? Middel kan ook.",
     hintMenstrual:
       "Veel vrouwen met ADHD ervaren tijdens hun menstruatie minder energie. Wil je vandaag starten op laag?",
     hintFollicular:
@@ -110,6 +141,37 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     settingsToastEnabled: "Cycle tracking is on.",
     settingsToastUpdated: "Cycle updated.",
     settingsToastDisabled: "Cycle tracking is off.",
+    energyContextHeadline: "Cycle day {day} · {phase}",
+    energyContextTrackingActive: "Cycle tracking active",
+    energyContextPhase_menstrual: "Menstruation",
+    energyContextPhase_follicular: "Follicular",
+    energyContextPhase_ovulation: "Ovulation",
+    energyContextPhase_luteal_early: "Luteal (early)",
+    energyContextPhase_luteal_late: "Luteal (late)",
+    energyContextBody_menstrual:
+      "Many women with ADHD experience lower energy and concentration in this phase.",
+    energyContextBody_follicular:
+      "Energy and focus often build gradually during this phase.",
+    energyContextBody_ovulation:
+      "Many women with ADHD experience their highest cognitive clarity around ovulation.",
+    energyContextBody_luteal_early:
+      "Energy may still feel steady in this phase, but fluctuations are normal.",
+    energyContextBody_luteal_late:
+      "In this phase, many women with ADHD report a temporary dip in focus and mood (luteal crash). Choosing low energy is often realistic here.",
+    energyContextExpandAria: "Show cycle explanation",
+    energyContextCollapseAria: "Hide cycle explanation",
+    energyContextTip_active_only:
+      "Enter your last period start in settings to see phase info that can help with your energy choice.",
+    energyContextTip_menstrual:
+      "Feeling tired or foggy? Low often fits. Feeling okay anyway? Choose what feels right for you today.",
+    energyContextTip_follicular:
+      "Noticing an uptick? Medium or high may fit. Not feeling fresh yet? Low is fine too.",
+    energyContextTip_ovulation:
+      "Feeling clear and energetic? High may fit. Feeling calmer? Medium or low works too.",
+    energyContextTip_luteal_early:
+      "Energy can still fluctuate. Pick what you feel now: steady often means medium, tired means low.",
+    energyContextTip_luteal_late:
+      "Brain fog or irritability? Low is often realistic. Having a good day? Medium can work too.",
     hintMenstrual:
       "Many women with ADHD have lower energy during their period. Want to start today on low?",
     hintFollicular:

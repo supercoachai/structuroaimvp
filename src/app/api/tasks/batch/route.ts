@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { LENGTH_LIMITS, firstLengthError, validateLength } from '@/lib/validateLength'
+import { withApiErrorTracking } from '@/lib/posthog/withApiErrorTracking'
 import { NextResponse } from 'next/server'
 
-// Batch update voor het synchroniseren van meerdere taken tegelijk
-export async function POST(request: Request) {
+async function postTasksBatch(request: Request) {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -107,3 +107,4 @@ export async function POST(request: Request) {
   return NextResponse.json(data)
 }
 
+export const POST = withApiErrorTracking("POST /api/tasks/batch", postTasksBatch);

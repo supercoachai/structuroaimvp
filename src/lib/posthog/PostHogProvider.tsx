@@ -1,71 +1,26 @@
 "use client";
 
-import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
+import posthog from "posthog-js";
 import { useEffect, useRef } from "react";
+
+import {
+  applyPostHogAnalyticsConsent,
+  ensurePostHogClientInitialized,
+} from "./clientInit";
 import { useConsent } from "./ConsentContext";
-
-let posthogInitOnce = false;
-
-function registerSiteGroup(): void {
-  if (typeof window === "undefined") return;
-  const hostname = window.location.hostname;
-  let site = "dev";
-  if (hostname.includes("structuro.eu")) site = "eu";
-  else if (hostname.includes("structuro.ai")) site = "ai";
-  posthog.register({ site });
-}
-
-/** Zet NEXT_PUBLIC_POSTHOG_HOST (bijv. https://eu.i.posthog.com) voor directe EU API; leeg = first-party proxy `${origin}/ph`. */
-function clientApiHost(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
-  if (fromEnv) return fromEnv.replace(/\/+$/, "");
-  if (typeof window !== "undefined") return `${window.location.origin}/ph`;
-  return "";
-}
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const { consent } = useConsent();
   const prevConsentRef = useRef<typeof consent>(consent);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (consent !== "granted") return;
-
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    if (!key) return;
-
-    if (!posthogInitOnce) {
-      const apiHost = clientApiHost();
-      if (!apiHost) return;
-      posthog.init(key, {
-        api_host: apiHost,
-        ui_host: "https://eu.posthog.com",
-        person_profiles: "identified_only",
-        capture_pageview: false,
-        capture_pageleave: true,
-        autocapture: false,
-        disable_session_recording: true,
-        mask_all_text: true,
-        mask_all_element_attributes: true,
-        respect_dnt: true,
-        persistence: "localStorage+cookie",
-        cross_subdomain_cookie: false,
-      });
-      registerSiteGroup();
-      posthog.opt_in_capturing();
-      posthogInitOnce = true;
-    }
-  }, [consent]);
+    ensurePostHogClientInitialized();
+  }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (consent === "denied") {
-      posthog.opt_out_capturing();
-      posthog.reset();
-    } else if (prevConsentRef.current === "denied" && consent === "granted") {
-      posthog.opt_in_capturing();
-    }
+    if (consent === "unknown") return;
+    applyPostHogAnalyticsConsent(consent === "granted");
     prevConsentRef.current = consent;
   }, [consent]);
 
