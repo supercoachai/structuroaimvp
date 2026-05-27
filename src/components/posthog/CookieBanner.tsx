@@ -5,10 +5,10 @@ import { useConsent } from "@/lib/posthog/ConsentContext";
 import { useI18n } from "@/lib/i18n";
 
 export function CookieBanner() {
-  const { consent, grant, deny } = useConsent();
+  const { consent, consentReady, grant, deny } = useConsent();
   const { t } = useI18n();
 
-  if (consent !== "unknown") return null;
+  if (!consentReady || consent !== "unknown") return null;
 
   return (
     <div

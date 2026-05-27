@@ -41,7 +41,7 @@ export default function WelkomPage() {
   }, []);
 
   return (
-    <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[#F4F6FB] px-4 py-8">
+    <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--st-bg)] px-4 py-8">
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 text-center shadow-sm">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-3xl">
           ✓

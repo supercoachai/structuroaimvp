@@ -1,25 +1,66 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+
+const STORAGE_KEY = 'sidebar_open';
+
+function readSidebarOpenFromStorage(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeSidebarOpenToStorage(open: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, open ? 'true' : 'false');
+  } catch {
+    /* ignore */
+  }
+}
 
 interface SidebarContextType {
-  collapsed: boolean;
+  /** Desktop sidebar uitgeklapt (standaard ingeklapt). */
+  sidebarOpen: boolean;
   toggleSidebar: () => void;
-  setCollapsed: (collapsed: boolean) => void;
-  mobileOpen: boolean;
-  setMobileOpen: (open: boolean) => void;
+  setSidebarOpen: (open: boolean, options?: { persist?: boolean }) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpenState] = useState(false);
 
-  const toggleSidebar = () => setCollapsed(!collapsed);
+  useLayoutEffect(() => {
+    setSidebarOpenState(readSidebarOpenFromStorage());
+  }, []);
+
+  const setSidebarOpen = useCallback((open: boolean, options?: { persist?: boolean }) => {
+    setSidebarOpenState(open);
+    if (options?.persist !== false) {
+      writeSidebarOpenToStorage(open);
+    }
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpenState((prev) => {
+      const next = !prev;
+      writeSidebarOpenToStorage(next);
+      return next;
+    });
+  }, []);
 
   return (
-    <SidebarContext.Provider value={{ collapsed, toggleSidebar, setCollapsed, mobileOpen, setMobileOpen }}>
+    <SidebarContext.Provider value={{ sidebarOpen, toggleSidebar, setSidebarOpen }}>
       {children}
     </SidebarContext.Provider>
   );

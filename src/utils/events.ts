@@ -3,7 +3,7 @@ import { trackEvent } from "./analytics";
 // Dagstart
 export const trackDagstartOpened = () => trackEvent("dagstart_opened");
 
-export const trackEnergyChecked = (level: "laag" | "middel" | "hoog") =>
+export const trackEnergyChecked = (level: "laag" | "normaal" | "hoog") =>
   trackEvent("energy_checked", { level });
 
 // Taken

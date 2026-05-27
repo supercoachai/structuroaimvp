@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import AppLayout from "@/components/layout/AppLayout";
 import { useI18n } from "@/lib/i18n";
 
 type Props = {
@@ -15,7 +14,7 @@ export default function LegalStaticPage({ titleKey, updatedKey, bodyKey }: Props
   const paragraphs = t(bodyKey).split("\n\n").filter(Boolean);
 
   return (
-    <AppLayout>
+    <>
       <div className="min-h-full bg-[var(--structuro-bg)] text-[var(--structuro-text)]">
         <main className="relative mx-auto w-full max-w-xl px-4 pb-28 pt-4">
           <div
@@ -68,6 +67,6 @@ export default function LegalStaticPage({ titleKey, updatedKey, bodyKey }: Props
           </nav>
         </main>
       </div>
-    </AppLayout>
+    </>
   );
 }

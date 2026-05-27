@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import {
+  calendarDayToDueAt,
+  parseDueCalendarDayAmsterdam,
+} from "@/lib/dagstart/deadlineToday";
+import {
+  getCalendarDateAmsterdam,
+  getTomorrowCalendarDateAmsterdam,
+} from "@/lib/dagstartCookie";
 
 export interface TaskScheduleEditorTask {
   id: string;
@@ -14,22 +22,57 @@ export interface TaskScheduleEditorTask {
   energyLevel?: string;
 }
 
+type DeadlinePreset = "none" | "today" | "tomorrow" | "pick";
+
 interface TaskScheduleEditorProps {
   task: TaskScheduleEditorTask;
   onSave: (task: TaskScheduleEditorTask) => void;
   onClose: () => void;
 }
 
+function initialDeadlineState(dueAt: string | null | undefined): {
+  preset: DeadlinePreset;
+  pickedYmd: string;
+} {
+  const ymd = parseDueCalendarDayAmsterdam(dueAt);
+  if (!ymd) {
+    return { preset: "none", pickedYmd: getCalendarDateAmsterdam() };
+  }
+  const today = getCalendarDateAmsterdam();
+  const tomorrow = getTomorrowCalendarDateAmsterdam();
+  if (ymd === today) return { preset: "today", pickedYmd: ymd };
+  if (ymd === tomorrow) return { preset: "tomorrow", pickedYmd: ymd };
+  return { preset: "pick", pickedYmd: ymd };
+}
+
 export default function TaskScheduleEditor({ task, onSave, onClose }: TaskScheduleEditorProps) {
   const { t } = useI18n();
+  const initial = useMemo(
+    () => initialDeadlineState(task?.dueAt),
+    [task?.dueAt]
+  );
   const [title, setTitle] = useState(task?.title ?? "");
   const [duration, setDuration] = useState<number | null>(task?.duration ?? task?.estimatedDuration ?? null);
   const [energyLevel, setEnergyLevel] = useState<string>(task?.energyLevel ?? "medium");
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>(initial.preset);
+  const [pickedYmd, setPickedYmd] = useState(initial.pickedYmd);
+
+  const resolveDueAt = (): string | null => {
+    if (deadlinePreset === "none") return null;
+    if (deadlinePreset === "today") {
+      return calendarDayToDueAt(getCalendarDateAmsterdam());
+    }
+    if (deadlinePreset === "tomorrow") {
+      return calendarDayToDueAt(getTomorrowCalendarDateAmsterdam());
+    }
+    return calendarDayToDueAt(pickedYmd);
+  };
 
   const handleSave = () => {
     onSave({
       ...task,
       title: title.trim() || task.title,
+      dueAt: resolveDueAt(),
       reminders: [],
       repeat: "none",
       duration: duration || null,
@@ -38,6 +81,13 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
     });
     onClose();
   };
+
+  const chipClass = (active: boolean) =>
+    `rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? "bg-blue-600 text-white shadow-sm"
+        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+    }`;
 
   return (
     <div className="w-full max-w-lg bg-white rounded-3xl shadow-lg p-6 sm:p-8 border border-gray-200/80">
@@ -53,7 +103,6 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
       </div>
 
       <div className="space-y-5">
-        {/* Titel */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             {t("taskEditor.labelTitle")}
@@ -67,7 +116,39 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
           />
         </div>
 
-        {/* Duur */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+            {t("taskEditor.labelDeadline")}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["none", t("taskEditor.deadlineNone")],
+                ["today", t("taskEditor.deadlineToday")],
+                ["tomorrow", t("taskEditor.deadlineTomorrow")],
+                ["pick", t("taskEditor.deadlinePick")],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setDeadlinePreset(key)}
+                className={chipClass(deadlinePreset === key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {deadlinePreset === "pick" ? (
+            <input
+              type="date"
+              value={pickedYmd}
+              onChange={(e) => setPickedYmd(e.target.value)}
+              className="mt-3 w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+            />
+          ) : null}
+        </div>
+
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             {t("taskEditor.labelDuration")}
@@ -83,7 +164,6 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
           />
         </div>
 
-        {/* Energie */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
             {t("taskEditor.labelEnergy")}
@@ -111,7 +191,6 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
         </div>
       </div>
 
-      {/* Acties */}
       <div className="mt-6 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
         <button
           type="button"

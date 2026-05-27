@@ -1,8 +1,9 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { calendarDayToDueAt } from "@/lib/dagstart/deadlineToday";
 
-/** Zet postponed_to / postponed_at voor dagafsluiter-keuze "morgen oppakken". */
+/** Verplaatst deadline naar kalenderdag via due_at (dagafsluiter carry). */
 export async function postponeTasksToCalendarDay(
   supabase: SupabaseClient,
   userId: string,
@@ -10,12 +11,15 @@ export async function postponeTasksToCalendarDay(
   calendarDateYmd: string
 ): Promise<void> {
   if (taskIds.length === 0) return;
+  const dueAt = calendarDayToDueAt(calendarDateYmd);
+  if (!dueAt) return;
   try {
     const { error } = await supabase
       .from("tasks")
       .update({
-        postponed_to: calendarDateYmd,
-        postponed_at: new Date().toISOString(),
+        due_at: dueAt,
+        postponed_to: null,
+        postponed_at: null,
       })
       .in("id", taskIds)
       .eq("user_id", userId);

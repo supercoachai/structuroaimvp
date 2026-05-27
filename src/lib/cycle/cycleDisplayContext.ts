@@ -50,7 +50,8 @@ export function getCycleEnergyContext(
   const phase = calculateCyclePhase(
     startDate,
     profile.averageLength,
-    today
+    today,
+    profile.menstruationDuration
   );
   if (dayInCycle == null || phase === "unknown") {
     return { kind: "active_only" };

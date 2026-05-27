@@ -6,6 +6,7 @@ import { loadCycleProfile } from "@/lib/cycle/cycleProfileDb";
 import { calculateCyclePhase } from "@/lib/cycle/calculatePhase";
 import {
   CYCLE_LENGTH_DEFAULT,
+  MENSTRUATION_DURATION_DEFAULT,
   type CycleProfile,
   type CyclePhase,
 } from "@/lib/cycle/types";
@@ -29,6 +30,7 @@ export function useCycleProfile(): UseCycleProfileResult {
     consentAt: null,
     lastPeriodStart: null,
     averageLength: CYCLE_LENGTH_DEFAULT,
+    menstruationDuration: MENSTRUATION_DURATION_DEFAULT,
   });
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function useCycleProfile(): UseCycleProfileResult {
             consentAt: null,
             lastPeriodStart: null,
             averageLength: CYCLE_LENGTH_DEFAULT,
+            menstruationDuration: MENSTRUATION_DURATION_DEFAULT,
           });
           setLoading(false);
         }
@@ -69,9 +72,14 @@ export function useCycleProfile(): UseCycleProfileResult {
       if (!profile.lastPeriodStart) return "unknown" as CyclePhase;
       const startDate = new Date(profile.lastPeriodStart + "T00:00:00");
       if (Number.isNaN(startDate.getTime())) return "unknown" as CyclePhase;
-      return calculateCyclePhase(startDate, profile.averageLength);
+      return calculateCyclePhase(
+        startDate,
+        profile.averageLength,
+        new Date(),
+        profile.menstruationDuration
+      );
     },
-    [consentOn, profile.lastPeriodStart, profile.averageLength]
+    [consentOn, profile.lastPeriodStart, profile.averageLength, profile.menstruationDuration]
   );
 
   return {

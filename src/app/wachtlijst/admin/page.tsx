@@ -23,7 +23,7 @@ export default async function WachtlijstAdminPage({
 
   if (!expected || k !== expected) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#F4F6FB] px-4 text-sm text-slate-500">
+      <div className="flex min-h-[40vh] items-center justify-center bg-[var(--st-bg)] px-4 text-sm text-slate-500">
         Niet gevonden
       </div>
     );
@@ -32,7 +32,7 @@ export default async function WachtlijstAdminPage({
   const admin = createServiceRoleClient();
   if (!admin) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#F4F6FB] px-4 text-center text-sm text-red-700">
+      <div className="flex min-h-[40vh] items-center justify-center bg-[var(--st-bg)] px-4 text-center text-sm text-red-700">
         SUPABASE_SERVICE_ROLE_KEY ontbreekt op de server.
       </div>
     );
@@ -51,7 +51,7 @@ export default async function WachtlijstAdminPage({
   if (countErr || error) {
     console.error("[wachtlijst/admin]", countErr ?? error);
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#F4F6FB] px-4 text-sm text-red-700">
+      <div className="flex min-h-[40vh] items-center justify-center bg-[var(--st-bg)] px-4 text-sm text-red-700">
         Kon gegevens niet laden.
       </div>
     );
@@ -60,7 +60,7 @@ export default async function WachtlijstAdminPage({
   const list = (rows ?? []) as Row[];
 
   return (
-    <div className="min-h-[100dvh] bg-[#F4F6FB] px-4 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
+    <div className="min-h-[100dvh] bg-[var(--st-bg)] px-4 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
       <main className="mx-auto max-w-2xl">
         <p className="mb-6 text-xs text-slate-400">
           Privé-view. Pagina heeft geen index voor zoekmachines.

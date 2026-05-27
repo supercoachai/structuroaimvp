@@ -4,16 +4,21 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
-import { ANALYTICS_CONSENT_KEY } from "./consentStorage";
+import {
+  ANALYTICS_CONSENT_KEY,
+  readAnalyticsConsentFromStorage,
+} from "./consentStorage";
 
 export type ConsentState = "unknown" | "granted" | "denied";
 
 type ConsentContextValue = {
   consent: ConsentState;
+  /** localStorage gelezen; voorkomt cookiebanner-flash bij refresh. */
+  consentReady: boolean;
   grant: () => void;
   deny: () => void;
   reset: () => void;
@@ -21,6 +26,7 @@ type ConsentContextValue = {
 
 const ConsentContext = createContext<ConsentContextValue>({
   consent: "unknown",
+  consentReady: false,
   grant: () => {},
   deny: () => {},
   reset: () => {},
@@ -28,16 +34,12 @@ const ConsentContext = createContext<ConsentContextValue>({
 
 export function ConsentProvider({ children }: { children: React.ReactNode }) {
   const [consent, setConsent] = useState<ConsentState>("unknown");
+  const [consentReady, setConsentReady] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(ANALYTICS_CONSENT_KEY);
-      if (stored === "granted" || stored === "denied") {
-        setConsent(stored);
-      }
-    } catch {
-      /* ignore */
-    }
+  useLayoutEffect(() => {
+    const stored = readAnalyticsConsentFromStorage();
+    if (stored) setConsent(stored);
+    setConsentReady(true);
   }, []);
 
   const grant = useCallback(() => {
@@ -68,8 +70,8 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ consent, grant, deny, reset }),
-    [consent, grant, deny, reset]
+    () => ({ consent, consentReady, grant, deny, reset }),
+    [consent, consentReady, grant, deny, reset]
   );
 
   return (

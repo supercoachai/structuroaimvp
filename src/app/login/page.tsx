@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useLayoutEffect, Suspense, useEffect } from 'react';
+import { useState, useLayoutEffect, Suspense, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
+import LoginSuccessSplash from '@/components/LoginSuccessSplash';
 import {
   clearStructuroLocalModeCookie,
   markLocalSessionFresh,
@@ -63,6 +64,62 @@ function mapPasswordResetError(message: string, t: (k: string) => string): strin
   return message;
 }
 
+const loginInputClass =
+  "w-full rounded-[var(--st-r-md)] border border-[var(--st-line)] bg-[var(--st-surface-2)] px-4 py-3 text-base text-[var(--st-ink)] transition-colors placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue-soft)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--st-blue)]/20";
+
+function LoginOrDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3" aria-hidden={false}>
+      <div className="h-px flex-1 bg-[var(--st-line)]" aria-hidden />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--st-muted-2)]">
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-[var(--st-line)]" aria-hidden />
+    </div>
+  );
+}
+
+function LoginLanguageToggle({
+  locale,
+  setLocale,
+  label,
+}: {
+  locale: string;
+  setLocale: (l: "nl" | "en") => void;
+  label: string;
+}) {
+  return (
+    <div
+      className="flex gap-1 rounded-[10px] border border-[var(--st-line)] bg-[var(--st-surface)] p-0.5 text-xs font-semibold shadow-sm"
+      role="group"
+      aria-label={label}
+    >
+      <button
+        type="button"
+        onClick={() => setLocale("nl")}
+        className={`rounded-[8px] px-2.5 py-1 transition-colors ${
+          locale === "nl"
+            ? "bg-[var(--st-blue)] text-white"
+            : "text-[var(--st-muted)] hover:bg-[var(--st-surface-2)]"
+        }`}
+      >
+        NL
+      </button>
+      <button
+        type="button"
+        onClick={() => setLocale("en")}
+        className={`rounded-[8px] px-2.5 py-1 transition-colors ${
+          locale === "en"
+            ? "bg-[var(--st-blue)] text-white"
+            : "text-[var(--st-muted)] hover:bg-[var(--st-surface-2)]"
+        }`}
+      >
+        EN
+      </button>
+    </div>
+  );
+}
+
 function LoginPageInner() {
   const { t, locale, setLocale } = useI18n();
   const [isSignUp, setIsSignUp] = useState(false);
@@ -74,9 +131,18 @@ function LoginPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const splashTargetRef = useRef<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [localDevHost, setLocalDevHost] = useState(false);
+
+  const handleSplashDone = useCallback(() => {
+    const target = splashTargetRef.current ?? '/';
+    splashTargetRef.current = null;
+    router.push(target);
+    router.refresh();
+  }, [router]);
 
   useLayoutEffect(() => {
     try {
@@ -203,11 +269,9 @@ function LoginPageInner() {
           await persistSignupAttributionToProfile(data.user.id);
           queueSignupCompletedForAnalytics();
           setMessage(t('login.signupDone'));
-          // Auto login na signup
-          setTimeout(() => {
-            clearStructuroLocalModeCookie();
-            router.push('/');
-          }, 2000);
+          clearStructuroLocalModeCookie();
+          splashTargetRef.current = '/';
+          setShowSplash(true);
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -219,8 +283,8 @@ function LoginPageInner() {
 
         if (data.user) {
           clearStructuroLocalModeCookie();
-          router.push('/');
-          router.refresh();
+          splashTargetRef.current = '/';
+          setShowSplash(true);
         }
       }
     } catch (err: any) {
@@ -238,137 +302,132 @@ function LoginPageInner() {
     }
   };
 
+  const showSignInExtras = !isSignUp && !forgotPassword;
+
   return (
-    <div className="relative flex min-h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-x-hidden overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] bg-[#F4F6FB] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
-      <div
-        className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-0.5 text-xs font-semibold shadow-sm backdrop-blur-sm sm:right-6"
-        role="group"
-        aria-label={t('settings.languageTitle')}
-      >
-        <button
-          type="button"
-          onClick={() => setLocale('nl')}
-          className={`rounded-md px-2 py-1 ${locale === 'nl' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-        >
-          NL
-        </button>
-        <button
-          type="button"
-          onClick={() => setLocale('en')}
-          className={`rounded-md px-2 py-1 ${locale === 'en' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-        >
-          EN
-        </button>
+    <>
+      {showSplash ? <LoginSuccessSplash onDone={handleSplashDone} /> : null}
+    <div className="st-art relative flex min-h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-x-hidden overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+      <div className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 sm:right-6">
+        <LoginLanguageToggle
+          locale={locale}
+          setLocale={setLocale}
+          label={t("settings.languageTitle")}
+        />
       </div>
-      <div className="w-full min-w-0 max-w-sm space-y-6 rounded-2xl bg-white p-8 shadow-sm">
+
+      <div className="st-card w-full min-w-0 max-w-[440px] px-8 py-9 sm:px-9">
         <div className="flex flex-col items-center text-center">
-          <div className="flex flex-col items-center gap-2 leading-none">
-            {logoError ? (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-600 shadow-md">
-                <span className="text-3xl font-bold text-white">S</span>
-              </div>
-            ) : (
-              <img
-                src="/logo-structuro.png"
-                alt=""
-                width={96}
-                height={96}
-                className="h-20 w-20 object-contain drop-shadow-sm"
-                onError={() => setLogoError(true)}
-              />
-            )}
-            <span className="text-lg font-semibold tracking-tight text-slate-800">{t('login.taglineBrand')}</span>
-          </div>
-          <p className="mt-1 text-xs leading-tight text-gray-400">{t('brand.tagline')}</p>
+          {logoError ? (
+            <div className="flex h-[4.55rem] w-[4.55rem] items-center justify-center rounded-[var(--st-r-lg)] bg-[var(--st-blue)] shadow-md">
+              <span className="text-2xl font-bold text-white">S</span>
+            </div>
+          ) : (
+            <img
+              src="/logo-structuro.png"
+              alt=""
+              width={73}
+              height={73}
+              className="h-[4.55rem] w-[4.55rem] object-contain"
+              onError={() => setLogoError(true)}
+            />
+          )}
+          <p className="mt-4 text-sm font-semibold tracking-tight text-[var(--st-ink)]">
+            {t("login.taglineBrand")}
+          </p>
+          <p className="mt-1 text-[13px] leading-snug text-[var(--st-muted)]">
+            {t("brand.tagline")}
+          </p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-6">
+        <form onSubmit={handleAuth} className="mt-8 space-y-5">
           <div className="space-y-4">
-            {isSignUp && (
-              <div className="space-y-1">
-                <label htmlFor="fullName" className="block text-sm font-normal text-gray-500">
-                  {t('login.fullName')}
+            {isSignUp ? (
+              <div className="space-y-1.5">
+                <label htmlFor="fullName" className="block text-sm text-[var(--st-muted)]">
+                  {t("login.fullName")}
                 </label>
                 <input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  placeholder={t('login.fullNamePh')}
+                  className={loginInputClass}
+                  placeholder={t("login.fullNamePh")}
                   required={isSignUp}
                 />
               </div>
-            )}
+            ) : null}
 
-            <div className="space-y-1">
-              <label htmlFor="email" className="block text-sm font-normal text-gray-500">
-                {t('login.email')}
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-sm text-[var(--st-muted)]">
+                {t("login.email")}
               </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder={t('login.emailPh')}
+                className={loginInputClass}
+                placeholder={t("login.emailPh")}
                 required
+                autoComplete="email"
               />
             </div>
 
             {!forgotPassword || isSignUp ? (
-            <div className="space-y-1">
-              <label htmlFor="password" className="block text-sm font-normal text-gray-500">
-                {t('login.password')}
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="••••••••"
-                required={!forgotPassword || isSignUp}
-                minLength={6}
-                disabled={forgotPassword && !isSignUp}
-              />
-            </div>
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="block text-sm text-[var(--st-muted)]">
+                  {t("login.password")}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={loginInputClass}
+                  placeholder="••••••••"
+                  required={!forgotPassword || isSignUp}
+                  minLength={6}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                />
+              </div>
             ) : (
-              <p className="text-sm text-gray-600">
-                {t('login.forgotHelp')}
+              <p className="text-sm leading-relaxed text-[var(--st-muted)]">
+                {t("login.forgotHelp")}
               </p>
             )}
           </div>
 
-          {error && (
-            <div className="rounded-r-lg border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error ? (
+            <div className="rounded-xl border border-[var(--st-red-haze)] bg-[var(--st-red-haze)] px-4 py-3 text-sm text-[var(--st-red-deep)]">
               {error}
             </div>
-          )}
+          ) : null}
 
-          {message && (
-            <div className="rounded-r-lg border-l-4 border-green-500 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {message ? (
+            <div className="rounded-xl border border-[var(--st-green-haze)] bg-[var(--st-green-haze)] px-4 py-3 text-sm text-[var(--st-green-deep)]">
               {message}
             </div>
-          )}
+          ) : null}
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={loading || showSplash}
+            className="st-btn-primary h-12 w-full text-base disabled:cursor-not-allowed"
           >
             {loading
-              ? t('login.busy')
+              ? t("login.busy")
               : forgotPassword && !isSignUp
-                ? t('login.sendReset')
+                ? t("login.sendReset")
                 : isSignUp
-                  ? t('login.signUp')
-                  : t('login.signIn')}
+                  ? t("login.signUp")
+                  : t("login.signIn")}
           </button>
         </form>
 
         {!isSignUp ? (
-          <div className="text-center">
+          <div className="mt-4 text-center">
             {forgotPassword ? (
               <button
                 type="button"
@@ -376,9 +435,9 @@ function LoginPageInner() {
                   setForgotPassword(false);
                   setError(null);
                 }}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
               >
-                {t('login.backSignIn')}
+                {t("login.backSignIn")}
               </button>
             ) : (
               <button
@@ -388,35 +447,56 @@ function LoginPageInner() {
                   setError(null);
                   setMessage(null);
                 }}
-                className="text-sm text-gray-600 hover:text-gray-900 hover:underline"
+                className="text-sm text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink-soft)]"
               >
-                {t('login.forgot')}
+                {t("login.forgot")}
               </button>
             )}
           </div>
         ) : null}
 
-        {SIGNUP_ALLOWED ? (
-          <div className="text-center">
+        {SIGNUP_ALLOWED && showSignInExtras ? (
+          <div className="mt-6 space-y-4">
+            <LoginOrDivider label={t("login.orDivider")} />
+            <p className="text-center text-sm text-[var(--st-muted)]">
+              {t("login.noAccount")}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(true);
+                  setForgotPassword(false);
+                  setError(null);
+                  setMessage(null);
+                }}
+                className="font-semibold text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
+              >
+                {t("login.createAccount")}
+              </button>
+            </p>
+          </div>
+        ) : null}
+
+        {SIGNUP_ALLOWED && isSignUp ? (
+          <div className="mt-6 text-center">
             <button
               type="button"
               onClick={() => {
-                setIsSignUp((v) => !v);
+                setIsSignUp(false);
                 setForgotPassword(false);
                 setError(null);
                 setMessage(null);
               }}
-              className="text-sm text-gray-500 hover:text-gray-800"
+              className="text-sm text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink-soft)]"
             >
-              {isSignUp ? t('login.toggleSignIn') : t('login.toggleSignUp')}
+              {t("login.toggleSignIn")}
             </button>
           </div>
         ) : null}
 
-        {showLocalTest && (
-          <div className="border-t border-gray-200/80 pt-4 mt-0 space-y-3">
-            <p className="text-center text-xs text-gray-500">
-              {t('login.localTestHint')}
+        {showLocalTest ? (
+          <div className="mt-6 space-y-3 border-t border-[var(--st-line)] pt-5">
+            <p className="text-center text-xs text-[var(--st-muted-2)]">
+              {t("login.localTestHint")}
             </p>
             <button
               type="button"
@@ -434,15 +514,19 @@ function LoginPageInner() {
                 clearLocalOnboardingDoneCookieOnClient();
                 window.location.assign("/onboarding");
               }}
-              className="w-full py-3 rounded-xl text-sm font-medium border-2 border-dashed border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+              className="w-full rounded-[var(--st-r-md)] border border-dashed border-[var(--st-line-strong)] py-3 text-sm font-medium text-[var(--st-ink-soft)] transition-colors hover:bg-[var(--st-surface-2)]"
             >
-              {t('login.localTestCta')}
+              {t("login.localTestCta")}
             </button>
           </div>
-        )}
+        ) : null}
 
+        <p className="mt-8 text-center text-xs leading-relaxed text-[var(--st-muted-2)]">
+          {t("login.privacyFooter")}
+        </p>
       </div>
     </div>
+    </>
   );
 }
 
@@ -450,7 +534,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
+        <div className="st-art flex min-h-[100dvh] items-center justify-center px-4 py-8 text-[var(--st-muted)]">
           Laden…
         </div>
       }

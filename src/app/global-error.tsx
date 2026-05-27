@@ -4,6 +4,7 @@ import NextError from "next/error";
 import { useEffect } from "react";
 
 import { captureClientException } from "@/lib/posthog/captureExceptionClient";
+import { getErrorUiCopy, resolveClientLocale } from "@/lib/i18n/clientLocale";
 
 export default function GlobalError({
   error,
@@ -20,12 +21,16 @@ export default function GlobalError({
     });
   }, [error]);
 
+  const copy = getErrorUiCopy();
+  const locale = resolveClientLocale();
+
   return (
-    <html lang="nl">
+    <html lang={locale}>
       <body>
         <div style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
-          <p style={{ marginBottom: 12 }}>
-            Er ging iets mis in de app. Probeer de pagina te vernieuwen.
+          <p style={{ marginBottom: 12 }}>{copy.body}</p>
+          <p style={{ marginBottom: 16, fontSize: "0.85rem", color: "#64748b" }}>
+            {copy.translatorNote}
           </p>
           <button
             type="button"
@@ -39,7 +44,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Opnieuw proberen
+            {copy.retryLabel}
           </button>
           <button
             type="button"
@@ -53,7 +58,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Pagina vernieuwen
+            {copy.refreshLabel}
           </button>
         </div>
         <NextError statusCode={0} />

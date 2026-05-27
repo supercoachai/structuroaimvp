@@ -213,7 +213,7 @@ export default function RegistrerenAccountClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-sm text-slate-500">
+        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
           …
         </div>
       }

@@ -60,7 +60,7 @@ export default function IgniteTimer({ minutes }: IgniteTimerProps) {
         <>
           {/* Compacte timer display */}
           <div className="mb-4">
-            <div className="text-2xl font-medium text-[#2F3441] mb-1">
+            <div className="font-mono text-2xl font-medium text-[#2F3441] mb-1">
               {formatTime(timeLeft)}
             </div>
             <div className="text-sm text-[rgba(47,52,65,0.65)]">

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { captureClientException } from "@/lib/posthog/captureExceptionClient";
+import { getRouteErrorUiCopy } from "@/lib/i18n/clientLocale";
 
 type RouteSegmentErrorProps = {
   error: Error & { digest?: string };
@@ -25,15 +26,7 @@ export function RouteSegmentError({
     });
   }, [error, route]);
 
-  const langEn =
-    typeof document !== "undefined" &&
-    document.documentElement.lang.toLowerCase().startsWith("en");
-  const title = langEn ? "Something went wrong" : "Er ging iets mis";
-  const body = langEn
-    ? "This page hit an unexpected error. Try again or refresh."
-    : "Deze pagina liep tegen een onverwachte fout aan. Probeer opnieuw of vernieuw de pagina.";
-  const retryLabel = langEn ? "Try again" : "Opnieuw proberen";
-  const refreshLabel = langEn ? "Refresh page" : "Pagina vernieuwen";
+  const copy = getRouteErrorUiCopy();
 
   return (
     <div
@@ -66,7 +59,7 @@ export function RouteSegmentError({
             margin: "0 0 8px",
           }}
         >
-          {title}
+          {copy.title}
         </h1>
         <p
           style={{
@@ -76,7 +69,7 @@ export function RouteSegmentError({
             lineHeight: 1.5,
           }}
         >
-          {body}
+          {copy.body}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <button
@@ -94,7 +87,7 @@ export function RouteSegmentError({
               cursor: "pointer",
             }}
           >
-            {retryLabel}
+            {copy.retryLabel}
           </button>
           <button
             type="button"
@@ -111,7 +104,7 @@ export function RouteSegmentError({
               cursor: "pointer",
             }}
           >
-            {refreshLabel}
+            {copy.refreshLabel}
           </button>
         </div>
       </div>

@@ -1,0 +1,489 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTaskContext } from "@/context/TaskContext";
+import { useUser } from "@/hooks/useUser";
+import { useCheckIn } from "@/hooks/useCheckIn";
+import { useCycleProfile } from "@/hooks/useCycleProfile";
+import { createClient } from "@/lib/supabase/client";
+import { resolveDayStartFirstName, getDayStartTimeOfDay } from "@/lib/dayStartGreeting";
+import { calculateDayInCycle } from "@/lib/cycle/calculatePhase";
+import {
+  isDueStrictlyAfterToday,
+  compareDeadlineTasks,
+  calendarDayToDueAt,
+} from "@/lib/dagstart/deadlineToday";
+import {
+  buildDagstartTaskPlan,
+  rankTaskForDagstartSuggestions,
+} from "@/lib/dagstart/buildDagstartTaskPlan";
+import { resolveDagstartSavedTaskIds, clampDagstartSelection } from "@/lib/dagstart/dagstartPickLimits";
+import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import DagstartDeadlineOverflowModal from "@/components/dagstart/DagstartDeadlineOverflowModal";
+import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
+import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
+import { captureProductEvent } from "@/lib/posthog/track";
+import { markOnboardingCompleted } from "@/lib/onboardingProfile";
+import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
+import { toast } from "@/components/Toast";
+import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
+import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
+import StepEnergy from "./StepEnergy";
+import StepChoice from "./StepChoice";
+import StepSuggested from "./StepSuggested";
+import StepSwipe from "./StepSwipe";
+import StepDone from "./StepDone";
+import {
+  DAGSTART_ENERGIES,
+  appEnergyToDagstartId,
+  dagstartIdToAppEnergy,
+  dagstartMaxSlotsForEnergy,
+  dagstartTaskEnergyAllow,
+  type DagstartEnergyId,
+  type DagstartTaskCard,
+} from "./types";
+
+type DagstartFlowProps = {
+  onComplete: () => void;
+};
+
+function greetingLabel(): string {
+  const period = getDayStartTimeOfDay();
+  if (period === "morning") return "Goedemorgen";
+  if (period === "afternoon") return "Goedemiddag";
+  return "Goedenavond";
+}
+
+function taskToDagstartCardLocal(task: {
+  id: string;
+  title: string;
+  duration?: number | null;
+  estimatedDuration?: number | null;
+  energyLevel?: string | null;
+  dueAt?: string | null;
+}): DagstartTaskCard {
+  const minutes = task.duration || task.estimatedDuration || 15;
+  const appEnergy =
+    task.energyLevel === "low" || task.energyLevel === "high"
+      ? task.energyLevel
+      : "medium";
+  const deadlineMeta = task.dueAt ? getDagstartCardDeadline(task.dueAt, "nl") : null;
+  return {
+    id: String(task.id),
+    title: String(task.title ?? "").trim(),
+    appEnergy,
+    energy: appEnergyToDagstartId(task.energyLevel),
+    minutes,
+    dueAt: task.dueAt ?? null,
+    deadline: deadlineMeta?.label ?? null,
+    overdue: deadlineMeta?.overdue ?? false,
+  };
+}
+
+export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
+  const { tasks, addTask, fetchTasks, updateTask } = useTaskContext();
+  const { user: authUser } = useUser();
+  const { saveCheckIn } = useCheckIn();
+  const {
+    consentOn: cycleConsentOn,
+    profile: cycleProfile,
+    computePhaseToday,
+  } = useCycleProfile();
+
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const [energy, setEnergy] = useState<DagstartEnergyId | null>(null);
+  const [choice, setChoice] = useState<"structuro" | "self" | null>(null);
+  const [keptIds, setKeptIds] = useState<string[]>([]);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [swipeAddBusy, setSwipeAddBusy] = useState(false);
+  const [extraDeadlineSlots, setExtraDeadlineSlots] = useState(0);
+  const [overflowConfirmedIds, setOverflowConfirmedIds] = useState<string[]>([]);
+  const [overflowModal, setOverflowModal] = useState<{
+    task: DagstartTaskCard;
+    dueAt: string | null;
+    onConfirm?: () => void;
+  } | null>(null);
+  const [overflowBusy, setOverflowBusy] = useState(false);
+  const [overflowQueue, setOverflowQueue] = useState<DagstartTaskCard[]>([]);
+  /** Forceert remount van stap-2 substeps zodat lokale state (selecties, swipe-queue) opnieuw begint. */
+  const [step2Key, setStep2Key] = useState(0);
+
+  useEffect(() => {
+    trackDagstartOpened();
+    captureProductEvent("dagstart_started");
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const emailFallback = authUser?.email
+        ? resolveDayStartFirstName({ email: authUser.email })
+        : "";
+
+      if (!authUser?.id) {
+        if (typeof window !== "undefined") {
+          const storedName = localStorage.getItem("structuro_user_name");
+          if (storedName && !cancelled) {
+            setUserName(resolveDayStartFirstName({ preferredName: storedName }));
+            return;
+          }
+        }
+        if (emailFallback && !cancelled) setUserName(emailFallback);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("preferred_name, display_name")
+          .eq("id", authUser.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const resolved = resolveDayStartFirstName({
+          preferredName: profile?.preferred_name,
+          displayName: profile?.display_name,
+          email: authUser.email,
+        });
+        if (resolved) setUserName(resolved);
+        else if (emailFallback) setUserName(emailFallback);
+      } catch {
+        if (!cancelled && emailFallback) setUserName(emailFallback);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.id, authUser?.email]);
+
+  const cyclus = useMemo(() => {
+    if (!cycleConsentOn || !cycleProfile.lastPeriodStart) return null;
+    const startDate = new Date(`${cycleProfile.lastPeriodStart}T00:00:00`);
+    if (Number.isNaN(startDate.getTime())) return null;
+    const day = calculateDayInCycle(startDate, cycleProfile.averageLength);
+    if (day == null) return null;
+    return {
+      day,
+      cycleLength: cycleProfile.averageLength,
+      menstruationDuration: cycleProfile.menstruationDuration,
+    };
+  }, [cycleConsentOn, cycleProfile]);
+
+  /** Ruwe open takenpool (voor swipe + plan). */
+  const openTasksRaw = useMemo(() => {
+    if (!energy) return [];
+    const allowedIds = new Set(dagstartTaskEnergyAllow(energy));
+    return tasks.filter((t: any) => {
+      if (!t?.id || !String(t.title ?? "").trim()) return false;
+      if (t.done || t.notToday || t.not_today) return false;
+      if (t.source === "medication" || t.source === "event") return false;
+      if (isDueStrictlyAfterToday(t.dueAt)) return false;
+      const dsEnergy = appEnergyToDagstartId(t.energyLevel);
+      return allowedIds.has(dsEnergy);
+    });
+  }, [tasks, energy]);
+
+  const maxSlots = energy ? dagstartMaxSlotsForEnergy(energy) : 0;
+
+  const dagstartPlan = useMemo(() => {
+    if (!energy || maxSlots === 0) return null;
+    const dayEnergy = dagstartIdToAppEnergy(energy);
+    return buildDagstartTaskPlan(
+      openTasksRaw,
+      openTasksRaw,
+      dayEnergy,
+      maxSlots,
+      getCalendarDateAmsterdam()
+    );
+  }, [openTasksRaw, energy, maxSlots]);
+
+  const suggestedTasks = useMemo((): DagstartTaskCard[] => {
+    if (!dagstartPlan) return [];
+    return [...dagstartPlan.deadlineAutoFill, ...dagstartPlan.structuroFill].map(
+      taskToDagstartCardLocal
+    );
+  }, [dagstartPlan]);
+
+  /** Sortering: deadlines eerst (overdue → datum → duur → titel), dan rest op duur. */
+  const taskPool = useMemo((): DagstartTaskCard[] => {
+    if (!energy) return [];
+    const sorted = [...openTasksRaw].sort((a: any, b: any) => {
+      const deadlineRank =
+        rankTaskForDagstartSuggestions(a) - rankTaskForDagstartSuggestions(b);
+      if (deadlineRank !== 0) return deadlineRank;
+      if (
+        rankTaskForDagstartSuggestions(a) === 0 &&
+        rankTaskForDagstartSuggestions(b) === 0
+      ) {
+        const dueDiff = compareDeadlineTasks(a, b);
+        if (dueDiff !== 0) return dueDiff;
+      }
+      const durA = a.duration || a.estimatedDuration || 999;
+      const durB = b.duration || b.estimatedDuration || 999;
+      if (durA !== durB) return durA - durB;
+      return String(a.title || "").localeCompare(String(b.title || ""));
+    });
+
+    return sorted.map(taskToDagstartCardLocal);
+  }, [openTasksRaw, energy]);
+
+  useEffect(() => {
+    if (step !== 2 || !dagstartPlan) return;
+    setExtraDeadlineSlots(0);
+    setOverflowConfirmedIds([]);
+    setOverflowModal(null);
+    setOverflowQueue(
+      dagstartPlan.deadlineOverflow.map((t) => taskToDagstartCardLocal(t))
+    );
+  }, [step, step2Key, dagstartPlan]);
+
+  useEffect(() => {
+    if (step !== 2 || overflowModal || overflowQueue.length === 0) return;
+    const next = overflowQueue[0];
+    setOverflowModal({ task: next, dueAt: next.dueAt });
+  }, [step, overflowModal, overflowQueue]);
+
+  const requestDeadlineOverflow = useCallback(
+    (task: DagstartTaskCard, onConfirm?: () => void) => {
+      setOverflowModal({ task, dueAt: task.dueAt, onConfirm });
+    },
+    []
+  );
+
+  const handleOverflowPostpone = useCallback(async () => {
+    if (!overflowModal || overflowBusy) return;
+    setOverflowBusy(true);
+    try {
+      await updateTask(overflowModal.task.id, {
+        dueAt: calendarDayToDueAt(getTomorrowCalendarDateAmsterdam()),
+      });
+      await fetchTasks();
+      setOverflowQueue((q) =>
+        q.filter((t) => t.id !== overflowModal.task.id)
+      );
+      setOverflowModal(null);
+    } catch (e) {
+      console.error("deadline overflow postpone:", e);
+      toast("Taak kon niet worden verzet.");
+    } finally {
+      setOverflowBusy(false);
+    }
+  }, [overflowModal, overflowBusy, updateTask, fetchTasks]);
+
+  const handleOverflowAddAnyway = useCallback(() => {
+    if (!overflowModal || overflowBusy) return;
+    setExtraDeadlineSlots((n) => n + 1);
+    setOverflowConfirmedIds((ids) =>
+      ids.includes(overflowModal.task.id)
+        ? ids
+        : [...ids, overflowModal.task.id]
+    );
+    overflowModal.onConfirm?.();
+    setOverflowQueue((q) => q.filter((t) => t.id !== overflowModal.task.id));
+    setOverflowModal(null);
+  }, [overflowModal, overflowBusy]);
+
+  const finishWithPicks = useCallback(
+    async (pickedIds: string[]) => {
+      if (!energy || submitting) return;
+      const tasksById = new Map(taskPool.map((t) => [t.id, t]));
+      const savedIds = clampDagstartSelection(
+        pickedIds,
+        tasksById,
+        maxSlots,
+        extraDeadlineSlots
+      );
+      setSubmitting(true);
+      setKeptIds(savedIds);
+      setStep(3);
+
+      const appEnergy = dagstartIdToAppEnergy(energy);
+      const cyclePhase = computePhaseToday();
+      const top3 = resolveDagstartSavedTaskIds(
+        savedIds,
+        maxSlots,
+        extraDeadlineSlots
+      );
+
+      try {
+        await saveCheckIn({
+          energy_level: appEnergy,
+          top3_task_ids: top3.length > 0 ? top3 : null,
+          cycle_phase: cyclePhase ?? null,
+        });
+        if (authUser?.id) {
+          try {
+            await updateProfileAfterDagstartComplete(authUser.id, appEnergy);
+          } catch (err) {
+            console.warn("dagstart profile update:", err);
+          }
+        }
+        try {
+          await markOnboardingCompleted();
+        } catch (err) {
+          console.warn("markOnboardingCompleted:", err);
+        }
+        captureProductEvent("dagstart_completed", {
+          energy: appEnergy,
+          task_count: top3.length,
+        });
+      } catch (err: any) {
+        console.error("Dagstart save error:", err);
+        toast(`Fout bij opslaan: ${err?.message ?? "onbekende fout"}`);
+        setSubmitting(false);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [energy, submitting, computePhaseToday, saveCheckIn, authUser?.id, maxSlots, extraDeadlineSlots, taskPool]
+  );
+
+  const picksForDone = useMemo((): DagstartTaskCard[] => {
+    return keptIds
+      .map((id) => taskPool.find((t) => t.id === id))
+      .filter((t): t is DagstartTaskCard => Boolean(t));
+  }, [keptIds, taskPool]);
+
+  const handleEnergyPick = useCallback((id: DagstartEnergyId) => {
+    setEnergy(id);
+    trackEnergyChecked(id);
+    captureProductEvent("dagstart_energy_chosen", { level: id });
+    setTimeout(() => setStep(1), 480);
+  }, []);
+
+  const handleChoicePick = useCallback((c: "structuro" | "self") => {
+    setChoice(c);
+    setStep2Key((k) => k + 1);
+    setStep(2);
+  }, []);
+
+  const handleSwipeAddFromFlow = useCallback(
+    async (payload: NewTaskFlowPayload) => {
+      if (swipeAddBusy || !energy) {
+        throw new Error("dagstart_swipe_add_unavailable");
+      }
+      setSwipeAddBusy(true);
+      try {
+        await addTask(buildTaskFromFlowPayload(payload));
+        await fetchTasks();
+      } catch (e) {
+        console.error("dagstart swipe add:", e);
+        toast("Taak kon niet worden toegevoegd.");
+        throw e;
+      } finally {
+        setSwipeAddBusy(false);
+      }
+    },
+    [swipeAddBusy, energy, addTask, fetchTasks]
+  );
+
+  const handleBack = useCallback(() => {
+    setStep((s) => {
+      if (s <= 0 || s >= 3) return s;
+      const next = (s - 1) as 0 | 1 | 2;
+      if (s === 2) setChoice(null);
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="ds-root">
+      <div className="ds-card">
+        <div className="ds-topbar">
+          <span className="ds-brand">Structuro</span>
+          <span className="ds-topbar-meta">Dagstart</span>
+        </div>
+
+        {step > 0 && step < 3 ? (
+          <div className="ds-back-row">
+            <button
+              type="button"
+              className="ds-back"
+              onClick={handleBack}
+              aria-label="Terug"
+            >
+              ←
+            </button>
+          </div>
+        ) : null}
+
+        <div
+          className={`ds-body ${step === 3 ? "center" : ""} ${
+            step === 0 || step === 1 ? "center" : ""
+          } ${
+            step === 2 &&
+            (choice === "self" || (choice === "structuro" && taskPool.length === 0))
+              ? "scroll"
+              : ""
+          }`}
+        >
+          {step === 0 ? (
+            <StepEnergy
+              userName={userName}
+              greeting={greetingLabel()}
+              energy={energy}
+              cyclus={cyclus}
+              onPick={handleEnergyPick}
+            />
+          ) : null}
+
+          {step === 1 ? (
+            <StepChoice energy={energy} onPick={handleChoicePick} />
+          ) : null}
+
+          {step === 2 && choice === "structuro" ? (
+            <StepSuggested
+              key={`suggested-${step2Key}`}
+              energy={energy}
+              tasks={suggestedTasks}
+              maxSlots={maxSlots}
+              extraDeadlineSlots={extraDeadlineSlots}
+              preselectedIds={overflowConfirmedIds}
+              onAccept={(ids) => void finishWithPicks(ids)}
+              onSwitchToSwipe={() => {
+                setStep2Key((k) => k + 1);
+                setChoice("self");
+              }}
+              onAddTask={handleSwipeAddFromFlow}
+              onRequestDeadlineOverflow={requestDeadlineOverflow}
+              addBusy={swipeAddBusy}
+            />
+          ) : null}
+
+          {step === 2 && choice === "self" ? (
+            <StepSwipe
+              key={`swipe-${step2Key}`}
+              tasks={taskPool}
+              maxSlots={maxSlots}
+              extraDeadlineSlots={extraDeadlineSlots}
+              preselectedIds={overflowConfirmedIds}
+              onDone={(ids) => void finishWithPicks(ids)}
+              onAddTask={handleSwipeAddFromFlow}
+              onRequestDeadlineOverflow={requestDeadlineOverflow}
+              addBusy={swipeAddBusy}
+            />
+          ) : null}
+
+          {step === 3 ? (
+            <StepDone picks={picksForDone} onDashboard={onComplete} />
+          ) : null}
+        </div>
+      </div>
+
+      {overflowModal ? (
+        <DagstartDeadlineOverflowModal
+          taskTitle={overflowModal.task.title}
+          dueAt={overflowModal.task.dueAt}
+          busy={overflowBusy}
+          onPostpone={() => void handleOverflowPostpone()}
+          onAddAnyway={handleOverflowAddAnyway}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+// Voorkom dead-import waarschuwing voor energie-mapping in andere builds.
+export { DAGSTART_ENERGIES };

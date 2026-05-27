@@ -104,7 +104,7 @@ export default function WaitlistClient({ initialSource }: { initialSource: strin
   }
 
   return (
-    <div className="relative isolate flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-[#F4F6FB] pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <div className="relative isolate flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-[var(--st-bg)] pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       {/* Decor */}
       <div
         aria-hidden

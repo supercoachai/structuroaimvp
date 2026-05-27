@@ -1,0 +1,21 @@
+/** Routes zonder sidebar/header/dagstart-shell (login, onboarding, marketing). */
+export function isBarePagePath(pathname: string | null): boolean {
+  if (!pathname) return true;
+  const barePrefixes = [
+    '/login',
+    '/registreren',
+    '/auth',
+    '/onboarding',
+    '/welkom',
+    '/checkout-success',
+    '/dev-reset',
+    '/test',
+    '/wachtlijst',
+    '/inschrijven',
+  ];
+  return barePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+export function shouldUseAppShell(pathname: string | null): boolean {
+  return !isBarePagePath(pathname);
+}

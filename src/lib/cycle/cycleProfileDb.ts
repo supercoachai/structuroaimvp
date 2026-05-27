@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import {
   CYCLE_LENGTH_DEFAULT,
   clampCycleLength,
+  clampMenstruationDuration,
+  MENSTRUATION_DURATION_DEFAULT,
   type CycleProfile,
 } from "./types";
 
@@ -19,12 +21,38 @@ function isMissingColumnError(message: string | null | undefined): boolean {
   return NEW_OR_MISSING_COLUMN_HINTS.some((hint) => message.includes(hint));
 }
 
+type ProfileRow = {
+  cycle_tracking_consent_at?: string | null;
+  cycle_last_period_start?: string | null;
+  cycle_average_length?: number | null;
+  cycle_menstruation_duration?: number | null;
+};
+
+function parseProfileRow(row: ProfileRow | null): CycleProfile {
+  const averageLength =
+    typeof row?.cycle_average_length === "number"
+      ? clampCycleLength(row.cycle_average_length)
+      : CYCLE_LENGTH_DEFAULT;
+
+  return {
+    consentAt: row?.cycle_tracking_consent_at ?? null,
+    lastPeriodStart: row?.cycle_last_period_start ?? null,
+    averageLength,
+    menstruationDuration:
+      typeof row?.cycle_menstruation_duration === "number"
+        ? clampMenstruationDuration(averageLength, row.cycle_menstruation_duration)
+        : clampMenstruationDuration(averageLength, MENSTRUATION_DURATION_DEFAULT),
+  };
+}
+
 /** Lees cyclusvelden uit profiles. Geeft default-profile terug als kolommen ontbreken. */
 export async function loadCycleProfile(userId: string): Promise<CycleProfile> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("cycle_tracking_consent_at, cycle_last_period_start, cycle_average_length")
+    .select(
+      "cycle_tracking_consent_at, cycle_last_period_start, cycle_average_length, cycle_menstruation_duration"
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -32,37 +60,25 @@ export async function loadCycleProfile(userId: string): Promise<CycleProfile> {
     throw new Error(error.message);
   }
 
-  const row = data as
-    | {
-        cycle_tracking_consent_at?: string | null;
-        cycle_last_period_start?: string | null;
-        cycle_average_length?: number | null;
-      }
-    | null;
-
-  return {
-    consentAt: row?.cycle_tracking_consent_at ?? null,
-    lastPeriodStart: row?.cycle_last_period_start ?? null,
-    averageLength:
-      typeof row?.cycle_average_length === "number"
-        ? clampCycleLength(row.cycle_average_length)
-        : CYCLE_LENGTH_DEFAULT,
-  };
+  return parseProfileRow((data as ProfileRow | null) ?? null);
 }
 
-/** Eerste consent + setup. Schrijft consent-timestamp, period-start en lengte. */
+/** Eerste consent + setup. Schrijft consent-timestamp, period-start, lengte en menstruatieduur. */
 export async function saveCycleConsent(
   userId: string,
   lastPeriodStart: string,
-  averageLength: number
+  averageLength: number,
+  menstruationDuration: number
 ): Promise<void> {
   const supabase = createClient();
+  const length = clampCycleLength(averageLength);
   const { error } = await supabase
     .from("profiles")
     .update({
       cycle_tracking_consent_at: new Date().toISOString(),
       cycle_last_period_start: lastPeriodStart,
-      cycle_average_length: clampCycleLength(averageLength),
+      cycle_average_length: length,
+      cycle_menstruation_duration: clampMenstruationDuration(length, menstruationDuration),
     })
     .eq("id", userId);
   if (error) throw new Error(error.message);
@@ -87,9 +103,29 @@ export async function updateCycleAverageLength(
   averageLength: number
 ): Promise<void> {
   const supabase = createClient();
+  const length = clampCycleLength(averageLength);
   const { error } = await supabase
     .from("profiles")
-    .update({ cycle_average_length: clampCycleLength(averageLength) })
+    .update({ cycle_average_length: length })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+}
+
+/** Pas alleen de menstruatieduur aan. */
+export async function updateCycleMenstruationDuration(
+  userId: string,
+  averageLength: number,
+  menstruationDuration: number
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      cycle_menstruation_duration: clampMenstruationDuration(
+        averageLength,
+        menstruationDuration
+      ),
+    })
     .eq("id", userId);
   if (error) throw new Error(error.message);
 }
@@ -108,11 +144,11 @@ export async function clearAllCycleData(userId: string): Promise<void> {
       cycle_tracking_consent_at: null,
       cycle_last_period_start: null,
       cycle_average_length: CYCLE_LENGTH_DEFAULT,
+      cycle_menstruation_duration: MENSTRUATION_DURATION_DEFAULT,
     })
     .eq("id", userId);
   if (profileErr) throw new Error(profileErr.message);
 
-  // cycle_phase wissen op alle check-ins (trigger valideert top3 alleen bij wijziging top3/energie)
   const { error: checkinErr } = await supabase
     .from("daily_checkins")
     .update({ cycle_phase: null })

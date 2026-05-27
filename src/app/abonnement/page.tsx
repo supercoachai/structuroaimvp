@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -146,7 +145,7 @@ export default function AbonnementPage() {
   const refundMail = "mailto:info@structuro.eu?subject=Geld%20terug";
 
   return (
-    <AppLayout>
+    <>
       <div className="min-h-full bg-[var(--structuro-bg)] text-[var(--structuro-text)]">
         <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-6">
           <h1 className="structuro-page-title mb-2">{t("subscriptionPage.title")}</h1>
@@ -256,6 +255,6 @@ export default function AbonnementPage() {
           </div>
         </main>
       </div>
-    </AppLayout>
+    </>
   );
 }

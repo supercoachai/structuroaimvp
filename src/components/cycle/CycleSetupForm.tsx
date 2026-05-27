@@ -8,7 +8,10 @@ import {
   CYCLE_LENGTH_MAX,
   CYCLE_LENGTH_MIN,
   CYCLE_SETUP_MAX_DAYS_BACK,
+  MENSTRUATION_DURATION_DEFAULT,
   clampCycleLength,
+  clampMenstruationDuration,
+  maxMenstruationDurationForCycle,
 } from "@/lib/cycle/types";
 
 const PRIMARY_BUTTON_BASE =
@@ -35,8 +38,13 @@ function maxBackIso(): string {
 export type CycleSetupFormProps = {
   initialLastPeriodStart?: string | null;
   initialAverageLength?: number | null;
+  initialMenstruationDuration?: number | null;
   /** Resolves wanneer opslaan klaar is. Als de promise rejects, blijft de UI in busy=false. */
-  onSubmit: (lastPeriodStart: string, averageLength: number) => Promise<void>;
+  onSubmit: (
+    lastPeriodStart: string,
+    averageLength: number,
+    menstruationDuration: number
+  ) => Promise<void>;
   /** Optionele knop linksonder (bv. "Annuleren") in modals. */
   secondaryAction?: { label: string; onClick: () => void; disabled?: boolean };
   submitLabelOverride?: string;
@@ -45,6 +53,7 @@ export type CycleSetupFormProps = {
 export default function CycleSetupForm({
   initialLastPeriodStart,
   initialAverageLength,
+  initialMenstruationDuration,
   onSubmit,
   secondaryAction,
   submitLabelOverride,
@@ -62,18 +71,52 @@ export default function CycleSetupForm({
       ? clampCycleLength(initialAverageLength)
       : CYCLE_LENGTH_DEFAULT
   );
+  const [menstruationDuration, setMenstruationDuration] = useState<number>(() =>
+    clampMenstruationDuration(
+      typeof initialAverageLength === "number"
+        ? clampCycleLength(initialAverageLength)
+        : CYCLE_LENGTH_DEFAULT,
+      typeof initialMenstruationDuration === "number"
+        ? initialMenstruationDuration
+        : MENSTRUATION_DURATION_DEFAULT
+    )
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const decrease = () => setLength((v) => clampCycleLength(v - 1));
-  const increase = () => setLength((v) => clampCycleLength(v + 1));
+  const menstruationMax = maxMenstruationDurationForCycle(length);
+
+  const decreaseLength = () => {
+    setLength((prev) => {
+      const next = clampCycleLength(prev - 1);
+      setMenstruationDuration((d) => clampMenstruationDuration(next, d));
+      return next;
+    });
+  };
+
+  const increaseLength = () => {
+    setLength((prev) => clampCycleLength(prev + 1));
+  };
+
+  const decreaseMenstruation = () => {
+    setMenstruationDuration((v) => clampMenstruationDuration(length, v - 1));
+  };
+
+  const increaseMenstruation = () => {
+    setMenstruationDuration((v) => clampMenstruationDuration(length, v + 1));
+  };
 
   const submit = async () => {
     if (busy) return;
     setError(null);
     setBusy(true);
     try {
-      await onSubmit(periodStart, clampCycleLength(length));
+      const safeLength = clampCycleLength(length);
+      await onSubmit(
+        periodStart,
+        safeLength,
+        clampMenstruationDuration(safeLength, menstruationDuration)
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -109,12 +152,47 @@ export default function CycleSetupForm({
 
       <div className="space-y-2">
         <p className="text-sm font-semibold text-slate-700">
+          {t("cycle.setupMenstruationLabel")}
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <button
+            type="button"
+            onClick={decreaseMenstruation}
+            disabled={menstruationDuration <= 1 || busy}
+            aria-label={t("cycle.setupMenstruationDecreaseAria")}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <MinusIcon className="h-4 w-4" aria-hidden />
+          </button>
+          <div className="flex flex-1 flex-col items-center">
+            <span className="text-2xl font-semibold font-mono tabular-nums text-slate-900">
+              {menstruationDuration}
+            </span>
+            <span className="text-xs text-slate-500">
+              {t("cycle.setupLengthDays")}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={increaseMenstruation}
+            disabled={menstruationDuration >= menstruationMax || busy}
+            aria-label={t("cycle.setupMenstruationIncreaseAria")}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <PlusIcon className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">{t("cycle.setupMenstruationHint")}</p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-slate-700">
           {t("cycle.setupLengthLabel")}
         </p>
         <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
           <button
             type="button"
-            onClick={decrease}
+            onClick={decreaseLength}
             disabled={length <= CYCLE_LENGTH_MIN || busy}
             aria-label={t("cycle.setupLengthDecreaseAria")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
@@ -122,7 +200,7 @@ export default function CycleSetupForm({
             <MinusIcon className="h-4 w-4" aria-hidden />
           </button>
           <div className="flex flex-1 flex-col items-center">
-            <span className="text-2xl font-semibold tabular-nums text-slate-900">
+            <span className="text-2xl font-semibold font-mono tabular-nums text-slate-900">
               {length}
             </span>
             <span className="text-xs text-slate-500">
@@ -131,7 +209,7 @@ export default function CycleSetupForm({
           </div>
           <button
             type="button"
-            onClick={increase}
+            onClick={increaseLength}
             disabled={length >= CYCLE_LENGTH_MAX || busy}
             aria-label={t("cycle.setupLengthIncreaseAria")}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"

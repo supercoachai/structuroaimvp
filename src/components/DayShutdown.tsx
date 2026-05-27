@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTaskContext } from "../context/TaskContext";
 import { createClient } from "../lib/supabase/client";
 import { toast } from "./Toast";
@@ -8,82 +8,108 @@ import { track } from "../shared/track";
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import { insertDagafsluiterSuggestions } from "@/lib/supabase/parkedThoughtsDb";
 import { postponeTasksToCalendarDay } from "@/lib/supabase/postponeTasksDb";
-import { useCheckIn } from "../hooks/useCheckIn";
 import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { sortDeadlineTasks } from "@/lib/dagstart/deadlineToday";
 import { trackShutdownCompleted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
-import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
 import { captureProductEvent } from "@/lib/posthog/track";
+import { formatCompletedTimeAmsterdam } from "@/lib/dagafsluiting/formatCompletedTime";
+import DagafsluitingFlowShell from "@/components/dagafsluiting/DagafsluitingFlowShell";
+import DagafsluitingStepDone, {
+  type DoneTaskRow,
+} from "@/components/dagafsluiting/steps/DagafsluitingStepDone";
+import DagafsluitingStepCarry, {
+  type CarryTaskRow,
+} from "@/components/dagafsluiting/steps/DagafsluitingStepCarry";
+import DagafsluitingStepMood from "@/components/dagafsluiting/steps/DagafsluitingStepMood";
+import DagafsluitingStepRest from "@/components/dagafsluiting/steps/DagafsluitingStepRest";
+import type { SatisfactionLevel } from "@/components/dagafsluiting/DagafsluitingSatisfactionCards";
 
 interface DayShutdownProps {
   onComplete: () => void;
 }
 
-export type SatisfactionLevel = "low" | "good" | "great";
+export type { SatisfactionLevel };
+
+const MOOD_ADVANCE_MS = 520;
+const REST_REDIRECT_MS = 2800;
 
 export default function DayShutdown({ onComplete }: DayShutdownProps) {
   const { t: tr } = useI18n();
   const { tasks } = useTaskContext();
-  const { checkIn, loading: checkInLoading } = useCheckIn();
+  const [step, setStep] = useState(0);
   const [satisfactionLevel, setSatisfactionLevel] = useState<SatisfactionLevel | null>(null);
-  const [reflection, setReflection] = useState("");
-  const [completedTasks, setCompletedTasks] = useState<any[]>([]);
-  /** Alleen focus-taken van vandaag (dagstart top 3) die nog niet af zijn, met checkbox-state. */
-  const [tasksToRemember, setTasksToRemember] = useState<any[]>([]);
+  const [carryIds, setCarryIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const carryInitRef = useRef(false);
+  const saveStartedRef = useRef(false);
+  const moodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const todayYmd = getCalendarDateAmsterdam();
 
-  /** Zelfde bron als dagstart: top3_task_ids van vandaag, open, max 3. */
-  const incompleteDagstartTasks = useMemo(() => {
-    if (!checkIn || checkIn.date !== todayYmd || !checkIn.top3_task_ids?.length) {
-      return [] as any[];
-    }
-    const idOrder = checkIn.top3_task_ids.map(String).slice(0, 3);
-    const byId = new Map(tasks.map((t) => [String(t.id), t]));
-    const out: any[] = [];
-    for (const id of idOrder) {
-      const t = byId.get(id);
-      if (!t) continue;
-      if (t.done) continue;
-      if (t.source === "medication" || t.source === "event") continue;
-      out.push(t);
-    }
-    return out;
-  }, [checkIn, tasks, todayYmd]);
+  const completedRows = useMemo((): DoneTaskRow[] => {
+    return tasks
+      .filter(
+        (t: any) =>
+          t.done && t.completedAt && String(t.completedAt).slice(0, 10) === todayYmd
+      )
+      .map((t: any) => ({
+        id: String(t.id),
+        title: String(t.title ?? "").trim() || tr("common.taskFallback"),
+        completedAt: formatCompletedTimeAmsterdam(t.completedAt),
+        minutes: t.duration ?? t.estimatedDuration ?? null,
+      }));
+  }, [tasks, todayYmd, tr]);
+
+  const openRows = useMemo((): CarryTaskRow[] => {
+    const open = tasks.filter((t: any) => {
+      if (!t?.id || !String(t.title ?? "").trim()) return false;
+      if (t.done || t.notToday || t.not_today) return false;
+      if (t.source === "medication" || t.source === "event") return false;
+      return true;
+    });
+    return sortDeadlineTasks(open).map((t: any) => ({
+      id: String(t.id),
+      title: String(t.title ?? "").trim() || tr("common.taskFallback"),
+    }));
+  }, [tasks, tr]);
 
   useEffect(() => {
-    const completed = tasks.filter(
-      (t: any) =>
-        t.done && t.completedAt && String(t.completedAt).slice(0, 10) === todayYmd
-    );
-    setCompletedTasks(completed);
-  }, [tasks, todayYmd]);
+    if (carryInitRef.current) return;
+    if (openRows.length === 0) return;
+    setCarryIds(openRows.map((t) => t.id));
+    carryInitRef.current = true;
+  }, [openRows]);
 
   useEffect(() => {
-    setTasksToRemember(incompleteDagstartTasks.map((t) => ({ ...t, selected: false })));
-  }, [incompleteDagstartTasks]);
+    return () => {
+      if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+    };
+  }, []);
 
-  const handleSubmit = async () => {
-    if (!satisfactionLevel) {
-      toast(tr("dayShutdown.toastPickSatisfaction"));
-      return;
-    }
-
-    const reflectionErr = validateLength(
-      "reflection",
-      reflection,
-      LENGTH_LIMITS.SHUTDOWN_REFLECTION
+  const toggleCarry = useCallback((id: string) => {
+    setCarryIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
-    if (reflectionErr) {
-      toast(reflectionErr);
-      setSaveError(reflectionErr);
-      return;
-    }
+  }, []);
+
+  const handleMoodPick = useCallback((level: SatisfactionLevel) => {
+    setSatisfactionLevel(level);
+    if (moodTimerRef.current) clearTimeout(moodTimerRef.current);
+    moodTimerRef.current = setTimeout(() => {
+      setStep(3);
+    }, MOOD_ADVANCE_MS);
+  }, []);
+
+  const persistShutdown = useCallback(async () => {
+    if (!satisfactionLevel) return;
+    if (saveStartedRef.current) return;
+    saveStartedRef.current = true;
 
     setIsSubmitting(true);
     setSaveError(null);
+
     const supabase = createClient();
     const {
       data: { session },
@@ -92,298 +118,158 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
 
     if (!user) {
       toast(tr("dayShutdown.toastNeedLogin"));
+      saveStartedRef.current = false;
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const today = todayYmd;
       const tomorrowYmd = getTomorrowCalendarDateAmsterdam();
-      const completedIds = completedTasks.map((t) => t.id);
-      const selected = tasksToRemember.filter((t) => t.selected);
-      const unselected = tasksToRemember.filter((t) => !t.selected);
+      const completedIds = completedRows.map((t) => t.id);
+      const selectedIds = carryIds.filter((id) =>
+        openRows.some((row) => row.id === id)
+      );
+      const unselectedIds = openRows
+        .map((t) => t.id)
+        .filter((id) => !selectedIds.includes(id));
 
-      // "Not today" is expliciet tijdelijk. Bij dagafsluiting verwijderen we die taken.
       const { error: removeNotTodayErr } = await supabase
         .from("tasks")
         .delete()
         .eq("user_id", user.id)
         .eq("not_today", true);
-      if (removeNotTodayErr) {
-        console.error(
-          "[dagafsluiter] not_today cleanup failed:",
-          removeNotTodayErr.message,
-          removeNotTodayErr
-        );
-        throw removeNotTodayErr;
-      }
+      if (removeNotTodayErr) throw removeNotTodayErr;
 
-      // Open, niet geselecteerde focus-taken expliciet wegzetten uit "morgen".
-      if (unselected.length > 0) {
+      if (unselectedIds.length > 0) {
         const { error: archiveUnselectedErr } = await supabase
           .from("tasks")
           .update({ not_today: true })
-          .in("id", unselected.map((t: any) => t.id))
+          .in("id", unselectedIds)
           .eq("user_id", user.id);
-        if (archiveUnselectedErr) {
-          console.error(
-            "[dagafsluiter] archive unselected failed:",
-            archiveUnselectedErr.message,
-            archiveUnselectedErr
-          );
-          throw archiveUnselectedErr;
-        }
+        if (archiveUnselectedErr) throw archiveUnselectedErr;
       }
 
-      const suggestionItems = selected.map((t: any) => ({
-        content: String(t.title ?? "").trim() || tr("common.taskFallback"),
-        suggestedTaskEnergy: (["low", "medium", "high"].includes(String(t.energyLevel))
-          ? t.energyLevel
-          : "medium") as "low" | "medium" | "high",
-        scheduledFor: tomorrowYmd,
-      }));
+      const selectedTasks = openRows.filter((t) => selectedIds.includes(t.id));
+      const suggestionItems = selectedTasks.map((t) => {
+        const full = tasks.find((x: any) => String(x.id) === t.id);
+        const energy = full?.energyLevel;
+        return {
+          content: t.title,
+          suggestedTaskEnergy: (["low", "medium", "high"].includes(String(energy))
+            ? energy
+            : "medium") as "low" | "medium" | "high",
+          scheduledFor: tomorrowYmd,
+        };
+      });
 
       if (suggestionItems.length > 0) {
-        try {
-          await insertDagafsluiterSuggestions(user.id, suggestionItems);
-        } catch (err) {
-          console.error(
-            "[dagafsluiter] insertDagafsluiterSuggestions failed:",
-            err instanceof Error ? err.message : err,
-            err
-          );
-          throw err;
-        }
+        await insertDagafsluiterSuggestions(user.id, suggestionItems);
       }
 
-      if (selected.length > 0) {
-        try {
-          await postponeTasksToCalendarDay(
-            supabase,
-            user.id,
-            selected.map((t: any) => t.id),
-            tomorrowYmd
-          );
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
-          }
-        } catch (err) {
-          console.error(
-            "[dagafsluiter] postponeTasksToCalendarDay failed:",
-            err instanceof Error ? err.message : err,
-            err
-          );
-          throw err;
+      if (selectedIds.length > 0) {
+        await postponeTasksToCalendarDay(supabase, user.id, selectedIds, tomorrowYmd);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
         }
       }
 
       const rememberedTasksPayload =
-        selected.length > 0
-          ? selected.map((t: any) => ({
-              id: String(t.id),
-              title: String(t.title ?? "").trim() || tr("common.taskFallback"),
-            }))
+        selectedTasks.length > 0
+          ? selectedTasks.map((t) => ({ id: t.id, title: t.title }))
           : null;
-
-      const movedToTomorrowIds = selected.map((t: any) => t.id);
 
       const { error: shutdownErr } = await supabase.from("daily_shutdowns").upsert(
         {
           user_id: user.id,
-          date: today,
+          date: todayYmd,
           completed_task_ids: completedIds,
-          moved_to_tomorrow_task_ids: movedToTomorrowIds,
+          moved_to_tomorrow_task_ids: selectedIds,
           energy_level: null,
           satisfaction_level: satisfactionLevel,
-          reflection: reflection.trim() || null,
+          reflection: null,
           remembered_tasks: rememberedTasksPayload,
         },
-        {
-          onConflict: "user_id,date",
-        }
+        { onConflict: "user_id,date" }
       );
 
-      if (shutdownErr) {
-        console.error(
-          "[dagafsluiter] daily_shutdowns upsert failed:",
-          shutdownErr.message,
-          shutdownErr
-        );
-        throw shutdownErr;
-      }
+      if (shutdownErr) throw shutdownErr;
 
       triggerHaptic(HAPTIC_PATTERNS.DAY_DONE);
-      toast(tr("dayShutdown.toastDone"));
       track("day_shutdown", {
         satisfactionLevel,
-        completedCount: completedTasks.length,
+        completedCount: completedRows.length,
         dagafsluiterSuggestionCount: suggestionItems.length,
       });
-      trackShutdownCompleted(
-        movedToTomorrowIds.length,
-        satisfactionLevel
-      );
+      trackShutdownCompleted(selectedIds.length, satisfactionLevel);
       captureProductEvent("shutdown_completed", {
-        tasks_completed_count: completedTasks.length,
-        tasks_moved_count: movedToTomorrowIds.length,
+        tasks_completed_count: completedRows.length,
+        tasks_moved_count: selectedIds.length,
       });
-      onComplete();
+
+      window.setTimeout(() => {
+        onComplete();
+      }, REST_REDIRECT_MS);
     } catch (error: unknown) {
-      const detail =
-        error && typeof error === "object" && "message" in error
-          ? String((error as { message: unknown }).message)
-          : String(error);
-      console.error("Dagafsluiter save error:", detail, error);
+      console.error("Dagafsluiter save error:", error);
       const msg = tr("dayShutdown.saveError");
       setSaveError(msg);
       toast(msg);
+      saveStartedRef.current = false;
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    satisfactionLevel,
+    carryIds,
+    openRows,
+    completedRows,
+    tasks,
+    todayYmd,
+    tr,
+    onComplete,
+  ]);
 
-  const toggleTaskRemember = (taskId: string) => {
-    setTasksToRemember((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, selected: !t.selected } : t))
-    );
-  };
-
-  const satisfactionOptions: { key: SatisfactionLevel; emoji: string; label: string }[] = useMemo(
-    () => [
-      { key: "low" as const, emoji: "😮‍💨", label: tr("dayShutdown.satLowLabel") },
-      { key: "good" as const, emoji: "🙂", label: tr("dayShutdown.satGoodLabel") },
-      { key: "great" as const, emoji: "🌟", label: tr("dayShutdown.satGreatLabel") },
-    ],
-    [tr]
-  );
+  useEffect(() => {
+    if (step !== 3 || !satisfactionLevel) return;
+    void persistShutdown();
+  }, [step, satisfactionLevel, persistShutdown]);
 
   return (
-    <div className="w-full max-w-xl rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
-      <h2 className="structuro-page-title text-center">{tr("dayShutdown.title")}</h2>
-      <p className="structuro-page-subtitle mx-auto mt-2 max-w-md text-center text-balance">
-        {tr("dayShutdown.subtitle")}
-      </p>
-
-      {/* 1. Vandaag (afgeronde taken) */}
-      <section className="mt-8">
-        <h3 className="mb-3 text-base font-semibold text-slate-800">
-          {tr("dayShutdown.completedTitle")}
-        </h3>
-        {completedTasks.length > 0 ? (
-          <div className="grid gap-2">
-            {completedTasks.map((task) => (
-              <div
-                key={task.id}
-                className="rounded-lg border border-green-200 bg-green-50 px-3 py-3 text-sm text-slate-800"
-              >
-                ✓ {task.title}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm text-slate-600">
-            {tr("dayShutdown.noCompleted")}
-          </div>
-        )}
-      </section>
-
-      {/* 2. Hoe voelt het? */}
-      <section className="mt-8">
-        <h3 className="mb-4 text-base font-semibold text-slate-800">
-          {tr("dayShutdown.satisfactionTitle")}
-        </h3>
-        <div className="flex flex-wrap justify-center gap-3">
-          {satisfactionOptions.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setSatisfactionLevel(opt.key)}
-              className={`flex min-w-[88px] max-w-[160px] flex-1 flex-col items-center gap-1.5 rounded-xl border-2 p-3.5 transition-all active:scale-[0.98] ${
-                satisfactionLevel === opt.key
-                  ? "border-blue-600 bg-sky-50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <span className="text-[26px] leading-none" aria-hidden>
-                {opt.emoji}
-              </span>
-              <span className="text-sm font-semibold text-slate-800">{opt.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* 3. Morgen */}
-      <section className="mt-8">
-        {checkInLoading ? (
-          <p className="text-center text-sm text-slate-500">{tr("common.loading")}</p>
-        ) : incompleteDagstartTasks.length === 0 ? (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-center text-sm leading-snug text-slate-700">
-            {tr("dayShutdown.allDoneToday")}
-          </div>
-        ) : (
-          <>
-            <h3 className="mb-3 text-base font-semibold text-slate-800">
-              {tr("dayShutdown.tomorrowTitle")}
-            </h3>
-            <div className="grid max-h-[200px] gap-2 overflow-y-auto">
-              {tasksToRemember.map((task) => (
-                <label
-                  key={task.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                    task.selected
-                      ? "border-sky-300 bg-sky-50"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={task.selected || false}
-                    onChange={() => toggleTaskRemember(task.id)}
-                    className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-blue-600"
-                  />
-                  <span className="min-w-0 flex-1 text-sm text-slate-800">{task.title}</span>
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* 4. Reflectie (optioneel, afgekaderd) */}
-      <section className="mt-8 border-t border-slate-100 pt-8">
-        <h3 className="mb-3 text-base font-semibold text-slate-800">
-          {tr("dayShutdown.reflectionTitle")}{" "}
-          <span className="text-xs font-normal italic text-slate-500">
-            {tr("dayShutdown.reflectionOptional")}
-          </span>
-        </h3>
-        <textarea
-          value={reflection}
-          onChange={(e) => setReflection(e.target.value)}
-          placeholder={tr("dayShutdown.reflectionPh")}
-          className="min-h-[80px] w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
+    <DagafsluitingFlowShell
+      step={step}
+      stageAlign={step === 3 ? "start" : "center"}
+      onBack={() => {
+        if (step > 0 && step < 3) setStep((s) => s - 1);
+      }}
+    >
+      {step === 0 ? (
+        <DagafsluitingStepDone
+          tasks={completedRows}
+          onNext={() => setStep(openRows.length === 0 ? 2 : 1)}
         />
-      </section>
-
-      {saveError ? (
-        <p className="mb-3 mt-6 text-center text-sm leading-snug text-red-700" role="alert">
-          {saveError}
-        </p>
       ) : null}
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!satisfactionLevel || isSubmitting}
-        className={`mt-6 w-full rounded-xl px-4 py-4 text-base font-semibold transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 ${
-          satisfactionLevel && !isSubmitting
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : "bg-slate-200 text-slate-500"
-        }`}
-      >
-        {isSubmitting ? tr("dayShutdown.submitting") : tr("dayShutdown.submit")}
-      </button>
-    </div>
+      {step === 1 ? (
+        <DagafsluitingStepCarry
+          tasks={openRows}
+          carryIds={carryIds}
+          onToggle={toggleCarry}
+          onNext={() => setStep(2)}
+        />
+      ) : null}
+
+      {step === 2 ? (
+        <DagafsluitingStepMood mood={satisfactionLevel} onPick={handleMoodPick} />
+      ) : null}
+
+      {step === 3 ? (
+        <DagafsluitingStepRest
+          mood={satisfactionLevel}
+          saving={isSubmitting}
+          saveError={saveError}
+          onRetry={saveError ? () => void persistShutdown() : undefined}
+        />
+      ) : null}
+    </DagafsluitingFlowShell>
   );
 }

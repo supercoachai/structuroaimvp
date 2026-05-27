@@ -1,6 +1,5 @@
 "use client";
 
-import AppLayout from "../../components/layout/AppLayout";
 import { useI18n } from "@/lib/i18n";
 import { useMemo } from "react";
 
@@ -42,7 +41,7 @@ export default function UitlegPage() {
   );
 
   return (
-    <AppLayout>
+    <>
       <div
         className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
         style={{ background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)" }}
@@ -155,6 +154,6 @@ export default function UitlegPage() {
           <p className="text-center text-sm text-slate-500 pb-4">{tr("uitleg.closing")}</p>
         </main>
       </div>
-    </AppLayout>
+    </>
   );
 }

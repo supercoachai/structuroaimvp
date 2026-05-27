@@ -18,7 +18,7 @@ export function RegistrerenShell({ children, error, info }: RegistrerenShellProp
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-x-hidden bg-[#F4F6FB] px-4 py-6 pt-[max(3rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-x-hidden bg-[var(--st-bg)] px-4 py-6 pt-[max(3rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
       <button
         type="button"
         onClick={handleBack}

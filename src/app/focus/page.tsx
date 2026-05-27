@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useClientSearchParams } from '@/hooks/useClientSearchParams';
-import AppLayout from '../../components/layout/AppLayout';
 import { DopamineAirlock } from '@/components/DopamineAirlock';
 import { track } from '../../shared/track';
 import {
@@ -27,6 +26,8 @@ import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
 import { useI18n } from '@/lib/i18n';
 import { captureProductEvent } from '@/lib/posthog/track';
 import { focusPlannedMinutesBucket } from '@/lib/posthog/durationBuckets';
+import { useViewportContentFit } from '@/hooks/useViewportContentFit';
+import InfoButton from '@/components/info/InfoButton';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -34,7 +35,6 @@ import {
   PlayIcon,
   CheckIcon,
   ClockIcon,
-  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 
 const countdownDigitStyle = `
@@ -47,6 +47,16 @@ const countdownDigitStyle = `
     animation: structuro-countdown-pulse 1s ease-in-out forwards;
   }
 `;
+
+const FOCUS_FIT_MIN_SCALE = 0.62;
+
+function useFocusContentFit(
+  viewportRef: React.RefObject<HTMLDivElement | null>,
+  contentRef: React.RefObject<HTMLDivElement | null>,
+  deps: unknown[]
+) {
+  return useViewportContentFit(viewportRef, contentRef, deps, FOCUS_FIT_MIN_SCALE);
+}
 
 function FocusContent() {
   const fireCompletionConfetti = useCallback(() => {
@@ -69,8 +79,8 @@ function FocusContent() {
   const { locale, t: tr } = useI18n();
   const router = useRouter();
   const searchParams = useClientSearchParams();
-  const { addTask, tasks, fetchTasks, updateTask } = useTaskContext();
-  const { checkIn, saveCheckIn } = useCheckIn();
+  const { addTask, tasks, fetchTasks, updateTask, loading: tasksLoading } = useTaskContext();
+  const { checkIn, saveCheckIn, loading: checkInLoading } = useCheckIn();
   const { user } = useUser();
   const [nuNietBusy, setNuNietBusy] = useState(false);
   const [taskTitle, setTaskTitle] = useState(searchParams?.get("task") || "");
@@ -81,6 +91,8 @@ function FocusContent() {
   const [microUndoSnapshot, setMicroUndoSnapshot] = useState<MicroStep[] | null>(null);
   const microUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const parkThoughtInputRef = useRef<HTMLInputElement | null>(null);
+  const focusFitViewportRef = useRef<HTMLDivElement | null>(null);
+  const focusFitContentRef = useRef<HTMLDivElement | null>(null);
 
   const currentTask = useMemo(() => {
     const taskParam = searchParams?.get('task');
@@ -557,38 +569,11 @@ function FocusContent() {
         ? tr("focus.energyHigh")
         : tr("focus.energyMed");
 
-  if (showCountdown) {
-    return (
-      <AppLayout hideSidebar={true}>
-        <style>{countdownDigitStyle}</style>
-        <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--structuro-bg)] px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <div
-            className={`flex w-full max-w-md flex-col items-center text-center transition-opacity duration-500 ease-out ${
-              countdownFadeOut ? 'opacity-0' : 'opacity-100'
-            }`}
-          >
-            <div
-              key={countdown}
-              className="structuro-countdown-digit text-[120px] font-bold leading-none tabular-nums text-[#0F172A]"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {countdown}
-            </div>
-            <div className="mt-6 space-y-1">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-400">
-                {tr("focus.countdownUp")}
-              </p>
-              <p className="text-2xl font-bold text-[#0F172A]">
-                {currentTask?.title || taskTitle || tr("focus.sessionDefault")}
-              </p>
-              <p className="text-sm text-gray-400">{energyLabel}</p>
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
+  const taskParam = searchParams?.get('task');
+  const resolvingTask =
+    tasksLoading ||
+    checkInLoading ||
+    (Boolean(taskParam) && tasks.length === 0);
 
   const timerActive = isRunning || isPaused;
   const showTimerInHeader = timerActive || showTimeUpPrompt;
@@ -607,8 +592,8 @@ function FocusContent() {
 
   // ─── Microstappen (donker scherm, zelfde logica als design-mock) ───────────────
   const microStepsSection = (
-    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.04] px-[18px] py-3.5">
-      <div className="mb-3 flex items-center gap-2">
+    <div className="focus-screen__micro-card rounded-2xl border border-white/[0.07] bg-white/[0.04]">
+      <div className="mb-2 flex items-center gap-2 sm:mb-3">
         <svg className="h-3.5 w-3.5 shrink-0 text-violet-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M12 2 2 7l10 5 10-5-10-5z" />
           <path d="m2 17 10 5 10-5" />
@@ -617,14 +602,7 @@ function FocusContent() {
         <span className="min-w-0 flex-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
           {tr("focus.microTitle")}
         </span>
-        <button
-          type="button"
-          className="shrink-0 rounded-lg p-1 text-[#64748B] transition-colors hover:bg-white/5 hover:text-[#94A3B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
-          title={tr("focus.microHint")}
-          aria-label={tr("focus.microHint")}
-        >
-          <InformationCircleIcon className="h-4 w-4" aria-hidden />
-        </button>
+        <InfoButton infoId="microstappen" variant="onDark" autoIntro={false} />
       </div>
 
       {existingMicroSteps.length > 0 ? (
@@ -637,10 +615,10 @@ function FocusContent() {
                 key={step.id}
                 type="button"
                 onClick={() => handleToggleMicroStep(step.id)}
-                className={`flex w-full items-center gap-2.5 rounded-[10px] px-0 py-1.5 text-left transition-colors ${
+                className={`focus-micro-step flex w-full items-center gap-2.5 rounded-[10px] px-0 text-left transition-colors ${
                   isActive
                     ? 'border border-violet-400/30 bg-violet-500/15 -mx-1 px-3 py-2'
-                    : 'border border-transparent'
+                    : 'border border-transparent py-1.5'
                 }`}
               >
                 {isDone ? (
@@ -668,7 +646,7 @@ function FocusContent() {
         </div>
       ) : null}
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="focus-micro-input-row mt-2 flex items-center gap-2 sm:mt-3">
         <input
           type="text"
           value={inlineNewStep}
@@ -730,285 +708,371 @@ function FocusContent() {
   /** Parkeerbalk alleen tijdens actieve focus (timer) of tijd-voorbij-flow, niet vóór Start. */
   const showParkBarInFocus = timerActive || showTimeUpPrompt;
 
-  // ═══════════════════════════════════════════════
-  // ─── NO TASK ──────────────────────────────────
-  // ═══════════════════════════════════════════════
-  if (!currentTask) {
+  const focusFitLayout = useFocusContentFit(
+    focusFitViewportRef,
+    focusFitContentRef,
+    [
+      currentTask?.id,
+      currentTask?.title,
+      existingMicroSteps.length,
+      timerActive,
+      showTimeUpPrompt,
+      showCountdown,
+      duration,
+    ]
+  );
+
+  const isPreSession = !timerActive && !showTimeUpPrompt;
+
+  const focusSessionActions = showTimeUpPrompt ? (
+    <>
+      <p className="mb-1 text-center text-sm italic text-[#94A3B8]">
+        &ldquo;{timeUpQuote}&rdquo;
+      </p>
+      <button
+        type="button"
+        onClick={() => void completeCurrentTask()}
+        className="w-full rounded-xl border-2 border-emerald-500/40 py-2.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/10"
+      >
+        {tr("focus.yesTaskDone")}
+      </button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {[5, 10, 15, 25].map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setExtendMinutes(m)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              extendMinutes === m
+                ? 'border-white/20 bg-white/10 text-white'
+                : 'border-white/10 text-[#94A3B8] hover:bg-white/5'
+            }`}
+          >
+            +{m} min
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          const extra = Math.max(1, Math.min(480, extendMinutes || 10));
+          setShowTimeUpPrompt(false);
+          setCompleted(false);
+          setIsPaused(false);
+          setIsRunning(true);
+          setDuration((prev) => prev + extra);
+          setTimeLeft(extra * 60);
+          endAtRef.current = Date.now() + extra * 60 * 1000;
+          track('ignite_extend_after_timeup', { taskTitle, duration, extra });
+          toast(tr("focus.extendCheer", { n: String(extra) }));
+        }}
+        className="w-full rounded-xl border-2 border-white/10 py-2.5 text-sm font-semibold text-[#cbd5e1] transition hover:bg-white/5"
+      >
+        {tr("focus.extendWith", { n: String(extendMinutes) })}
+      </button>
+    </>
+  ) : timerActive ? (
+    <div className="focus-screen__timer-actions">
+      <button
+        type="button"
+        onClick={pauseSession}
+        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
+      >
+        {isPaused ? (
+          <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
+        ) : (
+          <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
+        )}
+        {isPaused ? tr("focus.resume") : tr("focus.pause")}
+      </button>
+      <button
+        type="button"
+        onClick={extendSession}
+        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
+      >
+        <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
+        {tr("focus.addFiveMin")}
+      </button>
+      <button
+        type="button"
+        onClick={handleVoltooienClick}
+        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
+      >
+        <CheckIcon className="h-4 w-4 shrink-0" aria-hidden />
+        {tr("focus.finish")}
+      </button>
+      <button
+        type="button"
+        onClick={stopSession}
+        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
+      >
+        <svg
+          className="h-4 w-4 shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <rect x="7" y="7" width="10" height="10" rx="1.5" />
+        </svg>
+        {tr("focus.stop")}
+      </button>
+    </div>
+  ) : null;
+
+  const focusPreSessionActions = isPreSession ? (
+    <>
+      <button
+        type="button"
+        onClick={() => void handleNuNietPark()}
+        disabled={nuNietBusy}
+        className="mx-auto block text-center text-[10px] text-[#64748B] transition hover:text-[#94A3B8] disabled:opacity-40 sm:text-[11px]"
+      >
+        {nuNietBusy ? "…" : tr("focus.nuNiet")}
+      </button>
+      <button
+        type="button"
+        onClick={startSession}
+        className="w-full rounded-xl bg-[#22c55e] py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] transition hover:bg-[#16a34a] sm:py-3.5"
+      >
+        {tr("focus.startSession")}
+      </button>
+    </>
+  ) : null;
+
+  if (resolvingTask) {
     return (
-      <AppLayout>
-        <div className="flex min-h-full flex-col items-center justify-center bg-slate-50 px-4 sm:px-6 pt-14 sm:pt-16 pb-8">
-          <main className="flex w-full max-w-md flex-col gap-5">
-            <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
-              <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 shadow-sm">
-                <span className="text-xl">🎯</span>
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
-                {tr("focus.noTaskTitle")}
-              </h1>
-              <p className="mt-2 max-w-sm text-sm text-slate-500">
-                {tr("focus.noTaskBody")}
-              </p>
-            </header>
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => router.push('/todo')}
-                  className="inline-flex w-full items-center justify-center py-3 px-6 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors sm:w-auto sm:min-w-[200px]"
-                >
-                  {tr("focus.goTasks")}
-                </button>
-              </div>
-            </div>
-          </main>
-        </div>
-      </AppLayout>
+      <div
+        className="flex h-full min-h-[100dvh] w-full items-center justify-center bg-[#0f172a]"
+        aria-busy="true"
+        aria-label={tr('common.loadingDots')}
+      />
     );
   }
 
-  // ═══════════════════════════════════════════════
-  // ─── MAIN FOCUS CARD VIEW ─────────────────────
-  // (pre-timer, timer running, paused, time-up)
-  // ═══════════════════════════════════════════════
-  return (
-    <AppLayout hideSidebar={true}>
-      <DopamineAirlock isActive={isAirlockActive} onAirlockComplete={handleAirlockComplete} />
-
-      <div className="flex h-full min-h-0 flex-col overflow-hidden overflow-x-hidden bg-[#0f172a] text-white">
-        <div className="mx-auto flex h-full min-h-0 w-full max-w-[430px] flex-col">
-          <div className="flex shrink-0 items-center justify-between px-5 pt-[max(8px,env(safe-area-inset-top))] pb-2">
-            <SluitenButton />
-            {isPaused ? (
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">
-                {tr("focus.paused")}
-              </span>
-            ) : (
-              <span className="w-16" aria-hidden />
-            )}
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] px-4 pb-4 pt-0 sm:px-6">
-          <div className="mx-auto w-full max-w-md text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#94A3B8]">
-              {tr("focus.nuAanZet")}
-            </p>
-            <h1 className="mt-2.5 text-[23px] font-bold leading-tight tracking-tight text-white">
-              {currentTask.title}
-            </h1>
-            <p className="mt-1 text-sm text-[#64748B]">{energyLabel}</p>
-          </div>
-
-          <div className="relative mx-auto my-8 h-[210px] w-[210px] shrink-0">
-            <svg className="h-[210px] w-[210px]" viewBox="0 0 210 210" aria-hidden>
-              <circle
-                cx="105"
-                cy="105"
-                r={RING_R}
-                fill="none"
-                stroke="rgba(255,255,255,0.06)"
-                strokeWidth="10"
-              />
-              <circle
-                cx="105"
-                cy="105"
-                r={RING_R}
-                fill="none"
-                stroke="#22c55e"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={RING_C}
-                strokeDashoffset={ringDashOffset}
-                transform="rotate(-90 105 105)"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-[46px] font-bold leading-none tabular-nums tracking-tight text-white">
-                {showTimerInHeader && !showTimeUpPrompt
-                  ? formatTime(timeLeft)
-                  : formatTime(duration * 60)}
-              </div>
-              <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#94A3B8]">
-                {tr("focus.ofTotalMins", { n: String(duration) })}
-              </div>
+  if (showCountdown) {
+    return (
+      <>
+        <style>{countdownDigitStyle}</style>
+        <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--structuro-bg)] px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <div
+            className={`flex w-full max-w-md flex-col items-center text-center transition-opacity duration-500 ease-out ${
+              countdownFadeOut ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            <div
+              key={countdown}
+              className="structuro-countdown-digit font-mono text-[120px] font-bold leading-none tabular-nums text-[#0F172A]"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {countdown}
+            </div>
+            <div className="mt-6 space-y-1">
+              <p className="text-sm font-semibold uppercase tracking-wide text-gray-400">
+                {tr("focus.countdownUp")}
+              </p>
+              <p className="text-2xl font-bold text-[#0F172A]">
+                {currentTask?.title || taskTitle || tr("focus.sessionDefault")}
+              </p>
+              <p className="text-sm text-gray-400">{energyLabel}</p>
             </div>
           </div>
+        </div>
+      </>
+    );
+  }
 
-          <div className="mx-auto w-full max-w-md flex-1">{microStepsSection}</div>
-
-          {!showTimeUpPrompt && !timerActive ? (
-            <button
-              type="button"
-              onClick={() => void handleNuNietPark()}
-              disabled={nuNietBusy}
-              className="mx-auto mt-2 block text-center text-[11px] text-[#64748B] transition hover:text-[#94A3B8] disabled:opacity-40"
-            >
-              {nuNietBusy ? "…" : tr("focus.nuNiet")}
-            </button>
-          ) : null}
-
-          <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-2">
-            {showTimeUpPrompt ? (
-              <>
-                <p className="mb-1 text-center text-sm italic text-[#94A3B8]">
-                  &ldquo;{timeUpQuote}&rdquo;
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void completeCurrentTask()}
-                  className="w-full rounded-xl border-2 border-emerald-500/40 py-2.5 text-sm font-semibold text-emerald-400 transition hover:bg-emerald-500/10"
-                >
-                  {tr("focus.yesTaskDone")}
-                </button>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {[5, 10, 15, 25].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setExtendMinutes(m)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        extendMinutes === m
-                          ? 'border-white/20 bg-white/10 text-white'
-                          : 'border-white/10 text-[#94A3B8] hover:bg-white/5'
-                      }`}
-                    >
-                      +{m} min
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const extra = Math.max(1, Math.min(480, extendMinutes || 10));
-                    setShowTimeUpPrompt(false);
-                    setCompleted(false);
-                    setIsPaused(false);
-                    setIsRunning(true);
-                    setDuration((prev) => prev + extra);
-                    setTimeLeft(extra * 60);
-                    endAtRef.current = Date.now() + extra * 60 * 1000;
-                    track('ignite_extend_after_timeup', { taskTitle, duration, extra });
-                    toast(tr("focus.extendCheer", { n: String(extra) }));
-                  }}
-                  className="w-full rounded-xl border-2 border-white/10 py-2.5 text-sm font-semibold text-[#cbd5e1] transition hover:bg-white/5"
-                >
-                  {tr("focus.extendWith", { n: String(extendMinutes) })}
-                </button>
-              </>
-            ) : timerActive ? (
-              <div className="flex w-full flex-col items-center gap-0">
-                <button
-                  type="button"
-                  onClick={pauseSession}
-                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
-                >
-                  {isPaused ? (
-                    <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  ) : (
-                    <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  )}
-                  {isPaused ? tr("focus.resume") : tr("focus.pause")}
-                </button>
-                <button
-                  type="button"
-                  onClick={extendSession}
-                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
-                >
-                  <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  {tr("focus.addFiveMin")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleVoltooienClick}
-                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
-                >
-                  <CheckIcon className="h-4 w-4 shrink-0" aria-hidden />
-                  {tr("focus.finish")}
-                </button>
-                <button
-                  type="button"
-                  onClick={stopSession}
-                  className="mx-auto flex items-center gap-2 py-2 text-[13px] font-medium text-[#94A3B8] transition hover:text-white"
-                >
-                  <svg
-                    className="h-4 w-4 shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <rect x="7" y="7" width="10" height="10" rx="1.5" />
-                  </svg>
-                  {tr("focus.stop")}
-                </button>
-              </div>
-            ) : (
+  if (!currentTask) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#0f172a] px-4 pb-8 pt-14 sm:px-6 sm:pt-16">
+        <main className="flex w-full max-w-md flex-col gap-5">
+          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
+            <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 shadow-sm">
+              <span className="text-xl">🎯</span>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">
+              {tr("focus.noTaskTitle")}
+            </h1>
+            <p className="mt-2 max-w-sm text-sm text-[#94A3B8]">
+              {tr("focus.noTaskBody")}
+            </p>
+          </header>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-center">
               <button
                 type="button"
-                onClick={startSession}
-                className="w-full rounded-xl bg-[#22c55e] py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] transition hover:bg-[#16a34a]"
+                onClick={() => router.push('/todo')}
+                className="inline-flex w-full items-center justify-center rounded-xl bg-[#22c55e] py-3 px-6 text-sm font-semibold text-white transition-colors hover:bg-[#16a34a] sm:w-auto sm:min-w-[200px]"
               >
-                {tr("focus.startSession")}
+                {tr("focus.goTasks")}
               </button>
-            )}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <DopamineAirlock isActive={isAirlockActive} onAirlockComplete={handleAirlockComplete} />
+
+      <div
+        className={`focus-screen flex flex-col bg-[#0f172a] text-white ${
+          isPreSession ? "focus-screen--pre" : "focus-screen--active"
+        }`}
+      >
+        <div className="flex shrink-0 items-center justify-between px-5 pt-[max(8px,env(safe-area-inset-top))] pb-1">
+          <SluitenButton />
+          {isPaused ? (
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-400">
+              {tr("focus.paused")}
+            </span>
+          ) : (
+            <span className="w-16" aria-hidden />
+          )}
+        </div>
+
+        <div ref={focusFitViewportRef} className="focus-screen__fit-viewport">
+          <div
+            className="mx-auto flex w-full max-w-md justify-center"
+            style={
+              focusFitLayout.scale < 0.995 && focusFitLayout.fittedHeight > 0
+                ? { height: focusFitLayout.fittedHeight, maxHeight: '100%' }
+                : undefined
+            }
+          >
+            <div
+              ref={focusFitContentRef}
+              className="focus-screen__fit-content"
+              style={
+                focusFitLayout.scale < 0.995
+                  ? {
+                      transform: `scale(${focusFitLayout.scale})`,
+                      transformOrigin: 'top center',
+                    }
+                  : undefined
+              }
+            >
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#94A3B8] sm:text-[11px]">
+                  {tr("focus.nuAanZet")}
+                </p>
+                <InfoButton infoId="timer" variant="onDark" />
+              </div>
+              <h1 className="focus-screen__title mt-1.5 line-clamp-2 text-[23px] font-bold leading-tight tracking-tight text-white sm:mt-2.5">
+                {currentTask.title}
+              </h1>
+              <p className="mt-0.5 text-xs text-[#64748B] sm:mt-1 sm:text-sm">{energyLabel}</p>
+            </div>
+
+            <div className="focus-screen__timer relative shrink-0">
+              <svg viewBox="0 0 210 210" aria-hidden>
+                <circle
+                  cx="105"
+                  cy="105"
+                  r={RING_R}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth="10"
+                />
+                <circle
+                  cx="105"
+                  cy="105"
+                  r={RING_R}
+                  fill="none"
+                  stroke="#22c55e"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={ringDashOffset}
+                  transform="rotate(-90 105 105)"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="focus-screen__timer-digit font-mono font-bold leading-none tabular-nums tracking-tight text-white">
+                  {showTimerInHeader && !showTimeUpPrompt
+                    ? formatTime(timeLeft)
+                    : formatTime(duration * 60)}
+                </div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#94A3B8] sm:mt-1 sm:text-[11px]">
+                  {tr("focus.ofTotalMins", { n: String(duration) })}
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full">{microStepsSection}</div>
+
+            {focusSessionActions ? (
+              <div className="focus-screen__actions flex flex-col gap-2">{focusSessionActions}</div>
+            ) : null}
+          </div>
           </div>
         </div>
 
-          {showParkBarInFocus ? (
-            <div
-              className="flex shrink-0 flex-col border-t border-white/10 bg-[#1a1d24]"
-              style={{
-                paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))',
-              }}
-            >
-              <div className="flex items-center gap-3 px-4 py-3">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const input = e.currentTarget.querySelector('input') as HTMLInputElement;
-                    if (input && input.value.trim()) {
-                      handleParkThought(input.value.trim());
-                      input.value = '';
-                    }
-                  }}
-                  className="min-w-0 flex-1"
-                >
-                  <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3">
-                    <SparklesIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" aria-hidden />
-                    <input
-                      ref={parkThoughtInputRef}
-                      name="park-thought"
-                      type="text"
-                      placeholder={tr("focus.parkPlaceholder")}
-                      className="min-w-0 flex-1 bg-transparent text-sm text-[#e2e8f0] placeholder:text-white/40 focus:outline-none"
-                    />
-                  </div>
-                </form>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const v = parkThoughtInputRef.current?.value?.trim();
-                    if (!v) return;
-                    void handleParkThought(v);
-                    parkThoughtInputRef.current!.value = "";
-                  }}
-                  className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  {tr("focus.parkAction")}
-                </button>
-              </div>
-              {user?.id && parkedCount > 0 ? (
-                <span className="sr-only">
-                  {tr("focus.parkedCountSr", { n: String(parkedCount) })}
-                </span>
-              ) : null}
+        {focusPreSessionActions ? (
+          <div className="focus-screen__pre-actions flex flex-col gap-2">
+            {focusPreSessionActions}
+          </div>
+        ) : null}
+
+        {showParkBarInFocus ? (
+          <div
+            className="flex shrink-0 flex-col border-t border-white/10 bg-[#1a1d24]"
+            style={{
+              paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))',
+            }}
+          >
+            <div className="mx-auto flex w-full max-w-lg items-center gap-2 px-4 py-2 sm:gap-3 sm:py-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const input = e.currentTarget.querySelector('input') as HTMLInputElement;
+                  if (input && input.value.trim()) {
+                    handleParkThought(input.value.trim());
+                    input.value = '';
+                  }
+                }}
+                className="min-w-0 flex-1"
+              >
+                <div className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 sm:px-4 sm:py-3">
+                  <SparklesIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" aria-hidden />
+                  <input
+                    ref={parkThoughtInputRef}
+                    name="park-thought"
+                    type="text"
+                    placeholder={tr("focus.parkPlaceholder")}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-[#e2e8f0] placeholder:text-white/40 focus:outline-none"
+                  />
+                </div>
+              </form>
+              <button
+                type="button"
+                onClick={() => {
+                  const v = parkThoughtInputRef.current?.value?.trim();
+                  if (!v) return;
+                  void handleParkThought(v);
+                  parkThoughtInputRef.current!.value = "";
+                }}
+                className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-5 sm:py-3 sm:text-sm"
+              >
+                {tr("focus.parkAction")}
+              </button>
             </div>
-          ) : null}
-        </div>
+            {user?.id && parkedCount > 0 ? (
+              <span className="sr-only">
+                {tr("focus.parkedCountSr", { n: String(parkedCount) })}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-    </AppLayout>
+    </>
   );
 }
 

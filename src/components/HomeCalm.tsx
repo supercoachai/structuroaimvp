@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  BoltIcon,
-  FaceSmileIcon,
   InformationCircleIcon,
-  MoonIcon,
   PlayIcon,
 } from '@heroicons/react/24/outline';
+import EnergyIcon, { type EnergyIconKind } from '@/components/structuro/EnergyIcon';
 import { normalizeMicroSteps, microStepId, type MicroStep } from '@/lib/microSteps';
 import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import { useRouter } from 'next/navigation';
@@ -21,8 +19,15 @@ import { createClient } from '@/lib/supabase/client';
 import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { persistPreferredDisplayName } from '@/lib/accountDisplayName';
 import { useI18n } from '@/lib/i18n';
-import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
-import { homeWelcomeEn, homeWelcomeNl } from '@/lib/i18n/homeCopy';
+import HomeTodayProgress from '@/components/home/HomeTodayProgress';
+import {
+  getOpenTop3Tasks,
+  getTop3SlotPosition,
+  maxSlotsForEnergy,
+} from '@/lib/top3CurrentTask';
+import { getTodayMinutesProgress } from '@/lib/homeTodayProgress';
+import { getDayStartTimeOfDay } from '@/lib/dayStartGreeting';
+import { useViewportContentFit } from '@/hooks/useViewportContentFit';
 
 export default function HomeCalm() {
   const { t, locale } = useI18n();
@@ -36,6 +41,10 @@ export default function HomeCalm() {
   const [isProtectedAccount, setIsProtectedAccount] = useState(false);
   const [heroMicroDraft, setHeroMicroDraft] = useState('');
   const [heroMicroSaving, setHeroMicroSaving] = useState(false);
+  const [heroTaskIndex, setHeroTaskIndex] = useState(0);
+  const [dateTimeLine, setDateTimeLine] = useState('');
+  const homeFitViewportRef = useRef<HTMLDivElement | null>(null);
+  const homeFitContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const checkProtected = async () => {
@@ -52,10 +61,33 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
-  // Huidige focus: eerste open taak in daily_checkins.top3_task_ids (zelfde bron als /todo)
-  const findLowestEnergyTask = useMemo(
-    () => getFirstOpenTop3Task(tasks, todayCheckIn),
+  const openTop3Tasks = useMemo(
+    () => getOpenTop3Tasks(tasks, todayCheckIn),
     [tasks, todayCheckIn]
+  );
+
+  useEffect(() => {
+    setHeroTaskIndex(0);
+  }, [openTop3Tasks.map((t) => t.id).join('|')]);
+
+  const heroTask = openTop3Tasks[heroTaskIndex % Math.max(openTop3Tasks.length, 1)] ?? null;
+
+  const todaySlotProgress = useMemo(() => {
+    const ids = todayCheckIn?.top3_task_ids;
+    if (!Array.isArray(ids) || ids.length === 0) return null;
+    const total = maxSlotsForEnergy(todayCheckIn?.energy_level);
+    if (heroTask) {
+      const pos = getTop3SlotPosition(heroTask.id, todayCheckIn);
+      if (pos) return pos;
+    }
+    const openCount = openTop3Tasks.length;
+    if (openCount === 0) return { current: total, total };
+    return { current: total - openCount + 1, total };
+  }, [heroTask, todayCheckIn, openTop3Tasks.length]);
+
+  const todayMinutesProgress = useMemo(
+    () => getTodayMinutesProgress(tasks, todayCheckIn, heroTask?.id),
+    [tasks, todayCheckIn, heroTask?.id]
   );
 
   const nonMedicationTasks = useMemo(
@@ -180,12 +212,33 @@ export default function HomeCalm() {
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t('home.greetingMorning');
-    if (hour < 18) return t('home.greetingAfternoon');
+  const greetingWord = useMemo(() => {
+    const period = getDayStartTimeOfDay();
+    if (period === 'morning') return t('home.greetingMorning');
+    if (period === 'afternoon') return t('home.greetingAfternoon');
     return t('home.greetingEvening');
-  };
+  }, [t]);
+
+  useEffect(() => {
+    const format = () => {
+      const now = new Date();
+      const loc = locale === 'en' ? 'en-GB' : 'nl-NL';
+      const weekday = now.toLocaleDateString(loc, {
+        weekday: 'long',
+        timeZone: 'Europe/Amsterdam',
+      });
+      const timePart = now.toLocaleTimeString(loc, {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Amsterdam',
+      });
+      const cap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+      setDateTimeLine(`${cap} · ${timePart}`);
+    };
+    format();
+    const id = window.setInterval(format, 30_000);
+    return () => window.clearInterval(id);
+  }, [locale]);
 
   // Helper: Haal energie-status op van vandaag (useCheckIn levert al vandaag)
   const getTodayEnergyStatus = () => {
@@ -208,29 +261,13 @@ export default function HomeCalm() {
   };
 
   const energyForPill = getTodayEnergyStatus();
-  /** Doctrine mock: zachte pill, bold label; normaal = amber crème / gouden rand / diep oker */
-  const energyPillClass =
-    energyForPill === 'low'
-      ? 'border-slate-200 bg-slate-50 text-slate-800'
-      : energyForPill === 'high'
-        ? 'border-violet-200 bg-violet-50 text-violet-900'
-        : energyForPill === 'medium'
-          ? 'border-amber-200 bg-amber-50 text-amber-900'
-          : '';
-
-  const welcomeMessages = locale === 'en' ? homeWelcomeEn : homeWelcomeNl;
-
-  const getWelcomeMessage = () => {
-    const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 0).getTime();
-    const dayOfYear = Math.floor((today.getTime() - startOfYear) / (1000 * 60 * 60 * 24));
-    return welcomeMessages[dayOfYear % welcomeMessages.length];
-  };
+  const energyPillIconKind: EnergyIconKind | null =
+    energyForPill === 'low' ? 'low' : energyForPill === 'high' ? 'high' : energyForPill === 'medium' ? 'medium' : null;
 
   const heroMicroSteps: MicroStep[] = useMemo(() => {
-    if (!findLowestEnergyTask) return [];
-    return normalizeMicroSteps(findLowestEnergyTask.microSteps);
-  }, [findLowestEnergyTask]);
+    if (!heroTask) return [];
+    return normalizeMicroSteps(heroTask.microSteps);
+  }, [heroTask]);
 
   const heroMicroActiveIdx = useMemo(() => {
     const i = heroMicroSteps.findIndex((s) => !s.done);
@@ -238,7 +275,7 @@ export default function HomeCalm() {
   }, [heroMicroSteps]);
 
   const addHeroMicroStep = async () => {
-    if (!findLowestEnergyTask) return;
+    if (!heroTask) return;
     const title = heroMicroDraft.trim();
     if (!title) {
       toast(t('tasks.toastMiniFill'));
@@ -246,7 +283,7 @@ export default function HomeCalm() {
     }
     setHeroMicroSaving(true);
     try {
-      const existing = normalizeMicroSteps(findLowestEnergyTask.microSteps);
+      const existing = normalizeMicroSteps(heroTask.microSteps);
       const next: MicroStep[] = [
         ...existing,
         {
@@ -257,7 +294,7 @@ export default function HomeCalm() {
           done: false,
         },
       ];
-      await updateTask(findLowestEnergyTask.id, { microSteps: next });
+      await updateTask(heroTask.id, { microSteps: next });
       setHeroMicroDraft('');
       toast(t('tasks.toastMiniAdded'));
     } catch (e) {
@@ -269,11 +306,11 @@ export default function HomeCalm() {
   };
 
   const toggleHeroMicroStep = async (stepId: string) => {
-    if (!findLowestEnergyTask) return;
-    const steps = normalizeMicroSteps(findLowestEnergyTask.microSteps);
+    if (!heroTask) return;
+    const steps = normalizeMicroSteps(heroTask.microSteps);
     const next = steps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s));
     try {
-      await updateTask(findLowestEnergyTask.id, { microSteps: next });
+      await updateTask(heroTask.id, { microSteps: next });
     } catch (e) {
       console.error(e);
       toast(t('tasks.toastAddErr'));
@@ -302,34 +339,29 @@ export default function HomeCalm() {
     void restartDagstartForDev();
   };
 
+  const homeFitLayout = useViewportContentFit(
+    homeFitViewportRef,
+    homeFitContentRef,
+    [
+      userName,
+      heroTask?.id,
+      heroTask?.title,
+      heroMicroSteps.length,
+      todaySlotProgress?.current,
+      allNonMedicationDone,
+      loading,
+      showNamePrompt,
+    ]
+  );
+
   return (
     <>
       {devResetToolbarOn && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
+        <div className="home-dev-toolbar fixed z-[9999] flex flex-col gap-1.5">
           <button
             type="button"
             onClick={handleRestartDagstart}
-            style={{
-              padding: '8px 16px',
-              background: '#2563EB',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            }}
+            className="rounded-lg border-0 bg-[#2563EB] font-semibold text-white shadow-md"
             title={t('home.devRestartDagstartTitle')}
           >
             ☀️ {t('home.devRestartDagstart')}
@@ -337,72 +369,117 @@ export default function HomeCalm() {
           {!isProtectedAccount ? (
             <>
               <button
-            type="button"
-            onClick={handleClearAllTasks}
-            style={{
-              padding: '8px 16px',
-              background: '#DC2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            }}
-          >
-            🗑️ {t('home.devClearTasks')}
-          </button>
-          <button
-            type="button"
-            onClick={handleReset}
-            style={{
-              padding: '8px 16px',
-              background: '#EF4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            }}
-            title={t('home.devResetTitle')}
-          >
-            🔄 {t('home.devResetData')}
-          </button>
+                type="button"
+                onClick={handleClearAllTasks}
+                className="rounded-lg border-0 bg-[#DC2626] font-semibold text-white shadow-md"
+              >
+                🗑️ {t('home.devClearTasks')}
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-lg border-0 bg-[#EF4444] font-semibold text-white shadow-md"
+                title={t('home.devResetTitle')}
+              >
+                🔄 {t('home.devResetData')}
+              </button>
             </>
           ) : null}
         </div>
       )}
-    <div className="min-h-full bg-[var(--structuro-bg)] px-4 pb-28 pt-4 text-[var(--structuro-text)]">
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-        <header className="flex w-full flex-col items-start text-left">
-          <p className="text-[13px] font-medium leading-tight text-[#6B7280]">
-            {getGreeting()},
-          </p>
-          <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-tight text-[#111827]">
-            {userName || t('home.guestFallback')}
-          </h1>
-          {getEnergyStatusLabel() && energyPillClass ? (
+      <div className="home-screen flex min-h-0 flex-1 flex-col text-[var(--st-ink)]">
+        <div ref={homeFitViewportRef} className="home-screen__fit-viewport">
+          <div
+            className="mx-auto flex w-full justify-center"
+            style={
+              homeFitLayout.scale < 0.995 && homeFitLayout.fittedHeight > 0
+                ? { height: homeFitLayout.fittedHeight, maxHeight: '100%' }
+                : undefined
+            }
+          >
             <div
-              className={`mt-8 inline-flex items-center gap-2 self-start rounded-full border px-4 py-2 text-sm font-bold ${energyPillClass}`}
+              ref={homeFitContentRef}
+              className="home-screen__fit-content px-5 pt-3 pb-1"
+              style={
+                homeFitLayout.scale < 0.995
+                  ? {
+                      transform: `scale(${homeFitLayout.scale})`,
+                      transformOrigin: 'top center',
+                    }
+                  : undefined
+              }
             >
-              {energyForPill === 'low' ? (
-                <MoonIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
-              ) : energyForPill === 'high' ? (
-                <BoltIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
-              ) : (
-                <FaceSmileIcon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={1.75} aria-hidden />
-              )}
-              <span>{getEnergyStatusLabel()}</span>
-            </div>
-          ) : (
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--structuro-sub)]">
-              {getWelcomeMessage()}
+            <div className="mx-auto flex w-full max-w-md flex-col gap-[clamp(8px,1.6dvh,20px)]">
+        <header className="w-full shrink-0">
+          <p
+            className="home-screen__greeting-sub"
+            style={{
+              fontWeight: 400,
+              color: 'var(--st-muted)',
+              marginBottom: 2,
+            }}
+          >
+            {greetingWord},
+          </p>
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <h1
+              className="home-screen__greeting-name min-w-0 flex-1"
+              style={{
+                fontWeight: 700,
+                letterSpacing: '-0.025em',
+                lineHeight: 1.05,
+                color: 'var(--st-ink)',
+              }}
+            >
+              {userName || t('home.guestFallback')}
+            </h1>
+            {getEnergyStatusLabel() ? (
+              <div
+                className="st-pill inline-flex shrink-0 items-center gap-2 border bg-white"
+                style={{
+                  borderColor: 'var(--st-line-strong)',
+                  color: 'var(--st-ink-soft)',
+                  padding: '6px 12px',
+                }}
+              >
+                {energyPillIconKind ? (
+                  <EnergyIcon kind={energyPillIconKind} size={16} color="var(--st-ink-soft)" />
+                ) : null}
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{getEnergyStatusLabel()}</span>
+              </div>
+            ) : null}
+          </div>
+          {isClient && dateTimeLine ? (
+            <p
+              className="font-mono"
+              style={{
+                fontSize: 13,
+                fontWeight: 400,
+                color: 'var(--st-muted-2)',
+                marginTop: 6,
+              }}
+            >
+              {dateTimeLine}
             </p>
-          )}
+          ) : null}
         </header>
+
+        {todaySlotProgress && todayMinutesProgress ? (
+          <HomeTodayProgress
+            current={todaySlotProgress.current}
+            total={todaySlotProgress.total}
+            doneMinutes={todayMinutesProgress.done}
+            totalMinutes={todayMinutesProgress.total}
+            todayLabel={t('home.todayProgress', {
+              current: String(todaySlotProgress.current),
+              total: String(todaySlotProgress.total),
+            })}
+            minutesLabel={t('home.minutesProgress', {
+              done: String(todayMinutesProgress.done),
+              total: String(todayMinutesProgress.total),
+            })}
+          />
+        ) : null}
 
         {/* Naam prompt modal */}
         {showNamePrompt && (
@@ -474,20 +551,57 @@ export default function HomeCalm() {
         )}
 
 
-        {findLowestEnergyTask && (
-          <section className="rounded-[20px] bg-[var(--structuro-dark)] p-5 shadow-[0_16px_40px_rgba(15,23,42,0.2)]">
-            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--structuro-green)]">
-              {t('home.nowUp')}
+        {heroTask && (
+          <section
+            className="home-screen__hero shrink-0 rounded-[20px] text-white"
+            style={{
+              background: 'var(--st-night)',
+              boxShadow:
+                '0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 44px -16px rgba(14,23,48,0.35), 0 28px 60px -28px rgba(45,91,251,0.20)',
+            }}
+          >
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <span
+                className="inline-flex items-center gap-2"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  color: 'var(--st-green)',
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: 'var(--st-green)',
+                    boxShadow: '0 0 0 3px rgba(22,194,90,0.25)',
+                  }}
+                  aria-hidden
+                />
+                {t('home.nowUp')}
+              </span>
+              <span
+                className="st-mono"
+                style={{
+                  fontSize: 12,
+                  color: 'var(--st-night-muted)',
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--st-night-line)',
+                }}
+              >
+                {heroTask.duration || heroTask.estimatedDuration || 15} {t('home.min')} ·{' '}
+                {t('home.coreFocus')}
+              </span>
             </div>
-            <h2 className="mb-1 text-[20px] font-bold leading-snug tracking-tight text-white">
-              {findLowestEnergyTask.title}
+            <h2 className="home-screen__hero-title font-semibold leading-snug tracking-tight">
+              {heroTask.title}
             </h2>
-            <p className="text-[13px] text-[var(--structuro-dark-sub)]">
-              {t('home.coreFocus')} · {findLowestEnergyTask.duration || findLowestEnergyTask.estimatedDuration || 15}{' '}
-              {t('home.min')}
-            </p>
 
-            <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.04] px-[18px] py-3.5">
+            <div className="focus-screen__micro-card rounded-2xl border border-white/[0.07] bg-white/[0.04]">
               <div className="mb-3 flex items-center gap-2">
                 <svg
                   className="h-3.5 w-3.5 shrink-0 text-violet-400/90"
@@ -566,7 +680,7 @@ export default function HomeCalm() {
                 </div>
               ) : null}
 
-              <div className="mt-3 flex items-center gap-2">
+              <div className="focus-micro-input-row mt-2 flex items-center gap-2 sm:mt-3">
                 <label htmlFor="home-hero-micro" className="sr-only">
                   {t('focus.microPh')}
                 </label>
@@ -582,7 +696,7 @@ export default function HomeCalm() {
                     }
                   }}
                   disabled={heroMicroSaving}
-                  placeholder={t('focus.microPh')}
+                  placeholder={t('home.microStepsAdd')}
                   className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 disabled:opacity-50"
                   autoComplete="off"
                   enterKeyHint="done"
@@ -602,18 +716,35 @@ export default function HomeCalm() {
             <button
               type="button"
               onClick={async () => {
-                await updateTask(findLowestEnergyTask.id, { started: true });
+                await updateTask(heroTask.id, { started: true });
                 const mins =
-                  getTaskDurationMinutes(findLowestEnergyTask) ?? 15;
+                  getTaskDurationMinutes(heroTask) ?? 15;
                 router.push(
-                  `/focus?task=${encodeURIComponent(findLowestEnergyTask.id)}&duration=${mins}`
+                  `/focus?task=${encodeURIComponent(heroTask.id)}&duration=${mins}`
                 );
               }}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--structuro-green)] py-3.5 text-[15px] font-bold text-white shadow-[0_8px_20px_rgba(34,197,94,0.35)] transition hover:bg-[var(--structuro-green-hover)]"
+              className="home-screen__start-btn st-btn-primary st-btn-success w-full border-0"
             >
               <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
               {t('home.startFocus')}
             </button>
+
+            {openTop3Tasks.length > 1 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setHeroTaskIndex((prev) => (prev + 1) % openTop3Tasks.length)
+                }
+                className="mt-3 w-full border-0 bg-transparent text-center"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: 'var(--st-night-muted)',
+                }}
+              >
+                {t('home.pickOtherTask')}
+              </button>
+            ) : null}
           </section>
         )}
 
@@ -688,8 +819,11 @@ export default function HomeCalm() {
             </div>
           </section>
         )}
+            </div>
+          </div>
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }

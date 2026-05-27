@@ -38,7 +38,7 @@ function AuthCodeErrorContent() {
   }, [errorCode, errorDescription, t]);
 
   return (
-    <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[#F4F6FB] px-4 py-8">
+    <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[var(--st-bg)] px-4 py-8">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">{body}</p>
@@ -69,7 +69,7 @@ function AuthCodeErrorContent() {
 function AuthCodeErrorFallback() {
   const { t } = useI18n();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6FB] text-slate-600">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
       {t("common.loading")}
     </div>
   );

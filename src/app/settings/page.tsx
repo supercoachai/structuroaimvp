@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Cog6ToothIcon } from "@heroicons/react/24/outline";
-import AppLayout from '../../components/layout/AppLayout';
 import { wipeAllUserData, STRUCTURO_STORAGE_KEYS } from '../../lib/resetStorage';
 import { toast } from '../../components/Toast';
 import { createClient } from '@/lib/supabase/client';
@@ -16,6 +14,7 @@ import {
 } from '@/lib/onboardingProfile';
 import { clearLocalOnboardingDoneCookieOnClient, hasStructuroLocalModeCookieOnClient } from '@/lib/localOnboardingCookie';
 import { performClientLogout } from '@/lib/logoutClient';
+import { useInfoDismissals } from '@/contexts/InfoDismissalsContext';
 import {
   clearPreferredDisplayName,
   persistPreferredDisplayName,
@@ -28,13 +27,24 @@ import {
 import { useConsent } from '@/lib/posthog/ConsentContext';
 import CycleSettingsSection from '@/components/cycle/CycleSettingsSection';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
+import {
+  SettingsLinkActions,
+  SettingsRow,
+  SettingsSection,
+  SettingsTextLink,
+  SettingsToggle,
+} from '@/components/settings/SettingsUi';
 
 const NAME_KEY = 'structuro_user_name';
+
+/** Tijdelijk: abonnement-acties uit voor testers tot Stripe-flow live is. */
+const SUBSCRIPTION_ACTIONS_DISABLED = true;
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useI18n();
   const router = useRouter();
   const { consent, grant, deny } = useConsent();
+  const { resetAll: resetInfoDismissals } = useInfoDismissals();
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState('');
@@ -427,330 +437,256 @@ export default function SettingsPage() {
   };
 
   const isLocalOnly = hasStructuroLocalModeCookieOnClient() && !hasSupabaseSession;
+  const notificationsOn = notificationPermission === 'granted';
+  const notificationsToggleDisabled =
+    notificationBusy ||
+    notificationPermission === 'unsupported' ||
+    notificationPermission === 'denied';
+
+  const handleNotificationToggle = () => {
+    if (notificationsOn) void handleDisableNotifications();
+    else void handleEnableNotifications();
+  };
+
+  const handleResetInfoIcons = () => {
+    void resetInfoDismissals().then(() => {
+      toast(t('settings.toastInfoIconsReset'));
+    });
+  };
+
+  const subscriptionStatusLine = (() => {
+    if (subscriptionStatus === 'active') return t('settings.subscriptionStatusActive');
+    if (subscriptionStatus === 'cancelled') {
+      return t('settings.subscriptionStatusCancelledEnd', {
+        date: formatPeriodEnd(subscriptionPeriodEnd),
+      });
+    }
+    if (subscriptionStatus === 'past_due') return t('settings.subscriptionStatusPastDue');
+    if (subscriptionStatus === 'refunded') return t('settings.subscriptionStatusRefunded');
+    if (subscriptionStatus === 'expired') return t('settings.subscriptionStatusExpired');
+    return t('settings.subscriptionUnknown');
+  })();
 
   return (
-    <AppLayout>
+    <>
       <div className="min-h-full bg-[var(--structuro-bg)] text-[var(--structuro-text)]">
         <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-4">
-          <header className="mb-10 flex w-full flex-col items-start text-left sm:mb-12">
-            <div
-              className="mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-md"
-              style={{
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
-              }}
-            >
-              <Cog6ToothIcon className="h-7 w-7 text-white" aria-hidden />
-            </div>
+          <header className="mb-8">
             <h1 className="structuro-page-title">{t('settings.title')}</h1>
             <p className="structuro-page-subtitle">
               {t('settings.subtitle')}
             </p>
           </header>
 
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.languageTitle')}</h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.languageHint')}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(['nl', 'en'] as Locale[]).map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => setLocale(code)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-all active:scale-[0.98] ${
-                    locale === code
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {code === 'nl' ? t('settings.languageNl') : t('settings.languageEn')}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">
-              {t('settings.analyticsTitle')}
-            </h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.analyticsHint')}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-medium text-slate-700">
-                {consent === 'granted'
-                  ? t('settings.analyticsStatusOn')
-                  : t('settings.analyticsStatusOff')}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  if (consent === 'granted') {
-                    deny();
-                  } else {
-                    grant();
-                  }
-                }}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 active:scale-[0.98]"
-              >
-                {consent === 'granted'
-                  ? t('settings.analyticsDisable')
-                  : t('settings.analyticsEnable')}
-              </button>
-            </div>
-          </section>
-
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">
-              {t('settings.notificationsTitle')}
-            </h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.notificationsHint')}
-            </p>
-            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              <span className="font-semibold">{t('settings.notificationsStatusLabel')}: </span>
-              {notificationPermission === 'granted'
-                ? t('settings.notificationsStatusOn')
-                : notificationPermission === 'denied'
-                  ? t('settings.notificationsStatusOff')
-                  : notificationPermission === 'unsupported'
-                    ? t('settings.notificationsStatusUnsupported')
-                    : t('settings.notificationsStatusAsk')}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => void handleEnableNotifications()}
-                disabled={notificationBusy || notificationPermission === 'unsupported'}
-                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-              >
-                {notificationBusy
-                  ? t('settings.notificationsBusy')
-                  : t('settings.notificationsEnableCta')}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleDisableNotifications()}
-                disabled={notificationBusy || notificationPermission !== 'granted'}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-              >
-                {t('settings.notificationsDisableCta')}
-              </button>
-            </div>
-          </section>
-
-          {/* Kaart 1: Jouw profiel */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.displayNameTitle')}</h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.displayNameHint')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleSaveName();
-                }}
-                placeholder={t('settings.displayNamePlaceholder')}
-                className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-300"
-              />
-              <button
-                type="button"
-                onClick={() => void handleSaveName()}
-                disabled={nameSaveBusy}
-                className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {nameSaveBusy ? t('settings.saving') : t('settings.save')}
-              </button>
-            </div>
-
-            <div className="border-t border-slate-100 my-4" />
-
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              disabled={logoutBusy}
-              className="block text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 disabled:opacity-50"
-            >
-              {logoutBusy ? t('settings.logoutBusy') : t('settings.logout')}
-            </button>
-            {isLocalOnly ? (
-              <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                {t('settings.localOnlyHint')}
-              </p>
-            ) : null}
-          </section>
-
-          {hasSupabaseSession && !isLocalOnly ? <CycleSettingsSection /> : null}
-
-          {hasSupabaseSession && !isLocalOnly && isRegistrationCheckoutEnabledClient() ? (
-            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-              <h2 className="text-base font-semibold text-slate-800 mb-1">
-                {t('settings.subscriptionTitle')}
-              </h2>
-              <p className="text-sm text-slate-500 mb-4 text-balance">
-                {t('settings.subscriptionHint')}
-              </p>
-              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-700">
-                {subscriptionStatus === 'active' ? (
-                  <span>{t('settings.subscriptionStatusActive')}</span>
-                ) : subscriptionStatus === 'cancelled' ? (
-                  <span>
-                    {t('settings.subscriptionStatusCancelledEnd', {
-                      date: formatPeriodEnd(subscriptionPeriodEnd),
-                    })}
-                  </span>
-                ) : subscriptionStatus === 'past_due' ? (
-                  <span>{t('settings.subscriptionStatusPastDue')}</span>
-                ) : subscriptionStatus === 'refunded' ? (
-                  <span>{t('settings.subscriptionStatusRefunded')}</span>
-                ) : subscriptionStatus === 'expired' ? (
-                  <span>{t('settings.subscriptionStatusExpired')}</span>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="font-medium text-slate-800">
-                      {t('settings.subscriptionUnknown')}
-                    </p>
-                    <p className="text-slate-600 leading-relaxed">
-                      {t('settings.subscriptionUnknownHint')}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {subscriptionNeedsLink ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => void handleSyncSubscription()}
-                      disabled={subscriptionSyncBusy}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {subscriptionSyncBusy
-                        ? t('settings.subscriptionSyncBusy')
-                        : t('settings.subscriptionSyncCta')}
-                    </button>
-                    <Link
-                      href="/abonnement"
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                      {t('settings.subscriptionGoAbonnement')}
-                    </Link>
-                  </>
-                ) : null}
-                {subscriptionStatus === 'active' && stripeSubscriptionId ? (
+          <SettingsSection title={t('settings.sectionPreferences')}>
+            <SettingsRow label={t('settings.languageTitle')} hint={t('settings.languageHint')}>
+              <div className="flex gap-1.5">
+                {(['nl', 'en'] as Locale[]).map((code) => (
                   <button
+                    key={code}
                     type="button"
-                    onClick={() => setRefundModalOpen(true)}
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-800 text-left"
+                    onClick={() => setLocale(code)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      locale === code
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
                   >
-                    {t('settings.refundSelfCta')}
+                    {code === 'nl' ? t('settings.languageNl') : t('settings.languageEn')}
                   </button>
-                ) : null}
-                {subscriptionStatus === 'active' && stripeSubscriptionId ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleCancelSubscription()}
-                    disabled={cancelBusy}
-                    className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {cancelBusy ? t('settings.cancelBusy') : t('settings.cancelCta')}
-                  </button>
-                ) : null}
+                ))}
               </div>
-            </section>
-          ) : null}
+            </SettingsRow>
 
-          {/* Kaart 2: App-ervaring */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.tourTitle')}</h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.tourHint')}
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleReplayIntro()}
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 active:scale-[0.98]"
+            <SettingsRow
+              label={t('settings.displayNameTitle')}
+              hint={t('settings.displayNameHint')}
+              stack
             >
-              {t('settings.tourCta')}
-            </button>
-          </section>
-
-          {/* Kaart 3: Data & privacy */}
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.exportTitle')}</h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance">
-              {t('settings.exportHint')}
-            </p>
-            <button
-              type="button"
-              onClick={handleDownloadData}
-              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-200 active:scale-[0.98]"
-            >
-              {t('settings.exportCta')}
-            </button>
-          </section>
-
-          <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-            <h2 className="text-base font-semibold text-slate-800 mb-1">{t('settings.wipeTitle')}</h2>
-            <p className="text-sm text-slate-500 mb-4 text-balance leading-relaxed">
-              {t('settings.wipeHint')}
-            </p>
-
-            {isProtectedAccount ? (
-              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
-                {t('settings.wipeProtected')}
-              </div>
-            ) : null}
-
-            {!confirmWipe ? (
-              <button
-                type="button"
-                onClick={handleWipeData}
-                disabled={isProtectedAccount === true}
-                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
-              >
-                {t('settings.wipeCta')}
-              </button>
-            ) : (
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
-                <p className="text-sm text-slate-600 text-balance">
-                  {t('settings.wipeConfirmLine', { word: wipeWord })}
-                </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder={t('settings.wipePlaceholder')}
-                  className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-200"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleSaveName();
+                  }}
+                  placeholder={t('settings.displayNamePlaceholder')}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
                 />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleWipeData}
-                    className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 active:scale-[0.98]"
-                  >
-                    {t('settings.wipeFinal')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelWipe}
-                    className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 transition-colors hover:bg-slate-50 active:scale-[0.98]"
-                  >
-                    {t('settings.cancel')}
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveName()}
+                  disabled={nameSaveBusy}
+                  className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {nameSaveBusy ? t('settings.saving') : t('settings.save')}
+                </button>
+              </div>
+            </SettingsRow>
+          </SettingsSection>
+
+          <SettingsSection title={t('cycle.settingsTitle')}>
+            <CycleSettingsSection embedded />
+          </SettingsSection>
+
+          <SettingsSection title={t('settings.sectionPrivacy')}>
+            <SettingsRow
+              label={t('settings.analyticsTitle')}
+              hint={t('settings.analyticsHint')}
+            >
+              <SettingsToggle
+                checked={consent === 'granted'}
+                onChange={() => {
+                  if (consent === 'granted') deny();
+                  else grant();
+                }}
+                ariaLabel={t('settings.analyticsTitle')}
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              label={t('settings.notificationsTitle')}
+              hint={
+                notificationPermission === 'denied'
+                  ? t('settings.notificationsDenied')
+                  : notificationPermission === 'unsupported'
+                    ? t('settings.notificationsUnsupported')
+                    : t('settings.notificationsHint')
+              }
+            >
+              <SettingsToggle
+                checked={notificationsOn}
+                onChange={handleNotificationToggle}
+                disabled={notificationsToggleDisabled}
+                busy={notificationBusy}
+                ariaLabel={t('settings.notificationsTitle')}
+              />
+            </SettingsRow>
+          </SettingsSection>
+
+          <SettingsSection title={t('settings.sectionAccount')}>
+            {hasSupabaseSession && !isLocalOnly && isRegistrationCheckoutEnabledClient() ? (
+              <div className="px-4 py-4">
+                <p className="text-sm font-medium text-slate-800">
+                  {t('settings.subscriptionTitle')}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                  {subscriptionStatusLine}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {subscriptionNeedsLink ? (
+                    SUBSCRIPTION_ACTIONS_DISABLED ? (
+                      <>
+                        <span className="text-sm font-medium text-slate-400">
+                          {t('settings.subscriptionSyncCta')}
+                        </span>
+                        <span className="text-sm font-medium text-slate-400">
+                          {t('settings.subscriptionGoAbonnement')}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <SettingsTextLink
+                          onClick={() => void handleSyncSubscription()}
+                          disabled={subscriptionSyncBusy}
+                        >
+                          {subscriptionSyncBusy
+                            ? t('settings.subscriptionSyncBusy')
+                            : t('settings.subscriptionSyncCta')}
+                        </SettingsTextLink>
+                        <Link
+                          href="/abonnement"
+                          className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
+                        >
+                          {t('settings.subscriptionGoAbonnement')}
+                        </Link>
+                      </>
+                    )
+                  ) : null}
+                  {subscriptionStatus === 'active' && stripeSubscriptionId ? (
+                    <>
+                      <SettingsTextLink onClick={() => setRefundModalOpen(true)}>
+                        {t('settings.refundSelfCta')}
+                      </SettingsTextLink>
+                      <SettingsTextLink
+                        onClick={() => void handleCancelSubscription()}
+                        disabled={cancelBusy}
+                      >
+                        {cancelBusy ? t('settings.cancelBusy') : t('settings.cancelCta')}
+                      </SettingsTextLink>
+                    </>
+                  ) : null}
                 </div>
               </div>
-            )}
-          </section>
+            ) : null}
 
-          <p className="mt-8 text-center text-xs text-slate-400 leading-relaxed text-balance">
+            <SettingsLinkActions>
+              <SettingsTextLink onClick={handleDownloadData}>
+                {t('settings.exportCta')}
+              </SettingsTextLink>
+              <SettingsTextLink onClick={() => void handleReplayIntro()}>
+                {t('settings.tourCta')}
+              </SettingsTextLink>
+              <SettingsTextLink onClick={() => void handleLogout()} disabled={logoutBusy}>
+                {logoutBusy ? t('settings.logoutBusy') : t('settings.logout')}
+              </SettingsTextLink>
+              {isLocalOnly ? (
+                <p className="text-xs leading-relaxed text-slate-400">
+                  {t('settings.localOnlyHint')}
+                </p>
+              ) : null}
+            </SettingsLinkActions>
+
+            <div className="border-t border-slate-100 px-4 py-4">
+              <p className="mb-1 text-sm font-medium text-slate-800">{t('settings.wipeTitle')}</p>
+              <p className="mb-3 text-xs leading-relaxed text-slate-500">{t('settings.wipeHint')}</p>
+
+              {isProtectedAccount ? (
+                <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-900">
+                  {t('settings.wipeProtected')}
+                </div>
+              ) : null}
+
+              {!confirmWipe ? (
+                <SettingsTextLink
+                  variant="danger"
+                  onClick={handleWipeData}
+                  disabled={isProtectedAccount === true}
+                >
+                  {t('settings.wipeCta')}
+                </SettingsTextLink>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                  <p className="text-sm text-slate-600 text-balance">
+                    {t('settings.wipeConfirmLine', { word: wipeWord })}
+                  </p>
+                  <input
+                    type="text"
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder={t('settings.wipePlaceholder')}
+                    className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <SettingsTextLink variant="danger" onClick={handleWipeData}>
+                      {t('settings.wipeFinal')}
+                    </SettingsTextLink>
+                    <SettingsTextLink onClick={cancelWipe}>{t('settings.cancel')}</SettingsTextLink>
+                  </div>
+                </div>
+              )}
+            </div>
+          </SettingsSection>
+
+          <p className="mt-4 text-center text-xs leading-relaxed text-slate-400 text-balance">
             {t('settings.footerPrivacy')}
           </p>
+          <div className="mt-3 flex justify-center">
+            <SettingsTextLink onClick={handleResetInfoIcons}>
+              {t('settings.resetInfoIcons')}
+            </SettingsTextLink>
+          </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium">
             <Link href="/privacy" className="text-blue-600 underline-offset-2 hover:underline">
               {t('settings.legalPrivacy')}
@@ -795,6 +731,6 @@ export default function SettingsPage() {
           </div>
         </div>
       ) : null}
-    </AppLayout>
+    </>
   );
 }

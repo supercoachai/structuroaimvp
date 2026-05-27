@@ -212,6 +212,9 @@ export default function OnboardingFlow() {
   /** Onthoudt setup-input van deze sessie zodat fase 1 silent-storage in eerste dagstart mee kan. */
   const [cyclePeriodStart, setCyclePeriodStart] = useState<string | null>(null);
   const [cycleAverageLength, setCycleAverageLength] = useState<number | null>(null);
+  const [cycleMenstruationDuration, setCycleMenstruationDuration] = useState<number | null>(
+    null
+  );
 
   /** Laatste slide: stap voor stap opbouwen tot de CTA zichtbaar is. */
   const [readySlidePhase, setReadySlidePhase] = useState(0);
@@ -784,7 +787,12 @@ export default function OnboardingFlow() {
     if (cyclePeriodStart && cycleAverageLength) {
       const startDate = new Date(`${cyclePeriodStart}T00:00:00`);
       if (!Number.isNaN(startDate.getTime())) {
-        cyclePhaseToday = calculateCyclePhase(startDate, cycleAverageLength);
+        cyclePhaseToday = calculateCyclePhase(
+          startDate,
+          cycleAverageLength,
+          new Date(),
+          cycleMenstruationDuration ?? undefined
+        );
       }
     }
     if (user?.id) {
@@ -1281,7 +1289,7 @@ export default function OnboardingFlow() {
                             </ul>
 
                             <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-                              <span className="text-xs text-gray-400 tabular-nums">
+                              <span className="text-xs text-gray-400 font-mono tabular-nums">
                                 {t("onboarding.microProgress", { done: String(doneCount) })}
                               </span>
                               <div className="flex gap-1 shrink-0" aria-hidden>
@@ -1500,12 +1508,18 @@ export default function OnboardingFlow() {
                         </div>
                         <div className="mt-6 w-full max-w-sm">
                           <CycleSetupForm
-                            onSubmit={async (periodStart, length) => {
+                            onSubmit={async (periodStart, length, menstruationDuration) => {
                               if (user?.id) {
-                                await saveCycleConsent(user.id, periodStart, length);
+                                await saveCycleConsent(
+                                  user.id,
+                                  periodStart,
+                                  length,
+                                  menstruationDuration
+                                );
                               }
                               setCyclePeriodStart(periodStart);
                               setCycleAverageLength(length);
+                              setCycleMenstruationDuration(menstruationDuration);
                               setCycleStage("intro");
                               setStep((s) =>
                                 Math.min(s + 1, STEP_COUNT - 1)

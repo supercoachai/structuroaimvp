@@ -10,16 +10,21 @@ import {
   loadCycleProfile,
   saveCycleConsent,
   updateCycleAverageLength,
+  updateCycleMenstruationDuration,
   updateCyclePeriodStart,
 } from "@/lib/cycle/cycleProfileDb";
 import {
   CYCLE_LENGTH_DEFAULT,
   CYCLE_LENGTH_MAX,
   CYCLE_LENGTH_MIN,
+  MENSTRUATION_DURATION_DEFAULT,
   clampCycleLength,
+  clampMenstruationDuration,
+  maxMenstruationDurationForCycle,
   type CycleProfile,
 } from "@/lib/cycle/types";
 import CycleSetupForm from "./CycleSetupForm";
+import { SettingsToggle } from "@/components/settings/SettingsUi";
 
 function formatDate(iso: string | null, locale: string): string {
   if (!iso) return "";
@@ -35,7 +40,7 @@ function formatDate(iso: string | null, locale: string): string {
   }
 }
 
-export default function CycleSettingsSection() {
+export default function CycleSettingsSection({ embedded = false }: { embedded?: boolean }) {
   const { t, locale } = useI18n();
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,12 +48,14 @@ export default function CycleSettingsSection() {
     consentAt: null,
     lastPeriodStart: null,
     averageLength: CYCLE_LENGTH_DEFAULT,
+    menstruationDuration: MENSTRUATION_DURATION_DEFAULT,
   });
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const [enableOpen, setEnableOpen] = useState(false);
   const [removeBusy, setRemoveBusy] = useState(false);
   const [lengthBusy, setLengthBusy] = useState(false);
+  const [menstruationBusy, setMenstruationBusy] = useState(false);
 
   const consentOn = Boolean(profile.consentAt);
 
@@ -87,7 +94,7 @@ export default function CycleSettingsSection() {
     };
   }, [loadProfile]);
 
-  if (!userId && !loading) return null;
+  const toggleDisabled = loading || removeBusy || !userId;
 
   const decreaseLength = async () => {
     if (!userId || lengthBusy) return;
@@ -96,8 +103,15 @@ export default function CycleSettingsSection() {
     setLengthBusy(true);
     try {
       await updateCycleAverageLength(userId, next);
-      setProfile((p) => ({ ...p, averageLength: next }));
-      toast(t("cycle.settingsToastUpdated"));
+      const nextMenstruation = clampMenstruationDuration(next, profile.menstruationDuration);
+      if (nextMenstruation !== profile.menstruationDuration) {
+        await updateCycleMenstruationDuration(userId, next, nextMenstruation);
+      }
+      setProfile((p) => ({
+        ...p,
+        averageLength: next,
+        menstruationDuration: nextMenstruation,
+      }));
     } catch (e) {
       toast(
         t("cycle.setupSaveError", {
@@ -117,7 +131,6 @@ export default function CycleSettingsSection() {
     try {
       await updateCycleAverageLength(userId, next);
       setProfile((p) => ({ ...p, averageLength: next }));
-      toast(t("cycle.settingsToastUpdated"));
     } catch (e) {
       toast(
         t("cycle.setupSaveError", {
@@ -126,6 +139,50 @@ export default function CycleSettingsSection() {
       );
     } finally {
       setLengthBusy(false);
+    }
+  };
+
+  const increaseMenstruation = async () => {
+    if (!userId || menstruationBusy) return;
+    const next = clampMenstruationDuration(
+      profile.averageLength,
+      profile.menstruationDuration + 1
+    );
+    if (next === profile.menstruationDuration) return;
+    setMenstruationBusy(true);
+    try {
+      await updateCycleMenstruationDuration(userId, profile.averageLength, next);
+      setProfile((p) => ({ ...p, menstruationDuration: next }));
+    } catch (e) {
+      toast(
+        t("cycle.setupSaveError", {
+          detail: e instanceof Error ? e.message : String(e),
+        })
+      );
+    } finally {
+      setMenstruationBusy(false);
+    }
+  };
+
+  const decreaseMenstruation = async () => {
+    if (!userId || menstruationBusy) return;
+    const next = clampMenstruationDuration(
+      profile.averageLength,
+      profile.menstruationDuration - 1
+    );
+    if (next === profile.menstruationDuration) return;
+    setMenstruationBusy(true);
+    try {
+      await updateCycleMenstruationDuration(userId, profile.averageLength, next);
+      setProfile((p) => ({ ...p, menstruationDuration: next }));
+    } catch (e) {
+      toast(
+        t("cycle.setupSaveError", {
+          detail: e instanceof Error ? e.message : String(e),
+        })
+      );
+    } finally {
+      setMenstruationBusy(false);
     }
   };
 
@@ -138,6 +195,7 @@ export default function CycleSettingsSection() {
         consentAt: null,
         lastPeriodStart: null,
         averageLength: CYCLE_LENGTH_DEFAULT,
+        menstruationDuration: MENSTRUATION_DURATION_DEFAULT,
       });
       setConfirmRemoveOpen(false);
       toast(t("cycle.settingsToastDisabled"));
@@ -152,118 +210,141 @@ export default function CycleSettingsSection() {
     }
   };
 
-  return (
-    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-500">
-          <ArrowPathIcon className="h-4 w-4" aria-hidden />
-        </span>
-        <h2 className="text-base font-semibold text-slate-800">
-          {t("cycle.settingsTitle")}
-        </h2>
-      </div>
-      <p className="mb-4 text-sm text-slate-500 text-balance">
-        {t("cycle.settingsHint")}
-      </p>
+  const handleCycleToggle = () => {
+    if (consentOn) {
+      setConfirmRemoveOpen(true);
+      return;
+    }
+    setEnableOpen(true);
+  };
 
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-        <span className="text-sm font-medium text-slate-700">
-          {consentOn
-            ? t("cycle.settingsToggleOn")
-            : t("cycle.settingsToggleOff")}
+  const toggleControl = (
+    <SettingsToggle
+      checked={consentOn}
+      onChange={handleCycleToggle}
+      disabled={toggleDisabled}
+      busy={removeBusy}
+      ariaLabel={t("cycle.settingsTitle")}
+    />
+  );
+
+  const expandedDetails = consentOn ? (
+    <div className={embedded ? "space-y-3" : "space-y-3"}>
+      <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {t("cycle.settingsPeriodLabel")}
         </span>
-        {consentOn ? (
-          <button
-            type="button"
-            onClick={() => setConfirmRemoveOpen(true)}
-            disabled={loading || removeBusy}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {t("cycle.settingsDisable")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEnableOpen(true)}
-            disabled={loading}
-            className="rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {t("cycle.settingsEnable")}
-          </button>
-        )}
+        <span className="text-sm text-slate-800">
+          {formatDate(profile.lastPeriodStart, locale)}
+        </span>
+        <button
+          type="button"
+          onClick={() => setAdjustOpen(true)}
+          className="mt-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.98]"
+        >
+          {t("cycle.settingsAdjustPeriod")}
+        </button>
       </div>
 
-      {consentOn ? (
-        <div className="space-y-3">
-          <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {t("cycle.settingsPeriodLabel")}
-            </span>
-            <span className="text-sm text-slate-800">
-              {formatDate(profile.lastPeriodStart, locale)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setAdjustOpen(true)}
-              className="mt-2 self-start rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.98]"
-            >
-              {t("cycle.settingsAdjustPeriod")}
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {t("cycle.settingsLengthLabel")}
-            </span>
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => void decreaseLength()}
-                disabled={profile.averageLength <= CYCLE_LENGTH_MIN || lengthBusy}
-                aria-label={t("cycle.setupLengthDecreaseAria")}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                –
-              </button>
-              <div className="flex flex-1 flex-col items-center">
-                <span className="text-xl font-semibold tabular-nums text-slate-900">
-                  {profile.averageLength}
-                </span>
-                <span className="text-xs text-slate-500">
-                  {t("cycle.setupLengthDays")}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => void increaseLength()}
-                disabled={profile.averageLength >= CYCLE_LENGTH_MAX || lengthBusy}
-                aria-label={t("cycle.setupLengthIncreaseAria")}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
+      <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {t("cycle.settingsLengthLabel")}
+        </span>
+        <div className="mt-1 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => setConfirmRemoveOpen(true)}
-            className="block text-sm font-medium text-red-600 transition-colors hover:text-red-700"
+            onClick={() => void decreaseLength()}
+            disabled={profile.averageLength <= CYCLE_LENGTH_MIN || lengthBusy}
+            aria-label={t("cycle.setupLengthDecreaseAria")}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t("cycle.settingsRemoveAll")}
+            –
+          </button>
+          <div className="flex flex-1 flex-col items-center">
+            <span className="text-xl font-semibold font-mono tabular-nums text-slate-900">
+              {profile.averageLength}
+            </span>
+            <span className="text-xs text-slate-500">
+              {t("cycle.setupLengthDays")}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void increaseLength()}
+            disabled={profile.averageLength >= CYCLE_LENGTH_MAX || lengthBusy}
+            aria-label={t("cycle.setupLengthIncreaseAria")}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
           </button>
         </div>
-      ) : null}
+      </div>
 
+      <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {t("cycle.settingsMenstruationLabel")}
+        </span>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => void decreaseMenstruation()}
+            disabled={
+              profile.menstruationDuration <= 1 ||
+              menstruationBusy ||
+              lengthBusy
+            }
+            aria-label={t("cycle.setupMenstruationDecreaseAria")}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            –
+          </button>
+          <div className="flex flex-1 flex-col items-center">
+            <span className="text-xl font-semibold font-mono tabular-nums text-slate-900">
+              {profile.menstruationDuration}
+            </span>
+            <span className="text-xs text-slate-500">
+              {t("cycle.setupLengthDays")}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void increaseMenstruation()}
+            disabled={
+              profile.menstruationDuration >=
+                maxMenstruationDurationForCycle(profile.averageLength) ||
+              menstruationBusy ||
+              lengthBusy
+            }
+            aria-label={t("cycle.setupMenstruationIncreaseAria")}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setConfirmRemoveOpen(true)}
+        className="block text-sm font-medium text-red-600 transition-colors hover:text-red-700"
+      >
+        {t("cycle.settingsRemoveAll")}
+      </button>
+    </div>
+  ) : null;
+
+  const modals = (
+    <>
       {enableOpen ? (
         <CycleSetupModal
           title={t("cycle.settingsAdjustModalTitle")}
           initialPeriod={profile.lastPeriodStart}
           initialLength={profile.averageLength}
+          initialMenstruation={profile.menstruationDuration}
           onClose={() => setEnableOpen(false)}
-          onSubmit={async (periodStart, length) => {
+          onSubmit={async (periodStart, length, menstruationDuration) => {
             if (!userId) return;
-            await saveCycleConsent(userId, periodStart, length);
+            await saveCycleConsent(userId, periodStart, length, menstruationDuration);
             await loadProfile(userId);
             setEnableOpen(false);
             toast(t("cycle.settingsToastEnabled"));
@@ -276,12 +357,16 @@ export default function CycleSettingsSection() {
           title={t("cycle.settingsAdjustModalTitle")}
           initialPeriod={profile.lastPeriodStart}
           initialLength={profile.averageLength}
+          initialMenstruation={profile.menstruationDuration}
           onClose={() => setAdjustOpen(false)}
-          onSubmit={async (periodStart, length) => {
+          onSubmit={async (periodStart, length, menstruationDuration) => {
             if (!userId) return;
             await updateCyclePeriodStart(userId, periodStart);
             if (length !== profile.averageLength) {
               await updateCycleAverageLength(userId, length);
+            }
+            if (menstruationDuration !== profile.menstruationDuration) {
+              await updateCycleMenstruationDuration(userId, length, menstruationDuration);
             }
             await loadProfile(userId);
             setAdjustOpen(false);
@@ -334,6 +419,77 @@ export default function CycleSettingsSection() {
           </div>
         </div>
       ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <>
+        <div className="px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-slate-800">
+                {t("cycle.settingsTitle")}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                {t("cycle.settingsHint")}
+              </p>
+            </div>
+            {toggleControl}
+          </div>
+        </div>
+        {expandedDetails ? (
+          <div className="border-t border-slate-100 px-4 py-4">{expandedDetails}</div>
+        ) : null}
+        {modals}
+      </>
+    );
+  }
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+          <ArrowPathIcon className="h-4 w-4" aria-hidden />
+        </span>
+        <h2 className="text-base font-semibold text-slate-800">
+          {t("cycle.settingsTitle")}
+        </h2>
+      </div>
+      <p className="mb-4 text-sm text-slate-500 text-balance">
+        {t("cycle.settingsHint")}
+      </p>
+
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+        <span className="text-sm font-medium text-slate-700">
+          {consentOn
+            ? t("cycle.settingsToggleOn")
+            : t("cycle.settingsToggleOff")}
+        </span>
+        {consentOn ? (
+          <button
+            type="button"
+            onClick={() => setConfirmRemoveOpen(true)}
+            disabled={loading || removeBusy}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {t("cycle.settingsDisable")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEnableOpen(true)}
+            disabled={loading}
+            className="rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {t("cycle.settingsEnable")}
+          </button>
+        )}
+      </div>
+
+      {expandedDetails}
+
+      {modals}
     </section>
   );
 }
@@ -342,14 +498,20 @@ function CycleSetupModal({
   title,
   initialPeriod,
   initialLength,
+  initialMenstruation,
   onClose,
   onSubmit,
 }: {
   title: string;
   initialPeriod: string | null;
   initialLength: number;
+  initialMenstruation?: number;
   onClose: () => void;
-  onSubmit: (periodStart: string, length: number) => Promise<void>;
+  onSubmit: (
+    periodStart: string,
+    length: number,
+    menstruationDuration: number
+  ) => Promise<void>;
 }) {
   const { t } = useI18n();
 
@@ -392,6 +554,7 @@ function CycleSetupModal({
           <CycleSetupForm
             initialLastPeriodStart={initialPeriod}
             initialAverageLength={initialLength}
+            initialMenstruationDuration={initialMenstruation}
             onSubmit={onSubmit}
             secondaryAction={{
               label: t("cycle.settingsRemoveConfirmCancel"),

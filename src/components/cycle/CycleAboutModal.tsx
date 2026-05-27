@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +20,11 @@ export default function CycleAboutModal({
   onNo,
 }: CycleAboutModalProps) {
   const { t } = useI18n();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -34,14 +40,14 @@ export default function CycleAboutModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={t("cycle.aboutTitle")}
-      className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/35 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-slate-900/35 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] backdrop-blur-sm sm:items-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -94,6 +100,7 @@ export default function CycleAboutModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

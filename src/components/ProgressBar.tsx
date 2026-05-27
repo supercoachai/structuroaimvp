@@ -51,15 +51,15 @@ export default function ProgressBar({ plannedMin, capacityMin }: ProgressBarProp
       {/* Statistieken */}
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="bg-gray-50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-gray-800">{plannedMin}</div>
+          <div className="font-mono text-2xl font-bold text-gray-800">{plannedMin}</div>
           <div className="text-xs text-gray-600">Gepland (min)</div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-gray-800">{capacityMin}</div>
+          <div className="font-mono text-2xl font-bold text-gray-800">{capacityMin}</div>
           <div className="text-xs text-gray-600">Capaciteit (min)</div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
-          <div className={`text-2xl font-bold ${remaining >= 0 ? 'text-gray-800' : 'text-red-600'}`}>
+          <div className={`font-mono text-2xl font-bold ${remaining >= 0 ? 'text-gray-800' : 'text-red-600'}`}>
             {remaining >= 0 ? remaining : Math.abs(remaining)}
           </div>
           <div className="text-xs text-gray-600">
@@ -71,7 +71,7 @@ export default function ProgressBar({ plannedMin, capacityMin }: ProgressBarProp
       {/* Percentage indicator */}
       <div className="text-center">
         <span className="text-sm text-gray-600">
-          {percentage.toFixed(0)}% van je dag gevuld
+          <span className="font-mono">{percentage.toFixed(0)}</span>% van je dag gevuld
         </span>
       </div>
     </div>

@@ -19,7 +19,7 @@ import {
   saveTasksToStorage,
   updateTaskInStorage,
 } from '../lib/localStorageTasks';
-import { getCalendarDateAmsterdam, setDagstartCookieOnClient } from '../lib/dagstartCookie';
+import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam, setDagstartCookieOnClient } from '../lib/dagstartCookie';
 import { useUser } from '../hooks/useUser';
 import { updateProfileAfterDagstartComplete } from '@/lib/supabase/profileDagstartDb';
 import {
@@ -29,7 +29,6 @@ import {
 } from '@/lib/supabase/parkedThoughtsDb';
 import { createClient } from '@/lib/supabase/client';
 import {
-  getDayStartQuote,
   getDayStartTimeOfDay,
   resolveDayStartFirstName,
 } from '@/lib/dayStartGreeting';
@@ -37,24 +36,70 @@ import { captureProductEvent } from '@/lib/posthog/track';
 import { useCycleProfile } from '@/hooks/useCycleProfile';
 import { useI18n } from '@/lib/i18n';
 import CycleEnergyContext from './cycle/CycleEnergyContext';
+import InfoButton from '@/components/info/InfoButton';
+import EnergyIcon, { type EnergyIconKind } from '@/components/structuro/EnergyIcon';
+import DagstartEnergyCards, {
+  energyBannerStyle,
+  energyBannerCopy,
+} from '@/components/dagstart/DagstartEnergyCards';
+import DagstartStep1Card from '@/components/dagstart/DagstartStep1Card';
+import DagstartCardStack, {
+  taskToDagstartCard,
+  type DagstartCardTask,
+} from '@/components/dagstart/DagstartCardStack';
+import VandaagDock from '@/components/dagstart/VandaagDock';
+import DagstartPickModeSwipeCard from '@/components/dagstart/DagstartPickModeSwipeCard';
+import DagstartFocusSlots from '@/components/dagstart/DagstartFocusSlots';
+import DagstartSuggestionsList, {
+  type SuggestionListItem,
+} from '@/components/dagstart/DagstartSuggestionsList';
+import { appEnergyToSt } from '@/lib/structuro/energyTokens';
+import {
+  type DayEnergy,
+} from '@/lib/dagstart/structuroPick';
 
-function localDayStart(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
+/**
+ * Dev-only logger: alleen actief in development, no-op in productie.
+ * Voorkomt console-spam, geheugendruk en data-lekken bij eindgebruikers.
+ */
+const debugLog: typeof console.log =
+  process.env.NODE_ENV === 'production' ? () => {} : console.log.bind(console);
 
-/** Taak is voor een kalenderdag na vandaag (lokale tijd) — hoort niet in dagstart-suggesties voor vandaag. */
-function isDueDateStrictlyAfterToday(dueAt: string | null | undefined): boolean {
-  if (!dueAt) return false;
-  const due = new Date(dueAt);
-  if (Number.isNaN(due.getTime())) return false;
-  return localDayStart(due).getTime() > localDayStart(new Date()).getTime();
-}
+const FOCUS_SLOT_NUMBERS = [1, 2, 3, 4] as const;
+const MAX_FOCUS_SLOTS = 4;
+
+import {
+  isDueStrictlyAfterToday,
+  compareDeadlineTasks,
+  calendarDayToDueAt,
+  maxSlotsForDayEnergy,
+} from '@/lib/dagstart/deadlineToday';
+import { buildDagstartTaskPlan, rankTaskForDagstartSuggestions } from '@/lib/dagstart/buildDagstartTaskPlan';
+import { buildTaskFromFlowPayload } from '@/lib/newTask/buildTaskFromFlowPayload';
+import type { NewTaskFlowPayload } from '@/lib/newTask/newTaskFlowTypes';
+import DagstartDeadlineOverflowModal from '@/components/dagstart/DagstartDeadlineOverflowModal';
 
 /** Taak bestaat en is kandidaat voor top3-opslag (open, niet "niet vandaag"). Geen filter op created_at: backlog moet mee. */
 function isExistingOpenTaskForTop3Save(task: any): boolean {
   if (!task?.id || task?.done) return false;
   if (task.notToday || task.not_today) return false;
+  if (!String(task.title ?? '').trim()) return false;
   return true;
+}
+
+function collectTop3TaskIdsFromSlots(
+  slots: { [key: number]: any },
+  maxSlots: number
+): string[] {
+  const ids: string[] = [];
+  for (let slot = 1; slot <= maxSlots; slot++) {
+    const task = slots[slot];
+    if (!isExistingOpenTaskForTop3Save(task)) continue;
+    const idStr = String(task.id).trim();
+    if (!idStr) continue;
+    ids.push(idStr);
+  }
+  return ids;
 }
 
 interface DayStartCheckInProps {
@@ -64,6 +109,8 @@ interface DayStartCheckInProps {
   firstTimeOnboarding?: boolean;
   /** Bij lunch-push: geen opgeslagen energie uit check-in tonen; gebruiker kiest zelf opnieuw. */
   ignoreStoredSessionEnergy?: boolean;
+  /** Sync dagstart-stap naar app-shell (bijv. topbar-logo verbergen op stap 1). */
+  onPhaseChange?: (phase: 'energy' | 'tasks' | null) => void;
 }
 
 export default function DayStartCheckIn({
@@ -71,6 +118,7 @@ export default function DayStartCheckIn({
   existingCheckIn,
   firstTimeOnboarding = false,
   ignoreStoredSessionEnergy = false,
+  onPhaseChange,
 }: DayStartCheckInProps) {
   const { t: tr, locale } = useI18n();
   const { tasks, addTask, fetchTasks, updateTask, loading: tasksContextLoading } = useTaskContext();
@@ -84,13 +132,37 @@ export default function DayStartCheckIn({
       ? null
       : existingCheckIn?.energy_level ?? checkInFromDb?.energy_level ?? null
   );
-  const [hoveredEnergyLevel, setHoveredEnergyLevel] = useState<string | null>(null);
-  const [top3Tasks, setTop3Tasks] = useState<{ [key: number]: any }>({ 1: null, 2: null, 3: null });
+  const [top3Tasks, setTop3Tasks] = useState<{ [key: number]: any }>({
+    1: null,
+    2: null,
+    3: null,
+    4: null,
+  });
+  const top3TasksRef = useRef(top3Tasks);
+  top3TasksRef.current = top3Tasks;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentlyAdded, setRecentlyAdded] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
-  const [energySelected, setEnergySelected] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [skippedCardIds, setSkippedCardIds] = useState<Set<string>>(() => new Set());
+  const [stackAddOpen, setStackAddOpen] = useState(false);
+  const [stackAddBusy, setStackAddBusy] = useState(false);
+  /** Nieuwe taken via empty-state staan vooraan in de kaartenstapel. */
+  const [stackInjectedTaskIds, setStackInjectedTaskIds] = useState<string[]>([]);
+  const [dateTimeLine, setDateTimeLine] = useState('');
+  const [dagstartPhase, setDagstartPhase] = useState<'energy' | 'tasks'>('energy');
+
+  useEffect(() => {
+    onPhaseChange?.(dagstartPhase);
+    return () => onPhaseChange?.(null);
+  }, [dagstartPhase, onPhaseChange]);
+
+  const [taskPickMode, setTaskPickMode] = useState<'choosing' | 'self' | 'structuro'>('choosing');
+  const [structuroPickBusy, setStructuroPickBusy] = useState(false);
+  const [structuroSwapSlot, setStructuroSwapSlot] = useState<number | null>(null);
+  const [extraFocusSlots, setExtraFocusSlots] = useState(0);
+  const [deadlineOverflowQueue, setDeadlineOverflowQueue] = useState<any[]>([]);
+  const [deadlineOverflowBusy, setDeadlineOverflowBusy] = useState(false);
+  const [energyStepExiting, setEnergyStepExiting] = useState(false);
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [quickAddTitle, setQuickAddTitle] = useState('');
   const [quickAddBusy, setQuickAddBusy] = useState(false);
@@ -106,6 +178,7 @@ export default function DayStartCheckIn({
   /** Na klik op herinnering: koppel nieuwe taak aan parked thought bij snel toevoegen. */
   const [pendingDagafsluiterThoughtId, setPendingDagafsluiterThoughtId] = useState<string | null>(null);
   const dagstartGaOpenedRef = useRef(false);
+  const energyAdvanceTimerRef = useRef<number | null>(null);
   /** Scroll-doel + animatie na kiezen uit suggesties */
   const focusSlotElRef = useRef<Record<number, HTMLDivElement | null>>({});
   const [suggestionPickingId, setSuggestionPickingId] = useState<string | null>(null);
@@ -240,19 +313,29 @@ export default function DayStartCheckIn({
     if (!energyLevel) return [];
     // Alleen open + actieve taken. Sluit alleen taken uit die al in today's focus-slots zitten.
     const selectedIds = new Set(
-      [1, 2, 3].map((n) => top3Tasks[n]?.id).filter(Boolean) as string[]
+      FOCUS_SLOT_NUMBERS.map((n) => top3Tasks[n]?.id).filter(Boolean) as string[]
     );
 
     const baseTasks = deferredTasksForSuggestions.filter((t: any) => {
       if (!t || !t.id || !t.title) return false;
       if (t.done || t.notToday || t.not_today) return false;
       if (t.source === "medication" || t.source === "event") return false;
-      if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
+      if (isDueStrictlyAfterToday(t.dueAt)) return false;
       if (selectedIds.has(t.id)) return false;
       return true;
     });
 
     const sorted = [...baseTasks].sort((a: any, b: any) => {
+      const deadlineRank =
+        rankTaskForDagstartSuggestions(a) - rankTaskForDagstartSuggestions(b);
+      if (deadlineRank !== 0) return deadlineRank;
+      if (
+        rankTaskForDagstartSuggestions(a) === 0 &&
+        rankTaskForDagstartSuggestions(b) === 0
+      ) {
+        const dueDiff = compareDeadlineTasks(a, b);
+        if (dueDiff !== 0) return dueDiff;
+      }
       const welcomeA = a.source === "onboarding_welcome" ? 0 : 1;
       const welcomeB = b.source === "onboarding_welcome" ? 0 : 1;
       if (welcomeA !== welcomeB) return welcomeA - welcomeB;
@@ -277,7 +360,7 @@ export default function DayStartCheckIn({
     | { kind: 'task'; task: any }
     | { kind: 'dagafsluiter'; row: DagafsluiterSuggestionRow };
 
-  const mergedSuggestionItems = useMemo((): MergedSuggestionItem[] => {
+  const mergedSuggestionItemsRaw = useMemo((): MergedSuggestionItem[] => {
     if (!energyLevel) return [];
     const dagTitles = new Set(
       dagafsluiterRows.map((d) => String(d.content || "").trim().toLowerCase())
@@ -295,7 +378,26 @@ export default function DayStartCheckIn({
         ? getEnergyRankForSuggestions(item.task)
         : getEnergyRankForTaskEnergy(item.row.suggestedTaskEnergy || 'medium');
 
+    const isDeadlineItem = (item: MergedSuggestionItem) =>
+      item.kind === 'task' && rankTaskForDagstartSuggestions(item.task) === 0;
+
     items.sort((a, b) => {
+      const deadlineFirst = Number(isDeadlineItem(b)) - Number(isDeadlineItem(a));
+      if (deadlineFirst !== 0) return deadlineFirst;
+
+      if (a.kind === 'task' && b.kind === 'task') {
+        const deadlineRank =
+          rankTaskForDagstartSuggestions(a.task) -
+          rankTaskForDagstartSuggestions(b.task);
+        if (deadlineRank !== 0) return deadlineRank;
+        if (
+          rankTaskForDagstartSuggestions(a.task) === 0 &&
+          rankTaskForDagstartSuggestions(b.task) === 0
+        ) {
+          const dueDiff = compareDeadlineTasks(a.task, b.task);
+          if (dueDiff !== 0) return dueDiff;
+        }
+      }
       const energyDiff = rankItem(a) - rankItem(b);
       if (energyDiff !== 0) return energyDiff;
       if (a.kind === 'task' && b.kind === 'task') {
@@ -325,9 +427,17 @@ export default function DayStartCheckIn({
     getEnergyRankForTaskEnergy,
   ]);
 
+  const mergedSuggestionItems = useDeferredValue(mergedSuggestionItemsRaw);
+
+  const structuroCandidateTasks = useMemo(() => {
+    return mergedSuggestionItems
+      .filter((item): item is { kind: 'task'; task: any } => item.kind === 'task')
+      .map((item) => item.task);
+  }, [mergedSuggestionItems]);
+
   const collapsedSuggestions = useMemo(() => {
     if (!energyLevel || mergedSuggestionItems.length === 0) return [] as MergedSuggestionItem[];
-    const selIds = [1, 2, 3].map((n) => top3Tasks[n]?.id).filter(Boolean) as string[];
+    const selIds = FOCUS_SLOT_NUMBERS.map((n) => top3Tasks[n]?.id).filter(Boolean) as string[];
     const selectedFirst = selIds
       .map((id) => mergedSuggestionItems.find((u) => u.kind === 'task' && u.task.id === id))
       .filter(Boolean) as MergedSuggestionItem[];
@@ -343,15 +453,52 @@ export default function DayStartCheckIn({
 
   useEffect(() => {
     setShowAllSuggestions(false);
+    setSkippedCardIds(new Set());
   }, [energyLevel]);
+
+  useEffect(() => {
+    const format = () => {
+      const now = new Date();
+      const loc = locale === 'en' ? 'en-GB' : 'nl-NL';
+      const datePart = now.toLocaleDateString(loc, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        timeZone: 'Europe/Amsterdam',
+      });
+      const timePart = now.toLocaleTimeString(loc, {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Amsterdam',
+      });
+      const cap = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+      setDateTimeLine(`${cap} · ${timePart}`);
+    };
+    format();
+    const id = window.setInterval(format, 30_000);
+    return () => window.clearInterval(id);
+  }, [locale]);
 
   // KRITIEK: Bereken max slots op basis van energie niveau
   const maxSlots = useMemo(() => {
-    if (!energyLevel) return 3; // Default tot energie is gekozen
-    if (energyLevel === 'low') return 1; // Alleen slot 1
-    if (energyLevel === 'medium') return 2; // Slot 1 en 2
-    return 3; // Alle slots bij high
+    if (!energyLevel) return 3;
+    if (energyLevel === 'low' || energyLevel === 'medium' || energyLevel === 'high') {
+      return maxSlotsForDayEnergy(energyLevel);
+    }
+    return 3;
   }, [energyLevel]);
+
+  const effectiveMaxSlots = Math.min(maxSlots + extraFocusSlots, MAX_FOCUS_SLOTS);
+
+  const dagstartTaskPool = useMemo(() => {
+    return deferredTasksForSuggestions.filter((t: any) => {
+      if (!t?.id || !String(t.title ?? '').trim()) return false;
+      if (t.done || t.notToday || t.not_today) return false;
+      if (t.source === 'medication' || t.source === 'event') return false;
+      if (isDueStrictlyAfterToday(t.dueAt)) return false;
+      return true;
+    });
+  }, [deferredTasksForSuggestions]);
 
   /** Minstens één bruikbare taak (dagstart stap 2); anders leeg-staat i.p.v. lege vakjes. */
   const hasUsableTasksForDayStart = useMemo(() => {
@@ -359,7 +506,7 @@ export default function DayStartCheckIn({
       if (!t?.id || !String(t.title ?? '').trim()) return false;
       if (t.done || t.notToday) return false;
       if (t.source === 'medication' || t.source === 'event') return false;
-      if (isDueDateStrictlyAfterToday(t.dueAt)) return false;
+      if (isDueStrictlyAfterToday(t.dueAt)) return false;
       return true;
     });
   }, [tasks]);
@@ -369,42 +516,27 @@ export default function DayStartCheckIn({
   /** Stap 2: tijdens fetch geen lege vakjes/suggesties tonen (voorkomt flitsende misleidende UI). */
   const isStep2LoadingTasks = Boolean(energyLevel && tasksContextLoading);
 
-  /** Zelfde regel als in de UI: slot telt alleen mee met bruikbare id + titel (niet alleen `!== null`). */
+  /** Zelfde regel als bij opslaan: slot telt alleen mee met open taak (id + titel, niet done/niet vandaag). */
   const slotHasUsableTask = useCallback((slotNum: number) => {
-    const t = top3Tasks[slotNum];
-    return Boolean(
-      t &&
-        t.id != null &&
-        String(t.id).trim() !== '' &&
-        String(t.title ?? '').trim() !== ''
-    );
+    return isExistingOpenTaskForTop3Save(top3Tasks[slotNum]);
   }, [top3Tasks]);
 
-  // Tel hoeveel slots gevuld zijn - ALLEEN beschikbare slots tellen
   const filledSlots = useMemo(() => {
     if (!energyLevel) {
-      return [1, 2, 3].filter((n) => slotHasUsableTask(n)).length;
+      return FOCUS_SLOT_NUMBERS.filter((n) => slotHasUsableTask(n)).length;
     }
-    if (energyLevel === 'low') {
-      return slotHasUsableTask(1) ? 1 : 0;
-    }
-    if (energyLevel === 'medium') {
-      return (slotHasUsableTask(1) ? 1 : 0) + (slotHasUsableTask(2) ? 1 : 0);
-    }
-    return [1, 2, 3].filter((n) => slotHasUsableTask(n)).length;
-  }, [top3Tasks, energyLevel, slotHasUsableTask]);
+    return FOCUS_SLOT_NUMBERS.filter(
+      (n) => n <= effectiveMaxSlots && slotHasUsableTask(n)
+    ).length;
+  }, [top3Tasks, energyLevel, slotHasUsableTask, effectiveMaxSlots]);
 
   const getFirstAvailableSlotNumber = useCallback((): number | null => {
     if (!energyLevel) return null;
-    for (let n = 1; n <= maxSlots; n++) {
-      const isLowEnergy = energyLevel === 'low';
-      const isMediumEnergy = energyLevel === 'medium';
-      const shouldDisable = (isLowEnergy && n !== 1) || (isMediumEnergy && n === 3);
-      if (shouldDisable) continue;
-      if (!top3Tasks[n]) return n;
+    for (let n = 1; n <= effectiveMaxSlots; n++) {
+      if (!slotHasUsableTask(n)) return n;
     }
     return null;
-  }, [energyLevel, maxSlots, top3Tasks]);
+  }, [energyLevel, effectiveMaxSlots, slotHasUsableTask]);
 
   // Naam: preferred_name → display_name → e-mail (Europe/Amsterdam begroeting)
   useEffect(() => {
@@ -508,7 +640,7 @@ export default function DayStartCheckIn({
         }
       }
       
-      console.log('🔍 Loading existing check-in tasks:', taskIds, 'Type:', typeof taskIds, 'IsArray:', Array.isArray(taskIds));
+      debugLog('🔍 Loading existing check-in tasks:', taskIds, 'Type:', typeof taskIds, 'IsArray:', Array.isArray(taskIds));
       
       // Zoek taken op basis van IDs - eerst in localStorage, dan in tasks state
       taskIds.forEach((taskId: string, index: number) => {
@@ -538,7 +670,7 @@ export default function DayStartCheckIn({
               task = { ...task, priority: finalSlotNumber };
             }
             slots[finalSlotNumber] = task;
-            console.log(`✅ Loaded task ${task.id} (${task.title}) into slot ${finalSlotNumber}`, {
+            debugLog(`✅ Loaded task ${task.id} (${task.title}) into slot ${finalSlotNumber}`, {
               originalPriority: task.priority,
               slotNumber: finalSlotNumber,
               done: task.done
@@ -552,71 +684,83 @@ export default function DayStartCheckIn({
       // KRITIEK: Forceer re-render door state te updaten
       setTop3Tasks(slots);
       hasInitializedRef.current = true;
-      console.log('✅ Loaded existing check-in:', slots);
-      console.log('✅ top3Tasks state after set:', Object.keys(slots).map(k => ({ slot: k, task: slots[Number(k)]?.title || 'null' })));
+      debugLog('✅ Loaded existing check-in:', slots);
+      debugLog('✅ top3Tasks state after set:', Object.keys(slots).map(k => ({ slot: k, task: slots[Number(k)]?.title || 'null' })));
       
       // KRITIEK: Trigger een re-render door fetchTasks aan te roepen
       // Dit zorgt ervoor dat de tasks array wordt geüpdatet en de UI wordt gerefresht
       fetchTasks().then(() => {
-        console.log('✅ fetchTasks completed after loading existing check-in');
+        debugLog('✅ fetchTasks completed after loading existing check-in');
       });
   }, [checkInFromDb, existingCheckIn, tasks, fetchTasks]);
 
-  const handleDrop = async (slotNumber: number, taskToUse: any) => {
+  const handleDrop = async (
+    slotNumber: number,
+    taskToUse: any,
+    options?: { fromCardSwipe?: boolean }
+  ) => {
     if (!taskToUse || !taskToUse.id) {
       console.warn('No task in handleDrop');
       return;
     }
 
+    const fromCardSwipe = options?.fromCardSwipe === true;
+
     try {
-      // STAP 1: Markeer dat gebruiker heeft geïnterageerd - VOORDAT we iets doen
-      // Dit voorkomt dat useEffect top3Tasks nog update vanuit tasks array
       userHasInteractedRef.current = true;
-      
-      // STAP 2: Markeer dat we een optimistic update doen - VOORDAT we iets doen
-      // Dit voorkomt dat useEffect interfereert
-      setIsUpdating(true);
-      
-      // STAP 3: BELANGRIJK - Optimistic update EERST (zodat oude taak direct uit top3Tasks wordt verwijderd)
-      // Dit zorgt ervoor dat getFilteredTasks de oude taak direct kan zien in suggesties
-      setTop3Tasks((prevTop3Tasks) => {
-        const taskToRemove =
-          prevTop3Tasks[slotNumber] && prevTop3Tasks[slotNumber].id !== taskToUse.id
-            ? prevTop3Tasks[slotNumber]
-            : null;
-        lastReplacedTaskRef.current = taskToRemove;
 
-        const newTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
-        
-        // Kopieer bestaande taken (behalve de gesleepte taak EN de taak die uit deze slot wordt verwijderd)
-        [1, 2, 3].forEach(num => {
-          const existingTask = prevTop3Tasks[num];
-          if (existingTask && existingTask.id && existingTask.id !== taskToUse.id) {
-            // Als dit de slot is waar we een nieuwe taak in zetten, skip de oude taak
-            if (num === slotNumber && taskToRemove && existingTask.id === taskToRemove.id) {
-              return; // Skip - deze taak wordt verwijderd
+      const applyTop3Update = () => {
+        setTop3Tasks((prevTop3Tasks) => {
+          const taskToRemove =
+            prevTop3Tasks[slotNumber] && prevTop3Tasks[slotNumber].id !== taskToUse.id
+              ? prevTop3Tasks[slotNumber]
+              : null;
+          lastReplacedTaskRef.current = taskToRemove;
+
+          const newTop3Tasks: { [key: number]: any } = {
+            1: null,
+            2: null,
+            3: null,
+            4: null,
+          };
+
+          FOCUS_SLOT_NUMBERS.forEach((num) => {
+            const existingTask = prevTop3Tasks[num];
+            if (existingTask && existingTask.id && existingTask.id !== taskToUse.id) {
+              if (num === slotNumber && taskToRemove && existingTask.id === taskToRemove.id) {
+                return;
+              }
+              newTop3Tasks[num] = existingTask;
             }
-            newTop3Tasks[num] = existingTask;
-          }
-        });
-        
-        // Zet gesleepte taak in nieuwe slot - BEHOUD ALLE VELDEN, update alleen priority
-        const taskWithPriority = { 
-          ...taskToUse, // Behoud ALLE bestaande velden (title, duration, energyLevel, etc.)
-          priority: slotNumber // Update ALLEEN priority
-        };
-        newTop3Tasks[slotNumber] = taskWithPriority;
-        
-        return newTop3Tasks;
-      });
+          });
 
-      await yieldToMain();
-      
+          const taskWithPriority = {
+            ...taskToUse,
+            priority: slotNumber,
+          };
+          newTop3Tasks[slotNumber] = taskWithPriority;
+
+          top3TasksRef.current = newTop3Tasks;
+          return newTop3Tasks;
+        });
+      };
+
+      if (fromCardSwipe) {
+        startTransition(applyTop3Update);
+      } else {
+        setIsUpdating(true);
+        applyTop3Update();
+        await yieldToMain();
+      }
+
+      const runDeferred = () => {
+        void (async () => {
+        try {
       // STAP 4: Verwijder de oude taak uit localStorage (priority = null) zodat deze terugkomt in suggesties
       // BELANGRIJK: Dit gebeurt NA de optimistic update, zodat getFilteredTasks de taak direct kan zien
       const taskToRemove = lastReplacedTaskRef.current;
       if (taskToRemove) {
-        console.log(`🔄 Removing existing task from slot ${slotNumber}: ${taskToRemove.id} (${taskToRemove.title})`);
+        debugLog(`🔄 Removing existing task from slot ${slotNumber}: ${taskToRemove.id} (${taskToRemove.title})`);
         
         try {
           // Check of taak bestaat in localStorage
@@ -625,7 +769,7 @@ export default function DayStartCheckIn({
           
           if (taskExists) {
             // KRITIEK: Verifieer dat de taak nog bestaat VOORDAT we updaten
-            console.log(`🔍 VOOR UPDATE - Task details:`, {
+            debugLog(`🔍 VOOR UPDATE - Task details:`, {
               id: taskExists.id,
               title: taskExists.title,
               priority: taskExists.priority,
@@ -649,7 +793,7 @@ export default function DayStartCheckIn({
             });
             
             if (updatedTask) {
-              console.log(`✅ Task ${taskToRemove.id} teruggezet naar suggesties (priority = null)`, {
+              debugLog(`✅ Task ${taskToRemove.id} teruggezet naar suggesties (priority = null)`, {
                 id: updatedTask.id,
                 title: updatedTask.title,
                 priority: updatedTask.priority,
@@ -672,7 +816,7 @@ export default function DayStartCheckIn({
                 const allTasks = getTasksFromStorage();
                 allTasks.push(taskToRestore);
                 saveTasksToStorage(allTasks);
-                console.log(`✅ Task ${taskToRemove.id} hersteld in localStorage`);
+                debugLog(`✅ Task ${taskToRemove.id} hersteld in localStorage`);
               }
               
               // Geen fetchTasks hier: één sync aan het eind van handleDrop voorkomt dubbele lijst-refresh en hapering.
@@ -691,7 +835,7 @@ export default function DayStartCheckIn({
       // STAP 5: Verwijder oude prioriteit van de gesleepte taak als die in een andere slot zat
       const oldSlot = Object.entries(top3Tasks).find(([_, task]) => task?.id === taskToUse.id)?.[0];
       if (oldSlot && oldSlot !== slotNumber.toString()) {
-        console.log(`🔄 Removing dragged task from old slot ${oldSlot}`);
+        debugLog(`🔄 Removing dragged task from old slot ${oldSlot}`);
         
         try {
           const tasksInStorage = getTasksFromStorage();
@@ -743,16 +887,16 @@ export default function DayStartCheckIn({
           updated_at: new Date().toISOString()
         };
         addTaskToStorage(taskToAdd);
-        console.log('✅ Task added to localStorage:', taskToAdd);
+        debugLog('✅ Task added to localStorage:', taskToAdd);
       } else {
-        console.log('✅ Task exists in localStorage, updating priority');
+        debugLog('✅ Task exists in localStorage, updating priority');
       }
       
       // STAP 7: Zet nieuwe prioriteit - gebruik updateTask(taskId, { priority: slotNumber })
       // BELANGRIJK: Dit update ALLEEN priority, alle andere velden (zoals energyLevel) blijven behouden
       // KRITIEK: Behoud energyLevel expliciet om te voorkomen dat deze verloren gaat
       const preservedEnergyLevel = taskToUse.energyLevel || 'medium';
-      console.log(`🔄 DayStart: Updating task ${taskToUse.id} with priority ${slotNumber}, energyLevel: ${preservedEnergyLevel}`);
+      debugLog(`🔄 DayStart: Updating task ${taskToUse.id} with priority ${slotNumber}, energyLevel: ${preservedEnergyLevel}`);
       await updateTask(taskToUse.id, { 
         priority: slotNumber,
         energyLevel: preservedEnergyLevel // Expliciet behouden
@@ -761,64 +905,82 @@ export default function DayStartCheckIn({
       // STAP 8: VERIFICATIE - controleer of taak correct is opgeslagen
       const tasksAfterUpdate = getTasksFromStorage();
       const updatedTask = tasksAfterUpdate.find((t: any) => t.id === taskToUse.id);
-      console.log('🔍 DayStart: Task after update in localStorage:', updatedTask ? {
+      debugLog('🔍 DayStart: Task after update in localStorage:', updatedTask ? {
         id: updatedTask.id,
         title: updatedTask.title,
         priority: updatedTask.priority,
         energyLevel: updatedTask.energyLevel
       } : 'NOT FOUND');
       
-      // BELANGRIJK: Trigger expliciet een sync event zodat andere pagina's direct updaten
-      // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe priority zien
-      if (typeof window !== 'undefined') {
+      // Sync event alleen buiten card-swipe: updateTask triggert al een sync voor Supabase-users.
+      if (!fromCardSwipe && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-        console.log('🔄 DayStart: Sync event triggered');
+        debugLog('🔄 DayStart: Sync event triggered');
       }
       
       // Eén fetch na paint: minder flitsen dan meerdere updates + sleeps.
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => resolve());
-      });
-      await fetchTasks();
+      if (!fromCardSwipe) {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+        await fetchTasks();
+      }
 
       trackTaskSelected(slotNumber);
 
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
+      if (!fromCardSwipe) {
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current);
+        }
+        startTransition(() => {
+          setIsUpdating(false);
+        });
       }
-      startTransition(() => {
-        setIsUpdating(false);
-      });
 
       setRecentlyAdded(taskToUse.id);
       setTimeout(() => setRecentlyAdded(null), 650);
 
+        } catch (error) {
+          console.error('❌ Error in handleDrop (deferred):', error);
+          toast(tr('dayStart.toastAddFail'));
+
+          try {
+            await fetchTasks();
+
+            const allTasks = getTasksFromStorage();
+            const restoredTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
+
+            for (let i = 1; i <= 3; i++) {
+              const task = allTasks.find((t: any) => t.priority == i);
+              if (task) {
+                restoredTop3Tasks[i] = task;
+              }
+            }
+
+            setTop3Tasks(restoredTop3Tasks);
+            debugLog('✅ State hersteld na error in handleDrop');
+          } catch (restoreError) {
+            console.error('❌ Error restoring state:', restoreError);
+          }
+
+          setIsUpdating(false);
+        }
+      })();
+      };
+
+      if (fromCardSwipe) {
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(() => runDeferred(), { timeout: 1200 });
+        } else {
+          window.setTimeout(runDeferred, 48);
+        }
+      } else {
+        runDeferred();
+      }
 
     } catch (error) {
       console.error('❌ Error in handleDrop:', error);
       toast(tr('dayStart.toastAddFail'));
-      
-      // KRITIEK: Herstel state bij error - haal taken opnieuw op zodat niets verloren gaat
-      try {
-        await fetchTasks();
-        
-        // Herstel top3Tasks uit localStorage om te voorkomen dat taken verdwijnen
-        const allTasks = getTasksFromStorage();
-        const restoredTop3Tasks: { [key: number]: any } = { 1: null, 2: null, 3: null };
-        
-        for (let i = 1; i <= 3; i++) {
-          const task = allTasks.find((t: any) => t.priority == i);
-          if (task) {
-            restoredTop3Tasks[i] = task;
-          }
-        }
-        
-        setTop3Tasks(restoredTop3Tasks);
-        console.log('✅ State hersteld na error in handleDrop');
-      } catch (restoreError) {
-        console.error('❌ Error restoring state:', restoreError);
-      }
-      
       setIsUpdating(false);
     }
   };
@@ -834,7 +996,7 @@ export default function DayStartCheckIn({
 
   const pickTaskFromSuggestions = async (task: any) => {
     if (!task?.id) return;
-    const alreadyFocused = [1, 2, 3].some((n) => top3Tasks[n]?.id === task.id);
+    const alreadyFocused = FOCUS_SLOT_NUMBERS.some((n) => top3Tasks[n]?.id === task.id);
     if (alreadyFocused) return;
     const slot = getFirstAvailableSlotNumber();
     if (slot == null) {
@@ -926,6 +1088,7 @@ export default function DayStartCheckIn({
       // Eerst: slot leegmaken (optimistic) zodat de taak direct uit het vak verdwijnt
       const newTop3Tasks: { [key: number]: any } = { ...top3Tasks };
       newTop3Tasks[slotNumber] = null;
+      top3TasksRef.current = newTop3Tasks;
       setTop3Tasks(newTop3Tasks);
       setIsUpdating(true);
 
@@ -969,15 +1132,12 @@ export default function DayStartCheckIn({
     }
   };
 
-  const top3TasksRef = React.useRef(top3Tasks);
-  top3TasksRef.current = top3Tasks;
-
-  /** Verberg slots buiten max (energie): ruim state + DB op. Geen async-run bij elke klik als er geen overflow is. */
+  /** Verberg slots buiten energielimiet (extra deadline-slots blijven staan). */
   useEffect(() => {
     if (!energyLevel) return;
-    const max = energyLevel === 'low' ? 1 : energyLevel === 'medium' ? 2 : 3;
+    setExtraFocusSlots(0);
     let hasOverflow = false;
-    for (let n = max + 1; n <= 3; n++) {
+    for (let n = maxSlots + 1; n <= MAX_FOCUS_SLOTS; n++) {
       if (top3Tasks[n]?.id) {
         hasOverflow = true;
         break;
@@ -987,7 +1147,7 @@ export default function DayStartCheckIn({
 
     let cancelled = false;
     (async () => {
-      for (let slotNum = 3; slotNum > max; slotNum--) {
+      for (let slotNum = MAX_FOCUS_SLOTS; slotNum > maxSlots; slotNum--) {
         if (cancelled) break;
         if (top3TasksRef.current[slotNum]?.id) {
           await handleRemoveFromSlot(slotNum);
@@ -998,7 +1158,7 @@ export default function DayStartCheckIn({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [energyLevel, top3Tasks[1]?.id, top3Tasks[2]?.id, top3Tasks[3]?.id]);
+  }, [energyLevel, maxSlots]);
 
   const handleSubmit = async () => {
     if (!energyLevel) {
@@ -1006,22 +1166,15 @@ export default function DayStartCheckIn({
       return;
     }
 
-    if (filledSlots < maxSlots) {
-      if (filledSlots === 0) {
-        toast(tr('dayStart.toastPickOne'));
-      } else if (energyLevel === 'medium') {
-        toast(tr('dayStart.toastNeedTwo'));
-      } else if (energyLevel === 'high') {
-        toast(tr('dayStart.toastNeedThree'));
-      } else {
-        toast(tr('dayStart.toastFillAll'));
-      }
+    if (filledSlots < 1) {
+      toast(tr('dayStart.toastPickOne'));
       return;
     }
 
-    const submitMaxSlots = energyLevel === 'low' ? 1 : energyLevel === 'medium' ? 2 : 3;
+    const submitMaxSlots = effectiveMaxSlots;
 
     setIsSubmitting(true);
+    await yieldToMain();
 
     const withTimeout = <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> =>
       Promise.race([
@@ -1077,34 +1230,26 @@ export default function DayStartCheckIn({
         return Array.from(merged.values());
       })();
       
-      console.log('🔍 VOOR UPDATE - Taken in localStorage:', tasksBeforeUpdate.length);
-      console.log('🔍 VOOR UPDATE - Top3Tasks state:', top3Tasks);
-      console.log('🔍 VOOR UPDATE - Top3 tasks entries:', Object.entries(top3Tasks));
-      
       // KRITIEK: Als top3Tasks leeg is, probeer taken uit localStorage te halen met priority 1-3
-      let tasksToProcess: { [key: number]: any } = { ...top3Tasks };
-      for (let n = submitMaxSlots + 1; n <= 3; n++) {
+      let tasksToProcess: { [key: number]: any } = { ...top3TasksRef.current };
+      for (let n = submitMaxSlots + 1; n <= MAX_FOCUS_SLOTS; n++) {
         tasksToProcess[n] = null;
       }
 
-      // Exacte slotvolgorde 1..max: nooit Object.entries-volgorde of backfill uit andere priority-taken
-      const selectedIdsBeforeSanitize: string[] = [];
-      for (let slot = 1; slot <= submitMaxSlots; slot++) {
-        const t = tasksToProcess[slot];
-        if (!t || typeof t !== "object") continue;
-        const idStr = t.id != null ? String(t.id).trim() : "";
-        if (!idStr || /^[1-3]$/.test(idStr)) continue;
-        selectedIdsBeforeSanitize.push(idStr);
-      }
-      const top3Ids = [...selectedIdsBeforeSanitize];
+      let top3Ids = collectTop3TaskIdsFromSlots(tasksToProcess, submitMaxSlots);
 
       const eligibleTop3Ids = top3Ids.filter((id) => {
+        const slotTask = Object.values(tasksToProcess).find(
+          (t: any) => t && String(t.id) === id
+        );
+        if (slotTask && isExistingOpenTaskForTop3Save(slotTask)) return true;
         const task =
           tasksBeforeUpdate.find((t: any) => String(t.id) === id) ??
-          tasks.find((t: any) => String(t.id) === id) ??
-          Object.values(tasksToProcess).find((t: any) => String(t?.id) === id);
+          tasks.find((t: any) => String(t.id) === id);
         return isExistingOpenTaskForTop3Save(task);
       });
+
+      const selectedIdsBeforeSanitize = [...top3Ids];
       top3Ids.length = 0;
       top3Ids.push(...eligibleTop3Ids);
       if (selectedIdsBeforeSanitize.length > eligibleTop3Ids.length) {
@@ -1119,9 +1264,12 @@ export default function DayStartCheckIn({
         setTop3SanitizeNotice(null);
       }
       
-      console.log('[DayStart] Top3 task IDs:', top3Ids);
-
-      if (top3Ids.length === 0 && filledSlots > 0) {
+      if (top3Ids.length < submitMaxSlots && filledSlots >= submitMaxSlots) {
+        console.error('[DayStart] Focus read mismatch', {
+          top3Ids,
+          filledSlots,
+          tasksToProcess: top3TasksRef.current,
+        });
         toast(tr('dayStart.toastFocusReadError'));
         return;
       }
@@ -1167,7 +1315,7 @@ export default function DayStartCheckIn({
             };
             
             tasksToAdd.push(taskToAdd);
-            console.log('📝 Preparing to add missing task:', taskToAdd.id, taskToAdd.title);
+            debugLog('📝 Preparing to add missing task:', taskToAdd.id, taskToAdd.title);
           }
         }
         
@@ -1183,9 +1331,9 @@ export default function DayStartCheckIn({
             if (newTasks.length > 0) {
               const allTasksCombined = [...currentTasks, ...newTasks];
               saveTasksToStorage(allTasksCombined);
-              console.log('✅ Added', newTasks.length, 'missing tasks to localStorage');
+              debugLog('✅ Added', newTasks.length, 'missing tasks to localStorage');
             } else {
-              console.log('ℹ️ All tasks already exist in localStorage');
+              debugLog('ℹ️ All tasks already exist in localStorage');
             }
           } catch (error) {
             console.error('❌ Error adding missing tasks to localStorage:', error);
@@ -1202,7 +1350,7 @@ export default function DayStartCheckIn({
           console.warn('⚠️ Maar we gaan door met de beschikbare taken');
           // Filter top3Ids om alleen bestaande taken te gebruiken
           const existingTop3Ids = top3Ids.filter(id => tasksAfterAdd.find((t: any) => t.id === id));
-          console.log('🔍 Using only existing tasks:', existingTop3Ids);
+          debugLog('🔍 Using only existing tasks:', existingTop3Ids);
           // Update top3Ids om alleen bestaande taken te gebruiken
           top3Ids.length = 0;
           top3Ids.push(...existingTop3Ids);
@@ -1214,87 +1362,51 @@ export default function DayStartCheckIn({
       // Gebruik merge-bron (niet alleen getTasksFromStorage): ingelogde users hebben taken vooral in Supabase-context.
       const allTasks = tasksBeforeUpdate;
       
-      console.log('🔍 handleSubmit: Starting direct save. Total tasks in storage:', allTasks.length);
-      console.log('🔍 handleSubmit: Top3 tasks to save:', top3Ids);
-      
-      // KRITIEK: Debug - toon top3Tasks met ALLE details
-      console.log('🔍 handleSubmit: top3Tasks FULL:', top3Tasks);
-      console.log('🔍 handleSubmit: top3Tasks entries:', Object.entries(top3Tasks).map(([slot, task]: any) => ({
-        slot,
-        slotType: typeof slot,
-        taskId: task?.id,
-        taskTitle: task?.title,
-        taskPriority: task?.priority,
-        taskPriorityType: typeof task?.priority,
-        taskFull: task
-      })));
-      
-      // KRITIEK: Check specifiek slot 1
-      console.log('🔍 handleSubmit: top3Tasks[1] specifically:', {
-        exists: top3Tasks[1] !== null && top3Tasks[1] !== undefined,
-        task: top3Tasks[1],
-        taskId: top3Tasks[1]?.id,
-        taskTitle: top3Tasks[1]?.title
-      });
-      
-      // DIRECTE UPDATE: Update elke taak direct in de array
-      // Gebruik tasksToProcess in plaats van top3Tasks (kan leeg zijn)
-      const updatedTasks = allTasks.map((t: any) => {
-        // Zoek of deze taak in tasksToProcess staat
-        const top3Entry = Object.entries(tasksToProcess).find(([_, task]: any) => task && task.id === t.id);
-        
-        // DEBUG: Log elke taak die we checken
-        if (top3Entry) {
-          console.log(`🔍 Checking task ${t.id} (${t.title}) - FOUND in top3Tasks at slot ${top3Entry[0]}`);
+      const top3ByTaskId = new Map<
+        string,
+        { slotNumber: string; taskFromState: { energyLevel?: string; duration?: number | null } }
+      >();
+      for (const [slotNumber, task] of Object.entries(tasksToProcess)) {
+        if (task?.id) {
+          top3ByTaskId.set(String(task.id), { slotNumber, taskFromState: task });
         }
-        
+      }
+      const top3IdSet = new Set(top3Ids.map(String));
+
+      const updatedTasks = allTasks.map((t: any) => {
+        const top3Entry = top3ByTaskId.get(String(t.id));
+
         if (top3Entry) {
-          const [slotNumber, taskFromState] = top3Entry;
-          // KRITIEK: Forceer integer met parseInt(value, 10) - NUCLEAIRE fix
-          const priorityStr = String(slotNumber);
-          const priority = parseInt(priorityStr, 10);
-          
-          // KRITIEK: Verifieer dat priority een geldig nummer is
-          if (isNaN(priority) || priority < 1 || priority > 3) {
+          const { slotNumber, taskFromState } = top3Entry;
+          const priority = parseInt(String(slotNumber), 10);
+
+          if (Number.isNaN(priority) || priority < 1 || priority > 3) {
             console.error(`❌ INVALID PRIORITY: slotNumber=${slotNumber}, priority=${priority}`);
-            return t; // Return unchanged if invalid
+            return t;
           }
-          
-          console.log(`📝 DIRECT SAVE: Task ${t.id} (${t.title}) -> priority ${priority} (integer)`);
-          console.log(`📝 EnergyLevel check: t.energyLevel=${t.energyLevel}, taskFromState.energyLevel=${taskFromState?.energyLevel}`);
-          
-          // KRITIEK: Gebruik energyLevel uit taskFromState (state) als die bestaat, anders uit t (localStorage)
-          // Dit voorkomt dat energyLevel verloren gaat
+
           const preservedEnergyLevel = taskFromState?.energyLevel || t.energyLevel || 'medium';
-          const preservedDuration = taskFromState?.duration || t.duration || null;
-          
-          // Behoud ALLE bestaande velden, update alleen priority, notToday en done
-          // KRITIEK: Forceer integer met parseInt
-          const updated = {
-            ...t, // Behoud ALLES (title, duration, etc.)
-            energyLevel: preservedEnergyLevel, // Behoud energyLevel expliciet
-            duration: preservedDuration, // Behoud duration expliciet
-            priority: priority, // ALTIJD integer
+          const preservedDuration = taskFromState?.duration ?? t.duration ?? null;
+
+          return {
+            ...t,
+            energyLevel: preservedEnergyLevel,
+            duration: preservedDuration,
+            priority,
             notToday: false,
             done: false,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           };
-          
-          console.log(`✅ Updated task priority: ${updated.priority} (type: ${typeof updated.priority}), energyLevel: ${updated.energyLevel}, duration: ${updated.duration}`);
-          return updated;
         }
-        
-        // Als taak NIET in top3Tasks staat maar WEL een priority 1-3 heeft, reset priority
-        // Dit voorkomt dat oude prioriteiten blijven staan
-        if (t.priority && t.priority >= 1 && t.priority <= 3 && !top3Ids.includes(t.id)) {
-          console.log(`🔄 RESET: Task ${t.id} (${t.title}) priority ${t.priority} -> null (niet meer in top3)`);
+
+        if (t.priority && t.priority >= 1 && t.priority <= 3 && !top3IdSet.has(String(t.id))) {
           return {
             ...t,
             priority: null,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           };
         }
-        
+
         return t;
       });
       
@@ -1307,7 +1419,6 @@ export default function DayStartCheckIn({
             // KRITIEK: Forceer integer met parseInt(value, 10) - NUCLEAIRE fix
             const priorityStr = String(slotNumber);
             const priority = parseInt(priorityStr, 10);
-            console.log(`➕ ADD MISSING: Task ${task.id} (${task.title}) -> priority ${priority} (integer)`);
             updatedTasks.push({
               id: task.id,
               title: task.title || 'Untitled Task',
@@ -1332,55 +1443,11 @@ export default function DayStartCheckIn({
         }
       }
       
-      // SLA DIRECT OP - dit is synchroon en gegarandeerd
       saveTasksToStorage(updatedTasks);
-      console.log('💾 DIRECT SAVE COMPLETE: Saved', updatedTasks.length, 'tasks to localStorage');
-      
-      // VERIFICATIE: Controleer DIRECT of taken correct zijn opgeslagen
+
       const tasksAfterSave = getTasksFromStorage();
-      const tasksWithPriority = tasksAfterSave.filter((t: any) => {
-        if (!t.priority) return false;
-        // KRITIEK: Gebruik losse vergelijking (==) voor type-flexibiliteit
-        return t.priority == 1 || t.priority == 2 || t.priority == 3;
-      });
-      
-      // KRITIEK: Check specifiek voor priority 1 (gebruik losse vergelijking ==)
-      const priority1Task = tasksAfterSave.find((t: any) => {
-        return t.priority == 1; // Losse vergelijking vangt "1" == 1 op
-      });
-      const priority1TaskStrict = tasksAfterSave.find((t: any) => t.priority === 1 && typeof t.priority === 'number');
-      
-      console.log('✅ VERIFICATION: Tasks in localStorage:', tasksAfterSave.length);
-      console.log('✅ VERIFICATION: Tasks with priority 1-3:', tasksWithPriority.map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        priority: t.priority,
-        priorityType: typeof t.priority,
-        energyLevel: t.energyLevel
-      })));
-      console.log('🔍 VERIFICATION: Priority 1 task (loose):', priority1Task ? {
-        id: priority1Task.id,
-        title: priority1Task.title,
-        priority: priority1Task.priority,
-        priorityType: typeof priority1Task.priority
-      } : 'NOT FOUND');
-      console.log('🔍 VERIFICATION: Priority 1 task (strict number):', priority1TaskStrict ? {
-        id: priority1TaskStrict.id,
-        title: priority1TaskStrict.title,
-        priority: priority1TaskStrict.priority
-      } : 'NOT FOUND');
-      
-      // Toon ALLE taken met hun priority voor debugging
-      console.log('🔍 VERIFICATION: ALL tasks with their priorities:', tasksAfterSave.map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        priority: t.priority,
-        priorityType: typeof t.priority
-      })));
-      
-      // Check of alle taken nog steeds bestaan
       const stillMissing = top3Ids.filter(
-        (id) => !tasksAfterSave.find((t: any) => String(t.id) === String(id))
+        (id) => !tasksAfterSave.some((t: any) => String(t.id) === String(id))
       );
       if (stillMissing.length > 0) {
         console.error('❌ KRITIEKE FOUT: Taken verdwenen na directe opslag:', stillMissing);
@@ -1388,14 +1455,9 @@ export default function DayStartCheckIn({
         return;
       }
       
-      // Wacht even zodat localStorage volledig is doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Haal taken opnieuw op via fetchTasks om state te synchroniseren
+      await yieldToMain();
       await fetchTasks();
-      
-      // Wacht nog even zodat fetchTasks volledig is doorgevoerd
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await yieldToMain();
 
       // Sla check-in op (Supabase bij ingelogde user, anders localStorage) — met timeout tegen eeuwig hangen.
       // Stille opslag van cyclus-fase als gebruiker consent heeft (geen UI-impact in fase 1).
@@ -1424,7 +1486,6 @@ export default function DayStartCheckIn({
       // Dit zorgt ervoor dat TasksOverview en Focus Mode direct de nieuwe prioriteiten zien
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-        console.log('🔄 DayStart: Final sync event triggered');
       }
 
       // Pas dagindeling aan op basis van energie
@@ -1442,10 +1503,6 @@ export default function DayStartCheckIn({
         tasks_selected_count: filledSlots,
       });
       
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
-      }
-
       if (firstTimeOnboarding) {
         await markOnboardingCompleted();
       }
@@ -1458,6 +1515,7 @@ export default function DayStartCheckIn({
         }
       }
 
+      await yieldToMain();
       onComplete();
       
     } catch (error: any) {
@@ -1486,635 +1544,856 @@ export default function DayStartCheckIn({
     }
   };
 
-  const energyLevels = useMemo(
-    () => [
-      {
-        label: tr("dayStart.labelLow"),
-        value: "low" as const,
-        sub: tr("dayStart.subLow"),
-        emoji: "🌙",
-        idleBorder: "border-[var(--structuro-border)]",
-        selectedBg: "bg-slate-50",
-        selectedBorder: "border-slate-400",
-        selectedRing: "shadow-[0_0_0_3px_rgba(148,163,184,0.25)]",
-        textSel: "text-slate-700",
-      },
-      {
-        label: tr("dayStart.labelMed"),
-        value: "medium" as const,
-        sub: tr("dayStart.subMed"),
-        emoji: "🙂",
-        idleBorder: "border-[var(--structuro-border)]",
-        selectedBg: "bg-amber-50",
-        selectedBorder: "border-amber-300",
-        selectedRing: "shadow-[0_0_0_3px_rgba(245,158,11,0.2)]",
-        textSel: "text-amber-900",
-      },
-      {
-        label: tr("dayStart.labelHigh"),
-        value: "high" as const,
-        sub: tr("dayStart.subHigh"),
-        emoji: "⚡",
-        idleBorder: "border-[var(--structuro-border)]",
-        selectedBg: "bg-violet-50",
-        selectedBorder: "border-violet-300",
-        selectedRing: "shadow-[0_0_0_3px_rgba(139,92,246,0.2)]",
-        textSel: "text-violet-900",
-      },
-    ],
-    [tr]
+  const handleEnergyPick = useCallback(
+    (value: 'low' | 'medium' | 'high') => {
+      if (energyAdvanceTimerRef.current) {
+        clearTimeout(energyAdvanceTimerRef.current);
+        energyAdvanceTimerRef.current = null;
+      }
+      if (firstTimeOnboarding) setEnergyOnboardingHintHidden(true);
+      setEnergyLevel(value);
+      setEnergyStepExiting(true);
+      queueMicrotask(() => {
+        trackEnergyChecked(
+          value === 'low' ? 'laag' : value === 'high' ? 'hoog' : 'normaal'
+        );
+      });
+      energyAdvanceTimerRef.current = window.setTimeout(() => {
+        energyAdvanceTimerRef.current = null;
+        startTransition(() => {
+          setTaskPickMode('choosing');
+          setStructuroSwapSlot(null);
+          setDagstartPhase('tasks');
+          setEnergyStepExiting(false);
+        });
+      }, 220);
+    },
+    [firstTimeOnboarding]
   );
 
-  const getEnergyIntensity = (value: string) => {
-    if (value === 'low') return 1;
-    if (value === 'medium') return 2;
-    return 3;
-  };
+  useEffect(() => {
+    return () => {
+      if (energyAdvanceTimerRef.current) {
+        clearTimeout(energyAdvanceTimerRef.current);
+      }
+    };
+  }, []);
 
-  const slotConfig = useMemo(
-    () => [
-      {
-        number: 1,
-        label: tr("dayStart.slot1Label"),
-        description: tr("dayStart.slot1Desc"),
-        color: "#3B82F6",
-        bgColor: "#EFF6FF",
-        borderColor: "#BFDBFE",
-      },
-      {
-        number: 2,
-        label: tr("dayStart.slot2Label"),
-        description: tr("dayStart.slot2Desc"),
-        color: "#14B8A6",
-        bgColor: "#F0FDFA",
-        borderColor: "#99F6E4",
-      },
-      {
-        number: 3,
-        label: tr("dayStart.slot3Label"),
-        description: tr("dayStart.slot3Desc"),
-        color: "#8B5CF6",
-        bgColor: "#F5F3FF",
-        borderColor: "#DDD6FE",
-      },
-    ],
-    [tr]
+  const handleCardDecide = useCallback(
+    async (id: string, action: 'keep' | 'skip') => {
+      if (action === 'skip') {
+        setSkippedCardIds((prev) => new Set(prev).add(id));
+        return;
+      }
+      const slot = getFirstAvailableSlotNumber();
+      if (slot == null) {
+        toast(tr('dayStart.toastSlotsFull'));
+        return;
+      }
+      const dagRow = dagafsluiterRows.find((r) => r.id === id);
+      if (dagRow) {
+        const e = dagRow.suggestedTaskEnergy || 'medium';
+        const taskEnergy =
+          e === 'low' || e === 'medium' || e === 'high' ? e : 'medium';
+        try {
+          const created = await addTask({
+            title: dagRow.content,
+            done: false,
+            started: false,
+            priority: null,
+            dueAt: null,
+            duration: 15,
+            source: 'regular',
+            reminders: [],
+            repeat: 'none',
+            impact: '🌱',
+            energyLevel: taskEnergy,
+            estimatedDuration: 15,
+            microSteps: [],
+            notToday: false,
+          });
+          await convertThoughtToTask(dagRow.id, created.id);
+          setDagafsluiterRows((prev) => prev.filter((r) => r.id !== dagRow.id));
+          await handleDrop(slot, created);
+        } catch (e) {
+          console.error('dagafsluiter card keep:', e);
+          toast(tr('dayStart.toastCantAdd'));
+        }
+        return;
+      }
+      const task =
+        tasks.find((t: any) => String(t.id) === id) ??
+        deferredTasksForSuggestions.find((t: any) => String(t.id) === id);
+      if (!task) {
+        console.warn('dagstart card keep: task not found', id);
+        toast(tr('dayStart.toastFocusReadError'));
+        return;
+      }
+      try {
+        void handleDrop(slot, task, { fromCardSwipe: true });
+      } catch (e) {
+        console.error('dagstart card keep:', e);
+        toast(tr('dayStart.toastAddFail'));
+      }
+    },
+    [
+      getFirstAvailableSlotNumber,
+      dagafsluiterRows,
+      addTask,
+      handleDrop,
+      tasks,
+      deferredTasksForSuggestions,
+      tr,
+    ]
   );
 
-  const dagstartHeaderBar = (
-    <div className="flex items-center justify-center gap-2.5" role="banner">
-      <img
-        src="/logo-structuro.png"
-        alt="Structuro"
-        className="h-8 w-8 shrink-0 rounded-2xl object-contain sm:h-9 sm:w-9"
-        width={36}
-        height={36}
-      />
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--structuro-sub)]">
-        {tr("dagstart.title")}
-      </span>
-    </div>
+  const handleReviewStackAgain = useCallback(() => {
+    setSkippedCardIds(new Set());
+    setStackAddOpen(false);
+  }, []);
+
+  const handleStackAddFromFlow = useCallback(
+    async (payload: NewTaskFlowPayload) => {
+      if (stackAddBusy || !energyLevel) {
+        throw new Error("daystart_stack_add_unavailable");
+      }
+      setStackAddBusy(true);
+      try {
+        const created = await addTask(buildTaskFromFlowPayload(payload));
+        setStackInjectedTaskIds((prev) => [
+          created.id,
+          ...prev.filter((id) => id !== created.id),
+        ]);
+        setSkippedCardIds((prev) => {
+          const next = new Set(prev);
+          next.delete(created.id);
+          return next;
+        });
+        setStackAddOpen(false);
+        await fetchTasks();
+      } catch (e) {
+        console.error('stack add daystart:', e);
+        toast(tr('dayStart.toastCantAdd'));
+        throw e;
+      } finally {
+        setStackAddBusy(false);
+      }
+    },
+    [stackAddBusy, energyLevel, addTask, fetchTasks, tr]
+  );
+
+  const handleDockRemove = useCallback(
+    (id: string) => {
+      const slot = FOCUS_SLOT_NUMBERS.find((n) => top3Tasks[n]?.id === id);
+      if (slot != null) void handleRemoveFromSlot(slot);
+    },
+    [top3Tasks, handleRemoveFromSlot]
+  );
+
+  const resetTaskPickState = useCallback(() => {
+    setTaskPickMode('choosing');
+    setStructuroSwapSlot(null);
+    setStructuroPickBusy(false);
+    setTop3Tasks({ 1: null, 2: null, 3: null, 4: null });
+    setSkippedCardIds(new Set());
+    setExtraFocusSlots(0);
+    setDeadlineOverflowQueue([]);
+  }, []);
+
+  const applyDeadlinePrefill = useCallback(
+    async (mode: 'self' | 'structuro') => {
+      if (
+        !energyLevel ||
+        (energyLevel !== 'low' && energyLevel !== 'medium' && energyLevel !== 'high')
+      ) {
+        return;
+      }
+      const dayEnergy = energyLevel as DayEnergy;
+      const plan = buildDagstartTaskPlan(
+        dagstartTaskPool,
+        structuroCandidateTasks,
+        dayEnergy,
+        maxSlots,
+        getCalendarDateAmsterdam(),
+        getImpactRankForSuggestions
+      );
+
+      setTop3Tasks({ 1: null, 2: null, 3: null, 4: null });
+      setSkippedCardIds(new Set());
+      setExtraFocusSlots(0);
+      setDeadlineOverflowQueue([]);
+
+      let slot = 1;
+      for (const task of plan.deadlineAutoFill) {
+        await handleDrop(slot, task);
+        slot += 1;
+      }
+
+      if (mode === 'structuro') {
+        for (const task of plan.structuroFill) {
+          await handleDrop(slot, task);
+          slot += 1;
+        }
+        if (
+          plan.deadlineAutoFill.length === 0 &&
+          plan.structuroFill.length === 0 &&
+          plan.deadlineOverflow.length === 0
+        ) {
+          toast(tr('dayStart.structuroNoTasks'));
+          return;
+        }
+        setTaskPickMode('structuro');
+      }
+
+      if (plan.deadlineOverflow.length > 0) {
+        setDeadlineOverflowQueue(plan.deadlineOverflow);
+      }
+    },
+    [
+      energyLevel,
+      dagstartTaskPool,
+      structuroCandidateTasks,
+      maxSlots,
+      getImpactRankForSuggestions,
+      handleDrop,
+      tr,
+    ]
+  );
+
+  const handlePickSelf = useCallback(() => {
+    setTaskPickMode('self');
+    void applyDeadlinePrefill('self');
+  }, [applyDeadlinePrefill]);
+
+  const handleDeadlineOverflowPostpone = useCallback(async () => {
+    const task = deadlineOverflowQueue[0];
+    if (!task?.id || deadlineOverflowBusy) return;
+    setDeadlineOverflowBusy(true);
+    try {
+      await updateTask(String(task.id), {
+        dueAt: calendarDayToDueAt(getTomorrowCalendarDateAmsterdam()),
+      });
+      await fetchTasks();
+      setDeadlineOverflowQueue((queue) => queue.slice(1));
+    } catch (e) {
+      console.error('deadline overflow postpone:', e);
+      toast(tr('dayStart.toastAddFail'));
+    } finally {
+      setDeadlineOverflowBusy(false);
+    }
+  }, [deadlineOverflowQueue, deadlineOverflowBusy, updateTask, fetchTasks, tr]);
+
+  const handleDeadlineOverflowAdd = useCallback(async () => {
+    const task = deadlineOverflowQueue[0];
+    if (!task?.id || deadlineOverflowBusy) return;
+    const nextSlot = maxSlots + extraFocusSlots + 1;
+    if (nextSlot > MAX_FOCUS_SLOTS) {
+      setDeadlineOverflowQueue((queue) => queue.slice(1));
+      return;
+    }
+    setDeadlineOverflowBusy(true);
+    try {
+      setExtraFocusSlots((prev) => prev + 1);
+      await handleDrop(nextSlot, task);
+      setDeadlineOverflowQueue((queue) => queue.slice(1));
+    } catch (e) {
+      console.error('deadline overflow add:', e);
+      toast(tr('dayStart.toastAddFail'));
+    } finally {
+      setDeadlineOverflowBusy(false);
+    }
+  }, [
+    deadlineOverflowQueue,
+    deadlineOverflowBusy,
+    maxSlots,
+    extraFocusSlots,
+    handleDrop,
+    tr,
+  ]);
+
+  const handlePickStructuro = useCallback(async () => {
+    if (
+      structuroPickBusy ||
+      !energyLevel ||
+      (energyLevel !== 'low' && energyLevel !== 'medium' && energyLevel !== 'high')
+    ) {
+      return;
+    }
+    setStructuroPickBusy(true);
+    try {
+      await applyDeadlinePrefill('structuro');
+    } catch (e) {
+      console.error('structuro pick:', e);
+      toast(tr('dayStart.toastAddFail'));
+    } finally {
+      setStructuroPickBusy(false);
+    }
+  }, [structuroPickBusy, energyLevel, applyDeadlinePrefill, tr]);
+
+  const handleStructuroSwapSlot = useCallback(
+    async (slot: number, replacementTask: any) => {
+      if (taskPickMode !== 'structuro') return;
+      try {
+        await handleDrop(slot, replacementTask);
+        setStructuroSwapSlot(null);
+        toast(tr('dayStart.toastSwapDone'));
+      } catch (e) {
+        console.error('structuro swap:', e);
+        toast(tr('dayStart.toastAddFail'));
+      }
+    },
+    [taskPickMode, handleDrop, tr]
+  );
+
+  const handleSuggestionItemPick = useCallback(
+    async (item: SuggestionListItem) => {
+      const targetSlot =
+        taskPickMode === 'structuro' && structuroSwapSlot != null
+          ? structuroSwapSlot
+          : getFirstAvailableSlotNumber();
+      if (targetSlot == null) {
+        toast(tr('dayStart.toastSlotsFull'));
+        return;
+      }
+
+      if (item.kind === 'reminder') {
+        const dagRow = dagafsluiterRows.find((r) => r.id === item.id);
+        if (!dagRow) return;
+        const e = dagRow.suggestedTaskEnergy || 'medium';
+        const taskEnergy =
+          e === 'low' || e === 'medium' || e === 'high' ? e : 'medium';
+        try {
+          const created = await addTask({
+            title: dagRow.content,
+            done: false,
+            started: false,
+            priority: null,
+            dueAt: null,
+            duration: 15,
+            source: 'regular',
+            reminders: [],
+            repeat: 'none',
+            impact: '🌱',
+            energyLevel: taskEnergy,
+            estimatedDuration: 15,
+            microSteps: [],
+            notToday: false,
+          });
+          await convertThoughtToTask(dagRow.id, created.id);
+          setDagafsluiterRows((prev) => prev.filter((r) => r.id !== dagRow.id));
+          if (taskPickMode === 'structuro' && structuroSwapSlot != null) {
+            await handleStructuroSwapSlot(structuroSwapSlot, created);
+          } else {
+            await handleDrop(targetSlot, created);
+          }
+        } catch (e) {
+          console.error('suggestion reminder pick:', e);
+          toast(tr('dayStart.toastCantAdd'));
+        }
+        return;
+      }
+
+      const task =
+        tasks.find((t: any) => String(t.id) === item.id) ??
+        deferredTasksForSuggestions.find((t: any) => String(t.id) === item.id);
+      if (!task) {
+        toast(tr('dayStart.toastFocusReadError'));
+        return;
+      }
+
+      setSuggestionPickingId(item.id);
+      try {
+        if (taskPickMode === 'structuro' && structuroSwapSlot != null) {
+          await handleStructuroSwapSlot(structuroSwapSlot, task);
+        } else {
+          await handleDrop(targetSlot, task);
+          setStructuroSwapSlot(null);
+        }
+      } catch (e) {
+        console.error('suggestion pick:', e);
+        toast(tr('dayStart.toastAddFail'));
+      } finally {
+        setSuggestionPickingId(null);
+      }
+    },
+    [
+      taskPickMode,
+      structuroSwapSlot,
+      getFirstAvailableSlotNumber,
+      dagafsluiterRows,
+      addTask,
+      handleStructuroSwapSlot,
+      handleDrop,
+      tasks,
+      deferredTasksForSuggestions,
+      tr,
+    ]
   );
 
   const dayStartGreetingLine = useMemo(() => {
-    const name = userName?.trim() || tr("dayStart.greetingFallbackName");
+    const name = userName?.trim();
+    if (!name) return null;
     const period = getDayStartTimeOfDay();
     if (period === "morning") return tr("dayStart.greetingMorning", { name });
     if (period === "afternoon") return tr("dayStart.greetingAfternoon", { name });
     return tr("dayStart.greetingEvening", { name });
   }, [userName, tr]);
 
-  const dayStartQuoteLine = useMemo(() => getDayStartQuote(locale), [locale]);
+  const keptCardTasks = useMemo((): DagstartCardTask[] => {
+    return FOCUS_SLOT_NUMBERS.filter((n) => n <= effectiveMaxSlots)
+      .map((n) => top3Tasks[n])
+      .filter(Boolean)
+      .map((task) => taskToDagstartCard(task, locale === 'en' ? 'en' : 'nl'));
+  }, [top3Tasks, effectiveMaxSlots, locale]);
 
-  // Als energie nog niet is gekozen, toon alleen energie-selectie
-  if (!energyLevel) {
+  const keptTotalMinutes = useMemo(
+    () => keptCardTasks.reduce((sum, t) => sum + t.minutes, 0),
+    [keptCardTasks]
+  );
+
+  const cardQueue = useMemo((): DagstartCardTask[] => {
+    if (!energyLevel) return [];
+    const keptIds = new Set(
+      FOCUS_SLOT_NUMBERS.map((n) => top3Tasks[n]?.id).filter(Boolean) as string[]
+    );
+    const cardLocale = locale === 'en' ? 'en' : 'nl';
+    const items: DagstartCardTask[] = [];
+    for (const item of mergedSuggestionItems) {
+      if (item.kind === 'task') {
+        if (keptIds.has(item.task.id) || skippedCardIds.has(item.task.id)) continue;
+        items.push(taskToDagstartCard(item.task, cardLocale));
+      } else {
+        if (keptIds.has(item.row.id) || skippedCardIds.has(item.row.id)) continue;
+        items.push({
+          id: item.row.id,
+          title: item.row.content,
+          minutes: 15,
+          energy: appEnergyToSt(item.row.suggestedTaskEnergy),
+          tone: tr('dayStart.reminderTone'),
+        });
+      }
+    }
+
+    const seen = new Set(items.map((c) => c.id));
+    const injectedFront: DagstartCardTask[] = [];
+    for (const id of stackInjectedTaskIds) {
+      if (keptIds.has(id) || skippedCardIds.has(id) || seen.has(id)) continue;
+      const task =
+        tasks.find((t: any) => String(t.id) === id) ??
+        deferredTasksForSuggestions.find((t: any) => String(t.id) === id);
+      if (task?.title) {
+        injectedFront.push(taskToDagstartCard(task, cardLocale));
+        seen.add(id);
+      }
+    }
+
+    const merged = [
+      ...injectedFront,
+      ...items.filter((c) => !injectedFront.some((f) => f.id === c.id)),
+    ];
+
+    const findPoolTask = (id: string) =>
+      tasks.find((t: any) => String(t.id) === id) ??
+      deferredTasksForSuggestions.find((t: any) => String(t.id) === id);
+
+    const deadlineCards: DagstartCardTask[] = [];
+    const otherCards: DagstartCardTask[] = [];
+    for (const card of merged) {
+      const poolTask = findPoolTask(card.id);
+      if (poolTask && rankTaskForDagstartSuggestions(poolTask) === 0) {
+        deadlineCards.push(card);
+      } else {
+        otherCards.push(card);
+      }
+    }
+
+    deadlineCards.sort((a, b) => {
+      const ta = findPoolTask(a.id);
+      const tb = findPoolTask(b.id);
+      if (ta && tb) return compareDeadlineTasks(ta, tb);
+      return 0;
+    });
+
+    return [...deadlineCards, ...otherCards];
+  }, [
+    energyLevel,
+    mergedSuggestionItems,
+    top3Tasks,
+    skippedCardIds,
+    stackInjectedTaskIds,
+    tasks,
+    deferredTasksForSuggestions,
+    tr,
+    locale,
+  ]);
+
+  const isSwipeExhausted =
+    !isStep2LoadingTasks &&
+    cardQueue.length === 0 &&
+    keptCardTasks.length === 0 &&
+    skippedCardIds.size > 0;
+
+  const allTasksSelectedInDock =
+    !isStep2LoadingTasks &&
+    Boolean(energyLevel) &&
+    filledSlots >= maxSlots &&
+    filledSlots > 0;
+
+  const greetingParts = dayStartGreetingLine?.split(',') ?? [];
+  const greetingLead = dayStartGreetingLine
+    ? `${greetingParts[0]?.trim() || tr('dayStart.greetingMorning')},`
+    : null;
+  const greetingName =
+    greetingParts[1]?.trim().replace(/\.$/, '') || userName?.trim() || null;
+
+  const energyPillLabel =
+    energyLevel === 'low'
+      ? tr('dayStart.energyPillLow')
+      : energyLevel === 'high'
+        ? tr('dayStart.energyPillHigh')
+        : energyLevel === 'medium'
+          ? tr('dayStart.energyPillMed')
+          : '';
+
+  const energyIconKind: EnergyIconKind =
+    energyLevel === 'low' ? 'low' : energyLevel === 'high' ? 'high' : 'medium';
+
+  const hasMinFocus = filledSlots >= 1;
+  const canSubmit = Boolean(energyLevel) && !isSubmitting && hasMinFocus;
+  const ctaText = hasMinFocus
+    ? existingCheckIn
+      ? tr('dayStart.saveChanges')
+      : tr('dayStart.startDay')
+    : tr('dayStart.pickTasksFirst');
+  const dockUnit =
+    keptCardTasks.length === 1 ? tr('dayStart.dockUnitOne') : tr('dayStart.dockUnitMany');
+
+  const focusedTaskIds = useMemo(() => {
+    return new Set(
+      FOCUS_SLOT_NUMBERS.map((n) => top3Tasks[n]?.id).filter(Boolean) as string[]
+    );
+  }, [top3Tasks]);
+
+  const suggestionListItems = useMemo((): SuggestionListItem[] => {
+    return mergedSuggestionItems.map((item) => {
+      if (item.kind === 'task') {
+        return {
+          kind: 'task' as const,
+          id: String(item.task.id),
+          title: String(item.task.title ?? ''),
+          energyLevel: item.task.energyLevel,
+          minutes: item.task.duration || item.task.estimatedDuration || 15,
+        };
+      }
+      return {
+        kind: 'reminder' as const,
+        id: item.row.id,
+        title: item.row.content,
+        energyLevel: item.row.suggestedTaskEnergy,
+        badge: tr('dayStart.reminderBadge'),
+      };
+    });
+  }, [mergedSuggestionItems, tr]);
+
+  const focusSlotConfigs = useMemo(() => {
+    const defs = [
+      { label: tr('dayStart.slot1Label'), description: tr('dayStart.slot1Desc') },
+      { label: tr('dayStart.slot2Label'), description: tr('dayStart.slot2Desc') },
+      { label: tr('dayStart.slot3Label'), description: tr('dayStart.slot3Desc') },
+      { label: tr('dayStart.slot4Label'), description: tr('dayStart.slot4Desc') },
+    ];
+    return FOCUS_SLOT_NUMBERS.filter((n) => n <= effectiveMaxSlots).map((slot) => ({
+      slot,
+      label: defs[slot - 1].label,
+      description: defs[slot - 1].description,
+      task: top3Tasks[slot],
+    }));
+  }, [effectiveMaxSlots, top3Tasks, tr]);
+
+  const energyBanner =
+    energyLevel === 'low' || energyLevel === 'medium' || energyLevel === 'high'
+      ? energyBannerCopy(energyLevel, tr)
+      : null;
+
+  if (dagstartPhase === 'energy') {
+    const cycleContext =
+      cycleConsentOn ? (
+        <CycleEnergyContext consentOn={cycleConsentOn} profile={cycleProfile} />
+      ) : null;
+
     return (
-      <div className="flex h-full min-h-0 w-full flex-col items-center justify-center px-4">
-        <div className="mb-3 flex w-full max-w-lg shrink-0 justify-center">
-          {dagstartHeaderBar}
-        </div>
-        <div className="w-full max-w-lg space-y-8 rounded-2xl border border-[var(--structuro-border)] bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--structuro-border-soft)]">
-              <div className="h-full w-1/2 rounded-full bg-amber-400/90 transition-all duration-300" />
-            </div>
-            <span className="shrink-0 text-xs font-medium tabular-nums text-[var(--structuro-sub)]">
-              {tr("dayStart.stepProgress")}
+      <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-y-auto bg-[#F1F3F8]">
+        <div className="mx-auto flex min-h-full w-full max-w-sm flex-col items-center justify-center px-4 py-6 pb-20 sm:py-8">
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <img
+              src="/logo-structuro.png"
+              alt=""
+              className="h-6 w-6 shrink-0 rounded-lg object-contain"
+              width={24}
+              height={24}
+              aria-hidden
+            />
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--st-muted-2)]">
+              {tr('dagstart.title').toUpperCase()}
             </span>
           </div>
 
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold tracking-tight text-[var(--structuro-text)]">
-                {dayStartGreetingLine}
-              </h2>
-              <p className="mt-2 mb-6 text-center text-sm italic text-gray-400">
-                &ldquo;{dayStartQuoteLine}&rdquo;
-              </p>
-              <div className="border-t border-gray-100 my-4" aria-hidden />
-              <p className="text-base font-normal text-gray-600">
-                {tr("dayStart.pEnergy")}
-              </p>
-            </div>
-
-            <div className="grid w-full grid-cols-3 gap-2">
-            {energyLevels.map((level) => {
-              const highlighted = hoveredEnergyLevel === level.value;
-              return (
-                <button
-                  key={level.value}
-                  type="button"
-                  onClick={() => {
-                    if (firstTimeOnboarding) setEnergyOnboardingHintHidden(true);
-                    setEnergyLevel(level.value);
-                    startTransition(() => {
-                      setEnergySelected(true);
-                      setShowConfirmation(true);
-                    });
-                    queueMicrotask(() => {
-                      trackEnergyChecked(
-                        level.value === "low"
-                          ? "laag"
-                          : level.value === "high"
-                            ? "hoog"
-                            : "middel"
-                      );
-                      const messages: Record<string, string> = {
-                        low: tr("dayStart.toastPickLow"),
-                        medium: tr("dayStart.toastPickMed"),
-                        high: tr("dayStart.toastPickHigh"),
-                      };
-                      toast(messages[level.value] || tr("dayStart.toastPickDefault"));
-                    });
-                    setTimeout(() => setEnergySelected(false), 1000);
-                    setTimeout(() => setShowConfirmation(false), 2000);
-                  }}
-                  className={`flex flex-col items-center justify-center rounded-2xl border-[1.5px] px-2 py-3 text-center transition-all duration-200 ${
-                    highlighted
-                      ? `${level.selectedBg} ${level.selectedBorder} ${level.selectedRing} -translate-y-px`
-                      : `border bg-white ${level.idleBorder} shadow-sm hover:bg-[var(--structuro-bg)]`
-                  }`}
-                  onMouseEnter={() => setHoveredEnergyLevel(level.value)}
-                  onMouseLeave={() => setHoveredEnergyLevel(null)}
-                >
-                  <span className="text-xl leading-none">{level.emoji}</span>
-                  <span
-                    className={`mt-1.5 text-sm font-bold ${highlighted ? level.textSel : 'text-[var(--structuro-text)]'}`}
-                  >
-                    {level.label}
-                  </span>
-                  <span className="mt-0.5 text-[11px] text-gray-400">{level.sub}</span>
-                </button>
-              );
-            })}
-            </div>
-          </div>
-
-          {showConfirmation && energyLevel ? (
-            <p className="text-center text-sm text-[var(--structuro-blue)] transition-opacity duration-300">
-              {tr("dayStart.confirmLine")}
-            </p>
-          ) : null}
+          <DagstartStep1Card
+            userName={userName}
+            stepLabel={tr('dayStart.stepProgress')}
+            question={tr('dayStart.pEnergy')}
+            locale={locale}
+            greetingMorning={tr('dayStart.greetingMorning')}
+            greetingAfternoon={tr('dayStart.greetingAfternoon')}
+            greetingEvening={tr('dayStart.greetingEvening')}
+            greetingFallbackName={tr('dayStart.greetingFallbackName')}
+            exiting={energyStepExiting}
+            value={
+              energyLevel === 'low' || energyLevel === 'medium' || energyLevel === 'high'
+                ? energyLevel
+                : null
+            }
+            onChange={handleEnergyPick}
+            labels={{
+              low: tr('dayStart.labelLow'),
+              medium: tr('dayStart.labelMed'),
+              high: tr('dayStart.labelHigh'),
+            }}
+            sublabels={{
+              low: tr('dayStart.subLow'),
+              medium: tr('dayStart.subMed'),
+              high: tr('dayStart.subHigh'),
+            }}
+            questionExtra={<InfoButton infoId="energie" />}
+            footer={cycleContext}
+          />
         </div>
-
-        {cycleConsentOn ? (
-          <div className="mt-3 w-full max-w-lg">
-            <CycleEnergyContext
-              consentOn={cycleConsentOn}
-              profile={cycleProfile}
-            />
-          </div>
-        ) : null}
       </div>
     );
   }
 
-  // Als energie is gekozen, toon de taken-selectie
-  const focusTaskIds = new Set(
-    [1, 2, 3]
-      .filter((n) => n <= maxSlots)
-      .map((n) => top3Tasks[n]?.id)
-      .filter(Boolean) as string[]
-  );
-
-  const visibleFocusSlots = slotConfig.filter((s) => s.number <= maxSlots);
-  const remainingFocusSlots = Math.max(0, maxSlots - filledSlots);
-  const hasAllRequiredFocus = filledSlots >= maxSlots;
+  const pillTone =
+    energyLevel === 'low' || energyLevel === 'medium' || energyLevel === 'high'
+      ? energyBannerStyle(energyLevel)
+      : null;
 
   return (
-    <div className="flex w-full max-h-[min(720px,88dvh)] min-h-0 flex-col items-center">
-      <div className="mb-3 flex w-full max-w-lg shrink-0 justify-center">
-        {dagstartHeaderBar}
-      </div>
-      <div className="flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white text-gray-900 shadow-sm [contain:layout]">
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-      <style>{`
-        @keyframes daystart-slot-bounce {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-        .daystart-slot-bounce {
-          animation: daystart-slot-bounce 150ms ease-out;
-        }
-        @keyframes daystart-slot-task-fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .daystart-slot-task-fade-in {
-          animation: daystart-slot-task-fade-in 300ms ease-out;
-        }
-      `}</style>
-      {/* Energie: compacte pill + subtekst (geen gekleurd banner-vlak) */}
-      <div className="mb-4">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700">
-            {energyLevel === "low" && tr("dayStart.pillLow")}
-            {energyLevel === "medium" && tr("dayStart.pillMed")}
-            {energyLevel === "high" && tr("dayStart.pillHigh")}
-          </span>
-          <button
-            type="button"
-            onClick={() => setEnergyLevel(null)}
-            className="shrink-0 text-[11px] text-gray-400 underline-offset-2 hover:text-gray-600 hover:underline"
-          >
-            {tr("dayStart.changeEnergy")}
-          </button>
-        </div>
-        <p className="mt-1.5 text-xs leading-snug text-gray-500">
-          {energyLevel === "low" && tr("dayStart.bannerLowTitle")}
-          {energyLevel === "medium" && tr("dayStart.bannerMedTitle")}
-          {energyLevel === "high" && tr("dayStart.bannerHighTitle")}
-        </p>
-        {isStep2LoadingTasks ? (
-          <span className="mt-1 block text-[10px] text-gray-400">
-            {tr("dayStart.tasksLoading")}
-          </span>
-        ) : null}
-      </div>
-
-      {/* Jouw focuspunten per slot (aantal afhankelijk van energie) */}
-      <div className="mb-4">
-        {firstTimeOnboarding && filledSlots === 0 ? (
-          <p className="text-sm text-gray-500 mb-3 leading-snug">
-            {tr("dayStart.hintTapTask")}
-          </p>
-        ) : null}
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-3">
-          {tr("dayStart.focusPoints")}
-        </p>
-        {top3SanitizeNotice ? (
-          <div className="mb-3 flex items-start justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            <span>{top3SanitizeNotice}</span>
-            <button
-              type="button"
-              onClick={() => setTop3SanitizeNotice(null)}
-              className="shrink-0 rounded px-1 text-amber-700 hover:bg-amber-100"
-              aria-label="Melding sluiten"
-            >
-              ×
-            </button>
-          </div>
-        ) : null}
-        <div className="flex flex-col gap-3">
-          {visibleFocusSlots.map((slot) => {
-            const task = top3Tasks[slot.number];
-            const hasTask = Boolean(task?.id && task?.title);
-            const runSlotAnim = slotPickAnim === slot.number;
-
-            return (
-              <div
-                key={slot.number}
-                ref={(el) => {
-                  focusSlotElRef.current[slot.number] = el;
-                }}
-                className={`rounded-2xl border-[1.5px] border-dashed border-gray-200 bg-white px-3 py-3 sm:px-4 sm:py-4 ${runSlotAnim ? "daystart-slot-bounce" : ""}`}
-              >
-                {hasTask ? (
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
-                      style={{ backgroundColor: slot.color }}
-                    >
-                      {slot.number}
-                    </div>
-                    <div
-                      className={`min-w-0 flex-1 flex h-10 items-center gap-2 rounded-lg border border-gray-200/90 border-l-[3px] border-l-[#3B82F6] bg-[#EFF6FF] px-3 text-sm text-gray-900 ${runSlotAnim ? "daystart-slot-task-fade-in" : ""}`}
-                    >
-                      <span className="min-w-0 flex-1 truncate font-medium">{task.title}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFromSlot(slot.number)}
-                        className="shrink-0 flex h-8 w-8 items-center justify-center rounded-md text-lg leading-none text-gray-600 opacity-80 hover:opacity-100 hover:bg-black/5"
-                        aria-label={tr("dayStart.removeFocusAria")}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
-                        style={{ backgroundColor: slot.color }}
-                      >
-                        {slot.number}
-                      </div>
-                      <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="text-sm font-bold uppercase tracking-wide text-gray-900">{slot.label}</p>
-                        <p className="text-xs leading-snug text-gray-600">{slot.description}</p>
-                      </div>
-                    </div>
-                    <p className="mt-1.5 text-center text-sm text-gray-500">
-                      {tr("dayStart.selectBelow")}
-                    </p>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {remainingFocusSlots > 0 ? (
-          <p className="mt-2 text-center text-xs text-gray-400">
-            {remainingFocusSlots === 1
-              ? tr("dayStart.selectRemainingOne")
-              : tr("dayStart.selectRemainingMany", { n: String(remainingFocusSlots) })}
-          </p>
-        ) : null}
-      </div>
-
-      {/* Suggesties voor vandaag (direct onder focus-slots, geen scroll nodig voor eerste suggesties) */}
-      {isStep2LoadingTasks ? (
-        <p className="mb-4 text-sm text-gray-500">{tr("dayStart.tasksLoading")}</p>
-      ) : showNoTasksDayStart ? (
-        <p className="mb-4 text-sm text-gray-600">{tr("dayStart.noTasksYet")}</p>
-      ) : (
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-            {tr("dayStart.suggestionsTitle")}
-          </p>
-          {mergedSuggestionItems.length > 0 ? (
-            <>
-              <div className="relative">
-                <ul
-                  className={`space-y-2 ${
-                    !showAllSuggestions && hasMoreSuggestions
-                      ? "max-h-[232px] overflow-hidden"
-                      : ""
-                  }`}
-                >
-                {suggestionsToRender.map((item) => {
-                  if (item.kind === 'dagafsluiter') {
-                    const row = item.row;
-                    const e = row.suggestedTaskEnergy || 'medium';
-                    return (
-                      <li key={`dagafsluiter-${row.id}`}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickAddTitle(row.content);
-                            setQuickAddTaskEnergy(
-                              e === 'low' || e === 'medium' || e === 'high' ? e : 'medium'
-                            );
-                            setQuickAddPresetMinutes(15);
-                            setQuickAddCustomMinutesStr('');
-                            setPendingDagafsluiterThoughtId(row.id);
-                          }}
-                          className="flex w-full items-center gap-3 rounded-lg border border-[#E5E7EB] bg-white p-3 text-left transition-colors hover:bg-[#F9FAFB] active:bg-[#F3F4F6]"
-                        >
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ background: getEnergyColor(e) }}
-                            aria-hidden
-                          />
-                          <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">
-                            {row.content}
-                          </span>
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wide shrink-0">
-                            {tr("dayStart.reminderBadge")}
-                          </span>
-                          <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
-                            -
-                          </span>
-                          <span className="shrink-0 text-sm text-gray-400" aria-hidden>
-                            ›
-                          </span>
-                        </button>
-                      </li>
-                    );
+    <div className="dagstart-step2 flex h-dvh min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pt-3 max-[380px]:px-3 md:px-12">
+        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-hidden">
+          <div className="mb-3 shrink-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (energyAdvanceTimerRef.current) {
+                    clearTimeout(energyAdvanceTimerRef.current);
+                    energyAdvanceTimerRef.current = null;
                   }
-                  const task = item.task;
-                  const isPicked = focusTaskIds.has(task.id);
-                  const dur = task.duration || task.estimatedDuration;
-
-                  return (
-                    <li key={task.id}>
-                      <button
-                        type="button"
-                        disabled={isPicked}
-                        onClick={() => {
-                          if (isPicked) return;
-                          void pickTaskFromSuggestions(task);
-                        }}
-                        className={`flex w-full items-center gap-3 rounded-lg border border-[#E5E7EB] bg-white p-3 text-left transition-colors ${
-                          isPicked
-                            ? 'cursor-default opacity-40 text-gray-500'
-                            : 'hover:bg-[#F9FAFB] active:bg-[#F3F4F6]'
-                        } ${
-                          suggestionPickingId === task.id ? 'opacity-0' : 'opacity-100'
-                        }`}
-                      >
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: getEnergyColor(task.energyLevel || 'medium') }}
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1 text-sm text-gray-900 truncate">{task.title}</span>
-                        <span className="text-xs text-gray-500 tabular-nums w-10 text-right shrink-0">
-                          {dur ? `${dur}m` : '-'}
-                        </span>
-                        <span className="shrink-0 text-sm text-gray-400" aria-hidden>
-                          ›
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-                </ul>
-                {!showAllSuggestions && hasMoreSuggestions ? (
-                  <div
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white via-white/90 to-transparent"
-                    aria-hidden
-                  />
-                ) : null}
-              </div>
-              {hasMoreSuggestions ? (
+                  setEnergyStepExiting(false);
+                  if (taskPickMode !== 'choosing') {
+                    resetTaskPickState();
+                  } else {
+                    setDagstartPhase('energy');
+                  }
+                }}
+                className="inline-flex items-center gap-1 rounded-xl border border-[var(--st-line)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--st-muted)] hover:bg-[var(--st-surface-2)] sm:text-sm"
+              >
+                <span aria-hidden>←</span>
+                {tr('dayStart.back')}
+              </button>
+              {energyLevel && pillTone ? (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium sm:text-sm"
+                  style={{ background: pillTone.background, color: pillTone.color }}
+                >
+                  <EnergyIcon kind={energyIconKind} size={13} color={pillTone.color} />
+                  {energyPillLabel}
+                </span>
+              ) : null}
+              {taskPickMode === 'structuro' ? (
                 <button
                   type="button"
-                  onClick={() => setShowAllSuggestions((v) => !v)}
-                  className="mt-2 w-full text-center text-xs text-gray-500 hover:text-gray-700"
+                  onClick={() => {
+                    resetTaskPickState();
+                    setDagstartPhase('energy');
+                  }}
+                  className="ml-auto text-xs font-medium text-[var(--st-blue)] hover:underline"
                 >
-                  {showAllSuggestions ? tr("dayStart.showLess") : tr("dayStart.moreTasks")}
+                  {tr('dayStart.changeEnergy')}
                 </button>
               ) : null}
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">{tr("dayStart.noSuggestions")}</p>
-          )}
-        </div>
-      )}
-
-      {/* Taak toevoegen (eigen energie + duur per taak) */}
-      <div className="mb-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">
-          {tr("dayStart.addTaskSection")}
-        </p>
-        <div className="flex gap-2 items-stretch">
-          <input
-            type="text"
-            value={quickAddTitle}
-            onChange={(e) => setQuickAddTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                if (quickAddFormReady && !noAvailableSlot) void handleQuickAddSubmit();
-              }
-            }}
-            placeholder={tr("dayStart.quickAddPh")}
-            className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
-          />
-          <button
-            type="button"
-            onClick={handleQuickAddSubmit}
-            disabled={quickAddBusy || !energyLevel || !quickAddFormReady || noAvailableSlot}
-            className="shrink-0 h-10 w-10 rounded-lg bg-gray-900 text-white text-lg font-light leading-none hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label={tr("dayStart.quickAddAria")}
-          >
-            +
-          </button>
-        </div>
-        {noAvailableSlot && quickAddTitle.trim().length > 2 ? (
-          <p className="mt-2 text-xs text-amber-700">{tr("dayStart.capacityReached")}</p>
-        ) : null}
-
-        {quickAddTitle.trim().length > 2 ? (
-          <div className="mt-3 space-y-3 animate-fade-in">
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-gray-600">
-                {tr("dayStart.quickEnergy")}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: tr("dayStart.quickRustig"), emoji: "🌙", value: "low" as const },
-                  { label: tr("dayStart.quickNormaal"), emoji: "🙂", value: "medium" as const },
-                  { label: tr("dayStart.quickIntensief"), emoji: "⚡", value: "high" as const },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setQuickAddTaskEnergy(opt.value)}
-                    className={`flex flex-col items-center gap-0.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
-                      quickAddTaskEnergy === opt.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-900'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-base leading-none" aria-hidden>
-                      {opt.emoji}
-                    </span>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
-
-            {quickAddTaskEnergy ? (
-              <div className="space-y-2 animate-fade-in">
-                <p className="text-xs font-medium text-gray-600">{tr("dayStart.quickTime")}</p>
-                <div className="flex gap-2">
-                  {([15, 30, 45] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setQuickAddPresetMinutes(m);
-                        setQuickAddCustomMinutesStr('');
-                      }}
-                      className={`min-w-0 flex-1 rounded-lg border py-2 text-xs font-semibold transition-colors ${
-                        quickAddPresetMinutes === m
-                          ? 'border-blue-600 bg-blue-600 text-white'
-                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      {m} min
-                    </button>
-                  ))}
-                </div>
-                <div>
-                  <label htmlFor="daystart-quick-minutes" className="sr-only">
-                    {tr("dayStart.quickOtherMinutesSr")}
-                  </label>
-                  <input
-                    id="daystart-quick-minutes"
-                    type="number"
-                    min={1}
-                    max={480}
-                    inputMode="numeric"
-                    value={quickAddCustomMinutesStr}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setQuickAddCustomMinutesStr(raw);
-                      if (raw.trim() !== '') {
-                        setQuickAddPresetMinutes(null);
-                      }
-                    }}
-                    onBlur={() => {
-                      setQuickAddCustomMinutesStr((prev) => {
-                        const t = prev.trim();
-                        if (t === '') return '';
-                        const n = parseInt(t, 10);
-                        if (!Number.isFinite(n)) return '';
-                        const clamped = Math.min(480, Math.max(1, n));
-                        return String(clamped);
-                      });
-                    }}
-                    placeholder={tr("dayStart.quickMinPh")}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  />
-                </div>
-              </div>
-            ) : null}
           </div>
-        ) : null}
+
+          {taskPickMode === 'structuro' && energyBanner ? (
+            <div className="mb-3 shrink-0 rounded-xl border border-[var(--st-line)] bg-white px-3 py-2.5 shadow-sm">
+              <p className="text-sm font-semibold text-[var(--st-ink)]">{energyBanner.title}</p>
+              <p className="mt-0.5 text-xs text-[var(--st-muted)]">{energyBanner.sub}</p>
+            </div>
+          ) : null}
+
+          <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto">
+            {isStep2LoadingTasks ? (
+              <p className="py-8 text-center text-sm text-[var(--st-muted)]">
+                {tr('dayStart.tasksLoading')}
+              </p>
+            ) : taskPickMode === 'structuro' ? (
+              <div className="flex flex-col gap-4 pb-2">
+                <DagstartFocusSlots
+                  title={tr('dayStart.focusPoints')}
+                  titleExtra={<InfoButton infoId="max3taken" />}
+                  slots={focusSlotConfigs}
+                  swapLabel={tr('dayStart.swapTask')}
+                  swapAria={tr('dayStart.swapTaskAria')}
+                  swapSlotTarget={structuroSwapSlot}
+                  onSwapClick={(slot) => {
+                    setStructuroSwapSlot((prev) => (prev === slot ? null : slot));
+                  }}
+                />
+                <DagstartSuggestionsList
+                  title={tr('dayStart.suggestionsTitle')}
+                  titleExtra={<InfoButton infoId="legedag" />}
+                  items={suggestionListItems}
+                  emptyHint={tr('dayStart.noSuggestions')}
+                  showAllLabel={tr('dayStart.showAll')}
+                  showLessLabel={tr('dayStart.showLess')}
+                  hasMore={hasMoreSuggestions}
+                  showAll={showAllSuggestions}
+                  onToggleShowAll={() => setShowAllSuggestions((v) => !v)}
+                  pickingId={suggestionPickingId}
+                  focusedIds={focusedTaskIds}
+                  onPick={(item) => {
+                    void handleSuggestionItemPick(item);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
+                {taskPickMode === 'choosing' ? (
+                  <>
+                    <DagstartPickModeSwipeCard
+                      className="w-full max-w-sm"
+                      cardTitle={tr('dayStart.pickModeTitle')}
+                      cardLabel={tr('dayStart.pickModeCardLabel')}
+                      selfTitle={tr('dayStart.pickSelfTitle')}
+                      structuroTitle={tr('dayStart.pickStructuroTitle')}
+                      onPickSelf={handlePickSelf}
+                      onPickStructuro={() => {
+                        void handlePickStructuro();
+                      }}
+                      busy={structuroPickBusy}
+                    />
+                    {structuroPickBusy ? (
+                      <p className="mt-2 text-center text-xs text-[var(--st-muted)]">
+                        {tr('dayStart.structuroPickBusy')}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <DagstartCardStack
+                    className="w-full max-w-sm"
+                    queue={cardQueue}
+                    onDecide={(id, action) => {
+                      void handleCardDecide(id, action);
+                    }}
+                    swipeExhausted={isSwipeExhausted}
+                    allSelected={allTasksSelectedInDock}
+                    allSelectedTitle={tr('dayStart.stackAllSelectedTitle')}
+                    allSelectedSub={tr('dayStart.stackAllSelectedSub')}
+                    exhaustedTitle={tr('dayStart.stackExhaustedTitle')}
+                    exhaustedSub={tr('dayStart.stackExhaustedSub')}
+                    reviewAgainLabel={tr('dayStart.stackReviewAgain')}
+                    addAnywayLabel={tr('dayStart.stackAddAnyway')}
+                    onReviewAgain={handleReviewStackAgain}
+                    addOpen={stackAddOpen}
+                    onAddAnywayClick={() => setStackAddOpen(true)}
+                    onAddSave={handleStackAddFromFlow}
+                    onAddClose={() => setStackAddOpen(false)}
+                    addBusy={stackAddBusy}
+                    emptyTitle={tr('dayStart.cardEmptyTitle')}
+                    emptyHint={tr('dayStart.cardEmptyHint')}
+                    skipLabel={tr('dayStart.cardSkip')}
+                    keepLabel={tr('dayStart.cardKeep')}
+                    asksLabel={tr('dayStart.cardAsks')}
+                    energyAskLabels={{
+                      laag: tr('dayStart.cardAsksLow'),
+                      gem: tr('dayStart.cardAsksMed'),
+                      hoog: tr('dayStart.cardAsksHigh'),
+                    }}
+                    swipeSkipHint={tr('dayStart.swipeSkip')}
+                    swipeKeepHint={tr('dayStart.swipeKeep')}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
+      <div
+        className="z-10 w-full shrink-0 border-t bg-[var(--st-bg)] px-6 pt-2 shadow-[0_-6px_20px_-10px_rgba(14,23,48,0.12)] max-[380px]:px-3 md:px-12"
+        style={{ borderColor: 'var(--st-line)' }}
+      >
+        <div className="mx-auto w-full max-w-2xl">
+          {top3SanitizeNotice ? (
+            <div className="mb-2 flex items-start justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <span>{top3SanitizeNotice}</span>
+              <button
+                type="button"
+                onClick={() => setTop3SanitizeNotice(null)}
+                className="shrink-0 rounded px-1 text-amber-700 hover:bg-amber-100"
+                aria-label="Melding sluiten"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
+
+          <VandaagDock
+            kept={keptCardTasks}
+            total={keptTotalMinutes}
+            onRemove={handleDockRemove}
+            label={tr('dayStart.dockLabel', {
+              n: String(keptCardTasks.length),
+              unit: dockUnit,
+            })}
+            totalLabel={tr('dayStart.dockTotal')}
+            emptyHint={tr('dayStart.dockEmptyHint')}
+            removeAria={tr('dayStart.removeFocusAria')}
+            structuroMode={false}
+          />
+
+          <div className="pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className={`st-btn-primary w-full border-0 px-6 py-4 text-base font-semibold max-[380px]:py-3 max-[380px]:text-sm ${
+                canSubmit
+                  ? ''
+                  : 'cursor-not-allowed !bg-[var(--st-surface-2)] !text-[var(--st-muted)] !shadow-none'
+              }`}
+            >
+              {isSubmitting ? tr('dayStart.saving') : `${ctaText} →`}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="shrink-0 border-t border-gray-100 bg-white px-4 py-3 sm:px-6">
-        {(() => {
-          const canSubmit = Boolean(energyLevel) && !isSubmitting && hasAllRequiredFocus;
-          const ctaText = hasAllRequiredFocus
-            ? existingCheckIn
-              ? tr("dayStart.saveChanges")
-              : tr("dayStart.startDay")
-            : tr("dayStart.pickTasksFirst");
-          return (
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className={`w-full rounded-xl px-6 py-3.5 text-base font-semibold transition-colors ${
-            canSubmit
-              ? "bg-[#3B82F6] text-white shadow-sm hover:bg-blue-700"
-              : "cursor-not-allowed bg-gray-200 text-gray-500"
-          }`}
-        >
-          {isSubmitting ? tr("dayStart.saving") : ctaText}
-        </button>
-          );
-        })()}
-      </div>
-      </div>
+      {deadlineOverflowQueue[0] ? (
+        <DagstartDeadlineOverflowModal
+          taskTitle={String(deadlineOverflowQueue[0].title ?? '')}
+          dueAt={deadlineOverflowQueue[0].dueAt}
+          busy={deadlineOverflowBusy}
+          onPostpone={() => {
+            void handleDeadlineOverflowPostpone();
+          }}
+          onAddAnyway={() => {
+            void handleDeadlineOverflowAdd();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

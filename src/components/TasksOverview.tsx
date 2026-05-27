@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useDeferredValue, startTransition } from "react";
+import React, { useMemo, useState, useEffect, useDeferredValue, startTransition, useCallback } from "react";
 import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
 import {
   trackFocusModeStarted,
@@ -15,7 +15,10 @@ import { useCheckIn } from "../hooks/useCheckIn";
 import { toast } from "./Toast";
 import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
+import DeadlineLabel from "@/components/structuro/DeadlineLabel";
+import { getTaskDeadlineMeta } from "@/lib/taskDeadlineDisplay";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
+import { compareDeadlineTasks } from "@/lib/dagstart/deadlineToday";
 import { isOpenBacklogTask } from "../lib/taskFilters";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
@@ -29,6 +32,9 @@ import {
   Square2StackIcon,
 } from "@heroicons/react/24/outline";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
+import NewTaskFlow from "@/components/newTask/NewTaskFlow";
+import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
+import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
 import { useI18n } from "@/lib/i18n";
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
@@ -79,18 +85,8 @@ export default function TasksOverviewCalm() {
   const deferredTasks = useDeferredValue(tasks);
   const router = useRouter();
   
-  // State voor nieuwe taak input
-  const [taskInput, setTaskInput] = useState("");
-  const [energy, setEnergy] = useState<"laag" | "normaal" | "hoog" | null>(null);
-  /** Vaste keuze 15/30/45 of "custom" voor vrij in te vullen minuten (vierde optie). */
-  const [duration, setDuration] = useState<"15 min" | "30 min" | "45 min" | "custom" | null>(null);
-  const [customMinutes, setCustomMinutes] = useState("");
-  /** null = nog niet gekozen; true = ja, microstappen invullen; false = nee */
-  const [newTaskUseMicroSteps, setNewTaskUseMicroSteps] = useState<boolean | null>(null);
-  const [newTaskMicroTitles, setNewTaskMicroTitles] = useState<string[]>([]);
-  const [newTaskMicroInput, setNewTaskMicroInput] = useState("");
-  const [showVandaagPrompt, setShowVandaagPrompt] = useState<string | null>(null); // taskId die prompt moet tonen
-  const newTaskInfo = useDismissibleTooltip();
+  // State voor nieuwe taak (step-flow)
+  const [newTaskBusy, setNewTaskBusy] = useState(false);
   const openTasksInfo = useDismissibleTooltip();
   const convertTaskInfo = useDismissibleTooltip();
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -124,25 +120,6 @@ export default function TasksOverviewCalm() {
     yellow: false,
     red: false,
   });
-
-  useEffect(() => {
-    if (taskInput.length <= 2) {
-      setEnergy(null);
-      setDuration(null);
-      setCustomMinutes("");
-      setNewTaskUseMicroSteps(null);
-      setNewTaskMicroTitles([]);
-      setNewTaskMicroInput("");
-    }
-  }, [taskInput]);
-
-  useEffect(() => {
-    setDuration(null);
-    setCustomMinutes("");
-    setNewTaskUseMicroSteps(null);
-    setNewTaskMicroTitles([]);
-    setNewTaskMicroInput("");
-  }, [energy]);
 
   useEffect(() => {
     setMicroStepDraft({ title: "", minutes: null, difficulty: null });
@@ -262,170 +239,21 @@ export default function TasksOverviewCalm() {
     toast(tr("tasks.toastMiniToTask"), { durationMs: 3000, replace: true });
   };
 
-  const durationLabelToMinutes = (label: "15 min" | "30 min" | "45 min"): number => {
-    switch (label) {
-      case "15 min":
-        return 15;
-      case "30 min":
-        return 30;
-      case "45 min":
-        return 45;
-      default:
-        return 15;
-    }
-  };
-
-  const parseCustomMinutes = (raw: string): number | null => {
-    const n = parseInt(raw.trim(), 10);
-    if (!Number.isFinite(n) || n < 1 || n > 480) return null;
-    return n;
-  };
-
-  const resolvedDurationMinutes = (): number | null => {
-    if (!duration) return null;
-    if (duration === "custom") return parseCustomMinutes(customMinutes);
-    return durationLabelToMinutes(duration);
-  };
-
-  const durationResolved = resolvedDurationMinutes() !== null;
-
-  const canSubmitNewTask =
-    Boolean(taskInput.trim()) &&
-    Boolean(energy) &&
-    durationResolved &&
-    newTaskUseMicroSteps !== null &&
-    (newTaskUseMicroSteps === false ||
-      (newTaskUseMicroSteps === true && newTaskMicroTitles.length > 0));
-
-  const appendNewTaskMicroStep = () => {
-    const t = newTaskMicroInput.trim();
-    if (!t) {
-      toast(tr("tasks.toastMicroFill"));
-      return;
-    }
-    setNewTaskMicroTitles((prev) => [...prev, t]);
-    setNewTaskMicroInput("");
-  };
-
-  const energyUiToLevel = (e: "laag" | "normaal" | "hoog"): "low" | "medium" | "high" => {
-    if (e === "laag") return "low";
-    if (e === "normaal") return "medium";
-    return "high";
-  };
-
-  const handleSaveTask = async () => {
-    const title = taskInput.trim();
-    const minutes = resolvedDurationMinutes();
-    if (!title || !energy || minutes == null) {
-      if (duration === "custom" && minutes == null) {
-        toast(tr("tasks.toastMicroMinutes"));
-      }
-      return;
-    }
-
-    const energyLevel = energyUiToLevel(energy);
-
-    if (newTaskUseMicroSteps === null) {
-      return;
-    }
-    if (newTaskUseMicroSteps === true && newTaskMicroTitles.length === 0) {
-      toast(tr("tasks.toastMicroNeedOne"));
-      return;
-    }
-
-    const microSteps: MicroStep[] =
-      newTaskUseMicroSteps === true
-        ? newTaskMicroTitles.map((stepTitle) => ({
-            id: microStepId(),
-            title: stepTitle,
-            minutes: null,
-            difficulty: null,
-            done: false,
-          }))
-        : [];
-
+  const handleNewTaskFlowSave = useCallback(async (payload: NewTaskFlowPayload) => {
+    setNewTaskBusy(true);
     try {
-      const taskData = {
-        title,
-        done: false,
-        started: false,
-        priority: null,
-        energyLevel,
-        estimatedDuration: minutes,
-        duration: minutes,
-        notToday: false,
-        source: "regular" as const,
-        microSteps,
-      };
-
-      const newTask = await addTask(taskData);
-
-      setTaskInput("");
-      setEnergy(null);
-      setDuration(null);
-      setCustomMinutes("");
-      setNewTaskUseMicroSteps(null);
-      setNewTaskMicroTitles([]);
-      setNewTaskMicroInput("");
-
+      await addTask(buildTaskFromFlowPayload(payload));
       toast(tr("tasks.toastAdded"));
-
-      setShowVandaagPrompt(newTask.id);
-
-      setTimeout(() => {
-        setShowVandaagPrompt(null);
-      }, 5000);
-
-      track("task_added", { energyLevel });
+      track("task_added", { energyLevel: payload.energy });
       trackTaskCreated();
     } catch (error) {
       console.error("Error adding task:", error);
       toast(tr("tasks.toastAddErr"));
+      throw new Error("task_save_failed");
+    } finally {
+      setNewTaskBusy(false);
     }
-  };
-
-  // Handle: "Vandaag" kiezen voor nieuwe taak
-  const handleAddToVandaag = async (taskId: string) => {
-    // Check of "Vandaag gekozen" al vol is (max 3)
-    const currentVandaagCount = Object.values(priorityTasks).filter(t => t !== null).length;
-    
-    if (currentVandaagCount >= maxSlots) {
-      toast(tr("tasks.toastFocusChosen"));
-      setShowVandaagPrompt(null);
-      return;
-    }
-
-    // Vind de laagste beschikbare priority (achteraan toevoegen)
-    let targetPriority = 1;
-    for (let i = 1; i <= maxSlots; i++) {
-      if (!priorityTasks[i]) {
-        targetPriority = i;
-        break;
-      }
-    }
-
-    try {
-      // KRITIEK: Vind de taak om energyLevel te behouden
-      const taskToUpdate = tasks.find(t => t.id === taskId);
-      const preservedEnergyLevel = taskToUpdate?.energyLevel || 'medium';
-      
-      await updateTask(taskId, { 
-        priority: targetPriority,
-        energyLevel: preservedEnergyLevel // Behoud bestaande energyLevel
-      });
-      setShowVandaagPrompt(null);
-      toast(tr("tasks.toastAddedToday"));
-      track('task_added_to_vandaag', { taskId, priority: targetPriority });
-    } catch (error) {
-      console.error('Error adding to vandaag:', error);
-      toast(tr("tasks.toastAddTodayErr"));
-    }
-  };
-
-  // Handle: "Later" kiezen (geen actie nodig)
-  const handleAddToLater = () => {
-    setShowVandaagPrompt(null);
-  };
+  }, [addTask, tr]);
 
   // Handle: Start Focus Mode
   // KRITIEK: Focus duur moet matchen met de ingeschatte taakduur (duration/estimatedDuration)
@@ -494,19 +322,9 @@ export default function TasksOverviewCalm() {
 
   // Filter: backlog voor energie-kolommen — zelfde basis als isOpenBacklogTask, minus vandaag-focus
   const openTasks = useMemo(() => {
-    const durationOf = (t: any) => {
-      const d = t?.duration ?? t?.estimatedDuration;
-      return typeof d === 'number' && !Number.isNaN(d) ? d : Number.POSITIVE_INFINITY;
-    };
-
     return deferredTasks
       .filter((t: any) => isOpenBacklogTask(t) && !vandaagFocusIds.has(t.id))
-      // Sorteer op ingeschatte duur: kortste eerst, zonder duur onderaan
-      .sort((a: any, b: any) => {
-        const diff = durationOf(a) - durationOf(b);
-        if (diff !== 0) return diff;
-        return String(a?.title || '').localeCompare(String(b?.title || ''));
-      });
+      .sort((a: any, b: any) => compareDeadlineTasks(a, b));
   }, [deferredTasks, vandaagFocusIds]);
 
   // Energy Board (Taken & Prioriteiten): verdeel open taken in 3 kolommen
@@ -561,7 +379,7 @@ export default function TasksOverviewCalm() {
   }, [deferredTasks]);
 
   return (
-    <div className="min-h-full bg-[var(--structuro-bg)] px-5 pb-6 pt-6">
+    <div className="min-h-full bg-[var(--st-bg)] px-5 pb-6 pt-6">
       <main className="mx-auto flex w-full max-w-lg flex-col">
         <header className="mb-6 flex w-full flex-col items-start text-left">
           <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-[#0F172A]">
@@ -600,7 +418,7 @@ export default function TasksOverviewCalm() {
                     <div className="break-words text-[16px] font-bold leading-snug text-gray-500 line-through">
                       {task.title}
                     </div>
-                    <p className="mt-1 text-[13px] tabular-nums text-gray-400">{mins} min</p>
+                    <p className="mt-1 text-[13px] font-mono tabular-nums text-gray-400">{mins} min</p>
                   </div>
                 </div>
               );
@@ -628,7 +446,7 @@ export default function TasksOverviewCalm() {
                     {task.title}
                   </div>
                   <p
-                    className={`mt-1 text-[13px] tabular-nums ${
+                    className={`mt-1 text-[13px] font-mono tabular-nums ${
                       tint.timeMuted ? "text-gray-300" : "text-[#64748B]"
                     }`}
                   >
@@ -704,7 +522,7 @@ export default function TasksOverviewCalm() {
                       {task.title}
                     </span>
                     {task.completedAt ? (
-                      <span className="text-xs tabular-nums text-gray-400">
+                      <span className="text-xs font-mono tabular-nums text-gray-400">
                         {new Date(task.completedAt).toLocaleDateString(dateLocale, {
                           day: "numeric",
                           month: "short",
@@ -755,276 +573,16 @@ export default function TasksOverviewCalm() {
         <div className="mt-10 flex flex-col gap-8">
           <GeparkeerdeGedachtenSection />
 
-      {/* SECTIE 1: Nieuwe taak toevoegen (progressive disclosure) */}
-      <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionNew")}</h2>
-          <div ref={newTaskInfo.wrapperRef} className="relative flex items-center">
-            <button
-              type="button"
-              aria-label={tr("tasks.newInfoAria")}
-              aria-expanded={newTaskInfo.open}
-              className="w-6 h-6 rounded-full border border-gray-200 bg-white/70 text-slate-600 flex items-center justify-center text-[12px] leading-none hover:bg-white transition-colors"
-              onClick={newTaskInfo.toggle}
-            >
-              i
-            </button>
-            {newTaskInfo.open ? (
-              <div
-                className="absolute top-7 right-0 z-50 w-64 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
-                role="tooltip"
-              >
-                <div className="text-[11px] font-semibold text-gray-900 mb-1">
-                  {tr("tasks.newInfoTitle")}
-                </div>
-                <div className="text-[11px] text-gray-600 leading-relaxed">
-                  {tr("tasks.newInfoBodyBefore")}{" "}
-                  <span className="font-semibold">{tr("tasks.newInfoBold")}</span>{" "}
-                  {tr("tasks.newInfoBodyAfter")}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <input
-              type="text"
-              value={taskInput}
-              onChange={(e) => setTaskInput(e.target.value)}
-              className="w-full bg-white rounded-2xl px-4 py-4 text-base text-gray-900 shadow-sm border border-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-blue-300 transition-all"
-              placeholder={tr("tasks.phNewTask")}
-            />
-          </div>
-
-          {taskInput.length > 2 && (
-            <div className="flex gap-2 animate-fade-in">
-              {[
-                { label: tr("tasks.enCalm"), emoji: "🌙", value: "laag" as const },
-                { label: tr("tasks.enNormal"), emoji: "😊", value: "normaal" as const },
-                { label: tr("tasks.enIntense"), emoji: "⚡", value: "hoog" as const },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setEnergy(opt.value)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-1 ${
-                    energy === opt.value
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 border border-gray-200"
-                  }`}
-                >
-                  <span className="text-lg" aria-hidden>
-                    {opt.emoji}
-                  </span>
-                  <span>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {energy && (
-            <div className="flex flex-col gap-2 animate-fade-in">
-              <div className="flex gap-2">
-                {(["15 min", "30 min", "45 min"] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      setDuration(opt);
-                      setCustomMinutes("");
-                    }}
-                    className={`flex-1 min-w-[4rem] py-3 rounded-xl text-sm font-medium transition-all ${
-                      duration === opt
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-600 border border-gray-200"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-
-              <div
-                className={`overflow-hidden rounded-xl border transition-colors ${
-                  duration === "custom"
-                    ? "border-blue-600 ring-2 ring-blue-600/15"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setDuration("custom")}
-                  className={`w-full py-3 px-3 text-center transition-all ${
-                    duration === "custom"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-sm font-medium">{tr("tasks.durCustomLine1")}</span>
-                  <span
-                    className={`mt-0.5 block text-xs font-normal ${
-                      duration === "custom" ? "text-white/90" : "text-gray-500"
-                    }`}
-                  >
-                    {tr("tasks.durCustomLine2")}
-                  </span>
-                </button>
-                {duration === "custom" ? (
-                  <div className="border-t border-gray-100 bg-gray-50/80 px-3 py-3 animate-fade-in">
-                    <label htmlFor="custom-task-minutes" className="sr-only">
-                      {tr("tasks.customMinSr")}
-                    </label>
-                    <input
-                      id="custom-task-minutes"
-                      type="number"
-                      min={1}
-                      max={480}
-                      inputMode="numeric"
-                      value={customMinutes}
-                      onChange={(e) => setCustomMinutes(e.target.value)}
-                      placeholder={tr("tasks.customPh")}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          )}
-
-          {energy && durationResolved && newTaskUseMicroSteps === null ? (
-            <div className="space-y-3 animate-fade-in">
-              <p className="text-sm font-medium text-gray-800">{tr("tasks.microQ")}</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNewTaskUseMicroSteps(true)}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                >
-                  {tr("common.yes")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNewTaskUseMicroSteps(false)}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                >
-                  {tr("common.no")}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {energy && durationResolved && newTaskUseMicroSteps === true ? (
-            <div className="space-y-3 animate-fade-in rounded-2xl border border-violet-200 bg-violet-50/40 px-3 py-3 sm:px-4">
-              <div className="flex items-center gap-2">
-                <Square2StackIcon className="h-4 w-4 shrink-0 text-violet-600" aria-hidden />
-                <span className="text-sm font-semibold text-gray-900">{tr("tasks.microTitle")}</span>
-              </div>
-              {newTaskMicroTitles.length > 0 ? (
-                <ul className="space-y-2">
-                  {newTaskMicroTitles.map((line, idx) => (
-                    <li
-                      key={`${idx}-${line.slice(0, 24)}`}
-                      className="flex items-start gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm text-gray-800 shadow-sm"
-                    >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
-                        {idx + 1}
-                      </span>
-                      <span className="min-w-0 flex-1 leading-snug">{line}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setNewTaskMicroTitles((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label={tr("tasks.microRemoveStepAria")}
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-gray-600">{tr("tasks.microEmpty")}</p>
-              )}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                <input
-                  type="text"
-                  value={newTaskMicroInput}
-                  onChange={(e) => setNewTaskMicroInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      appendNewTaskMicroStep();
-                    }
-                  }}
-                  placeholder={tr("tasks.microPh")}
-                  className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                />
-                <button
-                  type="button"
-                  onClick={() => appendNewTaskMicroStep()}
-                  className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
-                >
-                  {tr("tasks.microAdd")}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setNewTaskUseMicroSteps(false);
-                  setNewTaskMicroTitles([]);
-                  setNewTaskMicroInput("");
-                }}
-                className="text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
-              >
-                {tr("tasks.microSkip")}
-              </button>
-            </div>
-          ) : null}
-
-          {durationResolved ? (
-            <div className="animate-fade-in">
-              <button
-                type="button"
-                onClick={() => void handleSaveTask()}
-                disabled={!canSubmitNewTask}
-                title={
-                  canSubmitNewTask ? undefined : tr("tasks.addTaskTitleDisabled")
-                }
-                className={`w-full rounded-xl py-4 font-semibold text-white transition-all ${
-                  canSubmitNewTask
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "cursor-not-allowed bg-blue-400/60"
-                }`}
-              >
-                {tr("tasks.addTaskCta")}
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        {/* "Vandaag?" prompt */}
-        {showVandaagPrompt && (
-          <div className="mt-3 p-4 bg-gray-50 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 text-sm">
-            <span className="text-gray-600">{tr("tasks.pickTodayQ")}</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleAddToVandaag(showVandaagPrompt)}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
-              >
-                {tr("tasks.todayBtn")}
-              </button>
-              <button
-                onClick={handleAddToLater}
-                className="px-4 py-2 rounded-xl bg-white text-gray-600 text-sm font-medium shadow-sm hover:bg-gray-50 transition-colors"
-              >
-                {tr("tasks.laterBtn")}
-              </button>
-            </div>
-          </div>
-        )}
+      {/* SECTIE 1: Nieuwe taak toevoegen (step-flow) */}
+      <section className="overflow-hidden rounded-3xl bg-white p-0 shadow-sm">
+        <NewTaskFlow
+          mode="inline"
+          variant="default"
+          showClose={false}
+          saving={newTaskBusy}
+          onSave={handleNewTaskFlowSave}
+          className="shadow-none"
+        />
       </section>
 
       {/* SECTIE 4: Alle open taken – zwevende kaarten */}
@@ -1120,7 +678,7 @@ export default function TasksOverviewCalm() {
                         <span className={`shrink-0 text-sm font-semibold ${col.titleClass}`}>
                           {col.title}
                         </span>
-                        <span className="tabular-nums rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600">
+                        <span className="font-mono tabular-nums rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600">
                           {list.length}
                         </span>
                       </div>
@@ -1140,6 +698,7 @@ export default function TasksOverviewCalm() {
                       {list.map((task: any) => {
                         const isExpanded = expandedTaskId === task.id;
                         const energyLevel = task.energyLevel || 'medium';
+                        const deadlineMeta = getTaskDeadlineMeta(task.dueAt, locale);
                         const isCompleting = completingTaskIds.has(task.id);
                         const isPop = checkboxPopId === task.id;
                         const isEasyColumn = col.key === "green";
@@ -1229,17 +788,30 @@ export default function TasksOverviewCalm() {
                                   </div>
                                   <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
                                     {(task.duration || task.estimatedDuration) ? (
-                                      <span className="tabular-nums text-gray-400">
+                                      <span className="font-mono tabular-nums text-gray-400">
                                         {task.duration || task.estimatedDuration} min
                                       </span>
                                     ) : null}
-                                    {(task.duration || task.estimatedDuration) && microCount > 0 ? (
+                                    {(task.duration || task.estimatedDuration) && deadlineMeta ? (
+                                      <span className="text-gray-300" aria-hidden>
+                                        ·
+                                      </span>
+                                    ) : null}
+                                    {deadlineMeta ? (
+                                      <DeadlineLabel
+                                        deadline={deadlineMeta.label}
+                                        overdue={deadlineMeta.overdue}
+                                        compact
+                                      />
+                                    ) : null}
+                                    {((task.duration || task.estimatedDuration) || deadlineMeta) &&
+                                    microCount > 0 ? (
                                       <span className="text-gray-300" aria-hidden>
                                         ·
                                       </span>
                                     ) : null}
                                     {microCount > 0 ? (
-                                      <span className="tabular-nums text-[#6B7280]">
+                                      <span className="font-mono tabular-nums text-[#6B7280]">
                                         {tr("tasks.microStepsCollapsed", {
                                           n: String(microCount),
                                         })}
@@ -1273,7 +845,7 @@ export default function TasksOverviewCalm() {
                                           {tr("tasks.microPanelTitle")}
                                         </span>
                                         {ms.length > 0 ? (
-                                          <span className="text-xs tabular-nums text-gray-500">
+                                          <span className="text-xs font-mono tabular-nums text-gray-500">
                                             {msDone}/{ms.length}
                                           </span>
                                         ) : null}

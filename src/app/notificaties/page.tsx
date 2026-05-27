@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import AppLayout from "../../components/layout/AppLayout";
 import { useTaskContext, Task } from "../../context/TaskContext";
 import { requestNotificationPermission, testReminder } from "../../components/ReminderEngine";
 import { toast } from "../../components/Toast";
@@ -140,7 +139,7 @@ export default function HerinneringenPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div
         className="min-h-full px-4 sm:px-6 pt-14 sm:pt-16 pb-6 sm:pb-8"
         style={{
@@ -727,6 +726,6 @@ export default function HerinneringenPage() {
           </section>
         </main>
       </div>
-    </AppLayout>
+    </>
   );
 }

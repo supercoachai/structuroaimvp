@@ -1,22 +1,27 @@
 import type { Metadata } from 'next'
-import { DM_Sans } from 'next/font/google'
+import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { AppProviders } from '@/components/AppProviders'
+import { STRUCTURO_LOCALE_STORAGE_KEY } from '@/lib/i18n/types'
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-structuro',
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
   title: 'Structuro',
   description: 'AI-powered platform voor volwassenen met ADHD-achtige kenmerken',
   manifest: '/manifest.json',
-  icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -39,15 +44,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" translate="no">
+    <html lang="nl" translate="no" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k=${JSON.stringify(STRUCTURO_LOCALE_STORAGE_KEY)};var l=localStorage.getItem(k);if(l==="en"||l==="nl")document.documentElement.lang=l;}catch(e){}})();`,
+          }}
+        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta
           name="theme-color"
           media="(prefers-color-scheme: light)"
-          content="#E8F0FE"
+          content="#F0F2F8"
         />
         <meta
           name="theme-color"
@@ -55,8 +64,8 @@ export default function RootLayout({
           content="#1C2B4A"
         />
       </head>
-      <body className={`${dmSans.className} min-h-[100dvh] antialiased`}>
-        <div className="relative flex min-h-[100dvh] w-full min-w-0 max-w-[100vw] flex-col overflow-x-hidden bg-[var(--structuro-bg)]">
+      <body className={`${inter.className} antialiased`}>
+        <div className="flex h-dvh min-h-dvh w-full flex-col overflow-hidden bg-[var(--st-bg)]">
           <AppProviders>{children}</AppProviders>
         </div>
       </body>
