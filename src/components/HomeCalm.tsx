@@ -43,6 +43,7 @@ export default function HomeCalm() {
   const [heroMicroSaving, setHeroMicroSaving] = useState(false);
   const [heroTaskIndex, setHeroTaskIndex] = useState(0);
   const [dateTimeLine, setDateTimeLine] = useState('');
+  const [greetingWord, setGreetingWord] = useState('');
   const homeFitViewportRef = useRef<HTMLDivElement | null>(null);
   const homeFitContentRef = useRef<HTMLDivElement | null>(null);
 
@@ -212,13 +213,6 @@ export default function HomeCalm() {
     }
   };
 
-  const greetingWord = useMemo(() => {
-    const period = getDayStartTimeOfDay();
-    if (period === 'morning') return t('home.greetingMorning');
-    if (period === 'afternoon') return t('home.greetingAfternoon');
-    return t('home.greetingEvening');
-  }, [t]);
-
   useEffect(() => {
     const format = () => {
       const now = new Date();
@@ -234,11 +228,16 @@ export default function HomeCalm() {
       });
       const cap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
       setDateTimeLine(`${cap} · ${timePart}`);
+
+      const period = getDayStartTimeOfDay(now);
+      if (period === 'morning') setGreetingWord(t('home.greetingMorning'));
+      else if (period === 'afternoon') setGreetingWord(t('home.greetingAfternoon'));
+      else setGreetingWord(t('home.greetingEvening'));
     };
     format();
     const id = window.setInterval(format, 30_000);
     return () => window.clearInterval(id);
-  }, [locale]);
+  }, [locale, t]);
 
   // Helper: Haal energie-status op van vandaag (useCheckIn levert al vandaag)
   const getTodayEnergyStatus = () => {
@@ -418,8 +417,9 @@ export default function HomeCalm() {
               color: 'var(--st-muted)',
               marginBottom: 2,
             }}
+            suppressHydrationWarning
           >
-            {greetingWord},
+            {greetingWord ? `${greetingWord},` : '\u00A0'}
           </p>
           <div className="flex items-center justify-between gap-2 sm:gap-3">
             <h1
