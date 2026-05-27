@@ -41,6 +41,17 @@ function canAccessWithoutActiveSubscription(pathname: string): boolean {
   return false;
 }
 
+/** Publieke API-routes (geen login, geen redirect). */
+function isPublicApiRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/waitlist/join") ||
+    pathname.startsWith("/api/analytics/waitlist-conversion") ||
+    pathname.startsWith("/api/stripe/webhook") ||
+    pathname.startsWith("/api/stripe/checkout") ||
+    pathname.startsWith("/api/checkout/create-session")
+  );
+}
+
 /** Routes zonder sessie die geen redirect naar login krijgen (legal, launch-wachtlijst). */
 function isAnonymousPublicPage(pathname: string): boolean {
   if (
@@ -132,7 +143,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/posthog-otel-logs-test") ||
     pathname.startsWith("/api/posthog-error-test") ||
-    pathname.startsWith("/api/stripe/webhook") ||
+    isPublicApiRoute(pathname) ||
     pathname === "/favicon.ico" ||
     pathname === "/sw.js" ||
     pathname === "/manifest.json"
@@ -258,7 +269,7 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
 
   if (!hasSession) {
-    if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname)) {
+    if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname) || isPublicApiRoute(pathname)) {
       return supabaseResponse;
     }
     const url = request.nextUrl.clone();
@@ -441,6 +452,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/posthog-otel-logs-test") ||
     pathname.startsWith("/api/posthog-error-test") ||
+    isPublicApiRoute(pathname) ||
     pathname === "/sw.js" ||
     pathname === "/manifest.json"
   ) {

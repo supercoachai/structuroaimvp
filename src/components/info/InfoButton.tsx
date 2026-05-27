@@ -13,6 +13,8 @@ type InfoButtonProps = {
   className?: string;
   /** Eerste bezoek: uitleg automatisch openen. Zet uit als er al een andere auto-intro op het scherm staat. */
   autoIntro?: boolean;
+  /** Externe pulse (bijv. bij binnenkomst op een onboarding-stap), zonder panel te openen. */
+  pulse?: boolean;
 };
 
 const INTRO_PULSE_MS = 3000;
@@ -22,6 +24,7 @@ export default function InfoButton({
   variant = "default",
   className = "",
   autoIntro = true,
+  pulse = false,
 }: InfoButtonProps) {
   const { locale, t } = useI18n();
   const { ready, isDismissed, dismiss } = useInfoDismissals();
@@ -72,7 +75,7 @@ export default function InfoButton({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-transparent text-xs font-semibold leading-none transition-colors ${buttonClass} ${
-          introPulse ? pulseClass : ""
+          introPulse || pulse ? pulseClass : ""
         } ${className}`.trim()}
         aria-label={t("info.openAria", { title: content.title })}
         aria-expanded={open}

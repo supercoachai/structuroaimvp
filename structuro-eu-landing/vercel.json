@@ -29,6 +29,10 @@
       "destination": "/wachtlijst/index.html"
     },
     {
+      "source": "/cyclus",
+      "destination": "/cyclus/index.html"
+    },
+    {
       "source": "/ph/static/:path*",
       "destination": "https://eu-assets.i.posthog.com/static/:path*"
     },

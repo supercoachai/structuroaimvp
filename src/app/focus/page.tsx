@@ -25,7 +25,12 @@ import { getTaskDurationMinutes } from '@/lib/taskDurationMinutes';
 import { getFirstOpenTop3Task } from '@/lib/top3CurrentTask';
 import { useI18n } from '@/lib/i18n';
 import { captureProductEvent } from '@/lib/posthog/track';
-import { focusPlannedMinutesBucket } from '@/lib/posthog/durationBuckets';
+import {
+  captureFocusSessionAbandoned,
+  captureFocusSessionCompleted,
+  captureFocusSessionEndedEarly,
+  type FocusSessionOutcomePayload,
+} from '@/lib/posthog/focusSessionEvents';
 import { useViewportContentFit } from '@/hooks/useViewportContentFit';
 import InfoButton from '@/components/info/InfoButton';
 import {
@@ -139,11 +144,38 @@ function FocusContent() {
   const endAtRef = useRef<number | null>(null);
   /** Laatste taak waarvan we de geplande minuten naar state hebben gesynchroniseerd (geen overschrijven na verlenging / zelfde sessie). */
   const lastSyncedTaskIdRef = useRef<string | null>(null);
+  const focusSessionOutcomeRef = useRef<'idle' | 'active' | 'captured'>('idle');
+  const focusOutcomePayloadRef = useRef<FocusSessionOutcomePayload>({
+    plannedMinutes: 15,
+    timeLeftSec: 15 * 60,
+    taskId: null,
+    energy: 'medium',
+  });
 
   const [showTimeUpPrompt, setShowTimeUpPrompt] = useState(false);
   const [extendMinutes, setExtendMinutes] = useState<number>(10);
   const [timeUpQuote, setTimeUpQuote] = useState<string>('');
   const focusOpenedTaskIdRef = useRef<string | null>(null);
+
+  focusOutcomePayloadRef.current = {
+    plannedMinutes: duration,
+    timeLeftSec: timeLeft,
+    taskId: currentTask?.id ?? null,
+    energy: (currentTask?.energyLevel as 'low' | 'medium' | 'high') ?? 'medium',
+  };
+
+  const markFocusSessionActive = useCallback(() => {
+    focusSessionOutcomeRef.current = 'active';
+  }, []);
+
+  const captureFocusOutcomeOnce = useCallback(
+    (capture: (payload: FocusSessionOutcomePayload) => void) => {
+      if (focusSessionOutcomeRef.current !== 'active') return;
+      focusSessionOutcomeRef.current = 'captured';
+      capture(focusOutcomePayloadRef.current);
+    },
+    []
+  );
 
   const markFocusOpened = useCallback(async () => {
     if (!currentTask?.id) return;
@@ -168,6 +200,28 @@ function FocusContent() {
     void markFocusOpened();
   }, [currentTask?.id, markFocusOpened]);
 
+  useEffect(() => {
+    return () => {
+      if (focusSessionOutcomeRef.current !== 'active') return;
+      focusSessionOutcomeRef.current = 'captured';
+      captureFocusSessionAbandoned({
+        ...focusOutcomePayloadRef.current,
+        reason: 'navigation',
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isRunning && !isPaused) return;
+    const onPageHide = () => {
+      captureFocusOutcomeOnce((payload) =>
+        captureFocusSessionAbandoned({ ...payload, reason: 'navigation' })
+      );
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, [isRunning, isPaused, captureFocusOutcomeOnce]);
+
   const SluitenButton = () => (
     <button
       type="button"
@@ -177,6 +231,9 @@ function FocusContent() {
             tr("focus.closeConfirm")
           );
           if (!ok) return;
+          captureFocusOutcomeOnce((payload) =>
+            captureFocusSessionAbandoned({ ...payload, reason: 'navigation' })
+          );
           await markFocusExitedWithoutCompletion();
         }
         router.push('/');
@@ -223,6 +280,7 @@ function FocusContent() {
           (currentTask?.energyLevel as "low" | "medium" | "high") ?? "medium",
           getTaskDurationMinutes(currentTask ?? null) ?? duration
         );
+        markFocusSessionActive();
         captureProductEvent("focus_session_started");
       }, 500);
       return () => clearTimeout(t);
@@ -264,16 +322,15 @@ function FocusContent() {
         setTimeUpQuote(getRandomAdhdPlanningQuote(Date.now(), locale));
         track("ignite_complete", { taskTitle, duration });
         trackFocusCompleted(duration * 60);
-        captureProductEvent("focus_session_completed", {
-          duration_bucket: focusPlannedMinutesBucket(duration),
-          completed_normally: true,
-        });
+        captureFocusOutcomeOnce((payload) =>
+          captureFocusSessionCompleted({ ...payload, timeLeftSec: 0 })
+        );
       }
     };
     tick();
     const timer = setInterval(tick, 250);
     return () => clearInterval(timer);
-  }, [isRunning, isPaused, timeLeft, taskTitle, duration, locale]);
+  }, [isRunning, isPaused, timeLeft, taskTitle, duration, locale, captureFocusOutcomeOnce]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -363,6 +420,9 @@ function FocusContent() {
 
   const stopSession = () => {
     if (isRunning || isPaused) {
+      captureFocusOutcomeOnce((payload) =>
+        captureFocusSessionAbandoned({ ...payload, reason: 'user_cancelled' })
+      );
       trackFocusAbandoned(Math.max(0, duration * 60 - timeLeft));
       void markFocusExitedWithoutCompletion();
     }
@@ -388,7 +448,12 @@ function FocusContent() {
     if (!currentTask?.id || nuNietBusy) return;
     setNuNietBusy(true);
     try {
-      if (isRunning || isPaused || showTimeUpPrompt) {
+      if (isRunning || isPaused) {
+        captureFocusOutcomeOnce((payload) =>
+          captureFocusSessionAbandoned({ ...payload, reason: 'parked' })
+        );
+        await markFocusExitedWithoutCompletion();
+      } else if (showTimeUpPrompt) {
         await markFocusExitedWithoutCompletion();
       }
       const { remainingTop3Ids } = await parkFocusTaskSilently(
@@ -449,10 +514,12 @@ function FocusContent() {
         (currentTask.energyLevel as "low" | "medium" | "high") ?? "medium"
       );
       trackFocusCompleted(Math.max(0, duration * 60 - timeLeft));
-      captureProductEvent("focus_session_completed", {
-        duration_bucket: focusPlannedMinutesBucket(duration),
-        completed_normally: false,
-      });
+      captureFocusOutcomeOnce((payload) =>
+        captureFocusSessionEndedEarly({
+          ...payload,
+          reason: 'manual_complete',
+        })
+      );
       track('task_completed_early', {
         taskId: currentTask.id,
         minutesFocused: Math.max(0, Math.round(((duration * 60 - timeLeft) / 60))),

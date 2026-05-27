@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 import { useI18n } from "@/lib/i18n";
+import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
 
 export function CookieBanner() {
+  const pathname = usePathname();
   const { consent, consentReady, grant, deny } = useConsent();
   const { t } = useI18n();
 
+  if (isWaitlistMarketingPath(pathname)) return null;
   if (!consentReady || consent !== "unknown") return null;
 
   return (

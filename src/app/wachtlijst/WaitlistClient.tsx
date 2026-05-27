@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { joinWaitlist, type JoinWaitlistResult } from "./actions";
 import { useI18n } from "@/lib/i18n";
+import { captureMarketingEvent } from "@/lib/posthog/track";
 
 /** Marketing site (landing); los van de Next-app waar je wordt ingelogd. */
 const STRUCTURO_EU_ORIGIN = "https://www.structuro.eu";
@@ -69,6 +70,8 @@ export default function WaitlistClient({ initialSource }: { initialSource: strin
     fd.set("name", nameTrimmed);
     fd.set("email", emailTrimmed.toLowerCase());
     fd.set("source", initialSource);
+
+    captureMarketingEvent("waitlist_signup_started", { source: initialSource, site: "ai" });
 
     setBusy(true);
     let result: JoinWaitlistResult;

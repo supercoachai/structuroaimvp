@@ -20,6 +20,7 @@
     "start:prod": "npm run build && npm run start",
     "lint": "next lint",
     "test:task-put": "npx --yes tsx src/lib/buildTaskPutDbUpdates.test.ts",
+    "test:focus-events": "npx --yes tsx src/lib/posthog/focusSessionEvents.test.ts",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",

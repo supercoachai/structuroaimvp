@@ -100,6 +100,10 @@ export default function UitlegPage() {
                   <li>
                     <span className="font-semibold">{tr("uitleg.tipSteerTitle")}</span> {tr("uitleg.tipSteerBody")}
                   </li>
+                  <li>
+                    <span className="font-semibold">{tr("uitleg.tipPickTitle")}</span>
+                    {tr("uitleg.tipPickBody")}
+                  </li>
                 </ul>
               </div>
               <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-slate-50 border border-gray-200 items-center justify-center text-xl flex-shrink-0">
@@ -108,35 +112,19 @@ export default function UitlegPage() {
             </div>
           </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.agendaTitle")}</h2>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li>
-                  <span className="font-semibold">{tr("uitleg.agenda1a")}</span> {tr("uitleg.agenda1b")}
-                </li>
-                <li>
-                  <span className="font-semibold">{tr("uitleg.agenda2a")}</span> {tr("uitleg.agenda2b")}
-                </li>
-                <li>
-                  <span className="font-semibold">{tr("uitleg.agenda3a")}</span> {tr("uitleg.agenda3b")}
-                </li>
-              </ul>
-            </div>
-            <div className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.rewardsTitle")}</h2>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li>
-                  <span className="font-semibold">{tr("uitleg.rewards1a")}</span> {tr("uitleg.rewards1b")}
-                </li>
-                <li>
-                  <span className="font-semibold">{tr("uitleg.rewards2a")}</span> {tr("uitleg.rewards2b")}
-                </li>
-                <li>
-                  <span className="font-semibold">{tr("uitleg.rewards3a")}</span> {tr("uitleg.rewards3b")}
-                </li>
-              </ul>
-            </div>
+          <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">{tr("uitleg.rewardsTitle")}</h2>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li>
+                <span className="font-semibold">{tr("uitleg.rewards1a")}</span> {tr("uitleg.rewards1b")}
+              </li>
+              <li>
+                <span className="font-semibold">{tr("uitleg.rewards2a")}</span> {tr("uitleg.rewards2b")}
+              </li>
+              <li>
+                <span className="font-semibold">{tr("uitleg.rewards3a")}</span> {tr("uitleg.rewards3b")}
+              </li>
+            </ul>
           </section>
 
           <section className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">

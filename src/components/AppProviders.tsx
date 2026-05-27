@@ -19,8 +19,10 @@ import { PostHogPageviews } from "@/components/posthog/PostHogPageviews";
 import { PostHogAuthEffects } from "@/components/posthog/PostHogAuthEffects";
 import { SignupAttributionCapture } from "@/components/SignupAttributionCapture";
 import { CookieBanner } from "@/components/posthog/CookieBanner";
+import { MarketingWaitlistConsent } from "@/components/posthog/MarketingWaitlistConsent";
 import AppLayout from "@/components/layout/AppLayout";
 import { isBarePagePath, shouldUseAppShell } from "@/lib/appShell";
+import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
 
 /** Eenmalig: oude key die focusduur bevatte; duration komt nu alleen uit URL + taak. */
 function RemoveLegacyFocusDurationKey() {
@@ -48,13 +50,6 @@ function GaSessionAbandonListener() {
   }, []);
 
   return null;
-}
-
-/**
- * Wachtlijst-/inschrijfpagina: geen TaskProvider (geen sync met ingelogde app-state).
- */
-function isWaitlistMarketingPath(pathname: string | null): boolean {
-  return isBarePagePath(pathname) && Boolean(pathname?.startsWith('/wachtlijst') || pathname?.startsWith('/inschrijven'));
 }
 
 function ConditionalAppShell({ children }: { children: ReactNode }) {
@@ -86,6 +81,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <I18nProvider>
         <ConsentProvider>
           <PostHogProvider>
+            <MarketingWaitlistConsent />
             <Suspense fallback={null}>
               <PostHogPageviews />
             </Suspense>

@@ -3,7 +3,7 @@ import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 
 export const CREATE_WELCOME_TASK_STORAGE_KEY = "create_welcome_task";
 
-const WELCOME_TASK_TITLE = "Abonnement opzeggen";
+export const WELCOME_TASK_TITLE = "Abonnement opzeggen";
 
 const WELCOME_MICRO_STEP_TITLES = [
   "Bedenk welk abonnement je wilt opzeggen",

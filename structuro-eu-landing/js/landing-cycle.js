@@ -70,14 +70,14 @@
       en: { name: 'Ovulation', days: 'Day 14', sub: 'Peak dopamine, highest clarity', str: 'Structuro: room for hard tasks' },
       nlInfo: {
         adhd:
-          'Oestrogeen piekt, dopamine en serotonine pieken mee. Executiefuncties zoals planning en focus zijn voor veel mensen op hun sterkst.',
+          'Oestrogeen piekt, dopamine en serotonine pieken mee. Executiefuncties zoals focus en starten zijn voor veel mensen op hun sterkst.',
         voel:
           'Vaak de beste dag van de maand. Taken die normaal wilskracht kosten, kunnen vanzelf gaan. Hoofd voelt helder, energie stabieler dan de rest van de cyclus.',
         str: 'Ruimte voor de zwaarste taak op je lijst. Plan lastige gesprekken of complexe taken op of rondom deze dag.',
       },
       enInfo: {
         adhd:
-          'Estrogen peaks, and dopamine and serotonin peak with it. Executive functions like planning and focus are at their strongest for many people.',
+          'Estrogen peaks, and dopamine and serotonin peak with it. Executive functions like focus and getting started are at their strongest for many people.',
         voel:
           'Often the best day of the month. Tasks that normally drain willpower can flow easily. Mind feels clear, energy more stable than the rest of the cycle.',
         str: 'Room for the hardest task on your list. Schedule difficult conversations or complex work on or around this day.',

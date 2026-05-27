@@ -34,6 +34,8 @@ export function ensurePostHogClientInitialized(): boolean {
     api_host: apiHost,
     ui_host: "https://eu.posthog.com",
     person_profiles: "identified_only",
+    /** Na opt_out: privacyvriendelijke telling zonder cookies (Paths, pageviews). */
+    cookieless_mode: "on_reject",
     capture_performance: {
       web_vitals: false,
     },
@@ -64,6 +66,7 @@ export function applyPostHogAnalyticsConsent(granted: boolean): void {
       });
       registerSiteGroup();
     } else {
+      posthog.opt_out_capturing();
       posthog.set_config({
         capture_pageleave: false,
         capture_performance: { web_vitals: false },

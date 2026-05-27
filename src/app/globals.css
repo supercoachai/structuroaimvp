@@ -315,6 +315,29 @@ body {
   padding: 14px;
 }
 
+.st-cycle-card--onboarding {
+  padding: 14px;
+}
+
+.st-cycle-card--onboarding .st-cycle-head {
+  padding: 0;
+}
+
+.st-cycle-card--onboarding-footnote {
+  margin: 12px 0 0;
+  padding: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--st-muted-2);
+}
+
+.st-cycle-onboarding-match {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-start;
+}
+
 .st-cycle-head {
   display: flex;
   align-items: stretch;

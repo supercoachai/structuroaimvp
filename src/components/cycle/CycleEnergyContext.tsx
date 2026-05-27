@@ -13,11 +13,19 @@ import {
   type CyclePhaseKey,
 } from "@/lib/cycle/cycleContextModel";
 import { getCycleEnergyContext } from "@/lib/cycle/cycleDisplayContext";
+import {
+  getEnergyPhaseMatch,
+  type EnergyLevel,
+} from "@/lib/cycle/getEnergyPhaseMatch";
 import type { CycleProfile } from "@/lib/cycle/types";
 
 export type CycleEnergyContextProps = {
   consentOn: boolean;
   profile: CycleProfile;
+  /** Onboarding: geen uitklapbare fase-legend, statische footnote. */
+  onboardingCompact?: boolean;
+  /** Gekozen energie voor observatie-tag (geen sturing). */
+  chosenEnergy?: EnergyLevel | null;
 };
 
 function phaseRangeLabel(
@@ -98,6 +106,8 @@ function CycleContextRing({
 export default function CycleEnergyContext({
   consentOn,
   profile,
+  onboardingCompact = false,
+  chosenEnergy = null,
 }: CycleEnergyContextProps) {
   const { t } = useI18n();
   const [introPulse, setIntroPulse] = useState(true);
@@ -145,6 +155,40 @@ export default function CycleEnergyContext({
   const active = getActivePhaseStyle(view.phases, view.activePhase);
   const phaseKey = view.activePhase as CyclePhaseKey;
 
+  const energyMatch = chosenEnergy
+    ? getEnergyPhaseMatch(phaseKey, chosenEnergy)
+    : null;
+
+  const matchTagStyle = energyMatch
+    ? energyMatch.match === "match"
+      ? {
+          background: "rgba(16,185,129,0.12)",
+          color: "#047857",
+          border: "1px solid rgba(16,185,129,0.35)",
+        }
+      : energyMatch.match === "soft-mismatch"
+        ? {
+            background: "rgba(245,158,11,0.12)",
+            color: "#B45309",
+            border: "1px solid rgba(245,158,11,0.35)",
+          }
+        : {
+            background: "rgba(244,63,94,0.1)",
+            color: "#BE123C",
+            border: "1px solid rgba(244,63,94,0.3)",
+          }
+    : null;
+
+  const matchTagLabel = energyMatch
+    ? energyMatch.match === "match"
+      ? t("cycle.energyMatchTag_match")
+      : energyMatch.match === "strong-mismatch"
+        ? t("cycle.energyMatchTag_strong")
+        : energyMatch.direction === "higher"
+          ? t("cycle.energyMatchTag_softHigher")
+          : t("cycle.energyMatchTag_softLower")
+    : null;
+
   const cardStyle = {
     "--st-cycle-color": active.color,
     "--st-cycle-tint": active.tint,
@@ -152,7 +196,9 @@ export default function CycleEnergyContext({
 
   return (
     <div
-      className={`st-cycle-card ${introPulse ? "st-cycle-context-pulse" : ""}`}
+      className={`st-cycle-card ${introPulse ? "st-cycle-context-pulse" : ""}${
+        onboardingCompact ? " st-cycle-card--onboarding" : ""
+      }`}
       style={cardStyle}
     >
       <div className="st-cycle-head">
@@ -185,13 +231,33 @@ export default function CycleEnergyContext({
         </div>
       </div>
 
-      <div className="st-cycle-advice">
-        <span className="st-cycle-advice-label">{t("cycle.contextAdviceLabel")}</span>
-        <span className="st-cycle-advice-text">{t(`cycle.contextAdvice_${phaseKey}`)}</span>
-        <span className="st-cycle-advice-chip">{t(`cycle.contextChip_${phaseKey}`)}</span>
-      </div>
+      {onboardingCompact ? (
+        <>
+          {energyMatch && matchTagLabel && matchTagStyle ? (
+            <div className="st-cycle-onboarding-match">
+              <span className="st-cycle-advice-chip" style={matchTagStyle}>
+                {matchTagLabel}
+              </span>
+            </div>
+          ) : null}
+          <p className="st-cycle-card--onboarding-footnote">
+            {t("cycle.contextOnboardingLegendNote")}
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="st-cycle-advice">
+            <span className="st-cycle-advice-text">{t(`cycle.contextAdvice_${phaseKey}`)}</span>
+            {energyMatch && matchTagLabel && matchTagStyle ? (
+              <span className="st-cycle-advice-chip" style={matchTagStyle}>
+                {matchTagLabel}
+              </span>
+            ) : (
+              <span className="st-cycle-advice-chip">{t(`cycle.contextChip_${phaseKey}`)}</span>
+            )}
+          </div>
 
-      <details className="st-cycle-disclosure">
+          <details className="st-cycle-disclosure">
         <summary>
           <span className="st-cycle-summary-shut">{t("cycle.contextLegendExpand")}</span>
           <span className="st-cycle-summary-open">{t("cycle.contextLegendCollapse")}</span>
@@ -236,6 +302,8 @@ export default function CycleEnergyContext({
           <p className="st-cycle-legend-note">{t("cycle.contextLegendNote")}</p>
         </div>
       </details>
+        </>
+      )}
     </div>
   );
 }

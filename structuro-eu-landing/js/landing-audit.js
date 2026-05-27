@@ -1,0 +1,100 @@
+(function () {
+  'use strict';
+
+  var LAUNCH = new Date('2026-05-31T00:00:00+02:00');
+
+  function daysUntilLaunch() {
+    var now = new Date();
+    var diff = LAUNCH.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
+  function isPreLaunch() {
+    return new Date() < LAUNCH;
+  }
+
+  function updateCountdown() {
+    var els = document.querySelectorAll('[data-countdown-days]');
+    if (!els.length) return;
+    var days = daysUntilLaunch();
+    els.forEach(function (el) {
+      el.textContent = String(days);
+    });
+    var banner = document.getElementById('launchBanner');
+    if (banner) {
+      banner.hidden = !isPreLaunch();
+    }
+  }
+
+  function updateCtaCopy() {
+    var pre = isPreLaunch();
+    var lang = window.currentLang || 'nl';
+    var preText = lang === 'en' ? 'Claim your spot for May 31' : 'Pak je plek voor 31 mei';
+    var postText = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
+    var text = pre ? preText : postText;
+    document.querySelectorAll('[data-cta-dynamic]').forEach(function (el) {
+      el.textContent = text;
+    });
+  }
+
+  var ENERGY_COPY = {
+    nl: {
+      low: 'Met lage energie kiest Structuro één taak voor vandaag, omschreven zo klein mogelijk. We delen samen deze taak op in kleine stapjes.',
+      normal: 'Met normale energie stel je 2 taken voor vandaag. Geen weekplan, geen schuld over wat je niet doet.',
+      high: 'Met hoge energie kies je maximaal 3 taken. Ruimte voor het zwaarste op je lijst, zonder je brein te overladen.',
+      prompt: 'Klik op een energieniveau en zie wat Structuro vandaag zou voorstellen.',
+    },
+    en: {
+      low: 'With low energy, Structuro picks one task for today, described as small as possible. We break it down into small steps together.',
+      normal: 'With normal energy, you choose 2 tasks for today. No week plan, no guilt about what you skip.',
+      high: 'With high energy, you pick up to 3 tasks. Room for the hardest item on your list, without overloading your brain.',
+      prompt: 'Click an energy level to see what Structuro would suggest today.',
+    },
+  };
+
+  function initEnergyDemo() {
+    var root = document.getElementById('energyDemo');
+    if (!root) return;
+    var result = document.getElementById('energyResult');
+    var btns = root.querySelectorAll('[data-energy]');
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btns.forEach(function (b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        var level = btn.getAttribute('data-energy');
+        var lang = window.currentLang || 'nl';
+        var copy = ENERGY_COPY[lang] || ENERGY_COPY.nl;
+        if (result) {
+          result.textContent = copy[level] || copy.prompt;
+          result.dataset.selected = '1';
+          result.removeAttribute('data-i18n');
+        }
+        try {
+          if (window.posthog) posthog.capture('energy_demo_clicked', { level: level });
+        } catch (_) {}
+      });
+    });
+  }
+
+  window.refreshLandingDynamic = function () {
+    updateCountdown();
+    updateCtaCopy();
+    var lang = window.currentLang || 'nl';
+    var copy = ENERGY_COPY[lang] || ENERGY_COPY.nl;
+    var result = document.getElementById('energyResult');
+    if (result && !result.dataset.selected) {
+      result.textContent = copy.prompt;
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    updateCountdown();
+    updateCtaCopy();
+    initEnergyDemo();
+    setInterval(updateCountdown, 60000);
+  });
+})();

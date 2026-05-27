@@ -14,10 +14,11 @@ export function PostHogPageviews() {
   const { consent } = useConsent();
 
   useEffect(() => {
-    if (consent !== "granted" || !pathname) return;
+    if (consent === "unknown" || !pathname) return;
     if (!shouldSendProductAnalytics()) return;
     try {
-      if (localStorage.getItem(ANALYTICS_CONSENT_KEY) !== "granted") return;
+      const stored = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+      if (stored !== "granted" && stored !== "denied") return;
     } catch {
       return;
     }

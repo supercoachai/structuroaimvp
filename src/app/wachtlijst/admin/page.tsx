@@ -68,7 +68,7 @@ export default async function WachtlijstAdminPage({
         <h1 className="mb-2 text-lg font-semibold text-slate-800">Wachtlijst</h1>
         <p className="mb-8 text-sm text-slate-600">
           <span className="font-semibold text-slate-800">{count ?? 0}</span> aanmeldingen
-          totaal · laatste 20 hieronder.
+          totaal (structuro.ai + structuro.eu) · laatste 20 hieronder.
         </p>
         <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
           <table className="w-full border-collapse text-left text-sm">

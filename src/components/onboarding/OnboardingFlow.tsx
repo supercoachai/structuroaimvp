@@ -4,25 +4,30 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import confetti from "canvas-confetti";
 import {
   ArrowPathIcon,
-  BoltIcon,
   CheckCircleIcon,
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  FaceSmileIcon,
-  MoonIcon,
   RocketLaunchIcon,
+  SparklesIcon,
   Squares2X2Icon,
   SunIcon,
 } from "@heroicons/react/24/outline";
+import { BatteryFull, BatteryLow, BatteryMedium } from "lucide-react";
+import { IconShutdown, IconSun, IconTarget } from "@/components/navigation/mainAppNav";
+import { ST_ENERGY_DOT, type StEnergyId } from "@/lib/structuro/energyTokens";
 import { useUser } from "@/hooks/useUser";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { completeOnboardingProfile } from "@/lib/onboardingMutations";
-import CycleAboutModal from "@/components/cycle/CycleAboutModal";
 import CycleSetupForm from "@/components/cycle/CycleSetupForm";
+import InfoButton from "@/components/info/InfoButton";
+import CycleEnergyContext from "@/components/cycle/CycleEnergyContext";
 import { saveCycleConsent } from "@/lib/cycle/cycleProfileDb";
 import { calculateCyclePhase } from "@/lib/cycle/calculatePhase";
-import type { CyclePhase } from "@/lib/cycle/types";
+import type { CyclePhase, CycleProfile } from "@/lib/cycle/types";
+import {
+  WELCOME_TASK_TITLE,
+} from "@/lib/onboardingWelcomeTask";
 import {
   isLocalOnboardingCompleted,
   setLocalOnboardingCompleted,
@@ -35,18 +40,18 @@ import {
 import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import {
   getCalendarDateAmsterdam,
-  getTimeOfDayGreeting,
   setDagstartCookieOnClient,
 } from "@/lib/dagstartCookie";
 import { useI18n } from "@/lib/i18n";
 import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
 import { microStepId, type MicroStep } from "@/lib/microSteps";
-import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
+import { addTaskToSupabase, fetchTasksFromSupabase, updateTaskInSupabase } from "@/lib/supabase/tasksDb";
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
-import { addTaskToStorage, saveCheckInToStorage } from "@/lib/localStorageTasks";
+import { addTaskToStorage, getTasksFromStorage, saveCheckInToStorage, updateTaskInStorage } from "@/lib/localStorageTasks";
 import { toast } from "@/components/Toast";
 import { captureProductEvent } from "@/lib/posthog/track";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
+import { captureDagstartEventsFromOnboardingFinish } from "@/lib/posthog/onboardingDagstartEvents";
 
 /** Lege cirkel voor microstep-indicator (één lightweight DOM-node). */
 function MicroStepCircleOutline({ className }: { className?: string }) {
@@ -58,16 +63,136 @@ function MicroStepCircleOutline({ className }: { className?: string }) {
   );
 }
 
-const STEP_COUNT = 11;
+type ObEnergyLevel = "low" | "medium" | "high";
+
+const OB_ENERGY_CARDS: {
+  level: ObEnergyLevel;
+  stId: StEnergyId;
+  Icon: typeof BatteryLow;
+  labelKey: "energyLowLabel" | "energyNormalLabel" | "energyHighLabel";
+  subKey: "energyLowSub" | "energyNormalSub" | "energyHighSub";
+  idx: number;
+}[] = [
+  { level: "low", stId: "laag", Icon: BatteryLow, labelKey: "energyLowLabel", subKey: "energyLowSub", idx: 1 },
+  { level: "medium", stId: "gem", Icon: BatteryMedium, labelKey: "energyNormalLabel", subKey: "energyNormalSub", idx: 2 },
+  { level: "high", stId: "hoog", Icon: BatteryFull, labelKey: "energyHighLabel", subKey: "energyHighSub", idx: 3 },
+];
+
+function ObEnergyCard({
+  stId,
+  Icon,
+  label,
+  sub,
+  selected,
+  highlighted = selected,
+  className = "",
+}: {
+  stId: StEnergyId;
+  Icon: typeof BatteryLow;
+  label: string;
+  sub?: string;
+  selected?: boolean;
+  highlighted?: boolean;
+  className?: string;
+}) {
+  const tone = ST_ENERGY_DOT[stId];
+  const active = selected || highlighted;
+  return (
+    <div
+      className={`flex flex-col items-center rounded-xl border p-3 text-center transition-all duration-150 ease-out ${className}`}
+      style={{
+        borderColor: selected
+          ? tone.color
+          : active
+            ? `${tone.color}66`
+            : "var(--st-line-strong)",
+        background: selected ? tone.bg : "white",
+        boxShadow: selected
+          ? `0 0 0 2px ${tone.color}33`
+          : active
+            ? "0 2px 8px -4px rgba(14,23,48,0.08)"
+            : undefined,
+      }}
+    >
+      <Icon
+        className="h-8 w-8"
+        style={{ color: selected || active ? tone.color : "var(--st-muted)" }}
+        strokeWidth={selected ? 2 : 1.75}
+        aria-hidden
+      />
+      <p className="mt-2 text-sm font-semibold text-[var(--st-ink)]">{label}</p>
+      {sub ? <p className="mt-0.5 text-xs text-[var(--st-muted-2)]">{sub}</p> : null}
+    </div>
+  );
+}
+
+function ObEnergyCardPicker({
+  value,
+  onChange,
+  labelFor,
+  subFor,
+}: {
+  value: ObEnergyLevel | null;
+  onChange: (level: ObEnergyLevel) => void;
+  labelFor: (key: (typeof OB_ENERGY_CARDS)[number]["labelKey"]) => string;
+  subFor?: (key: (typeof OB_ENERGY_CARDS)[number]["subKey"]) => string;
+}) {
+  const [hovered, setHovered] = useState<ObEnergyLevel | null>(null);
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {OB_ENERGY_CARDS.map((c) => {
+        const selected = value === c.level;
+        const highlighted = selected || hovered === c.level;
+        return (
+          <button
+            key={c.level}
+            type="button"
+            onClick={() => onChange(c.level)}
+            onMouseEnter={() => setHovered(c.level)}
+            onMouseLeave={() => setHovered(null)}
+            className="text-left transition-transform duration-150 ease-out active:scale-[0.98]"
+          >
+            <ObEnergyCard
+              stId={c.stId}
+              Icon={c.Icon}
+              label={labelFor(c.labelKey)}
+              sub={subFor?.(c.subKey)}
+              selected={selected}
+              highlighted={highlighted}
+              className="h-full w-full"
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ObNavIconBadge({
+  Icon,
+  className = "text-[var(--st-blue)]",
+}: {
+  Icon: typeof IconSun;
+  className?: string;
+}) {
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--st-line)] bg-[var(--st-surface-2)]">
+      <Icon className={`h-5 w-5 ${className}`} />
+    </span>
+  );
+}
+
+const STEP_COUNT = 12;
 /** Horizontale slide tussen stappen (bewust rustig). */
 const SLIDE_MS = 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 /** Gecombineerde microstappen + parkeren-demo (0-based stap-index). */
-const MICRO_MERGED_SLIDE_INDEX = 4;
-const NAME_SLIDE_INDEX = 5;
-const CYCLE_OPT_IN_SLIDE_INDEX = 6;
-const FIRST_DAY_SLIDE_INDEX = 8;
+const MICRO_MERGED_SLIDE_INDEX = 5;
+const NAME_SLIDE_INDEX = 6;
+const CYCLE_OPT_IN_SLIDE_INDEX = 7;
+const FIRST_DAY_SLIDE_INDEX = 9;
 
 /** Parkeren-demo: korte pauzes, rustigere typing, daarna klik → toast. */
 /** Eerst H2 + uitleg lezen, daarna pas voorbeeldzin "Bel mama terug" en demo. */
@@ -101,6 +226,7 @@ export default function OnboardingFlow() {
   const { user, loading: userLoading } = useUser();
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
+  const [nameSkipped, setNameSkipped] = useState(false);
   const onboardingStartedAtRef = useRef<number>(Date.now());
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -112,6 +238,7 @@ export default function OnboardingFlow() {
    */
   const [microDemoStage, setMicroDemoStage] = useState(0);
   const [energyStage, setEnergyStage] = useState(0);
+  const [pickChoiceStage, setPickChoiceStage] = useState(0);
   const [focuspuntenStage, setFocuspuntenStage] = useState(0);
   const [focusModeStage, setFocusModeStage] = useState(0);
   const [parkerenStage, setParkerenStage] = useState(0);
@@ -142,6 +269,11 @@ export default function OnboardingFlow() {
   const [firstDayUseMicroSteps, setFirstDayUseMicroSteps] = useState<boolean | null>(null);
   const [firstDayMicroTitles, setFirstDayMicroTitles] = useState<string[]>([]);
   const [firstDayMicroInput, setFirstDayMicroInput] = useState("");
+  const [welcomeTaskPreview, setWelcomeTaskPreview] = useState<{
+    id: string;
+    title: string;
+    microStepCount: number;
+  } | null>(null);
   /** Stap B (taak) pas na korte pauze na energiekeuze, zodat het rustig binnenkomt. */
   const [firstDayTaskPhaseVisible, setFirstDayTaskPhaseVisible] = useState(false);
   /** Minutenblok pas na korte pauze + eigen fade-in (niet “pats” na taak). */
@@ -161,10 +293,10 @@ export default function OnboardingFlow() {
     setHydrated(true);
   }, []);
 
-  /** Begroeting op basis van actuele tijd in Amsterdam (zelfde als dagstart). Vernieuwt als je deze stap opnieuw opent. */
+  /** Eerste dagstart in onboarding: altijd welkomst-copy, geen terugkeer-begroeting. */
   const firstDaySlideGreeting = useMemo(
-    () => getTimeOfDayGreeting(locale),
-    [locale, step]
+    () => t("onboarding.firstDayGreeting"),
+    [t]
   );
 
   const firstDayMinutesOk =
@@ -174,12 +306,13 @@ export default function OnboardingFlow() {
   const firstDayMicroStepsResolved =
     firstDayUseMicroSteps === false ||
     (firstDayUseMicroSteps === true && firstDayMicroTitles.length > 0);
-  const firstDayReady =
-    Boolean(firstDayEnergy) &&
-    firstTaskTitle.trim().length >= 2 &&
-    firstDayMinutesOk &&
-    firstDayUseMicroSteps !== null &&
-    firstDayMicroStepsResolved;
+  const firstDayReady = welcomeTaskPreview
+    ? Boolean(firstDayEnergy)
+    : Boolean(firstDayEnergy) &&
+      firstTaskTitle.trim().length >= 2 &&
+      firstDayMinutesOk &&
+      firstDayUseMicroSteps !== null &&
+      firstDayMicroStepsResolved;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -206,15 +339,59 @@ export default function OnboardingFlow() {
     if (!user?.id) window.location.replace("/login");
   }, [isLocalMode, userLoading, user?.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const tasks = user?.id
+          ? await fetchTasksFromSupabase(user.id)
+          : isLocalMode
+            ? getTasksFromStorage()
+            : [];
+        const welcome = tasks.find(
+          (task) =>
+            task.source === "onboarding_welcome" ||
+            task.title?.trim() === WELCOME_TASK_TITLE
+        );
+        if (cancelled || !welcome?.id) {
+          if (!cancelled) setWelcomeTaskPreview(null);
+          return;
+        }
+        const microSteps = Array.isArray(welcome.microSteps) ? welcome.microSteps : [];
+        setWelcomeTaskPreview({
+          id: String(welcome.id),
+          title: String(welcome.title ?? WELCOME_TASK_TITLE).trim() || WELCOME_TASK_TITLE,
+          microStepCount: microSteps.length,
+        });
+      } catch (err) {
+        console.warn("[onboarding] welcome task lookup failed", err);
+        if (!cancelled) setWelcomeTaskPreview(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, isLocalMode]);
+
   /** Cyclus-stap (optioneel, alle gebruikers): 'intro' = drie keuzes, 'setup' = datum + lengte. */
   const [cycleStage, setCycleStage] = useState<"intro" | "setup">("intro");
-  const [cycleAboutOpen, setCycleAboutOpen] = useState(false);
+  const [cycleInfoPulse, setCycleInfoPulse] = useState(false);
   /** Onthoudt setup-input van deze sessie zodat fase 1 silent-storage in eerste dagstart mee kan. */
   const [cyclePeriodStart, setCyclePeriodStart] = useState<string | null>(null);
   const [cycleAverageLength, setCycleAverageLength] = useState<number | null>(null);
   const [cycleMenstruationDuration, setCycleMenstruationDuration] = useState<number | null>(
     null
   );
+
+  const cyclePreviewProfile = useMemo((): CycleProfile | null => {
+    if (!cyclePeriodStart || !cycleAverageLength) return null;
+    return {
+      consentAt: new Date().toISOString(),
+      lastPeriodStart: cyclePeriodStart,
+      averageLength: cycleAverageLength,
+      menstruationDuration: cycleMenstruationDuration ?? 5,
+    };
+  }, [cyclePeriodStart, cycleAverageLength, cycleMenstruationDuration]);
 
   /** Laatste slide: stap voor stap opbouwen tot de CTA zichtbaar is. */
   const [readySlidePhase, setReadySlidePhase] = useState(0);
@@ -647,9 +824,18 @@ export default function OnboardingFlow() {
   useEffect(() => {
     if (step !== CYCLE_OPT_IN_SLIDE_INDEX) {
       setCycleStage("intro");
-      setCycleAboutOpen(false);
+      setCycleInfoPulse(false);
     }
   }, [step]);
+
+  useEffect(() => {
+    if (step !== CYCLE_OPT_IN_SLIDE_INDEX || cycleStage !== "intro") return;
+    const rm = reduceMotionRef.current;
+    if (rm) return;
+    setCycleInfoPulse(true);
+    const timer = window.setTimeout(() => setCycleInfoPulse(false), 3000);
+    return () => window.clearTimeout(timer);
+  }, [step, cycleStage]);
 
   useEffect(() => {
     if (step !== 1) { setEnergyStage(0); return; }
@@ -664,7 +850,18 @@ export default function OnboardingFlow() {
   }, [step]);
 
   useEffect(() => {
-    if (step !== 2) { setFocuspuntenStage(0); return; }
+    if (step !== 2) { setPickChoiceStage(0); return; }
+    const rm = reduceMotionRef.current;
+    if (rm) { setPickChoiceStage(3); return; }
+    setPickChoiceStage(0);
+    const t1 = setTimeout(() => setPickChoiceStage(1), 800);
+    const t2 = setTimeout(() => setPickChoiceStage(2), 1600);
+    const t3 = setTimeout(() => setPickChoiceStage(3), 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== 3) { setFocuspuntenStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setFocuspuntenStage(3); return; }
     setFocuspuntenStage(0);
@@ -675,7 +872,7 @@ export default function OnboardingFlow() {
   }, [step]);
 
   useEffect(() => {
-    if (step !== 3) { setFocusModeStage(0); return; }
+    if (step !== 4) { setFocusModeStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setFocusModeStage(3); return; }
     setFocusModeStage(0);
@@ -707,40 +904,53 @@ export default function OnboardingFlow() {
     }
     if (step === NAME_SLIDE_INDEX) {
       const name = firstName.trim();
-      if (name.length < 2) return;
-      if (user?.id) {
-        setSaving(true);
-        try {
-          const { error } = await persistPreferredDisplayName(user, name);
-          if (error) {
-            toast(t("onboarding.toastNameErr", { detail: String(error) }));
+      if (name.length < 2 && !nameSkipped) return;
+      if (name.length >= 2) {
+        if (user?.id) {
+          setSaving(true);
+          try {
+            const { error } = await persistPreferredDisplayName(user, name);
+            if (error) {
+              toast(t("onboarding.toastNameErr", { detail: String(error) }));
+              return;
+            }
+          } catch (e) {
+            toast(
+              t("onboarding.toastNameErr", {
+                detail: e instanceof Error ? e.message : String(e),
+              })
+            );
             return;
+          } finally {
+            setSaving(false);
           }
-        } catch (e) {
-          toast(
-            t("onboarding.toastNameErr", {
-              detail: e instanceof Error ? e.message : String(e),
-            })
-          );
-          return;
-        } finally {
-          setSaving(false);
+        } else {
+          try {
+            window.localStorage.setItem("structuro_user_name", name);
+          } catch {
+            /* ignore */
+          }
         }
-      } else {
-        try { window.localStorage.setItem("structuro_user_name", name); } catch { /* ignore */ }
       }
       setStep((s) => s + 1);
       return;
     }
     setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
-  }, [step, firstName, user, firstDayReady, parkerenStage, t]);
+  }, [step, firstName, nameSkipped, user, firstDayReady, parkerenStage, t]);
 
   const goPrev = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
 
-  const goToStep = useCallback((index: number) => {
-    const i = Math.max(0, Math.min(STEP_COUNT - 1, index));
-    setStep(i);
-  }, []);
+  const goToStep = useCallback(
+    (index: number) => {
+      let i = Math.max(0, Math.min(STEP_COUNT - 1, index));
+      const nameStepComplete = firstName.trim().length >= 2 || nameSkipped;
+      if (!nameStepComplete && i > NAME_SLIDE_INDEX) {
+        i = NAME_SLIDE_INDEX;
+      }
+      setStep(i);
+    },
+    [firstName, nameSkipped]
+  );
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -765,24 +975,9 @@ export default function OnboardingFlow() {
   };
 
   const persistFirstDayTaskAndEnergy = async () => {
-    const title = firstTaskTitle.trim();
     const energy = firstDayEnergy;
-    const mins = firstTaskEstimatedMinutes;
-    if (!title || !energy || mins == null || mins < 1 || mins > 480) return;
-    if (firstDayUseMicroSteps !== true && firstDayUseMicroSteps !== false) return;
-    const microSteps: MicroStep[] =
-      firstDayUseMicroSteps === true
-        ? firstDayMicroTitles.map((line) => ({
-            id: microStepId(),
-            title: line.trim(),
-            minutes: null,
-            difficulty: null,
-            done: false,
-          }))
-        : [];
-    if (firstDayUseMicroSteps === true && microSteps.length === 0) return;
+    if (!energy) return;
     const dateStr = getCalendarDateAmsterdam();
-    const energyLevel = energy;
     let cyclePhaseToday: CyclePhase | null = null;
     if (cyclePeriodStart && cycleAverageLength) {
       const startDate = new Date(`${cyclePeriodStart}T00:00:00`);
@@ -795,6 +990,46 @@ export default function OnboardingFlow() {
         );
       }
     }
+
+    if (welcomeTaskPreview) {
+      if (user?.id) {
+        await updateTaskInSupabase(user.id, welcomeTaskPreview.id, { energyLevel: energy });
+        await upsertCheckInToSupabase(user.id, dateStr, {
+          energy_level: energy,
+          top3_task_ids: [welcomeTaskPreview.id],
+          cycle_phase: cyclePhaseToday,
+        });
+      } else {
+        updateTaskInStorage(welcomeTaskPreview.id, { energyLevel: energy });
+        saveCheckInToStorage({
+          date: dateStr,
+          energy_level: energy,
+          top3_task_ids: [welcomeTaskPreview.id],
+          user_id: "local",
+        });
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
+      }
+      return;
+    }
+
+    const title = firstTaskTitle.trim();
+    const mins = firstTaskEstimatedMinutes;
+    if (!title || mins == null || mins < 1 || mins > 480) return;
+    if (firstDayUseMicroSteps !== true && firstDayUseMicroSteps !== false) return;
+    const microSteps: MicroStep[] =
+      firstDayUseMicroSteps === true
+        ? firstDayMicroTitles.map((line) => ({
+            id: microStepId(),
+            title: line.trim(),
+            minutes: null,
+            difficulty: null,
+            done: false,
+          }))
+        : [];
+    if (firstDayUseMicroSteps === true && microSteps.length === 0) return;
+    const energyLevel = energy;
     if (user?.id) {
       let task;
       try {
@@ -889,6 +1124,9 @@ export default function OnboardingFlow() {
         }
       }
       setDagstartCookieOnClient();
+      if (firstDayEnergy) {
+        captureDagstartEventsFromOnboardingFinish(firstDayEnergy, 1);
+      }
       if (user?.id && firstDayReady && firstDayEnergy) {
         try {
           await updateProfileAfterDagstartComplete(user.id, firstDayEnergy);
@@ -950,6 +1188,7 @@ export default function OnboardingFlow() {
   }
 
   const nameOk = firstName.trim().length >= 2;
+  const nameStepComplete = nameOk || nameSkipped;
 
   const backBtn = step > 0 && (
     <button
@@ -1085,26 +1324,19 @@ export default function OnboardingFlow() {
                   <p className={`${OB_INTRO_P} text-balance`}>{t("onboarding.energyIntro1")}</p>
                   <p className={`${OB_INTRO_P} text-balance mt-2`}>{t("onboarding.energyIntro2")}</p>
                 </div>
-                <div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-md">
-                  {[
-                    { icon: <MoonIcon className="w-10 h-10 text-slate-500" strokeWidth={1.5} />, label: t("onboarding.energyLowLabel"), sub: t("onboarding.energyLowSub"), idx: 1 },
-                    { icon: <FaceSmileIcon className="w-10 h-10 text-amber-500" strokeWidth={1.5} />, label: t("onboarding.energyNormalLabel"), sub: t("onboarding.energyNormalSub"), idx: 2 },
-                    { icon: <BoltIcon className="w-10 h-10 text-violet-600" strokeWidth={1.75} />, label: t("onboarding.energyHighLabel"), sub: t("onboarding.energyHighSub"), idx: 3 },
-                  ].map((c) => (
-                    <div
-                      key={c.idx}
-                      className={`rounded-2xl border bg-white p-4 text-center shadow-sm cursor-default transition-all duration-[1000ms] ease-out ${
+                <div className="mt-8 grid grid-cols-3 gap-2 w-full max-w-md">
+                  {OB_ENERGY_CARDS.map((c) => (
+                    <ObEnergyCard
+                      key={c.level}
+                      stId={c.stId}
+                      Icon={c.Icon}
+                      label={t(`onboarding.${c.labelKey}`)}
+                      sub={t(`onboarding.${c.subKey}`)}
+                      selected={energyStage >= 4 && c.idx === 2}
+                      className={`cursor-default ${
                         energyStage >= c.idx ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                      } ${
-                        energyStage >= 4 && c.idx === 2
-                          ? "border-blue-400 ring-2 ring-blue-200 shadow-md scale-105"
-                          : "border-slate-200"
-                      }`}
-                    >
-                      <div className="flex justify-center">{c.icon}</div>
-                      <p className="mt-2 font-semibold text-gray-900 text-sm">{c.label}</p>
-                      <p className="text-xs text-gray-500 mt-1">{c.sub}</p>
-                    </div>
+                      } ${energyStage >= 4 && c.idx === 2 ? "scale-105" : ""}`}
+                    />
                   ))}
                 </div>
                 <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
@@ -1115,7 +1347,61 @@ export default function OnboardingFlow() {
               </div>
             </section>
 
-            {/* ── 3 — Focuspunten ── */}
+            {/* ── 3 — Structuro kiest / zelf kiezen ── */}
+            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
+              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
+                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
+                <div className="flex flex-col items-center text-center">
+                <SparklesIcon className="w-14 h-14 text-blue-600 mb-4" strokeWidth={1.75} aria-hidden />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.pickChoiceTitle")}</h2>
+                <div className={OB_INTRO_OUTER}>
+                  <p className={`${OB_INTRO_P} text-balance`}>{t("onboarding.pickChoiceIntro1")}</p>
+                  <p className={`${OB_INTRO_P} text-balance mt-2`}>{t("onboarding.pickChoiceIntro2")}</p>
+                </div>
+                <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-md">
+                  <div
+                    className={`rounded-2xl border bg-blue-50 border-blue-200 p-4 text-center shadow-sm transition-all duration-[1000ms] ease-out ${
+                      pickChoiceStage >= 1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    } ${pickChoiceStage >= 3 ? "ring-2 ring-blue-300 scale-[1.02]" : ""}`}
+                  >
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                      <SparklesIcon className="w-6 h-6 text-blue-600" strokeWidth={1.75} aria-hidden />
+                    </div>
+                    <p className="mt-3 font-semibold text-blue-900 text-sm">{t("onboarding.pickStructuroLabel")}</p>
+                    <p className="text-xs text-blue-600 mt-1">{t("onboarding.pickStructuroSub")}</p>
+                  </div>
+                  <div
+                    className={`rounded-2xl border bg-white border-slate-200 p-4 text-center shadow-sm transition-all duration-[1000ms] ease-out ${
+                      pickChoiceStage >= 2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    }`}
+                  >
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+                      <div className="flex items-center gap-0.5 text-slate-500" aria-hidden>
+                        <ChevronLeftIcon className="w-4 h-4" strokeWidth={2} />
+                        <Squares2X2Icon className="w-5 h-5" strokeWidth={1.75} />
+                        <ChevronRightIcon className="w-4 h-4" strokeWidth={2} />
+                      </div>
+                    </div>
+                    <p className="mt-3 font-semibold text-gray-900 text-sm">{t("onboarding.pickSelfLabel")}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t("onboarding.pickSelfSub")}</p>
+                  </div>
+                </div>
+                <p
+                  className={`mt-6 max-w-md text-xs text-slate-500 transition-all duration-[1000ms] ease-out ${
+                    pickChoiceStage >= 3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  }`}
+                >
+                  {t("onboarding.pickDayOneNote")}
+                </p>
+                <button type="button" onClick={() => void goNext()} className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
+                  {t("onboarding.next")}
+                </button>
+                </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 4 — Focuspunten ── */}
             <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
@@ -1125,22 +1411,33 @@ export default function OnboardingFlow() {
                 <div className={OB_INTRO_OUTER}>
                   <p className={OB_INTRO_P}>{t("onboarding.focusPointsBody")}</p>
                 </div>
-                <ul className="mt-8 w-full max-w-md space-y-3 text-left">
+                <ul className="mt-8 w-full max-w-md space-y-2.5 text-left">
                   {[
-                    { n: "1", label: t("onboarding.fp1Label"), sub: t("onboarding.fp1Sub"), bg: "bg-blue-50", border: "border-blue-100", numColor: "text-blue-700", textColor: "text-blue-900", subColor: "text-blue-600", idx: 1 },
-                    { n: "2", label: t("onboarding.fp2Label"), sub: t("onboarding.fp2Sub"), bg: "bg-teal-50", border: "border-teal-100", numColor: "text-teal-700", textColor: "text-teal-900", subColor: "text-teal-600", idx: 2 },
-                    { n: "3", label: t("onboarding.fp3Label"), sub: t("onboarding.fp3Sub"), bg: "bg-violet-50", border: "border-violet-100", numColor: "text-violet-700", textColor: "text-violet-900", subColor: "text-violet-600", idx: 3 },
+                    { n: "1", label: t("onboarding.fp1Label"), sub: t("onboarding.fp1Sub"), idx: 1 },
+                    { n: "2", label: t("onboarding.fp2Label"), sub: t("onboarding.fp2Sub"), idx: 2 },
+                    { n: "3", label: t("onboarding.fp3Label"), sub: t("onboarding.fp3Sub"), idx: 3 },
                   ].map((r) => (
                     <li
                       key={r.n}
-                      className={`flex gap-3 rounded-xl ${r.bg} border ${r.border} px-4 py-3 cursor-default transition-all duration-[1000ms] ease-out ${
+                      className={`rounded-xl border border-[var(--st-line)] bg-white p-3 shadow-sm cursor-default transition-all duration-[1000ms] ease-out ${
                         focuspuntenStage >= r.idx ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
                       }`}
                     >
-                      <span className={`font-bold ${r.numColor} w-6 pt-0.5`}>{r.n}</span>
-                      <div>
-                        <p className={`font-semibold ${r.textColor}`}>{r.label}</p>
-                        <p className={`text-xs ${r.subColor} mt-0.5`}>{r.sub}</p>
+                      <div className="flex items-start gap-2">
+                        <span
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-white"
+                          style={{
+                            background: "linear-gradient(180deg, #5A84F9, var(--st-blue-deep))",
+                          }}
+                        >
+                          {r.n}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--st-muted)]">
+                            {r.label}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-[var(--st-muted-2)]">{r.sub}</p>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -1443,6 +1740,17 @@ export default function OnboardingFlow() {
                 >
                   {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
                 </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => {
+                    setNameSkipped(true);
+                    setStep((s) => s + 1);
+                  }}
+                  className="mt-4 text-sm font-medium text-gray-500 transition hover:text-gray-700 disabled:opacity-40"
+                >
+                  {t("onboarding.nameSkip")}
+                </button>
                 </div>
                 </div>
               </div>
@@ -1464,9 +1772,12 @@ export default function OnboardingFlow() {
                         >
                           <ArrowPathIcon className="h-6 w-6" strokeWidth={1.75} />
                         </span>
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                          {t("cycle.optInTitle")}
-                        </h2>
+                        <div className="flex items-center justify-center gap-2">
+                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                            {t("cycle.optInTitle")}
+                          </h2>
+                          <InfoButton infoId="cyclus" autoIntro={false} pulse={cycleInfoPulse} />
+                        </div>
                         <div className={OB_INTRO_OUTER}>
                           <p className={`${OB_INTRO_P} text-balance`}>
                             {t("cycle.optInBody")}
@@ -1486,13 +1797,6 @@ export default function OnboardingFlow() {
                             className="w-full rounded-xl border border-slate-200 bg-white py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.99]"
                           >
                             {t("cycle.optInNo")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setCycleAboutOpen(true)}
-                            className="mt-1 self-center text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700"
-                          >
-                            {t("cycle.optInLearnMore")}
                           </button>
                         </div>
                       </>
@@ -1539,12 +1843,6 @@ export default function OnboardingFlow() {
                   </div>
                 </div>
               </div>
-              <CycleAboutModal
-                open={cycleAboutOpen}
-                onClose={() => setCycleAboutOpen(false)}
-                onYes={() => setCycleStage("setup")}
-                onNo={() => void goNext()}
-              />
             </section>
 
             {/* ── 8 — Persoonlijk welkom ── */}
@@ -1554,9 +1852,11 @@ export default function OnboardingFlow() {
                 <div className="flex flex-col items-center text-center">
                 <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
                 <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {t("onboarding.welcomePersonalGreeting", {
-                    name: firstName.trim() || t("onboarding.welcomePersonalFallback"),
-                  })}
+                  {nameStepComplete && firstName.trim()
+                    ? t("onboarding.welcomePersonalGreeting", {
+                        name: firstName.trim(),
+                      })
+                    : t("onboarding.welcomePersonalGreetingNoName")}
                 </p>
                 <p className="mt-4 text-base leading-relaxed text-gray-700">
                   {t("onboarding.personalBodyStart")}
@@ -1575,7 +1875,10 @@ export default function OnboardingFlow() {
             </section>
 
             {/* ── 9 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
+            <section
+              data-ob-slide
+              className="box-border flex h-full min-h-0 w-screen shrink-0 flex-col overflow-hidden"
+            >
               <style>{`
                 @keyframes ob-first-day-bridge-in {
                   from { opacity: 0; transform: translateY(8px); }
@@ -1604,67 +1907,90 @@ export default function OnboardingFlow() {
                   .ob-first-day-duration-in { animation: none !important; opacity: 1 !important; transform: none !important; }
                 }
               `}</style>
-              <div className="flex min-h-full w-full flex-col justify-center px-5 py-8 md:px-4">
-                <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-3 text-4xl leading-none" aria-hidden>
-                    {"\u{1F331}"}
-                  </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl">
-                    {firstDaySlideGreeting}
-                    {firstName.trim() ? (
-                      <>
-                        , <span className="whitespace-nowrap">{firstName.trim()}</span>
-                      </>
-                    ) : null}
-                    .
-                  </h2>
-                  <p className="mt-3 max-w-md text-base text-gray-500">{t("onboarding.firstDayEnergyHelp")}</p>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
+                <div className="flex min-h-full w-full flex-col px-5 py-8 pb-28 md:px-4">
+                  <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
+                    <div className="flex flex-col items-center text-center">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--st-blue)]">
+                        {t("onboarding.firstDayIntro")}
+                      </p>
+                      <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl">
+                        {firstDaySlideGreeting}
+                        {firstName.trim() ? (
+                          <>
+                            , <span className="whitespace-nowrap">{firstName.trim()}</span>
+                          </>
+                        ) : null}
+                        .
+                      </h2>
+                      <p className="mt-3 max-w-md text-base leading-relaxed text-gray-500">
+                        {welcomeTaskPreview
+                          ? t("onboarding.firstDayIntroSubWelcome")
+                          : t("onboarding.firstDayIntroSub")}
+                      </p>
 
-                  <div className="mt-10 w-full max-w-md">
-                    <div className="grid grid-cols-3 gap-3">
-                      {([
-                        {
-                          key: "low" as const,
-                          label: t("onboarding.energyLowLabel"),
-                          icon: <MoonIcon className="h-10 w-10 text-slate-500" strokeWidth={1.5} aria-hidden />,
-                        },
-                        {
-                          key: "medium" as const,
-                          label: t("onboarding.energyNormalLabel"),
-                          icon: <FaceSmileIcon className="h-10 w-10 text-amber-500" strokeWidth={1.5} aria-hidden />,
-                        },
-                        {
-                          key: "high" as const,
-                          label: t("onboarding.energyHighLabel"),
-                          icon: <BoltIcon className="h-10 w-10 text-violet-600" strokeWidth={1.75} aria-hidden />,
-                        },
-                      ]).map((c) => (
-                        <button
-                          key={c.key}
-                          type="button"
-                          onClick={() => setFirstDayEnergy(c.key)}
-                          className={`rounded-2xl px-2 py-3 text-center shadow-sm transition-all duration-300 ease-out sm:py-4 ${
-                            firstDayEnergy === c.key
-                              ? "scale-[1.02] bg-white shadow-md ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-50"
-                              : "border border-slate-200/90 bg-white/90 hover:border-slate-300 hover:shadow-md active:scale-[0.98]"
-                          }`}
-                        >
-                          <div className="mb-2 flex justify-center">{c.icon}</div>
-                          <span className="block text-sm font-semibold text-gray-900">{c.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                      {cyclePreviewProfile ? (
+                        <div className="ob-first-day-bridge-in mt-8 w-full max-w-md text-left">
+                          <p className="mb-3 text-center text-sm leading-relaxed text-[var(--st-muted-2)]">
+                            {t("onboarding.firstDayCyclePreviewHint")}
+                          </p>
+                          <CycleEnergyContext
+                            consentOn
+                            profile={cyclePreviewProfile}
+                            onboardingCompact
+                            chosenEnergy={firstDayEnergy}
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className={`w-full max-w-md ${cyclePreviewProfile ? "mt-8" : "mt-10"}`}>
+                        <ObEnergyCardPicker
+                          value={firstDayEnergy}
+                          onChange={setFirstDayEnergy}
+                          labelFor={(key) => t(`onboarding.${key}`)}
+                        />
+                      </div>
 
                   {firstDayEnergy ? (
                     <div className="ob-first-day-bridge-in mt-10 w-full max-w-md space-y-1 text-center">
-                      <p className="text-base font-medium text-gray-900">{t("onboarding.firstDayBridge1")}</p>
-                      <p className="text-sm text-gray-400">{t("onboarding.firstDayBridge2")}</p>
+                      <p className="text-base font-medium text-gray-900">
+                        {welcomeTaskPreview
+                          ? t("onboarding.firstDayWelcomeBridge1")
+                          : t("onboarding.firstDayBridge1")}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {welcomeTaskPreview
+                          ? t("onboarding.firstDayWelcomeBridge2")
+                          : t("onboarding.firstDayBridge2")}
+                      </p>
                     </div>
                   ) : null}
 
-                  {firstDayTaskPhaseVisible ? (
+                  {firstDayTaskPhaseVisible && welcomeTaskPreview ? (
+                    <div
+                      ref={firstDayTaskBlockRef}
+                      className="ob-first-day-task-in mt-8 w-full max-w-md text-left"
+                    >
+                      <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-[var(--st-muted)]">
+                        {t("onboarding.firstDayWelcomeTaskLabel")}
+                      </p>
+                      <div className="rounded-xl border border-[var(--st-line)] bg-white p-4 shadow-sm">
+                        <p className="text-base font-semibold text-[var(--st-ink)]">
+                          {welcomeTaskPreview.title}
+                        </p>
+                        {welcomeTaskPreview.microStepCount > 0 ? (
+                          <p className="mt-1 text-sm text-[var(--st-muted-2)]">
+                            {t("onboarding.firstDayWelcomeTaskHint").replace(
+                              "{n}",
+                              String(welcomeTaskPreview.microStepCount)
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {firstDayTaskPhaseVisible && !welcomeTaskPreview ? (
                     <div
                       ref={firstDayTaskBlockRef}
                       className="ob-first-day-task-in mt-8 w-full max-w-md space-y-4"
@@ -1855,20 +2181,23 @@ export default function OnboardingFlow() {
                       ) : null}
                     </div>
                   ) : null}
-
-                  {firstDayTaskPhaseVisible && firstDayReady ? (
-                    <button
-                      ref={firstDayBeginCtaRef}
-                      type="button"
-                      onClick={() => void goNext()}
-                      className="ob-first-day-task-in mt-10 w-full max-w-md rounded-xl bg-blue-600 py-4 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.99]"
-                    >
-                      {t("onboarding.firstDayCta")}
-                    </button>
-                  ) : null}
-                </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {firstDayReady ? (
+                <div className="sticky bottom-0 z-10 shrink-0 border-t border-slate-200/80 bg-[#F1F3F8]/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+                  <button
+                    ref={firstDayBeginCtaRef}
+                    type="button"
+                    onClick={() => void goNext()}
+                    className="mx-auto block w-full max-w-md rounded-xl bg-blue-600 py-4 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.99]"
+                  >
+                    {t("onboarding.firstDayCta")}
+                  </button>
+                </div>
+              ) : null}
             </section>
 
             {/* ── 10 — Dagafsluiting (uitleg) ── */}
@@ -1879,9 +2208,9 @@ export default function OnboardingFlow() {
               <div className="flex min-h-full w-full flex-col justify-center bg-gradient-to-b from-slate-50/80 via-white to-slate-50/60 px-4 py-8 md:px-6 md:py-10">
                 <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
                   <div className="flex flex-col items-center space-y-6 text-center">
-                    <div className="text-5xl leading-none" aria-hidden>
-                      {"\u{1F319}"}
-                    </div>
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--st-line)] bg-white shadow-sm">
+                      <IconShutdown className="h-7 w-7 text-[var(--st-blue)]" />
+                    </span>
                     <div className="space-y-2">
                       <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                         {t("onboarding.shutdownTitle")}
@@ -1889,43 +2218,69 @@ export default function OnboardingFlow() {
                       <p className="text-base text-gray-500">{t("onboarding.shutdownSubtitle")}</p>
                     </div>
 
-                    <div className="flex w-full flex-col gap-3 text-left">
+                    <div className="flex w-full flex-col gap-2.5 text-left">
                       {(
                         [
                           {
-                            emoji: "\u2705",
-                            title: t("onboarding.shutdownQ1Title"),
-                            sub: t("onboarding.shutdownQ1Sub"),
+                            key: "done",
+                            title: t("onboarding.shutdownStep1Title"),
+                            sub: t("onboarding.shutdownStep1Sub"),
+                            visual: (
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--st-green)] shadow-[0_1px_2px_rgba(34,197,94,0.25)]">
+                                <CheckIcon className="h-3 w-3 text-white" strokeWidth={3} />
+                              </span>
+                            ),
                           },
                           {
-                            emoji: "\u{1F4C5}",
-                            title: t("onboarding.shutdownQ2Title"),
-                            sub: t("onboarding.shutdownQ2Sub"),
+                            key: "carry",
+                            title: t("onboarding.shutdownStep2Title"),
+                            sub: t("onboarding.shutdownStep2Sub"),
+                            visual: (
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[var(--st-line)] bg-[var(--st-surface-2)] text-[10px] font-bold text-[var(--st-muted)]">
+                                →
+                              </span>
+                            ),
                           },
                           {
-                            emoji: "\u2B50",
-                            title: t("onboarding.shutdownQ3Title"),
-                            sub: t("onboarding.shutdownQ3Sub"),
+                            key: "mood",
+                            title: t("onboarding.shutdownStep3Title"),
+                            sub: t("onboarding.shutdownStep3Sub"),
+                            visual: (
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--st-line)] bg-[var(--st-surface-2)]">
+                                <span
+                                  className="h-2.5 w-2.5 rounded-full bg-[var(--st-muted)]"
+                                  aria-hidden
+                                />
+                              </span>
+                            ),
+                          },
+                          {
+                            key: "rest",
+                            title: t("onboarding.shutdownStep4Title"),
+                            sub: t("onboarding.shutdownStep4Sub"),
+                            visual: (
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--st-line)] bg-white">
+                                <IconShutdown className="h-3 w-3 text-[var(--st-muted)]" />
+                              </span>
+                            ),
                           },
                         ] as const
                       ).map((row) => (
                         <div
-                          key={row.title}
-                          className="flex items-center gap-4 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm"
+                          key={row.key}
+                          className="flex items-center gap-4 rounded-xl border border-[var(--st-line)] bg-white px-4 py-3.5 shadow-sm"
                         >
-                          <span className="shrink-0 text-2xl leading-none" aria-hidden>
-                            {row.emoji}
-                          </span>
+                          {row.visual}
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{row.title}</p>
-                            <p className="mt-0.5 text-xs text-gray-500">{row.sub}</p>
+                            <p className="text-sm font-semibold text-[var(--st-ink)]">{row.title}</p>
+                            <p className="mt-0.5 text-xs text-[var(--st-muted-2)]">{row.sub}</p>
                           </div>
                         </div>
                       ))}
                     </div>
 
-                    <div className="w-full rounded-2xl bg-blue-50 px-5 py-4">
-                      <p className="text-center text-sm text-blue-700">{t("onboarding.shutdownTip")}</p>
+                    <div className="w-full rounded-xl border border-[var(--st-blue)]/15 bg-[var(--st-blue-haze)] px-5 py-4">
+                      <p className="text-center text-sm text-[var(--st-blue-deep)]">{t("onboarding.shutdownTip")}</p>
                     </div>
 
                     <button
@@ -1949,12 +2304,18 @@ export default function OnboardingFlow() {
                 <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
                   <div className="flex flex-col items-center space-y-8 text-center">
                   <div
-                    className={`text-6xl leading-none transition-all duration-500 ease-out motion-reduce:transition-none ${
+                    className={`transition-all duration-500 ease-out motion-reduce:transition-none ${
                       readySlidePhase >= 1 ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                     }`}
                     aria-hidden
                   >
-                    {"\u2728"}
+                    <img
+                      src="/logo-structuro.png"
+                      alt=""
+                      className="mx-auto h-14 w-14 rounded-2xl object-contain shadow-sm"
+                      width={56}
+                      height={56}
+                    />
                   </div>
 
                   <div
@@ -1972,17 +2333,17 @@ export default function OnboardingFlow() {
                     {(
                       [
                         {
-                          emoji: "\u{1F305}",
+                          Icon: IconSun,
                           title: t("onboarding.readyRoutine1Title"),
                           sub: t("onboarding.readyRoutine1Sub"),
                         },
                         {
-                          emoji: "\u{1F3AF}",
+                          Icon: IconTarget,
                           title: t("onboarding.readyRoutine2Title"),
                           sub: t("onboarding.readyRoutine2Sub"),
                         },
                         {
-                          emoji: "\u{1F319}",
+                          Icon: IconShutdown,
                           title: t("onboarding.readyRoutine3Title"),
                           sub: t("onboarding.readyRoutine3Sub"),
                         },
@@ -1990,16 +2351,14 @@ export default function OnboardingFlow() {
                     ).map((row, idx) => (
                       <div
                         key={row.title}
-                        className={`flex items-center gap-4 rounded-2xl border border-slate-200/90 bg-white px-5 py-4 shadow-sm transition-all duration-500 ease-out motion-reduce:transition-none ${
+                        className={`flex items-center gap-4 rounded-xl border border-[var(--st-line)] bg-white px-5 py-4 shadow-sm transition-all duration-500 ease-out motion-reduce:transition-none ${
                           readySlidePhase >= 3 + idx ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                         }`}
                       >
-                        <span className="text-2xl leading-none shrink-0" aria-hidden>
-                          {row.emoji}
-                        </span>
+                        <ObNavIconBadge Icon={row.Icon} />
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{row.title}</p>
-                          <p className="mt-0.5 text-xs text-gray-500">{row.sub}</p>
+                          <p className="text-sm font-semibold text-[var(--st-ink)]">{row.title}</p>
+                          <p className="mt-0.5 text-xs text-[var(--st-muted-2)]">{row.sub}</p>
                         </div>
                       </div>
                     ))}

@@ -6,6 +6,16 @@ import {
 } from "./consentStorage";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
+function readStoredConsent(): "granted" | "denied" | null {
+  try {
+    const v = localStorage.getItem(ANALYTICS_CONSENT_KEY);
+    if (v === "granted" || v === "denied") return v;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 /**
  * Core Loop / Stripe events voor PostHog. Alleen bij expliciete analytics-toestemming.
  * Geen energy_level, task_id, thought_type of ruwe duur in seconden.
@@ -16,11 +26,22 @@ export function captureProductEvent(
 ) {
   if (typeof window === "undefined") return;
   if (!shouldSendProductAnalytics()) return;
+  if (readStoredConsent() !== "granted") return;
   try {
-    if (localStorage.getItem(ANALYTICS_CONSENT_KEY) !== "granted") return;
+    posthog.capture(event, properties);
   } catch {
-    return;
+    /* ignore */
   }
+}
+
+/** Marketing/conversie-events: granted (cookies) of denied (cookieless on_reject). */
+export function captureMarketingEvent(
+  event: string,
+  properties?: Record<string, unknown>
+) {
+  if (typeof window === "undefined") return;
+  if (!shouldSendProductAnalytics()) return;
+  if (!readStoredConsent()) return;
   try {
     posthog.capture(event, properties);
   } catch {

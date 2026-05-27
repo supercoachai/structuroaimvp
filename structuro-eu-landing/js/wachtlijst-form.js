@@ -1,6 +1,3 @@
-const SUPABASE_URL = 'https://oapnsywlmdmqgmfwiojy.supabase.co';
-const SUPABASE_ANON_KEY = String(typeof window.__STRUCTURO_EU_SB_ANON__ === 'undefined' ? '' : window.__STRUCTURO_EU_SB_ANON__);
-
 const T = {
   nl: {
     wl_h1: 'Wachtlijst',
@@ -9,7 +6,7 @@ const T = {
     wl_email: 'E-mailadres',
     wl_ph_name: 'Jouw naam',
     wl_ph_email: 'jouw@email.nl',
-    wl_submit: 'Zet me op de lijst',
+    wl_submit: 'Pak je plek voor 31 mei',
     wl_success: 'Gelukt! Je hoort van ons zodra Structuro live gaat op 31 mei.',
     wl_dup: 'Dit e-mailadres staat al op de lijst.',
     wl_err: 'Er ging iets mis. Probeer het opnieuw.',
@@ -22,7 +19,7 @@ const T = {
     wl_email: 'Email',
     wl_ph_name: 'Your name',
     wl_ph_email: 'your@email.com',
-    wl_submit: 'Join the waitlist',
+    wl_submit: 'Claim your spot for May 31',
     wl_success: 'Done! You will hear from us when Structuro goes live on 31 May.',
     wl_dup: 'This email address is already on the list.',
     wl_err: 'Something went wrong. Please try again.',
@@ -49,11 +46,13 @@ function resolveWaitlistSource() {
   return 'direct';
 }
 
-function supabaseAnonKeyReady() {
-  var k = (SUPABASE_ANON_KEY || '').trim();
-  if (!k) return false;
-  if (k.indexOf('__SUPABASE_ANON_KEY__') !== -1) return false;
-  return k.length >= 40;
+function waitlistJoinUrl() {
+  var override =
+    typeof window.__STRUCTURO_WAITLIST_JOIN_URL__ === 'string'
+      ? window.__STRUCTURO_WAITLIST_JOIN_URL__.trim()
+      : '';
+  if (override) return override;
+  return 'https://www.structuro.ai/api/waitlist/join';
 }
 
 function lang() {
@@ -89,16 +88,6 @@ document.getElementById('btnEN').onclick = function () {
 };
 setLang(lang());
 
-var supabaseJsPromise = null;
-function loadCreateClient() {
-  if (!supabaseJsPromise) {
-    supabaseJsPromise = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-  }
-  return supabaseJsPromise.then(function (m) {
-    return m.createClient;
-  });
-}
-
 const form = document.getElementById('wl-form');
 const btn = document.getElementById('wl-submit');
 const boxDup = document.getElementById('wl-dup');
@@ -108,38 +97,40 @@ form.addEventListener('submit', async function (e) {
   e.preventDefault();
   boxDup.hidden = true;
   boxErr.hidden = true;
-  if (!supabaseAnonKeyReady()) {
-    boxErr.textContent = T[lang()].wl_err;
-    boxErr.hidden = false;
-    return;
-  }
   btn.disabled = true;
+
+  var wlSource = resolveWaitlistSource();
   if (typeof window.posthog !== 'undefined') {
     window.posthog.capture('waitlist_signup_started', {
-      source: resolveWaitlistSource(),
+      source: wlSource,
+      site: 'eu',
     });
   }
-  const nameVal = document.getElementById('wl-name').value.trim();
-  const emailVal = document.getElementById('wl-email').value.trim().toLowerCase();
+
+  var nameVal = document.getElementById('wl-name').value.trim();
+  var emailVal = document.getElementById('wl-email').value.trim().toLowerCase();
+
   try {
-    const createClient = await loadCreateClient();
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY.trim());
-    const { error } = await supabase.from('waitlist_subscribers').insert({
-      name: nameVal,
-      email: emailVal,
-      source: resolveWaitlistSource(),
+    var res = await fetch(waitlistJoinUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: nameVal,
+        email: emailVal,
+        source: wlSource,
+        site: 'eu',
+      }),
     });
-    if (!error) {
+
+    var data = null;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      data = null;
+    }
+
+    if (res.ok && data && data.ok === true) {
       form.classList.add('hidden');
-      if (typeof window.posthog !== 'undefined') {
-        var params = new URLSearchParams(window.location.search);
-        window.posthog.capture('waitlist_signup_completed', {
-          source: resolveWaitlistSource(),
-          utm_source: params.get('utm_source') || null,
-          utm_medium: params.get('utm_medium') || null,
-          utm_campaign: params.get('utm_campaign') || null,
-        });
-      }
       var okEl = document.getElementById('wl-success-msg');
       if (!okEl) {
         okEl = document.createElement('p');
@@ -152,16 +143,16 @@ form.addEventListener('submit', async function (e) {
       okEl.textContent = T[lang()].wl_success;
       return;
     }
-    var code = error.code || '';
-    var msg = (error.message || '') + '';
-    if (code === '23505' || /duplicate|unique/i.test(msg)) {
+
+    if (res.status === 409 || (data && data.error === 'already_exists')) {
       boxDup.textContent = T[lang()].wl_dup;
       boxDup.hidden = false;
-    } else {
-      boxErr.textContent = T[lang()].wl_err;
-      boxErr.hidden = false;
+      return;
     }
-  } catch (e) {
+
+    boxErr.textContent = T[lang()].wl_err;
+    boxErr.hidden = false;
+  } catch (err) {
     boxErr.textContent = T[lang()].wl_err;
     boxErr.hidden = false;
   } finally {
