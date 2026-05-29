@@ -6,6 +6,10 @@ import Script from 'next/script';
 const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? 'G-S21LBEY64B';
 
+/** Standaard uit (mobiele INP). Weer aan: NEXT_PUBLIC_GOOGLE_ANALYTICS_ENABLED=true */
+const GA_ENABLED =
+  process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ENABLED === 'true';
+
 /**
  * GA4 zonder toestemmingsbanner: meet zodra de tag laadt (standaard gtag-snippet).
  * IP-anonimisering is in GA4 standaard aan.
@@ -13,7 +17,7 @@ const GA_MEASUREMENT_ID =
  * (zie analyticsInternal). Voor teamverkeer: GA4 intern verkeer / IP-filter aanvullen.
  */
 export function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) return null;
+  if (!GA_ENABLED || !GA_MEASUREMENT_ID) return null;
 
   return (
     <>

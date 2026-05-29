@@ -918,6 +918,12 @@ body {
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .dagafsluiting-eod-mood-btn:hover {
+    cursor: pointer;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dagafsluiting-eod-step,
   .dagafsluiting-eod-list-item,
@@ -945,6 +951,11 @@ body {
 
 .new-task-flow--compact {
   max-height: min(640px, 70dvh);
+}
+
+.new-task-flow--embedded {
+  max-height: 100%;
+  height: 100%;
 }
 
 .new-task-flow-dot {
@@ -1398,7 +1409,7 @@ body {
   .ds-root {
     flex: 1 1 auto;
     width: 100%;
-    min-height: min(100%, 100dvh);
+    min-height: 0;
     justify-content: center;
     padding:
       max(12px, env(safe-area-inset-top))
@@ -1412,6 +1423,7 @@ body {
   height: fit-content;
   max-height: 100%;
   align-self: center;
+  flex: 0 0 auto;
   flex-shrink: 0;
   background: #FFFFFF;
   border-radius: 32px;
@@ -1421,6 +1433,12 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+/** Stap 2 (taken kiezen): kaart mag groeien tot viewport, inhoud scrollt binnen ds-body. */
+.ds-card--tall {
+  max-height: 100%;
+  min-height: 0;
+  flex: 0 1 auto;
 }
 .ds-topbar {
   height: 52px;

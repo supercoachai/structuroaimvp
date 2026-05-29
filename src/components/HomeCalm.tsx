@@ -32,8 +32,8 @@ import { useViewportContentFit } from '@/hooks/useViewportContentFit';
 export default function HomeCalm() {
   const { t, locale } = useI18n();
   const router = useRouter();
-  const { tasks, loading, updateTask } = useTaskContext();
-  const { checkIn: todayCheckIn } = useCheckIn();
+  const { tasks, loading, updateTask, fetchTasks } = useTaskContext();
+  const { checkIn: todayCheckIn, loading: checkInLoading } = useCheckIn();
   const [userName, setUserName] = useState<string | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [newName, setNewName] = useState('');
@@ -61,6 +61,8 @@ export default function HomeCalm() {
     };
     checkProtected();
   }, []);
+
+  const dashboardReady = !loading && !checkInLoading;
 
   const openTop3Tasks = useMemo(
     () => getOpenTop3Tasks(tasks, todayCheckIn),
@@ -349,6 +351,7 @@ export default function HomeCalm() {
       todaySlotProgress?.current,
       allNonMedicationDone,
       loading,
+      checkInLoading,
       showNamePrompt,
     ]
   );
@@ -551,7 +554,7 @@ export default function HomeCalm() {
         )}
 
 
-        {heroTask && (
+        {dashboardReady && heroTask && (
           <section
             className="home-screen__hero shrink-0 rounded-[20px] text-white"
             style={{
@@ -748,7 +751,16 @@ export default function HomeCalm() {
           </section>
         )}
 
-        {!loading && allNonMedicationDone && (
+        {!dashboardReady && (
+          <div
+            className="mx-auto w-full max-w-md shrink-0 rounded-[20px] bg-white/80 px-6 py-10 text-center text-sm text-[var(--st-muted)] shadow-sm animate-pulse"
+            aria-busy="true"
+          >
+            {t('tasks.loadingOpen')}
+          </div>
+        )}
+
+        {dashboardReady && allNonMedicationDone && (
           <section className="mt-2">
             <div className="bg-white rounded-2xl p-6 text-center space-y-2 shadow-sm mt-4">
               <div className="text-3xl">✅</div>
@@ -760,9 +772,37 @@ export default function HomeCalm() {
           </section>
         )}
 
-        {/* Geen openstaande “stille” taken: eerste stap / backlog leeg (niet hetzelfde als alles klaar) */}
-        {!loading &&
+        {dashboardReady &&
+          !heroTask &&
           !allNonMedicationDone &&
+          (todayCheckIn?.top3_task_ids?.length ?? 0) > 0 && (
+          <section className="mt-2">
+            <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50/80 p-5 text-center shadow-sm">
+              <p className="text-sm font-semibold text-amber-900">
+                {t('home.top3MissingTitle')}
+              </p>
+              <p className="mt-1 text-sm text-amber-800/90">
+                {t('home.top3MissingHint')}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  void fetchTasks();
+                  window.dispatchEvent(new CustomEvent('structuro_checkin_updated'));
+                }}
+                className="mt-4 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+              >
+                {t('home.top3MissingRetry')}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Geen openstaande "stille" taken: eerste stap / backlog leeg (niet hetzelfde als alles klaar) */}
+        {dashboardReady &&
+          !heroTask &&
+          !allNonMedicationDone &&
+          (todayCheckIn?.top3_task_ids?.length ?? 0) === 0 &&
           tasks.filter(
             (t) => t.source !== 'medication' && !t.done && !t.started
           ).length === 0 && (

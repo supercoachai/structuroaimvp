@@ -17,6 +17,7 @@ import { ConsentProvider } from "@/lib/posthog/ConsentContext";
 import { PostHogProvider } from "@/lib/posthog/PostHogProvider";
 import { PostHogPageviews } from "@/components/posthog/PostHogPageviews";
 import { PostHogAuthEffects } from "@/components/posthog/PostHogAuthEffects";
+import { AppOpenedTracker } from "@/components/posthog/AppOpenedTracker";
 import { SignupAttributionCapture } from "@/components/SignupAttributionCapture";
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 import { MarketingWaitlistConsent } from "@/components/posthog/MarketingWaitlistConsent";
@@ -86,6 +87,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
               <PostHogPageviews />
             </Suspense>
             <PostHogAuthEffects />
+            <AppOpenedTracker />
             <SignupAttributionCapture />
             <RemoveLegacyFocusDurationKey />
             <PasswordRecoveryRedirect />

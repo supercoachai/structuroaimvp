@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTaskContext } from "../context/TaskContext";
+import { useCheckIn } from "@/hooks/useCheckIn";
+import { getUnfinishedTop3TasksForShutdown } from "@/lib/top3CurrentTask";
 import { createClient } from "../lib/supabase/client";
 import { toast } from "./Toast";
 import { track } from "../shared/track";
@@ -9,7 +11,6 @@ import { triggerHaptic, HAPTIC_PATTERNS } from "@/lib/haptics";
 import { insertDagafsluiterSuggestions } from "@/lib/supabase/parkedThoughtsDb";
 import { postponeTasksToCalendarDay } from "@/lib/supabase/postponeTasksDb";
 import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
-import { sortDeadlineTasks } from "@/lib/dagstart/deadlineToday";
 import { trackShutdownCompleted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
 import { captureProductEvent } from "@/lib/posthog/track";
@@ -37,6 +38,7 @@ const REST_REDIRECT_MS = 2800;
 export default function DayShutdown({ onComplete }: DayShutdownProps) {
   const { t: tr } = useI18n();
   const { tasks } = useTaskContext();
+  const { checkIn: todayCheckIn } = useCheckIn();
   const [step, setStep] = useState(0);
   const [satisfactionLevel, setSatisfactionLevel] = useState<SatisfactionLevel | null>(null);
   const [carryIds, setCarryIds] = useState<string[]>([]);
@@ -63,17 +65,11 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
   }, [tasks, todayYmd, tr]);
 
   const openRows = useMemo((): CarryTaskRow[] => {
-    const open = tasks.filter((t: any) => {
-      if (!t?.id || !String(t.title ?? "").trim()) return false;
-      if (t.done || t.notToday || t.not_today) return false;
-      if (t.source === "medication" || t.source === "event") return false;
-      return true;
-    });
-    return sortDeadlineTasks(open).map((t: any) => ({
+    return getUnfinishedTop3TasksForShutdown(tasks, todayCheckIn).map((t: any) => ({
       id: String(t.id),
       title: String(t.title ?? "").trim() || tr("common.taskFallback"),
     }));
-  }, [tasks, tr]);
+  }, [tasks, todayCheckIn, tr]);
 
   useEffect(() => {
     if (carryInitRef.current) return;

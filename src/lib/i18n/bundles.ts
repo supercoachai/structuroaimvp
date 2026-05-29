@@ -241,6 +241,10 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emptyTitle: "Doe dit nu. Klein is genoeg.",
       emptyHint: "Voeg een kleine taak toe om vandaag te beginnen",
       emptyCta: "+ Voeg je eerste taak toe",
+      top3MissingTitle: "Je focus-taak ontbreekt op het dashboard",
+      top3MissingHint:
+        "Je dagstart is opgeslagen, maar de taak kon niet worden gekoppeld. Vernieuw je taken.",
+      top3MissingRetry: "Opnieuw laden",
       nameModalTitle: "Welkom bij Structuro!",
       nameModalBody: "Hoe wil je dat we je aanspreken?",
       nameModalPh: "Je voornaam...",
@@ -601,6 +605,10 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emptyTitle: "Do this now. Small is enough.",
       emptyHint: "Add a small task to get started today",
       emptyCta: "+ Add your first task",
+      top3MissingTitle: "Your focus task is missing on the dashboard",
+      top3MissingHint:
+        "Your day start was saved, but the task could not be linked. Refresh your tasks.",
+      top3MissingRetry: "Reload",
       nameModalTitle: "Welcome to Structuro!",
       nameModalBody: "How should we address you?",
       nameModalPh: "Your first name...",

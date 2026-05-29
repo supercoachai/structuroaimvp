@@ -45,24 +45,34 @@ const ENERGY_MAX_TASKS: Record<string, number> = {
   high: 3,
 };
 
+export type UpsertCheckInResult = {
+  top3_task_ids: string[] | null;
+};
+
 export async function upsertCheckInToSupabase(
   userId: string,
   date: string,
   payload: CheckInPayload
-): Promise<void> {
+): Promise<UpsertCheckInResult> {
   const maxTasks = ENERGY_MAX_TASKS[payload.energy_level] ?? 3;
-  const ids = await sanitizeTop3TaskIdsForDate(
-    userId,
-    payload.top3_task_ids?.slice(0, maxTasks) ?? []
-  );
+  const requested =
+    payload.top3_task_ids?.slice(0, maxTasks).filter(Boolean) ?? [];
+  const ids = await sanitizeTop3TaskIdsForDate(userId, requested);
 
+  if (requested.length > 0 && ids.length === 0) {
+    throw new Error(
+      "Geen van je gekozen taken kon worden opgeslagen. Vernieuw je takenlijst en probeer opnieuw."
+    );
+  }
+
+  const savedTop3 = ids.length > 0 ? ids : null;
   const supabase = createClient();
   const includeCyclePhase = payload.cycle_phase !== undefined;
   const baseRow: Record<string, unknown> = {
     user_id: userId,
     date,
     energy_level: payload.energy_level,
-    top3_task_ids: ids.length > 0 ? ids : null,
+    top3_task_ids: savedTop3,
   };
   if (includeCyclePhase) {
     baseRow.cycle_phase = payload.cycle_phase ?? null;
@@ -82,10 +92,12 @@ export async function upsertCheckInToSupabase(
         .from("daily_checkins")
         .upsert(baseRow, { onConflict: "user_id,date" });
       if (retryErr) throw new Error(retryErr.message);
-      return;
+      return { top3_task_ids: savedTop3 };
     }
     throw new Error(error.message);
   }
+
+  return { top3_task_ids: savedTop3 };
 }
 
 /**

@@ -127,6 +127,15 @@ export function sortDeadlineTasks<T extends DeadlineEligibleTask>(
   return [...tasks].sort((a, b) => compareDeadlineTasks(a, b, todayYmd));
 }
 
+export function isDueExactlyToday(
+  dueAt: string | null | undefined,
+  todayYmd: string = getCalendarDateAmsterdam()
+): boolean {
+  const dueDay = parseDueCalendarDayAmsterdam(dueAt);
+  if (!dueDay) return false;
+  return dueDay === todayYmd;
+}
+
 /** Open taken met deadline vandaag of eerder, gesorteerd op urgentie. */
 export function getDeadlineTasksDueToday<T extends DeadlineEligibleTask>(
   tasks: T[],
@@ -142,13 +151,31 @@ export function getDeadlineTasksDueToday<T extends DeadlineEligibleTask>(
   );
 }
 
+/**
+ * Deadlines voor dagstart-autofill: alleen taken die vandaag vervallen.
+ * Achterstallige backlog (april, etc.) hoort niet de dagstart te blokkeren.
+ */
+export function getDeadlineTasksForDagstartFill<T extends DeadlineEligibleTask>(
+  tasks: T[],
+  todayYmd: string = getCalendarDateAmsterdam()
+): T[] {
+  return sortDeadlineTasks(
+    tasks.filter(
+      (t) =>
+        isDeadlineEligibleTask(t) &&
+        isDueExactlyToday(t.dueAt, todayYmd)
+    ),
+    todayYmd
+  );
+}
+
 export function buildDeadlineDagstartPlan<T extends DeadlineEligibleTask>(
   tasks: T[],
   maxSlots: number,
   todayYmd: string = getCalendarDateAmsterdam()
 ): DeadlineDagstartPlan<T> {
   const safeMax = Math.max(0, Math.floor(maxSlots));
-  const due = getDeadlineTasksDueToday(tasks, todayYmd);
+  const due = getDeadlineTasksForDagstartFill(tasks, todayYmd);
   return {
     autoFill: due.slice(0, safeMax),
     overflow: due.slice(safeMax),

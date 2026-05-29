@@ -130,27 +130,27 @@ export default function StepSuggested({
 
   if (suggested.length === 0 && onAddTask) {
     return (
-      <div style={{ width: "100%" }}>
-        <div className="ds-eyebrow">Voor jou</div>
-        <h2 className="ds-title">Voeg een taak toe.</h2>
-        <p className="ds-sub">
-          Nog geen passende taken? Begin met één kleine stap.
-        </p>
-        <div
-          className="max-h-[min(520px,62dvh)] min-h-[360px] overflow-hidden"
-          style={{ marginTop: 20 }}
-        >
+      <div className="flex min-h-0 w-full flex-1 flex-col">
+        <div className="shrink-0">
+          <div className="ds-eyebrow">Voor jou</div>
+          <h2 className="ds-title">Voeg een taak toe.</h2>
+          <p className="ds-sub">
+            Nog geen passende taken? Begin met één kleine stap.
+          </p>
+        </div>
+        <div className="mt-5 flex min-h-0 max-h-[min(520px,55dvh)] flex-1 flex-col overflow-hidden">
           <NewTaskFlow
             variant="compact"
             mode="panel"
+            fillContainer
             saving={addBusy}
             onSave={async (payload) => {
               await onAddTask(payload);
             }}
-            className="h-full shadow-none"
+            className="min-h-0 flex-1 shadow-none"
           />
         </div>
-        <div style={{ textAlign: "center", marginTop: 16 }}>
+        <div className="shrink-0" style={{ textAlign: "center", marginTop: 16 }}>
           <button
             type="button"
             className="ds-link"
@@ -164,16 +164,19 @@ export default function StepSuggested({
   }
 
   return (
-    <div style={{ width: "100%" }}>
-      <div className="ds-eyebrow">Voor jou</div>
-      <h2 className="ds-title">Dit stelt Structuro voor.</h2>
-      <p className="ds-sub">
-        {meta ? `Past bij ${meta.label.toLowerCase()} energie. ` : ""}
-        Klik weg wat niet past. Max {maxSlots}{" "}
-        {maxSlots === 1 ? "taak" : "taken"}.
-      </p>
+    <div className="flex min-h-0 w-full flex-1 flex-col">
+      <div className="shrink-0">
+        <div className="ds-eyebrow">Voor jou</div>
+        <h2 className="ds-title">Dit stelt Structuro voor.</h2>
+        <p className="ds-sub">
+          {meta ? `Past bij ${meta.label.toLowerCase()} energie. ` : ""}
+          Klik weg wat niet past. Max {maxSlots}{" "}
+          {maxSlots === 1 ? "taak" : "taken"}.
+        </p>
+      </div>
 
       <div
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -297,51 +300,53 @@ export default function StepSuggested({
         })}
       </div>
 
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: 12,
-          color: "var(--st-muted-2)",
-          marginBottom: 20,
-        }}
-      >
-        {selected.length === 0
-          ? "Niks geselecteerd."
-          : `${selected.length}/${slotCapacity} taken, ${total} min`}
-      </div>
+      <div className="shrink-0">
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 12,
+            color: "var(--st-muted-2)",
+            marginBottom: 20,
+          }}
+        >
+          {selected.length === 0
+            ? "Niks geselecteerd."
+            : `${selected.length}/${slotCapacity} taken, ${total} min`}
+        </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <button
-          type="button"
-          className="ds-link"
-          onClick={onSwitchToSwipe}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          liever swipen
-        </button>
-        <button
-          type="button"
-          className="ds-link primary"
-          aria-disabled={selected.length === 0}
-          onClick={() =>
-            selected.length > 0 &&
-            onAccept(
-              clampDagstartSelection(
-                selected,
-                tasksById,
-                maxSlots,
-                extraDeadlineSlots
+          <button
+            type="button"
+            className="ds-link"
+            onClick={onSwitchToSwipe}
+          >
+            liever swipen
+          </button>
+          <button
+            type="button"
+            className="ds-link primary"
+            aria-disabled={selected.length === 0}
+            onClick={() =>
+              selected.length > 0 &&
+              onAccept(
+                clampDagstartSelection(
+                  selected,
+                  tasksById,
+                  maxSlots,
+                  extraDeadlineSlots
+                )
               )
-            )
-          }
-        >
-          Start mijn dag →
-        </button>
+            }
+          >
+            Start mijn dag →
+          </button>
+        </div>
       </div>
     </div>
   );

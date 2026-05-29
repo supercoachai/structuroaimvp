@@ -36,7 +36,7 @@ export type NewTaskFlowProps = {
   /** Sla deadline-stap over (bijv. quick-add balk). */
   skipDeadline?: boolean;
   /** Sla titel-stap over (bijv. omzetten geparkeerde gedacht). */
-  skipTitle?: boolean;
+  fillContainer?: boolean;
 };
 
 function truncateTitle(title: string | undefined | null, max = 22): string {
@@ -84,6 +84,7 @@ export default function NewTaskFlow({
   saving = false,
   skipDeadline = false,
   skipTitle = false,
+  fillContainer = false,
 }: NewTaskFlowProps) {
   const { t, locale } = useI18n();
   const dateLocale = locale === "en" ? "en-US" : "nl-NL";
@@ -249,7 +250,7 @@ export default function NewTaskFlow({
     <div
       className={`new-task-flow flex min-h-0 flex-col overflow-hidden bg-[var(--st-surface,#fff)] ${
         compact ? "new-task-flow--compact rounded-[20px]" : "new-task-flow--default rounded-[32px]"
-      } ${className}`}
+      } ${fillContainer ? "new-task-flow--embedded h-full max-h-full" : ""} ${className}`}
     >
       {step < doneStepIndex ? (
         <div className="new-task-flow-header flex shrink-0 items-center justify-between px-5 pt-4 sm:px-[22px] sm:pt-[18px]">

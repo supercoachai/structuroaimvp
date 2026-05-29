@@ -1,8 +1,8 @@
 import {
   buildDeadlineDagstartPlan,
-  getDeadlineTasksDueToday,
+  getDeadlineTasksForDagstartFill,
   isDeadlineEligibleTask,
-  isDueOnOrBeforeToday,
+  isDueExactlyToday,
   type DeadlineEligibleTask,
 } from "@/lib/dagstart/deadlineToday";
 import {
@@ -24,7 +24,7 @@ export function isTaskDueTodayForDagstart(
   todayYmd: string = getCalendarDateAmsterdam()
 ): boolean {
   return (
-    isDeadlineEligibleTask(task) && isDueOnOrBeforeToday(task.dueAt, todayYmd)
+    isDeadlineEligibleTask(task) && isDueExactlyToday(task.dueAt, todayYmd)
   );
 }
 
@@ -51,7 +51,7 @@ export function buildDagstartTaskPlan<
     maxSlots,
     todayYmd
   );
-  const deadlineToday = getDeadlineTasksDueToday(poolTasks, todayYmd);
+  const deadlineToday = getDeadlineTasksForDagstartFill(poolTasks, todayYmd);
   const deadlineTodayIds = new Set(deadlineToday.map((t) => String(t.id)));
 
   const autoFillIds = new Set(autoFill.map((t) => String(t.id)));

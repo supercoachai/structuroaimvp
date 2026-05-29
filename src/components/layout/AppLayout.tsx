@@ -19,7 +19,7 @@ const DagstartOverlay = dynamic(() => import('@/components/DagstartOverlay'), {
   loading: () => <div className="min-h-0 flex-1 bg-[#F1F3F8]" aria-hidden />,
 });
 import { performClientLogout } from '@/lib/logoutClient';
-import { isDagstartDoneTodayClient } from '@/lib/dagstartCookie';
+import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useI18n } from '@/lib/i18n';
 
@@ -86,10 +86,14 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   };
 
   const handleDagstartComplete = () => {
+    setDagstartCookieOnClient();
     setDagstartPhase(null);
     startTransition(() => {
-      setDagstartDone(isDagstartDoneTodayClient());
+      setDagstartDone(true);
     });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
+    }
     requestAnimationFrame(() => {
       router.refresh();
     });

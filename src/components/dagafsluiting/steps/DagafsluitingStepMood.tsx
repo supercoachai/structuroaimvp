@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { SatisfactionLevel } from "@/components/dagafsluiting/DagafsluitingSatisfactionCards";
 import { SHUTDOWN_MOODS } from "@/lib/dagafsluiting/shutdownMoods";
 import { useI18n } from "@/lib/i18n";
+import { useSupportsHover } from "@/hooks/useSupportsHover";
 
 type DagafsluitingStepMoodProps = {
   mood: SatisfactionLevel | null;
@@ -14,6 +16,8 @@ export default function DagafsluitingStepMood({
   onPick,
 }: DagafsluitingStepMoodProps) {
   const { t } = useI18n();
+  const supportsHover = useSupportsHover();
+  const [hoveredMood, setHoveredMood] = useState<SatisfactionLevel | null>(null);
 
   return (
     <div className="dagafsluiting-eod-step w-full max-w-[480px]">
@@ -26,22 +30,38 @@ export default function DagafsluitingStepMood({
         {SHUTDOWN_MOODS.map((m, i) => {
           const active = mood === m.id;
           const dim = mood != null && !active;
+          const hovered = supportsHover && hoveredMood === m.id;
+          const highlighted = active || hovered;
           return (
             <button
               key={m.id}
               type="button"
               aria-pressed={active}
               onClick={() => onPick(m.id)}
-              className="dagafsluiting-eod-list-item flex aspect-square flex-col items-center justify-center gap-3 rounded-3xl border transition-all duration-300 active:scale-[0.98]"
+              onMouseEnter={
+                supportsHover ? () => setHoveredMood(m.id) : undefined
+              }
+              onMouseLeave={
+                supportsHover ? () => setHoveredMood(null) : undefined
+              }
+              onFocus={supportsHover ? () => setHoveredMood(m.id) : undefined}
+              onBlur={supportsHover ? () => setHoveredMood(null) : undefined}
+              className="dagafsluiting-eod-mood-btn dagafsluiting-eod-list-item flex aspect-square flex-col items-center justify-center gap-3 rounded-3xl border transition-all duration-300 active:scale-[0.98]"
               style={{
                 animationDelay: `${120 + i * 90}ms`,
-                background: active ? m.haze : "#FFFFFF",
-                borderColor: active ? m.color : "var(--st-line)",
+                background: highlighted ? m.haze : "#FFFFFF",
+                borderColor: highlighted ? m.color : "var(--st-line)",
                 opacity: dim ? 0.35 : 1,
-                transform: active ? "translateY(-3px) scale(1.02)" : "none",
+                transform: active
+                  ? "translateY(-3px) scale(1.02)"
+                  : hovered
+                    ? "translateY(-2px)"
+                    : "none",
                 boxShadow: active
                   ? `0 14px 30px -10px ${m.color}40, 0 0 0 6px ${m.haze}`
-                  : "0 1px 2px rgba(14,23,48,0.04)",
+                  : hovered
+                    ? `0 10px 24px -12px ${m.color}35, 0 0 0 3px ${m.haze}`
+                    : "0 1px 2px rgba(14,23,48,0.04)",
               }}
             >
               <span
@@ -49,13 +69,13 @@ export default function DagafsluitingStepMood({
                 style={{
                   background: `radial-gradient(circle at 35% 30%, ${m.color}, ${m.color}80 60%, ${m.color}40 100%)`,
                   boxShadow: `inset 0 -6px 12px ${m.color}30`,
-                  transform: active ? "scale(1.1)" : "scale(1)",
+                  transform: highlighted ? "scale(1.1)" : "scale(1)",
                 }}
                 aria-hidden
               />
               <span
                 className="text-lg font-medium tracking-tight transition-colors duration-200"
-                style={{ color: active ? m.color : "var(--st-ink)" }}
+                style={{ color: highlighted ? m.color : "var(--st-ink)" }}
               >
                 {t(`dayShutdown.${m.labelKey}`)}
               </span>

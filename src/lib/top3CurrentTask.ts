@@ -54,6 +54,38 @@ export function getOpenTop3Tasks<T extends Top3TaskLike & { id: string }>(
   return open;
 }
 
+/** Onafgeronde focus-taken uit vandaag's dagstart (volgorde top3), voor dagafsluiting. */
+export function getUnfinishedTop3TasksForShutdown<
+  T extends Top3TaskLike & { id: string; notToday?: boolean | null; not_today?: boolean | null },
+>(
+  tasks: T[],
+  checkIn: CheckInForTop3 | null | undefined
+): T[] {
+  const rawIds = checkIn?.top3_task_ids;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) return [];
+
+  const max = maxSlotsForEnergy(checkIn?.energy_level);
+  const ids = rawIds.slice(0, max);
+  const result: T[] = [];
+
+  for (const taskId of ids) {
+    const idStr = String(taskId).trim();
+    if (!idStr) continue;
+    const task = tasks.find((t) => t && String(t.id) === idStr);
+    if (
+      task &&
+      task.source !== "medication" &&
+      task.source !== "event" &&
+      !task.done &&
+      !task.notToday &&
+      !task.not_today
+    ) {
+      result.push(task);
+    }
+  }
+  return result;
+}
+
 /**
  * Eerste taak uit top3_task_ids die nog open is (niet done, geen medication/event).
  * Respecteert energie-limiet (low 1 / medium 2 / high 3 ids).

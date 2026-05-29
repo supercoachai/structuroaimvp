@@ -6,7 +6,9 @@ import {
   buildDeadlineDagstartPlan,
   calendarDayDiff,
   getDeadlineTasksDueToday,
+  getDeadlineTasksForDagstartFill,
   isDueToday,
+  isDueExactlyToday,
   isDueOnOrBeforeToday,
   isDueStrictlyAfterToday,
   isTaskOverdue,
@@ -114,7 +116,7 @@ function task(
   assert.deepEqual(due.map((t) => t.id), ["ok"]);
 }
 
-// buildDeadlineDagstartPlan: overflow = deadlines - maxSlots
+// buildDeadlineDagstartPlan: alleen deadlines vandaag, overflow = vandaag - maxSlots
 {
   const tasks = [
     task("1", "2026-05-24"),
@@ -125,21 +127,46 @@ function task(
   const low = buildDeadlineDagstartPlan(tasks, 1, TODAY);
   assert.deepEqual(
     low.autoFill.map((t) => t.id),
-    ["1"]
+    ["2"]
   );
-  assert.deepEqual(
-    low.overflow.map((t) => t.id),
-    ["3", "2"]
-  );
+  assert.equal(low.overflow.length, 0);
 
   const high = buildDeadlineDagstartPlan(tasks, 3, TODAY);
-  assert.equal(high.autoFill.length, 3);
+  assert.deepEqual(
+    high.autoFill.map((t) => t.id),
+    ["2"]
+  );
   assert.equal(high.overflow.length, 0);
 
-  const overflowOne = buildDeadlineDagstartPlan(tasks, 2, TODAY);
-  assert.equal(overflowOne.autoFill.length, 2);
-  assert.equal(overflowOne.overflow.length, 1);
-  assert.equal(overflowOne.overflow[0].id, "2");
+  const manyToday = buildDeadlineDagstartPlan(
+    [
+      task("a", "2026-05-26", { duration: 30 }),
+      task("b", "2026-05-26", { duration: 15 }),
+      task("c", "2026-05-26", { duration: 45 }),
+    ],
+    2,
+    TODAY
+  );
+  assert.equal(manyToday.autoFill.length, 2);
+  assert.equal(manyToday.overflow.length, 1);
+}
+
+// getDeadlineTasksForDagstartFill vs getDeadlineTasksDueToday
+{
+  const tasks = [
+    task("today", "2026-05-26"),
+    task("overdue", "2026-05-24"),
+  ];
+  assert.deepEqual(
+    getDeadlineTasksForDagstartFill(tasks, TODAY).map((t) => t.id),
+    ["today"]
+  );
+  assert.deepEqual(
+    getDeadlineTasksDueToday(tasks, TODAY).map((t) => t.id),
+    ["overdue", "today"]
+  );
+  assert.equal(isDueExactlyToday("2026-05-26", TODAY), true);
+  assert.equal(isDueExactlyToday("2026-05-24", TODAY), false);
 }
 
 // calendarDayDiff

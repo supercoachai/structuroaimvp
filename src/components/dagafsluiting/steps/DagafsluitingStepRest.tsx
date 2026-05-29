@@ -23,11 +23,12 @@ export default function DagafsluitingStepRest({
   const adjective = meta ? t(`dayShutdown.${meta.adjectiveKey}`) : t("dayShutdown.moodAdjCalm");
 
   return (
-    <div className="dagafsluiting-eod-step flex w-full max-w-[380px] flex-col items-center pt-2">
-      <div
-        className="dagafsluiting-eod-orb relative mb-10 flex h-[min(240px,42vw)] w-[min(240px,42vw)] items-center justify-center sm:mb-12"
-        aria-hidden
-      >
+    <div className="dagafsluiting-eod-step dagafsluiting-eod-step--rest flex min-h-full w-full max-w-[380px] flex-col items-center pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+      <div className="flex w-full flex-col items-center">
+        <div
+          className="dagafsluiting-eod-orb relative mb-10 flex h-[min(240px,42vw)] w-[min(240px,42vw)] items-center justify-center sm:mb-12"
+          aria-hidden
+        >
         <div
           className="dagafsluiting-eod-orb-ring absolute inset-0 rounded-full"
           style={{ border: `1px solid ${color}28` }}
@@ -76,9 +77,10 @@ export default function DagafsluitingStepRest({
           ) : null}
         </div>
       ) : null}
+      </div>
 
       <p
-        className="dagafsluiting-eod-goodnight mt-[clamp(3rem,12vh,6rem)] text-[13px] font-medium uppercase tracking-[0.15em] text-[var(--st-muted-2)]"
+        className="dagafsluiting-eod-goodnight mt-auto w-full pt-[clamp(3.5rem,22vh,7rem)] text-center text-[13px] font-medium uppercase tracking-[0.15em] text-[var(--st-muted-2)]"
         style={{ animationDelay: "1200ms" }}
       >
         {t("dayShutdown.goodNight")}

@@ -119,11 +119,15 @@ export function useCheckIn(): {
       const date = today();
       if (user?.id) {
         try {
-          await upsertCheckInToSupabase(user.id, date, payload as CheckInPayload);
+          const saved = await upsertCheckInToSupabase(
+            user.id,
+            date,
+            payload as CheckInPayload
+          );
           setCheckIn({
             date,
             energy_level: payload.energy_level,
-            top3_task_ids: payload.top3_task_ids,
+            top3_task_ids: saved.top3_task_ids,
             cycle_phase: payload.cycle_phase ?? null,
             user_id: user.id,
             created_at: new Date().toISOString(),

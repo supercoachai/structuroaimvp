@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTaskContext } from "@/context/TaskContext";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { OPTIMISTIC_TASK_ID_PREFIX, useTaskContext } from "@/context/TaskContext";
 import { useUser } from "@/hooks/useUser";
 import { useCheckIn } from "@/hooks/useCheckIn";
 import { useCycleProfile } from "@/hooks/useCycleProfile";
@@ -10,6 +10,7 @@ import { resolveDayStartFirstName, getDayStartTimeOfDay } from "@/lib/dayStartGr
 import { calculateDayInCycle } from "@/lib/cycle/calculatePhase";
 import {
   isDueStrictlyAfterToday,
+  isTaskOverdue,
   compareDeadlineTasks,
   calendarDayToDueAt,
 } from "@/lib/dagstart/deadlineToday";
@@ -18,7 +19,7 @@ import {
   rankTaskForDagstartSuggestions,
 } from "@/lib/dagstart/buildDagstartTaskPlan";
 import { resolveDagstartSavedTaskIds, clampDagstartSelection } from "@/lib/dagstart/dagstartPickLimits";
-import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam, setDagstartCookieOnClient } from "@/lib/dagstartCookie";
 import DagstartDeadlineOverflowModal from "@/components/dagstart/DagstartDeadlineOverflowModal";
 import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
@@ -105,12 +106,20 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
     onConfirm?: () => void;
   } | null>(null);
   const [overflowBusy, setOverflowBusy] = useState(false);
-  const [overflowQueue, setOverflowQueue] = useState<DagstartTaskCard[]>([]);
   /** Forceert remount van stap-2 substeps zodat lokale state (selecties, swipe-queue) opnieuw begint. */
   const [step2Key, setStep2Key] = useState(0);
 
+  /**
+   * Mount-guard: PostHog fired `dagstart_started` één keer per actieve sessie.
+   * Voorheen vuurde het event bij elke remount (reload, back-navigatie, parent re-render),
+   * waardoor de funnel-ratio dagstart_started/dagstart_completed structureel scheef stond.
+   */
+  const hasFiredStart = useRef(false);
+
   useEffect(() => {
     trackDagstartOpened();
+    if (hasFiredStart.current) return;
+    hasFiredStart.current = true;
     captureProductEvent("dagstart_started");
   }, []);
 
@@ -174,11 +183,13 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   const openTasksRaw = useMemo(() => {
     if (!energy) return [];
     const allowedIds = new Set(dagstartTaskEnergyAllow(energy));
+    const todayYmd = getCalendarDateAmsterdam();
     return tasks.filter((t: any) => {
       if (!t?.id || !String(t.title ?? "").trim()) return false;
       if (t.done || t.notToday || t.not_today) return false;
       if (t.source === "medication" || t.source === "event") return false;
       if (isDueStrictlyAfterToday(t.dueAt)) return false;
+      if (t.dueAt && isTaskOverdue(t.dueAt, todayYmd)) return false;
       const dsEnergy = appEnergyToDagstartId(t.energyLevel);
       return allowedIds.has(dsEnergy);
     });
@@ -233,16 +244,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
     setExtraDeadlineSlots(0);
     setOverflowConfirmedIds([]);
     setOverflowModal(null);
-    setOverflowQueue(
-      dagstartPlan.deadlineOverflow.map((t) => taskToDagstartCardLocal(t))
-    );
   }, [step, step2Key, dagstartPlan]);
-
-  useEffect(() => {
-    if (step !== 2 || overflowModal || overflowQueue.length === 0) return;
-    const next = overflowQueue[0];
-    setOverflowModal({ task: next, dueAt: next.dueAt });
-  }, [step, overflowModal, overflowQueue]);
 
   const requestDeadlineOverflow = useCallback(
     (task: DagstartTaskCard, onConfirm?: () => void) => {
@@ -259,9 +261,6 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         dueAt: calendarDayToDueAt(getTomorrowCalendarDateAmsterdam()),
       });
       await fetchTasks();
-      setOverflowQueue((q) =>
-        q.filter((t) => t.id !== overflowModal.task.id)
-      );
       setOverflowModal(null);
     } catch (e) {
       console.error("deadline overflow postpone:", e);
@@ -280,7 +279,6 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         : [...ids, overflowModal.task.id]
     );
     overflowModal.onConfirm?.();
-    setOverflowQueue((q) => q.filter((t) => t.id !== overflowModal.task.id));
     setOverflowModal(null);
   }, [overflowModal, overflowBusy]);
 
@@ -294,17 +292,23 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         maxSlots,
         extraDeadlineSlots
       );
-      setSubmitting(true);
-      setKeptIds(savedIds);
-      setStep(3);
-
       const appEnergy = dagstartIdToAppEnergy(energy);
       const cyclePhase = computePhaseToday();
       const top3 = resolveDagstartSavedTaskIds(
         savedIds,
         maxSlots,
         extraDeadlineSlots
-      );
+      ).filter((id) => id && !id.startsWith(OPTIMISTIC_TASK_ID_PREFIX));
+
+      if (savedIds.length > 0 && top3.length === 0) {
+        toast(
+          "Je gekozen taak wordt nog opgeslagen. Wacht even en probeer opnieuw."
+        );
+        return;
+      }
+
+      setSubmitting(true);
+      setKeptIds(savedIds);
 
       try {
         await saveCheckIn({
@@ -325,13 +329,18 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
           console.warn("markOnboardingCompleted:", err);
         }
         captureProductEvent("dagstart_completed", {
+          energy_level: appEnergy,
+          tasks_selected_count: top3.length,
+          has_cycle_phase: Boolean(cyclePhase),
+          source: "dagstart_flow",
           energy: appEnergy,
           task_count: top3.length,
         });
+        setDagstartCookieOnClient();
+        setStep(3);
       } catch (err: any) {
         console.error("Dagstart save error:", err);
         toast(`Fout bij opslaan: ${err?.message ?? "onbekende fout"}`);
-        setSubmitting(false);
         return;
       } finally {
         setSubmitting(false);
@@ -349,7 +358,11 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   const handleEnergyPick = useCallback((id: DagstartEnergyId) => {
     setEnergy(id);
     trackEnergyChecked(id);
-    captureProductEvent("dagstart_energy_chosen", { level: id });
+    captureProductEvent("dagstart_energy_chosen", {
+      energy_level: dagstartIdToAppEnergy(id),
+      level: id,
+      source: "dagstart_flow",
+    });
     setTimeout(() => setStep(1), 480);
   }, []);
 
@@ -390,7 +403,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
   return (
     <div className="ds-root">
-      <div className="ds-card">
+      <div className={`ds-card${step === 2 ? " ds-card--tall" : ""}`}>
         <div className="ds-topbar">
           <span className="ds-brand">Structuro</span>
           <span className="ds-topbar-meta">Dagstart</span>
@@ -410,13 +423,8 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         ) : null}
 
         <div
-          className={`ds-body ${step === 3 ? "center" : ""} ${
-            step === 0 || step === 1 ? "center" : ""
-          } ${
-            step === 2 &&
-            (choice === "self" || (choice === "structuro" && taskPool.length === 0))
-              ? "scroll"
-              : ""
+          className={`ds-body ${step === 0 || step === 1 || step === 3 ? "center" : ""} ${
+            step === 2 || step === 3 ? "scroll" : ""
           }`}
         >
           {step === 0 ? (
@@ -467,7 +475,13 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
           ) : null}
 
           {step === 3 ? (
-            <StepDone picks={picksForDone} onDashboard={onComplete} />
+            <StepDone
+              picks={picksForDone}
+              onDashboard={() => {
+                setDagstartCookieOnClient();
+                onComplete();
+              }}
+            />
           ) : null}
         </div>
       </div>

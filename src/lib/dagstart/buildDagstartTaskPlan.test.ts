@@ -38,12 +38,9 @@ function task(
   );
   assert.deepEqual(
     low.deadlineAutoFill.map((t) => t.id),
-    ["d2"]
-  );
-  assert.deepEqual(
-    low.deadlineOverflow.map((t) => t.id),
     ["d1"]
   );
+  assert.equal(low.deadlineOverflow.length, 0);
   assert.equal(low.structuroFill.length, 0);
 }
 

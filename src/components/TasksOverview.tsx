@@ -36,6 +36,34 @@ import NewTaskFlow from "@/components/newTask/NewTaskFlow";
 import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
 import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
 import { useI18n } from "@/lib/i18n";
+import EnergyIcon from "@/components/structuro/EnergyIcon";
+import EnergyDotTask from "@/components/structuro/EnergyDotTask";
+import { NEW_TASK_ENERGIES } from "@/lib/newTask/newTaskFlowTypes";
+import { appEnergyToSt } from "@/lib/structuro/energyTokens";
+
+const OPEN_ENERGY_SECTIONS = [
+  {
+    key: "green" as const,
+    bucket: NEW_TASK_ENERGIES[0],
+    titleKey: "tasks.colEasy" as const,
+    zoneTitleKey: "tasks.zoneEasy" as const,
+    zoneDescKey: "tasks.zoneEasyDesc" as const,
+  },
+  {
+    key: "yellow" as const,
+    bucket: NEW_TASK_ENERGIES[1],
+    titleKey: "tasks.colNormal" as const,
+    zoneTitleKey: "tasks.zoneNormal" as const,
+    zoneDescKey: "tasks.zoneNormalDesc" as const,
+  },
+  {
+    key: "red" as const,
+    bucket: NEW_TASK_ENERGIES[2],
+    titleKey: "tasks.colIntense" as const,
+    zoneTitleKey: "tasks.zoneHard" as const,
+    zoneDescKey: "tasks.zoneHardDesc" as const,
+  },
+] as const;
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
   bg: designSystem.colors.background,
@@ -154,40 +182,6 @@ export default function TasksOverviewCalm() {
     });
     return out;
   }, [todayCheckIn?.top3_task_ids, maxSlots, deferredTasks]);
-
-  // Helper: Get energie kleur
-  const getEnergyColor = (level: string) => {
-    switch (level) {
-      case 'low': return '#10B981'; // groen
-      case 'medium': return '#F59E0B'; // oranje
-      case 'high': return '#EF4444'; // rood
-      default: return '#6B7280';
-    }
-  };
-
-  // Glow voor status-dot (zelfde kleur, transparant)
-  const getEnergyGlow = (level: string) => {
-    const c = getEnergyColor(level);
-    const hex = c.slice(1);
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return `0 0 0 2px ${c}20, 0 0 8px ${c}40`;
-  };
-
-  // Helper: Get energie label
-  const getEnergyLabel = (level: string) => {
-    switch (level) {
-      case "low":
-        return tr("tasks.energyEasy");
-      case "medium":
-        return tr("tasks.energyNormal");
-      case "high":
-        return tr("tasks.energyHard");
-      default:
-        return tr("tasks.energyUnknown");
-    }
-  };
 
   const addMicroStepToTask = async (task: any) => {
     const title = microStepDraft.title.trim();
@@ -612,30 +606,33 @@ export default function TasksOverviewCalm() {
                 {tr("tasks.zonesIntro")}
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                <div className="min-w-0 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
-                  <div className="mb-1.5 text-xs font-semibold text-emerald-700 sm:text-sm">
-                    {tr("tasks.zoneEasy")}
+                {OPEN_ENERGY_SECTIONS.map((section) => (
+                  <div
+                    key={section.key}
+                    className="min-w-0 rounded-xl border p-3"
+                    style={{
+                      borderColor: `${section.bucket.color}33`,
+                      background: section.bucket.haze,
+                    }}
+                  >
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <EnergyIcon
+                        kind={section.bucket.iconKind}
+                        size={18}
+                        color={section.bucket.color}
+                      />
+                      <div
+                        className="text-xs font-semibold sm:text-sm"
+                        style={{ color: section.bucket.color }}
+                      >
+                        {tr(section.zoneTitleKey)}
+                      </div>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-700">
+                      {tr(section.zoneDescKey)}
+                    </p>
                   </div>
-                  <p className="text-xs leading-relaxed text-gray-700">
-                    {tr("tasks.zoneEasyDesc")}
-                  </p>
-                </div>
-                <div className="min-w-0 rounded-xl border border-amber-100 bg-amber-50/40 p-3">
-                  <div className="mb-1.5 text-xs font-semibold text-amber-700 sm:text-sm">
-                    {tr("tasks.zoneNormal")}
-                  </div>
-                  <p className="text-xs leading-relaxed text-gray-700">
-                    {tr("tasks.zoneNormalDesc")}
-                  </p>
-                </div>
-                <div className="min-w-0 rounded-xl border border-red-100 bg-red-50/40 p-3">
-                  <div className="mb-1.5 text-xs font-semibold text-red-700 sm:text-sm">
-                    {tr("tasks.zoneHard")}
-                  </div>
-                  <p className="text-xs leading-relaxed text-gray-700">
-                    {tr("tasks.zoneHardDesc")}
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           ) : null}
@@ -652,45 +649,63 @@ export default function TasksOverviewCalm() {
         ) : (
           <>
             <div className="flex flex-col gap-3">
-              {(
-                [
-                  { key: "green" as const, title: tr("tasks.colEasy"), titleClass: "text-emerald-700" },
-                  { key: "yellow" as const, title: tr("tasks.colNormal"), titleClass: "text-amber-700" },
-                  { key: "red" as const, title: tr("tasks.colIntense"), titleClass: "text-red-700" },
-                ] as const
-              ).map((col) => {
-                const list = (openByEnergy as Record<typeof col.key, any[]>)[col.key];
-                const zoneOpen = openEnergySections[col.key];
+              {OPEN_ENERGY_SECTIONS.map((section) => {
+                const { key, bucket, titleKey } = section;
+                const list = (openByEnergy as Record<typeof key, any[]>)[key];
+                const zoneOpen = openEnergySections[key];
                 return (
                   <div
-                    key={col.key}
-                    className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm"
+                    key={key}
+                    className="overflow-hidden rounded-2xl border shadow-sm"
+                    style={{
+                      borderColor: `${bucket.color}28`,
+                      background: bucket.haze,
+                    }}
                   >
                     <button
                       type="button"
                       onClick={() =>
-                        setOpenEnergySections((p) => ({ ...p, [col.key]: !p[col.key] }))
+                        setOpenEnergySections((p) => ({ ...p, [key]: !p[key] }))
                       }
-                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-100/90"
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-white/50"
                       aria-expanded={zoneOpen}
                     >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className={`shrink-0 text-sm font-semibold ${col.titleClass}`}>
-                          {col.title}
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <EnergyIcon
+                          kind={bucket.iconKind}
+                          size={20}
+                          color={bucket.color}
+                        />
+                        <span
+                          className="shrink-0 text-sm font-semibold"
+                          style={{ color: bucket.color }}
+                        >
+                          {tr(titleKey)}
                         </span>
-                        <span className="font-mono tabular-nums rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-600">
+                        <span
+                          className="font-mono tabular-nums rounded-lg px-2 py-0.5 text-xs font-semibold"
+                          style={{
+                            border: `1px solid ${bucket.color}40`,
+                            background: "white",
+                            color: bucket.color,
+                          }}
+                        >
                           {list.length}
                         </span>
                       </div>
                       <ChevronDownIcon
-                        className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 ${
+                        className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
                           zoneOpen ? "rotate-180" : ""
                         }`}
+                        style={{ color: bucket.color }}
                         aria-hidden
                       />
                     </button>
                     {zoneOpen ? (
-                      <div className="border-t border-gray-200 bg-white/60 px-3 pb-3 pt-2">
+                      <div
+                        className="border-t bg-white/70 px-3 pb-3 pt-2"
+                        style={{ borderColor: `${bucket.color}22` }}
+                      >
                         {list.length === 0 ? (
                           <p className="px-1 py-2 text-xs italic text-gray-500">{tr("tasks.noInCol")}</p>
                         ) : (
@@ -701,7 +716,8 @@ export default function TasksOverviewCalm() {
                         const deadlineMeta = getTaskDeadlineMeta(task.dueAt, locale);
                         const isCompleting = completingTaskIds.has(task.id);
                         const isPop = checkboxPopId === task.id;
-                        const isEasyColumn = col.key === "green";
+                        const isEasyColumn = key === "green";
+                        const easyTone = NEW_TASK_ENERGIES[0].color;
                         const microCount = normalizeMicroSteps(task.microSteps).length;
 
                         return (
@@ -725,9 +741,13 @@ export default function TasksOverviewCalm() {
                                     }}
                                     aria-label={tr("tasks.quickDoneTitle")}
                                     title={tr("tasks.quickDoneTitle")}
-                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 transition-transform duration-200 disabled:pointer-events-none ${
-                                      isCompleting ? "bg-emerald-500" : "bg-white hover:bg-emerald-50"
-                                    } ${isPop ? "scale-125" : "scale-100"}`}
+                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-200 disabled:pointer-events-none ${
+                                      isPop ? "scale-125" : "scale-100"
+                                    }`}
+                                    style={{
+                                      borderColor: easyTone,
+                                      background: isCompleting ? easyTone : "white",
+                                    }}
                                   >
                                     {isCompleting ? (
                                       <svg
@@ -743,17 +763,12 @@ export default function TasksOverviewCalm() {
                                     ) : null}
                                   </button>
                                 ) : (
-                                  <div
-                                    className="pointer-events-none mt-0.5 h-5 w-5 shrink-0 rounded-full"
-                                    style={{
-                                      background: getEnergyColor(energyLevel),
-                                      boxShadow: getEnergyGlow(energyLevel),
-                                    }}
-                                    role="img"
-                                    aria-label={tr("tasks.energyDotAria", {
-                                      label: getEnergyLabel(energyLevel),
-                                    })}
-                                  />
+                                  <span className="mt-0.5 shrink-0" aria-hidden>
+                                    <EnergyDotTask
+                                      energy={appEnergyToSt(energyLevel)}
+                                      size={10}
+                                    />
+                                  </span>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex min-w-0 items-start justify-between gap-2">
