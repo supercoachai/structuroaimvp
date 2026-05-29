@@ -673,7 +673,7 @@ function FocusContent() {
       </div>
 
       {existingMicroSteps.length > 0 ? (
-        <div className="flex flex-col gap-1">
+        <div className="focus-screen__micro-steps-scroll flex flex-col gap-1">
           {existingMicroSteps.map((step, idx) => {
             const isDone = Boolean(step.done);
             const isActive = !isDone && idx === activeStepIdx;

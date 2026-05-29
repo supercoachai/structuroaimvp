@@ -18,7 +18,7 @@ export function RegistrerenShell({ children, error, info }: RegistrerenShellProp
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-x-hidden bg-[var(--st-bg)] px-4 py-6 pt-[max(3rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
+    <div className="relative flex min-h-[100dvh] w-full items-start justify-center overflow-x-hidden overflow-y-auto bg-[var(--st-bg)] px-2 py-6 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))] sm:px-4">
       <button
         type="button"
         onClick={handleBack}
@@ -50,7 +50,7 @@ export function RegistrerenShell({ children, error, info }: RegistrerenShellProp
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[780px] space-y-6">
+      <div className="mx-auto w-full max-w-[980px] space-y-6">
         <div className="flex flex-col items-center text-center">
           {logoError ? (
             <div className="flex h-[4.55rem] w-[4.55rem] items-center justify-center rounded-2xl bg-blue-600 shadow-md">

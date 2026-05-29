@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { clearStructuroLocalModeCookie } from "@/lib/localModeSession";
@@ -14,9 +15,10 @@ import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { RegistrerenPricingCard } from "./RegistrerenPricingCard";
+import { refundMailtoHref } from "@/lib/refundContact";
 
 function RegistrerenPlanInner() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -122,6 +124,7 @@ function RegistrerenPlanInner() {
         priceId,
         userId,
         email: userEmail,
+        addWelcomeTask: welcomeTaskOptIn,
       }),
     });
 
@@ -181,8 +184,8 @@ function RegistrerenPlanInner() {
         {t("registrerenPage.planHeading")}
       </h2>
 
-      <div className="grid grid-cols-1 items-stretch gap-[22px] md:grid-cols-2">
-        <div className="order-2 flex w-full md:order-1">
+      <div className="grid grid-cols-2 items-stretch gap-2 sm:gap-5 lg:gap-6">
+        <div className="flex min-w-0 w-full">
           <RegistrerenPricingCard
             plan={monthlyPlan}
             selected={selectedPlanId === "monthly"}
@@ -190,13 +193,38 @@ function RegistrerenPlanInner() {
             t={t}
           />
         </div>
-        <div className="order-1 flex w-full md:order-2">
+        <div className="flex min-w-0 w-full">
           <RegistrerenPricingCard
             plan={yearlyPlan}
             selected={selectedPlanId === "yearly"}
             onSelect={(plan) => setSelectedPlanId(plan.id)}
             t={t}
           />
+        </div>
+      </div>
+
+      <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3.5 pt-4 sm:px-5 sm:py-4">
+        <ShieldCheckIcon
+          className="mt-1 h-5 w-5 shrink-0 text-emerald-600"
+          aria-hidden
+        />
+        <div className="min-w-0 pt-0.5">
+          <p className="text-sm font-semibold text-slate-900">
+            {t("registrerenPage.guaranteeLine")}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+            {t("registrerenPage.guaranteeIntro")}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-600">
+            {t("registrerenPage.guaranteeCtaBefore")}{" "}
+            <a
+              href={refundMailtoHref(locale)}
+              className="font-medium text-blue-600 underline-offset-2 hover:underline"
+            >
+              {t("registrerenPage.guaranteeMail")}
+            </a>{" "}
+            {t("registrerenPage.guaranteeCtaAfter")}
+          </p>
         </div>
       </div>
 

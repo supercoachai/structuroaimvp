@@ -34,6 +34,7 @@ import {
   SettingsTextLink,
   SettingsToggle,
 } from '@/components/settings/SettingsUi';
+import { refundMailtoHref } from '@/lib/refundContact';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -61,8 +62,6 @@ export default function SettingsPage() {
   const [subscriptionPeriodEnd, setSubscriptionPeriodEnd] = useState<string | null>(null);
   const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
   const [subscriptionSyncBusy, setSubscriptionSyncBusy] = useState(false);
-  const [refundModalOpen, setRefundModalOpen] = useState(false);
-  const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -422,36 +421,6 @@ export default function SettingsPage() {
     subscriptionStatus === 'none' ||
     subscriptionStatus === 'unknown';
 
-  const confirmSelfServiceRefund = async () => {
-    if (refundSubmitting) return;
-    setRefundSubmitting(true);
-    try {
-      const res = await fetch('/api/stripe/refund/self-service', { method: 'POST' });
-      const data = (await res.json()) as {
-        success?: boolean;
-        reason?: string;
-        refund_id?: string;
-      };
-      if (res.ok && data.success) {
-        toast(t('settings.refundDoneToast'));
-        setRefundModalOpen(false);
-        setSubscriptionStatus('refunded');
-        setStripeSubscriptionId(null);
-        return;
-      }
-      if (data.reason === 'previous_refund_exists') {
-        toast(t('settings.refundPreviouslyRefunded'));
-        setRefundModalOpen(false);
-        return;
-      }
-      toast(t('settings.refundFailToast', { detail: data.reason ?? String(res.status) }));
-    } catch (err) {
-      toast(t('settings.refundFailToast', { detail: String(err) }));
-    } finally {
-      setRefundSubmitting(false);
-    }
-  };
-
   const formatPeriodEnd = (iso: string | null) => {
     if (!iso) return '';
     try {
@@ -636,9 +605,12 @@ export default function SettingsPage() {
                   ) : null}
                   {subscriptionStatus === 'active' && stripeSubscriptionId ? (
                     <>
-                      <SettingsTextLink onClick={() => setRefundModalOpen(true)}>
+                      <a
+                        href={refundMailtoHref(locale)}
+                        className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
+                      >
                         {t('settings.refundSelfCta')}
-                      </SettingsTextLink>
+                      </a>
                       <SettingsTextLink
                         onClick={() => void handleCancelSubscription()}
                         disabled={cancelBusy}
@@ -733,40 +705,6 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
-
-      {refundModalOpen ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="refund-modal-title"
-        >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 id="refund-modal-title" className="mb-4 text-base font-semibold text-slate-900">
-              {t('settings.refundSelfCta')}
-            </h3>
-            <p className="text-sm text-slate-700 text-balance mb-6">{t('settings.refundModalBody')}</p>
-            <div className="flex flex-wrap gap-2 justify-end">
-              <button
-                type="button"
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                onClick={() => !refundSubmitting && setRefundModalOpen(false)}
-                disabled={refundSubmitting}
-              >
-                {t('settings.refundModalCancel')}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                onClick={() => void confirmSelfServiceRefund()}
-                disabled={refundSubmitting}
-              >
-                {refundSubmitting ? t('settings.refundBusy') : t('settings.refundModalConfirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

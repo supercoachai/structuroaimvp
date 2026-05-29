@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 import { useI18n } from "@/lib/i18n";
 import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
+import { isPrivacySetupCompleted } from "@/lib/privacySetup";
 
 export function CookieBanner() {
   const pathname = usePathname();
@@ -12,6 +13,8 @@ export function CookieBanner() {
   const { t } = useI18n();
 
   if (isWaitlistMarketingPath(pathname)) return null;
+  if (pathname === "/consent" || pathname.startsWith("/consent/")) return null;
+  if (!isPrivacySetupCompleted()) return null;
   if (!consentReady || consent !== "unknown") return null;
 
   return (

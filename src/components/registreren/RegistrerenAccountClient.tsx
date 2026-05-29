@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signUpWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -101,22 +102,13 @@ function RegistrerenAccountInner() {
         return;
       }
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { user } = await signUpWithLocalDevFallback(supabase, {
         email: emailTrimmed,
         password,
-        options: {
-          data: { full_name: nameTrimmed },
-        },
+        fullName: nameTrimmed,
       });
 
-      if (signUpError) throw signUpError;
-
-      if (!data.user?.id) {
-        setError(t("registrerenPage.errGeneric"));
-        return;
-      }
-
-      await persistSignupAttributionToProfile(data.user.id);
+      await persistSignupAttributionToProfile(user.id);
       queueSignupCompletedForAnalytics();
 
       router.push("/registreren/plan");

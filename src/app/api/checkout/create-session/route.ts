@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAppOrigin } from "@/lib/appUrl";
 import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteServiceRole";
+import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
@@ -22,7 +23,12 @@ async function postCreateSession(request: Request) {
     );
   }
 
-  let body: { priceId?: string; userId?: string; email?: string };
+  let body: {
+    priceId?: string;
+    userId?: string;
+    email?: string;
+    addWelcomeTask?: boolean;
+  };
   try {
     body = await request.json();
   } catch {
@@ -33,6 +39,7 @@ async function postCreateSession(request: Request) {
   const userId = typeof body.userId === "string" ? body.userId.trim() : "";
   const email =
     typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const addWelcomeTask = body.addWelcomeTask === true;
 
   if (!priceId || !userId || !email) {
     return NextResponse.json({ error: "missing_parameters" }, { status: 400 });
@@ -91,6 +98,7 @@ async function postCreateSession(request: Request) {
     allow_promotion_codes: true,
     metadata: {
       supabase_user_id: userId,
+      [CHECKOUT_METADATA_WELCOME_TASK]: addWelcomeTask ? "1" : "0",
     },
     subscription_data: {
       metadata: {

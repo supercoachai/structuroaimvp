@@ -6,12 +6,15 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/registreren',
     '/auth',
     '/onboarding',
+    '/consent',
     '/welkom',
     '/checkout-success',
     '/dev-reset',
     '/test',
     '/wachtlijst',
     '/inschrijven',
+    '/privacy',
+    '/terms',
   ];
   return barePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }

@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import WelkomSuccessScreen from "@/components/welkom/WelkomSuccessScreen";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import {
-  consumeCreateWelcomeTaskFlag,
-  createOnboardingWelcomeTask,
-} from "@/lib/onboardingWelcomeTask";
+import { createOnboardingWelcomeTask } from "@/lib/onboardingWelcomeTask";
+import { resolveWelcomeTaskAfterCheckout } from "@/lib/welcomeTaskAfterCheckout";
+import { captureProductEvent } from "@/lib/posthog/track";
 
-export default function WelkomPage() {
+function WelkomPageInner() {
   const { t } = useI18n();
   const welcomeTaskStarted = useRef(false);
   const [welcomeTaskReady, setWelcomeTaskReady] = useState(false);
@@ -19,7 +18,16 @@ export default function WelkomPage() {
     welcomeTaskStarted.current = true;
 
     (async () => {
-      if (!consumeCreateWelcomeTaskFlag()) {
+      const decision = await resolveWelcomeTaskAfterCheckout();
+
+      captureProductEvent("welcome_task_checkout_decision", {
+        source: decision.source,
+        should_create: decision.shouldCreate,
+        had_checkout_session_id: decision.hadCheckoutSessionId,
+        metadata_lookup_failed: decision.metadataLookupFailed,
+      });
+
+      if (!decision.shouldCreate) {
         setWelcomeTaskReady(true);
         return;
       }
@@ -30,7 +38,12 @@ export default function WelkomPage() {
           data: { user },
         } = await supabase.auth.getUser();
         if (user?.id) {
-          await createOnboardingWelcomeTask(user.id);
+          const created = await createOnboardingWelcomeTask(user.id);
+          if (created) {
+            captureProductEvent("welcome_task_created", {
+              source: decision.source,
+            });
+          }
         }
       } catch (err) {
         console.error("[welkom] welcome task creation failed", err);
@@ -41,30 +54,28 @@ export default function WelkomPage() {
   }, []);
 
   return (
-    <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--st-bg)] px-4 py-8">
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-3xl">
-          ✓
+    <WelkomSuccessScreen
+      title={t("welkomPage.title")}
+      tagline={t("welkomPage.tagline")}
+      closingLine={t("welkomPage.closingLine")}
+      cta={t("welkomPage.cta")}
+      busyLabel={t("registrerenPage.submitBusy")}
+      paidBadge={t("welkomPage.paidBadge")}
+      welcomeTaskReady={welcomeTaskReady}
+    />
+  );
+}
+
+export default function WelkomPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
+          …
         </div>
-        <div className="space-y-2">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            {t("welkomPage.title")}
-          </h1>
-          <p className="text-sm leading-relaxed text-slate-600">
-            {t("welkomPage.body")}
-          </p>
-        </div>
-        <Link
-          href="/onboarding"
-          aria-disabled={!welcomeTaskReady}
-          className={`inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 ${
-            welcomeTaskReady ? "" : "pointer-events-none opacity-60"
-          }`}
-        >
-          {welcomeTaskReady ? t("welkomPage.cta") : t("registrerenPage.submitBusy")}
-        </Link>
-        <p className="text-xs text-slate-400">{t("welkomPage.footerHint")}</p>
-      </div>
-    </div>
+      }
+    >
+      <WelkomPageInner />
+    </Suspense>
   );
 }

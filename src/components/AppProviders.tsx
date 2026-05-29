@@ -22,7 +22,8 @@ import { SignupAttributionCapture } from "@/components/SignupAttributionCapture"
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 import { MarketingWaitlistConsent } from "@/components/posthog/MarketingWaitlistConsent";
 import AppLayout from "@/components/layout/AppLayout";
-import { isBarePagePath, shouldUseAppShell } from "@/lib/appShell";
+import { PrivacySetupGate } from "@/components/consent/PrivacySetupGate";
+import { shouldUseAppShell } from "@/lib/appShell";
 import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
 
 /** Eenmalig: oude key die focusduur bevatte; duration komt nu alleen uit URL + taak. */
@@ -97,7 +98,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
             </Suspense>
             <VisualViewportBridge />
             <GoogleAnalytics />
-            <ConditionalAppShell>{children}</ConditionalAppShell>
+            <PrivacySetupGate>
+              <ConditionalAppShell>{children}</ConditionalAppShell>
+            </PrivacySetupGate>
             <DeferredVercelObservability />
           </PostHogProvider>
           <CookieBanner />

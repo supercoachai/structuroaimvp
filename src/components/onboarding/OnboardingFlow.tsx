@@ -1142,7 +1142,7 @@ export default function OnboardingFlow() {
         Date.now() - onboardingStartedAtRef.current
       ),
     });
-    window.location.assign("/");
+    window.location.assign("/consent");
   };
 
   const obLanguageToggle = (

@@ -8,10 +8,22 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     cookie: {
       aria: "Cookie-toestemming",
       message:
-        "We meten anoniem hoe Structuro wordt gebruikt om het product te verbeteren. Geen advertenties, geen tracking buiten Structuro.",
+        "We meten anoniem hoe Structuro wordt gebruikt om het product te verbeteren.",
       acceptAll: "Akkoord",
       necessaryOnly: "Alleen noodzakelijk",
       moreInfo: "Meer info",
+    },
+    consentSetup: {
+      title: "Nog één stap",
+      subtitle:
+        "Kies wat je deelt, zodat Structuro je kan ondersteunen zonder je privacy te schenden.",
+      remindersIntro:
+        "Structuro werkt het best als we je op het juiste moment kunnen herinneren aan je dagstart, focus of micro-stappen. Zet meldingen aan als je die steun wilt. Anonieme productanalyse is optioneel en bevat nooit inhoud van je taken.",
+      notificationsHint:
+        "Zet aan om herinneringen te ontvangen op dit apparaat. Je kunt dit later altijd wijzigen in Instellingen.",
+      continueCta: "Naar mijn dashboard",
+      continueBusy: "Even geduld…",
+      footer: "Meer details vind je in ons",
     },
     sidebar: {
       today: "Vandaag",
@@ -150,7 +162,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Geen abonnement gevonden voor dit e-mailadres in Stripe.",
       subscriptionSyncFail: "Kon status niet ophalen: {detail}",
       subscriptionGoAbonnement: "Naar abonnement",
-      refundSelfCta: "Geld terug binnen 14 dagen",
+      refundSelfCta: "Mail voor geld terug",
       refundModalBody:
         "Je krijgt het volledige bedrag binnen 5-10 werkdagen terug op je rekening. Je toegang stopt direct. Doorgaan?",
       refundModalConfirm: "Ja, terugbetalen",
@@ -289,6 +301,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyAmount: "€119",
       yearlyPeriod: "/ jaar",
       yearlyEffective: "€9,92/mnd effectief",
+      yearlyEffectiveCompact: "€9,92/mnd",
       yearlySave: "24% korting",
       yearlyFeat1: "Alles uit het maandabonnement",
       yearlyFeat2: "Bijna 3 maanden gratis effectief",
@@ -304,6 +317,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat3: "Taken gefilterd op jouw energie van vandaag",
       monthlyFeat4: "Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus",
       monthlyFeat5: "Eindelijk rust in je hoofd. Elke dag opnieuw.",
+      guaranteeLine: "14 dagen geld-terug-garantie",
+      guaranteeIntro:
+        "Een nieuw systeem kost tijd en energie. Je hoeft niet vandaag al te bewijzen dat het werkt. Je hebt 14 dagen om te voelen of Structuro bij jouw brein past.",
+      guaranteeCtaBefore: "Klikt het niet? Mail",
+      guaranteeCtaAfter: "met onderwerp 'Geld terug'.",
+      guaranteeMail: "info@structuro.eu",
       submitBusy: "Even geduld…",
       cancelledHint:
         "Je account staat klaar. Voltooi je abonnement om aan de slag te gaan.",
@@ -319,6 +338,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errEmailInUse: "Dit e-mailadres is al in gebruik. Log in om verder te gaan.",
       errEmailInvalid: "Vul een geldig e-mailadres in.",
       errNetwork: "Netwerkfout. Probeer het opnieuw.",
+      errDevServiceRole:
+        "Lokaal account aanmaken vereist SUPABASE_SERVICE_ROLE_KEY in .env.local.",
       errCheckout: "Kon de betaalpagina niet openen. Probeer het opnieuw.",
       errStripeNotConfigured: "Betalingen zijn nog niet geconfigureerd.",
       errPreviousRefund:
@@ -327,9 +348,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     welkomPage: {
       title: "Welkom bij Structuro",
-      body: "Je account is actief. We leiden je even door de onboarding.",
-      cta: "Start je onboarding",
-      footerHint: "Betaling kan een paar seconden duren om te verwerken.",
+      tagline:
+        "Je hebt net de stap gezet die de meeste mensen blijven uitstellen.",
+      closingLine: "Je account staat klaar. Tijd om het echt te gaan doen.",
+      cta: "Zet je eerste stap →",
+      paidBadge: "Stap gezet",
     },
     subscriptionPage: {
       title: "Kies je abonnement",
@@ -357,13 +380,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       refreshStatus: "Ververs status",
     },
     subscription: {
-      moneyBackTitle:
-        "14 dagen geld terug, geen vragen. Eén klik in de app.",
+      moneyBackTitle: "14 dagen geld-terug-garantie",
       moneyBackBody:
-        "Niet tevreden? Vraag binnen 14 dagen je geld terug. Geen mail, geen formulier, geen weken wachten.",
+        "Niet tevreden binnen 14 dagen? Mail info@structuro.eu met onderwerp 'Geld terug'.",
       moneyBackHowLink: "Hoe werkt dit?",
       moneyBackHowDetail:
-        "Na je aankoop vind je in Instellingen de knop om binnen 14 dagen het volledige bedrag terug te vragen.",
+        "We verwerken je verzoek binnen drie werkdagen. Het bedrag staat meestal binnen 5 tot 10 werkdagen terug op je rekening.",
       paymentTrustLabel: "Veilig betalen via Stripe",
       checkoutServiceRoleError:
         "Er ging iets mis aan onze kant. Probeer het over een paar minuten opnieuw of mail info@structuro.eu.",
@@ -375,10 +397,22 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     cookie: {
       aria: "Cookie consent",
       message:
-        "We collect anonymous usage data to improve Structuro. No ads and no tracking outside Structuro.",
+        "We collect anonymous usage data to improve Structuro.",
       acceptAll: "Accept",
       necessaryOnly: "Essential only",
       moreInfo: "Learn more",
+    },
+    consentSetup: {
+      title: "One more step",
+      subtitle:
+        "Choose what you share so Structuro can support you without compromising your privacy.",
+      remindersIntro:
+        "Structuro works best when we can remind you at the right moment about your day start, focus, or micro-steps. Turn on notifications if you want that support. Anonymous product analytics is optional and never includes the content of your tasks.",
+      notificationsHint:
+        "Turn on to receive reminders on this device. You can change this later in Settings.",
+      continueCta: "Go to my dashboard",
+      continueBusy: "One moment…",
+      footer: "More details are in our",
     },
     sidebar: {
       today: "Today",
@@ -517,7 +551,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "No subscription found in Stripe for this email address.",
       subscriptionSyncFail: "Could not fetch status: {detail}",
       subscriptionGoAbonnement: "Go to subscription",
-      refundSelfCta: "Refund within 14 days",
+      refundSelfCta: "Email for refund",
       refundModalBody:
         "You will receive the full amount back within 5-10 business days. Your access ends immediately. Continue?",
       refundModalConfirm: "Yes, refund me",
@@ -656,6 +690,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyAmount: "€119",
       yearlyPeriod: "/ year",
       yearlyEffective: "€9.92/mo effective",
+      yearlyEffectiveCompact: "€9.92/mo",
       yearlySave: "24% off",
       yearlyFeat1: "Everything in the monthly plan",
       yearlyFeat2: "Almost 3 months free effectively",
@@ -671,6 +706,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat3: "Tasks filtered to your energy today",
       monthlyFeat4: "Tuned for the ADHD brain, including the female cycle",
       monthlyFeat5: "Finally quiet in your head. Every day anew.",
+      guaranteeLine: "14-day money-back guarantee",
+      guaranteeIntro:
+        "A new system takes time and energy. You do not have to prove it works today. You have 14 days to feel whether Structuro fits your brain.",
+      guaranteeCtaBefore: "Not clicking? Email",
+      guaranteeCtaAfter: "with subject 'Refund'.",
+      guaranteeMail: "info@structuro.eu",
       submitBusy: "Please wait…",
       cancelledHint:
         "Your account is ready. Complete your subscription to get started.",
@@ -685,6 +726,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errEmailInUse: "This email is already in use. Sign in to continue.",
       errEmailInvalid: "Enter a valid email address.",
       errNetwork: "Network error. Please try again.",
+      errDevServiceRole:
+        "Local signup requires SUPABASE_SERVICE_ROLE_KEY in .env.local.",
       errCheckout: "Could not open checkout. Please try again.",
       errStripeNotConfigured: "Payments are not configured yet.",
       errPreviousRefund:
@@ -693,9 +736,10 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     welkomPage: {
       title: "Welcome to Structuro",
-      body: "Your account is active. We'll walk you through onboarding.",
-      cta: "Start your onboarding",
-      footerHint: "Payment processing may take a few seconds.",
+      tagline: "You just took the step most people keep putting off.",
+      closingLine: "Your account is ready. Time to make it real.",
+      cta: "Take your first step →",
+      paidBadge: "Step taken",
     },
     subscriptionPage: {
       title: "Choose your plan",
@@ -723,12 +767,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       refreshStatus: "Refresh status",
     },
     subscription: {
-      moneyBackTitle: "14-day money back, no questions. One tap in the app.",
+      moneyBackTitle: "14-day money-back guarantee",
       moneyBackBody:
-        "Not satisfied? Request a refund within 14 days. No email, no form, no weeks of waiting.",
+        "Not satisfied within 14 days? Email info@structuro.eu with subject 'Refund'.",
       moneyBackHowLink: "How does this work?",
       moneyBackHowDetail:
-        "After you subscribe, you will find a button in Settings to request a full refund within 14 days.",
+        "We process your request within three business days. The amount usually returns to your account within 5 to 10 business days.",
       paymentTrustLabel: "Secure checkout with Stripe",
       checkoutServiceRoleError:
         "Something went wrong on our end. Please try again in a few minutes or email info@structuro.eu.",
