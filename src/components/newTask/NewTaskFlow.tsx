@@ -36,6 +36,8 @@ export type NewTaskFlowProps = {
   /** Sla deadline-stap over (bijv. quick-add balk). */
   skipDeadline?: boolean;
   /** Sla titel-stap over (bijv. omzetten geparkeerde gedacht). */
+  skipTitle?: boolean;
+  /** Vult beschikbare hoogte (embedded in dagstart/swiper). */
   fillContainer?: boolean;
 };
 
