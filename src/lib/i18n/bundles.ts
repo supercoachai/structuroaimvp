@@ -89,7 +89,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       exportCta: "Exporteer mijn data",
       wipeTitle: "Account & gegevens verwijderen",
       wipeHint:
-        "Wis al je taken en check-ins permanent. Dit kan niet ongedaan worden gemaakt.",
+        "Verwijder je account en alle gegevens (taken, check-ins, instellingen) permanent. Dit kan niet ongedaan worden gemaakt.",
       wipeProtected:
         "Dit is een beschermd testaccount. Wissen is uitgeschakeld tijdens development.",
       wipeCta: "Alle gegevens wissen",
@@ -98,6 +98,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       wipePlaceholder: "WISSEN",
       wipeWord: "WISSEN",
       wipeFinal: "Definitief wissen",
+      wipeBusy: "Bezig met verwijderen...",
       cancel: "Annuleren",
       footerPrivacy:
         "Structuro is privacy-by-design. Je data is alleen voor jou inzichtelijk.",
@@ -112,6 +113,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastTypeConfirm: "Typ {word} om te bevestigen",
       toastWiped: "Alle data gewist. Je wordt doorgestuurd.",
       toastWipeError: "Fout bij wissen van data",
+      toastDeleteFail: "Account verwijderen mislukt. Probeer het opnieuw of mail info@structuro.eu.",
       toastExportDone: "Export gedownload",
       notificationsUnsupported: "Meldingen worden niet ondersteund op dit apparaat.",
       notificationsNeedLogin: "Log in om meldingen te koppelen.",
@@ -454,7 +456,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       exportCta: "Export my data",
       wipeTitle: "Delete account & data",
       wipeHint:
-        "Permanently delete your tasks and check-ins. This cannot be undone.",
+        "Permanently delete your account and all data (tasks, check-ins, settings). This cannot be undone.",
       wipeProtected:
         "This is a protected test account. Wiping is disabled during development.",
       wipeCta: "Delete all data",
@@ -462,6 +464,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       wipePlaceholder: "DELETE",
       wipeWord: "DELETE",
       wipeFinal: "Delete permanently",
+      wipeBusy: "Deleting...",
       cancel: "Cancel",
       footerPrivacy:
         "Structuro is privacy-first. Your data is only visible to you.",
@@ -476,6 +479,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastTypeConfirm: "Type {word} to confirm",
       toastWiped: "All data deleted. Redirecting.",
       toastWipeError: "Something went wrong while deleting data",
+      toastDeleteFail: "Account deletion failed. Try again or email info@structuro.eu.",
       toastExportDone: "Export downloaded",
       notificationsUnsupported:
         "Notifications are not supported on this device.",

@@ -83,6 +83,15 @@
       window.posthog.init(key, {
         api_host: PH_API_HOST,
         ui_host: "https://eu.posthog.com",
+        __add_tracing_headers: [
+          "localhost",
+          "127.0.0.1",
+          "structuro.ai",
+          "www.structuro.ai",
+          "structuro.eu",
+          "www.structuro.eu",
+          window.location.hostname,
+        ].filter(Boolean),
         capture_pageview: true,
         capture_pageleave: true,
         autocapture: true,

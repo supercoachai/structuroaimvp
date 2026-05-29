@@ -4,7 +4,7 @@ import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 
 import { captureServerException } from "@/lib/posthog/server";
-import { extractPostHogSessionIdFromCookieHeader } from "@/lib/posthog/postHogCookie";
+import { extractPostHogSessionIdFromRequest } from "@/lib/posthog/postHogCookie";
 
 const DEFAULT_POSTHOG_LOGS_URL = "https://eu.i.posthog.com/i/v1/logs";
 
@@ -60,7 +60,11 @@ type RequestErrorContext = {
  */
 export async function onRequestError(
   err: unknown,
-  request: { path: string; method: string; headers: { cookie?: string | string[] } },
+  request: {
+    path: string;
+    method: string;
+    headers: { cookie?: string | string[]; [key: string]: string | string[] | undefined };
+  },
   context: RequestErrorContext
 ): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
@@ -69,10 +73,28 @@ export async function onRequestError(
     ? request.headers.cookie.join("; ")
     : request.headers.cookie;
 
+  const sessionIdHeader = request.headers["x-posthog-session-id"];
+  const sessionIdFromHeader =
+    typeof sessionIdHeader === "string"
+      ? sessionIdHeader
+      : Array.isArray(sessionIdHeader)
+        ? sessionIdHeader[0]
+        : null;
+
   await captureServerException(err, {
     route: request.path,
     method: request.method,
-    sessionId: extractPostHogSessionIdFromCookieHeader(cookieHeader),
+    sessionId: extractPostHogSessionIdFromRequest({
+      get(name) {
+        if (name.toLowerCase() === "x-posthog-session-id") {
+          return sessionIdFromHeader ?? null;
+        }
+        if (name.toLowerCase() === "cookie") {
+          return cookieHeader ?? null;
+        }
+        return null;
+      },
+    }),
     extra: {
       router_kind: context.routerKind,
       route_path: context.routePath,

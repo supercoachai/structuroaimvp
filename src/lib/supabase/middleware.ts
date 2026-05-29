@@ -10,7 +10,7 @@ import {
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
-import { profileHasAppAccess } from "../subscriptionAccess";
+import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
 import { isProtectedTestAccount } from "../protectedTestAccount";
 import {
   isRegistrationAppRoute,
@@ -29,6 +29,9 @@ function isMiddlewareSubscriptionPaywallEnabled(): boolean {
 
 /** Routes die zichtbaar zijn zonder betaald abonnement (na onboarding). */
 function canAccessWithoutActiveSubscription(pathname: string): boolean {
+  // API-routes nooit paywallen: ze hebben hun eigen auth en moeten een JSON-respons
+  // kunnen geven (anders breekt bijv. fetch('/api/account/delete') op een 307 naar /abonnement).
+  if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/auth")) return true;
   if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
@@ -216,12 +219,13 @@ export async function updateSession(request: NextRequest) {
   let profileRowReadOk = false;
   let subscriptionStatus: string | null | undefined;
   let subscriptionPeriodEnd: string | null | undefined;
+  let profileCreatedAt: string | null | undefined;
 
   if (user) {
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end"
+        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -243,6 +247,8 @@ export async function updateSession(request: NextRequest) {
           : prof.subscription_current_period_end != null
             ? String(prof.subscription_current_period_end)
             : null;
+      profileCreatedAt =
+        prof.created_at != null ? String(prof.created_at) : null;
     } else {
       onboardingCompleted = false;
     }
@@ -307,9 +313,11 @@ export async function updateSession(request: NextRequest) {
       isProtectedTestAccount(user.email ?? null) ||
       canAccessWithoutActiveSubscription(pathname);
     if (!skipPaidGate) {
-      const ok = profileHasAppAccess({
+      const ok = profileHasAppAccessOrGrace({
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
+        created_at: profileCreatedAt,
+        last_dagstart_date: profileLastDagstartDate,
       });
       if (!ok) {
         const url = request.nextUrl.clone();

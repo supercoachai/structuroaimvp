@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { captureServerException } from "./server";
-import { extractPostHogSessionIdFromCookieHeader } from "./postHogCookie";
+import { extractPostHogSessionIdFromRequest } from "./postHogCookie";
 
 type NextRouteContext = { params: Promise<Record<string, string>> };
 
@@ -19,9 +19,7 @@ export function withApiErrorTracking(
     try {
       return await handler(request);
     } catch (error) {
-      const sessionId = extractPostHogSessionIdFromCookieHeader(
-        request.headers.get("cookie")
-      );
+      const sessionId = extractPostHogSessionIdFromRequest(request.headers);
       await captureServerException(error, {
         route: routeLabel,
         method: request.method,

@@ -48,6 +48,7 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [wipeBusy, setWipeBusy] = useState(false);
   const [isProtectedAccount, setIsProtectedAccount] = useState<boolean | null>(null);
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
@@ -196,7 +197,7 @@ export default function SettingsPage() {
 
   const wipeWord = t('settings.wipeWord');
 
-  const handleWipeData = () => {
+  const handleWipeData = async () => {
     if (isProtectedAccount) {
       toast(t('settings.toastProtected'));
       return;
@@ -210,6 +211,35 @@ export default function SettingsPage() {
       toast(t('settings.toastTypeConfirm', { word: wipeWord }));
       return;
     }
+    if (wipeBusy) return;
+
+    // Ingelogd: definitieve server-side accountverwijdering (AVG art. 17).
+    if (hasSupabaseSession) {
+      setWipeBusy(true);
+      try {
+        const res = await fetch('/api/account/delete', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.status === 403) {
+          toast(t('settings.toastProtected'));
+          return;
+        }
+        if (!res.ok && res.status !== 204) {
+          toast(t('settings.toastDeleteFail'));
+          return;
+        }
+        // Server-data is weg: ruim ook lokale resten op en log uit naar /.
+        wipeAllUserData();
+      } catch {
+        toast(t('settings.toastDeleteFail'));
+      } finally {
+        setWipeBusy(false);
+      }
+      return;
+    }
+
+    // Lokale modus (geen Supabase-sessie): alleen browseropslag wissen.
     const ok = wipeAllUserData();
     if (ok) toast(t('settings.toastWiped'));
     else toast(t('settings.toastWipeError'));
@@ -669,10 +699,16 @@ export default function SettingsPage() {
                     className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                   />
                   <div className="flex flex-wrap gap-3">
-                    <SettingsTextLink variant="danger" onClick={handleWipeData}>
-                      {t('settings.wipeFinal')}
+                    <SettingsTextLink
+                      variant="danger"
+                      onClick={handleWipeData}
+                      disabled={wipeBusy}
+                    >
+                      {wipeBusy ? t('settings.wipeBusy') : t('settings.wipeFinal')}
                     </SettingsTextLink>
-                    <SettingsTextLink onClick={cancelWipe}>{t('settings.cancel')}</SettingsTextLink>
+                    <SettingsTextLink onClick={cancelWipe} disabled={wipeBusy}>
+                      {t('settings.cancel')}
+                    </SettingsTextLink>
                   </div>
                 </div>
               )}

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withPostHogConfig } from "@posthog/nextjs-config";
 
 /** Alleen tijdens `next dev` (true). Bij `next build` is NODE_ENV production → altijd uit in clientbundle. */
 const devResetToolbarEnabled = process.env.NODE_ENV === "development";
@@ -10,6 +11,13 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_STRUCTURO_DEV_RESET: devResetToolbarEnabled ? "1" : "0",
+    /**
+     * Vercel levert VERCEL_GIT_COMMIT_SHA/VERCEL_ENV automatisch, maar NIET de NEXT_PUBLIC_-
+     * varianten die client-side error-tags nodig hebben. Hier mappen we ze door (build-time),
+     * zodat $exception-events in productie de echte release/omgeving dragen i.p.v. "local".
+     */
+    NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? "",
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? "",
   },
   async rewrites() {
     return {
@@ -86,4 +94,28 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+const baseConfig = withBundleAnalyzer(nextConfig);
+
+/**
+ * Source maps uploaden naar PostHog Error Tracking (leesbare stack traces in productie).
+ *
+ * Alleen actief als de build-time env vars aanwezig zijn (op Vercel). Zonder deze keys
+ * (lokaal / preview zonder secrets) valt het terug op de gewone config, zodat builds
+ * niet breken. Veldnamen (`envId`, `sourcemaps.version`) zijn geverifieerd tegen de
+ * geinstalleerde @posthog/nextjs-config types, niet tegen de oude audit-snippet.
+ */
+const posthogApiKey = process.env.POSTHOG_API_KEY;
+const posthogProjectId = process.env.POSTHOG_PROJECT_ID;
+
+export default posthogApiKey && posthogProjectId
+  ? withPostHogConfig(baseConfig, {
+      personalApiKey: posthogApiKey,
+      envId: posthogProjectId,
+      host: "https://eu.posthog.com",
+      sourcemaps: {
+        enabled: true,
+        version: process.env.VERCEL_GIT_COMMIT_SHA,
+        deleteAfterUpload: true,
+      },
+    })
+  : baseConfig;

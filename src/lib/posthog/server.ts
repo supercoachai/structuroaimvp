@@ -45,6 +45,14 @@ export async function captureServerException(
     error_tracking: true,
     legitimate_interest: true,
     runtime: "nodejs",
+    release:
+      process.env.VERCEL_GIT_COMMIT_SHA?.trim() ||
+      process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.trim() ||
+      "local",
+    environment:
+      process.env.VERCEL_ENV?.trim() ||
+      process.env.NEXT_PUBLIC_VERCEL_ENV?.trim() ||
+      "development",
   };
   if (context?.route) properties.route = context.route;
   if (context?.method) properties.method = context.method;

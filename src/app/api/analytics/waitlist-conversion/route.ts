@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { captureWaitlistSignupServer } from "@/lib/posthog/waitlistAnalytics";
+import { captureServerException } from "@/lib/posthog/server";
 import { waitlistCorsHeaders } from "@/lib/wachtlijst/cors";
 import { sanitizeWaitlistSourceParam } from "@/lib/wachtlijst/source";
 
@@ -36,7 +37,21 @@ export async function POST(request: Request) {
   const site = siteRaw === "ai" ? "ai" : "eu";
   const source = sanitizeWaitlistSourceParam(raw) || "direct";
 
-  await captureWaitlistSignupServer({ source, site });
+  try {
+    await captureWaitlistSignupServer({ source, site });
+  } catch (error) {
+    // CORS-headers behouden: deze route wordt cross-origin aangeroepen vanaf de EU-landing,
+    // anders kan de browser de respons niet lezen. onRequestError vangt de throw ook,
+    // maar we sturen hier expliciet naar PostHog met route-context.
+    await captureServerException(error, {
+      route: "POST /api/analytics/waitlist-conversion",
+      method: "POST",
+    });
+    return NextResponse.json(
+      { ok: false, error: "server_error" },
+      { status: 500, headers: waitlistCorsHeaders(origin) }
+    );
+  }
 
   return NextResponse.json({ ok: true }, { headers: waitlistCorsHeaders(origin) });
 }
