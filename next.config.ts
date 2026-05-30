@@ -99,15 +99,22 @@ const baseConfig = withBundleAnalyzer(nextConfig);
 /**
  * Source maps uploaden naar PostHog Error Tracking (leesbare stack traces in productie).
  *
- * Alleen actief als de build-time env vars aanwezig zijn (op Vercel). Zonder deze keys
- * (lokaal / preview zonder secrets) valt het terug op de gewone config, zodat builds
- * niet breken. Veldnamen (`envId`, `sourcemaps.version`) zijn geverifieerd tegen de
- * geinstalleerde @posthog/nextjs-config types, niet tegen de oude audit-snippet.
+ * Alleen actief als build-time secrets aanwezig zijn én de key een Personal API key is
+ * (`phx_…`, niet de project key `phc_…` / NEXT_PUBLIC_POSTHOG_KEY).
+ *
+ * Vercel: POSTHOG_API_KEY (of POSTHOG_PERSONAL_API_KEY) + POSTHOG_PROJECT_ID (175224).
+ * Personal key: PostHog → Settings → Personal API keys → Create key.
  */
-const posthogApiKey = process.env.POSTHOG_API_KEY;
-const posthogProjectId = process.env.POSTHOG_PROJECT_ID;
+const posthogApiKey = (
+  process.env.POSTHOG_PERSONAL_API_KEY ?? process.env.POSTHOG_API_KEY
+)?.trim();
+const posthogProjectId = (
+  process.env.POSTHOG_ENV_ID ?? process.env.POSTHOG_PROJECT_ID
+)?.trim();
+const posthogSourcemapsReady =
+  Boolean(posthogApiKey?.startsWith("phx_") && posthogProjectId);
 
-export default posthogApiKey && posthogProjectId
+export default posthogSourcemapsReady
   ? withPostHogConfig(baseConfig, {
       personalApiKey: posthogApiKey,
       envId: posthogProjectId,
