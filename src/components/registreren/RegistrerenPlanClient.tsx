@@ -279,7 +279,7 @@ export default function RegistrerenPlanClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
+        <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
           …
         </div>
       }

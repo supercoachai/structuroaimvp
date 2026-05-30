@@ -9,6 +9,7 @@ import {
   deleteTaskFromStorage,
   LocalTask
 } from '../lib/localStorageTasks';
+import type { User } from '@supabase/supabase-js';
 import { useUser } from '../hooks/useUser';
 import {
   fetchTasksFromSupabase,
@@ -226,6 +227,8 @@ function applyCompletionDefaultsToUpdates(updates: Partial<Task>): Partial<Task>
 }
 
 interface TaskContextType {
+  user: User | null;
+  authLoading: boolean;
   tasks: Task[];
   loading: boolean;
   error: string | null;
@@ -480,6 +483,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   const value: TaskContextType = {
+    user: user ?? null,
+    authLoading,
     tasks,
     loading,
     error,

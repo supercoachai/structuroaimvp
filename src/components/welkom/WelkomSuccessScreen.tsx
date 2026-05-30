@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 
@@ -210,7 +209,7 @@ export default function WelkomSuccessScreen({
         </div>
 
         <span
-          className={`mb-3 inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700 transition-all duration-[680ms] ${reveal(showBadge)}`}
+          className={`mb-3 inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700 transition-all duration-[680ms] ${reveal(showBadge)}`}
           style={motionStyle}
         >
           {paidBadge}
@@ -224,23 +223,27 @@ export default function WelkomSuccessScreen({
         </h1>
 
         <p
-          className={`mt-3 max-w-sm text-balance text-base font-normal leading-relaxed text-slate-600 transition-all duration-[780ms] sm:text-[1.05rem] ${reveal(showTagline)}`}
+          className={`mt-3 max-w-sm text-balance text-base leading-relaxed text-slate-700 transition-all duration-[780ms] sm:text-[1.05rem] ${reveal(showTagline)}`}
           style={motionStyle}
         >
           {tagline}
         </p>
 
         <p
-          className={`mt-2 max-w-xs text-balance text-sm leading-relaxed text-slate-400 transition-all duration-[680ms] ${reveal(showClosing)}`}
+          className={`mt-4 max-w-xs text-xs leading-relaxed text-slate-400 transition-all duration-[680ms] ${reveal(showClosing)}`}
           style={motionStyle}
         >
-          Geen haast, wel structuur.
+          {closingLine}
         </p>
 
-        <Link
-          href="/onboarding"
-          aria-disabled={!showCta}
-          className={`mt-8 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-[780ms] hover:bg-blue-700 active:scale-[0.98] ${
+        <button
+          type="button"
+          disabled={!showCta}
+          onClick={() => {
+            if (!showCta) return;
+            window.location.assign("/onboarding");
+          }}
+          className={`mt-8 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-[780ms] hover:bg-blue-700 active:scale-[0.98] disabled:pointer-events-none ${
             showCta
               ? "pointer-events-auto translate-y-0 opacity-100"
               : "pointer-events-none translate-y-2 opacity-0"
@@ -258,7 +261,7 @@ export default function WelkomSuccessScreen({
           ) : (
             cta
           )}
-        </Link>
+        </button>
       </div>
     </div>
   );

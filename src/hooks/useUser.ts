@@ -12,12 +12,16 @@ export function useUser(): { user: User | null; loading: boolean } {
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
+    /** Laatste bekende user; voorkomt dat INITIAL_SESSION met null getSession overschrijft. */
+    let resolvedUser: User | null = null;
 
-    const done = (u: User | null) => {
-      if (!cancelled) {
-        setUser(u ?? null);
-        setLoading(false);
-      }
+    const applyUser = (next: User | null) => {
+      resolvedUser = next;
+      setUser(next);
+    };
+
+    const finishLoading = () => {
+      if (!cancelled) setLoading(false);
     };
 
     const getInitial = async () => {
@@ -26,33 +30,51 @@ export function useUser(): { user: User | null; loading: boolean } {
         if (cancelled) return;
         const supabase = createClient();
 
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            if (cancelled) return;
+            const next = session?.user ?? null;
+
+            /**
+             * Supabase kan bij subscribe INITIAL_SESSION sturen met session:null terwijl
+             * cookies nog geparsed worden. Nooit een reeds opgeloste user wegvegen.
+             */
+            if (event === "INITIAL_SESSION" && next === null && resolvedUser !== null) {
+              finishLoading();
+              return;
+            }
+
+            applyUser(next);
+            finishLoading();
+          }
+        );
+        unsubscribe = () => subscription.unsubscribe();
+
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("auth_timeout")), AUTH_TIMEOUT_MS)
         );
-        /** getSession leest lokaal; getUser triggert iedere keer /user en veroorzaakt stormen bij veel mounts. */
         const userPromise = supabase.auth
           .getSession()
           .then(({ data: { session } }) => session?.user ?? null, (err: unknown) => {
             console.warn("useUser: getSession afgewezen", err);
             return null;
           });
-        const u = await Promise.race([userPromise, timeoutPromise]);
-        done(u);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          if (!cancelled) {
-            setUser(session?.user ?? null);
-            setLoading(false);
-          }
-        });
-        unsubscribe = () => subscription.unsubscribe();
+        const u = await Promise.race([userPromise, timeoutPromise]);
+        if (cancelled) return;
+
+        applyUser(u);
+        finishLoading();
       } catch (err) {
         console.warn("useUser: auth check failed or timed out, continuing without user", err);
-        done(null);
+        if (!cancelled) {
+          applyUser(null);
+          finishLoading();
+        }
       }
     };
 
-    getInitial();
+    void getInitial();
 
     return () => {
       cancelled = true;
