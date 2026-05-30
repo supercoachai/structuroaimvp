@@ -23,6 +23,8 @@ import {
   persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
 } from '@/lib/posthog/signupAttribution';
+import Link from 'next/link';
+import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -303,6 +305,8 @@ function LoginPageInner() {
   };
 
   const showSignInExtras = !isSignUp && !forgotPassword;
+  /** Launch: registratie via de geprijsde /registreren-flow i.p.v. inline signup. */
+  const registrationEnabled = isRegistrationCheckoutEnabledClient();
 
   return (
     <>
@@ -455,7 +459,20 @@ function LoginPageInner() {
           </div>
         ) : null}
 
-        {SIGNUP_ALLOWED && showSignInExtras ? (
+        {registrationEnabled && showSignInExtras ? (
+          <div className="mt-6 space-y-4">
+            <LoginOrDivider label={t("login.orDivider")} />
+            <p className="text-center text-sm text-[var(--st-muted)]">
+              {t("login.noAccount")}{" "}
+              <Link
+                href="/registreren"
+                className="font-semibold text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
+              >
+                {t("login.createAccount")}
+              </Link>
+            </p>
+          </div>
+        ) : SIGNUP_ALLOWED && showSignInExtras ? (
           <div className="mt-6 space-y-4">
             <LoginOrDivider label={t("login.orDivider")} />
             <p className="text-center text-sm text-[var(--st-muted)]">

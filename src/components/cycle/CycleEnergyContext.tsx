@@ -26,6 +26,13 @@ export type CycleEnergyContextProps = {
   onboardingCompact?: boolean;
   /** Gekozen energie voor observatie-tag (geen sturing). */
   chosenEnergy?: EnergyLevel | null;
+  /** Onboarding: ring draait één keer rond bij verschijnen. */
+  ringIntroSpin?: boolean;
+  /** Onboarding: footnote pas na ring-animatie tonen. */
+  onboardingFootnoteVisible?: boolean;
+  onboardingFootnoteFadeIn?: boolean;
+  /** Onboarding: 1=ring, 2=header, 3=fase, 4=bio (undefined = alles tonen). */
+  onboardingRevealPart?: number;
 };
 
 function phaseRangeLabel(
@@ -42,9 +49,11 @@ function phaseRangeLabel(
 function CycleContextRing({
   day,
   view,
+  introSpin = false,
 }: {
   day: number;
   view: ReturnType<typeof buildCycleContextView>;
+  introSpin?: boolean;
 }) {
   const { indicator, ringSegments } = view;
   const active = getActivePhaseStyle(view.phases, view.activePhase);
@@ -54,7 +63,7 @@ function CycleContextRing({
       width="66"
       height="66"
       viewBox="0 0 66 66"
-      className="block overflow-visible"
+      className={`block overflow-visible ${introSpin ? "ob-cycle-ring-spin-once" : ""}`}
       aria-hidden
     >
       <circle
@@ -108,15 +117,23 @@ export default function CycleEnergyContext({
   profile,
   onboardingCompact = false,
   chosenEnergy = null,
+  ringIntroSpin = false,
+  onboardingFootnoteVisible = true,
+  onboardingFootnoteFadeIn = false,
+  onboardingRevealPart,
 }: CycleEnergyContextProps) {
   const { t } = useI18n();
-  const [introPulse, setIntroPulse] = useState(true);
+  const [introPulse, setIntroPulse] = useState(!ringIntroSpin);
   const ctx = useMemo(
     () => getCycleEnergyContext(consentOn, profile),
     [consentOn, profile]
   );
 
   useEffect(() => {
+    if (ringIntroSpin) {
+      setIntroPulse(false);
+      return;
+    }
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setIntroPulse(false);
@@ -124,7 +141,7 @@ export default function CycleEnergyContext({
     }
     const timer = window.setTimeout(() => setIntroPulse(false), 2400);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [ringIntroSpin]);
 
   if (ctx.kind === "none") return null;
 
@@ -194,6 +211,13 @@ export default function CycleEnergyContext({
     "--st-cycle-tint": active.tint,
   } as CSSProperties;
 
+  const stagedOnboarding =
+    onboardingCompact && typeof onboardingRevealPart === "number";
+  const showRing = !stagedOnboarding || onboardingRevealPart >= 1;
+  const showHeader = !stagedOnboarding || onboardingRevealPart >= 2;
+  const showPhase = !stagedOnboarding || onboardingRevealPart >= 3;
+  const showBio = !stagedOnboarding || onboardingRevealPart >= 4;
+
   return (
     <div
       className={`st-cycle-card ${introPulse ? "st-cycle-context-pulse" : ""}${
@@ -202,32 +226,44 @@ export default function CycleEnergyContext({
       style={cardStyle}
     >
       <div className="st-cycle-head">
-        <div className="st-cycle-ring">
-          <CycleContextRing day={view.day} view={view} />
-        </div>
+        {showRing ? (
+          <div className={`st-cycle-ring${stagedOnboarding ? " ob-cycle-part-in" : ""}`}>
+            <CycleContextRing day={view.day} view={view} introSpin={ringIntroSpin} />
+          </div>
+        ) : (
+          <div className="st-cycle-ring w-[66px] shrink-0" aria-hidden />
+        )}
         <div className="st-cycle-info">
-          <div className="st-cycle-row">
-            <span className="st-cycle-eyebrow inline-flex items-center gap-1">
-              {t("cycle.contextEyebrow")}
-              <InfoButton infoId="cyclus" />
-            </span>
-            <span className="st-cycle-day st-mono">
-              {t("cycle.contextDayCounter", {
-                day: String(view.day),
-                length: String(view.length),
-              })}
-            </span>
-          </div>
-          <div className="st-cycle-phase">
-            <span className="st-cycle-phase-name">
-              <span className="st-cycle-dot" aria-hidden />
-              {t(`cycle.contextPhase_${phaseKey}`)}
-            </span>
-            <span className="st-cycle-range st-mono">
-              {phaseRangeLabel(active.start, active.end, t)}
-            </span>
-          </div>
-          <p className="st-cycle-bio">{t(`cycle.contextBio_${phaseKey}`)}</p>
+          {showHeader ? (
+            <div className={`st-cycle-row${stagedOnboarding ? " ob-cycle-part-in" : ""}`}>
+              <span className="st-cycle-eyebrow inline-flex items-center gap-1">
+                {t("cycle.contextEyebrow")}
+                <InfoButton infoId="cyclus" />
+              </span>
+              <span className="st-cycle-day st-mono">
+                {t("cycle.contextDayCounter", {
+                  day: String(view.day),
+                  length: String(view.length),
+                })}
+              </span>
+            </div>
+          ) : null}
+          {showPhase ? (
+            <div className={`st-cycle-phase${stagedOnboarding ? " ob-cycle-part-in" : ""}`}>
+              <span className="st-cycle-phase-name">
+                <span className="st-cycle-dot" aria-hidden />
+                {t(`cycle.contextPhase_${phaseKey}`)}
+              </span>
+              <span className="st-cycle-range st-mono">
+                {phaseRangeLabel(active.start, active.end, t)}
+              </span>
+            </div>
+          ) : null}
+          {showBio ? (
+            <p className={`st-cycle-bio${stagedOnboarding ? " ob-cycle-part-in" : ""}`}>
+              {t(`cycle.contextBio_${phaseKey}`)}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -240,21 +276,25 @@ export default function CycleEnergyContext({
               </span>
             </div>
           ) : null}
-          <p className="st-cycle-card--onboarding-footnote">
-            {t("cycle.contextOnboardingLegendNote")}
-          </p>
+          {onboardingFootnoteVisible ? (
+            <p
+              className={`st-cycle-card--onboarding-footnote${
+                onboardingFootnoteFadeIn ? " ob-cycle-footnote-fade-in" : ""
+              }`}
+            >
+              {t("cycle.contextOnboardingLegendNote")}
+            </p>
+          ) : null}
         </>
       ) : (
         <>
           <div className="st-cycle-advice">
-            <span className="st-cycle-advice-text">{t(`cycle.contextAdvice_${phaseKey}`)}</span>
+            <span className="st-cycle-advice-text">{t(`cycle.contextTip_${phaseKey}`)}</span>
             {energyMatch && matchTagLabel && matchTagStyle ? (
               <span className="st-cycle-advice-chip" style={matchTagStyle}>
                 {matchTagLabel}
               </span>
-            ) : (
-              <span className="st-cycle-advice-chip">{t(`cycle.contextChip_${phaseKey}`)}</span>
-            )}
+            ) : null}
           </div>
 
           <details className="st-cycle-disclosure">

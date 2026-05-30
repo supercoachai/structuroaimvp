@@ -10,8 +10,13 @@ import {
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
-import { profileHasAppAccess } from "../subscriptionAccess";
+import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
+import {
+  preOnboardingPath,
+  requiresPaidSubscriptionBeforeOnboarding,
+} from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
+import { PRIVACY_SETUP_DONE_COOKIE } from "../privacySetup";
 import {
   isRegistrationAppRoute,
   isRegistrationCheckoutApiRoute,
@@ -29,12 +34,18 @@ function isMiddlewareSubscriptionPaywallEnabled(): boolean {
 
 /** Routes die zichtbaar zijn zonder betaald abonnement (na onboarding). */
 function canAccessWithoutActiveSubscription(pathname: string): boolean {
+  // API-routes nooit paywallen: ze hebben hun eigen auth en moeten een JSON-respons
+  // kunnen geven (anders breekt bijv. fetch('/api/account/delete') op een 307 naar /abonnement).
+  if (pathname.startsWith("/api")) return true;
   if (pathname.startsWith("/login")) return true;
   if (pathname.startsWith("/auth")) return true;
   if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
   if (pathname === "/welkom" || pathname.startsWith("/welkom/")) return true;
+  if (pathname === "/consent" || pathname.startsWith("/consent/")) return true;
   if (isAnonymousPublicPage(pathname)) return true;
   if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
+  if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return true;
+  if (pathname === "/terms" || pathname.startsWith("/terms/")) return true;
   if (pathname.startsWith("/api/stripe/webhook")) return true;
   if (pathname.startsWith("/api/stripe/checkout")) return true;
   if (pathname.startsWith("/api/checkout/create-session")) return true;
@@ -43,6 +54,12 @@ function canAccessWithoutActiveSubscription(pathname: string): boolean {
 
 /** Publieke API-routes (geen login, geen redirect). */
 function isPublicApiRoute(pathname: string): boolean {
+  if (
+    process.env.NODE_ENV === "development" &&
+    pathname.startsWith("/api/dev/")
+  ) {
+    return true;
+  }
   return (
     pathname.startsWith("/api/waitlist/join") ||
     pathname.startsWith("/api/analytics/waitlist-conversion") ||
@@ -216,12 +233,13 @@ export async function updateSession(request: NextRequest) {
   let profileRowReadOk = false;
   let subscriptionStatus: string | null | undefined;
   let subscriptionPeriodEnd: string | null | undefined;
+  let profileCreatedAt: string | null | undefined;
 
   if (user) {
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end"
+        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -243,6 +261,8 @@ export async function updateSession(request: NextRequest) {
           : prof.subscription_current_period_end != null
             ? String(prof.subscription_current_period_end)
             : null;
+      profileCreatedAt =
+        prof.created_at != null ? String(prof.created_at) : null;
     } else {
       onboardingCompleted = false;
     }
@@ -258,7 +278,12 @@ export async function updateSession(request: NextRequest) {
   if (isLoginPath && user) {
     if (!onboardingCompleted) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
+      url.pathname = preOnboardingPath({
+        email: user.email ?? null,
+        profileRowReadOk,
+        subscription_status: subscriptionStatus,
+        subscription_current_period_end: subscriptionPeriodEnd,
+      });
       return NextResponse.redirect(url);
     }
     const url = request.nextUrl.clone();
@@ -286,17 +311,54 @@ export async function updateSession(request: NextRequest) {
     const onPasswordRecovery =
       pathname === "/auth/wachtwoord-instellen" ||
       pathname.startsWith("/auth/wachtwoord-instellen/");
-    if (!pathname.startsWith("/onboarding") && !onPasswordRecovery) {
+    const onRegistrationFlow =
+      isRegistrationCheckoutEnabled() && isRegistrationAppRoute(pathname);
+    const payBeforeOnboarding = requiresPaidSubscriptionBeforeOnboarding({
+      email: user.email ?? null,
+      profileRowReadOk,
+      subscription_status: subscriptionStatus,
+      subscription_current_period_end: subscriptionPeriodEnd,
+    });
+
+    if (pathname.startsWith("/onboarding") && payBeforeOnboarding) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
+      url.pathname = "/registreren/plan";
+      return NextResponse.redirect(url);
+    }
+
+    if (
+      !pathname.startsWith("/onboarding") &&
+      !onPasswordRecovery &&
+      !onRegistrationFlow
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = payBeforeOnboarding ? "/registreren/plan" : "/onboarding";
       return NextResponse.redirect(url);
     }
     return supabaseResponse;
   }
 
+  const privacySetupDone =
+    request.cookies.get(PRIVACY_SETUP_DONE_COOKIE)?.value === "1";
+
+  if (onboardingCompleted && !privacySetupDone) {
+    const onConsentPath =
+      pathname === "/consent" || pathname.startsWith("/consent/");
+    if (
+      !onConsentPath &&
+      !pathname.startsWith("/api") &&
+      !pathname.startsWith("/privacy") &&
+      !pathname.startsWith("/terms")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/consent";
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = privacySetupDone ? "/" : "/consent";
     return NextResponse.redirect(url);
   }
 
@@ -307,9 +369,11 @@ export async function updateSession(request: NextRequest) {
       isProtectedTestAccount(user.email ?? null) ||
       canAccessWithoutActiveSubscription(pathname);
     if (!skipPaidGate) {
-      const ok = profileHasAppAccess({
+      const ok = profileHasAppAccessOrGrace({
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
+        created_at: profileCreatedAt,
+        last_dagstart_date: profileLastDagstartDate,
       });
       if (!ok) {
         const url = request.nextUrl.clone();
@@ -345,6 +409,9 @@ function applyDagstartDbGate(
     !pathname.startsWith("/welkom") &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/consent") &&
+    !pathname.startsWith("/privacy") &&
+    !pathname.startsWith("/terms") &&
     !pathname.startsWith("/api");
 
   if (!needsDagstartPath) {
@@ -392,6 +459,8 @@ function applyLocalAnonymousOnboardingGuard(
   const localObRaw =
     request.cookies.get(LOCAL_ONBOARDING_DONE_COOKIE)?.value;
   const localOnboardingDone = localObRaw === "2";
+  const privacySetupDone =
+    request.cookies.get(PRIVACY_SETUP_DONE_COOKIE)?.value === "1";
 
   if (
     !localOnboardingDone &&
@@ -403,12 +472,27 @@ function applyLocalAnonymousOnboardingGuard(
     return NextResponse.redirect(url);
   }
 
+  if (localOnboardingDone && !privacySetupDone) {
+    const onConsentPath =
+      pathname === "/consent" || pathname.startsWith("/consent/");
+    if (
+      !onConsentPath &&
+      !pathname.startsWith("/api") &&
+      !pathname.startsWith("/privacy") &&
+      !pathname.startsWith("/terms")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/consent";
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (
     localOnboardingDone &&
     pathname.startsWith("/onboarding")
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = privacySetupDone ? "/" : "/consent";
     return NextResponse.redirect(url);
   }
 

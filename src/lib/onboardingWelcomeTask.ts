@@ -1,9 +1,19 @@
 import { microStepId, type MicroStep } from "@/lib/microSteps";
+import { createClient } from "@/lib/supabase/client";
 import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 
 export const CREATE_WELCOME_TASK_STORAGE_KEY = "create_welcome_task";
 
+/** Stripe Checkout Session metadata (string values only). */
+export const CHECKOUT_METADATA_WELCOME_TASK = "add_welcome_task";
+
 export const WELCOME_TASK_TITLE = "Abonnement opzeggen";
+
+export function welcomeTaskEnabledFromCheckoutMetadata(
+  metadata: Record<string, string> | null | undefined
+): boolean {
+  return metadata?.[CHECKOUT_METADATA_WELCOME_TASK] === "1";
+}
 
 const WELCOME_MICRO_STEP_TITLES = [
   "Bedenk welk abonnement je wilt opzeggen",
@@ -38,7 +48,20 @@ function buildWelcomeMicroSteps(): MicroStep[] {
   }));
 }
 
-export async function createOnboardingWelcomeTask(userId: string): Promise<void> {
+export async function createOnboardingWelcomeTask(userId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("source", "onboarding_welcome")
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return false;
+  }
+
   await addTaskToSupabase(userId, {
     title: WELCOME_TASK_TITLE,
     done: false,
@@ -59,4 +82,6 @@ export async function createOnboardingWelcomeTask(userId: string): Promise<void>
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
   }
+
+  return true;
 }

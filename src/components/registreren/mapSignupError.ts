@@ -19,5 +19,8 @@ export function mapSignupError(
   if (lower.includes("email not confirmed")) {
     return t("login.errEmailConfirm");
   }
+  if (lower.includes("service_role_unavailable")) {
+    return t("registrerenPage.errDevServiceRole");
+  }
   return raw;
 }

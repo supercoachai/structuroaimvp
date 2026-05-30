@@ -103,7 +103,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     firstDayWelcomeBridge2: "Morgen kies je zelf je focuspunten.",
     firstDayCyclePreviewHint:
       "Op basis van je cyclus zie je wat zou kunnen passen.",
-    firstDayEnergyQuestion: "Hoe zit je in je energie vandaag?",
+    firstDayEnergyQuestion: "Hoe voel je je qua energie?",
     firstDayEnergyHelp: "Hoe zit je in je energie?",
     firstDayBridge1: "Goed. Laten we je eerste taak instellen.",
     firstDayBridge2: "Wat wil je vandaag als eerste doen?",
@@ -255,7 +255,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     firstDayWelcomeBridge2: "From tomorrow you pick your own focus points.",
     firstDayCyclePreviewHint:
       "Based on your cycle, you can see what might fit.",
-    firstDayEnergyQuestion: "How is your energy today?",
+    firstDayEnergyQuestion: "How does your energy feel?",
     firstDayEnergyHelp: "How is your energy?",
     firstDayBridge1: "Nice. Let us set your first task.",
     firstDayBridge2: "What do you want to do first today?",

@@ -34,6 +34,7 @@ import {
   SettingsTextLink,
   SettingsToggle,
 } from '@/components/settings/SettingsUi';
+import { refundMailtoHref } from '@/lib/refundContact';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -48,6 +49,7 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState('');
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const [wipeBusy, setWipeBusy] = useState(false);
   const [isProtectedAccount, setIsProtectedAccount] = useState<boolean | null>(null);
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
@@ -60,8 +62,6 @@ export default function SettingsPage() {
   const [subscriptionPeriodEnd, setSubscriptionPeriodEnd] = useState<string | null>(null);
   const [stripeSubscriptionId, setStripeSubscriptionId] = useState<string | null>(null);
   const [subscriptionSyncBusy, setSubscriptionSyncBusy] = useState(false);
-  const [refundModalOpen, setRefundModalOpen] = useState(false);
-  const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +196,7 @@ export default function SettingsPage() {
 
   const wipeWord = t('settings.wipeWord');
 
-  const handleWipeData = () => {
+  const handleWipeData = async () => {
     if (isProtectedAccount) {
       toast(t('settings.toastProtected'));
       return;
@@ -210,6 +210,35 @@ export default function SettingsPage() {
       toast(t('settings.toastTypeConfirm', { word: wipeWord }));
       return;
     }
+    if (wipeBusy) return;
+
+    // Ingelogd: definitieve server-side accountverwijdering (AVG art. 17).
+    if (hasSupabaseSession) {
+      setWipeBusy(true);
+      try {
+        const res = await fetch('/api/account/delete', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.status === 403) {
+          toast(t('settings.toastProtected'));
+          return;
+        }
+        if (!res.ok && res.status !== 204) {
+          toast(t('settings.toastDeleteFail'));
+          return;
+        }
+        // Server-data is weg: ruim ook lokale resten op en log uit naar /.
+        wipeAllUserData();
+      } catch {
+        toast(t('settings.toastDeleteFail'));
+      } finally {
+        setWipeBusy(false);
+      }
+      return;
+    }
+
+    // Lokale modus (geen Supabase-sessie): alleen browseropslag wissen.
     const ok = wipeAllUserData();
     if (ok) toast(t('settings.toastWiped'));
     else toast(t('settings.toastWipeError'));
@@ -391,36 +420,6 @@ export default function SettingsPage() {
     !subscriptionStatus ||
     subscriptionStatus === 'none' ||
     subscriptionStatus === 'unknown';
-
-  const confirmSelfServiceRefund = async () => {
-    if (refundSubmitting) return;
-    setRefundSubmitting(true);
-    try {
-      const res = await fetch('/api/stripe/refund/self-service', { method: 'POST' });
-      const data = (await res.json()) as {
-        success?: boolean;
-        reason?: string;
-        refund_id?: string;
-      };
-      if (res.ok && data.success) {
-        toast(t('settings.refundDoneToast'));
-        setRefundModalOpen(false);
-        setSubscriptionStatus('refunded');
-        setStripeSubscriptionId(null);
-        return;
-      }
-      if (data.reason === 'previous_refund_exists') {
-        toast(t('settings.refundPreviouslyRefunded'));
-        setRefundModalOpen(false);
-        return;
-      }
-      toast(t('settings.refundFailToast', { detail: data.reason ?? String(res.status) }));
-    } catch (err) {
-      toast(t('settings.refundFailToast', { detail: String(err) }));
-    } finally {
-      setRefundSubmitting(false);
-    }
-  };
 
   const formatPeriodEnd = (iso: string | null) => {
     if (!iso) return '';
@@ -606,9 +605,12 @@ export default function SettingsPage() {
                   ) : null}
                   {subscriptionStatus === 'active' && stripeSubscriptionId ? (
                     <>
-                      <SettingsTextLink onClick={() => setRefundModalOpen(true)}>
+                      <a
+                        href={refundMailtoHref(locale)}
+                        className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
+                      >
                         {t('settings.refundSelfCta')}
-                      </SettingsTextLink>
+                      </a>
                       <SettingsTextLink
                         onClick={() => void handleCancelSubscription()}
                         disabled={cancelBusy}
@@ -669,10 +671,16 @@ export default function SettingsPage() {
                     className="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                   />
                   <div className="flex flex-wrap gap-3">
-                    <SettingsTextLink variant="danger" onClick={handleWipeData}>
-                      {t('settings.wipeFinal')}
+                    <SettingsTextLink
+                      variant="danger"
+                      onClick={handleWipeData}
+                      disabled={wipeBusy}
+                    >
+                      {wipeBusy ? t('settings.wipeBusy') : t('settings.wipeFinal')}
                     </SettingsTextLink>
-                    <SettingsTextLink onClick={cancelWipe}>{t('settings.cancel')}</SettingsTextLink>
+                    <SettingsTextLink onClick={cancelWipe} disabled={wipeBusy}>
+                      {t('settings.cancel')}
+                    </SettingsTextLink>
                   </div>
                 </div>
               )}
@@ -697,40 +705,6 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
-
-      {refundModalOpen ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="refund-modal-title"
-        >
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 id="refund-modal-title" className="mb-4 text-base font-semibold text-slate-900">
-              {t('settings.refundSelfCta')}
-            </h3>
-            <p className="text-sm text-slate-700 text-balance mb-6">{t('settings.refundModalBody')}</p>
-            <div className="flex flex-wrap gap-2 justify-end">
-              <button
-                type="button"
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                onClick={() => !refundSubmitting && setRefundModalOpen(false)}
-                disabled={refundSubmitting}
-              >
-                {t('settings.refundModalCancel')}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                onClick={() => void confirmSelfServiceRefund()}
-                disabled={refundSubmitting}
-              >
-                {refundSubmitting ? t('settings.refundBusy') : t('settings.refundModalConfirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

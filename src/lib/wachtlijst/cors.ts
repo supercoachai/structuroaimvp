@@ -13,6 +13,7 @@ export function waitlistCorsHeaders(origin: string | null): HeadersInit {
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers":
+      "Content-Type, X-POSTHOG-SESSION-ID, X-POSTHOG-DISTINCT-ID",
   };
 }
