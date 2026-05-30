@@ -105,19 +105,25 @@ const baseConfig = withBundleAnalyzer(nextConfig);
  * Vercel: POSTHOG_API_KEY (of POSTHOG_PERSONAL_API_KEY) + POSTHOG_PROJECT_ID (175224).
  * Personal key: PostHog → Settings → Personal API keys → Create key.
  */
-const posthogApiKey = (
-  process.env.POSTHOG_PERSONAL_API_KEY ?? process.env.POSTHOG_API_KEY
-)?.trim();
-const posthogProjectId = (
-  process.env.POSTHOG_ENV_ID ?? process.env.POSTHOG_PROJECT_ID
-)?.trim();
-const posthogSourcemapsReady =
-  Boolean(posthogApiKey?.startsWith("phx_") && posthogProjectId);
+function getPostHogSourcemapConfig():
+  | { personalApiKey: string; envId: string }
+  | null {
+  const personalApiKey = (
+    process.env.POSTHOG_PERSONAL_API_KEY ?? process.env.POSTHOG_API_KEY
+  )?.trim();
+  const envId = (
+    process.env.POSTHOG_ENV_ID ?? process.env.POSTHOG_PROJECT_ID
+  )?.trim();
+  if (!personalApiKey?.startsWith("phx_") || !envId) return null;
+  return { personalApiKey, envId };
+}
 
-export default posthogSourcemapsReady
+const posthogSourcemaps = getPostHogSourcemapConfig();
+
+export default posthogSourcemaps
   ? withPostHogConfig(baseConfig, {
-      personalApiKey: posthogApiKey,
-      envId: posthogProjectId,
+      personalApiKey: posthogSourcemaps.personalApiKey,
+      envId: posthogSourcemaps.envId,
       host: "https://eu.posthog.com",
       sourcemaps: {
         enabled: true,
