@@ -6,6 +6,8 @@ Levend document voor de laatste 22 uur vóór launch. Alles met `[ ]` moet af vo
 
 **PR (open vóór merge):** [compare main…launch-branch](https://github.com/supercoachai/structuroaimvp/compare/main...launch/compliance-paywall-tracking-2026-05-29) · merge-commando in `docs/LAUNCH-PR-DESCRIPTION.md`
 
+**Launch night (30→31 mei):** stap-voor-stap in `docs/LAUNCH-NIGHT-RUNBOOK.md`
+
 **Code-scan resultaat (30 mei):**
 
 - ✅ Geen hardcoded `sk_test_…` of `whsec_…` in source
