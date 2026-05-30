@@ -111,7 +111,7 @@ async function postCreateSession(request: Request) {
     return NextResponse.json({ error: "no_checkout_url" }, { status: 500 });
   }
 
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json({ url: session.url, checkoutSessionId: session.id });
 }
 
 export const POST = withApiErrorTracking(

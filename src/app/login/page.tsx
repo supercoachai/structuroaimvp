@@ -25,6 +25,10 @@ import {
 } from '@/lib/posthog/signupAttribution';
 import Link from 'next/link';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
+import {
+  clearCheckoutReturn,
+  readCheckoutReturn,
+} from '@/lib/checkoutReturnStorage';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -53,6 +57,13 @@ function emailAllowsLocalTestLogin(emailValue: string): boolean {
   const owner = process.env.NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL?.trim().toLowerCase();
   if (!owner) return false;
   return emailValue.trim().toLowerCase() === owner;
+}
+
+function safeAppPath(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return null;
+  return trimmed;
 }
 
 function mapPasswordResetError(message: string, t: (k: string) => string): string {
@@ -175,7 +186,15 @@ function LoginPageInner() {
     if (searchParams?.get('wachtwoord') === 'bijgewerkt') {
       setMessage(t('login.passwordUpdated'));
     }
-  }, [searchParams, t]);
+    if (searchParams?.get('checkout') === '1') {
+      const stored = readCheckoutReturn();
+      if (stored?.email && !email.trim()) {
+        setEmail(stored.email);
+      }
+    }
+  }, [searchParams, t, email]);
+
+  const afterCheckoutLogin = searchParams?.get('checkout') === '1';
 
   /** Productie: alleen zichtbaar na intypen van allowlisted email (protected testaccount of NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL). */
   const showLocalTest =
@@ -272,6 +291,7 @@ function LoginPageInner() {
           queueSignupCompletedForAnalytics();
           setMessage(t('login.signupDone'));
           clearStructuroLocalModeCookie();
+          clearCheckoutReturn();
           splashTargetRef.current = '/';
           setShowSplash(true);
         }
@@ -285,7 +305,10 @@ function LoginPageInner() {
 
         if (data.user) {
           clearStructuroLocalModeCookie();
-          splashTargetRef.current = '/';
+          clearCheckoutReturn();
+          const next = safeAppPath(searchParams?.get("next"));
+          splashTargetRef.current =
+            next ?? (afterCheckoutLogin ? "/onboarding" : "/");
           setShowSplash(true);
         }
       }
@@ -343,6 +366,12 @@ function LoginPageInner() {
             {t("brand.tagline")}
           </p>
         </div>
+
+        {afterCheckoutLogin ? (
+          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm leading-relaxed text-emerald-950">
+            {t("login.checkoutReturnHint")}
+          </p>
+        ) : null}
 
         <form onSubmit={handleAuth} className="mt-8 space-y-5">
           <div className="space-y-4">

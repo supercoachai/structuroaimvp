@@ -5,6 +5,7 @@ import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { clearStructuroLocalModeCookie } from "@/lib/localModeSession";
+import { markCheckoutStarted } from "@/lib/checkoutReturnStorage";
 import { useI18n } from "@/lib/i18n";
 import { setCreateWelcomeTaskFlag } from "@/lib/onboardingWelcomeTask";
 import {
@@ -128,7 +129,11 @@ function RegistrerenPlanInner() {
       }),
     });
 
-    const data = (await res.json()) as { url?: string; error?: string };
+    const data = (await res.json()) as {
+      url?: string;
+      checkoutSessionId?: string;
+      error?: string;
+    };
 
     if (!res.ok) {
       if (data.error === "previous_refund_exists") {
@@ -145,6 +150,13 @@ function RegistrerenPlanInner() {
     }
 
     clearStructuroLocalModeCookie();
+    try {
+      const supabase = createClient();
+      await supabase.auth.refreshSession();
+    } catch {
+      /* best-effort */
+    }
+    markCheckoutStarted(userEmail, data.checkoutSessionId);
     window.location.href = data.url;
   }
 

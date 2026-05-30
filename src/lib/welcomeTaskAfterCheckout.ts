@@ -28,6 +28,24 @@ export async function resolveWelcomeTaskAfterCheckout(): Promise<WelcomeTaskChec
 
   if (hadCheckoutSessionId && sessionId) {
     try {
+      const statusRes = await fetch(
+        `/api/checkout/session-status?session_id=${encodeURIComponent(sessionId)}`
+      );
+      if (statusRes.ok) {
+        const statusData = (await statusRes.json()) as {
+          addWelcomeTask?: boolean;
+          paid?: boolean;
+        };
+        if (statusData.paid) {
+          return {
+            shouldCreate: statusData.addWelcomeTask === true,
+            source: "stripe_metadata",
+            hadCheckoutSessionId: true,
+            metadataLookupFailed: false,
+          };
+        }
+      }
+
       const res = await fetch(
         `/api/checkout/welcome-task?session_id=${encodeURIComponent(sessionId)}`,
         { credentials: "include" }

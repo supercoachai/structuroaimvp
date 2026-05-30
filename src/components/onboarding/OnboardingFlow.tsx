@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 import { useTaskContext } from "@/context/TaskContext";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -48,6 +49,7 @@ function ObLanguageToggle({
 
 export default function OnboardingFlow() {
   const { t, locale, setLocale } = useI18n();
+  const router = useRouter();
   const { user, authLoading } = useTaskContext();
 
   const isLocalMode =
@@ -72,6 +74,11 @@ export default function OnboardingFlow() {
   /** Cookie-hint zonder user: middleware liet door, geen login-scherm tonen. */
   const showLoginRedirect =
     !isLocalMode && !authLoading && !user?.id && !authHint;
+
+  useEffect(() => {
+    if (!showLoginRedirect) return;
+    router.replace("/login?checkout=1");
+  }, [showLoginRedirect, router]);
 
   if (waitingForSession) {
     return (

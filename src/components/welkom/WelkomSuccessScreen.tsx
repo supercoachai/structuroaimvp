@@ -11,6 +11,8 @@ type WelkomSuccessScreenProps = {
   busyLabel: string;
   paidBadge: string;
   welcomeTaskReady: boolean;
+  ctaHref?: string;
+  recoveryHint?: string | null;
 };
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -44,6 +46,8 @@ export default function WelkomSuccessScreen({
   busyLabel,
   paidBadge,
   welcomeTaskReady,
+  ctaHref = "/onboarding",
+  recoveryHint = null,
 }: WelkomSuccessScreenProps) {
   const [logoError, setLogoError] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
@@ -236,12 +240,18 @@ export default function WelkomSuccessScreen({
           {closingLine}
         </p>
 
+        {recoveryHint ? (
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
+            {recoveryHint}
+          </p>
+        ) : null}
+
         <button
           type="button"
           disabled={!showCta}
           onClick={() => {
             if (!showCta) return;
-            window.location.assign("/onboarding");
+            window.location.assign(ctaHref);
           }}
           className={`mt-8 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-[780ms] hover:bg-blue-700 active:scale-[0.98] disabled:pointer-events-none ${
             showCta

@@ -233,6 +233,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimitEmail:
         "Er zijn te veel herstel-mails verstuurd. Wacht ongeveer een uur en probeer het daarna nog een keer.",
       errRateLimit: "Te veel verzoeken. Probeer het later opnieuw.",
+      checkoutReturnHint:
+        "Je betaling is gelukt. Log in om verder te gaan met je account.",
     },
     home: {
       guestFallback: "daar",
@@ -351,8 +353,19 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       tagline:
         "Je hebt net de stap gezet die de meeste mensen blijven uitstellen.",
       closingLine: "Je account staat klaar. Tijd om het echt te gaan doen.",
+      closingLineLogin:
+        "Je betaling staat klaar. Log in om je account af te ronden.",
       cta: "Zet je eerste stap →",
+      ctaLogin: "Inloggen en verder →",
       paidBadge: "Stap gezet",
+      recoveryHint:
+        "Je betaling is gelukt. Log in met {email} om verder te gaan.",
+      recoveryHintGeneric:
+        "Je betaling is gelukt. Log in met het e-mailadres waarmee je je registreerde.",
+      pendingTitle: "We verwerken je betaling nog",
+      pendingBody:
+        "Sluit de betaalpagina en log in zodra je bank de betaling heeft bevestigd. Je hoeft niet opnieuw te betalen.",
+      resuming: "Je account wordt klaargezet…",
     },
     subscriptionPage: {
       title: "Kies je abonnement",
@@ -621,6 +634,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimitEmail:
         "Too many reset emails were sent. Wait about an hour, then try once more.",
       errRateLimit: "Too many requests. Try again later.",
+      checkoutReturnHint:
+        "Your payment went through. Sign in to continue with your account.",
     },
     home: {
       guestFallback: "there",
@@ -738,8 +753,19 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Welcome to Structuro",
       tagline: "You just took the step most people keep putting off.",
       closingLine: "Your account is ready. Time to make it real.",
+      closingLineLogin:
+        "Your payment is ready. Sign in to finish setting up your account.",
       cta: "Take your first step →",
+      ctaLogin: "Sign in and continue →",
       paidBadge: "Step taken",
+      recoveryHint:
+        "Your payment went through. Sign in with {email} to continue.",
+      recoveryHintGeneric:
+        "Your payment went through. Sign in with the email you used to register.",
+      pendingTitle: "We are still processing your payment",
+      pendingBody:
+        "Close the payment page and sign in once your bank confirms. You do not need to pay again.",
+      resuming: "Setting up your account…",
     },
     subscriptionPage: {
       title: "Choose your plan",
