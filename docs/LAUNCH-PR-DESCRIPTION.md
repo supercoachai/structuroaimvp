@@ -4,7 +4,7 @@
 
 ---
 
-## Wat zit erin (6 commits)
+## Wat zit erin (8 commits)
 
 | Commit | Inhoud |
 |--------|--------|
@@ -14,6 +14,8 @@
 | `f15243e` | PostHog source map plugin alleen bij geldige phx_-key |
 | `0bed799` | TypeScript-narrowing fix voor PostHog source map config |
 | `ff1e88e` | Polish dagstart UX: toasts, info-wolkje, swipe-stack, confetti |
+| `67ebbde` | Launch docs + preview smoke-script (`npm run smoke:preview`) |
+| `f3f6765` | Vercel Production env-vars copy-paste blok |
 
 ## Routes die nieuw zijn of fundamenteel gewijzigd
 
@@ -31,6 +33,7 @@
 Zie `docs/VERCEL-ENV-PRODUCTIE.md` voor het complete copy-paste blok.
 
 De kritische drie die fout gaan als ze ontbreken:
+
 - `STRIPE_SECRET_KEY=sk_live_…`
 - `STRIPE_WEBHOOK_SECRET=whsec_…` (live webhook)
 - `STRUCTURO_PUBLIC_REGISTRATION=1`
@@ -58,6 +61,7 @@ BASE_URL=https://... POSTHOG_ERROR_TEST_SECRET=... npm run smoke:preview
 ```bash
 # Terminal op jouw machine (in de repo-map):
 git checkout main
+git pull origin main
 git merge --no-ff launch/compliance-paywall-tracking-2026-05-29 \
   -m "feat: launch 31 mei — paywall, registratie, checkout, consent"
 git push origin main
