@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import NewTaskFlow from "@/components/newTask/NewTaskFlow";
 import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
 import {
@@ -9,6 +9,7 @@ import {
   dagstartSlotCapacity,
 } from "@/lib/dagstart/dagstartPickLimits";
 import { toast } from "@/components/Toast";
+import { fireDagstartCompleteConfetti } from "@/lib/dagstartConfetti";
 import Battery from "./Battery";
 import {
   DAGSTART_ENERGIES,
@@ -147,11 +148,6 @@ export default function StepSwipe({
     setAddOpen(false);
   };
 
-  const finishSwipe = () =>
-    onDone(
-      clampDagstartSelection(kept, tasksById, maxSlots, extraDeadlineSlots)
-    );
-
   const keptTasks = kept
     .map((id) => tasks.find((t) => t.id === id))
     .filter((t): t is DagstartTaskCard => Boolean(t));
@@ -171,6 +167,42 @@ export default function StepSwipe({
     (kept.length >= maxSlots &&
       topKeepAnalysis?.kind === "reject" &&
       queue.length > 0);
+
+  const finishPendingRef = useRef(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const stableMainHeightRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (selectionComplete) return;
+    const el = mainRef.current;
+    if (!el) return;
+    stableMainHeightRef.current = el.offsetHeight;
+  });
+
+  const finishSwipe = () => {
+    if (finishPendingRef.current) return;
+
+    const ids = clampDagstartSelection(
+      kept,
+      tasksById,
+      maxSlots,
+      extraDeadlineSlots
+    );
+    const celebrate =
+      selectionComplete || (queue.length === 0 && kept.length > 0);
+
+    if (celebrate) {
+      finishPendingRef.current = true;
+      fireDagstartCompleteConfetti();
+      window.setTimeout(() => {
+        onDone(ids);
+        finishPendingRef.current = false;
+      }, 480);
+      return;
+    }
+
+    onDone(ids);
+  };
 
   const showAddFlow =
     Boolean(onAddTask) && (tasks.length === 0 || addOpen);
@@ -317,14 +349,27 @@ export default function StepSwipe({
   }
 
   return (
-    <div style={{ width: "100%" }}>
-      <div className="ds-eyebrow">Stel samen</div>
-      <h2 className="ds-title">Veeg per taak.</h2>
-      {maxSlots > 0 ? (
-        <p className="ds-sub">
-          Max {maxSlots} {maxSlots === 1 ? "taak" : "taken"} bij{" "}
-          {energyLabel(maxSlots)} energie.
-        </p>
+    <div className="ds-swipe-step">
+      <div
+        ref={mainRef}
+        className={`ds-swipe-main${selectionComplete ? " ds-swipe-main--complete" : ""}`}
+        style={
+          selectionComplete && stableMainHeightRef.current
+            ? { minHeight: stableMainHeightRef.current }
+            : undefined
+        }
+      >
+      {!selectionComplete ? (
+        <>
+          <div className="ds-eyebrow">Stel samen</div>
+          <h2 className="ds-title">Veeg per taak.</h2>
+          {maxSlots > 0 ? (
+            <p className="ds-sub">
+              Max {maxSlots} {maxSlots === 1 ? "taak" : "taken"} bij{" "}
+              {energyLabel(maxSlots)} energie.
+            </p>
+          ) : null}
+        </>
       ) : null}
 
       {selectionComplete ? (
@@ -342,10 +387,6 @@ export default function StepSwipe({
             </svg>
           </div>
           <p className="ds-swipe-complete-title">Focus compleet voor vandaag.</p>
-          <p className="ds-swipe-complete-sub">
-            {kept.length}/{slotCapacity} gekozen
-            {totalMin > 0 ? ` · ${totalMin} min totaal` : ""}
-          </p>
         </div>
       ) : (
         <div className="ds-swipe-deck">
@@ -374,20 +415,9 @@ export default function StepSwipe({
         </div>
       )}
 
-      <div
-        style={{
-          marginTop: 14,
-          padding: "10px 14px",
-          borderRadius: 12,
-          background: "var(--st-surface-2)",
-          border: "1px solid var(--st-line)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: 13,
-          color: "var(--st-muted)",
-        }}
-      >
+      </div>
+
+      <div className="ds-swipe-dock">
         <span>
           <strong style={{ color: "var(--st-ink)", fontWeight: 600 }}>
             {kept.length}/{slotCapacity}
@@ -397,14 +427,14 @@ export default function StepSwipe({
         <span style={{ fontFamily: "var(--st-mono)", fontSize: 12 }}>
           {totalMin} min totaal
         </span>
-          <button
-            type="button"
-            className="ds-link primary"
-            onClick={finishSwipe}
-            style={{ padding: "4px 12px" }}
-          >
-            {selectionComplete ? "klaar ✓" : "klaar →"}
-          </button>
+        <button
+          type="button"
+          className="ds-link primary"
+          onClick={finishSwipe}
+          style={{ padding: "4px 12px" }}
+        >
+          {selectionComplete ? "klaar ✓" : "klaar →"}
+        </button>
       </div>
     </div>
   );

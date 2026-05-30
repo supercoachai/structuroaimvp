@@ -31,6 +31,7 @@ export default function InfoButton({
   const [open, setOpen] = useState(false);
   const [introPulse, setIntroPulse] = useState(false);
   const introStartedRef = useRef(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const content = getInfoContent(infoId, locale);
   const hidden = ready && isDismissed(infoId);
@@ -72,6 +73,7 @@ export default function InfoButton({
   return (
     <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-transparent text-xs font-semibold leading-none transition-colors ${buttonClass} ${
@@ -84,6 +86,8 @@ export default function InfoButton({
       </button>
       <InfoPanel
         open={open}
+        anchorRef={buttonRef}
+        variant={variant}
         onClose={handleClose}
         onDismissPermanent={() => {
           void dismiss(infoId);

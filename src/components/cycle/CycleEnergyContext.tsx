@@ -289,14 +289,12 @@ export default function CycleEnergyContext({
       ) : (
         <>
           <div className="st-cycle-advice">
-            <span className="st-cycle-advice-text">{t(`cycle.contextAdvice_${phaseKey}`)}</span>
+            <span className="st-cycle-advice-text">{t(`cycle.contextTip_${phaseKey}`)}</span>
             {energyMatch && matchTagLabel && matchTagStyle ? (
               <span className="st-cycle-advice-chip" style={matchTagStyle}>
                 {matchTagLabel}
               </span>
-            ) : (
-              <span className="st-cycle-advice-chip">{t(`cycle.contextChip_${phaseKey}`)}</span>
-            )}
+            ) : null}
           </div>
 
           <details className="st-cycle-disclosure">

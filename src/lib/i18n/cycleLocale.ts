@@ -72,7 +72,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextBody_luteal_early:
       "Energie kan in deze fase nog stabiel zijn, maar fluctuaties zijn normaal.",
     energyContextBody_luteal_late:
-      "In deze fase rapporteren veel vrouwen met ADHD een tijdelijke dip in focus en stemming (luteale crash). Lage energie kiezen is hier vaak realistisch.",
+      "In deze fase rapporteren veel vrouwen met ADHD een tijdelijke dip in focus en stemming (luteale crash).",
     energyContextExpandAria: "Toon cyclus-uitleg",
     energyContextCollapseAria: "Verberg cyclus-uitleg",
     energyContextTip_active_only:
@@ -88,13 +88,13 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextTip_luteal_late:
       "Brain fog of prikkelbaarheid? Laag is vaak realistisch. Goede dag? Middel kan ook.",
     hintMenstrual:
-      "Veel vrouwen met ADHD ervaren tijdens hun menstruatie minder energie. Wil je vandaag starten op laag?",
+      "Veel vrouwen met ADHD ervaren tijdens hun menstruatie minder energie en focus.",
     hintFollicular:
       "Je zit waarschijnlijk in je folliculaire fase. Veel vrouwen met ADHD ervaren in deze week meer focus en energie.",
     hintOvulation:
-      "Veel vrouwen met ADHD ervaren rond hun ovulatie hun hoogste cognitieve helderheid. Wil je vandaag starten op hoog?",
+      "Veel vrouwen met ADHD ervaren rond hun ovulatie hun hoogste cognitieve helderheid.",
     hintLuteal:
-      "Veel vrouwen met ADHD ervaren in hun luteale fase minder focus en meer brain fog. Wil je vandaag starten op laag?",
+      "Veel vrouwen met ADHD ervaren in hun luteale fase minder focus en meer brain fog.",
     hintDismissAria: "Verberg deze suggestie voor vandaag",
     contextEyebrow: "Cyclus",
     contextDayCounter: "Dag {day}/{length}",
@@ -104,28 +104,38 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     contextPhase_follicular: "Folliculair",
     contextPhase_ovulation: "Ovulatie",
     contextPhase_luteal: "Luteaal",
-    contextBio_menstrual: "Lage dopamine, lage energie.",
-    contextBio_follicular: "Stijgende oestrogeen, herstellende focus.",
-    contextBio_ovulation: "Piek dopamine, hoogste helderheid.",
-    contextBio_luteal: "Dalende oestrogeen, brain fog.",
-    contextAdvice_menstrual: "minder taken, meer rust",
-    contextAdvice_follicular: "gewone capaciteit",
-    contextAdvice_ovulation: "ruimte voor zware taken",
-    contextAdvice_luteal: "minder forceren, suggesties op maat",
+    contextBio_menstrual: "Veel mensen rapporteren lagere energie in deze fase.",
+    contextBio_follicular: "Veel mensen merken herstellende focus.",
+    contextBio_ovulation: "Veel mensen ervaren meer helderheid.",
+    contextBio_luteal: "Veel mensen merken wisselende focus.",
+    contextAdvice_menstrual: "Energie varieert per persoon",
+    contextAdvice_follicular: "Focus bouwt vaak op",
+    contextAdvice_ovulation: "Helderheid kan pieken",
+    contextAdvice_luteal: "Wisselend is normaal",
+    contextTip_menstrual:
+      "Voel je je vermoeid of wazig? Laag komt hier vaak voor. Voel je je toch redelijk? Kies wat klopt voor jou vandaag.",
+    contextTip_follicular:
+      "Merkt je een opleving? Middel of hoog kan passen. Nog niet fris? Laag is ook oké.",
+    contextTip_ovulation:
+      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Middel of laag is prima.",
+    contextTip_luteal:
+      "Energie kan wisselen. Brain fog of prikkelbaarheid komt voor. Kies wat je nu voelt.",
     contextOnboardingLegendNote:
       "De andere cyclus-fases zie je later in je dagstart.",
     energyMatchTag_match: "Past bij je fase",
     energyMatchTag_softHigher: "Hoger dan je fase aangeeft",
     energyMatchTag_softLower: "Lager dan je fase aangeeft",
-    energyMatchTag_strong: "Tegen je cyclus in",
-    contextChip_menstrual: "Laag past",
-    contextChip_follicular: "Normaal past",
+    energyMatchTag_strong: "Afwijkend van fasepatroon",
+    contextChip_menstrual: "Laag komt vaak voor",
+    contextChip_follicular: "Middel komt vaak voor",
     contextChip_ovulation: "Hoog kan passen",
-    contextChip_luteal: "Op maat",
+    contextChip_luteal: "Varieert per dag",
     contextLegendExpand: "Bekijk alle fases",
     contextLegendCollapse: "Verberg cyclusfases",
     contextLegendNote:
       "Cycli verschillen per persoon. In Structuro stuur jij zelf: geen algoritme.",
+    dagstartCyclusHint: "Bekijk je cyclusfase",
+    dagstartCyclusButtonAria: "Cyclus, dag {day}",
   },
   en: {
     optInTitle: "Want to include your cycle?",
@@ -197,7 +207,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextBody_luteal_early:
       "Energy may still feel steady in this phase, but fluctuations are normal.",
     energyContextBody_luteal_late:
-      "In this phase, many women with ADHD report a temporary dip in focus and mood (luteal crash). Choosing low energy is often realistic here.",
+      "In this phase, many women with ADHD report a temporary dip in focus and mood (luteal crash).",
     energyContextExpandAria: "Show cycle explanation",
     energyContextCollapseAria: "Hide cycle explanation",
     energyContextTip_active_only:
@@ -213,13 +223,13 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextTip_luteal_late:
       "Brain fog or irritability? Low is often realistic. Having a good day? Medium can work too.",
     hintMenstrual:
-      "Many women with ADHD have lower energy during their period. Want to start today on low?",
+      "Many women with ADHD experience lower energy and focus during their period.",
     hintFollicular:
       "You are likely in your follicular phase. Many women with ADHD feel more focus and energy this week.",
     hintOvulation:
-      "Many women with ADHD experience their sharpest cognitive clarity around ovulation. Want to start today on high?",
+      "Many women with ADHD experience their sharpest cognitive clarity around ovulation.",
     hintLuteal:
-      "Many women with ADHD have less focus and more brain fog in the luteal phase. Want to start today on low?",
+      "Many women with ADHD have less focus and more brain fog in the luteal phase.",
     hintDismissAria: "Hide this suggestion for today",
     contextEyebrow: "Cycle",
     contextDayCounter: "Day {day}/{length}",
@@ -229,27 +239,37 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     contextPhase_follicular: "Follicular",
     contextPhase_ovulation: "Ovulation",
     contextPhase_luteal: "Luteal",
-    contextBio_menstrual: "Low dopamine, low energy.",
-    contextBio_follicular: "Rising estrogen, focus returns.",
-    contextBio_ovulation: "Peak dopamine, highest clarity.",
-    contextBio_luteal: "Falling estrogen, brain fog.",
-    contextAdvice_menstrual: "fewer tasks, more rest",
-    contextAdvice_follicular: "regular capacity",
-    contextAdvice_ovulation: "room for hard tasks",
-    contextAdvice_luteal: "less forcing, tailored suggestions",
+    contextBio_menstrual: "Many people report lower energy in this phase.",
+    contextBio_follicular: "Many people notice returning focus.",
+    contextBio_ovulation: "Many people experience more clarity.",
+    contextBio_luteal: "Many people notice shifting focus.",
+    contextAdvice_menstrual: "Energy varies per person",
+    contextAdvice_follicular: "Focus often builds",
+    contextAdvice_ovulation: "Clarity may peak",
+    contextAdvice_luteal: "Variation is normal",
+    contextTip_menstrual:
+      "Feeling tired or foggy? Low is common here. Feeling okay anyway? Choose what fits you today.",
+    contextTip_follicular:
+      "Noticing an uptick? Medium or high may fit. Not feeling fresh yet? Low is fine too.",
+    contextTip_ovulation:
+      "Feeling clear and energetic? High may fit. Feeling calmer? Medium or low works too.",
+    contextTip_luteal:
+      "Energy can shift. Brain fog or irritability happens. Choose what you feel now.",
     contextOnboardingLegendNote:
       "You will see the other cycle phases later in your day start.",
     energyMatchTag_match: "Fits your phase",
     energyMatchTag_softHigher: "Higher than your phase suggests",
     energyMatchTag_softLower: "Lower than your phase suggests",
-    energyMatchTag_strong: "Against your cycle",
-    contextChip_menstrual: "Low fits",
-    contextChip_follicular: "Normal fits",
+    energyMatchTag_strong: "Differs from phase pattern",
+    contextChip_menstrual: "Low is common here",
+    contextChip_follicular: "Medium is common here",
     contextChip_ovulation: "High may fit",
-    contextChip_luteal: "Tailored",
+    contextChip_luteal: "Varies by day",
     contextLegendExpand: "View all phases",
     contextLegendCollapse: "Hide cycle phases",
     contextLegendNote:
       "Cycles differ per person. In Structuro you stay in control: no algorithm.",
+    dagstartCyclusHint: "View your cycle phase",
+    dagstartCyclusButtonAria: "Cycle, day {day}",
   },
 };

@@ -47,10 +47,12 @@ export default function DagafsluitingStepCarry({
 
   return (
     <div className="dagafsluiting-eod-step w-full max-w-[380px]">
-      <div className="mb-8 text-center sm:mb-9">
+      <div className="mb-8 w-full text-center sm:mb-9">
         <p className="dagafsluiting-eod-eyebrow">{t("dayShutdown.stepCarryEyebrow")}</p>
-        <h1 className="dagafsluiting-eod-title">{t("dayShutdown.stepCarryTitle")}</h1>
-        <p className="dagafsluiting-eod-subtitle">{t("dayShutdown.stepCarrySubtitle")}</p>
+        <h1 className="dagafsluiting-eod-title mb-8">{t("dayShutdown.stepCarryTitle")}</h1>
+        <p className="dagafsluiting-eod-subtitle text-center text-balance">
+          {t("dayShutdown.stepCarrySubtitle")}
+        </p>
       </div>
 
       {tasks.length === 0 ? (
@@ -88,8 +90,13 @@ export default function DagafsluitingStepCarry({
                     style={{
                       fontWeight: active ? 500 : 400,
                       color: active ? "var(--st-ink)" : "var(--st-muted)",
-                      textDecoration: active ? "none" : "line-through",
-                      textDecorationColor: "rgba(138,146,166,0.4)",
+                      ...(active
+                        ? { textDecorationLine: "none" }
+                        : {
+                            textDecorationLine: "line-through",
+                            textDecorationStyle: "solid",
+                            textDecorationColor: "rgba(138,146,166,0.4)",
+                          }),
                     }}
                   >
                     {task.title}

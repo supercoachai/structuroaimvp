@@ -71,6 +71,8 @@ export interface UndoToastProps {
   onDismiss: () => void;
 }
 
+const TOAST_EXIT_MS = 900;
+
 const MESSAGES: Record<UndoableActionType, string> = {
   task_update: "Taak bijgewerkt",
   task_delete: "Taak verwijderd",
@@ -84,40 +86,54 @@ export function UndoToast({
   onDismiss,
 }: UndoToastProps) {
   const [timeLeft, setTimeLeft] = useState(8);
+  const [exiting, setExiting] = useState(false);
+
+  const beginExit = useCallback(() => {
+    setExiting((was) => {
+      if (was) return was;
+      window.setTimeout(() => {
+        setExiting(false);
+        onDismiss();
+      }, TOAST_EXIT_MS);
+      return true;
+    });
+  }, [onDismiss]);
 
   useEffect(() => {
     if (!isActive || !action) return;
+    setExiting(false);
     setTimeLeft(8);
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onDismiss();
+          beginExit();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isActive, action, onDismiss]);
+  }, [isActive, action, beginExit]);
 
-  if (!isActive || !action) return null;
+  if ((!isActive || !action) && !exiting) return null;
+
+  const type = action?.type ?? "task_complete";
 
   return (
-    <div
-      className="fixed left-4 right-4 z-[10002] mx-auto max-w-sm rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg flex items-center justify-between gap-3 bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)+0.5rem))]"
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-slate-900">{MESSAGES[action.type]}</p>
-        <p className="mt-1 text-xs text-slate-500">Ongedaan maken in {timeLeft}s</p>
-      </div>
-      <button
-        type="button"
-        onClick={onUndo}
-        className="flex-shrink-0 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 active:scale-95"
+    <div className="st-toast-host" style={{ zIndex: 10002 }}>
+      <div
+        className={`st-toast st-toast--action${exiting ? " is-fading" : ""}`}
+        role="status"
       >
-        Ongedaan
-      </button>
+        <div className="st-toast__body">
+          <p className="st-toast__title">{MESSAGES[type]}</p>
+          <p className="st-toast__meta">Ongedaan maken in {timeLeft}s</p>
+        </div>
+        <button type="button" onClick={onUndo} className="st-toast__action">
+          Ongedaan
+        </button>
+      </div>
     </div>
   );
 }

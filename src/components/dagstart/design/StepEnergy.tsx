@@ -5,6 +5,7 @@ import Battery from "./Battery";
 import CyclusButton, { resolveCurrentPhaseKey } from "./CyclusButton";
 import { getCyclePhaseColor } from "./CycleRing";
 import { useSupportsHover } from "@/hooks/useSupportsHover";
+import { useI18n } from "@/lib/i18n/I18nContext";
 import { DAGSTART_ENERGIES, type DagstartEnergyId } from "./types";
 
 type CyclusInfo = {
@@ -21,27 +22,6 @@ type StepEnergyProps = {
   onPick: (id: DagstartEnergyId) => void;
 };
 
-const PHASE_LABEL: Record<string, string> = {
-  menstrual: "Menstruatie",
-  follicular: "Folliculair",
-  ovulation: "Ovulatie",
-  luteal: "Luteaal",
-};
-
-const PHASE_BIO: Record<string, string> = {
-  menstrual: "Lage dopamine, lage energie",
-  follicular: "Stijgende oestrogeen, herstellende focus",
-  ovulation: "Piek dopamine, hoogste helderheid",
-  luteal: "Dalende oestrogeen, brain fog mogelijk",
-};
-
-const PHASE_ADVICE: Record<string, string> = {
-  menstrual: "Wees lief voor jezelf. Pak één kleine taak op, niet meer.",
-  follicular: "Goede dag voor gewone capaciteit. Bouw rustig op.",
-  ovulation: "Ruimte voor iets zwaars. Pak die taak die je al uitstelt.",
-  luteal: "Minder forceren. Kies kleine, concrete stappen.",
-};
-
 export default function StepEnergy({
   userName,
   greeting,
@@ -49,6 +29,7 @@ export default function StepEnergy({
   cyclus,
   onPick,
 }: StepEnergyProps) {
+  const { t } = useI18n();
   const meta = DAGSTART_ENERGIES.find((e) => e.id === energy);
   const color = meta ? meta.color : "#F59E0B";
   const [cyclusOpen, setCyclusOpen] = useState(false);
@@ -65,11 +46,11 @@ export default function StepEnergy({
     return {
       key,
       color: getCyclePhaseColor(key),
-      label: PHASE_LABEL[key],
-      bio: PHASE_BIO[key],
-      advice: PHASE_ADVICE[key],
+      label: t(`cycle.contextPhase_${key}`),
+      bio: t(`cycle.contextBio_${key}`),
+      tip: t(`cycle.contextTip_${key}`),
     };
-  }, [cyclus]);
+  }, [cyclus, t]);
 
   return (
     <div
@@ -249,34 +230,26 @@ export default function StepEnergy({
                 color: "var(--st-muted-2)",
               }}
             >
-              Dag {cyclus.day}/{cyclus.cycleLength}
+              {t("cycle.contextDayCounter", {
+                day: String(cyclus.day),
+                length: String(cyclus.cycleLength),
+              })}
             </span>
             <span style={{ fontSize: 11, color: "var(--st-muted-2)" }}>
               {"\u00b7 "}
               {phaseInfo.bio}
             </span>
           </div>
-          <div
+          <p
             style={{
               fontSize: 13,
               color: "var(--st-ink-soft)",
               lineHeight: 1.5,
+              margin: 0,
             }}
           >
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: phaseInfo.color,
-                marginRight: 8,
-              }}
-            >
-              Structuro
-            </span>
-            {phaseInfo.advice}
-          </div>
+            {phaseInfo.tip}
+          </p>
         </div>
       ) : null}
     </div>

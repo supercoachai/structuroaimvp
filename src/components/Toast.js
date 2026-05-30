@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from "react";
 
+/** Moet gelijk lopen met `--st-toast-motion-ms` in globals.css */
+const TOAST_EXIT_MS = 900;
+
 let push;
 export function useToast() {
   const [q, setQ] = useState([]);
+
+  const removeAfterFade = (id) => {
+    setTimeout(() => {
+      setQ((s) => s.filter((x) => x.id !== id));
+    }, TOAST_EXIT_MS);
+  };
+
   push = (msg, opts = {}) => {
     const { durationMs = 3000, replace = false, tone = "neutral" } = opts || {};
     const id = Math.random();
@@ -12,68 +22,65 @@ export function useToast() {
         : [...s, { id, msg, durationMs, fading: false, tone }]
     );
     if (typeof durationMs === "number" && durationMs > 0) {
-      // Fade-out net voor removal
-      const fadeMs = 250;
-      const fadeAt = Math.max(0, durationMs - fadeMs);
+      const fadeAt = Math.max(0, durationMs - TOAST_EXIT_MS);
       setTimeout(() => {
         setQ((s) => s.map((x) => (x.id === id ? { ...x, fading: true } : x)));
       }, fadeAt);
       setTimeout(() => {
         setQ((s) => s.filter((x) => x.id !== id));
-      }, durationMs);
+      }, fadeAt + TOAST_EXIT_MS);
     }
   };
-  const dismiss = (id) => setQ((s) => s.filter((x) => x.id !== id));
+
+  const dismiss = (id) => {
+    setQ((s) => {
+      const item = s.find((x) => x.id === id);
+      if (!item || item.fading) return s;
+      return s.map((x) => (x.id === id ? { ...x, fading: true } : x));
+    });
+    removeAfterFade(id);
+  };
+
   return { q, dismiss };
+}
+
+function toastToneClass(tone) {
+  if (tone === "error") return "st-toast--error";
+  if (tone === "success") return "st-toast--success";
+  return "";
 }
 
 export function ToastHost() {
   const { q, dismiss } = useToast();
-  useEffect(()=>{ /* no-op, hook singleton-ish */ },[]);
-  
+  useEffect(() => {
+    /* singleton hook anchor */
+  }, []);
+
+  if (!q.length) return null;
+
   return (
-    <div style={{ 
-      position:"fixed", 
-      bottom:16, 
-      left:"50%", 
-      transform:"translateX(-50%)", 
-      display:"grid", 
-      gap:8, 
-      zIndex:9999 
-    }}>
-      {q.map(t=>(
-        <div key={t.id} style={{ 
-          background: t.tone === "error" ? "#fef2f2" : "#fff", 
-          border: t.tone === "error" ? "1px solid #fecaca" : "1px solid #E6E8EE", 
-          borderRadius:10, 
-          padding:"8px 12px", 
-          boxShadow:"0 2px 8px rgba(0,0,0,0.04)",
-          fontSize: '14px',
-          color: t.tone === "error" ? "#b91c1c" : "#374151",
-          opacity: t.fading ? 0 : 1,
-          transition: 'opacity 250ms ease'
-        }}>
+    <div className="st-toast-host" aria-live="polite">
+      {q.map((t) => (
+        <div
+          key={t.id}
+          role="status"
+          className={`st-toast ${toastToneClass(t.tone)}${t.fading ? " is-fading" : ""}`}
+          onClick={() => dismiss(t.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              dismiss(t.id);
+            }
+          }}
+          tabIndex={0}
+        >
           {t.msg}
-          <button 
-            onClick={()=>dismiss(t.id)} 
-            style={{ 
-              marginLeft:8, 
-              border:"1px solid #E6E8EE", 
-              borderRadius:8, 
-              padding:"2px 6px", 
-              background:"#fff",
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            ok
-          </button>
         </div>
       ))}
     </div>
   );
 }
 
-// Backwards-compatible: toast("msg") and toast("msg", { durationMs, replace })
 export const toast = (m, opts) => push?.(m, opts);
 toast.error = (m, opts) => push?.(m, { ...opts, tone: "error" });
+toast.success = (m, opts) => push?.(m, { ...opts, tone: "success" });

@@ -7,6 +7,7 @@ import {
   resolvePhaseKeyForDay,
   type CyclePhaseKey,
 } from "@/lib/cycle/cyclePhaseRanges";
+import { useI18n } from "@/lib/i18n/I18nContext";
 
 const HINT_KEY = "structuro.dagstartDesignCyclusHintSeen";
 
@@ -43,6 +44,7 @@ export default function CyclusButton({
   open,
   onToggle,
 }: CyclusButtonProps) {
+  const { t } = useI18n();
   const [hintSeen, setHintSeen] = useState<boolean>(() => readHintSeen());
   const phaseKey = resolveCurrentPhaseKey(day, cycleLength, menstruationDuration);
   const color = getCyclePhaseColor(phaseKey);
@@ -78,7 +80,7 @@ export default function CyclusButton({
           position: "relative",
         }}
         aria-expanded={open}
-        aria-label={`Cyclus dag ${day}`}
+        aria-label={t("cycle.dagstartCyclusButtonAria", { day: String(day) })}
       >
         <CycleRing
           day={day}
@@ -143,7 +145,7 @@ export default function CyclusButton({
           }}
           role="tooltip"
         >
-          Cyclus-info en advies
+          {t("cycle.dagstartCyclusHint")}
           <span
             style={{
               position: "absolute",
