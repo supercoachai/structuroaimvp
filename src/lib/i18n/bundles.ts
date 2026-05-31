@@ -174,7 +174,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Voor een nieuw refund-verzoek, mail info@structuro.eu",
       analyticsTitle: "Anonieme productanalyse",
       analyticsHint:
-        "Optionele meetgegevens (PostHog, EU) om de app te verbeteren. Geen inhoud van je taken of gedachten.",
+        "Optionele meetgegevens om de app te verbeteren. Geen inhoud van je taken of gedachten.",
       analyticsStatusOn: "Aan",
       analyticsStatusOff: "Uit",
       analyticsEnable: "Aanzetten",
@@ -576,7 +576,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "For a new refund request, email info@structuro.eu",
       analyticsTitle: "Anonymous product analytics",
       analyticsHint:
-        "Optional usage metrics (PostHog, EU region) to improve the app. Never the text of your tasks or parked thoughts.",
+        "Optional usage metrics to improve the app. Never the text of your tasks or parked thoughts.",
       analyticsStatusOn: "On",
       analyticsStatusOff: "Off",
       analyticsEnable: "Turn on",

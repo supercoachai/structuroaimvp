@@ -336,7 +336,6 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
           energy: appEnergy,
           task_count: top3.length,
         });
-        setDagstartCookieOnClient();
         setStep(3);
       } catch (err: any) {
         console.error("Dagstart save error:", err);
