@@ -19,14 +19,16 @@ function DagstartBody() {
 
 export default function DagstartPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--structuro-sub)]">
-          …
-        </div>
-      }
-    >
-      <DagstartBody />
-    </Suspense>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <Suspense
+        fallback={
+          <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--structuro-sub)]">
+            …
+          </div>
+        }
+      >
+        <DagstartBody />
+      </Suspense>
+    </div>
   );
 }

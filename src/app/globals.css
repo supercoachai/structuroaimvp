@@ -1308,6 +1308,25 @@ body {
   animation: new-task-flow-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+.new-task-flow--embedded {
+  max-height: 100%;
+  height: 100%;
+  box-shadow: none;
+}
+
+.new-task-flow--embedded .new-task-flow-stage {
+  overflow: hidden;
+}
+
+.new-task-flow--embedded .new-task-flow-chip {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.6875rem;
+}
+
+.new-task-flow--embedded .new-task-flow-dot {
+  max-width: 1.75rem;
+}
+
 .quick-task-panel {
   max-height: min(780px, calc(100dvh - var(--quick-task-bar-offset, 5rem)));
 }
@@ -1684,6 +1703,8 @@ body {
 .ds-root {
   flex: 1;
   min-height: 0;
+  width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1694,11 +1715,25 @@ body {
   font-family: var(--st-font, 'Inter', system-ui, -apple-system, sans-serif);
   color: #1A2340;
 }
+.ds-root--tall-step {
+  justify-content: stretch;
+  align-items: stretch;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.ds-root--tall-step .ds-card--tall {
+  max-width: 460px;
+  width: 100%;
+  margin-inline: auto;
+}
 @media (max-width: 767px) {
   .ds-root {
     flex: 1 1 auto;
     width: 100%;
     min-height: 0;
+    height: 100%;
+    max-height: 100dvh;
     justify-content: center;
     padding:
       max(12px, env(safe-area-inset-top))
@@ -1723,11 +1758,14 @@ body {
   display: flex;
   flex-direction: column;
 }
-/** Stap 2 (taken kiezen): kaart mag groeien tot viewport, inhoud scrollt binnen ds-body. */
+/** Stap 2 (taken kiezen): kaart vult beschikbare hoogte, geen scroll op de kaart zelf. */
 .ds-card--tall {
-  max-height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
-  flex: 0 1 auto;
+  max-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .ds-topbar {
   height: 52px;
@@ -1780,6 +1818,15 @@ body {
 .ds-body.scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+/** Taak toevoegen / swipe: alles op één scherm, geen kaart-scroll. */
+.ds-body.ds-body--task-pick {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px 20px 18px;
+  display: flex;
+  flex-direction: column;
 }
 .ds-body.center {
   justify-content: center;

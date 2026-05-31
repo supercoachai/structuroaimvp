@@ -238,6 +238,7 @@ export default function NewTaskFlow({
 
   const busy = saving || saveBusy;
   const compact = variant === "compact";
+  const embedded = fillContainer && compact;
   const skippedStepCount = (skipTitle ? 1 : 0) + (skipDeadline ? 1 : 0);
   const progressSteps = TOTAL_STEPS - skippedStepCount;
   const progressIndex =
@@ -255,7 +256,11 @@ export default function NewTaskFlow({
       } ${fillContainer ? "new-task-flow--embedded h-full max-h-full" : ""} ${className}`}
     >
       {step < doneStepIndex ? (
-        <div className="new-task-flow-header flex shrink-0 items-center justify-between px-5 pt-4 sm:px-[22px] sm:pt-[18px]">
+        <div
+          className={`new-task-flow-header flex shrink-0 items-center justify-between ${
+            embedded ? "px-4 pt-2 sm:px-5" : "px-5 pt-4 sm:px-[22px] sm:pt-[18px]"
+          }`}
+        >
           <div className="flex flex-1 items-center gap-1.5">
             {Array.from({ length: progressSteps }).map((_, i) => (
               <div
@@ -285,8 +290,12 @@ export default function NewTaskFlow({
         </div>
       ) : null}
 
-      {step > firstStepIndex && step < doneStepIndex ? (
-        <div className="new-task-flow-answers flex min-h-9 shrink-0 flex-wrap gap-1.5 px-5 pt-3.5 sm:px-[22px]">
+      {step >= 2 && step < doneStepIndex ? (
+        <div
+          className={`new-task-flow-answers flex shrink-0 flex-wrap gap-1.5 px-5 sm:px-[22px] ${
+            embedded ? "min-h-0 pt-2" : "min-h-9 pt-3.5"
+          }`}
+        >
           {!skipTitle && String(title ?? "").trim() ? (
             <AnswerChip onClick={() => setStep(0)}>
               <span className="text-[var(--st-muted-2)]">{t("newTask.chipTask")}</span>
@@ -313,9 +322,11 @@ export default function NewTaskFlow({
       ) : null}
 
       <div
-        className={`new-task-flow-stage flex min-h-0 flex-1 flex-col justify-center overflow-y-auto overflow-x-hidden px-5 sm:px-6 ${
-          compact ? "py-3" : "py-4 sm:py-5"
-        }`}
+        className={`new-task-flow-stage flex min-h-0 flex-1 flex-col px-5 sm:px-6 ${
+          embedded
+            ? "justify-start overflow-hidden py-1"
+            : "justify-center overflow-y-auto overflow-x-hidden py-4 sm:py-5"
+        } ${compact && !embedded ? "py-3" : ""}`}
       >
         {!skipTitle && step === 0 ? (
           <StepTitle
@@ -336,6 +347,7 @@ export default function NewTaskFlow({
               scheduleAdvance(2);
             }}
             compact={compact}
+            embedded={embedded}
           />
         ) : null}
 
@@ -374,6 +386,7 @@ export default function NewTaskFlow({
             onSave={() => void persist()}
             busy={busy}
             compact={compact}
+            embedded={embedded}
           />
         ) : null}
 
@@ -387,7 +400,11 @@ export default function NewTaskFlow({
       </div>
 
       {step < doneStepIndex ? (
-        <div className="new-task-flow-footer flex shrink-0 items-center justify-between px-5 pb-6 pt-4 sm:px-6 sm:pb-7">
+        <div
+          className={`new-task-flow-footer flex shrink-0 items-center justify-between px-5 sm:px-6 ${
+            embedded ? "pb-3 pt-2" : "pb-6 pt-4 sm:pb-7"
+          }`}
+        >
           {step > firstStepIndex ? (
             <button
               type="button"
@@ -462,19 +479,35 @@ function AnswerChip({
   );
 }
 
-function StepEyebrow({ children }: { children: ReactNode }) {
+function StepEyebrow({ children, embedded }: { children: ReactNode; embedded?: boolean }) {
   return (
-    <p className="new-task-flow-eyebrow mb-3 text-[11px] font-medium uppercase tracking-[0.22em] text-[var(--st-muted-2)]">
+    <p
+      className={`new-task-flow-eyebrow font-medium uppercase tracking-[0.22em] text-[var(--st-muted-2)] ${
+        embedded ? "mb-1.5 text-[10px]" : "mb-3 text-[11px]"
+      }`}
+    >
       {children}
     </p>
   );
 }
 
-function StepQuestion({ children, compact }: { children: ReactNode; compact?: boolean }) {
+function StepQuestion({
+  children,
+  compact,
+  embedded,
+}: {
+  children: ReactNode;
+  compact?: boolean;
+  embedded?: boolean;
+}) {
   return (
     <h2
-      className={`new-task-flow-q m-0 mb-6 font-medium leading-tight tracking-tight text-[var(--st-ink)] ${
-        compact ? "text-[clamp(1.25rem,5vw,1.5rem)]" : "text-[clamp(1.35rem,5.5vw,1.625rem)]"
+      className={`new-task-flow-q m-0 font-medium leading-tight tracking-tight text-[var(--st-ink)] ${
+        embedded
+          ? "mb-3 text-[1.2rem]"
+          : compact
+            ? "mb-6 text-[clamp(1.25rem,5vw,1.5rem)]"
+            : "mb-6 text-[clamp(1.35rem,5.5vw,1.625rem)]"
       }`}
     >
       {children}
@@ -526,18 +559,22 @@ function StepEnergy({
   value,
   onPick,
   compact,
+  embedded,
 }: {
   value: NewTaskEnergyLevel | null;
   onPick: (id: NewTaskEnergyLevel) => void;
   compact?: boolean;
+  embedded?: boolean;
 }) {
   const { t } = useI18n();
 
   return (
     <div className="new-task-flow-step w-full">
-      <StepEyebrow>{t("newTask.eyebrowEnergy")}</StepEyebrow>
-      <StepQuestion compact={compact}>{t("newTask.qEnergy")}</StepQuestion>
-      <div className="grid grid-cols-3 gap-2.5">
+      <StepEyebrow embedded={embedded}>{t("newTask.eyebrowEnergy")}</StepEyebrow>
+      <StepQuestion compact={compact} embedded={embedded}>
+        {t("newTask.qEnergy")}
+      </StepQuestion>
+      <div className={`grid grid-cols-3 ${embedded ? "gap-1.5" : "gap-2.5"}`}>
         {NEW_TASK_ENERGIES.map((e) => {
           const active = value === e.id;
           return (
@@ -545,7 +582,11 @@ function StepEnergy({
               key={e.id}
               type="button"
               onClick={() => onPick(e.id)}
-              className="flex flex-col items-center gap-2.5 rounded-[18px] border px-2 py-4 text-center transition-all duration-200 hover:-translate-y-px hover:bg-white active:scale-[0.98]"
+              className={`flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-px hover:bg-white active:scale-[0.98] ${
+                embedded
+                  ? "gap-1 rounded-[14px] border px-1 py-2.5"
+                  : "gap-2.5 rounded-[18px] border px-2 py-4"
+              }`}
               style={{
                 background: active ? e.haze : "var(--st-surface-2,#F6F8FC)",
                 borderColor: active ? e.color : "var(--st-line)",
@@ -553,14 +594,22 @@ function StepEnergy({
                 transform: active ? "translateY(-2px)" : "none",
               }}
             >
-              <EnergyIcon kind={e.iconKind} size={compact ? 30 : 36} color={e.color} />
+              <EnergyIcon
+                kind={e.iconKind}
+                size={embedded ? 26 : compact ? 30 : 36}
+                color={e.color}
+              />
               <span
-                className="text-sm font-medium tracking-tight"
+                className={`font-medium tracking-tight ${embedded ? "text-xs leading-tight" : "text-sm"}`}
                 style={{ color: active ? e.color : "var(--st-ink)" }}
               >
                 {t(`newTask.${e.labelKey}`)}
               </span>
-              <span className="-mt-1 text-[11px] text-[var(--st-muted-2)]">
+              <span
+                className={`leading-tight text-[var(--st-muted-2)] ${
+                  embedded ? "text-[9px]" : "-mt-1 text-[11px]"
+                }`}
+              >
                 {t(`newTask.${e.subKey}`)}
               </span>
             </button>
@@ -718,6 +767,7 @@ function StepMicro({
   onSave,
   busy,
   compact,
+  embedded,
 }: {
   microsteps: string[];
   setMicrosteps: (v: string[]) => void;
@@ -726,6 +776,7 @@ function StepMicro({
   onSave: () => void;
   busy: boolean;
   compact?: boolean;
+  embedded?: boolean;
 }) {
   const { t } = useI18n();
 
@@ -753,20 +804,32 @@ function StepMicro({
   if (!editing) {
     return (
       <div className="new-task-flow-step w-full">
-        <StepEyebrow>{t("newTask.eyebrowSplit")}</StepEyebrow>
-        <StepQuestion compact={compact}>{t("newTask.qMicro")}</StepQuestion>
-        <p className="mb-6 text-[13.5px] leading-relaxed text-[var(--st-muted)]">
+        <StepEyebrow embedded={embedded}>{t("newTask.eyebrowSplit")}</StepEyebrow>
+        <StepQuestion compact={compact} embedded={embedded}>
+          {t("newTask.qMicro")}
+        </StepQuestion>
+        <p
+          className={`leading-relaxed text-[var(--st-muted)] ${
+            embedded ? "mb-2.5 text-xs" : "mb-6 text-[13.5px]"
+          }`}
+        >
           {t("newTask.microHint")}
         </p>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className={`grid grid-cols-2 ${embedded ? "gap-2" : "gap-2.5"}`}>
           <button
             type="button"
             onClick={() => void onSave()}
             disabled={busy}
-            className="flex flex-col items-center gap-1 rounded-[18px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)] px-3 py-5 transition-all hover:bg-white disabled:opacity-50"
+            className={`flex flex-col items-center gap-0.5 rounded-[18px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)] transition-all hover:bg-white disabled:opacity-50 ${
+              embedded ? "px-2 py-3" : "gap-1 px-3 py-5"
+            }`}
           >
-            <span className="text-base font-medium text-[var(--st-ink)]">{t("newTask.microNo")}</span>
-            <span className="text-[11px] text-[var(--st-muted-2)]">{t("newTask.microNoSub")}</span>
+            <span className={`font-medium text-[var(--st-ink)] ${embedded ? "text-sm" : "text-base"}`}>
+              {t("newTask.microNo")}
+            </span>
+            <span className={`text-[var(--st-muted-2)] ${embedded ? "text-[10px]" : "text-[11px]"}`}>
+              {t("newTask.microNoSub")}
+            </span>
           </button>
           <button
             type="button"
@@ -774,10 +837,16 @@ function StepMicro({
               setEditing(true);
               addStep();
             }}
-            className="flex flex-col items-center gap-1 rounded-[18px] border border-[var(--st-blue)] bg-[var(--st-blue-haze)] px-3 py-5 transition-all"
+            className={`flex flex-col items-center gap-0.5 rounded-[18px] border border-[var(--st-blue)] bg-[var(--st-blue-haze)] transition-all ${
+              embedded ? "px-2 py-3" : "gap-1 px-3 py-5"
+            }`}
           >
-            <span className="text-base font-medium text-[var(--st-blue)]">{t("newTask.microYes")}</span>
-            <span className="text-[11px] text-[var(--st-muted-2)]">{t("newTask.microYesSub")}</span>
+            <span className={`font-medium text-[var(--st-blue)] ${embedded ? "text-sm" : "text-base"}`}>
+              {t("newTask.microYes")}
+            </span>
+            <span className={`text-[var(--st-muted-2)] ${embedded ? "text-[10px]" : "text-[11px]"}`}>
+              {t("newTask.microYesSub")}
+            </span>
           </button>
         </div>
       </div>
@@ -786,8 +855,10 @@ function StepMicro({
 
   return (
     <div className="new-task-flow-step w-full">
-      <StepEyebrow>{t("newTask.eyebrowMicro")}</StepEyebrow>
-      <StepQuestion compact={compact}>{t("newTask.qMicroFirst")}</StepQuestion>
+      <StepEyebrow embedded={embedded}>{t("newTask.eyebrowMicro")}</StepEyebrow>
+      <StepQuestion compact={compact} embedded={embedded}>
+        {t("newTask.qMicroFirst")}
+      </StepQuestion>
 
       <div className="mb-3.5 flex flex-col gap-1.5">
         {microsteps.map((s, i) => (

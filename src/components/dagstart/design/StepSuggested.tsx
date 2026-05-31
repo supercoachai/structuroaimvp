@@ -130,35 +130,17 @@ export default function StepSuggested({
 
   if (suggested.length === 0 && onAddTask) {
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col">
-        <div className="shrink-0">
-          <div className="ds-eyebrow">Voor jou</div>
-          <h2 className="ds-title">Voeg een taak toe.</h2>
-          <p className="ds-sub">
-            Nog geen passende taken? Begin met één kleine stap.
-          </p>
-        </div>
-        <div className="mt-5 flex min-h-0 max-h-[min(520px,55dvh)] flex-1 flex-col overflow-hidden">
-          <NewTaskFlow
-            variant="compact"
-            mode="panel"
-            fillContainer
-            saving={addBusy}
-            onSave={async (payload) => {
-              await onAddTask(payload);
-            }}
-            className="min-h-0 flex-1 shadow-none"
-          />
-        </div>
-        <div className="shrink-0" style={{ textAlign: "center", marginTop: 16 }}>
-          <button
-            type="button"
-            className="ds-link"
-            onClick={() => onAccept([])}
-          >
-            Overslaan, geen taken vandaag
-          </button>
-        </div>
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+        <NewTaskFlow
+          variant="compact"
+          mode="panel"
+          fillContainer
+          saving={addBusy}
+          onSave={async (payload) => {
+            await onAddTask(payload);
+          }}
+          className="min-h-0 min-w-0 flex-1 shadow-none"
+        />
       </div>
     );
   }

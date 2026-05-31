@@ -16,7 +16,7 @@ export default function DagstartOverlay({ onComplete, onPhaseChange }: DagstartO
   }, [onPhaseChange]);
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F0F2F8] max-md:justify-center">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#F0F2F8]">
       <DagstartFlow onComplete={onComplete} />
     </div>
   );

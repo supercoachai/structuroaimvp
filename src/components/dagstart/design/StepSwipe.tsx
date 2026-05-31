@@ -215,48 +215,22 @@ export default function StepSwipe({
   if (queue.length === 0) {
     if (showAddFlow) {
       return (
-        <div className="flex min-h-0 w-full flex-1 flex-col">
-          <div className="shrink-0">
-            <div className="ds-eyebrow">Stel samen</div>
-            <h2 className="ds-title">
-              {tasks.length === 0 ? "Voeg een taak toe." : "Nieuwe taak toevoegen."}
-            </h2>
-            <p className="ds-sub">
-              {tasks.length === 0
-                ? "Nog geen taken? Begin met één kleine stap."
-                : "Ook een kleine taak telt voor vandaag."}
-            </p>
-          </div>
-          <div className="mt-5 flex min-h-0 max-h-[min(520px,55dvh)] flex-1 flex-col overflow-hidden">
-            <NewTaskFlow
-              variant="compact"
-              mode="panel"
-              fillContainer
-              saving={addBusy}
-              onClose={
-                tasks.length === 0
-                  ? undefined
-                  : () => setAddOpen(false)
-              }
-              showClose={tasks.length > 0}
-              onSave={async (payload) => {
-                await onAddTask?.(payload);
-                setAddOpen(false);
-              }}
-              className="min-h-0 flex-1 shadow-none"
-            />
-          </div>
-          {tasks.length === 0 ? (
-            <div className="shrink-0" style={{ textAlign: "center", marginTop: 16 }}>
-              <button
-                type="button"
-                className="ds-link"
-                onClick={() => onDone([])}
-              >
-                Overslaan, geen taken vandaag
-              </button>
-            </div>
-          ) : null}
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+          <NewTaskFlow
+            variant="compact"
+            mode="panel"
+            fillContainer
+            saving={addBusy}
+            onClose={
+              tasks.length === 0 ? undefined : () => setAddOpen(false)
+            }
+            showClose={tasks.length > 0}
+            onSave={async (payload) => {
+              await onAddTask?.(payload);
+              setAddOpen(false);
+            }}
+            className="min-h-0 min-w-0 flex-1 shadow-none"
+          />
         </div>
       );
     }

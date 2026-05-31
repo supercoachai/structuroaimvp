@@ -402,7 +402,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   }, []);
 
   return (
-    <div className="ds-root">
+    <div className={`ds-root${step === 2 ? " ds-root--tall-step" : ""}`}>
       <div className={`ds-card${step === 2 ? " ds-card--tall" : ""}`}>
         <div className="ds-topbar">
           <span className="ds-brand">Structuro</span>
@@ -424,7 +424,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
         <div
           className={`ds-body ${step === 0 || step === 1 || step === 3 ? "center" : ""} ${
-            step === 2 || step === 3 ? "scroll" : ""
+            step === 2 ? "ds-body--task-pick" : step === 3 ? "scroll" : ""
           }`}
         >
           {step === 0 ? (
