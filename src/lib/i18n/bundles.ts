@@ -326,8 +326,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       guaranteeCtaAfter: "met onderwerp 'Geld terug'.",
       guaranteeMail: "info@structuro.eu",
       submitBusy: "Even geduld…",
+      renewalDisclosure:
+        "Je abonnement verlengt automatisch. Betaal je met iDEAL? Dan geef je ook een SEPA-incassomachtiging voor toekomstige termijnen. Opzeggen kan altijd in Instellingen.",
       cancelledHint:
         "Je account staat klaar. Voltooi je abonnement om aan de slag te gaan.",
+      resumePaymentHint:
+        "Je bent ingelogd, maar je abonnement is nog niet actief. Kies een plan en rond de betaling af om Structuro te gebruiken.",
       confirmedHint:
         "E-mail bevestigd. Kies je abonnement om verder te gaan.",
       resumeAs: "Ingelogd als {email}.",
@@ -399,7 +403,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       moneyBackHowLink: "Hoe werkt dit?",
       moneyBackHowDetail:
         "We verwerken je verzoek binnen drie werkdagen. Het bedrag staat meestal binnen 5 tot 10 werkdagen terug op je rekening.",
-      paymentTrustLabel: "Veilig betalen via Stripe",
+      paymentTrustLabel:
+        "Veilig betalen via Stripe. Bij iDEAL geef je een SEPA-incassomachtiging voor verlengingen.",
       checkoutServiceRoleError:
         "Er ging iets mis aan onze kant. Probeer het over een paar minuten opnieuw of mail info@structuro.eu.",
     },
@@ -728,8 +733,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       guaranteeCtaAfter: "with subject 'Refund'.",
       guaranteeMail: "info@structuro.eu",
       submitBusy: "Please wait…",
+      renewalDisclosure:
+        "Your subscription renews automatically. If you pay with iDEAL, you also authorize SEPA Direct Debit for future billing periods. You can cancel anytime in Settings.",
       cancelledHint:
         "Your account is ready. Complete your subscription to get started.",
+      resumePaymentHint:
+        "You are signed in, but your subscription is not active yet. Choose a plan and complete payment to use Structuro.",
       confirmedHint: "Email confirmed. Choose your plan to continue.",
       resumeAs: "Signed in as {email}.",
       loginToResume: "Sign in again to complete payment.",
@@ -799,7 +808,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       moneyBackHowLink: "How does this work?",
       moneyBackHowDetail:
         "We process your request within three business days. The amount usually returns to your account within 5 to 10 business days.",
-      paymentTrustLabel: "Secure checkout with Stripe",
+      paymentTrustLabel:
+        "Secure checkout with Stripe. With iDEAL you authorize SEPA Direct Debit for renewals.",
       checkoutServiceRoleError:
         "Something went wrong on our end. Please try again in a few minutes or email info@structuro.eu.",
     },

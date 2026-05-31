@@ -25,6 +25,7 @@ import {
 } from '@/lib/posthog/signupAttribution';
 import Link from 'next/link';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
+import { profileHasAppAccess } from '@/lib/subscriptionAccess';
 import {
   clearCheckoutReturn,
   readCheckoutReturn,
@@ -64,6 +65,45 @@ function safeAppPath(raw: string | null | undefined): string | null {
   const trimmed = raw.trim();
   if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return null;
   return trimmed;
+}
+
+async function resolvePostLoginPath(
+  userId: string,
+  email: string | null | undefined,
+  next: string | null,
+  afterCheckoutLogin: boolean
+): Promise<string> {
+  const safeNext = safeAppPath(next);
+  if (isProtectedTestAccount(email ?? null)) {
+    return safeNext ?? (afterCheckoutLogin ? "/onboarding" : "/");
+  }
+
+  try {
+    const supabase = createClient();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select(
+        "onboarding_completed, subscription_status, subscription_current_period_end"
+      )
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.onboarding_completed) {
+      const needsPay =
+        isRegistrationCheckoutEnabledClient() &&
+        !profileHasAppAccess({
+          subscription_status: profile?.subscription_status as string | null,
+          subscription_current_period_end:
+            profile?.subscription_current_period_end as string | null,
+        });
+      if (needsPay) return "/registreren/plan?resume=1";
+      return "/onboarding";
+    }
+  } catch {
+    /* fallback */
+  }
+
+  return safeNext ?? (afterCheckoutLogin ? "/onboarding" : "/");
 }
 
 function mapPasswordResetError(message: string, t: (k: string) => string): string {
@@ -306,9 +346,13 @@ function LoginPageInner() {
         if (data.user) {
           clearStructuroLocalModeCookie();
           clearCheckoutReturn();
-          const next = safeAppPath(searchParams?.get("next"));
-          splashTargetRef.current =
-            next ?? (afterCheckoutLogin ? "/onboarding" : "/");
+          const next = searchParams?.get("next") ?? null;
+          splashTargetRef.current = await resolvePostLoginPath(
+            data.user.id,
+            data.user.email,
+            next,
+            afterCheckoutLogin
+          );
           setShowSplash(true);
         }
       }

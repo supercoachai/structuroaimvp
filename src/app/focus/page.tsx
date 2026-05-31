@@ -483,7 +483,7 @@ function FocusContent() {
 
   const handleAirlockComplete = useCallback(() => {
     setIsAirlockActive(false);
-    router.push('/todo');
+    router.push('/');
   }, [router]);
 
   const completeCurrentTask = async () => {

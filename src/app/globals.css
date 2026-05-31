@@ -79,6 +79,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * iOS Safari zoomt bij focus op invoervelden met font-size < 16px en zoomt
+ * daarna niet betrouwbaar terug uit. Minimaal 16px op touch devices voorkomt dat.
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
+
 /* Structuro Launch Set design tokens */
 :root {
   --st-bg: #F0F2F8;
@@ -923,7 +936,7 @@ body {
 
 .focus-screen__micro-card .focus-micro-input-row input {
   padding-block: clamp(6px, 1.2dvh, 10px);
-  font-size: clamp(12px, 3.2vw, 14px);
+  font-size: 16px;
 }
 
 .focus-screen__actions {
@@ -1449,7 +1462,7 @@ body {
   }
 
   .quick-task-bar .quick-task-field input {
-    font-size: 12px;
+    font-size: 16px;
   }
 
   .quick-task-bar .quick-task-submit {

@@ -25,6 +25,7 @@ function RegistrerenPlanInner() {
 
   const cancelled = searchParams?.get("cancelled") === "1";
   const confirmed = searchParams?.get("confirmed") === "1";
+  const resume = searchParams?.get("resume") === "1";
 
   const [selectedPlanId, setSelectedPlanId] = useState<RegisterPlanId>("yearly");
   const [welcomeTaskOptIn, setWelcomeTaskOptIn] = useState(true);
@@ -46,8 +47,10 @@ function RegistrerenPlanInner() {
       setInfo(t("registrerenPage.cancelledHint"));
     } else if (confirmed) {
       setInfo(t("registrerenPage.confirmedHint"));
+    } else if (resume) {
+      setInfo(t("registrerenPage.resumePaymentHint"));
     }
-  }, [cancelled, confirmed, t]);
+  }, [cancelled, confirmed, resume, t]);
 
   useEffect(() => {
     let cancelledEffect = false;
@@ -85,6 +88,9 @@ function RegistrerenPlanInner() {
 
         setUserId(user.id);
         setUserEmail(user.email ?? null);
+        if (!cancelled && !confirmed && !resume) {
+          setInfo(t("registrerenPage.resumePaymentHint"));
+        }
       } catch {
         /* ignore */
       } finally {
@@ -94,7 +100,7 @@ function RegistrerenPlanInner() {
     return () => {
       cancelledEffect = true;
     };
-  }, [router]);
+  }, [router, cancelled, confirmed, resume, t]);
 
   const selectedPlan =
     REGISTER_PLANS.find((p) => p.id === selectedPlanId) ?? REGISTER_PLANS[0];
@@ -263,6 +269,10 @@ function RegistrerenPlanInner() {
             {t("registrerenPage.welcomeTaskSource")}
           </p>
         </div>
+
+        <p className="text-center text-xs leading-relaxed text-slate-500">
+          {t("registrerenPage.renewalDisclosure")}
+        </p>
 
         <button
           type="button"

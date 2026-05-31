@@ -3,6 +3,7 @@ import { getAppOrigin } from "@/lib/appUrl";
 import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteServiceRole";
 import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
+import { CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES } from "@/lib/stripe/checkoutPaymentMethods";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
@@ -88,7 +89,7 @@ async function postCreateSession(request: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    payment_method_types: ["card", "ideal"],
+    payment_method_types: [...CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES],
     line_items: [{ price: priceId, quantity: 1 }],
     customer_email: email,
     client_reference_id: userId,
