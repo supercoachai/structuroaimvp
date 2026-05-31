@@ -2,90 +2,13 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Wachtlijst · Structuro</title>
-<meta name="description" content="Meld je aan voor Structuro voor de launch. Eén gerichte mail, geen spam."/>
-<link rel="icon" href="/uploads/logo-structuro.png" type="image/png"/>
-<link rel="apple-touch-icon" href="/uploads/logo-structuro.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-:root {
-  --bg:#F0F2F8;--white:#FFF;--border:rgba(26,35,64,0.12);--text:#1A2340;--sub:#6B7280;--place:#ABB3C5;--blue:#3B6BF7;--blue-h:#1E47D6;
-  --green:#22C55E;--green-s:#D1FAE5;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100dvh;}
-a{color:inherit;text-decoration:none;}
-.wl-shell{position:relative;isolation:isolate;padding:max(12px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom));}
-.wl-shell::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(37,99,235,.14),transparent);z-index:-1;}
-.wl-inner{max-width:520px;margin:0 auto;position:relative;z-index:1;}
-.wl-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:8px 0 28px;border-bottom:1px solid var(--border);margin-bottom:28px;}
-.wl-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;color:var(--text);}
-.wl-brand img{height:36px;width:auto;display:block;}
-.lang-switch{display:flex;gap:2px;padding:4px;background:var(--white);border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:700;}
-.lang-switch button{border:none;background:transparent;padding:8px 12px;border-radius:8px;cursor:pointer;font:inherit;color:var(--sub);}
-.lang-switch button.active{background:var(--blue);color:#fff;}
-main h1{font-size:clamp(26px,5vw,32px);font-weight:800;letter-spacing:-.03em;line-height:1.12;margin-bottom:10px;}
-.wl-lede{color:var(--sub);font-size:16px;font-weight:400;margin-bottom:28px;}
-.wl-card{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:26px 24px 28px;box-shadow:0 12px 40px rgba(15,23,42,.06);}
-label{display:block;font-size:13px;font-weight:600;color:var(--sub);margin-bottom:6px;}
-input[type=text],input[type=email]{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--border);font:inherit;font-size:16px;margin-bottom:18px;background:#fafbfc;}
-input::placeholder{color:var(--place);opacity:1;}
-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12);}
-.btn-submit{appearance:none;width:100%;border:none;border-radius:14px;background:linear-gradient(180deg,#5A84F9,var(--blue) 55%,var(--blue-h));color:#fff;font:inherit;font-weight:600;font-size:16px;padding:14px 20px;cursor:pointer;box-shadow:0 8px 22px rgba(59,107,247,.35);transition:transform 140ms;}
-.btn-submit:hover{transform:translateY(-1px);}
-.btn-submit:disabled{opacity:.55;cursor:not-allowed;}
-.wl-msg{margin-top:14px;font-size:14px;display:none;padding:14px;border-radius:12px;}
-.wl-msg.show{display:block;}
-.wl-msg.ok{background:var(--green-s);border:1px solid #A7F3D0;color:#065F46;}
-.wl-msg.warn{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;}
-.wl-msg.err{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;}
-.wl-back{display:inline-block;margin-top:28px;font-size:14px;font-weight:600;color:var(--blue);}
-.wl-back:hover{text-decoration:underline;}
-.hidden{display:none!important;}
-</style>
+<meta http-equiv="refresh" content="0;url=https://www.structuro.ai/registreren"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Doorverwijzen · Structuro</title>
+<link rel="canonical" href="https://www.structuro.ai/registreren"/>
+<script>location.replace('https://www.structuro.ai/registreren');</script>
 </head>
 <body>
-<div class="wl-shell">
-  <div class="wl-inner">
-    <header class="wl-head">
-      <a href="/" class="wl-brand">
-        <img src="/uploads/logo-structuro.png" alt="Structuro"/>
-        <span>Structuro</span>
-      </a>
-      <div class="lang-switch" role="group" aria-label="Taal">
-        <button type="button" id="btnNL" class="active">NL</button>
-        <button type="button" id="btnEN">EN</button>
-      </div>
-    </header>
-    <main>
-      <h1 data-i18n="wl_h1">Wachtlijst</h1>
-      <p class="wl-lede" data-i18n="wl_lede">Laat je gegevens achter. Als Structuro voor jou live gaat, hoor je van ons. Geen nieuwsbrieven, geen gedoe.</p>
-      <div class="wl-card" id="wl-card">
-        <form id="wl-form">
-          <div>
-            <label for="wl-name" data-i18n="wl_name">Naam</label>
-            <input id="wl-name" name="name" type="text" autocomplete="given-name" required maxlength="120" placeholder="Jouw naam"/>
-          </div>
-          <div>
-            <label for="wl-email" data-i18n="wl_email">E-mailadres</label>
-            <input id="wl-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="jouw@email.nl"/>
-          </div>
-          <button type="submit" class="btn-submit" id="wl-submit" data-i18n="wl_submit">Pak je plek voor 31 mei</button>
-        </form>
-        <div id="wl-dup" class="wl-msg warn" hidden role="alert"></div>
-        <div id="wl-err" class="wl-msg err" hidden role="alert"></div>
-      </div>
-      <a href="/" class="wl-back" data-i18n="wl_back">← Terug naar de landingspagina</a>
-    </main>
-  </div>
-</div>
-
-
-<script src="/js/ph-config.js"></script>
-<script src="/js/analytics.js"></script>
-<script type="module" src="/js/wachtlijst-form.js"></script>
+<p><a href="https://www.structuro.ai/registreren">Ga naar account aanmaken</a></p>
 </body>
 </html>

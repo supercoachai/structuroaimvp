@@ -149,9 +149,9 @@ h1 .stuck::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:
 .phone-wrap{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;}
 .phone-bg-blob{position:absolute;width:380px;height:380px;background:radial-gradient(circle,rgba(37,99,235,.09),transparent 70%);top:-40px;right:-40px;border-radius:50%;z-index:-1;}
 .phone{background:#0a0a0c;border-radius:38px;padding:7px;box-shadow:0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,.06);}
-.hero-phone{width:280px;height:570px;overflow:hidden;position:relative;}
+.hero-phone{width:280px;height:auto;aspect-ratio:471/1024;overflow:hidden;position:relative;}
 .hero-phone-slides{width:100%;height:100%;border-radius:32px;overflow:hidden;position:relative;}
-.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;opacity:0;transition:opacity 700ms ease;border-radius:32px;}
+.hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;transition:opacity 700ms ease;border-radius:32px;background:#F0F2F8;}
 .hero-slide.active{opacity:1;}
 .hero-phone-dots{display:flex;gap:8px;justify-content:center;position:relative;z-index:2;}
 .hero-dot{width:7px;height:7px;border-radius:4px;background:var(--border);cursor:pointer;transition:all 250ms;}
@@ -1099,15 +1099,18 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     width: 100%;
     max-width: min(280px, calc(100vw - 32px));
     height: auto;
-    aspect-ratio: 280 / 570;
+    aspect-ratio: 471 / 1024;
   }
   .hero-phone-slides {
     height: auto;
-    aspect-ratio: 280 / 570;
+    aspect-ratio: 471 / 1024;
     min-height: 0;
+    background: #F0F2F8;
   }
   .hero-slide {
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
+    background: #F0F2F8;
   }
   .hero-cta {
     flex-direction: row;
@@ -1329,7 +1332,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="/wachtlijst/" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic data-i18n="nav_cta">Pak je plek voor 31 mei</span></a>
+      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic data-i18n="nav_cta">Start je eerste dag</span></a>
       <!-- Language switcher -->
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')" aria-label="Nederlands">
@@ -1369,7 +1372,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.
       </p>
       <div class="hero-cta">
-        <a href="/wachtlijst/" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Pak je plek voor 31 mei</span>
+        <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start je eerste dag</span>
           <span class="arrow-r">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </span>
@@ -1598,7 +1601,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
     </div>
     <div style="margin-top:40px;text-align:center;">
-      <a href="/wachtlijst/" class="btn-primary" data-event="manifesto_cta_click" data-ph-cta="manifesto"><span data-cta-dynamic data-i18n="cta_try">Pak je plek voor 31 mei</span></a>
+      <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="manifesto_cta_click" data-ph-cta="manifesto"><span data-cta-dynamic data-i18n="cta_try">Start je eerste dag</span></a>
     </div>
   </div>
 </section>
@@ -1740,8 +1743,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <h2 data-i18n="footer_h2">Je brein verdient rust.<br/>Niet meer systemen.</h2>
     <p class="footer-cta-body" data-i18n="footer_body">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
     <p class="footer-cta-scarcity" data-i18n="footer_scarcity">Lancering 31 mei. 100+ mensen wachten al.</p>
-    <a href="/wachtlijst/" class="btn-primary" data-event="footer_cta_click" data-ph-cta="footer">
-      <span data-cta-dynamic data-i18n="footer_cta_btn">Pak je plek voor 31 mei →</span>
+    <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="footer_cta_click" data-ph-cta="footer">
+      <span data-cta-dynamic data-i18n="footer_cta_btn">Start je eerste dag →</span>
     </a>
     <div class="trust-strip">
       <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_live">Live vanaf 31 mei</span></span>
@@ -1868,19 +1871,19 @@ const TRANSLATIONS = {
     launch_banner_prefix: 'Lancering 31 mei',
     launch_banner_countdown: 'Nog <span class="launch-countdown" data-countdown-days>4</span> dagen',
     nav_how: 'Hoe het werkt', nav_waarom: 'Waarom', nav_vrouwen: 'Cyclus', nav_why: 'Waarom anders', nav_price: 'Prijs',
-    nav_login: 'Inloggen', nav_cta: 'Pak je plek voor 31 mei',
-    cta_try: 'Pak je plek voor 31 mei',
+    nav_login: 'Inloggen', nav_cta: 'Start je eerste dag',
+    cta_try: 'Start je eerste dag',
     payment_trust_label: 'Veilig betalen via Stripe',
     hero_eyebrow: 'Voor ADHD-breinen die vastlopen op executie',
     hero_h1: 'Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.',
     hero_lede: 'Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.',
-    trust_check1: 'Gratis aanmelden, geen creditcard',
+    trust_check1: 'Account aanmaken, daarna kies je je plan',
     trust_check2: 'Klaar in 90 seconden om in te stellen',
     trust_check3: '14 dagen geld terug, geen vragen. Eén klik in de app.',
     trust_check4: 'Alle data in de EU, geen verkoop aan derden',
     badge1_title: 'Energie bepaalt workload', badge1_sub: 'Geen one-size-fits-all',
     badge2_title: 'Maximaal 3 taken per dag', badge2_sub: 'Bewust klein gehouden',
-    trust_stat1: "ADHD'ers staan al op de wachtlijst voor 31 mei",
+    trust_stat1: "Gebouwd met ADHD'ers, getest vóór launch",
     trust_stat2: "ADHD'ers hebben Structuro actief mee getest",
     trust_stat3: 'Day-1 retentie in early testing',
     loop_eyebrow: 'De dagelijkse loop', loop_h2: 'Geen overzicht. Een ritme.',
@@ -1978,7 +1981,7 @@ const TRANSLATIONS = {
     footer_h2: 'Je brein verdient rust.<br/>Niet meer systemen.',
     footer_body: 'Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.',
     footer_scarcity: 'Lancering 31 mei. 100+ mensen wachten al.',
-    footer_cta_btn: 'Pak je plek voor 31 mei →',
+    footer_cta_btn: 'Start je eerste dag →',
     strip_live: 'Live vanaf 31 mei',
     strip_refund: '14 dagen geld terug',
     strip_stripe: 'Veilig betalen via Stripe',
@@ -1989,8 +1992,8 @@ const TRANSLATIONS = {
     launch_banner_prefix: 'Launch May 31',
     launch_banner_countdown: '<span class="launch-countdown" data-countdown-days>4</span> days left',
     nav_how: 'How it works', nav_waarom: 'Why', nav_vrouwen: 'Cycle', nav_why: 'Why different', nav_price: 'Pricing',
-    nav_login: 'Log in', nav_cta: 'Claim your spot for May 31',
-    cta_try: 'Claim your spot for May 31',
+    nav_login: 'Log in', nav_cta: 'Start your first day',
+    cta_try: 'Start your first day',
     payment_trust_label: 'Secure checkout with Stripe',
     hero_eyebrow: 'For ADHD brains that get stuck on execution',
     hero_h1: 'You know what you<br/>need to do.<br/>You just don\'t <span class="stuck">start</span>.',
@@ -2001,7 +2004,7 @@ const TRANSLATIONS = {
     trust_check4: 'All data in the EU, no third-party sales',
     badge1_title: 'Energy drives your workload', badge1_sub: 'No one-size-fits-all',
     badge2_title: 'Max 3 tasks per day', badge2_sub: 'Intentionally small',
-    trust_stat1: 'people with ADHD already on the waitlist for May 31',
+    trust_stat1: 'Built with people with ADHD, tested before launch',
     trust_stat2: 'people with ADHD actively tested Structuro',
     trust_stat3: 'Day-1 retention in early testing',
     loop_eyebrow: 'The daily loop', loop_h2: 'No overview. A rhythm.',
@@ -2099,7 +2102,7 @@ const TRANSLATIONS = {
     footer_h2: 'Your brain deserves rest.<br/>Not more systems.',
     footer_body: 'You don\'t have to get it perfect every day. The app adapts to you, not the other way around. Starting is enough.',
     footer_scarcity: 'Launch May 31. 100+ people already waiting.',
-    footer_cta_btn: 'Claim your spot for May 31 →',
+    footer_cta_btn: 'Start your first day →',
     strip_live: 'Live from May 31',
     strip_refund: '14-day money-back',
     strip_stripe: 'Secure checkout with Stripe',

@@ -301,6 +301,12 @@ export async function updateSession(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    if (
+      pathname.startsWith("/onboarding") ||
+      pathname.startsWith("/welkom/install")
+    ) {
+      url.searchParams.set("next", "/onboarding");
+    }
     return NextResponse.redirect(url);
   }
 

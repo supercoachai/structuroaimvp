@@ -6,7 +6,7 @@ import confetti from "canvas-confetti";
 type WelkomSuccessScreenProps = {
   title: string;
   tagline: string;
-  closingLine: string;
+  closingLine?: string | null;
   cta: string;
   busyLabel: string;
   paidBadge: string;
@@ -233,12 +233,14 @@ export default function WelkomSuccessScreen({
           {tagline}
         </p>
 
-        <p
-          className={`mt-4 max-w-xs text-xs leading-relaxed text-slate-400 transition-all duration-[680ms] ${reveal(showClosing)}`}
-          style={motionStyle}
-        >
-          {closingLine}
-        </p>
+        {closingLine ? (
+          <p
+            className={`mt-4 max-w-xs text-xs leading-relaxed text-slate-400 transition-all duration-[680ms] ${reveal(showClosing)}`}
+            style={motionStyle}
+          >
+            {closingLine}
+          </p>
+        ) : null}
 
         {recoveryHint ? (
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">

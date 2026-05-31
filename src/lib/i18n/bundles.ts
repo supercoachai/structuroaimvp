@@ -360,8 +360,9 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       closingLineLogin:
         "Je betaling staat klaar. Log in om je account af te ronden.",
       cta: "Zet je eerste stap →",
+      ctaToInstall: "Verder →",
       ctaLogin: "Inloggen en verder →",
-      paidBadge: "Stap gezet",
+      paidBadge: "Betaling gelukt",
       recoveryHint:
         "Je betaling is gelukt. Log in met {email} om verder te gaan.",
       recoveryHintGeneric:
@@ -370,6 +371,24 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       pendingBody:
         "Sluit de betaalpagina en log in zodra je bank de betaling heeft bevestigd. Je hoeft niet opnieuw te betalen.",
       resuming: "Je account wordt klaargezet…",
+      installTitle: "Zet Structuro op je homescreen",
+      installBody:
+        "Dan open je het elke dag met één tik, zonder je tab kwijt te raken.",
+      installTabIos: "iPhone",
+      installTabAndroid: "Android",
+      installIos1: "Open structuro.ai in Safari (niet in Chrome).",
+      installIos2: "Tik op de Deel-knop onderin (vierkant met pijl omhoog).",
+      installIos3: "Kies Zet op beginscherm, tik op Voeg toe.",
+      installIosSafariNote:
+        "Zie je Deel niet? Open de site opnieuw in Safari via je betaalbevestiging.",
+      installAndroid1: "Open structuro.ai in Chrome.",
+      installAndroid2: "Tik op het menu rechtsboven (drie puntjes).",
+      installAndroid3: "Kies App installeren of Toevoegen aan startscherm.",
+      installAndroidNativeCta: "Installeer Structuro",
+      installAndroidNativeHint: "Één tik, geïnstalleerd.",
+      installAndroidFallbackNote: "Werkt de knop niet? Volg deze stappen:",
+      installContinueCta: "Ga verder naar onboarding →",
+      installBack: "Terug",
     },
     subscriptionPage: {
       title: "Kies je abonnement",
@@ -765,8 +784,9 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       closingLineLogin:
         "Your payment is ready. Sign in to finish setting up your account.",
       cta: "Take your first step →",
+      ctaToInstall: "Continue →",
       ctaLogin: "Sign in and continue →",
-      paidBadge: "Step taken",
+      paidBadge: "Payment successful",
       recoveryHint:
         "Your payment went through. Sign in with {email} to continue.",
       recoveryHintGeneric:
@@ -775,6 +795,24 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       pendingBody:
         "Close the payment page and sign in once your bank confirms. You do not need to pay again.",
       resuming: "Setting up your account…",
+      installTitle: "Add Structuro to your home screen",
+      installBody:
+        "Open it every day with one tap, without losing your browser tab.",
+      installTabIos: "iPhone",
+      installTabAndroid: "Android",
+      installIos1: "Open structuro.ai in Safari (not Chrome).",
+      installIos2: "Tap the Share button at the bottom (square with arrow up).",
+      installIos3: "Choose Add to Home Screen, then tap Add.",
+      installIosSafariNote:
+        "Don't see Share? Open the site again in Safari from your payment confirmation.",
+      installAndroid1: "Open structuro.ai in Chrome.",
+      installAndroid2: "Tap the menu in the top right (three dots).",
+      installAndroid3: "Choose Install app or Add to Home screen.",
+      installAndroidNativeCta: "Install Structuro",
+      installAndroidNativeHint: "One tap to install.",
+      installAndroidFallbackNote: "Button not working? Follow these steps:",
+      installContinueCta: "Continue to onboarding →",
+      installBack: "Back",
     },
     subscriptionPage: {
       title: "Choose your plan",

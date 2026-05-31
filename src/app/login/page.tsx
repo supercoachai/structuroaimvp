@@ -3,7 +3,6 @@
 import { useState, useLayoutEffect, Suspense, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import LoginSuccessSplash from '@/components/LoginSuccessSplash';
 import {
   clearStructuroLocalModeCookie,
@@ -24,12 +23,13 @@ import {
   queueSignupCompletedForAnalytics,
 } from '@/lib/posthog/signupAttribution';
 import Link from 'next/link';
+import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
-import { profileHasAppAccess } from '@/lib/subscriptionAccess';
 import {
   clearCheckoutReturn,
   readCheckoutReturn,
 } from '@/lib/checkoutReturnStorage';
+import { resolvePostLoginPathFromProfile } from '@/lib/postAuthRouting';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -73,37 +73,26 @@ async function resolvePostLoginPath(
   next: string | null,
   afterCheckoutLogin: boolean
 ): Promise<string> {
-  const safeNext = safeAppPath(next);
-  if (isProtectedTestAccount(email ?? null)) {
-    return safeNext ?? (afterCheckoutLogin ? "/onboarding" : "/");
-  }
-
   try {
     const supabase = createClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, subscription_status, subscription_current_period_end"
+        "onboarding_completed, onboarding_version, subscription_status, subscription_current_period_end"
       )
       .eq("id", userId)
       .maybeSingle();
 
-    if (!profile?.onboarding_completed) {
-      const needsPay =
-        isRegistrationCheckoutEnabledClient() &&
-        !profileHasAppAccess({
-          subscription_status: profile?.subscription_status as string | null,
-          subscription_current_period_end:
-            profile?.subscription_current_period_end as string | null,
-        });
-      if (needsPay) return "/registreren/plan?resume=1";
-      return "/onboarding";
-    }
+    return resolvePostLoginPathFromProfile(profile, {
+      email,
+      next,
+      afterCheckoutLogin,
+    });
   } catch {
-    /* fallback */
+    const safeNext = safeAppPath(next);
+    if (safeNext === "/onboarding") return "/onboarding";
+    return safeNext ?? (afterCheckoutLogin ? "/onboarding" : "/");
   }
-
-  return safeNext ?? (afterCheckoutLogin ? "/onboarding" : "/");
 }
 
 function mapPasswordResetError(message: string, t: (k: string) => string): string {

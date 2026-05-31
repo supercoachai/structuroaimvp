@@ -27,11 +27,8 @@
   }
 
   function updateCtaCopy() {
-    var pre = isPreLaunch();
     var lang = window.currentLang || 'nl';
-    var preText = lang === 'en' ? 'Claim your spot for May 31' : 'Pak je plek voor 31 mei';
-    var postText = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
-    var text = pre ? preText : postText;
+    var text = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
     document.querySelectorAll('[data-cta-dynamic]').forEach(function (el) {
       el.textContent = text;
     });

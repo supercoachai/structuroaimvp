@@ -37,37 +37,57 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/waitlist",
-        destination: "/inschrijven",
+        destination: "/registreren",
+        permanent: true,
+      },
+      {
+        source: "/waitlist/:path*",
+        destination: "/registreren",
         permanent: true,
       },
       {
         source: "/Wachtlijst",
-        destination: "/wachtlijst",
-        permanent: false,
+        destination: "/registreren",
+        permanent: true,
       },
       {
         source: "/Wachtlijst/:path*",
-        destination: "/wachtlijst/:path*",
-        permanent: false,
+        destination: "/registreren",
+        permanent: true,
       },
       {
         source: "/Inschrijven",
-        destination: "/inschrijven",
-        permanent: false,
+        destination: "/registreren",
+        permanent: true,
       },
       {
         source: "/Inschrijven/:path*",
-        destination: "/inschrijven/:path*",
-        permanent: false,
+        destination: "/registreren",
+        permanent: true,
       },
       {
         source: "/wachtlijst",
-        destination: "/inschrijven",
+        destination: "/registreren",
         permanent: true,
       },
       {
         source: "/wachtlijst/",
-        destination: "/inschrijven",
+        destination: "/registreren",
+        permanent: true,
+      },
+      {
+        source: "/inschrijven",
+        destination: "/registreren",
+        permanent: true,
+      },
+      {
+        source: "/inschrijven/",
+        destination: "/registreren",
+        permanent: true,
+      },
+      {
+        source: "/inschrijven/:path*",
+        destination: "/registreren",
         permanent: true,
       },
       {

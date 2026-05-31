@@ -1,19 +1,20 @@
-import type { Metadata } from "next";
-import { sanitizeWaitlistSourceParam } from "@/lib/wachtlijst/source";
-import WaitlistClient from "./WaitlistClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Wachtlijst | Structuro",
-  description:
-    "Meld je aan voor Structuro voor de launch. Één gerichte mail, geen spam.",
+const REGISTREREN = "/registreren";
+
+function legacySourceQuery(source: string | undefined): string {
+  if (!source) return "";
+  const trimmed = source.trim().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!trimmed || trimmed === "direct") return "";
+  return `?source=${encodeURIComponent(trimmed)}`;
+}
+
+type PageProps = {
+  searchParams: Promise<{ source?: string }>;
 };
 
-export default async function WachtlijstPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ source?: string }>;
-}) {
+/** Legacy URL: doorsturen naar account aanmaken (geen wachtlijst meer). */
+export default async function WachtlijstRedirectPage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const initialSource = sanitizeWaitlistSourceParam(sp.source);
-  return <WaitlistClient initialSource={initialSource} />;
+  redirect(`${REGISTREREN}${legacySourceQuery(sp.source)}`);
 }

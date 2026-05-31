@@ -1,6 +1,8 @@
 {
   "name": "Structuro",
   "short_name": "Structuro",
+  "start_url": "/",
+  "scope": "/",
   "background_color": "#1E3A5F",
   "theme_color": "#1E3A5F",
   "display": "standalone",

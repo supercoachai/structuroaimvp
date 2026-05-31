@@ -15,6 +15,7 @@ import {
 } from "@/lib/checkoutReturnStorage";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { resumeCheckoutSession } from "@/lib/resumeCheckoutSession";
+import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
 
 type WelkomPhase = "loading" | "ready" | "pending_payment" | "resuming";
 
@@ -66,6 +67,9 @@ function WelkomPageInner() {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const previewInstall =
+    process.env.NODE_ENV === "development" &&
+    searchParams?.get("previewInstall") === "1";
   const welcomeTaskStarted = useRef(false);
   const [welcomeTaskReady, setWelcomeTaskReady] = useState(false);
   const [phase, setPhase] = useState<WelkomPhase>("loading");
@@ -73,8 +77,10 @@ function WelkomPageInner() {
   const [recoveryHint, setRecoveryHint] = useState<string | null>(null);
   const [ctaHref, setCtaHref] = useState("/onboarding");
   const [ctaLabel, setCtaLabel] = useState<string | null>(null);
+  const [showClosingLine, setShowClosingLine] = useState(false);
 
   useEffect(() => {
+    if (previewInstall) return;
     if (welcomeTaskStarted.current) return;
     welcomeTaskStarted.current = true;
 
@@ -131,7 +137,17 @@ function WelkomPageInner() {
           }
         }
 
-        router.replace("/onboarding");
+        setCtaHref(
+          shouldShowPwaInstallHint() ? "/welkom/install" : "/onboarding"
+        );
+        setCtaLabel(
+          shouldShowPwaInstallHint()
+            ? t("welkomPage.ctaToInstall")
+            : null
+        );
+        setShowClosingLine(false);
+        setWelcomeTaskReady(true);
+        setPhase("ready");
         return;
       }
 
@@ -157,6 +173,7 @@ function WelkomPageInner() {
       if (user?.id) {
         setCtaHref("/onboarding");
         setCtaLabel(null);
+        setShowClosingLine(false);
       } else {
         const emailHint = checkoutReturn?.email;
         if (emailHint) {
@@ -169,6 +186,7 @@ function WelkomPageInner() {
           `/login?checkout=1&next=${encodeURIComponent(loginNext)}`
         );
         setCtaLabel(t("welkomPage.ctaLogin"));
+        setShowClosingLine(true);
       }
 
       const decision = await resolveWelcomeTaskAfterCheckout();
@@ -199,7 +217,21 @@ function WelkomPageInner() {
         setWelcomeTaskReady(true);
       }
     })();
-  }, [searchParams, t, router]);
+  }, [searchParams, t, router, previewInstall]);
+
+  if (previewInstall) {
+    return (
+      <WelkomSuccessScreen
+        title={t("welkomPage.title")}
+        tagline={t("welkomPage.tagline")}
+        cta={t("welkomPage.ctaToInstall")}
+        busyLabel={t("registrerenPage.submitBusy")}
+        paidBadge={t("welkomPage.paidBadge")}
+        welcomeTaskReady
+        ctaHref="/welkom/install?previewInstall=1"
+      />
+    );
+  }
 
   if (phase === "loading" || phase === "resuming") {
     return (
@@ -233,9 +265,11 @@ function WelkomPageInner() {
       title={t("welkomPage.title")}
       tagline={t("welkomPage.tagline")}
       closingLine={
-        isLoggedIn
-          ? t("welkomPage.closingLine")
-          : t("welkomPage.closingLineLogin")
+        showClosingLine
+          ? isLoggedIn
+            ? t("welkomPage.closingLine")
+            : t("welkomPage.closingLineLogin")
+          : null
       }
       cta={ctaLabel ?? t("welkomPage.cta")}
       busyLabel={t("registrerenPage.submitBusy")}

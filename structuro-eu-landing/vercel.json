@@ -4,30 +4,36 @@
   "redirects": [
     {
       "source": "/waitlist",
-      "destination": "/wachtlijst/",
+      "destination": "https://www.structuro.ai/registreren",
       "permanent": false
     },
     {
       "source": "/waitlist/",
-      "destination": "/wachtlijst/",
+      "destination": "https://www.structuro.ai/registreren",
       "permanent": false
     },
     {
       "source": "/inschrijven",
-      "destination": "/wachtlijst/",
+      "destination": "https://www.structuro.ai/registreren",
       "permanent": false
     },
     {
       "source": "/inschrijven/",
-      "destination": "/wachtlijst/",
+      "destination": "https://www.structuro.ai/registreren",
+      "permanent": false
+    },
+    {
+      "source": "/wachtlijst",
+      "destination": "https://www.structuro.ai/registreren",
+      "permanent": false
+    },
+    {
+      "source": "/wachtlijst/",
+      "destination": "https://www.structuro.ai/registreren",
       "permanent": false
     }
   ],
   "rewrites": [
-    {
-      "source": "/wachtlijst",
-      "destination": "/wachtlijst/index.html"
-    },
     {
       "source": "/cyclus",
       "destination": "/cyclus/index.html"
