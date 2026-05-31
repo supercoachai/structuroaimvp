@@ -83,17 +83,6 @@ img{max-width:100%;height:auto;}
   scroll-margin-top: 88px;
 }
 
-/* ── Launch banner ── */
-.launch-banner{
-  background:var(--text);color:#fff;
-  padding:10px 24px;text-align:center;
-  font-size:13.5px;font-weight:500;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  position:relative;z-index:60;
-}
-.launch-banner a{color:#93C5FD;font-weight:600;text-decoration:underline;text-underline-offset:2px;}
-.launch-banner strong{font-weight:700;}
-.launch-countdown{font-variant-numeric:tabular-nums;font-family:var(--mono);font-weight:600;color:#93C5FD;}
 
 /* ── Nav ── */
 .nav{
@@ -1071,13 +1060,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 
 @media (max-width: 520px) {
-  .launch-banner {
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    font-size: 12.5px;
-    line-height: 1.45;
-    flex-wrap: wrap;
-  }
   .eyebrow {
     max-width: 100%;
     white-space: normal;
@@ -1311,12 +1293,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 </head>
 <body>
 
-<!-- Launch banner -->
-<div class="launch-banner" id="launchBanner">
-  <span data-i18n="launch_banner_prefix">Lancering 31 mei</span>
-  <span aria-hidden="true">·</span>
-  <span data-i18n="launch_banner_countdown">Nog <span class="launch-countdown" data-countdown-days>4</span> dagen</span>
-</div>
 
 <!-- Nav -->
 <nav class="nav" id="nav">
@@ -1449,7 +1425,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   <div class="container trust-grid">
     <div>
       <div class="trust-stat-num">100+</div>
-      <div class="trust-stat-label" data-i18n="trust_stat1">ADHD'ers staan al op de wachtlijst voor 31 mei</div>
+      <div class="trust-stat-label" data-i18n="trust_stat1">Gebouwd met ADHD'ers, getest vóór launch</div>
     </div>
     <div>
       <div class="trust-stat-num">60+</div>
@@ -1688,7 +1664,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat4">Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus</span></li>
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat5">Eindelijk rust in je hoofd. Elke dag opnieuw.</span></li>
         </ul>
-        <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:24px;" data-i18n="price_available">Beschikbaar vanaf 31 mei</p>
+        <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:24px;" data-i18n="price_available">Direct beschikbaar</p>
         </div>
       </div>
 
@@ -1708,7 +1684,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat4">Eén jaarlijkse keuze, één ding minder om aan te denken</span></li>
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat5">Als eerste toegang tot nieuwe functies, jij test wat anderen nog niet zien</span></li>
         </ul>
-        <p style="font-size:11.5px;color:var(--sub);text-align:center;margin-top:24px;" data-i18n="price_available">Beschikbaar vanaf 31 mei</p>
+        <p style="font-size:11.5px;color:var(--sub);text-align:center;margin-top:24px;" data-i18n="price_available">Direct beschikbaar</p>
         </div>
       </div>
     </div>
@@ -1742,12 +1718,11 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <div class="section-eyebrow" style="text-align:center;" data-i18n="footer_eyebrow">Tot slot</div>
     <h2 data-i18n="footer_h2">Je brein verdient rust.<br/>Niet meer systemen.</h2>
     <p class="footer-cta-body" data-i18n="footer_body">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
-    <p class="footer-cta-scarcity" data-i18n="footer_scarcity">Lancering 31 mei. 100+ mensen wachten al.</p>
     <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="footer_cta_click" data-ph-cta="footer">
       <span data-cta-dynamic data-i18n="footer_cta_btn">Start je eerste dag →</span>
     </a>
     <div class="trust-strip">
-      <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_live">Live vanaf 31 mei</span></span>
+      <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_live">Nu live</span></span>
       <span class="trust-strip-divider"></span>
       <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_refund">14 dagen geld terug</span></span>
       <span class="trust-strip-divider"></span>
@@ -1868,8 +1843,6 @@ document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div').
 // ── i18n ──────────────────────────────────────────────────────────
 const TRANSLATIONS = {
   nl: {
-    launch_banner_prefix: 'Lancering 31 mei',
-    launch_banner_countdown: 'Nog <span class="launch-countdown" data-countdown-days>4</span> dagen',
     nav_how: 'Hoe het werkt', nav_waarom: 'Waarom', nav_vrouwen: 'Cyclus', nav_why: 'Waarom anders', nav_price: 'Prijs',
     nav_login: 'Inloggen', nav_cta: 'Start je eerste dag',
     cta_try: 'Start je eerste dag',
@@ -1929,7 +1902,7 @@ const TRANSLATIONS = {
     price_feat1: 'Eén dagelijkse loop, geen systeem om bij te houden', price_feat2: 'Micro-stappen die het blokkeren doorbreken',
     price_feat3: 'Taken gefilterd op jouw energie van vandaag', price_feat4: 'Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus',
     price_feat5: 'Eindelijk rust in je hoofd. Elke dag opnieuw.',
-    price_available: 'Beschikbaar vanaf 31 mei',
+    price_available: 'Direct beschikbaar',
     price_best_badge: 'Beste deal',
     price_yearly_label: 'Jaarlijks', price_yearly_period: '/ jaar',
     price_yearly_sub: '€9,92/mnd effectief',
@@ -1980,17 +1953,14 @@ const TRANSLATIONS = {
     footer_eyebrow: 'Tot slot',
     footer_h2: 'Je brein verdient rust.<br/>Niet meer systemen.',
     footer_body: 'Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.',
-    footer_scarcity: 'Lancering 31 mei. 100+ mensen wachten al.',
     footer_cta_btn: 'Start je eerste dag →',
-    strip_live: 'Live vanaf 31 mei',
+    strip_live: 'Nu live',
     strip_refund: '14 dagen geld terug',
     strip_stripe: 'Veilig betalen via Stripe',
     footer_made: 'Gemaakt in Nederland',
     footer_privacy: 'Privacy policy', footer_terms: 'Algemene voorwaarden',
   },
   en: {
-    launch_banner_prefix: 'Launch May 31',
-    launch_banner_countdown: '<span class="launch-countdown" data-countdown-days>4</span> days left',
     nav_how: 'How it works', nav_waarom: 'Why', nav_vrouwen: 'Cycle', nav_why: 'Why different', nav_price: 'Pricing',
     nav_login: 'Log in', nav_cta: 'Start your first day',
     cta_try: 'Start your first day',
@@ -2050,7 +2020,7 @@ const TRANSLATIONS = {
     price_feat1: 'One daily loop, no system to maintain', price_feat2: 'Micro-steps that break through what\'s blocking you',
     price_feat3: 'Tasks filtered to your energy today', price_feat4: 'Tuned for the ADHD brain, including the female cycle',
     price_feat5: 'Finally quiet in your head. Every day anew.',
-    price_available: 'Available from May 31',
+    price_available: 'Available now',
     price_best_badge: 'Best deal',
     price_yearly_label: 'Yearly', price_yearly_period: '/ year',
     price_yearly_sub: '€9.92/mo effective',
@@ -2101,9 +2071,8 @@ const TRANSLATIONS = {
     footer_eyebrow: 'Finally',
     footer_h2: 'Your brain deserves rest.<br/>Not more systems.',
     footer_body: 'You don\'t have to get it perfect every day. The app adapts to you, not the other way around. Starting is enough.',
-    footer_scarcity: 'Launch May 31. 100+ people already waiting.',
     footer_cta_btn: 'Start your first day →',
-    strip_live: 'Live from May 31',
+    strip_live: 'Live now',
     strip_refund: '14-day money-back',
     strip_stripe: 'Secure checkout with Stripe',
     footer_made: 'Made in the Netherlands',

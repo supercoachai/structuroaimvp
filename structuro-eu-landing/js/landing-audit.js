@@ -1,31 +1,6 @@
 (function () {
   'use strict';
 
-  var LAUNCH = new Date('2026-05-31T00:00:00+02:00');
-
-  function daysUntilLaunch() {
-    var now = new Date();
-    var diff = LAUNCH.getTime() - now.getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }
-
-  function isPreLaunch() {
-    return new Date() < LAUNCH;
-  }
-
-  function updateCountdown() {
-    var els = document.querySelectorAll('[data-countdown-days]');
-    if (!els.length) return;
-    var days = daysUntilLaunch();
-    els.forEach(function (el) {
-      el.textContent = String(days);
-    });
-    var banner = document.getElementById('launchBanner');
-    if (banner) {
-      banner.hidden = !isPreLaunch();
-    }
-  }
-
   function updateCtaCopy() {
     var lang = window.currentLang || 'nl';
     var text = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
@@ -78,7 +53,6 @@
   }
 
   window.refreshLandingDynamic = function () {
-    updateCountdown();
     updateCtaCopy();
     var lang = window.currentLang || 'nl';
     var copy = ENERGY_COPY[lang] || ENERGY_COPY.nl;
@@ -89,9 +63,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
-    updateCountdown();
     updateCtaCopy();
     initEnergyDemo();
-    setInterval(updateCountdown, 60000);
   });
 })();
