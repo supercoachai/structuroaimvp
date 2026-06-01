@@ -173,15 +173,14 @@ export default function AbonnementPage() {
 
           <div className="mb-10 grid gap-4 sm:grid-cols-2">
             <Card className="border border-slate-100">
-              <CardHeader>
-                <CardTitle className="text-base">{t("subscriptionPage.monthlyTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 <div>
                   <p className="text-2xl font-bold text-slate-900">
                     {t("subscriptionPage.monthlyPrice")}
+                    <span className="ml-1 text-base font-medium text-slate-500">
+                      {t("subscriptionPage.monthlyPeriod")}
+                    </span>
                   </p>
-                  <p className="text-sm text-slate-500">{t("subscriptionPage.monthlyPeriod")}</p>
                 </div>
                 <button
                   type="button"

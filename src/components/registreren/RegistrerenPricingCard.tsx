@@ -55,11 +55,17 @@ export function RegistrerenPricingCard({
       ) : null}
 
       <div className="flex flex-col">
-        <div className="flex h-3 items-end text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:h-3.5 sm:text-xs lg:h-[18px] lg:text-[13px] lg:tracking-[0.1em]">
-          {t(`registrerenPage.${plan.labelKey}`)}
-        </div>
+        {isYearly ? (
+          <div className="flex h-3 items-end text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:h-3.5 sm:text-xs lg:h-[18px] lg:text-[13px] lg:tracking-[0.1em]">
+            {t(`registrerenPage.${plan.labelKey}`)}
+          </div>
+        ) : null}
 
-        <div className="mt-1.5 flex min-h-[1.75rem] items-end whitespace-nowrap text-[1.5rem] font-extrabold leading-none tracking-[-0.03em] text-slate-900 sm:mt-2 sm:min-h-[2rem] sm:text-[2rem] lg:min-h-[44px] lg:text-[44px]">
+        <div
+          className={`flex min-h-[1.75rem] items-end whitespace-nowrap text-[1.5rem] font-extrabold leading-none tracking-[-0.03em] text-slate-900 sm:min-h-[2rem] sm:text-[2rem] lg:min-h-[44px] lg:text-[44px] ${
+            isYearly ? "mt-1.5 sm:mt-2" : ""
+          }`}
+        >
           {t(`registrerenPage.${plan.amountKey}`)}
           <span className="ml-0.5 text-[10px] font-medium text-slate-500 sm:ml-1 sm:text-sm lg:text-base">
             {t(`registrerenPage.${plan.periodKey}`)}
