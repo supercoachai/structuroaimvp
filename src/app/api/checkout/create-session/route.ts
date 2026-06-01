@@ -6,6 +6,8 @@ import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
 import { CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES } from "@/lib/stripe/checkoutPaymentMethods";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
+import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
+import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { NextResponse } from "next/server";
 
@@ -110,6 +112,18 @@ async function postCreateSession(request: Request) {
 
   if (!session.url) {
     return NextResponse.json({ error: "no_checkout_url" }, { status: 500 });
+  }
+
+  const planId = planFromStripePriceId(priceId);
+  try {
+    await captureRegistrationFunnelServer(userId, "checkout_started", {
+      plan_id: planId,
+      price_id: priceId,
+      checkout_session_id: session.id,
+      welcome_task_opt_in: addWelcomeTask,
+    });
+  } catch {
+    /* PostHog best-effort */
   }
 
   return NextResponse.json({ url: session.url, checkoutSessionId: session.id });

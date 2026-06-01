@@ -264,7 +264,7 @@ Wij mogen prijzen wijzigen. Wezenlijke prijswijzigingen kondigen wij ten minste 
 
 Wij geven je 14 dagen vanaf je eerste betaling om Structuro te proberen. Ben je niet tevreden, om welke reden dan ook, dan krijg je je geld volledig terug. Geen formulieren, geen exit-vragenlijst, geen 'we missen je'-mails.
 
-Hoe het werkt: stuur binnen 14 dagen na je eerste betaling een e-mail naar info@structuro.eu met het onderwerp 'Geld terug'. Wij verwerken het verzoek binnen drie werkdagen en betalen het volledige bedrag terug op het rekeningnummer of de creditcard waarmee je hebt betaald.
+Hoe het werkt: stuur binnen 14 dagen na je eerste betaling een e-mail naar info@structuro.eu met het onderwerp 'Geld terug'. Je hoort binnen één werkdag terug. Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening of creditcard.
 
 Deze garantie geldt voor zowel het maand- als het jaarabonnement, en alleen voor je eerste betaling. Bij verlengingen na de eerste 14 dagen geldt de wettelijke regeling voor doorlopende abonnementen.
 
@@ -338,7 +338,7 @@ We may change prices. We announce significant price changes at least 30 days in 
 
 We give you 14 days from your first payment to try Structuro. If you are not satisfied, for any reason, you receive a full refund. No forms, no exit survey, no 'we miss you' emails.
 
-How it works: within 14 days of your first payment, email info@structuro.eu with the subject 'Refund'. We process the request within three business days and refund the full amount to the bank account or credit card you used to pay.
+How it works: within 14 days of your first payment, email info@structuro.eu with the subject 'Refund'. We reply within one business day. The amount usually returns within 5 to 10 business days to your bank account or credit card.
 
 This guarantee applies to both the monthly and annual subscription, and only to your first payment. For renewals after the first 14 days, the statutory rules for ongoing subscriptions apply.
 

@@ -8,14 +8,18 @@ import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
   captureUtmOnFirstVisit,
+  getSignupAttributionSource,
+  getStoredSignupCampaign,
   persistSignupAttributionToProfile,
   persistSignupSourceFromUrl,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
+import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { mapSignupError } from "./mapSignupError";
+import { useClientMounted } from "@/hooks/useClientMounted";
 
 function RegistrerenAccountInner() {
   const { t } = useI18n();
@@ -28,6 +32,7 @@ function RegistrerenAccountInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const mounted = useClientMounted();
 
   useEffect(() => {
     if (!isRegistrationCheckoutEnabledClient()) {
@@ -110,6 +115,10 @@ function RegistrerenAccountInner() {
 
       await persistSignupAttributionToProfile(user.id);
       queueSignupCompletedForAnalytics();
+      trackRegistrationFunnelServer("signup_completed", {
+        source: getSignupAttributionSource(),
+        utm_campaign: getStoredSignupCampaign(),
+      });
 
       router.push("/registreren/plan");
     } catch (err: unknown) {
@@ -119,7 +128,7 @@ function RegistrerenAccountInner() {
     }
   }
 
-  if (!sessionChecked) {
+  if (!mounted || !sessionChecked) {
     return (
       <RegistrerenShell>
         <p className="text-center text-sm text-slate-500">{t("registrerenPage.loading")}</p>

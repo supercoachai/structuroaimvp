@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createLocalDevUser, isLocalDevSignupEnabled } from "@/lib/dev/localSignup";
+import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 async function postDevSignup(request: Request) {
@@ -28,6 +29,16 @@ async function postDevSignup(request: Request) {
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  try {
+    await captureRegistrationFunnelServer(result.userId, "signup_completed", {
+      source: "direct",
+      channel: "server",
+      dev_signup: true,
+    });
+  } catch {
+    /* PostHog best-effort */
   }
 
   return NextResponse.json({ ok: true, userId: result.userId });

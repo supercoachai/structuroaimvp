@@ -94,14 +94,26 @@ img{max-width:100%;height:auto;}
   transition:border-color 200ms;
 }
 .nav.scrolled{border-bottom-color:var(--border);}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:76px;}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-0.01em;}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;height:76px;flex-wrap:nowrap;min-width:0;}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-0.01em;flex:0 0 auto;min-width:0;}
 .logo-mark{width:30px;height:30px;border-radius:9px;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(15,23,42,.16);}
-.nav-links{display:flex;align-items:center;gap:22px;font-size:14px;color:var(--sub);font-weight:500;}
+.nav-links{display:flex;align-items:center;justify-content:flex-end;gap:22px;font-size:14px;color:var(--sub);font-weight:500;flex:1 1 auto;min-width:0;flex-wrap:nowrap;}
+.nav-links a{white-space:nowrap;flex-shrink:0;}
 .nav-links a:hover{color:var(--text);}
-.nav-cta{background:var(--blue);color:#fff!important;padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 10px rgba(37,99,235,.20);transition:background 180ms;}
+.nav-cta{background:var(--blue);color:#fff!important;padding:9px 16px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 10px rgba(37,99,235,.20);transition:background 180ms;flex-shrink:0;}
 .nav-cta:hover{background:var(--blue-h);}
-@media(max-width:800px){.nav-links a:not(.nav-cta){display:none;}}
+@media(max-width:1100px){
+  .nav-links{gap:14px;font-size:13px;}
+  .nav-cta{padding:8px 14px;font-size:13px;}
+  .lang-switcher{margin-left:4px;padding-left:10px;}
+}
+@media(max-width:920px){
+  .nav-links{gap:10px;font-size:12.5px;}
+  .nav-cta{padding:8px 12px;font-size:12.5px;}
+}
+@media(max-width:720px){
+  .nav-links a:not(.nav-cta){display:none;}
+}
 
 /* ── Hero ── */
 .hero{padding:72px 0 88px;position:relative;overflow:hidden;}
@@ -269,8 +281,10 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 }
 
 /* ── Pricing ── */
-.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:48px;max-width:820px;margin-left:auto;margin-right:auto;}
-@media(max-width:720px){.pricing-grid{grid-template-columns:1fr;}}
+.pricing-grid{display:grid;grid-template-columns:1fr;gap:22px;margin-top:48px;max-width:480px;margin-left:auto;margin-right:auto;}
+.pricing-yearly-link{margin-top:14px;text-align:center;font-size:12.5px;color:var(--sub);line-height:1.5;}
+.pricing-yearly-link button,.pricing-yearly-link a{background:none;border:none;padding:0;font:inherit;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none;}
+.pricing-yearly-link button:hover,.pricing-yearly-link a:hover{text-decoration:underline;text-underline-offset:2px;}
 .pricing-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:32px 28px;position:relative;}
 .pricing-card.highlight{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.08),0 16px 40px rgba(37,99,235,.10);}
 .badge-best{position:absolute;top:-12px;right:22px;background:var(--blue);color:#fff;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
@@ -292,6 +306,19 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .roi-card .roi-card-inner{max-width:520px;margin:0 auto;}
 .roi-card h3{font-size:18px;font-weight:800;letter-spacing:-.015em;margin:0 0 8px;color:var(--text);}
 .roi-subtitle{font-size:14px;color:var(--sub);line-height:1.45;margin:0 0 24px;}
+.roi-card-details{padding:0;overflow:hidden;}
+.roi-card-details > summary{list-style:none;cursor:pointer;padding:32px 32px 28px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.roi-card-details > summary::-webkit-details-marker{display:none;}
+.roi-card-details > summary::after{content:'';width:10px;height:10px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:rotate(45deg);transition:transform 200ms;flex-shrink:0;margin-top:10px;}
+.roi-card-details[open] > summary::after{transform:rotate(-135deg);}
+.roi-card-details[open] > summary{padding-bottom:20px;border-bottom:0.5px solid #C7D7FD;}
+.roi-card-summary-inner{flex:1;min-width:0;}
+.roi-card-details .roi-card-summary-inner .roi-subtitle{margin-bottom:0;}
+.roi-card-details .roi-card-body{padding:24px 32px 32px;max-width:520px;margin:0 auto;}
+@media(max-width:720px){
+  .roi-card-details > summary{padding:22px 20px 18px;}
+  .roi-card-details .roi-card-body{padding:18px 20px 22px;}
+}
 .roi-rule{height:0;margin:0;border:none;border-top:0.5px solid #C7D7FD;}
 .roi-rule--margin{margin:20px 0;}
 .roi-block{padding:20px 0;}
@@ -524,7 +551,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     opacity: 1 !important;
     transform: none !important;
   }
-  .phone-tilt, .phone-float-badge { animation: none !important; transform: none !important; }
+  .phone-tilt, .phone-float-badge, .phone-tilt--mobile { animation: none !important; transform: none !important; }
 }
 
 /* ── 3D Phone tilt ── */
@@ -659,9 +686,67 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 @media(max-width:1100px) {
   .phone-float-badge { display: none; }
 }
+/* Mobile hero phone — eigen laag onder hero-tekst */
+.hero-phone-mobile {
+  display: none;
+  padding: 8px 0 0;
+  margin-top: 40px;
+}
+.hero-phone-mobile-bridge {
+  width: min(320px, 72vw);
+  height: 28px;
+  margin: 0 auto 20px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(180deg, rgba(37,99,235,0) 0%, rgba(37,99,235,.10) 100%);
+  transform: perspective(600px) rotateX(52deg) scaleX(1.08);
+  transform-origin: center top;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.hero-phone-mobile-head {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.hero-phone-mobile-head .section-eyebrow {
+  margin-bottom: 8px;
+}
+.hero-phone-mobile-head p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--sub);
+  line-height: 1.5;
+}
+.hero-phone-mobile .phone-tilt-wrap--mobile {
+  perspective: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+.hero-phone-mobile .phone-tilt--mobile {
+  transform: rotateY(-16deg) rotateX(10deg) rotateZ(2deg) translateY(28px) scale(0.88);
+  transform-style: preserve-3d;
+  opacity: 0;
+  filter: drop-shadow(0 32px 56px rgba(15,23,42,.24)) drop-shadow(0 8px 20px rgba(37,99,235,.12));
+  transition: transform 1.05s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.85s ease, filter 1s ease;
+  will-change: transform, opacity;
+}
+.hero-phone-mobile.visible .phone-tilt--mobile {
+  transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg) translateY(0) scale(1);
+  opacity: 1;
+  animation: mobilePhoneFloat 5.5s ease-in-out infinite 1.1s;
+}
+@keyframes mobilePhoneFloat {
+  0%, 100% { transform: rotateY(-12deg) rotateX(6deg) rotateZ(1deg) translateY(0); }
+  50% { transform: rotateY(-8deg) rotateX(4deg) rotateZ(0.5deg) translateY(-7px); }
+}
 @media(max-width:900px) {
-  .phone-tilt { transform: none; }
-  .phone-tilt-wrap { display: none; }
+  .phone-tilt-wrap--desktop { display: none !important; }
+  .hero-phone-mobile { display: block; }
+}
+@media(min-width:901px) {
+  .hero-phone-mobile { display: none !important; }
 }
 
 /* ── Glow CTA button ── */
@@ -942,6 +1027,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   margin-left: 8px;
   padding-left: 14px;
   border-left: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .lang-btn {
   display: flex;
@@ -995,31 +1081,9 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 720px) {
   .nav-inner {
-    height: auto;
     min-height: 64px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 10px;
-    column-gap: 12px;
-  }
-  .logo {
-    flex: 0 0 auto;
-    min-width: 0;
-  }
-  .nav-links {
-    flex: 1 1 auto;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 10px 12px;
-    min-width: 0;
-  }
-  .lang-switcher {
-    margin-left: 0;
-    padding-left: 12px;
   }
   .lang-btn {
     min-height: 44px;
@@ -1255,10 +1319,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 
 @media (max-width: 380px) {
-  .nav-links {
-    width: 100%;
-    justify-content: space-between;
-  }
   .lang-switcher {
     border-left: none;
     padding-left: 0;
@@ -1358,7 +1418,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <div class="trust-checks">
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <span data-i18n="trust_check1">Gratis aanmelden, geen creditcard</span>
+          <span data-i18n="trust_check1">Account aanmaken, daarna kies je je plan</span>
         </span>
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1366,7 +1426,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         </span>
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <span data-i18n="trust_check3">14 dagen geld terug, geen vragen. Eén klik in de app.</span>
+          <span data-i18n="trust_check3">14 dagen geld terug. Mail ons, reactie binnen één werkdag.</span>
         </span>
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1385,16 +1445,16 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
     </div>
 
-    <div class="phone-tilt-wrap" style="position:relative;">
+    <div class="phone-tilt-wrap phone-tilt-wrap--desktop" style="position:relative;">
       <div class="phone-tilt" id="phoneTilt">
         <div class="phone hero-phone">
           <div class="hero-phone-slides" id="heroSlides">
-            <img src="uploads/IMG_6890.PNG" alt="Structuro Dagstart: hoe is je energie?" class="hero-slide active"/>
-            <img src="uploads/IMG_6891.PNG" alt="Structuro dashboard vandaag" class="hero-slide"/>
-            <img src="uploads/IMG_6893.PNG" alt="Structuro Focus sessie starten" class="hero-slide"/>
-            <img src="uploads/IMG_6894.PNG" alt="Structuro Focus modus met timer" class="hero-slide"/>
-            <img src="uploads/IMG_6895.PNG" alt="Structuro Dagafsluiting: dit heb je gedaan" class="hero-slide"/>
-            <img src="uploads/IMG_6896.PNG" alt="Structuro Dagafsluiting: hoe voelt het?" class="hero-slide"/>
+            <img src="uploads/IMG_6890.PNG" alt="Structuro Dagstart: hoe is je energie?" class="hero-slide hero-slide-desktop active"/>
+            <img src="uploads/IMG_6891.PNG" alt="Structuro dashboard vandaag" class="hero-slide hero-slide-desktop"/>
+            <img src="uploads/IMG_6893.PNG" alt="Structuro Focus sessie starten" class="hero-slide hero-slide-desktop"/>
+            <img src="uploads/IMG_6894.PNG" alt="Structuro Focus modus met timer" class="hero-slide hero-slide-desktop"/>
+            <img src="uploads/IMG_6895.PNG" alt="Structuro Dagafsluiting: dit heb je gedaan" class="hero-slide hero-slide-desktop"/>
+            <img src="uploads/IMG_6896.PNG" alt="Structuro Dagafsluiting: hoe voelt het?" class="hero-slide hero-slide-desktop"/>
           </div>
         </div>
         <!-- Floating badges — concept-uitleggend, niet UI-spiegelend -->
@@ -1409,31 +1469,63 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
       <!-- Dots -->
       <div class="hero-phone-dots" id="heroDots" style="position:relative;z-index:2;">
-        <span class="hero-dot active" onclick="goHeroSlide(0)"></span>
-        <span class="hero-dot" onclick="goHeroSlide(1)"></span>
-        <span class="hero-dot" onclick="goHeroSlide(2)"></span>
-        <span class="hero-dot" onclick="goHeroSlide(3)"></span>
-        <span class="hero-dot" onclick="goHeroSlide(4)"></span>
-        <span class="hero-dot" onclick="goHeroSlide(5)"></span>
+        <span class="hero-dot hero-dot-desktop active" onclick="goHeroSlide(0)"></span>
+        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(1)"></span>
+        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(2)"></span>
+        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(3)"></span>
+        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(4)"></span>
+        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(5)"></span>
       </div>
     </div>
   </div>
+  <div class="hero-phone-mobile reveal" id="heroPhoneMobile">
+    <div class="container">
+      <div class="hero-phone-mobile-bridge" aria-hidden="true"></div>
+      <div class="hero-phone-mobile-head">
+        <div class="section-eyebrow" data-i18n="hero_phone_mobile_eyebrow">Zo ziet Structuro eruit</div>
+        <p data-i18n="hero_phone_mobile_lede">Swipe door de app. Geen overload, wel structuur.</p>
+      </div>
+      <div class="phone-tilt-wrap phone-tilt-wrap--mobile">
+        <div class="phone-tilt phone-tilt--mobile" id="phoneTiltMobile">
+          <div class="phone hero-phone">
+            <div class="hero-phone-slides" id="heroSlidesMobile">
+              <img src="uploads/IMG_6890.PNG" alt="Structuro Dagstart: hoe is je energie?" class="hero-slide hero-slide-mobile active"/>
+              <img src="uploads/IMG_6891.PNG" alt="Structuro dashboard vandaag" class="hero-slide hero-slide-mobile"/>
+              <img src="uploads/IMG_6893.PNG" alt="Structuro Focus sessie starten" class="hero-slide hero-slide-mobile"/>
+              <img src="uploads/IMG_6894.PNG" alt="Structuro Focus modus met timer" class="hero-slide hero-slide-mobile"/>
+              <img src="uploads/IMG_6895.PNG" alt="Structuro Dagafsluiting: dit heb je gedaan" class="hero-slide hero-slide-mobile"/>
+              <img src="uploads/IMG_6896.PNG" alt="Structuro Dagafsluiting: hoe voelt het?" class="hero-slide hero-slide-mobile"/>
+            </div>
+          </div>
+        </div>
+        <div class="hero-phone-dots" id="heroDotsMobile">
+          <span class="hero-dot hero-dot-mobile active" onclick="goHeroSlideMobile(0)"></span>
+          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(1)"></span>
+          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(2)"></span>
+          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(3)"></span>
+          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(4)"></span>
+          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(5)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- Trust bar -->
 <div class="trust reveal">
   <div class="container trust-grid">
     <div>
-      <div class="trust-stat-num">100+</div>
-      <div class="trust-stat-label" data-i18n="trust_stat1">Gebouwd met ADHD'ers, getest vóór launch</div>
+      <div class="trust-stat-num" data-i18n="trust_stat1_num">100+</div>
+      <div class="trust-stat-label" data-i18n="trust_stat1">Gebouwd met ADHD'ers</div>
     </div>
     <div>
-      <div class="trust-stat-num">60+</div>
-      <div class="trust-stat-label" data-i18n="trust_stat2">ADHD'ers hebben Structuro actief mee getest</div>
+      <div class="trust-stat-num" data-i18n="trust_stat2_num">500+</div>
+      <div class="trust-stat-label" data-i18n="trust_stat2">uur onderzoeksdata</div>
     </div>
     <div>
-      <div class="trust-stat-num">62%</div>
-      <div class="trust-stat-label" data-i18n="trust_stat3">Day-1 retentie in early testing</div>
+      <div class="trust-stat-num" data-i18n="trust_stat3_num">100%</div>
+      <div class="trust-stat-label" data-i18n="trust_stat3">afgestemd op jouw brein</div>
     </div>
   </div>
 </div>
@@ -1588,19 +1680,21 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <div class="center pricing-head">
       <div class="section-eyebrow" data-i18n="pricing_eyebrow">Prijs</div>
       <h2 data-i18n="pricing_h2">Eerlijk. Eén prijs. Zeg op wanneer je wil.</h2>
-      <p class="lede-2" style="margin:0 auto;" data-i18n="pricing_lede">€12,99 per maand of €119 per jaar. Opzeggen wanneer je wilt.</p>
+      <p class="lede-2" style="margin:0 auto;" data-i18n="pricing_lede">€12,99 per maand. Opzeggen wanneer je wilt.</p>
       <div class="pricing-money-back" style="max-width:520px;margin:18px auto 0;text-align:center;">
-        <p style="font-size:15px;font-weight:600;color:var(--text);margin:0 0 8px;" data-i18n="money_back_title">14 dagen geld terug, geen vragen. Eén klik in de app.</p>
-        <p style="font-size:14px;color:var(--sub);margin:0;line-height:1.55;" data-i18n="money_back_body">Niet tevreden? Vraag binnen 14 dagen je geld terug. Geen mail, geen formulier, geen weken wachten.</p>
+        <p style="font-size:15px;font-weight:600;color:var(--text);margin:0;" data-i18n="money_back_title">Werkt het niet? Geld terug, geen vragen.</p>
       </div>
     </div>
 
-    <!-- ROI card eerst: frame "je betaalt nul netto", daarna pas de prijs -->
-    <div class="roi-card">
-      <div class="roi-card-inner">
-        <h3 data-i18n="roi_h3">Wat kost Structuro echt?</h3>
-        <p class="roi-subtitle" data-i18n="roi_subtitle">Eén ongebruikt abonnement opzeggen dekt het al.</p>
-
+    <!-- ROI card — ingeklapt: titel + hook; uitgeklapt: volledige berekening -->
+    <details class="roi-card roi-card-details">
+      <summary class="roi-card-summary">
+        <div class="roi-card-summary-inner">
+          <h3 data-i18n="roi_h3">Wat kost Structuro echt?</h3>
+          <p class="roi-subtitle" data-i18n="roi_subtitle">Eén ongebruikt abonnement opzeggen dekt het al.</p>
+        </div>
+      </summary>
+      <div class="roi-card-body">
         <div class="roi-block roi-block--pay">
           <div class="roi-block-row">
             <div>
@@ -1649,10 +1743,10 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
           <span class="roi-source" data-i18n="roi_source">Bron: Nibud · richtprijzen marktconform</span>
         </div>
       </div>
-    </div>
+    </details>
 
     <div class="pricing-grid" style="margin-top:48px;">
-      <div class="pricing-card">
+      <div class="pricing-card highlight">
         <div class="pricing-inner-hover">
         <div class="price-label" data-i18n="price_monthly_label">Maandelijks</div>
         <div class="price-amount">€12,99<span data-i18n="price_monthly_period">/ maand</span></div>
@@ -1667,26 +1761,10 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:24px;" data-i18n="price_available">Direct beschikbaar</p>
         </div>
       </div>
-
-      <div class="pricing-card highlight">
-        <div class="badge-best" data-i18n="price_best_badge">Beste deal</div>
-        <div class="pricing-inner-hover">
-        <div class="price-label" data-i18n="price_yearly_label">Jaarlijks</div>
-        <div class="price-amount">€119<span data-i18n="price_yearly_period">/ jaar</span></div>
-        <div class="price-sub-row">
-          <div class="price-sub" data-i18n="price_yearly_sub">€9,92/mnd effectief</div>
-          <div class="price-save" data-i18n="price_yearly_save">24% korting</div>
-        </div>
-        <ul class="price-includes">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat1">Alles uit het maandabonnement</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat2">Bijna 3 maanden gratis effectief</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat3">Prijs staat vast, ook als Structuro groeit</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat4">Eén jaarlijkse keuze, één ding minder om aan te denken</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_yearly_feat5">Als eerste toegang tot nieuwe functies, jij test wat anderen nog niet zien</span></li>
-        </ul>
-        <p style="font-size:11.5px;color:var(--sub);text-align:center;margin-top:24px;" data-i18n="price_available">Direct beschikbaar</p>
-        </div>
-      </div>
+      <p class="pricing-yearly-link">
+        <span data-i18n="pricing_yearly_prompt">Liever jaarlijks?</span>
+        <a href="https://www.structuro.ai/registreren" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
+      </p>
     </div>
   </div>
 </section>
@@ -1699,13 +1777,13 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <h2 data-i18n="faq_h2">Eerlijke antwoorden.</h2>
     </div>
     <div class="faq-list">
-      <details class="faq-item" data-faq-id="refund"><summary data-event="faq_open"><span data-i18n="faq1_q">Hoe werkt de 14-dagen-garantie?</span></summary><div class="faq-body" data-i18n="faq1_a">Niet tevreden? Binnen 14 dagen na aankoop vraag je je geld terug met één klik in de app (Instellingen). Geen mail, geen formulier, geen weken wachten.</div></details>
+      <details class="faq-item" data-faq-id="refund"><summary data-event="faq_open"><span data-i18n="faq1_q">Hoe werkt de 14-dagen-garantie?</span></summary><div class="faq-body" data-i18n="faq1_a">Niet tevreden? Mail binnen 14 dagen na je eerste betaling naar info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug. Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening.</div></details>
       <details class="faq-item" data-faq-id="geen-dag"><summary data-event="faq_open"><span data-i18n="faq2_q">Werkt dit ook als ik niet elke dag iets doe?</span></summary><div class="faq-body" data-i18n="faq2_a">Ja. De app past zich aan jou aan, niet andersom. Sla een dag over, sla een week over, de app houdt geen score bij. Wanneer je terugkomt, begin je opnieuw met een schoon scherm.</div></details>
       <details class="faq-item" data-faq-id="geen-diagnose"><summary data-event="faq_open"><span data-i18n="faq3_q">Werkt dit als ik geen ADHD-diagnose heb?</span></summary><div class="faq-body" data-i18n="faq3_a">Ja. Structuro is gebouwd voor ADHD-breinen, maar HSP, autisme of gewoon executie-issues werken ook. Als je vastloopt op beginnen, diagnose of niet, is dit voor jou.</div></details>
       <details class="faq-item" data-faq-id="geen-planner"><summary data-event="faq_open"><span data-i18n="faq4_q">Waarom geen klassieke planner of integraties?</span></summary><div class="faq-body" data-i18n="faq4_a">Bewust weggelaten. Elke extra tool en elke losse melding is mentale ruis. Structuro houdt het bij vandaag beginnen, focussen en afsluiten.</div></details>
       <details class="faq-item" data-faq-id="verwijderen"><summary data-event="faq_open"><span data-i18n="faq5_q">Wat als ik mijn account wil verwijderen?</span></summary><div class="faq-body" data-i18n="faq5_a">Ga naar Instellingen → Account → Verwijderen. Alle data wordt binnen 24 uur gewist. Geen formulieren, geen exit-vragenlijst.</div></details>
       <details class="faq-item" data-faq-id="privacy"><summary data-event="faq_open"><span data-i18n="faq6_q">Hoe gaan jullie om met mijn gegevens?</span></summary><div class="faq-body" data-i18n="faq6_a">Servers in EU (Stockholm). Geen verkoop aan derden. Volledige privacy policy: <a href="/privacy/" style="color:var(--blue);">structuro.eu/privacy</a>.</div></details>
-      <details class="faq-item" data-faq-id="stop"><summary data-event="faq_open"><span data-i18n="faq7_q">Wat als het niet voor mij werkt?</span></summary><div class="faq-body" data-i18n="faq7_a">Stop gewoon. Geen formulieren, geen exit-vragenlijst, geen "we missen je"-emails. Eén klik in instellingen en het is voorbij.</div></details>
+      <details class="faq-item" data-faq-id="stop"><summary data-event="faq_open"><span data-i18n="faq7_q">Wat als het niet voor mij werkt?</span></summary><div class="faq-body" data-i18n="faq7_a">Niet tevreden binnen 14 dagen? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug. Daarna kun je altijd opzeggen via Instellingen, zonder exit-vragenlijst.</div></details>
       <details class="faq-item" data-faq-id="medicatie"><summary data-event="faq_open"><span data-i18n="faq8_q">Werkt dit als ik medicatie gebruik?</span></summary><div class="faq-body" data-i18n="faq8_a">Ja. Structuro is geen vervanging voor behandeling, maar een executie-interface naast medicatie. Veel gebruikers combineren beide: medicatie helpt focussen, Structuro helpt beginnen en afsluiten.</div></details>
       <details class="faq-item" data-faq-id="eerste-login"><summary data-event="faq_open"><span data-i18n="faq9_q">Wat zie ik als ik de eerste keer inlog?</span></summary><div class="faq-body" data-i18n="faq9_a">Je start met een korte onboarding. Structuro laat je in een paar stappen zien hoe energie, focuspunten en microstappen werken. Pas daarna land je op home voor je dagstart.</div></details>
     </div>
@@ -1724,7 +1802,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <div class="trust-strip">
       <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_live">Nu live</span></span>
       <span class="trust-strip-divider"></span>
-      <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_refund">14 dagen geld terug</span></span>
+      <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_refund">14 dagen geld terug via mail</span></span>
       <span class="trust-strip-divider"></span>
       <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_stripe">Veilig betalen via Stripe</span></span>
     </div>
@@ -1767,18 +1845,26 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 <script src="/js/analytics.js"></script>
 
 <script>
-// Hero phone slideshow
+// Hero phone slideshow (desktop + mobile in sync)
 let heroIdx = 0;
-const heroSlides = document.querySelectorAll('.hero-slide');
-const heroDots = document.querySelectorAll('.hero-dot');
-function goHeroSlide(n) {
-  heroSlides[heroIdx].classList.remove('active');
-  heroDots[heroIdx].classList.remove('active');
-  heroIdx = n % heroSlides.length;
-  heroSlides[heroIdx].classList.add('active');
-  heroDots[heroIdx].classList.add('active');
+const heroSlidesDesktop = document.querySelectorAll('.hero-slide-desktop');
+const heroDotsDesktop = document.querySelectorAll('.hero-dot-desktop');
+const heroSlidesMobile = document.querySelectorAll('.hero-slide-mobile');
+const heroDotsMobile = document.querySelectorAll('.hero-dot-mobile');
+const heroSlideCount = Math.max(heroSlidesDesktop.length, heroSlidesMobile.length, 1);
+
+function setHeroSlideAt(idx) {
+  heroIdx = ((idx % heroSlideCount) + heroSlideCount) % heroSlideCount;
+  heroSlidesDesktop.forEach((el, i) => el.classList.toggle('active', i === heroIdx));
+  heroDotsDesktop.forEach((el, i) => el.classList.toggle('active', i === heroIdx));
+  heroSlidesMobile.forEach((el, i) => el.classList.toggle('active', i === heroIdx));
+  heroDotsMobile.forEach((el, i) => el.classList.toggle('active', i === heroIdx));
 }
-setInterval(() => goHeroSlide(heroIdx + 1), 6000);
+
+function goHeroSlide(n) { setHeroSlideAt(n); }
+function goHeroSlideMobile(n) { setHeroSlideAt(n); }
+
+setInterval(() => setHeroSlideAt(heroIdx + 1), 6000);
 
 // 3D phone tilt on mouse move
 const phoneTilt = document.getElementById('phoneTilt');
@@ -1852,13 +1938,18 @@ const TRANSLATIONS = {
     hero_lede: 'Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.',
     trust_check1: 'Account aanmaken, daarna kies je je plan',
     trust_check2: 'Klaar in 90 seconden om in te stellen',
-    trust_check3: '14 dagen geld terug, geen vragen. Eén klik in de app.',
+    trust_check3: '14 dagen geld terug. Mail ons, reactie binnen één werkdag.',
     trust_check4: 'Alle data in de EU, geen verkoop aan derden',
     badge1_title: 'Energie bepaalt workload', badge1_sub: 'Geen one-size-fits-all',
     badge2_title: 'Maximaal 3 taken per dag', badge2_sub: 'Bewust klein gehouden',
-    trust_stat1: "Gebouwd met ADHD'ers, getest vóór launch",
-    trust_stat2: "ADHD'ers hebben Structuro actief mee getest",
-    trust_stat3: 'Day-1 retentie in early testing',
+    trust_stat1_num: '100+',
+    trust_stat1: "Gebouwd met ADHD'ers",
+    trust_stat2_num: '500+',
+    trust_stat2: 'uur onderzoeksdata',
+    trust_stat3_num: '100%',
+    trust_stat3: 'afgestemd op jouw brein',
+    hero_phone_mobile_eyebrow: 'Zo ziet Structuro eruit',
+    hero_phone_mobile_lede: 'Swipe door de app. Geen overload, wel structuur.',
     loop_eyebrow: 'De dagelijkse loop', loop_h2: 'Geen overzicht. Een ritme.',
     loop_lede: 'Drie momenten per dag. Open, doen, afsluiten. Meer hoeft niet.',
     step1_sub: 'Energie check', step1_h3: 'Hoe vol is je batterij vandaag?',
@@ -1894,9 +1985,10 @@ const TRANSLATIONS = {
     founder_name: 'Niels van den Hurk',
     founder_role: 'Founder met ADHD',
     pricing_eyebrow: 'Prijs', pricing_h2: 'Eerlijk. Eén prijs. Zeg op wanneer je wil.',
-    pricing_lede: '€12,99 per maand of €119 per jaar. Opzeggen wanneer je wilt.',
-    money_back_title: '14 dagen geld terug, geen vragen. Eén klik in de app.',
-    money_back_body: 'Niet tevreden? Vraag binnen 14 dagen je geld terug. Geen mail, geen formulier, geen weken wachten.',
+    pricing_lede: '€12,99 per maand. Opzeggen wanneer je wilt.',
+    pricing_yearly_prompt: 'Liever jaarlijks?',
+    pricing_yearly_link: '€119/jaar, bijna 3 maanden gratis →',
+    money_back_title: 'Werkt het niet? Geld terug, geen vragen.',
     price_monthly_label: 'Maandelijks', price_monthly_period: '/ maand',
     price_monthly_sub: 'Maandelijks opzegbaar',
     price_feat1: 'Eén dagelijkse loop, geen systeem om bij te houden', price_feat2: 'Micro-stappen die het blokkeren doorbreken',
@@ -1933,7 +2025,7 @@ const TRANSLATIONS = {
     roi_source: 'Bron: Nibud · richtprijzen marktconform',
     faq_eyebrow: 'Vragen die je waarschijnlijk hebt', faq_h2: 'Eerlijke antwoorden.',
     faq1_q: 'Hoe werkt de 14-dagen-garantie?',
-    faq1_a: 'Niet tevreden? Binnen 14 dagen na aankoop vraag je je geld terug met één klik in de app (Instellingen). Geen mail, geen formulier, geen weken wachten.',
+    faq1_a: 'Niet tevreden? Mail binnen 14 dagen na je eerste betaling naar info@structuro.eu met onderwerp \'Geld terug\'. Je hoort binnen één werkdag terug. Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening.',
     faq2_q: 'Werkt dit ook als ik niet elke dag iets doe?',
     faq2_a: 'Ja. De app past zich aan jou aan, niet andersom. Sla een dag over, sla een week over, de app houdt geen score bij. Wanneer je terugkomt, begin je opnieuw met een schoon scherm.',
     faq3_q: 'Werkt dit als ik geen ADHD-diagnose heb?',
@@ -1945,7 +2037,7 @@ const TRANSLATIONS = {
     faq6_q: 'Hoe gaan jullie om met mijn gegevens?',
     faq6_a: 'Servers in EU (Stockholm). Geen verkoop aan derden. Volledige privacy policy: <a href="/privacy/" style="color:var(--blue);">structuro.eu/privacy</a>.',
     faq7_q: 'Wat als het niet voor mij werkt?',
-    faq7_a: 'Stop gewoon. Geen formulieren, geen exit-vragenlijst, geen "we missen je"-emails. Één klik in instellingen en het is voorbij.',
+    faq7_a: 'Niet tevreden binnen 14 dagen? Mail info@structuro.eu met onderwerp \'Geld terug\'. Je hoort binnen één werkdag terug. Daarna kun je altijd opzeggen via Instellingen, zonder exit-vragenlijst.',
     faq8_q: 'Werkt dit als ik medicatie gebruik?',
     faq8_a: 'Ja. Structuro is geen vervanging voor behandeling, maar een executie-interface naast medicatie. Veel gebruikers combineren beide: medicatie helpt focussen, Structuro helpt beginnen en afsluiten.',
     faq9_q: 'Wat zie ik als ik de eerste keer inlog?',
@@ -1955,7 +2047,7 @@ const TRANSLATIONS = {
     footer_body: 'Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.',
     footer_cta_btn: 'Start je eerste dag →',
     strip_live: 'Nu live',
-    strip_refund: '14 dagen geld terug',
+    strip_refund: '14 dagen geld terug via mail',
     strip_stripe: 'Veilig betalen via Stripe',
     footer_made: 'Gemaakt in Nederland',
     footer_privacy: 'Privacy policy', footer_terms: 'Algemene voorwaarden',
@@ -1968,15 +2060,20 @@ const TRANSLATIONS = {
     hero_eyebrow: 'For ADHD brains that get stuck on execution',
     hero_h1: 'You know what you<br/>need to do.<br/>You just don\'t <span class="stuck">start</span>.',
     hero_lede: 'Tomorrow morning you pick your energy once. Then 1, 2 or 3 tasks for the day. Nothing more. No lists, no guilt.',
-    trust_check1: 'Free to sign up, no credit card',
+    trust_check1: 'Create an account, then choose your plan',
     trust_check2: 'Ready in 90 seconds to set up',
-    trust_check3: '14-day money-back, no questions. One click in the app.',
+    trust_check3: '14-day money-back. Email us, reply within one business day.',
     trust_check4: 'All data in the EU, no third-party sales',
     badge1_title: 'Energy drives your workload', badge1_sub: 'No one-size-fits-all',
     badge2_title: 'Max 3 tasks per day', badge2_sub: 'Intentionally small',
-    trust_stat1: 'Built with people with ADHD, tested before launch',
-    trust_stat2: 'people with ADHD actively tested Structuro',
-    trust_stat3: 'Day-1 retention in early testing',
+    trust_stat1_num: '100+',
+    trust_stat1: 'Built with people with ADHD',
+    trust_stat2_num: '500+',
+    trust_stat2: 'hours of research data',
+    trust_stat3_num: '100%',
+    trust_stat3: 'tuned to your brain',
+    hero_phone_mobile_eyebrow: 'This is what Structuro looks like',
+    hero_phone_mobile_lede: 'Swipe through the app. No overload, just structure.',
     loop_eyebrow: 'The daily loop', loop_h2: 'No overview. A rhythm.',
     loop_lede: 'Three moments a day. Open, do, close. That\'s all it takes.',
     step1_sub: 'Energy check', step1_h3: 'How full is your battery today?',
@@ -2012,9 +2109,10 @@ const TRANSLATIONS = {
     founder_name: 'Niels van den Hurk',
     founder_role: 'Founder with ADHD',
     pricing_eyebrow: 'Pricing', pricing_h2: 'Fair. One price. Cancel when you want.',
-    pricing_lede: '€12.99 per month or €119 per year. Cancel whenever you want.',
-    money_back_title: '14-day money-back, no questions. One click in the app.',
-    money_back_body: 'Not happy? Request a refund within 14 days. No email, no form, no weeks of waiting.',
+    pricing_lede: '€12.99 per month. Cancel whenever you want.',
+    pricing_yearly_prompt: 'Prefer yearly?',
+    pricing_yearly_link: '€119/year, almost 3 months free →',
+    money_back_title: 'Not working? Full refund, no questions.',
     price_monthly_label: 'Monthly', price_monthly_period: '/ month',
     price_monthly_sub: 'Cancel any time',
     price_feat1: 'One daily loop, no system to maintain', price_feat2: 'Micro-steps that break through what\'s blocking you',
@@ -2051,7 +2149,7 @@ const TRANSLATIONS = {
     roi_source: 'Source: Nibud · indicative market rates',
     faq_eyebrow: 'Questions you probably have', faq_h2: 'Honest answers.',
     faq1_q: 'How does the 14-day guarantee work?',
-    faq1_a: 'Not satisfied? Within 14 days of purchase, request a refund with one click in the app (Settings). No email, no form, no weeks of waiting.',
+    faq1_a: 'Not satisfied? Email info@structuro.eu within 14 days of your first payment with subject \'Refund\'. You hear back within one business day. The amount usually returns within 5 to 10 business days.',
     faq2_q: 'Does this work if I don\'t use it every day?',
     faq2_a: 'Yes. The app adapts to you, not the other way around. Skip a day, skip a week, the app keeps no score. When you come back, you start fresh.',
     faq3_q: 'Does this work without an ADHD diagnosis?',
@@ -2063,7 +2161,7 @@ const TRANSLATIONS = {
     faq6_q: 'How do you handle my data?',
     faq6_a: 'Servers in the EU (Stockholm). No third-party sales. Full privacy policy: <a href="/privacy/" style="color:var(--blue);">structuro.eu/privacy</a>.',
     faq7_q: 'What if it doesn\'t work for me?',
-    faq7_a: 'Just stop. No forms, no exit survey, no "we miss you" emails. One click in settings and it\'s over.',
+    faq7_a: 'Not satisfied within 14 days? Email info@structuro.eu with subject \'Refund\'. You hear back within one business day. You can always cancel later in Settings, with no exit survey.',
     faq8_q: 'Does this work if I take medication?',
     faq8_a: 'Yes. Structuro is not a replacement for treatment, but an execution interface alongside medication. Many users combine both: medication helps focus, Structuro helps you start and close your day.',
     faq9_q: 'What do I see when I log in for the first time?',
@@ -2073,7 +2171,7 @@ const TRANSLATIONS = {
     footer_body: 'You don\'t have to get it perfect every day. The app adapts to you, not the other way around. Starting is enough.',
     footer_cta_btn: 'Start your first day →',
     strip_live: 'Live now',
-    strip_refund: '14-day money-back',
+    strip_refund: '14-day refund via email',
     strip_stripe: 'Secure checkout with Stripe',
     footer_made: 'Made in the Netherlands',
     footer_privacy: 'Privacy policy', footer_terms: 'Terms & conditions',

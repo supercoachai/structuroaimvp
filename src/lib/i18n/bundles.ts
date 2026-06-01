@@ -289,6 +289,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emailPh: "je@email.com",
       passwordPh: "Minimaal 8 tekens",
       planHeading: "Één beslissing. Dan begint de rust.",
+      planToggleAria: "Kies maandelijks of jaarlijks abonnement",
       continueBtn: "Verder →",
       backLink: "Terug",
       logoutLink: "Uitloggen",
@@ -319,11 +320,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat3: "Taken gefilterd op jouw energie van vandaag",
       monthlyFeat4: "Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus",
       monthlyFeat5: "Eindelijk rust in je hoofd. Elke dag opnieuw.",
-      guaranteeLine: "14 dagen geld-terug-garantie",
+      guaranteeLine: "Werkt het niet? Geld terug, geen vragen.",
       guaranteeIntro:
-        "Een nieuw systeem kost tijd en energie. Je hoeft niet vandaag al te bewijzen dat het werkt. Je hebt 14 dagen om te voelen of Structuro bij jouw brein past.",
-      guaranteeCtaBefore: "Klikt het niet? Mail",
-      guaranteeCtaAfter: "met onderwerp 'Geld terug'.",
+        "Je hebt 14 dagen om te voelen of Structuro bij jouw brein past. Werkt het niet? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug en krijgt het volledige bedrag terug.",
+      guaranteeCtaBefore: "Wil je je geld terug? Mail",
+      guaranteeCtaAfter: ", je hoort binnen één werkdag.",
       guaranteeMail: "info@structuro.eu",
       submitBusy: "Even geduld…",
       renewalDisclosure:
@@ -404,7 +405,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyBadge: "Beste deal",
       cta: "Kies dit abonnement",
       guarantee:
-        "14 dagen geld-terug-garantie. Niet tevreden? Mail ons en je krijgt het volledige bedrag terug.",
+        "Werkt het niet? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug.",
       notConfigured: "Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw.",
       checkoutFail: "Kon de betaalpagina niet openen. Probeer het opnieuw.",
       waitingStripe: "Je betaling wordt verwerkt…",
@@ -416,12 +417,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       refreshStatus: "Ververs status",
     },
     subscription: {
-      moneyBackTitle: "14 dagen geld-terug-garantie",
+      moneyBackTitle: "Werkt het niet? Geld terug, geen vragen.",
       moneyBackBody:
         "Niet tevreden binnen 14 dagen? Mail info@structuro.eu met onderwerp 'Geld terug'.",
       moneyBackHowLink: "Hoe werkt dit?",
       moneyBackHowDetail:
-        "We verwerken je verzoek binnen drie werkdagen. Het bedrag staat meestal binnen 5 tot 10 werkdagen terug op je rekening.",
+        "Je hoort binnen één werkdag terug. Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening.",
       paymentTrustLabel:
         "Veilig betalen via Stripe. Bij iDEAL geef je een SEPA-incassomachtiging voor verlengingen.",
       checkoutServiceRoleError:
@@ -715,6 +716,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emailPh: "you@email.com",
       passwordPh: "At least 8 characters",
       planHeading: "One decision. Then the calm begins.",
+      planToggleAria: "Choose monthly or yearly subscription",
       continueBtn: "Continue →",
       backLink: "Back",
       logoutLink: "Log out",
@@ -745,11 +747,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat3: "Tasks filtered to your energy today",
       monthlyFeat4: "Tuned for the ADHD brain, including the female cycle",
       monthlyFeat5: "Finally quiet in your head. Every day anew.",
-      guaranteeLine: "14-day money-back guarantee",
+      guaranteeLine: "Not working? Full refund, no questions.",
       guaranteeIntro:
-        "A new system takes time and energy. You do not have to prove it works today. You have 14 days to feel whether Structuro fits your brain.",
-      guaranteeCtaBefore: "Not clicking? Email",
-      guaranteeCtaAfter: "with subject 'Refund'.",
+        "You have 14 days to feel whether Structuro fits your brain. Not working? Email info@structuro.eu with subject 'Refund'. You hear back within one business day and get every cent back.",
+      guaranteeCtaBefore: "Want your money back? Email",
+      guaranteeCtaAfter: ", you'll hear back within one business day.",
       guaranteeMail: "info@structuro.eu",
       submitBusy: "Please wait…",
       renewalDisclosure:
@@ -828,7 +830,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyBadge: "Best deal",
       cta: "Choose this plan",
       guarantee:
-        "14-day money-back guarantee. Not satisfied? Email us for a full refund.",
+        "Not working? Email info@structuro.eu with subject 'Refund'. You hear back within one business day.",
       notConfigured: "Payments are not configured yet. Please try again later.",
       checkoutFail: "Could not open checkout. Please try again.",
       waitingStripe: "Processing your payment…",
@@ -840,12 +842,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       refreshStatus: "Refresh status",
     },
     subscription: {
-      moneyBackTitle: "14-day money-back guarantee",
+      moneyBackTitle: "Not working? Full refund, no questions.",
       moneyBackBody:
         "Not satisfied within 14 days? Email info@structuro.eu with subject 'Refund'.",
       moneyBackHowLink: "How does this work?",
       moneyBackHowDetail:
-        "We process your request within three business days. The amount usually returns to your account within 5 to 10 business days.",
+        "We reply within one business day. The amount usually returns to your account within 5 to 10 business days.",
       paymentTrustLabel:
         "Secure checkout with Stripe. With iDEAL you authorize SEPA Direct Debit for renewals.",
       checkoutServiceRoleError:

@@ -55,7 +55,7 @@ export const REGISTER_PLANS: RegisterPlan[] = [
     ],
     priceId: CLIENT_STRIPE_PRICE_ID_MONTHLY,
     highlight: false,
-    default: false,
+    default: true,
   },
   {
     id: "yearly",
@@ -72,7 +72,7 @@ export const REGISTER_PLANS: RegisterPlan[] = [
     ],
     priceId: CLIENT_STRIPE_PRICE_ID_YEARLY,
     highlight: true,
-    default: true,
+    default: false,
   },
 ];
 
@@ -112,5 +112,5 @@ export function planFromStripePriceId(priceId: string): RegisterPlanId | null {
 }
 
 export function defaultRegisterPlanId(): RegisterPlanId {
-  return "yearly";
+  return "monthly";
 }

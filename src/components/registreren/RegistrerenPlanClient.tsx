@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -9,6 +9,7 @@ import { markCheckoutStarted } from "@/lib/checkoutReturnStorage";
 import { useI18n } from "@/lib/i18n";
 import { setCreateWelcomeTaskFlag } from "@/lib/onboardingWelcomeTask";
 import {
+  defaultRegisterPlanId,
   REGISTER_PLANS,
   type RegisterPlanId,
 } from "@/lib/stripe/registerPlans";
@@ -17,6 +18,8 @@ import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLa
 import { RegistrerenShell } from "./RegistrerenShell";
 import { RegistrerenPricingCard } from "./RegistrerenPricingCard";
 import { refundMailtoHref } from "@/lib/refundContact";
+import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
+import { useClientMounted } from "@/hooks/useClientMounted";
 
 function RegistrerenPlanInner() {
   const { t, locale } = useI18n();
@@ -27,14 +30,16 @@ function RegistrerenPlanInner() {
   const confirmed = searchParams?.get("confirmed") === "1";
   const resume = searchParams?.get("resume") === "1";
 
-  const [selectedPlanId, setSelectedPlanId] = useState<RegisterPlanId>("yearly");
-  const [welcomeTaskOptIn, setWelcomeTaskOptIn] = useState(true);
+  const [selectedPlanId] = useState<RegisterPlanId>(defaultRegisterPlanId());
+  const [welcomeTaskOptIn] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const mounted = useClientMounted();
+  const planViewTrackedRef = useRef(false);
 
   useEffect(() => {
     if (!isRegistrationCheckoutEnabledClient()) {
@@ -88,9 +93,6 @@ function RegistrerenPlanInner() {
 
         setUserId(user.id);
         setUserEmail(user.email ?? null);
-        if (!cancelled && !confirmed && !resume) {
-          setInfo(t("registrerenPage.resumePaymentHint"));
-        }
       } catch {
         /* ignore */
       } finally {
@@ -102,10 +104,26 @@ function RegistrerenPlanInner() {
     };
   }, [router, cancelled, confirmed, resume, t]);
 
-  const selectedPlan =
-    REGISTER_PLANS.find((p) => p.id === selectedPlanId) ?? REGISTER_PLANS[0];
+  useEffect(() => {
+    if (!mounted || !sessionChecked || !userId || planViewTrackedRef.current) return;
+    planViewTrackedRef.current = true;
+    trackRegistrationFunnelServer("registreren_plan_viewed", {
+      plan_id: "monthly",
+      default_plan_id: defaultRegisterPlanId(),
+      cancelled,
+      resume,
+    });
+  }, [
+    mounted,
+    sessionChecked,
+    userId,
+    cancelled,
+    resume,
+  ]);
+
   const monthlyPlan = REGISTER_PLANS.find((p) => p.id === "monthly")!;
-  const yearlyPlan = REGISTER_PLANS.find((p) => p.id === "yearly")!;
+  const checkoutPlan =
+    REGISTER_PLANS.find((p) => p.id === selectedPlanId) ?? monthlyPlan;
 
   async function handleLogout() {
     try {
@@ -176,7 +194,7 @@ function RegistrerenPlanInner() {
         return;
       }
 
-      await startCheckout(selectedPlan.priceId);
+      await startCheckout(checkoutPlan.priceId);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("registrerenPage.errCheckout"));
     } finally {
@@ -184,7 +202,26 @@ function RegistrerenPlanInner() {
     }
   }
 
-  if (!sessionChecked || !userId || !userEmail) {
+  async function handleStartYearly() {
+    setError(null);
+    setCheckoutLoading(true);
+
+    try {
+      if (!userId || !userEmail) {
+        setError(t("registrerenPage.errGeneric"));
+        return;
+      }
+
+      const yearlyPlan = REGISTER_PLANS.find((p) => p.id === "yearly")!;
+      await startCheckout(yearlyPlan.priceId);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("registrerenPage.errCheckout"));
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  if (!mounted || !sessionChecked || !userId || !userEmail) {
     return (
       <RegistrerenShell info={info}>
         <p className="text-center text-sm text-slate-500">{t("registrerenPage.loading")}</p>
@@ -202,24 +239,28 @@ function RegistrerenPlanInner() {
         {t("registrerenPage.planHeading")}
       </h2>
 
-      <div className="grid grid-cols-2 items-stretch gap-2 sm:gap-5 lg:gap-6">
-        <div className="flex min-w-0 w-full">
-          <RegistrerenPricingCard
-            plan={monthlyPlan}
-            selected={selectedPlanId === "monthly"}
-            onSelect={(plan) => setSelectedPlanId(plan.id)}
-            t={t}
-          />
-        </div>
-        <div className="flex min-w-0 w-full">
-          <RegistrerenPricingCard
-            plan={yearlyPlan}
-            selected={selectedPlanId === "yearly"}
-            onSelect={(plan) => setSelectedPlanId(plan.id)}
-            t={t}
-          />
-        </div>
+      <div className="mx-auto w-full max-w-md">
+        <RegistrerenPricingCard
+          plan={monthlyPlan}
+          selected
+          onSelect={() => {}}
+          t={t}
+        />
       </div>
+
+      <p className="mt-3 text-center text-xs text-slate-500">
+        {locale === "en" ? "Prefer yearly?" : "Liever jaarlijks?"}{" "}
+        <button
+          type="button"
+          disabled={checkoutLoading}
+          onClick={() => void handleStartYearly()}
+          className="font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {locale === "en"
+            ? "€119/year — almost 3 months free →"
+            : "€119/jaar — bijna 3 maanden gratis →"}
+        </button>
+      </p>
 
       <div className="mt-6 flex items-start gap-2.5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3.5 pt-4 sm:px-5 sm:py-4">
         <ShieldCheckIcon
@@ -246,34 +287,7 @@ function RegistrerenPlanInner() {
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">
-        <div className="rounded-[20px] border border-slate-200 bg-white px-6 py-5 shadow-sm sm:px-7">
-          <h3 className="text-sm font-semibold text-slate-900">
-            {t("registrerenPage.welcomeTaskTitle")}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            {t("registrerenPage.welcomeTaskBody")}
-          </p>
-          <label className="mt-4 flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={welcomeTaskOptIn}
-              onChange={(e) => setWelcomeTaskOptIn(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
-            />
-            <span className="text-sm leading-snug text-slate-800">
-              {t("registrerenPage.welcomeTaskCheckbox")}
-            </span>
-          </label>
-          <p className="mt-3 text-xs text-slate-400">
-            {t("registrerenPage.welcomeTaskSource")}
-          </p>
-        </div>
-
-        <p className="text-center text-xs leading-relaxed text-slate-500">
-          {t("registrerenPage.renewalDisclosure")}
-        </p>
-
+      <div className="mt-5 space-y-4">
         <button
           type="button"
           disabled={checkoutLoading}
@@ -282,6 +296,15 @@ function RegistrerenPlanInner() {
         >
           {checkoutLoading ? t("registrerenPage.submitBusy") : t("registrerenPage.ctaStart")}
         </button>
+
+        <details className="group text-center">
+          <summary className="cursor-pointer list-none text-xs text-slate-400 underline-offset-2 hover:text-slate-500 hover:underline [&::-webkit-details-marker]:hidden">
+            {locale === "en" ? "Renewal & payment details" : "Verlenging & betaling"}
+          </summary>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            {t("registrerenPage.renewalDisclosure")}
+          </p>
+        </details>
       </div>
 
       <p className="text-center">
