@@ -33,6 +33,7 @@ function tryCaptureSignup(user: {
         utm_campaign?: string | null;
       };
       captureProductEvent("signup_completed", {
+        channel: "client",
         source: parsed.source ?? getSignupAttributionSource(),
         utm_campaign: parsed.utm_campaign ?? getStoredSignupCampaign(),
       });
@@ -55,6 +56,7 @@ function tryCaptureSignup(user: {
   const ageMs = Date.now() - createdMs;
   if (ageMs >= 0 && ageMs < 3 * 60 * 1000) {
     captureProductEvent("signup_completed", {
+      channel: "client",
       source: getSignupAttributionSource(),
       utm_campaign: getStoredSignupCampaign(),
     });

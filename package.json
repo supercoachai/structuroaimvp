@@ -26,6 +26,7 @@
     "supabase:status": "supabase status",
     "supabase:reset": "supabase db reset",
     "posthog:wizard:ci": "bash scripts/run-posthog-wizard-ci.sh",
+    "posthog:launch-dashboard": "node scripts/setup-posthog-launch-dashboard.mjs",
     "smoke:preview": "node scripts/launch-smoke-preview.mjs"
   },
   "dependencies": {

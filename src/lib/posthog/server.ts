@@ -1,6 +1,7 @@
 import { PostHog } from "posthog-node";
 
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
+import { withServerEventContext } from "./serverEventContext";
 
 let _client: PostHog | null = null;
 
@@ -88,7 +89,11 @@ export async function captureServerEvent(
   const client = getClient();
   if (!client) return;
   try {
-    client.capture({ distinctId, event, properties });
+    client.capture({
+      distinctId,
+      event,
+      properties: withServerEventContext(properties),
+    });
     await client.flush();
   } catch {
     /* ignore */

@@ -20,7 +20,10 @@ async function safeCapture(
   properties?: Record<string, unknown>
 ): Promise<void> {
   try {
-    await captureServerEvent(distinctId, event, properties);
+    await captureServerEvent(distinctId, event, {
+      ...properties,
+      channel: "server",
+    });
   } catch (phErr) {
     console.error("[stripe-webhook] PostHog capture failed (non-fatal)", phErr);
   }

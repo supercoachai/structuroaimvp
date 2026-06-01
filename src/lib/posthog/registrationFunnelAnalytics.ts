@@ -17,5 +17,6 @@ export async function captureRegistrationFunnelServer(
   await captureServerEvent(distinctId, event, {
     ...properties,
     channel: "server",
+    funnel: "launch",
   });
 }
