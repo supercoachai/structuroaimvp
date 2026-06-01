@@ -693,7 +693,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   margin-top: 40px;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 .hero-phone-mobile-bridge {
   display: none;
@@ -746,6 +747,30 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   .hero-phone-mobile { display: block; }
   .phone-bg-blob { display: none; }
   section, .hero, .trust, .manifesto { overflow-x: clip; max-width: 100%; }
+  .hero { padding-bottom: 0; overflow-x: clip; overflow-y: visible; }
+  .hero-phone-mobile {
+    padding-bottom: 36px;
+    margin-bottom: 0;
+  }
+  .hero-phone-mobile::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    top: 0;
+    bottom: 0;
+    background: var(--bg);
+    z-index: -1;
+    pointer-events: none;
+  }
+  .hero-phone-mobile .phone-tilt-wrap--mobile {
+    padding-bottom: 16px;
+    overflow: visible;
+  }
+  .hero-phone-mobile .phone-tilt--mobile {
+    filter: drop-shadow(0 20px 36px rgba(15,23,42,.18)) drop-shadow(0 6px 14px rgba(37,99,235,.08));
+  }
 }
 @media(min-width:901px) {
   .hero-phone-mobile { display: none !important; }
