@@ -72,27 +72,17 @@ export function RegistrerenPricingCard({
           </span>
         </div>
 
-        <div
-          className={`mt-2 flex min-h-[14px] items-center sm:mt-3.5 sm:min-h-[18px] ${
-            isYearly ? "gap-1 flex-nowrap" : ""
-          }`}
-        >
-          <span className="shrink-0 whitespace-nowrap text-[9px] leading-none text-slate-500 sm:text-sm">
-            {isYearly ? (
-              <>
-                {t("registrerenPage.yearlyEffectiveCompact")}
-                <span className="hidden sm:inline"> effectief</span>
-              </>
-            ) : (
-              t(`registrerenPage.${plan.subKey}`)
-            )}
-          </span>
-          {isYearly ? (
+        {isYearly ? (
+          <div className="mt-2 flex min-h-[14px] items-center gap-1 flex-nowrap sm:mt-3.5 sm:min-h-[18px]">
+            <span className="shrink-0 whitespace-nowrap text-[9px] leading-none text-slate-500 sm:text-sm">
+              {t("registrerenPage.yearlyEffectiveCompact")}
+              <span className="hidden sm:inline"> effectief</span>
+            </span>
             <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[8px] font-bold leading-none text-emerald-700 sm:px-2 sm:text-[10px] lg:px-2.5 lg:text-xs">
               {t("registrerenPage.yearlySave")}
             </span>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <ul className="mt-2 flex w-full list-none flex-col gap-1.5 p-0 sm:mt-3.5 sm:gap-2">
