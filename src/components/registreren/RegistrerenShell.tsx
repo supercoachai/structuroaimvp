@@ -7,9 +7,17 @@ type RegistrerenShellProps = {
   children: ReactNode;
   error?: string | null;
   info?: string | null;
+  /** Planpagina: vult viewport, compacter logo, geen page-scroll op shell */
+  page?: "default" | "plan";
 };
 
-export function RegistrerenShell({ children, error, info }: RegistrerenShellProps) {
+export function RegistrerenShell({
+  children,
+  error,
+  info,
+  page = "default",
+}: RegistrerenShellProps) {
+  const isPlanPage = page === "plan";
   const { t, locale, setLocale } = useI18n();
   const [logoError, setLogoError] = useState(false);
 
@@ -18,7 +26,13 @@ export function RegistrerenShell({ children, error, info }: RegistrerenShellProp
   }
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-1 items-start justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain bg-[var(--st-bg)] px-2 py-6 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))] sm:px-4">
+    <div
+      className={
+        isPlanPage
+          ? "relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--st-bg)] px-3 pt-[max(2.5rem,env(safe-area-inset-top))] pb-0 sm:px-4"
+          : "relative flex h-full min-h-0 w-full flex-1 items-start justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain bg-[var(--st-bg)] px-2 py-6 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))] sm:px-4"
+      }
+    >
       <button
         type="button"
         onClick={handleBack}
@@ -50,32 +64,50 @@ export function RegistrerenShell({ children, error, info }: RegistrerenShellProp
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[980px] space-y-6">
-        <div className="flex flex-col items-center text-center">
+      <div
+        className={
+          isPlanPage
+            ? "mx-auto flex h-full min-h-0 w-full max-w-[980px] flex-col"
+            : "mx-auto w-full max-w-[980px] space-y-6"
+        }
+      >
+        <div
+          className={`flex shrink-0 flex-col items-center text-center ${isPlanPage ? "mb-1" : ""}`}
+        >
           {logoError ? (
-            <div className="flex h-[4.55rem] w-[4.55rem] items-center justify-center rounded-2xl bg-blue-600 shadow-md">
-              <span className="text-2xl font-bold text-white">S</span>
+            <div
+              className={`flex items-center justify-center rounded-2xl bg-blue-600 shadow-md ${isPlanPage ? "h-11 w-11" : "h-[4.55rem] w-[4.55rem]"}`}
+            >
+              <span
+                className={`font-bold text-white ${isPlanPage ? "text-lg" : "text-2xl"}`}
+              >
+                S
+              </span>
             </div>
           ) : (
             <img
               src="/logo-structuro.png"
               alt="Structuro"
-              width={73}
-              height={73}
-              className="h-[4.55rem] w-[4.55rem] object-contain drop-shadow-sm"
+              width={isPlanPage ? 44 : 73}
+              height={isPlanPage ? 44 : 73}
+              className={`object-contain drop-shadow-sm ${isPlanPage ? "h-11 w-11" : "h-[4.55rem] w-[4.55rem]"}`}
               onError={() => setLogoError(true)}
             />
           )}
         </div>
 
         {info ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950">
+          <p
+            className={`shrink-0 rounded-xl border border-amber-200 bg-amber-50 text-center text-amber-950 ${isPlanPage ? "mb-2 px-3 py-2 text-xs leading-snug" : "px-4 py-3 text-sm"}`}
+          >
             {info}
           </p>
         ) : null}
 
         {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800">
+          <p
+            className={`shrink-0 rounded-xl border border-red-200 bg-red-50 text-center text-red-800 ${isPlanPage ? "mb-2 px-3 py-2 text-xs leading-snug" : "px-4 py-3 text-sm"}`}
+          >
             {error}
           </p>
         ) : null}
