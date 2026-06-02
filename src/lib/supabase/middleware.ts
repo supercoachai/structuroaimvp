@@ -296,7 +296,13 @@ export async function updateSession(request: NextRequest) {
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
 
   if (!hasSession) {
-    if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname) || isPublicApiRoute(pathname)) {
+    if (
+      isLoginPath ||
+      isAuthPath ||
+      isAnonymousPublicPage(pathname) ||
+      isPublicApiRoute(pathname) ||
+      pathname.startsWith("/api/")
+    ) {
       return supabaseResponse;
     }
     const url = request.nextUrl.clone();
@@ -555,6 +561,9 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   const hasAuth = hasSupabaseAuthCookie(request);
 
   if (!hasAuth && !localModeCookie) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.next({ request });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

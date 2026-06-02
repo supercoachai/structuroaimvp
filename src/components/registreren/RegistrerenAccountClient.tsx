@@ -73,7 +73,7 @@ function RegistrerenAccountInner() {
           return;
         }
 
-        router.replace("/registreren/plan");
+        window.location.replace("/registreren/plan");
       } catch {
         /* ignore */
       } finally {
@@ -115,12 +115,12 @@ function RegistrerenAccountInner() {
 
       await persistSignupAttributionToProfile(user.id);
       queueSignupCompletedForAnalytics();
-      trackRegistrationFunnelServer("signup_completed", {
+      await trackRegistrationFunnelServer("signup_completed", {
         source: getSignupAttributionSource(),
         utm_campaign: getStoredSignupCampaign(),
       });
 
-      router.push("/registreren/plan");
+      window.location.assign("/registreren/plan");
     } catch (err: unknown) {
       setError(mapSignupError(err, t));
     } finally {

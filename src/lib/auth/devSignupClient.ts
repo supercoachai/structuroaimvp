@@ -21,6 +21,22 @@ export async function signUpWithLocalDevFallback(
     });
     if (error) throw error;
     if (!data.user?.id) throw new Error("signup_failed");
+
+    if (!data.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: params.email,
+        password: params.password,
+      });
+      if (signInError) throw signInError;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("signup_session_failed");
+    }
+
     return { user: data.user };
   }
 

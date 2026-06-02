@@ -6,7 +6,7 @@ type ClientFunnelEvent = "signup_completed" | "registreren_plan_viewed";
  * Stuurt funnel-events naar de server (PostHog capture zonder analytics-consent).
  * Best-effort: faalt stil bij netwerkfouten.
  */
-export function trackRegistrationFunnelServer(
+export async function trackRegistrationFunnelServer(
   event: ClientFunnelEvent,
   properties?: {
     source?: string;
@@ -16,13 +16,15 @@ export function trackRegistrationFunnelServer(
     cancelled?: boolean;
     resume?: boolean;
   }
-): void {
-  void fetch("/api/analytics/registration-funnel", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ event, ...properties }),
-  }).catch(() => {
+): Promise<void> {
+  try {
+    await fetch("/api/analytics/registration-funnel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ event, ...properties }),
+    });
+  } catch {
     /* ignore */
-  });
+  }
 }

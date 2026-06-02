@@ -22,5 +22,8 @@ export function mapSignupError(
   if (lower.includes("service_role_unavailable")) {
     return t("registrerenPage.errDevServiceRole");
   }
+  if (lower.includes("signup_session_failed")) {
+    return t("registrerenPage.errGeneric");
+  }
   return raw;
 }
