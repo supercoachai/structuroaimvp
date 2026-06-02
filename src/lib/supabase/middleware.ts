@@ -136,13 +136,13 @@ export async function updateSession(request: NextRequest) {
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (!isRegistrationCheckoutEnabled()) {
@@ -150,7 +150,7 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.search = "";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
     if (isRegistrationCheckoutApiRoute(pathname)) {
       return NextResponse.json({ error: "not_available" }, { status: 404 });
@@ -286,11 +286,11 @@ export async function updateSession(request: NextRequest) {
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
       });
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   const hasSession = Boolean(user) || hasSupabaseAuthCookie(request);
@@ -313,7 +313,7 @@ export async function updateSession(request: NextRequest) {
     ) {
       url.searchParams.set("next", "/onboarding");
     }
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   /** Sessie-cookie maar user nog niet gehydrateerd: niet blokkeren. */
@@ -337,7 +337,7 @@ export async function updateSession(request: NextRequest) {
     if (pathname.startsWith("/onboarding") && payBeforeOnboarding) {
       const url = request.nextUrl.clone();
       url.pathname = "/registreren/plan";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
 
     if (
@@ -347,7 +347,7 @@ export async function updateSession(request: NextRequest) {
     ) {
       const url = request.nextUrl.clone();
       url.pathname = payBeforeOnboarding ? "/registreren/plan" : "/onboarding";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
     return supabaseResponse;
   }
@@ -366,14 +366,14 @@ export async function updateSession(request: NextRequest) {
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/consent";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
   }
 
   if (pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
     url.pathname = privacySetupDone ? "/" : "/consent";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (user && onboardingCompleted && profileRowReadOk) {
@@ -392,7 +392,7 @@ export async function updateSession(request: NextRequest) {
       if (!ok) {
         const url = request.nextUrl.clone();
         url.pathname = "/abonnement";
-        return NextResponse.redirect(url);
+        return NextResponse.redirect(url, 302);
       }
     }
   }
@@ -483,7 +483,7 @@ function applyLocalAnonymousOnboardingGuard(
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/onboarding";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (localOnboardingDone && !privacySetupDone) {
@@ -497,7 +497,7 @@ function applyLocalAnonymousOnboardingGuard(
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/consent";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
   }
 
@@ -507,7 +507,7 @@ function applyLocalAnonymousOnboardingGuard(
   ) {
     const url = request.nextUrl.clone();
     url.pathname = privacySetupDone ? "/" : "/consent";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   return applyDagstartCookieGuard(request, response, pathname);
@@ -527,7 +527,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (!isRegistrationCheckoutEnabled()) {
@@ -535,7 +535,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.search = "";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(url, 302);
     }
     if (isRegistrationCheckoutApiRoute(pathname)) {
       return NextResponse.json({ error: "not_available" }, { status: 404 });
@@ -566,7 +566,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
     }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 302);
   }
 
   if (localModeCookie && !hasAuth) {
