@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { PaymentTrustStrip } from "@/components/subscription/PaymentTrustStrip";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { freeTrialExpired } from "@/lib/freeTrialAccess";
 import { toast } from "@/components/Toast";
 
 function sleep(ms: number) {
@@ -57,6 +58,7 @@ export default function AbonnementPage() {
   const { t } = useI18n();
   const router = useRouter();
   const [busyPlan, setBusyPlan] = useState<"monthly" | "yearly" | null>(null);
+  const [trialExpired, setTrialExpired] = useState(false);
   /** idle = geen stripe-return; polling = wacht op webhook; pending_timeout = vriendelijke timeout */
   const [stripeReturnPhase, setStripeReturnPhase] = useState<
     "idle" | "polling" | "pending_timeout"
@@ -85,6 +87,27 @@ export default function AbonnementPage() {
       router.replace("/dagstart");
     }
   }, [router]);
+
+  useEffect(() => {
+    // Detecteer of proeftijd verlopen is (voor gepaste messaging)
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from("profiles")
+        .select("created_at, subscription_status")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!data) return;
+          const status = data.subscription_status as string | null;
+          if (status === "active" || status === "cancelled") return;
+          if (freeTrialExpired(data.created_at as string | null)) {
+            setTrialExpired(true);
+          }
+        });
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -152,6 +175,15 @@ export default function AbonnementPage() {
           <p className="structuro-page-subtitle mb-8 max-w-xl">
             {t("subscriptionPage.subtitle")}
           </p>
+
+          {trialExpired ? (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+              <p className="font-semibold">Je gratis proeftijd is verlopen.</p>
+              <p className="mt-1 text-amber-800">
+                Kies een abonnement om Structuro te blijven gebruiken. Je voortgang en instellingen staan gewoon klaar.
+              </p>
+            </div>
+          ) : null}
 
           {stripeReturnPhase === "polling" ? (
             <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">

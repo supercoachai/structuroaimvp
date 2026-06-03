@@ -22,6 +22,7 @@ import { performClientLogout } from '@/lib/logoutClient';
 import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useI18n } from '@/lib/i18n';
+import { TrialBanner } from '@/components/TrialBanner';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -212,6 +213,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
             </button>
           </div>
         </header>
+
+        {showMainContent ? <TrialBanner /> : null}
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <main

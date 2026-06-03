@@ -285,6 +285,7 @@ export async function updateSession(request: NextRequest) {
         profileRowReadOk,
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
+        created_at: profileCreatedAt,
       });
       return NextResponse.redirect(url, 302);
     }
@@ -332,6 +333,7 @@ export async function updateSession(request: NextRequest) {
       profileRowReadOk,
       subscription_status: subscriptionStatus,
       subscription_current_period_end: subscriptionPeriodEnd,
+      created_at: profileCreatedAt,
     });
 
     if (pathname.startsWith("/onboarding") && payBeforeOnboarding) {
