@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useTaskContext } from "@/context/TaskContext";
@@ -51,36 +51,39 @@ export default function OnboardingFlow() {
   const { t, locale, setLocale } = useI18n();
   const router = useRouter();
   const { user, authLoading } = useTaskContext();
+  const [clientReady, setClientReady] = useState(false);
+  const [isLocalMode, setIsLocalMode] = useState(false);
+  const [authHint, setAuthHint] = useState(false);
 
-  const isLocalMode =
-    typeof window !== "undefined" && hasStructuroLocalModeCookieOnClient();
+  useLayoutEffect(() => {
+    setIsLocalMode(hasStructuroLocalModeCookieOnClient());
+    setAuthHint(hasSupabaseAuthHintOnClient());
+    setClientReady(true);
+  }, []);
 
   useEffect(() => {
-    if (isLocalMode && isLocalOnboardingCompleted()) {
-      setLocalOnboardingDoneCookieOnClient();
-      clearLocalSessionFresh();
-      window.location.replace("/");
-    }
-  }, [isLocalMode]);
+    if (!clientReady || !isLocalMode || !isLocalOnboardingCompleted()) return;
+    setLocalOnboardingDoneCookieOnClient();
+    clearLocalSessionFresh();
+    window.location.replace("/");
+  }, [clientReady, isLocalMode]);
 
   /**
    * Geen client-side redirect naar /login: middleware stuurt niet-ingelogde users al weg.
    * Wacht op useUser zolang er een sessie-hint is (cookie/localStorage), ook als getSession
    * even null is tijdens Supabase-hydratie.
    */
-  const authHint =
-    typeof window !== "undefined" && hasSupabaseAuthHintOnClient();
-  const waitingForSession = !isLocalMode && !user?.id && authLoading;
+  const waitingForSession = clientReady && !isLocalMode && !user?.id && authLoading;
   /** Cookie-hint zonder user: middleware liet door, geen login-scherm tonen. */
   const showLoginRedirect =
-    !isLocalMode && !authLoading && !user?.id && !authHint;
+    clientReady && !isLocalMode && !authLoading && !user?.id && !authHint;
 
   useEffect(() => {
     if (!showLoginRedirect) return;
     router.replace("/login?checkout=1");
   }, [showLoginRedirect, router]);
 
-  if (waitingForSession) {
+  if (!clientReady || waitingForSession) {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 pt-[max(0px,env(safe-area-inset-top))] text-slate-500">
         <ObLanguageToggle
