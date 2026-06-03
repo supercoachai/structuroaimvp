@@ -3,7 +3,8 @@ import RegistrerenAccountClient from "@/components/registreren/RegistrerenAccoun
 
 export const metadata: Metadata = {
   title: "Account aanmaken | Structuro",
-  description: "Maak je Structuro-account aan. Daarna kies je je abonnement.",
+  description:
+    "Maak je Structuro-account aan en probeer 3 dagen gratis. Geen betaling nu.",
 };
 
 export default function RegistrerenPage() {

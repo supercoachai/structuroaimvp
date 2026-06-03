@@ -533,6 +533,9 @@ function LoginPageInner() {
                 {t("login.createAccount")}
               </Link>
             </p>
+            <p className="text-center text-xs text-[var(--st-muted-2)]">
+              {t("login.registrerenTrialHint")}
+            </p>
           </div>
         ) : SIGNUP_ALLOWED && showSignInExtras ? (
           <div className="mt-6 space-y-4">

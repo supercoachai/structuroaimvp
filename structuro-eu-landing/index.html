@@ -287,6 +287,8 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .pricing-yearly-link button:hover,.pricing-yearly-link a:hover{text-decoration:underline;text-underline-offset:2px;}
 .pricing-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:32px 28px;position:relative;}
 .pricing-card.highlight{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.08),0 16px 40px rgba(37,99,235,.10);}
+
+.price-trial-badge{display:block;margin:0 auto 14px;padding:6px 14px;border-radius:999px;background:rgba(37,99,235,.1);color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;text-align:center;width:fit-content;}
 .badge-best{position:absolute;top:-12px;right:22px;background:var(--blue);color:#fff;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
 .price-label{font-size:13px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.1em;}
 .price-amount{font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:10px;}
@@ -1416,7 +1418,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic data-i18n="nav_cta">Start je eerste dag</span></a>
+      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic data-i18n="nav_cta">Start gratis proefperiode</span></a>
       <!-- Language switcher -->
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')" aria-label="Nederlands">
@@ -1456,7 +1458,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.
       </p>
       <div class="hero-cta">
-        <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start je eerste dag</span>
+        <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span>
           <span class="arrow-r">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </span>
@@ -1466,7 +1468,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <div class="trust-checks">
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          <span data-i18n="trust_check1">Account aanmaken, daarna kies je je plan</span>
+          <span data-i18n="trust_check1">3 dagen gratis uitproberen, daarna pas betalen</span>
         </span>
         <span class="trust-check">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1717,7 +1719,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
     </div>
     <div style="margin-top:40px;text-align:center;">
-      <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="manifesto_cta_click" data-ph-cta="manifesto"><span data-cta-dynamic data-i18n="cta_try">Start je eerste dag</span></a>
+      <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="manifesto_cta_click" data-ph-cta="manifesto"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span></a>
     </div>
   </div>
 </section>
@@ -1728,7 +1730,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <div class="center pricing-head">
       <div class="section-eyebrow" data-i18n="pricing_eyebrow">Prijs</div>
       <h2 data-i18n="pricing_h2">Eerlijk. Eén prijs. Zeg op wanneer je wil.</h2>
-      <p class="lede-2" style="margin:0 auto;" data-i18n="pricing_lede">€12,99 per maand. Opzeggen wanneer je wilt.</p>
+      <p class="lede-2" style="margin:0 auto;" data-i18n="pricing_lede">3 dagen gratis uitproberen. Daarna €12,99 per maand. Opzegbaar wanneer je wilt.</p>
       <div class="pricing-money-back" style="max-width:520px;margin:18px auto 0;text-align:center;">
         <p style="font-size:15px;font-weight:600;color:var(--text);margin:0;" data-i18n="money_back_title">Werkt het niet? Geld terug, geen vragen.</p>
       </div>
@@ -1796,6 +1798,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <div class="pricing-grid" style="margin-top:48px;">
       <div class="pricing-card highlight">
         <div class="pricing-inner-hover">
+        <div class="price-trial-badge" data-i18n="price_trial_badge">3 dagen gratis</div>
         <div class="price-amount">€12,99<span data-i18n="price_monthly_period">/ maand</span></div>
         <div class="price-sub" data-i18n="price_monthly_sub">Opzegbaar wanneer je wilt</div>
         <ul class="price-includes">
@@ -1805,7 +1808,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat4">Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus</span></li>
           <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat5">Eindelijk rust in je hoofd. Elke dag opnieuw.</span></li>
         </ul>
-        <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:24px;" data-i18n="price_available">Direct beschikbaar</p>
+        <p style="font-size:11.5px;color:var(--place);text-align:center;margin-top:24px;" data-i18n="price_available">Start gratis, geen creditcard nodig</p>
         </div>
       </div>
       <p class="pricing-yearly-link">
@@ -1844,7 +1847,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <h2 data-i18n="footer_h2">Je brein verdient rust.<br/>Niet meer systemen.</h2>
     <p class="footer-cta-body" data-i18n="footer_body">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
     <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="footer_cta_click" data-ph-cta="footer">
-      <span data-cta-dynamic data-i18n="footer_cta_btn">Start je eerste dag →</span>
+      <span data-cta-dynamic data-i18n="footer_cta_btn">Start gratis proefperiode →</span>
     </a>
     <div class="trust-strip">
       <span class="trust-strip-item"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="strip_live">Nu live</span></span>
@@ -2007,13 +2010,13 @@ document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div').
 const TRANSLATIONS = {
   nl: {
     nav_how: 'Hoe het werkt', nav_waarom: 'Waarom', nav_vrouwen: 'Cyclus', nav_why: 'Waarom anders', nav_price: 'Prijs',
-    nav_login: 'Inloggen', nav_cta: 'Start je eerste dag',
-    cta_try: 'Start je eerste dag',
+    nav_login: 'Inloggen', nav_cta: 'Start gratis proefperiode',
+    cta_try: 'Start gratis proefperiode',
     payment_trust_label: 'Veilig betalen via Stripe',
     hero_eyebrow: 'Voor ADHD-breinen die vastlopen op executie',
     hero_h1: 'Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.',
     hero_lede: 'Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.',
-    trust_check1: 'Account aanmaken, daarna kies je je plan',
+    trust_check1: '3 dagen gratis uitproberen, daarna pas betalen',
     trust_check2: 'Klaar in 90 seconden om in te stellen',
     trust_check3: '14 dagen geld terug. Mail ons, reactie binnen één werkdag.',
     trust_check4: 'Alle data in de EU, geen verkoop aan derden',
@@ -2062,16 +2065,17 @@ const TRANSLATIONS = {
     founder_name: 'Niels van den Hurk',
     founder_role: 'Founder met ADHD',
     pricing_eyebrow: 'Prijs', pricing_h2: 'Eerlijk. Eén prijs. Zeg op wanneer je wil.',
-    pricing_lede: '€12,99 per maand. Opzeggen wanneer je wilt.',
+    pricing_lede: '3 dagen gratis uitproberen. Daarna €12,99 per maand. Opzegbaar wanneer je wilt.',
     pricing_yearly_prompt: 'Liever jaarlijks?',
     pricing_yearly_link: '€119/jaar, bijna 3 maanden gratis →',
     money_back_title: 'Werkt het niet? Geld terug, geen vragen.',
+    price_trial_badge: '3 dagen gratis',
     price_monthly_label: 'Maandelijks', price_monthly_period: '/ maand',
     price_monthly_sub: 'Opzegbaar wanneer je wilt',
     price_feat1: 'Eén dagelijkse loop, geen systeem om bij te houden', price_feat2: 'Micro-stappen die het blokkeren doorbreken',
     price_feat3: 'Taken gefilterd op jouw energie van vandaag', price_feat4: 'Afgestemd op het ADHD-brein, inclusief de vrouwelijke cyclus',
     price_feat5: 'Eindelijk rust in je hoofd. Elke dag opnieuw.',
-    price_available: 'Direct beschikbaar',
+    price_available: 'Start gratis, geen creditcard nodig',
     price_best_badge: 'Beste deal',
     price_yearly_label: 'Jaarlijks', price_yearly_period: '/ jaar',
     price_yearly_sub: '€9,92/mnd effectief',
@@ -2122,7 +2126,7 @@ const TRANSLATIONS = {
     footer_eyebrow: 'Tot slot',
     footer_h2: 'Je brein verdient rust.<br/>Niet meer systemen.',
     footer_body: 'Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.',
-    footer_cta_btn: 'Start je eerste dag →',
+    footer_cta_btn: 'Start gratis proefperiode →',
     strip_live: 'Nu live',
     strip_refund: '14 dagen geld terug via mail',
     strip_stripe: 'Veilig betalen via Stripe',
@@ -2131,13 +2135,13 @@ const TRANSLATIONS = {
   },
   en: {
     nav_how: 'How it works', nav_waarom: 'Why', nav_vrouwen: 'Cycle', nav_why: 'Why different', nav_price: 'Pricing',
-    nav_login: 'Log in', nav_cta: 'Start your first day',
-    cta_try: 'Start your first day',
+    nav_login: 'Log in', nav_cta: 'Start free trial',
+    cta_try: 'Start free trial',
     payment_trust_label: 'Secure checkout with Stripe',
     hero_eyebrow: 'For ADHD brains that get stuck on execution',
     hero_h1: 'You know what you<br/>need to do.<br/>You just don\'t <span class="stuck">start</span>.',
     hero_lede: 'Tomorrow morning you pick your energy once. Then 1, 2 or 3 tasks for the day. Nothing more. No lists, no guilt.',
-    trust_check1: 'Create an account, then choose your plan',
+    trust_check1: '3 days free to try, pay only after',
     trust_check2: 'Ready in 90 seconds to set up',
     trust_check3: '14-day money-back. Email us, reply within one business day.',
     trust_check4: 'All data in the EU, no third-party sales',
@@ -2186,16 +2190,17 @@ const TRANSLATIONS = {
     founder_name: 'Niels van den Hurk',
     founder_role: 'Founder with ADHD',
     pricing_eyebrow: 'Pricing', pricing_h2: 'Fair. One price. Cancel when you want.',
-    pricing_lede: '€12.99 per month. Cancel whenever you want.',
+    pricing_lede: '3 days free to try. Then €12.99 per month. Cancel anytime.',
     pricing_yearly_prompt: 'Prefer yearly?',
     pricing_yearly_link: '€119/year, almost 3 months free →',
     money_back_title: 'Not working? Full refund, no questions.',
+    price_trial_badge: '3 days free',
     price_monthly_label: 'Monthly', price_monthly_period: '/ month',
     price_monthly_sub: 'Cancel any time',
     price_feat1: 'One daily loop, no system to maintain', price_feat2: 'Micro-steps that break through what\'s blocking you',
     price_feat3: 'Tasks filtered to your energy today', price_feat4: 'Tuned for the ADHD brain, including the female cycle',
     price_feat5: 'Finally quiet in your head. Every day anew.',
-    price_available: 'Available now',
+    price_available: 'Start free, no credit card needed',
     price_best_badge: 'Best deal',
     price_yearly_label: 'Yearly', price_yearly_period: '/ year',
     price_yearly_sub: '€9.92/mo effective',
@@ -2246,7 +2251,7 @@ const TRANSLATIONS = {
     footer_eyebrow: 'Finally',
     footer_h2: 'Your brain deserves rest.<br/>Not more systems.',
     footer_body: 'You don\'t have to get it perfect every day. The app adapts to you, not the other way around. Starting is enough.',
-    footer_cta_btn: 'Start your first day →',
+    footer_cta_btn: 'Start free trial →',
     strip_live: 'Live now',
     strip_refund: '14-day refund via email',
     strip_stripe: 'Secure checkout with Stripe',

@@ -16,6 +16,7 @@ import {
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolvePostSignupPath } from "@/lib/registrationGate";
+import { FREE_TRIAL_DAYS } from "@/lib/freeTrialAccess";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { mapSignupError } from "./mapSignupError";
@@ -160,9 +161,19 @@ function RegistrerenAccountInner() {
 
   return (
     <RegistrerenShell error={error}>
-      <h2 className="mt-8 mb-6 text-center text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
-        {t("registrerenPage.planHeading")}
-      </h2>
+      <div className="mx-auto mt-8 mb-6 max-w-md text-center">
+        <p className="mb-3">
+          <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
+            {t("registrerenPage.trialBadge", { days: String(FREE_TRIAL_DAYS) })}
+          </span>
+        </p>
+        <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+          {t("registrerenPage.accountHeading")}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          {t("registrerenPage.accountSubheading")}
+        </p>
+      </div>
 
       <div className="mx-auto w-full max-w-md space-y-4">
         <div className="space-y-1">
@@ -220,6 +231,10 @@ function RegistrerenAccountInner() {
         >
           {loading ? t("registrerenPage.submitBusy") : t("registrerenPage.continueBtn")}
         </button>
+
+        <p className="text-center text-xs leading-relaxed text-slate-500">
+          {t("registrerenPage.accountTrialAfter")}
+        </p>
       </div>
 
       <p className="text-center text-sm text-slate-500">
