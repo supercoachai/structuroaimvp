@@ -78,7 +78,7 @@ async function resolvePostLoginPath(
     const { data: profile } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, subscription_status, subscription_current_period_end"
+        "onboarding_completed, onboarding_version, subscription_status, subscription_current_period_end, created_at"
       )
       .eq("id", userId)
       .maybeSingle();

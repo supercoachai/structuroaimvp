@@ -2,8 +2,7 @@
 
 import { isProfileOnboardingUpToDate } from "@/lib/onboardingVersion";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
-import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
-import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
 
 function safeAppPath(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -17,6 +16,7 @@ type ProfileRow = {
   onboarding_version: number | null;
   subscription_status: string | null;
   subscription_current_period_end: string | null;
+  created_at?: string | null;
 };
 
 /**
@@ -44,13 +44,14 @@ export function resolvePostLoginPathFromProfile(
   );
 
   if (!onboardingDone) {
-    const needsPay =
-      isRegistrationCheckoutEnabledClient() &&
-      !profileHasAppAccess({
-        subscription_status: profile?.subscription_status ?? null,
-        subscription_current_period_end:
-          profile?.subscription_current_period_end ?? null,
-      });
+    const needsPay = requiresPaidSubscriptionBeforeOnboarding({
+      email: options.email ?? null,
+      profileRowReadOk: Boolean(profile),
+      subscription_status: profile?.subscription_status ?? null,
+      subscription_current_period_end:
+        profile?.subscription_current_period_end ?? null,
+      created_at: profile?.created_at ?? null,
+    });
     if (needsPay) return "/registreren/plan?resume=1";
     return "/onboarding";
   }

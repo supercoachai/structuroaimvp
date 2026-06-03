@@ -37,3 +37,27 @@ export function preOnboardingPath(row: ProfileSubscriptionRow): "/registreren/pl
     ? "/registreren/plan"
     : "/onboarding";
 }
+
+/** Na account aanmaken of sessie-check op /registreren: welkom, plan of onboarding. */
+export function resolvePostSignupPath(
+  profile: ProfileSubscriptionRow | null | undefined,
+  email: string | null | undefined
+): "/welkom" | "/registreren/plan" | "/onboarding" {
+  if (
+    profile &&
+    profileHasAppAccess({
+      subscription_status: profile.subscription_status,
+      subscription_current_period_end: profile.subscription_current_period_end,
+    })
+  ) {
+    return "/welkom";
+  }
+
+  return preOnboardingPath({
+    email,
+    profileRowReadOk: Boolean(profile),
+    subscription_status: profile?.subscription_status,
+    subscription_current_period_end: profile?.subscription_current_period_end,
+    created_at: profile?.created_at,
+  });
+}

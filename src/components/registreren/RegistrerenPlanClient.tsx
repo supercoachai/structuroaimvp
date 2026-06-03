@@ -14,6 +14,7 @@ import {
   type RegisterPlanId,
 } from "@/lib/stripe/registerPlans";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { RegistrerenPricingCard } from "./RegistrerenPricingCard";
@@ -75,7 +76,7 @@ function RegistrerenPlanInner() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("subscription_status, subscription_current_period_end")
+          .select("subscription_status, subscription_current_period_end, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -88,6 +89,20 @@ function RegistrerenPlanInner() {
           })
         ) {
           router.replace("/welkom");
+          return;
+        }
+
+        const needsPay = requiresPaidSubscriptionBeforeOnboarding({
+          email: user.email,
+          profileRowReadOk: Boolean(profile),
+          subscription_status: profile?.subscription_status as string | null,
+          subscription_current_period_end:
+            profile?.subscription_current_period_end as string | null,
+          created_at: profile?.created_at as string | null,
+        });
+
+        if (!needsPay && !cancelled && !resume) {
+          router.replace("/onboarding");
           return;
         }
 

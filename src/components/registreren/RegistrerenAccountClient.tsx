@@ -15,7 +15,7 @@ import {
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
-import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { resolvePostSignupPath } from "@/lib/registrationGate";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { mapSignupError } from "./mapSignupError";
@@ -57,23 +57,25 @@ function RegistrerenAccountInner() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("subscription_status, subscription_current_period_end")
+          .select("subscription_status, subscription_current_period_end, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
-        if (
-          profile &&
-          profileHasAppAccess({
-            subscription_status: profile.subscription_status as string | null,
-            subscription_current_period_end:
-              profile.subscription_current_period_end as string | null,
-          })
-        ) {
-          router.replace("/welkom");
-          return;
-        }
-
-        window.location.replace("/registreren/plan");
+        window.location.replace(
+          resolvePostSignupPath(
+            profile
+              ? {
+                  email: user.email,
+                  profileRowReadOk: true,
+                  subscription_status: profile.subscription_status as string | null,
+                  subscription_current_period_end:
+                    profile.subscription_current_period_end as string | null,
+                  created_at: profile.created_at as string | null,
+                }
+              : null,
+            user.email
+          )
+        );
       } catch {
         /* ignore */
       } finally {
@@ -120,7 +122,27 @@ function RegistrerenAccountInner() {
         utm_campaign: getStoredSignupCampaign(),
       });
 
-      window.location.assign("/registreren/plan");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_status, subscription_current_period_end, created_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      window.location.assign(
+        resolvePostSignupPath(
+          profile
+            ? {
+                email: emailTrimmed,
+                profileRowReadOk: true,
+                subscription_status: profile.subscription_status as string | null,
+                subscription_current_period_end:
+                  profile.subscription_current_period_end as string | null,
+                created_at: profile.created_at as string | null,
+              }
+            : null,
+          emailTrimmed
+        )
+      );
     } catch (err: unknown) {
       setError(mapSignupError(err, t));
     } finally {
