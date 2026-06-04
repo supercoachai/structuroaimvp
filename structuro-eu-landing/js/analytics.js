@@ -104,7 +104,10 @@
       var siteProp = "dev";
       if (hn.indexOf("structuro.eu") !== -1) siteProp = "eu";
       else if (hn.indexOf("structuro.ai") !== -1) siteProp = "ai";
-      window.posthog.register({ site: siteProp });
+      window.posthog.register({ 
+        site: siteProp,
+        environment: "production"
+      });
       window.posthog.opt_in_capturing();
       if (typeof initDone === "function") initDone();
     };
