@@ -775,7 +775,8 @@ export default function HomeCalm() {
         {dashboardReady &&
           !heroTask &&
           !allNonMedicationDone &&
-          (todayCheckIn?.top3_task_ids?.length ?? 0) > 0 && (
+          (todayCheckIn?.top3_task_ids?.length ?? 0) > 0 &&
+          !tasks.some(t => todayCheckIn.top3_task_ids.includes(t.id)) && (
           <section className="mt-2">
             <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-amber-50/80 p-5 text-center shadow-sm">
               <p className="text-sm font-semibold text-amber-900">
