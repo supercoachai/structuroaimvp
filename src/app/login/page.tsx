@@ -264,7 +264,7 @@ function LoginPageInner() {
       const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
       const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
         trimmed,
-        { redirectTo }
+        { redirectTo, skipSignUp: true }
       );
       if (resetErr) throw resetErr;
       setMessage(t('login.resetSent'));
