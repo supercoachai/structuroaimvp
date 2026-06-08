@@ -213,8 +213,8 @@ const FIRST_DAY_GREETING_START_MS = Math.round(SLIDE_MS * 0.7);
 const FIRST_DAY_INTRO_FADE_MS = 1450;
 const FIRST_DAY_REVEAL_AFTER_INTRO_MS = 1000;
 const FIRST_DAY_REVEAL_AFTER_SUB_MS = 700;
-const FIRST_DAY_CYCLE_HINT_CHAR_MS = 36;
-const FIRST_DAY_CYCLE_HINT_AFTER_TYPE_MS = 350;
+const FIRST_DAY_CYCLE_HINT_FADE_MS = 650;
+const FIRST_DAY_CYCLE_HINT_HOLD_MS = 400;
 const FIRST_DAY_CYCLE_RING_SPIN_MS = 2800;
 const FIRST_DAY_CYCLE_PART_STEP_MS = 560;
 const FIRST_DAY_CYCLE_PART_FADE_MS = 620;
@@ -320,7 +320,6 @@ export default function OnboardingFlowContent({
   const [firstDayDurationVisible, setFirstDayDurationVisible] = useState(false);
   /** Eerste-dagstart: opbouw in fases (header → sub → cyclus → energie). */
   const [firstDayRevealPhase, setFirstDayRevealPhase] = useState(0);
-  const [firstDayCycleHintChars, setFirstDayCycleHintChars] = useState(0);
   /** Cycluskaart: 1=ring, 2=header, 3=fase, 4=bio */
   const [firstDayCyclePart, setFirstDayCyclePart] = useState(0);
   /** Ring/shell-animatie eenmalig na start cycluskaart (niet opnieuw bij ENERGY-fase). */
@@ -330,7 +329,6 @@ export default function OnboardingFlowContent({
     [t]
   );
   const cyclePreviewProfileRef = useRef<CycleProfile | null>(null);
-  const firstDayCycleHintTextRef = useRef(firstDayCycleHintText);
   const firstDayRevealTimelineIdRef = useRef(0);
   const firstDayTaskBlockRef = useRef<HTMLDivElement | null>(null);
   const firstTaskInputRef = useRef<HTMLInputElement | null>(null);
@@ -368,7 +366,6 @@ export default function OnboardingFlowContent({
   }, [cyclePeriodStart, cycleAverageLength, cycleMenstruationDuration]);
 
   cyclePreviewProfileRef.current = cyclePreviewProfile;
-  firstDayCycleHintTextRef.current = firstDayCycleHintText;
 
   /** Laatste slide: stap voor stap opbouwen tot de CTA zichtbaar is. */
   const [readySlidePhase, setReadySlidePhase] = useState(0);
@@ -900,7 +897,6 @@ export default function OnboardingFlowContent({
   useEffect(() => {
     if (step !== FIRST_DAY_SLIDE_INDEX) {
       setFirstDayRevealPhase(0);
-      setFirstDayCycleHintChars(0);
       setFirstDayCyclePart(0);
       setFirstDayCycleRingSpinActive(false);
       return;
@@ -909,16 +905,13 @@ export default function OnboardingFlowContent({
     const isCurrent = () => firstDayRevealTimelineIdRef.current === timelineId;
     const rm = reduceMotionRef.current;
     const hasCycle = cyclePreviewProfileRef.current != null;
-    const hintText = firstDayCycleHintTextRef.current;
     if (rm) {
       setFirstDayRevealPhase(FIRST_DAY_REVEAL_ENERGY);
-      setFirstDayCycleHintChars(hintText.length);
       setFirstDayCyclePart(4);
       setFirstDayCycleRingSpinActive(true);
       return;
     }
     setFirstDayRevealPhase(0);
-    setFirstDayCycleHintChars(0);
     setFirstDayCyclePart(0);
     setFirstDayCycleRingSpinActive(false);
     const timers: number[] = [];
@@ -938,9 +931,7 @@ export default function OnboardingFlowContent({
     schedule(introStart, () => setFirstDayRevealPhase(FIRST_DAY_REVEAL_INTRO));
     if (hasCycle) {
       schedule(afterIntro, () => setFirstDayRevealPhase(FIRST_DAY_REVEAL_CYCLE_HINT));
-      const hintDuration =
-        hintText.length * FIRST_DAY_CYCLE_HINT_CHAR_MS +
-        FIRST_DAY_CYCLE_HINT_AFTER_TYPE_MS;
+      const hintDuration = FIRST_DAY_CYCLE_HINT_FADE_MS + FIRST_DAY_CYCLE_HINT_HOLD_MS;
       const cardStart = afterIntro + hintDuration;
       schedule(cardStart, () => {
         setFirstDayRevealPhase(FIRST_DAY_REVEAL_CYCLE_CARD);
@@ -967,25 +958,6 @@ export default function OnboardingFlowContent({
       timers.forEach(clearTimeout);
     };
   }, [step]);
-
-  useEffect(() => {
-    if (firstDayRevealPhase !== FIRST_DAY_REVEAL_CYCLE_HINT) return;
-    const hintText = firstDayCycleHintTextRef.current;
-    if (reduceMotionRef.current) {
-      setFirstDayCycleHintChars(hintText.length);
-      return;
-    }
-    setFirstDayCycleHintChars(0);
-    let i = 0;
-    const interval = window.setInterval(() => {
-      i += 1;
-      setFirstDayCycleHintChars(i);
-      if (i >= hintText.length) {
-        window.clearInterval(interval);
-      }
-    }, FIRST_DAY_CYCLE_HINT_CHAR_MS);
-    return () => window.clearInterval(interval);
-  }, [firstDayRevealPhase]);
 
   useEffect(() => {
     if (step !== CYCLE_OPT_IN_SLIDE_INDEX || cycleStage !== "intro") return;
@@ -2191,14 +2163,8 @@ export default function OnboardingFlowContent({
 
                       {cyclePreviewProfile &&
                       firstDayRevealPhase >= FIRST_DAY_REVEAL_CYCLE_HINT ? (
-                        <p className="mt-8 max-w-md text-center text-sm leading-relaxed text-[var(--st-muted-2)]">
-                          {firstDayCycleHintText.slice(0, firstDayCycleHintChars)}
-                          {firstDayCycleHintChars < firstDayCycleHintText.length ? (
-                            <span
-                              className="ml-px inline-block w-0.5 animate-pulse bg-[var(--st-blue)] align-middle"
-                              aria-hidden
-                            />
-                          ) : null}
+                        <p className="ob-first-day-reveal-in mt-8 max-w-md px-2 text-center text-sm leading-relaxed text-balance text-[var(--st-muted-2)]">
+                          {firstDayCycleHintText}
                         </p>
                       ) : null}
 
