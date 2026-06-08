@@ -128,6 +128,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastDeleteFail: "Account verwijderen mislukt. Probeer het opnieuw of mail info@structuro.eu.",
       toastExportDone: "Export gedownload",
       notificationsUnsupported: "Meldingen worden niet ondersteund op dit apparaat.",
+      notificationsNeedsHomescreenHint:
+        "Op iPhone werken meldingen pas als Structuro op je beginscherm staat, zoals in onboarding uitgelegd.",
+      notificationsHomescreenLink: "Bekijk hier hoe je dat doet",
+      notificationsNeedsHomescreenToast:
+        "Voeg Structuro eerst toe aan je beginscherm. Open daarna de app via het icoon op je startscherm en zet meldingen daar aan.",
       notificationsNeedLogin: "Log in om meldingen te koppelen.",
       notificationsEnabled: "Meldingen staan aan.",
       notificationsDenied:
@@ -403,22 +408,35 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Sluit de betaalpagina en log in zodra je bank de betaling heeft bevestigd. Je hoeft niet opnieuw te betalen.",
       resuming: "Je account wordt klaargezet…",
       installTitle: "Zet Structuro op je homescreen",
+      installKicker: "Nog één korte stap",
+      installHeadingLine1: "Zet Structuro op je",
+      installHeadingLine2: "beginscherm.",
       installBody:
         "Dan open je het elke dag met één tik, zonder je tab kwijt te raken.",
       installTabIos: "iPhone",
       installTabAndroid: "Android",
-      installIos1: "Open structuro.ai in Safari (niet in Chrome).",
-      installIos2: "Tik op de Deel-knop onderin (vierkant met pijl omhoog).",
-      installIos3: "Kies Zet op beginscherm, tik op Voeg toe.",
+      installIos1:
+        "Open <b>structuro.ai</b> in Safari (niet in Chrome).",
+      installIos2:
+        "Tik op de <b>Deel</b>-knop onderin (vierkant met pijl omhoog).",
+      installIos3:
+        "Kies <b>Zet op beginscherm</b> en tik op <b>Voeg toe</b>.",
       installIosSafariNote:
         "Zie je Deel niet? Open de site opnieuw in Safari via je betaalbevestiging.",
-      installAndroid1: "Open structuro.ai in Chrome.",
-      installAndroid2: "Tik op het menu rechtsboven (drie puntjes).",
-      installAndroid3: "Kies App installeren of Toevoegen aan startscherm.",
+      installAndroid1: "Open <b>structuro.ai</b> in Chrome.",
+      installAndroid2:
+        "Tik op het <b>menu</b> rechtsboven (de drie puntjes).",
+      installAndroid3:
+        "Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>.",
+      installAndroidHint:
+        "Staat de optie er niet? Ververs de pagina en probeer het menu opnieuw.",
       installAndroidNativeCta: "Installeer Structuro",
       installAndroidNativeHint: "Één tik, geïnstalleerd.",
       installAndroidFallbackNote: "Werkt de knop niet? Volg deze stappen:",
-      installContinueCta: "Ga verder naar onboarding →",
+      installContinueCta: "Ga verder naar onboarding",
+      installContinueConsent: "Terug naar privacy-instellingen",
+      installContinueSettings: "Terug naar instellingen",
+      installSkip: "Later doen",
       installBack: "Terug",
     },
     subscriptionPage: {
@@ -587,6 +605,11 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toastExportDone: "Export downloaded",
       notificationsUnsupported:
         "Notifications are not supported on this device.",
+      notificationsNeedsHomescreenHint:
+        "On iPhone, notifications only work after you add Structuro to your home screen, as explained during onboarding.",
+      notificationsHomescreenLink: "See how to do that here",
+      notificationsNeedsHomescreenToast:
+        "Add Structuro to your home screen first. Then open the app from your home screen icon and enable notifications there.",
       notificationsNeedLogin: "Sign in to connect notifications.",
       notificationsEnabled: "Notifications are enabled.",
       notificationsDenied:
@@ -860,22 +883,34 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Close the payment page and sign in once your bank confirms. You do not need to pay again.",
       resuming: "Setting up your account…",
       installTitle: "Add Structuro to your home screen",
+      installKicker: "One more quick step",
+      installHeadingLine1: "Add Structuro to your",
+      installHeadingLine2: "home screen.",
       installBody:
         "Open it every day with one tap, without losing your browser tab.",
       installTabIos: "iPhone",
       installTabAndroid: "Android",
-      installIos1: "Open structuro.ai in Safari (not Chrome).",
-      installIos2: "Tap the Share button at the bottom (square with arrow up).",
-      installIos3: "Choose Add to Home Screen, then tap Add.",
+      installIos1: "Open <b>structuro.ai</b> in Safari (not Chrome).",
+      installIos2:
+        "Tap the <b>Share</b> button at the bottom (square with arrow up).",
+      installIos3:
+        "Choose <b>Add to Home Screen</b> and tap <b>Add</b>.",
       installIosSafariNote:
         "Don't see Share? Open the site again in Safari from your payment confirmation.",
-      installAndroid1: "Open structuro.ai in Chrome.",
-      installAndroid2: "Tap the menu in the top right (three dots).",
-      installAndroid3: "Choose Install app or Add to Home screen.",
+      installAndroid1: "Open <b>structuro.ai</b> in Chrome.",
+      installAndroid2:
+        "Tap the <b>menu</b> in the top right (the three dots).",
+      installAndroid3:
+        "Choose <b>Install app</b> or <b>Add to Home screen</b>.",
+      installAndroidHint:
+        "Don't see the option? Refresh the page and try the menu again.",
       installAndroidNativeCta: "Install Structuro",
       installAndroidNativeHint: "One tap to install.",
       installAndroidFallbackNote: "Button not working? Follow these steps:",
-      installContinueCta: "Continue to onboarding →",
+      installContinueCta: "Continue to onboarding",
+      installContinueConsent: "Back to privacy settings",
+      installContinueSettings: "Back to settings",
+      installSkip: "Do it later",
       installBack: "Back",
     },
     subscriptionPage: {

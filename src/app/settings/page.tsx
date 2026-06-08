@@ -24,6 +24,8 @@ import {
   registerPushSubscription,
   unregisterPushSubscription,
 } from '@/utils/pushNotifications';
+import { detectPushSupport } from '@/lib/pushNotificationSupport';
+import { NotificationsHint } from '@/components/settings/NotificationsHint';
 import { useConsent } from '@/lib/posthog/ConsentContext';
 import CycleSettingsSection from '@/components/cycle/CycleSettingsSection';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
@@ -56,6 +58,8 @@ export default function SettingsPage() {
   const [nameSaveBusy, setNameSaveBusy] = useState(false);
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission | 'unsupported'>('unsupported');
+  const [needsHomescreen, setNeedsHomescreen] = useState(false);
+  const [pushChecked, setPushChecked] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
@@ -126,16 +130,10 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const supported =
-      'Notification' in window &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window;
-    if (!supported) {
-      setNotificationPermission('unsupported');
-      return;
-    }
-    setNotificationPermission(Notification.permission);
+    const state = detectPushSupport();
+    setNotificationPermission(state.permission);
+    setNeedsHomescreen(state.needsHomescreen);
+    setPushChecked(true);
   }, []);
 
   const handleReplayIntro = async () => {
@@ -284,8 +282,12 @@ export default function SettingsPage() {
 
   const handleEnableNotifications = async () => {
     if (notificationBusy) return;
+    if (needsHomescreen) {
+      toast.error(t('settings.notificationsNeedsHomescreenToast'));
+      return;
+    }
     if (notificationPermission === 'unsupported') {
-      toast(t('settings.notificationsUnsupported'));
+      toast.error(t('settings.notificationsUnsupported'));
       return;
     }
     setNotificationBusy(true);
@@ -438,11 +440,18 @@ export default function SettingsPage() {
   const isLocalOnly = hasStructuroLocalModeCookieOnClient() && !hasSupabaseSession;
   const notificationsOn = notificationPermission === 'granted';
   const notificationsToggleDisabled =
-    notificationBusy ||
-    notificationPermission === 'unsupported' ||
-    notificationPermission === 'denied';
+    notificationBusy || notificationPermission === 'denied';
 
   const handleNotificationToggle = () => {
+    if (notificationBusy) return;
+    if (needsHomescreen) {
+      toast.error(t('settings.notificationsNeedsHomescreenToast'));
+      return;
+    }
+    if (notificationPermission === 'denied') {
+      toast.error(t('settings.notificationsDenied'));
+      return;
+    }
     if (notificationsOn) void handleDisableNotifications();
     else void handleEnableNotifications();
   };
@@ -547,11 +556,16 @@ export default function SettingsPage() {
             <SettingsRow
               label={t('settings.notificationsTitle')}
               hint={
-                notificationPermission === 'denied'
-                  ? t('settings.notificationsDenied')
-                  : notificationPermission === 'unsupported'
-                    ? t('settings.notificationsUnsupported')
-                    : t('settings.notificationsHint')
+                pushChecked ? (
+                  <NotificationsHint
+                    permission={notificationPermission}
+                    needsHomescreen={needsHomescreen}
+                    installLinkHref="/welkom/install?from=settings"
+                    defaultHint="settings"
+                  />
+                ) : (
+                  ' '
+                )
               }
             >
               <SettingsToggle

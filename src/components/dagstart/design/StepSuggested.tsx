@@ -245,7 +245,7 @@ export default function StepSuggested({
                   flex: 1,
                   fontSize: 14.5,
                   color: active ? "var(--st-ink)" : "var(--st-muted)",
-                  textDecoration: active ? "none" : "line-through",
+                  textDecorationLine: active ? "none" : "line-through",
                   textDecorationColor: "rgba(138,146,166,0.4)",
                   fontWeight: active ? 500 : 400,
                   textAlign: "left",

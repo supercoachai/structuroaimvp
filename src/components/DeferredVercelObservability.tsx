@@ -1,37 +1,37 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { useEffect, useState, type ReactElement } from "react";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
 /**
- * Laadt Vercel Analytics + Speed Insights pas na hydrate (kleinere eerste JS-parse).
- * Meetgedrag hetzelfde; alleen timing van bundel-parse verschuift naar idle-ish window.
+ * Laadt Vercel Analytics + Speed Insights pas na mount (kleinere eerste JS-parse).
+ * Geen next/dynamic: voorkomt webpack moduleId-mismatches bij HMR in dev.
  */
-const Analytics = dynamic(
-  () =>
-    import("@vercel/analytics/next").then((m) => m.Analytics),
-  { ssr: false }
-);
-
-const SpeedInsights = dynamic(
-  () =>
-    import("@vercel/speed-insights/next").then((m) => m.SpeedInsights),
-  { ssr: false }
-);
-
 export function DeferredVercelObservability() {
-  return (
-    <>
-      <Analytics
-        beforeSend={(event) =>
-          shouldSendProductAnalytics() ? event : null
-        }
-      />
-      <SpeedInsights
-        beforeSend={(event) =>
-          shouldSendProductAnalytics() ? event : null
-        }
-      />
-    </>
-  );
+  const [widgets, setWidgets] = useState<ReactElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      import("@vercel/analytics/next"),
+      import("@vercel/speed-insights/next"),
+    ]).then(([analyticsMod, speedMod]) => {
+      if (cancelled) return;
+      const beforeSend = <T extends { url?: string }>(event: T | null) =>
+        shouldSendProductAnalytics() ? event : null;
+      const { Analytics } = analyticsMod;
+      const { SpeedInsights } = speedMod;
+      setWidgets(
+        <>
+          <Analytics beforeSend={beforeSend} />
+          <SpeedInsights beforeSend={beforeSend} />
+        </>
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return widgets;
 }

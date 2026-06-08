@@ -323,6 +323,15 @@ export async function updateSession(request: NextRequest) {
 
   if (!hasSession) {
     if (
+      process.env.NODE_ENV === "development" &&
+      pathname.startsWith("/welkom/install") &&
+      (request.nextUrl.searchParams.get("previewInstall") === "1" ||
+        request.nextUrl.searchParams.get("from") === "consent" ||
+        request.nextUrl.searchParams.get("from") === "settings")
+    ) {
+      return supabaseResponse;
+    }
+    if (
       isLoginPath ||
       isAuthPath ||
       isAnonymousPublicPage(pathname) ||

@@ -61,7 +61,9 @@ function ConditionalAppShell({ children }: { children: ReactNode }) {
     return <Suspense fallback={null}>{children}</Suspense>;
   }
   const skipTaskProvider =
-    pathname === "/abonnement" || pathname?.startsWith("/abonnement/");
+    pathname === "/abonnement" ||
+    pathname?.startsWith("/abonnement/") ||
+    pathname?.startsWith("/welkom/install");
   const content = shouldUseAppShell(pathname) ? (
     <AppLayout>{children}</AppLayout>
   ) : (

@@ -1,0 +1,302 @@
+/* Zet-op-beginscherm: design uit structuro-homescreen.html, scoped onder .homescreen-install */
+
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap");
+
+.homescreen-install {
+  --hi-navy: #0a1f5c;
+  --hi-cobalt: #2c5bff;
+  --hi-ink: #0a1f5c;
+  --hi-muted: #5b6b9a;
+  --hi-bg: #eef1fb;
+  --hi-surface: #ffffff;
+  --hi-line: #e3e8f7;
+  --hi-cobalt-soft: #eaf0ff;
+
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--hi-bg);
+  color: var(--hi-ink);
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center;
+}
+
+.homescreen-install *,
+.homescreen-install *::before,
+.homescreen-install *::after {
+  box-sizing: border-box;
+}
+
+.homescreen-install .screen {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px 24px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.homescreen-install .topbar {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: 8px;
+}
+
+.homescreen-install .back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hi-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.homescreen-install .back:hover {
+  background: var(--hi-cobalt-soft);
+  color: var(--hi-navy);
+}
+
+.homescreen-install .head {
+  margin-bottom: 22px;
+}
+
+.homescreen-install .kicker {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hi-cobalt);
+  margin: 0 0 12px;
+}
+
+.homescreen-install h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0 0 12px;
+  text-wrap: balance;
+  color: var(--hi-ink);
+}
+
+.homescreen-install .sub {
+  font-size: 17px;
+  color: var(--hi-muted);
+  font-weight: 500;
+  text-wrap: pretty;
+  max-width: 34ch;
+  margin: 0;
+}
+
+.homescreen-install .card {
+  background: var(--hi-surface);
+  border: 1px solid var(--hi-line);
+  border-radius: 24px;
+  padding: 8px;
+  box-shadow: 0 18px 40px -28px rgba(10, 31, 92, 0.35);
+}
+
+.homescreen-install .seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--hi-bg);
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 4px;
+}
+
+.homescreen-install .seg button {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--hi-muted);
+  cursor: pointer;
+  min-height: 48px;
+  border-radius: 12px;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.homescreen-install .seg button.on {
+  background: var(--hi-surface);
+  color: var(--hi-navy);
+  box-shadow: 0 2px 8px -2px rgba(10, 31, 92, 0.18);
+}
+
+.homescreen-install .steps {
+  padding: 18px 16px 8px;
+}
+
+.homescreen-install .step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 14px 0;
+}
+
+.homescreen-install .step + .step {
+  border-top: 1px solid var(--hi-line);
+}
+
+.homescreen-install .num {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--hi-cobalt-soft);
+  color: var(--hi-cobalt);
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.homescreen-install .step p {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding-top: 3px;
+  text-wrap: pretty;
+  margin: 0;
+}
+
+.homescreen-install .step p b {
+  color: var(--hi-ink);
+  font-weight: 700;
+}
+
+.homescreen-install .hint {
+  margin: 4px 8px 4px;
+  padding: 14px 16px;
+  background: var(--hi-bg);
+  border-radius: 14px;
+  font-size: 14px;
+  color: var(--hi-muted);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.homescreen-install .native-install {
+  padding: 8px 12px 4px;
+}
+
+.homescreen-install .native-install .btn-native {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: var(--hi-cobalt);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -8px rgba(44, 91, 255, 0.5);
+}
+
+.homescreen-install .native-install .btn-native:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.homescreen-install .actions {
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.homescreen-install .btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 60px;
+  border: none;
+  border-radius: 18px;
+  background: var(--hi-cobalt);
+  color: #fff;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 26px -8px rgba(44, 91, 255, 0.55);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.homescreen-install .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px -8px rgba(44, 91, 255, 0.6);
+}
+
+.homescreen-install .btn-primary:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+.homescreen-install .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.homescreen-install .btn-primary svg {
+  transition: transform 0.15s ease;
+}
+
+.homescreen-install .btn-primary:hover:not(:disabled) svg {
+  transform: translateX(3px);
+}
+
+.homescreen-install .skip {
+  text-align: center;
+  margin-top: 14px;
+}
+
+.homescreen-install .skip button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hi-muted);
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+.homescreen-install .skip button:hover {
+  color: var(--hi-ink);
+  text-decoration: underline;
+}
+
+.homescreen-install .loading {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  color: var(--hi-muted);
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homescreen-install * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import WelkomInstallHint from "@/components/welkom/WelkomInstallHint";
 import { useI18n } from "@/lib/i18n";
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
+import "./homescreen-install.css";
 
 function WelkomInstallPageInner() {
   const { t } = useI18n();
@@ -13,54 +14,85 @@ function WelkomInstallPageInner() {
   const previewInstall =
     process.env.NODE_ENV === "development" &&
     searchParams?.get("previewInstall") === "1";
-  const [ready, setReady] = useState(previewInstall);
+  const fromParam = searchParams?.get("from");
+  const returnPath =
+    fromParam === "consent"
+      ? "/consent"
+      : fromParam === "settings"
+        ? "/settings"
+        : null;
+  const [ready, setReady] = useState(false);
+  const explicitReturn = returnPath !== null;
 
   useEffect(() => {
-    if (previewInstall) return;
+    if (previewInstall || explicitReturn) {
+      setReady(true);
+      return;
+    }
     if (!shouldShowPwaInstallHint()) {
       router.replace("/onboarding");
       return;
     }
     setReady(true);
-  }, [previewInstall, router]);
+  }, [previewInstall, explicitReturn, router]);
 
-  const backHref = previewInstall ? "/welkom?previewInstall=1" : "/welkom";
+  const backHref =
+    returnPath ?? (previewInstall ? "/welkom?previewInstall=1" : "/welkom");
 
   if (!ready) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
-        …
+      <div className="homescreen-install">
+        <p className="loading">…</p>
       </div>
     );
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[var(--st-bg)] px-4 py-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <button
-        type="button"
-        onClick={() => router.push(backHref)}
-        className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 rounded-lg px-2 py-1 text-lg text-slate-500 transition hover:text-slate-800 sm:left-4"
-        aria-label={t("welkomPage.installBack")}
-      >
-        ←
-      </button>
+    <div className="homescreen-install">
+      <main className="screen">
+        <div className="topbar">
+          <button
+            type="button"
+            className="back"
+            onClick={() => router.push(backHref)}
+            aria-label={t("welkomPage.installBack")}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M15 5l-7 7 7 7"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute -top-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[var(--st-blue)]/10 blur-3xl" />
-        <div className="absolute bottom-8 right-[-4rem] h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
-      </div>
+        <div className="head">
+          <p className="kicker">{t("welkomPage.installKicker")}</p>
+          <h1>
+            {t("welkomPage.installHeadingLine1")}
+            <br />
+            {t("welkomPage.installHeadingLine2")}
+          </h1>
+          <p className="sub">{t("welkomPage.installBody")}</p>
+        </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col items-center">
         <WelkomInstallHint
           visible
-          onContinue={() => router.push("/onboarding")}
-          continueLabel={t("welkomPage.installContinueCta")}
+          onContinue={() => router.push(returnPath ?? "/onboarding")}
+          continueLabel={
+            fromParam === "consent"
+              ? t("welkomPage.installContinueConsent")
+              : fromParam === "settings"
+                ? t("welkomPage.installContinueSettings")
+                : t("welkomPage.installContinueCta")
+          }
+          skipLabel={t("welkomPage.installSkip")}
           busyLabel={t("registrerenPage.submitBusy")}
         />
-      </div>
+      </main>
     </div>
   );
 }
@@ -69,8 +101,8 @@ export default function WelkomInstallPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
-          …
+        <div className="homescreen-install">
+          <p className="loading">…</p>
         </div>
       }
     >

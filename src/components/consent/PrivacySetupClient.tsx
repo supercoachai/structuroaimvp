@@ -7,11 +7,13 @@ import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 import { markPrivacySetupCompleted } from "@/lib/privacySetup";
+import { detectPushSupport } from "@/lib/pushNotificationSupport";
 import {
   registerPushSubscription,
   unregisterPushSubscription,
 } from "@/utils/pushNotifications";
 import { toast } from "@/components/Toast";
+import { NotificationsHint } from "@/components/settings/NotificationsHint";
 import {
   SettingsRow,
   SettingsSection,
@@ -22,22 +24,18 @@ export default function PrivacySetupClient() {
   const { t } = useI18n();
   const router = useRouter();
   const { consent, grant, deny } = useConsent();
+  const [pushChecked, setPushChecked] = useState(false);
   const [notificationPermission, setNotificationPermission] =
-    useState<NotificationPermission | "unsupported">("unsupported");
+    useState<NotificationPermission | "unsupported">("default");
+  const [needsHomescreen, setNeedsHomescreen] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   useLayoutEffect(() => {
-    if (typeof window === "undefined") return;
-    const supported =
-      "Notification" in window &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window;
-    if (!supported) {
-      setNotificationPermission("unsupported");
-      return;
-    }
-    setNotificationPermission(Notification.permission);
+    const state = detectPushSupport();
+    setNotificationPermission(state.permission);
+    setNeedsHomescreen(state.needsHomescreen);
+    setPushChecked(true);
   }, []);
 
   const notificationsOn = notificationPermission === "granted";
@@ -45,6 +43,10 @@ export default function PrivacySetupClient() {
 
   const handleEnableNotifications = async () => {
     if (notificationBusy) return;
+    if (needsHomescreen) {
+      toast.error(t("settings.notificationsNeedsHomescreenToast"));
+      return;
+    }
     if (notificationPermission === "unsupported") {
       toast.error(t("settings.notificationsUnsupported"));
       return;
@@ -102,6 +104,10 @@ export default function PrivacySetupClient() {
 
   const handleNotificationToggle = () => {
     if (notificationBusy) return;
+    if (needsHomescreen) {
+      toast.error(t("settings.notificationsNeedsHomescreenToast"));
+      return;
+    }
     if (notificationPermission === "denied") {
       toast.error(t("settings.notificationsDenied"));
       return;
@@ -152,11 +158,14 @@ export default function PrivacySetupClient() {
           <SettingsRow
             label={t("settings.notificationsTitle")}
             hint={
-              notificationPermission === "denied"
-                ? t("settings.notificationsDenied")
-                : notificationPermission === "unsupported"
-                  ? t("settings.notificationsUnsupported")
-                  : t("consentSetup.notificationsHint")
+              pushChecked ? (
+                <NotificationsHint
+                  permission={notificationPermission}
+                  needsHomescreen={needsHomescreen}
+                />
+              ) : (
+                " "
+              )
             }
           >
             <SettingsToggle

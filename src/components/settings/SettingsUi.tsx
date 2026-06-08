@@ -28,7 +28,7 @@ export function SettingsRow({
   stack,
 }: {
   label: string;
-  hint?: string;
+  hint?: ReactNode;
   children: ReactNode;
   stack?: boolean;
 }) {

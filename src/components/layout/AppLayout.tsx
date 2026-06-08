@@ -13,10 +13,16 @@ import DesktopSidebarNav from '../navigation/DesktopSidebarNav';
 import QuickTaskInput from '@/components/QuickTaskInput';
 import dynamic from 'next/dynamic';
 
-const DagstartOverlay = dynamic(() => import('@/components/DagstartOverlay'), {
-  ssr: false,
-  loading: () => <div className="min-h-0 flex-1 bg-[#F1F3F8]" aria-hidden />,
-});
+const DagstartOverlay = dynamic(
+  () =>
+    import('@/components/DagstartOverlay').then((mod) => ({
+      default: mod.default,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-0 flex-1 bg-[#F1F3F8]" aria-hidden />,
+  }
+);
 import { performClientLogout } from '@/lib/logoutClient';
 import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
 import { useSidebar } from '@/contexts/SidebarContext';
