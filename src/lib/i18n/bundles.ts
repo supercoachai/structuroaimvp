@@ -282,6 +282,24 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Dagstart",
       subtitle: "Neem even de tijd om je dag te overzien.",
     },
+    trialBanner: {
+      eventEndingDaysLeft: "Je proefperiode loopt bijna af. Nog {days} dagen gratis.",
+      eventEndingLastDay: "Je proefperiode loopt morgen af.",
+      eventExpired:
+        "Je proefperiode is voorbij. Kies een betaalmethode om Structuro te blijven gebruiken.",
+      eventPayLink: "Betalen",
+      stripeDaysLeft:
+        "Je proefperiode loopt bijna af. Over {days} dagen start je abonnement (€12,99/maand), tenzij je opzegt.",
+      stripeLastDay:
+        "Je proefperiode loopt vandaag af. Morgen start je abonnement (€12,99/maand), tenzij je opzegt.",
+      legacyDaysLeft:
+        "Nog {days} dagen gratis proeftijd. Daarna heb je een abonnement nodig.",
+      legacyLastDay:
+        "Nog 1 dag gratis proeftijd. Daarna heb je een abonnement nodig.",
+      manageLink: "Beheer abonnement",
+      subscribeLink: "Abonneer",
+      dismiss: "Banner verbergen",
+    },
     registrerenPage: {
       title: "Structuro",
       nameLabel: "Naam",
@@ -289,12 +307,18 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emailLabel: "E-mailadres",
       emailPh: "je@email.com",
       passwordPh: "Minimaal 8 tekens",
-      accountHeading: "Start met 3 dagen gratis",
-      accountSubheading:
-        "Maak je account aan. Geen betaling nu, geen creditcard nodig.",
-      accountTrialAfter: "Na je proefperiode €12,99/maand. Opzegbaar wanneer je wilt.",
+      accountHeading: "Start je gratis proefperiode",
+      accountSubheading: "Maak eerst je account aan.",
+      accountTrialAfter:
+        "Na je proefperiode €12,99/maand. Opzegbaar wanneer je wilt. Zeg op voordat de proefperiode afloopt als je niet door wilt, dan betaal je niks.",
       trialBadge: "{days} dagen gratis",
-      planHeading: "Één beslissing. Dan begint de rust.",
+      planHeading: "Activeer je proefperiode",
+      planTrialHeadline: "{days} dagen gratis",
+      planTrialSub: "Daarna €12,99/maand. Je betaalt nu niets.",
+      planTrialFootnote:
+        "We slaan je betaalmethode vast. Zeg op vóór je proefperiode afloopt op als je niet door wilt, dan betaal je niks.",
+      planCtaTrial: "Betaalmethode toevoegen",
+      planWalletLabel: "Ook met",
       planToggleAria: "Kies maandelijks of jaarlijks abonnement",
       continueBtn: "Start gratis proefperiode",
       backLink: "Terug",
@@ -410,6 +434,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyEquiv: "effectief €9,92 per maand",
       yearlyBadge: "Beste deal",
       cta: "Kies dit abonnement",
+      walletPayTitle: "Betaal snel met",
+      walletPayHint: "Je kiest je betaalmethode op de veilige Stripe-pagina.",
       guarantee:
         "Werkt het niet? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug.",
       notConfigured: "Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw.",
@@ -715,6 +741,24 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Day start",
       subtitle: "Take a moment to look at your day.",
     },
+    trialBanner: {
+      eventEndingDaysLeft: "Your trial is almost over. {days} days of free access left.",
+      eventEndingLastDay: "Your trial ends tomorrow.",
+      eventExpired:
+        "Your trial has ended. Add a payment method to keep using Structuro.",
+      eventPayLink: "Pay now",
+      stripeDaysLeft:
+        "Your trial is almost over. In {days} days your subscription starts (€12.99/month) unless you cancel.",
+      stripeLastDay:
+        "Your trial ends today. Your subscription starts tomorrow (€12.99/month) unless you cancel.",
+      legacyDaysLeft:
+        "{days} days left on your free trial. You will need a subscription after that.",
+      legacyLastDay:
+        "1 day left on your free trial. You will need a subscription after that.",
+      manageLink: "Manage subscription",
+      subscribeLink: "Subscribe",
+      dismiss: "Hide banner",
+    },
     registrerenPage: {
       title: "Structuro",
       nameLabel: "Name",
@@ -722,12 +766,18 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       emailLabel: "Email address",
       emailPh: "you@email.com",
       passwordPh: "At least 8 characters",
-      accountHeading: "Start with 3 days free",
-      accountSubheading:
-        "Create your account. No payment now, no credit card required.",
-      accountTrialAfter: "After your trial, €12.99/month. Cancel anytime.",
+      accountHeading: "Start your free trial",
+      accountSubheading: "Create your account first.",
+      accountTrialAfter:
+        "After your trial, €12.99/month. Cancel anytime. Cancel before your trial ends if you do not want to continue, and you pay nothing.",
       trialBadge: "{days} days free",
-      planHeading: "One decision. Then the calm begins.",
+      planHeading: "Activate your trial",
+      planTrialHeadline: "{days} days free",
+      planTrialSub: "Then €12.99/month. You pay nothing today.",
+      planTrialFootnote:
+        "We save your payment method. Cancel before your trial ends if you do not want to continue, and you pay nothing.",
+      planCtaTrial: "Add payment method",
+      planWalletLabel: "Also with",
       planToggleAria: "Choose monthly or yearly subscription",
       continueBtn: "Start free trial",
       backLink: "Back",
@@ -841,6 +891,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       yearlyEquiv: "effectively €9.92 per month",
       yearlyBadge: "Best deal",
       cta: "Choose this plan",
+      walletPayTitle: "Pay quickly with",
+      walletPayHint: "You choose your payment method on the secure Stripe page.",
       guarantee:
         "Not working? Email info@structuro.eu with subject 'Refund'. You hear back within one business day.",
       notConfigured: "Payments are not configured yet. Please try again later.",

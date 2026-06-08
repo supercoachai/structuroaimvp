@@ -22,6 +22,10 @@ import {
   isRegistrationCheckoutApiRoute,
   isRegistrationCheckoutEnabled,
 } from "../stripe/registrationLaunch";
+import {
+  ADHD_CAFE_SIGNUP_CAMPAIGN,
+  ADHD_CAFE_SIGNUP_SOURCE,
+} from "../stripe/trialConfig";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -89,7 +93,9 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/registreren" ||
     pathname.startsWith("/registreren/") ||
     pathname === "/welkom" ||
-    pathname.startsWith("/welkom/")
+    pathname.startsWith("/welkom/") ||
+    pathname === "/adhd-cafe" ||
+    pathname.startsWith("/adhd-cafe/")
   );
 }
 
@@ -119,8 +125,23 @@ function isSupabaseConfigured(): boolean {
   );
 }
 
+function redirectAdhdCafeToRegistreren(request: NextRequest): NextResponse | null {
+  const pathname = request.nextUrl.pathname;
+  if (pathname !== "/adhd-cafe" && !pathname.startsWith("/adhd-cafe/")) {
+    return null;
+  }
+  const url = request.nextUrl.clone();
+  url.pathname = "/registreren";
+  url.searchParams.set("source", ADHD_CAFE_SIGNUP_SOURCE);
+  url.searchParams.set("utm_campaign", ADHD_CAFE_SIGNUP_CAMPAIGN);
+  return NextResponse.redirect(url, 302);
+}
+
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  const adhdCafeRedirect = redirectAdhdCafeToRegistreren(request);
+  if (adhdCafeRedirect) return adhdCafeRedirect;
 
   /**
    * PKCE (magic link / wachtwoordherstel): Supabase hangt `?code=` aan de redirect-URL.
@@ -236,12 +257,13 @@ export async function updateSession(request: NextRequest) {
   let subscriptionStatus: string | null | undefined;
   let subscriptionPeriodEnd: string | null | undefined;
   let profileCreatedAt: string | null | undefined;
+  let profileSignupSource: string | null | undefined;
 
   if (user) {
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at"
+        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -265,6 +287,8 @@ export async function updateSession(request: NextRequest) {
             : null;
       profileCreatedAt =
         prof.created_at != null ? String(prof.created_at) : null;
+      profileSignupSource =
+        typeof prof.signup_source === "string" ? prof.signup_source : null;
     } else {
       onboardingCompleted = false;
     }
@@ -286,6 +310,7 @@ export async function updateSession(request: NextRequest) {
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
         created_at: profileCreatedAt,
+        signup_source: profileSignupSource,
       });
       return NextResponse.redirect(url, 302);
     }
@@ -334,6 +359,7 @@ export async function updateSession(request: NextRequest) {
       subscription_status: subscriptionStatus,
       subscription_current_period_end: subscriptionPeriodEnd,
       created_at: profileCreatedAt,
+      signup_source: profileSignupSource,
     });
 
     if (pathname.startsWith("/onboarding") && payBeforeOnboarding) {
@@ -390,6 +416,7 @@ export async function updateSession(request: NextRequest) {
         subscription_current_period_end: subscriptionPeriodEnd,
         created_at: profileCreatedAt,
         last_dagstart_date: profileLastDagstartDate,
+        signup_source: profileSignupSource,
       });
       if (!ok) {
         const url = request.nextUrl.clone();
@@ -426,6 +453,7 @@ function applyDagstartDbGate(
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/onboarding") &&
     !pathname.startsWith("/consent") &&
+    !pathname.startsWith("/abonnement") &&
     !pathname.startsWith("/privacy") &&
     !pathname.startsWith("/terms") &&
     !pathname.startsWith("/api");

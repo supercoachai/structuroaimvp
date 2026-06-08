@@ -1,0 +1,22 @@
+---
+description: Dagstart UI — compacte kaarten, geen overbodige witruimte
+globs: src/components/dagstart/**/*.tsx
+alwaysApply: false
+---
+
+# Dagstart: compacte kaarten
+
+Kaarten in dagstart (swipe, suggesties, lege staten) moeten **inhoudsgestuurd** zijn, niet opgerekt.
+
+## Regels
+
+- Geen vaste `height` op kaart-containers tenzij scroll/stack dat vereist
+- Geen `flex: 1` op titels of body om lege ruimte te vullen
+- Padding kaarten: **14–16px**, niet 22px+
+- Titels swipe-kaart: **~18px**, knoppen **~10px** verticale padding
+- Deck/stack: bovenste kaart in document flow (`position: relative`), schaduwlagen `absolute` erachter
+- Onder-padding ≈ boven-padding; geen grote lege zone onder knoppen
+
+## Referentie
+
+Swipe-styling: `.ds-swipe-*` in `globals.css`, `StepSwipe.tsx`.

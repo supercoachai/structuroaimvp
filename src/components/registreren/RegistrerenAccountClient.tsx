@@ -7,16 +7,20 @@ import { signUpWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
-  captureUtmOnFirstVisit,
+  applySignupAttributionFromSearchParams,
   getSignupAttributionSource,
   getStoredSignupCampaign,
+  getStoredSignupSource,
   persistSignupAttributionToProfile,
-  persistSignupSourceFromUrl,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolvePostSignupPath } from "@/lib/registrationGate";
-import { FREE_TRIAL_DAYS } from "@/lib/freeTrialAccess";
+import {
+  DEFAULT_STRIPE_TRIAL_DAYS,
+  isEventSignupSource,
+  resolveStripeTrialDaysForSignupSource,
+} from "@/lib/stripe/trialConfig";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
 import { mapSignupError } from "./mapSignupError";
@@ -33,18 +37,22 @@ function RegistrerenAccountInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [trialDays, setTrialDays] = useState(DEFAULT_STRIPE_TRIAL_DAYS);
+  const [eventSignupFlow, setEventSignupFlow] = useState(false);
   const mounted = useClientMounted();
+
+  useEffect(() => {
+    applySignupAttributionFromSearchParams(searchParams);
+    const source = getStoredSignupSource();
+    setTrialDays(resolveStripeTrialDaysForSignupSource(source));
+    setEventSignupFlow(isEventSignupSource(source));
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isRegistrationCheckoutEnabledClient()) {
       router.replace("/login");
     }
   }, [router]);
-
-  useEffect(() => {
-    captureUtmOnFirstVisit();
-    persistSignupSourceFromUrl(searchParams?.get("source") ?? undefined);
-  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +66,7 @@ function RegistrerenAccountInner() {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("subscription_status, subscription_current_period_end, created_at")
+          .select("signup_source, subscription_status, subscription_current_period_end, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -72,9 +80,11 @@ function RegistrerenAccountInner() {
                   subscription_current_period_end:
                     profile.subscription_current_period_end as string | null,
                   created_at: profile.created_at as string | null,
+                  signup_source: profile.signup_source as string | null,
                 }
               : null,
-            user.email
+            user.email,
+            { clientSide: true }
           )
         );
       } catch {
@@ -114,6 +124,8 @@ function RegistrerenAccountInner() {
         email: emailTrimmed,
         password,
         fullName: nameTrimmed,
+        signupSource: getStoredSignupSource(),
+        signupCampaign: getStoredSignupCampaign(),
       });
 
       await persistSignupAttributionToProfile(user.id);
@@ -125,7 +137,7 @@ function RegistrerenAccountInner() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("subscription_status, subscription_current_period_end, created_at")
+        .select("signup_source, subscription_status, subscription_current_period_end, created_at")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -139,9 +151,11 @@ function RegistrerenAccountInner() {
                 subscription_current_period_end:
                   profile.subscription_current_period_end as string | null,
                 created_at: profile.created_at as string | null,
+                signup_source: profile.signup_source as string | null,
               }
             : null,
-          emailTrimmed
+          emailTrimmed,
+          { clientSide: true }
         )
       );
     } catch (err: unknown) {
@@ -164,7 +178,7 @@ function RegistrerenAccountInner() {
       <div className="mx-auto mt-8 mb-6 max-w-md text-center">
         <p className="mb-3">
           <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
-            {t("registrerenPage.trialBadge", { days: String(FREE_TRIAL_DAYS) })}
+            {t("registrerenPage.trialBadge", { days: String(trialDays) })}
           </span>
         </p>
         <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
@@ -237,12 +251,14 @@ function RegistrerenAccountInner() {
         </p>
       </div>
 
-      <p className="text-center text-sm text-slate-500">
-        {t("registrerenPage.hasAccount")}{" "}
-        <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-800">
-          {t("registrerenPage.loginLink")}
-        </Link>
-      </p>
+      {!eventSignupFlow ? (
+        <p className="text-center text-sm text-slate-500">
+          {t("registrerenPage.hasAccount")}{" "}
+          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-800">
+            {t("registrerenPage.loginLink")}
+          </Link>
+        </p>
+      ) : null}
     </RegistrerenShell>
   );
 }

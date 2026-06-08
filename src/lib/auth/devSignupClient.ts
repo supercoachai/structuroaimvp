@@ -4,6 +4,8 @@ type SignUpParams = {
   email: string;
   password: string;
   fullName: string;
+  signupSource?: string | null;
+  signupCampaign?: string | null;
 };
 
 /** Lokaal: admin-createUser + sign-in (Supabase staat publieke signup uit). */
@@ -16,7 +18,15 @@ export async function signUpWithLocalDevFallback(
       email: params.email,
       password: params.password,
       options: {
-        data: { full_name: params.fullName },
+        data: {
+          full_name: params.fullName,
+          ...(params.signupSource
+            ? { signup_source: params.signupSource }
+            : {}),
+          ...(params.signupCampaign
+            ? { signup_utm_campaign: params.signupCampaign }
+            : {}),
+        },
       },
     });
     if (error) throw error;
@@ -47,6 +57,8 @@ export async function signUpWithLocalDevFallback(
       email: params.email,
       password: params.password,
       full_name: params.fullName,
+      signup_source: params.signupSource ?? undefined,
+      signup_utm_campaign: params.signupCampaign ?? undefined,
     }),
   });
 

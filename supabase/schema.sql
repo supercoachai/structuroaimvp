@@ -193,13 +193,22 @@ CREATE POLICY "Users can update own shutdowns" ON daily_shutdowns
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name)
-  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
+  INSERT INTO public.profiles (
+    id,
+    email,
+    full_name,
+    signup_source,
+    signup_utm_campaign
+  )
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'signup_source'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'signup_utm_campaign'), '')
+  );
   
   -- Maak ook gamification data aan
-  INSERT INTO public.gamification_data (user_id)
-  VALUES (NEW.id);
-  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

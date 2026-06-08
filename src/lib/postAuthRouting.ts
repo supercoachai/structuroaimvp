@@ -17,6 +17,7 @@ type ProfileRow = {
   subscription_status: string | null;
   subscription_current_period_end: string | null;
   created_at?: string | null;
+  signup_source?: string | null;
 };
 
 /**
@@ -44,14 +45,18 @@ export function resolvePostLoginPathFromProfile(
   );
 
   if (!onboardingDone) {
-    const needsPay = requiresPaidSubscriptionBeforeOnboarding({
-      email: options.email ?? null,
-      profileRowReadOk: Boolean(profile),
-      subscription_status: profile?.subscription_status ?? null,
-      subscription_current_period_end:
-        profile?.subscription_current_period_end ?? null,
-      created_at: profile?.created_at ?? null,
-    });
+    const needsPay = requiresPaidSubscriptionBeforeOnboarding(
+      {
+        email: options.email ?? null,
+        profileRowReadOk: Boolean(profile),
+        subscription_status: profile?.subscription_status ?? null,
+        subscription_current_period_end:
+          profile?.subscription_current_period_end ?? null,
+        created_at: profile?.created_at ?? null,
+        signup_source: profile?.signup_source ?? null,
+      },
+      { clientSide: true }
+    );
     if (needsPay) return "/registreren/plan?resume=1";
     return "/onboarding";
   }

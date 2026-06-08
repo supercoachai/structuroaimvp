@@ -3,7 +3,9 @@ import { getAppOrigin } from "@/lib/appUrl";
 import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteServiceRole";
 import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
-import { CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES } from "@/lib/stripe/checkoutPaymentMethods";
+import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
+import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
+import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
@@ -86,27 +88,35 @@ async function postCreateSession(request: Request) {
     }
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("signup_source, subscription_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const signupSource = resolveProfileSignupSource(
+    profile?.signup_source as string | null,
+    user.user_metadata as Record<string, unknown> | undefined
+  );
+  const subStatus = (profile?.subscription_status as string | null) ?? "none";
+  const trialDays =
+    subStatus === "none" || !subStatus
+      ? resolveStripeTrialDaysForSignupSource(signupSource)
+      : 0;
+
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    payment_method_types: [...CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES],
-    line_items: [{ price: priceId, quantity: 1 }],
-    customer_email: email,
-    client_reference_id: userId,
-    success_url: `${base}/welkom?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/registreren/plan?cancelled=1`,
-    locale: "nl",
-    allow_promotion_codes: true,
+  const session = await createSubscriptionCheckoutSession({
+    stripe,
+    priceId,
+    userId,
+    email,
+    trialDays,
+    successUrl: `${base}/welkom?session_id={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${base}/registreren/plan?cancelled=1`,
     metadata: {
-      supabase_user_id: userId,
       [CHECKOUT_METADATA_WELCOME_TASK]: addWelcomeTask ? "1" : "0",
-    },
-    subscription_data: {
-      metadata: {
-        supabase_user_id: userId,
-      },
     },
   });
 
@@ -121,12 +131,18 @@ async function postCreateSession(request: Request) {
       price_id: priceId,
       checkout_session_id: session.id,
       welcome_task_opt_in: addWelcomeTask,
+      trial_days: trialDays,
+      signup_source: signupSource,
     });
   } catch {
     /* PostHog best-effort */
   }
 
-  return NextResponse.json({ url: session.url, checkoutSessionId: session.id });
+  return NextResponse.json({
+    url: session.url,
+    checkoutSessionId: session.id,
+    trialDays,
+  });
 }
 
 export const POST = withApiErrorTracking(

@@ -8,6 +8,8 @@ type LocalSignupInput = {
   email: string;
   password: string;
   fullName: string;
+  signupSource?: string | null;
+  signupCampaign?: string | null;
 };
 
 type LocalSignupResult =
@@ -40,7 +42,13 @@ export async function createLocalDevUser(
     email,
     password: input.password,
     email_confirm: true,
-    user_metadata: { full_name: fullName },
+    user_metadata: {
+      full_name: fullName,
+      ...(input.signupSource ? { signup_source: input.signupSource } : {}),
+      ...(input.signupCampaign
+        ? { signup_utm_campaign: input.signupCampaign }
+        : {}),
+    },
   });
 
   if (error) {

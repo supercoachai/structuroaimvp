@@ -59,22 +59,26 @@ function ConditionalAppShell({ children }: { children: ReactNode }) {
   if (isWaitlistMarketingPath(pathname)) {
     return <Suspense fallback={null}>{children}</Suspense>;
   }
+  const skipTaskProvider =
+    pathname === "/abonnement" || pathname?.startsWith("/abonnement/");
   const content = shouldUseAppShell(pathname) ? (
     <AppLayout>{children}</AppLayout>
   ) : (
     children
   );
-  return (
-    <TaskProvider>
-      <InfoDismissalsProvider>
-        <SidebarProvider>
-          <div className="flex h-full min-h-0 w-full flex-1 flex-col">
-            <Suspense fallback={null}>{content}</Suspense>
-          </div>
-        </SidebarProvider>
-      </InfoDismissalsProvider>
-    </TaskProvider>
+  const shell = (
+    <InfoDismissalsProvider>
+      <SidebarProvider>
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col">
+          <Suspense fallback={null}>{content}</Suspense>
+        </div>
+      </SidebarProvider>
+    </InfoDismissalsProvider>
   );
+  if (skipTaskProvider) {
+    return shell;
+  }
+  return <TaskProvider>{shell}</TaskProvider>;
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {

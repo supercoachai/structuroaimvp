@@ -6,20 +6,9 @@ import {
 } from "@/lib/stripeServer";
 
 import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
+import { mapStripeSubscriptionStatus } from "@/lib/stripe/mapStripeSubscriptionStatus";
 
-/** Zelfde mapping als Stripe-webhook `customer.subscription.updated`. */
-export function mapStripeSubscriptionStatus(
-  subscription: Stripe.Subscription
-): string {
-  if (subscription.status === "past_due") return "past_due";
-  if (subscription.status === "canceled" || subscription.status === "unpaid") {
-    return "cancelled";
-  }
-  if (subscription.status === "active" || subscription.status === "trialing") {
-    return subscription.cancel_at_period_end ? "cancelled" : "active";
-  }
-  return "none";
-}
+export { mapStripeSubscriptionStatus };
 
 export function profileFieldsFromStripeSubscription(
   subscription: Stripe.Subscription,

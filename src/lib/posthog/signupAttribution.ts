@@ -1,4 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
+import {
+  EVENT_TRIAL_BY_SIGNUP_SOURCE,
+  normalizeSignupSourceKey,
+  resolveStripeTrialDaysForSignupSource,
+} from "@/lib/stripe/trialConfig";
 
 const SOURCE_KEY = "signup_source";
 const CAMPAIGN_KEY = "signup_utm_campaign";
@@ -77,6 +82,50 @@ export function normalizeSignupSource(raw: string | null | undefined): string {
   return s || "direct";
 }
 
+type SearchParamsLike = {
+  get(name: string): string | null;
+};
+
+/**
+ * URL-params op /registreren: event-bronnen (QR) overschrijven altijd;
+ * overige bronnen alleen bij eerste touch.
+ */
+export function applySignupAttributionFromSearchParams(
+  params: SearchParamsLike | null | undefined
+): void {
+  if (!params) return;
+  const fromUtm = sanitizeAttributionValue(params.get("utm_source"));
+  const fromSource = sanitizeAttributionValue(params.get("source"));
+  const source = fromUtm || fromSource;
+  const campaign = sanitizeAttributionValue(params.get("utm_campaign"));
+  const key = normalizeSignupSourceKey(source);
+
+  if (key && key in EVENT_TRIAL_BY_SIGNUP_SOURCE) {
+    captureEventSignupSource(key, campaign || null);
+    return;
+  }
+
+  captureUtmOnFirstVisit();
+  persistSignupSourceFromUrl(source || null);
+}
+
+/** Event-landingspagina's (QR): overschrijf bron zodat trial-promo altijd geldt. */
+export function captureEventSignupSource(
+  source: string,
+  campaign?: string | null
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const s = sanitizeAttributionValue(source);
+    if (!s) return;
+    sessionStorage.setItem(SOURCE_KEY, s);
+    const c = sanitizeAttributionValue(campaign ?? "");
+    if (c) sessionStorage.setItem(CAMPAIGN_KEY, c);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Login/registreren: expliciete ?source= als er nog geen first-touch is. */
 export function persistSignupSourceFromUrl(source: string | null | undefined) {
   captureUtmOnFirstVisit();
@@ -109,30 +158,82 @@ export function queueSignupCompletedForAnalytics() {
   }
 }
 
+/** Trial-dagen: profiel/metadata zijn leidend; sessionStorage alleen als fallback. */
+export function resolveRegistrationTrialDays(
+  profileSignupSource: string | null | undefined,
+  userMetadata: Record<string, unknown> | null | undefined,
+  fallbackSessionSource?: string | null
+): number {
+  const source =
+    resolveProfileSignupSource(profileSignupSource, userMetadata) ??
+    normalizeSignupSourceKey(fallbackSessionSource) ??
+    null;
+  return resolveStripeTrialDaysForSignupSource(source);
+}
+
+/** Bron voor trial/checkout: profiel, anders auth metadata bij signup. */
+export function resolveProfileSignupSource(
+  profileSignupSource: string | null | undefined,
+  userMetadata: Record<string, unknown> | null | undefined
+): string | null {
+  const fromProfile = (profileSignupSource ?? "").trim();
+  if (fromProfile) return fromProfile;
+
+  const fromMeta = userMetadata?.signup_source;
+  if (typeof fromMeta === "string" && fromMeta.trim()) {
+    return fromMeta.trim();
+  }
+  return null;
+}
+
 /** Schrijf acquisitie naar profiles (alleen als signup_source nog leeg is). */
 export async function persistSignupAttributionToProfile(
   userId: string
-): Promise<void> {
+): Promise<boolean> {
   const signupSource = getStoredSignupSource();
   const signupCampaign = getStoredSignupCampaign();
+  const maxAttempts = 8;
 
-  try {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        signup_source: signupSource,
-        signup_utm_campaign: signupCampaign,
-      })
-      .eq("id", userId)
-      .is("signup_source", null);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          signup_source: signupSource,
+          signup_utm_campaign: signupCampaign,
+        })
+        .eq("id", userId)
+        .is("signup_source", null)
+        .select("id");
 
-    if (error) {
-      console.warn("[signupAttribution] profile update failed:", error.message);
-      return;
+      if (error) {
+        console.warn("[signupAttribution] profile update failed:", error.message);
+        return false;
+      }
+
+      if (data && data.length > 0) {
+        clearSignupAttributionStorage();
+        return true;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("signup_source")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if ((profile?.signup_source as string | null | undefined)?.trim()) {
+        clearSignupAttributionStorage();
+        return true;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+    } catch (e) {
+      console.warn("[signupAttribution] profile update error:", e);
+      if (attempt === maxAttempts - 1) return false;
     }
-    clearSignupAttributionStorage();
-  } catch (e) {
-    console.warn("[signupAttribution] profile update error:", e);
   }
+
+  return false;
 }

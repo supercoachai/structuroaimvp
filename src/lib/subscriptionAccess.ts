@@ -1,5 +1,6 @@
 import { hasLaunchGraceAccess } from "./launchGrace";
 import { hasFreeTrial } from "./freeTrialAccess";
+import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
 
 /** Toegang tot de app na betaalde launch: actief, of opgezegd maar nog binnen betaalperiode. */
 
@@ -36,8 +37,11 @@ export function profileHasAppAccessOrGrace(row: {
   subscription_current_period_end: string | null | undefined;
   created_at: string | null | undefined;
   last_dagstart_date: string | null | undefined;
+  signup_source?: string | null | undefined;
 }): boolean {
   if (profileHasAppAccess(row)) return true;
+  // Event-QR (bijv. café): 14 dagen app-toegang zonder Stripe bij signup
+  if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;
   // Gratis proeftijd: eerste 3 dagen na aanmaken account
   if (hasFreeTrial(row.created_at)) return true;
   // Launch-grace: bestaande testers gratis t/m 30 juni 2026

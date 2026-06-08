@@ -8,6 +8,8 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/onboarding',
     '/consent',
     '/welkom',
+    '/abonnement',
+    '/adhd-cafe',
     '/checkout-success',
     '/dev-reset',
     '/test',

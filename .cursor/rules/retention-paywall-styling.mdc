@@ -1,0 +1,16 @@
+# Retention paywall (/abonnement)
+
+De betaalpagina na verlopen trial/abonnement gebruikt **geen CSS modules** en **geen Tailwind** voor layout.
+
+## Verplicht
+
+- Styling staat in `src/app/abonnement/retention-paywall.css`
+- Layout wrapper in `src/app/abonnement/layout.tsx` (class `retention-paywall` + Hanken Grotesk)
+- Markup in `RetentionPaywall.tsx` gebruikt vaste class names uit de HTML-referentie (`built`, `btn-primary`, `done-state`, …)
+- Design-wijzigingen: pas de CSS aan, niet ad-hoc inline styles of CSS modules
+
+## Niet doen
+
+- Geen `RetentionPaywall.module.css` opnieuw introduceren
+- Geen blokkerende loader vóór de paywall; pagina direct tonen
+- Geen `useSearchParams` zonder `Suspense` op deze route

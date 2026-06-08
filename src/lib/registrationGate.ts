@@ -1,7 +1,21 @@
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
-import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
+import {
+  isRegistrationCheckoutEnabled,
+  isRegistrationCheckoutEnabledClient,
+} from "@/lib/stripe/registrationLaunch";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
-import { hasFreeTrial } from "@/lib/freeTrialAccess";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+
+type RegistrationGateOptions = {
+  /** Client components: gebruik NEXT_PUBLIC_STRUCTURO_PUBLIC_REGISTRATION. */
+  clientSide?: boolean;
+};
+
+function isCheckoutGateActive(options?: RegistrationGateOptions): boolean {
+  return options?.clientSide
+    ? isRegistrationCheckoutEnabledClient()
+    : isRegistrationCheckoutEnabled();
+}
 
 type ProfileSubscriptionRow = {
   email: string | null | undefined;
@@ -9,22 +23,24 @@ type ProfileSubscriptionRow = {
   subscription_status: string | null | undefined;
   subscription_current_period_end: string | null | undefined;
   created_at?: string | null | undefined;
+  signup_source?: string | null | undefined;
 };
 
 /**
- * Productie: nieuwe accounts mogen onboarding pas na geslaagde Stripe-checkout
- * OF als ze nog binnen de 3-dagen gratis proeftijd zitten.
+ * Productie: onboarding pas na Stripe-checkout met betaalmethode
+ * (proefperiode loopt via Stripe subscription trial, daarna auto-incasso).
  * Development: altijd uit (lokaal testen zonder betaling).
  */
 export function requiresPaidSubscriptionBeforeOnboarding(
-  row: ProfileSubscriptionRow
+  row: ProfileSubscriptionRow,
+  options?: RegistrationGateOptions
 ): boolean {
   if (process.env.NODE_ENV !== "production") return false;
-  if (!isRegistrationCheckoutEnabled()) return false;
+  if (!isCheckoutGateActive(options)) return false;
   if (isProtectedTestAccount(row.email ?? null)) return false;
   if (!row.profileRowReadOk) return true;
-  // Gratis proeftijd: eerste 3 dagen na aanmaken account — geen betaling nodig
-  if (hasFreeTrial(row.created_at)) return false;
+  // Café / event-QR: geen Stripe-checkout vóór onboarding
+  if (isEventSignupSource(row.signup_source)) return false;
   return !profileHasAppAccess({
     subscription_status: row.subscription_status,
     subscription_current_period_end: row.subscription_current_period_end,
@@ -32,8 +48,11 @@ export function requiresPaidSubscriptionBeforeOnboarding(
 }
 
 /** Doelroute vóór onboarding: checkout of intro. */
-export function preOnboardingPath(row: ProfileSubscriptionRow): "/registreren/plan" | "/onboarding" {
-  return requiresPaidSubscriptionBeforeOnboarding(row)
+export function preOnboardingPath(
+  row: ProfileSubscriptionRow,
+  options?: RegistrationGateOptions
+): "/registreren/plan" | "/onboarding" {
+  return requiresPaidSubscriptionBeforeOnboarding(row, options)
     ? "/registreren/plan"
     : "/onboarding";
 }
@@ -41,7 +60,8 @@ export function preOnboardingPath(row: ProfileSubscriptionRow): "/registreren/pl
 /** Na account aanmaken of sessie-check op /registreren: welkom, plan of onboarding. */
 export function resolvePostSignupPath(
   profile: ProfileSubscriptionRow | null | undefined,
-  email: string | null | undefined
+  email: string | null | undefined,
+  options?: RegistrationGateOptions
 ): "/welkom" | "/registreren/plan" | "/onboarding" {
   if (
     profile &&
@@ -53,11 +73,15 @@ export function resolvePostSignupPath(
     return "/welkom";
   }
 
-  return preOnboardingPath({
-    email,
-    profileRowReadOk: Boolean(profile),
-    subscription_status: profile?.subscription_status,
-    subscription_current_period_end: profile?.subscription_current_period_end,
-    created_at: profile?.created_at,
-  });
+  return preOnboardingPath(
+    {
+      email,
+      profileRowReadOk: Boolean(profile),
+      subscription_status: profile?.subscription_status,
+      subscription_current_period_end: profile?.subscription_current_period_end,
+      created_at: profile?.created_at,
+      signup_source: profile?.signup_source,
+    },
+    options
+  );
 }

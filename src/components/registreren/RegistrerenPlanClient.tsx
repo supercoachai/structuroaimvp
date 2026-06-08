@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { clearStructuroLocalModeCookie } from "@/lib/localModeSession";
@@ -17,9 +16,14 @@ import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
-import { RegistrerenPricingCard } from "./RegistrerenPricingCard";
-import { refundMailtoHref } from "@/lib/refundContact";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
+import {
+  applySignupAttributionFromSearchParams,
+  getStoredSignupSource,
+  resolveRegistrationTrialDays,
+} from "@/lib/posthog/signupAttribution";
+import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 import { useClientMounted } from "@/hooks/useClientMounted";
 
 function RegistrerenPlanInner() {
@@ -39,8 +43,13 @@ function RegistrerenPlanInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [trialDays, setTrialDays] = useState<number | null>(null);
   const mounted = useClientMounted();
   const planViewTrackedRef = useRef(false);
+
+  useEffect(() => {
+    applySignupAttributionFromSearchParams(searchParams);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isRegistrationCheckoutEnabledClient()) {
@@ -61,6 +70,7 @@ function RegistrerenPlanInner() {
   useEffect(() => {
     let cancelledEffect = false;
     (async () => {
+      let readyToShowPlan = false;
       try {
         const supabase = createClient();
         const {
@@ -70,15 +80,29 @@ function RegistrerenPlanInner() {
         if (cancelledEffect) return;
 
         if (!user?.id) {
-          router.replace("/registreren");
+          window.location.replace("/registreren");
           return;
         }
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("subscription_status, subscription_current_period_end, created_at")
+          .select(
+            "signup_source, subscription_status, subscription_current_period_end, created_at"
+          )
           .eq("id", user.id)
           .maybeSingle();
+
+        const signupSource = profile?.signup_source as string | null;
+        if (
+          isEventSignupSource(signupSource) &&
+          hasEventSignupAppTrial(
+            profile?.created_at as string | null,
+            signupSource
+          )
+        ) {
+          window.location.replace("/onboarding");
+          return;
+        }
 
         if (
           profile &&
@@ -88,30 +112,44 @@ function RegistrerenPlanInner() {
               profile.subscription_current_period_end as string | null,
           })
         ) {
-          router.replace("/welkom");
+          window.location.replace("/welkom");
           return;
         }
 
-        const needsPay = requiresPaidSubscriptionBeforeOnboarding({
-          email: user.email,
-          profileRowReadOk: Boolean(profile),
-          subscription_status: profile?.subscription_status as string | null,
-          subscription_current_period_end:
-            profile?.subscription_current_period_end as string | null,
-          created_at: profile?.created_at as string | null,
-        });
+        const needsPay = requiresPaidSubscriptionBeforeOnboarding(
+          {
+            email: user.email,
+            profileRowReadOk: Boolean(profile),
+            subscription_status: profile?.subscription_status as string | null,
+            subscription_current_period_end:
+              profile?.subscription_current_period_end as string | null,
+            created_at: profile?.created_at as string | null,
+            signup_source: signupSource,
+          },
+          { clientSide: true }
+        );
 
         if (!needsPay && !cancelled && !resume) {
-          router.replace("/onboarding");
+          window.location.replace("/onboarding");
           return;
         }
 
+        const days = resolveRegistrationTrialDays(
+          profile?.signup_source as string | null,
+          user.user_metadata as Record<string, unknown> | undefined,
+          getStoredSignupSource()
+        );
+
+        setTrialDays(days);
         setUserId(user.id);
         setUserEmail(user.email ?? null);
+        readyToShowPlan = true;
       } catch {
         /* ignore */
       } finally {
-        if (!cancelledEffect) setSessionChecked(true);
+        if (!cancelledEffect && readyToShowPlan) {
+          setSessionChecked(true);
+        }
       }
     })();
     return () => {
@@ -128,13 +166,7 @@ function RegistrerenPlanInner() {
       cancelled,
       resume,
     });
-  }, [
-    mounted,
-    sessionChecked,
-    userId,
-    cancelled,
-    resume,
-  ]);
+  }, [mounted, sessionChecked, userId, cancelled, resume]);
 
   const monthlyPlan = REGISTER_PLANS.find((p) => p.id === "monthly")!;
   const checkoutPlan =
@@ -236,7 +268,7 @@ function RegistrerenPlanInner() {
     }
   }
 
-  if (!mounted || !sessionChecked || !userId || !userEmail) {
+  if (!mounted || !sessionChecked || !userId || !userEmail || trialDays === null) {
     return (
       <RegistrerenShell page="plan" info={info}>
         <p className="text-center text-sm text-slate-500">{t("registrerenPage.loading")}</p>
@@ -244,103 +276,60 @@ function RegistrerenPlanInner() {
     );
   }
 
-  const guaranteeDetailsLabel =
-    locale === "en" ? "14-day refund details" : "14 dagen geld-terug";
-
   return (
     <RegistrerenShell page="plan" error={error} info={info}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
-        <div className="flex min-h-full flex-col justify-center py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex w-full max-w-sm flex-col gap-3 px-0.5">
-          <p className="text-center text-[11px] leading-tight text-slate-400">
-            {t("registrerenPage.resumeAs", { email: userEmail })}
-          </p>
+        <div className="flex min-h-full flex-col justify-center py-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex w-full max-w-sm flex-col gap-5 px-1 text-center">
+            <p className="text-[11px] leading-tight text-slate-400">
+              {t("registrerenPage.resumeAs", { email: userEmail })}
+            </p>
 
-          <h2 className="text-center text-lg font-semibold leading-snug tracking-tight text-slate-900">
-            {t("registrerenPage.planHeading")}
-          </h2>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+                {t("registrerenPage.planTrialHeadline", { days: String(trialDays) })}
+              </h2>
+              <p className="text-sm leading-relaxed text-slate-600">
+                {t("registrerenPage.planTrialSub")}
+              </p>
+            </div>
 
-          <div className="pointer-events-none select-none">
-            <RegistrerenPricingCard
-              plan={monthlyPlan}
-              selected
-              onSelect={() => {}}
-              t={t}
-            />
-          </div>
-
-          <p className="text-center text-xs text-slate-500">
-            {locale === "en" ? "Prefer yearly?" : "Liever jaarlijks?"}{" "}
             <button
               type="button"
               disabled={checkoutLoading}
-              onClick={() => void handleStartYearly()}
-              className="pointer-events-auto font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => void handleStartSelected()}
+              className="flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {locale === "en"
-                ? "€119/year — almost 3 months free →"
-                : "€119/jaar — bijna 3 maanden gratis →"}
+              {checkoutLoading
+                ? t("registrerenPage.submitBusy")
+                : t("registrerenPage.planCtaTrial")}
             </button>
-          </p>
 
-          <div className="flex items-center gap-2.5 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
-            <ShieldCheckIcon
-              className="h-5 w-5 shrink-0 text-emerald-600"
-              aria-hidden
-            />
-            <p className="text-sm font-semibold leading-snug text-slate-900">
-              {t("registrerenPage.guaranteeLine")}
+            <p className="text-xs leading-relaxed text-slate-500">
+              {t("registrerenPage.planTrialFootnote")}
             </p>
-          </div>
 
-          <button
-            type="button"
-            disabled={checkoutLoading}
-            onClick={() => void handleStartSelected()}
-            className="flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {checkoutLoading ? t("registrerenPage.submitBusy") : t("registrerenPage.ctaStart")}
-          </button>
+            <p className="text-xs text-slate-400">
+              {locale === "en" ? "Prefer yearly?" : "Liever jaarlijks?"}{" "}
+              <button
+                type="button"
+                disabled={checkoutLoading}
+                onClick={() => void handleStartYearly()}
+                className="font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {locale === "en" ? "€119/year" : "€119/jaar"}
+              </button>
+            </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-            <details className="group inline-block">
-              <summary className="cursor-pointer list-none text-xs text-slate-400 underline-offset-2 hover:text-slate-500 hover:underline [&::-webkit-details-marker]:hidden">
-                {guaranteeDetailsLabel}
-              </summary>
-              <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-slate-500">
-                {t("registrerenPage.guaranteeIntro")}{" "}
-                {t("registrerenPage.guaranteeCtaBefore")}{" "}
-                <a
-                  href={refundMailtoHref(locale)}
-                  className="font-medium text-blue-600 underline-offset-2 hover:underline"
-                >
-                  {t("registrerenPage.guaranteeMail")}
-                </a>{" "}
-                {t("registrerenPage.guaranteeCtaAfter")}
-              </p>
-            </details>
-            <span className="hidden text-slate-200 sm:inline" aria-hidden>
-              ·
-            </span>
-            <details className="group inline-block">
-              <summary className="cursor-pointer list-none text-xs text-slate-400 underline-offset-2 hover:text-slate-500 hover:underline [&::-webkit-details-marker]:hidden">
-                {locale === "en" ? "Renewal & payment" : "Verlenging & betaling"}
-              </summary>
-              <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-slate-500">
-                {t("registrerenPage.renewalDisclosure")}
-              </p>
-            </details>
-          </div>
-
-          <p className="text-center">
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="text-xs text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline"
-            >
-              {t("registrerenPage.logoutLink")}
-            </button>
-          </p>
+            <p>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="text-xs text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline"
+              >
+                {t("registrerenPage.logoutLink")}
+              </button>
+            </p>
           </div>
         </div>
       </div>

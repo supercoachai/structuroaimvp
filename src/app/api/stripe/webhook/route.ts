@@ -12,6 +12,10 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 
 import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
+import {
+  mapStripeSubscriptionStatus,
+  profileFieldsFromStripeSubscription,
+} from "@/lib/stripe/syncProfileSubscription";
 
 /** PostHog is best-effort: mag geen Stripe-retry triggeren na geslaagde DB-write. */
 async function safeCapture(
@@ -99,24 +103,15 @@ async function postStripeWebhook(request: Request) {
           break;
         }
         const subscription = await stripe.subscriptions.retrieve(subId);
-        const priceId = subscription.items.data[0]?.price?.id;
-        const plan = planFromStripePriceId(priceId ?? "");
-        const periodEnd = new Date(
-          subscriptionCurrentPeriodEndUnix(subscription) * 1000
-        ).toISOString();
-        const cancelAtEnd = Boolean(subscription.cancel_at_period_end);
-        const startedAt = new Date(subscription.created * 1000).toISOString();
+        const plan = planFromStripePriceId(
+          subscription.items.data[0]?.price?.id ?? ""
+        );
 
         await profileDb
           .from("profiles")
           .update({
-            subscription_status: "active",
+            ...profileFieldsFromStripeSubscription(subscription, customerId),
             subscription_plan: plan,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subId,
-            subscription_started_at: startedAt,
-            subscription_current_period_end: periodEnd,
-            cancel_at_period_end: cancelAtEnd,
           })
           .eq("id", userId);
 
@@ -142,17 +137,7 @@ async function postStripeWebhook(request: Request) {
             : subscription.customer?.id;
         if (!customerId) break;
 
-        let status: string;
-        if (subscription.status === "past_due") {
-          status = "past_due";
-        } else if (subscription.status === "canceled" || subscription.status === "unpaid") {
-          status = "cancelled";
-        } else if (subscription.status === "active") {
-          status = subscription.cancel_at_period_end ? "cancelled" : "active";
-        } else {
-          status = "none";
-        }
-
+        const status = mapStripeSubscriptionStatus(subscription);
         const priceId = subscription.items.data[0]?.price?.id;
         const plan = planFromStripePriceId(priceId ?? "");
 

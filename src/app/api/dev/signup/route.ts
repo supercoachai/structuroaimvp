@@ -25,6 +25,12 @@ async function postDevSignup(request: Request) {
     email: String(raw.email ?? ""),
     password: String(raw.password ?? ""),
     fullName: String(raw.full_name ?? raw.fullName ?? ""),
+    signupSource:
+      typeof raw.signup_source === "string" ? raw.signup_source : null,
+    signupCampaign:
+      typeof raw.signup_utm_campaign === "string"
+        ? raw.signup_utm_campaign
+        : null,
   });
 
   if (!result.ok) {

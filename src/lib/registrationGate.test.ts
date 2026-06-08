@@ -60,19 +60,15 @@ const paidProfile = {
     assert.equal(requiresPaidSubscriptionBeforeOnboarding(paidProfile), false);
     assert.equal(preOnboardingPath(paidProfile), "/onboarding");
 
-    const trialProfile = {
+    const stripeTrialProfile = {
       ...unpaidProfile,
-      created_at: new Date().toISOString(),
+      subscription_status: "trialing",
+      subscription_current_period_end: new Date(
+        Date.now() + 14 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     };
-    assert.equal(requiresPaidSubscriptionBeforeOnboarding(trialProfile), false);
-    assert.equal(preOnboardingPath(trialProfile), "/onboarding");
-
-    const expiredTrialProfile = {
-      ...unpaidProfile,
-      created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-    assert.equal(requiresPaidSubscriptionBeforeOnboarding(expiredTrialProfile), true);
-    assert.equal(preOnboardingPath(expiredTrialProfile), "/registreren/plan");
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(stripeTrialProfile), false);
+    assert.equal(preOnboardingPath(stripeTrialProfile), "/onboarding");
   });
 }
 
@@ -92,6 +88,17 @@ const paidProfile = {
   } else {
     process.env.NEXT_PUBLIC_PROTECTED_TEST_ACCOUNT_EMAIL = origProtectedEmail;
   }
+}
+
+{
+  withEnv("production", "1", () => {
+    const cafeProfile = {
+      ...unpaidProfile,
+      signup_source: "adhd_cafe",
+    };
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(cafeProfile), false);
+    assert.equal(preOnboardingPath(cafeProfile), "/onboarding");
+  });
 }
 
 console.log("registrationGate.test.ts: ok");

@@ -5,7 +5,7 @@ import {
   STRIPE_PRICE_ID_MONTHLY,
   STRIPE_PRICE_ID_YEARLY,
 } from "@/lib/stripe/registerPlans";
-import { CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES } from "@/lib/stripe/checkoutPaymentMethods";
+import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
@@ -48,7 +48,6 @@ async function postCheckout(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  /** Zelfde regel als refund: max één levenslange self-service refund per e-mail; geen nieuw abonnement daarna. */
   const gate = gateCheckoutServiceRole();
   if (!gate.ok) return gate.response;
   if (gate.admin) {
@@ -75,24 +74,15 @@ async function postCheckout(request: Request) {
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    payment_method_types: [...CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES],
-    client_reference_id: user.id,
-    customer_email: user.email ?? undefined,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${base}/abonnement?from=stripe`,
-    cancel_url: `${base}/abonnement`,
-    locale: "nl",
-    allow_promotion_codes: true,
-    metadata: {
-      supabase_user_id: user.id,
-    },
-    subscription_data: {
-      metadata: {
-        supabase_user_id: user.id,
-      },
-    },
+  /** Herinschrijving na verlopen proefperiode: geen nieuwe trial. */
+  const session = await createSubscriptionCheckoutSession({
+    stripe,
+    priceId,
+    userId: user.id,
+    email: user.email,
+    trialDays: 0,
+    successUrl: `${base}/abonnement?from=stripe`,
+    cancelUrl: `${base}/abonnement`,
   });
 
   if (!session.url) {

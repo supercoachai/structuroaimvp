@@ -1,0 +1,48 @@
+# Build output
+.next/
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Large files & media
+*.mp4
+*.mov
+*.mp3
+*.png
+*.jpg
+*.gif
+uploads/
+
+# Logs & cache
+logs/
+*.log
+.cache/
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific noise
+structuro-eu-landing/uploads/
+public/
+~$*
+
+# Docs & templates (niet nodig voor AI)
+*.docx
+*.md
+DIAGNOSE-*.md
+Structuro_*.docx
