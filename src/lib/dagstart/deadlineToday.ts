@@ -12,6 +12,11 @@ export type DeadlineEligibleTask = {
   source?: string | null;
   duration?: number | null;
   estimatedDuration?: number | null;
+  repeat?: string | null;
+  repeatUntil?: string | null;
+  repeatWeekdays?: string | null;
+  repeatExcludeDates?: string[] | null;
+  created_at?: string | null;
 };
 
 export type DeadlineDagstartPlan<T extends DeadlineEligibleTask> = {

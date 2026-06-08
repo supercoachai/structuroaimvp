@@ -10,13 +10,16 @@ import {
   type DayEnergy,
 } from "@/lib/dagstart/structuroPick";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { isRecurringDueToday } from "@/lib/taskRecurrence";
 
 export type DagstartTaskPlan<T extends DeadlineEligibleTask> = {
   deadlineAutoFill: T[];
   deadlineOverflow: T[];
+  recurringDueToday: T[];
   structuroFill: T[];
   /** Alle deadline-taken voor vandaag (auto + overflow), voor sort/filter in UI. */
   deadlineTodayIds: Set<string>;
+  recurringTodayIds: Set<string>;
 };
 
 export function isTaskDueTodayForDagstart(
@@ -54,10 +57,19 @@ export function buildDagstartTaskPlan<
   const deadlineToday = getDeadlineTasksForDagstartFill(poolTasks, todayYmd);
   const deadlineTodayIds = new Set(deadlineToday.map((t) => String(t.id)));
 
+  const recurringDueToday = poolTasks.filter(
+    (t) =>
+      t?.id &&
+      isRecurringDueToday(t, todayYmd) &&
+      !deadlineTodayIds.has(String(t.id))
+  );
+
+  const recurringTodayIds = new Set(recurringDueToday.map((t) => String(t.id)));
+
   const autoFillIds = new Set(autoFill.map((t) => String(t.id)));
   const remainingSlots = Math.max(0, maxSlots - autoFill.length);
 
-  const structuroExclude = new Set([...deadlineTodayIds]);
+  const structuroExclude = new Set([...deadlineTodayIds, ...recurringTodayIds]);
   const structuroPool = structuroCandidates.filter(
     (t) => t?.id && !structuroExclude.has(String(t.id))
   );
@@ -75,8 +87,10 @@ export function buildDagstartTaskPlan<
   return {
     deadlineAutoFill: autoFill,
     deadlineOverflow: overflow,
+    recurringDueToday,
     structuroFill,
     deadlineTodayIds,
+    recurringTodayIds,
   };
 }
 
@@ -86,5 +100,7 @@ export function rankTaskForDagstartSuggestions<
   task: T,
   todayYmd: string = getCalendarDateAmsterdam()
 ): number {
-  return isTaskDueTodayForDagstart(task, todayYmd) ? 0 : 1;
+  if (isTaskDueTodayForDagstart(task, todayYmd)) return 0;
+  if (isRecurringDueToday(task, todayYmd)) return 1;
+  return 2;
 }

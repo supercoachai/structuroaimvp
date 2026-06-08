@@ -112,6 +112,13 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false, // Keep false to catch real errors
   },
+  /** Voorkomt corrupte .next/webpack chunks (leeg scherm op /settings, /todo, enz.). */
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
 };
 
 const baseConfig = withBundleAnalyzer(nextConfig);

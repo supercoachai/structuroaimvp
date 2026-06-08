@@ -17,6 +17,9 @@ import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
 import DeadlineLabel from "@/components/structuro/DeadlineLabel";
 import { getTaskDeadlineMeta } from "@/lib/taskDeadlineDisplay";
+import {
+  getTaskScheduleDisplayLabel,
+} from "@/lib/taskScheduleTime";
 import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
 import { compareDeadlineTasks } from "@/lib/dagstart/deadlineToday";
 import { isOpenBacklogTask } from "../lib/taskFilters";
@@ -25,12 +28,16 @@ import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import { maxSlotsForEnergy } from "@/lib/top3CurrentTask";
 import {
   CheckCircleIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  ChevronRightIcon,
   ChevronDownIcon,
   Square2StackIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import TaskCardActions from "@/components/tasks/TaskCardActions";
+import {
+  buildRecurringCompletionUpdate,
+  isRecurringTask,
+  repeatLabelKey,
+} from "@/lib/taskRecurrence";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
 import NewTaskFlow from "@/components/newTask/NewTaskFlow";
 import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
@@ -273,6 +280,12 @@ export default function TasksOverviewCalm() {
     });
   };
 
+  const handleDeleteTask = async (task: any) => {
+    if (!confirm(tr("tasks.deleteConfirm"))) return;
+    await deleteTask(task.id);
+    setExpandedTaskId((id) => (id === task.id ? null : id));
+  };
+
   const handleQuickCompleteFromCard = (task: any) => {
     const taskDuration = getTaskDurationMinutes(task) ?? 15;
     const energy =
@@ -284,19 +297,24 @@ export default function TasksOverviewCalm() {
       trackQuickCompleteTriggered(energy, taskDuration);
       trackTaskCompleted("quick_complete", energy);
       startTransition(() => {
-        void updateTask(task.id, {
-          done: true,
-          started: true,
-          source: "quick_complete",
-          completedAt: new Date().toISOString(),
-        });
+        const updates = isRecurringTask(task)
+          ? buildRecurringCompletionUpdate(task)
+          : {
+              done: true,
+              started: true,
+              source: "quick_complete",
+              completedAt: new Date().toISOString(),
+            };
+        void updateTask(task.id, updates);
         setCompletingTaskIds((prev) => {
           const next = new Set(prev);
           next.delete(task.id);
           return next;
         });
-        setExpandedTaskId((id) => (id === task.id ? null : id));
-        setCompletedSectionOpen(true);
+        if (!isRecurringTask(task)) {
+          setExpandedTaskId((id) => (id === task.id ? null : id));
+          setCompletedSectionOpen(true);
+        }
       });
       queueMicrotask(() => {
         toast(tr("tasks.toastChecked"));
@@ -418,12 +436,12 @@ export default function TasksOverviewCalm() {
               );
             }
 
+            const repeatKey = repeatLabelKey(task);
+
             return (
-              <button
+              <div
                 key={priority}
-                type="button"
-                onClick={() => startFocus(task)}
-                className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left transition active:scale-[0.99] ${tint.card}`}
+                className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${tint.card}`}
               >
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[17px] font-bold leading-none ${tint.badge} ${tint.num}`}
@@ -446,6 +464,12 @@ export default function TasksOverviewCalm() {
                   >
                     {mins} min
                   </p>
+                  {repeatKey ? (
+                    <p className="mt-1 flex items-center gap-1 text-[12px] font-medium text-blue-600">
+                      <ArrowPathIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {tr(`taskEditor.${repeatKey}`)}
+                    </p>
+                  ) : null}
                   {ms.length > 0 ? (
                     <div className="mt-2.5 flex items-center gap-1.5 text-[12px] font-medium text-violet-600">
                       <Square2StackIcon className="h-3.5 w-3.5 shrink-0 text-violet-500" aria-hidden />
@@ -458,8 +482,15 @@ export default function TasksOverviewCalm() {
                     </div>
                   ) : null}
                 </div>
-                <ChevronRightIcon className="h-5 w-5 shrink-0 text-gray-300" aria-hidden />
-              </button>
+                <TaskCardActions
+                  onPlay={() => startFocus(task)}
+                  onEdit={() => setEditing(task)}
+                  onDelete={() => void handleDeleteTask(task)}
+                  playLabel={tr("tasks.playFocus")}
+                  editLabel={tr("tasks.edit")}
+                  deleteLabel={tr("tasks.deleteTitle")}
+                />
+              </div>
             );
           })}
           {!loading &&
@@ -713,12 +744,22 @@ export default function TasksOverviewCalm() {
                       {list.map((task: any) => {
                         const isExpanded = expandedTaskId === task.id;
                         const energyLevel = task.energyLevel || 'medium';
-                        const deadlineMeta = getTaskDeadlineMeta(task.dueAt, locale);
+                        const legacyOneOffDeadline =
+                          task.isDeadline == null &&
+                          Boolean(task.dueAt) &&
+                          (!task.repeat || task.repeat === "none");
+                        const showsDeadline = task.isDeadline || legacyOneOffDeadline;
+                        const deadlineMeta = showsDeadline
+                          ? getTaskDeadlineMeta(task.dueAt, locale)
+                          : null;
+                        const scheduleTimeLabel = !showsDeadline
+                          ? getTaskScheduleDisplayLabel(task, locale)
+                          : null;
                         const isCompleting = completingTaskIds.has(task.id);
                         const isPop = checkboxPopId === task.id;
                         const isEasyColumn = key === "green";
-                        const easyTone = NEW_TASK_ENERGIES[0].color;
                         const microCount = normalizeMicroSteps(task.microSteps).length;
+                        const repeatKey = repeatLabelKey(task);
 
                         return (
                           <div
@@ -726,50 +767,24 @@ export default function TasksOverviewCalm() {
                             className="group overflow-hidden rounded-2xl border border-gray-100 bg-white transition-all duration-200 hover:border-gray-200 hover:shadow-sm"
                           >
                             <div
-                              onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
-                              className="flex min-w-0 cursor-pointer flex-col gap-2 rounded-2xl p-4 transition-colors hover:bg-gray-50/90"
+                              onClick={() => {
+                                if (microCount > 0) {
+                                  setExpandedTaskId(isExpanded ? null : task.id);
+                                }
+                              }}
+                              className={`flex min-w-0 flex-col gap-2 rounded-2xl p-4 transition-colors ${
+                                microCount > 0
+                                  ? "cursor-pointer hover:bg-gray-50/90"
+                                  : ""
+                              }`}
                             >
                               <div className="flex min-w-0 items-start gap-2 sm:gap-3">
-                                {isEasyColumn ? (
-                                  <button
-                                    type="button"
-                                    disabled={isCompleting}
-                                    aria-busy={isCompleting}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleQuickCompleteFromCard(task);
-                                    }}
-                                    aria-label={tr("tasks.quickDoneTitle")}
-                                    title={tr("tasks.quickDoneTitle")}
-                                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-200 disabled:pointer-events-none ${
-                                      isPop ? "scale-125" : "scale-100"
-                                    }`}
-                                    style={{
-                                      borderColor: easyTone,
-                                      background: isCompleting ? easyTone : "white",
-                                    }}
-                                  >
-                                    {isCompleting ? (
-                                      <svg
-                                        className="h-3 w-3 text-white"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3"
-                                        aria-hidden
-                                      >
-                                        <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                                      </svg>
-                                    ) : null}
-                                  </button>
-                                ) : (
-                                  <span className="mt-0.5 shrink-0" aria-hidden>
-                                    <EnergyDotTask
-                                      energy={appEnergyToSt(energyLevel)}
-                                      size={10}
-                                    />
-                                  </span>
-                                )}
+                                <span className="mt-0.5 shrink-0" aria-hidden>
+                                  <EnergyDotTask
+                                    energy={appEnergyToSt(energyLevel)}
+                                    size={10}
+                                  />
+                                </span>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex min-w-0 items-start justify-between gap-2">
                                     <div
@@ -780,25 +795,41 @@ export default function TasksOverviewCalm() {
                                       {task.title}
                                     </div>
                                     <div className="flex shrink-0 items-center gap-1">
-                                      {!isExpanded ? (
+                                      <TaskCardActions
+                                        onPlay={() => startFocus(task)}
+                                        onEdit={() => setEditing(task)}
+                                        onDelete={() => void handleDeleteTask(task)}
+                                        playLabel={tr("tasks.playFocus")}
+                                        editLabel={tr("tasks.edit")}
+                                        deleteLabel={tr("tasks.deleteTitle")}
+                                        {...(isEasyColumn
+                                          ? {
+                                              onComplete: () => handleQuickCompleteFromCard(task),
+                                              completeLabel: tr("tasks.quickDoneTitle"),
+                                              completing: isCompleting,
+                                              completePop: isPop,
+                                            }
+                                          : {})}
+                                      />
+                                      {microCount > 0 ? (
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            startFocus(task);
+                                            setExpandedTaskId(isExpanded ? null : task.id);
                                           }}
-                                          className="rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
-                                          title={tr("tasks.startThis")}
+                                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 shadow-sm transition-colors hover:bg-gray-50"
+                                          aria-label={tr("tasks.microPanelTitle")}
+                                          aria-expanded={isExpanded}
                                         >
-                                          {tr("tasks.start")}
+                                          <ChevronDownIcon
+                                            className={`h-4 w-4 transition-transform duration-200 ${
+                                              isExpanded ? "rotate-0" : "-rotate-90"
+                                            }`}
+                                            aria-hidden
+                                          />
                                         </button>
                                       ) : null}
-                                      <ChevronDownIcon
-                                        className={`h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 ${
-                                          isExpanded ? "rotate-0" : "-rotate-90"
-                                        }`}
-                                        aria-hidden
-                                      />
                                     </div>
                                   </div>
                                   <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
@@ -807,7 +838,8 @@ export default function TasksOverviewCalm() {
                                         {task.duration || task.estimatedDuration} min
                                       </span>
                                     ) : null}
-                                    {(task.duration || task.estimatedDuration) && deadlineMeta ? (
+                                    {(task.duration || task.estimatedDuration) &&
+                                    (deadlineMeta || scheduleTimeLabel) ? (
                                       <span className="text-gray-300" aria-hidden>
                                         ·
                                       </span>
@@ -819,18 +851,57 @@ export default function TasksOverviewCalm() {
                                         compact
                                       />
                                     ) : null}
-                                    {((task.duration || task.estimatedDuration) || deadlineMeta) &&
+                                    {scheduleTimeLabel ? (
+                                      <>
+                                        {deadlineMeta ? (
+                                          <span className="text-gray-300" aria-hidden>
+                                            ·
+                                          </span>
+                                        ) : null}
+                                        <span className="text-gray-500">
+                                          {scheduleTimeLabel}
+                                        </span>
+                                      </>
+                                    ) : null}
+                                    {((task.duration || task.estimatedDuration) ||
+                                      deadlineMeta ||
+                                      scheduleTimeLabel) &&
                                     microCount > 0 ? (
                                       <span className="text-gray-300" aria-hidden>
                                         ·
                                       </span>
                                     ) : null}
+                                    {repeatKey ? (
+                                      <>
+                                        {((task.duration || task.estimatedDuration) ||
+                                          deadlineMeta ||
+                                          scheduleTimeLabel) ? (
+                                          <span className="text-gray-300" aria-hidden>
+                                            ·
+                                          </span>
+                                        ) : null}
+                                        <span className="inline-flex items-center gap-0.5 font-medium text-blue-600">
+                                          <ArrowPathIcon className="h-3 w-3 shrink-0" aria-hidden />
+                                          {tr(`taskEditor.${repeatKey}`)}
+                                        </span>
+                                      </>
+                                    ) : null}
                                     {microCount > 0 ? (
-                                      <span className="font-mono tabular-nums text-[#6B7280]">
-                                        {tr("tasks.microStepsCollapsed", {
-                                          n: String(microCount),
-                                        })}
-                                      </span>
+                                      <>
+                                        {((task.duration || task.estimatedDuration) ||
+                                          deadlineMeta ||
+                                          scheduleTimeLabel ||
+                                          repeatKey) ? (
+                                          <span className="text-gray-300" aria-hidden>
+                                            ·
+                                          </span>
+                                        ) : null}
+                                        <span className="font-mono tabular-nums text-[#6B7280]">
+                                          {tr("tasks.microStepsCollapsed", {
+                                            n: String(microCount),
+                                          })}
+                                        </span>
+                                      </>
                                     ) : null}
                                   </div>
                                 </div>
@@ -957,33 +1028,6 @@ export default function TasksOverviewCalm() {
                                     ) : null}
                                   </div>
 
-                                  <div className="flex items-center justify-between border-t border-gray-200/80 pt-3">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditing(task);
-                                      }}
-                                      className="text-sm text-gray-500 hover:text-blue-600 flex items-center gap-1.5"
-                                    >
-                                      <PencilSquareIcon className="w-4 h-4" aria-hidden />
-                                      {tr("tasks.edit")}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        if (confirm(tr("tasks.deleteConfirm"))) {
-                                          await deleteTask(task.id);
-                                          setExpandedTaskId(null);
-                                        }
-                                      }}
-                                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title={tr("tasks.deleteTitle")}
-                                    >
-                                      <TrashIcon className="w-5 h-5" aria-hidden />
-                                    </button>
-                                  </div>
                                 </div>
                               </div>
                               );
@@ -1008,19 +1052,24 @@ export default function TasksOverviewCalm() {
 
       {/* Task Editor Modal –zelfde layout als rest van de app */}
       {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4 overflow-y-auto">
-          <div className="my-auto w-full max-w-lg">
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/50 sm:items-center sm:p-4">
+          <div className="w-full max-w-lg sm:my-auto">
             <TaskScheduleEditor
               task={editing}
               onSave={async (updatedTask: any) => {
                 await updateTask(updatedTask.id, {
                   title: updatedTask.title,
                   dueAt: updatedTask.dueAt ?? null,
+                  isDeadline: updatedTask.isDeadline ?? false,
                   reminders: updatedTask.reminders ?? [],
                   repeat: updatedTask.repeat ?? "none",
+                  repeatWeekdays: updatedTask.repeatWeekdays ?? "all",
                   duration: updatedTask.duration ?? null,
                   estimatedDuration: updatedTask.estimatedDuration ?? null,
                   energyLevel: updatedTask.energyLevel ?? "medium",
+                  ...(updatedTask.created_at
+                    ? { created_at: updatedTask.created_at }
+                    : {}),
                 });
                 setEditing(null);
                 setExpandedTaskId(null);

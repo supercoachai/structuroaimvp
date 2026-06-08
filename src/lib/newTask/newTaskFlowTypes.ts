@@ -8,12 +8,19 @@ export type NewTaskDeadlineChoice =
   | "tomorrow"
   | string;
 
+export type NewTaskRepeatChoice = "none" | "daily" | "weekdays" | "weekly";
+
 export type NewTaskFlowPayload = {
   title: string;
   energy: NewTaskEnergyLevel;
   durationMin: number;
+  /** Kalenderdag (YMD) waarop de taak gepland staat. */
+  scheduleDate?: string;
+  /** Optioneel tijdstip op de geplande dag. */
+  scheduleTime?: { hour: number; minute: number } | null;
   deadline: NewTaskDeadlineChoice;
   microsteps: string[];
+  repeat?: NewTaskRepeatChoice;
 };
 
 export type NewTaskEnergyOption = {
@@ -62,3 +69,5 @@ export const NEW_TASK_DURATION_PRESETS = [
 export type DurationValue = number | "custom";
 
 export type DeadlinePickId = "none" | "today" | "tomorrow" | "custom";
+
+export type ScheduleDatePickId = "none" | "today" | "tomorrow" | "custom";

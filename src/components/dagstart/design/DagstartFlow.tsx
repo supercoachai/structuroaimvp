@@ -211,22 +211,21 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
   const suggestedTasks = useMemo((): DagstartTaskCard[] => {
     if (!dagstartPlan) return [];
-    return [...dagstartPlan.deadlineAutoFill, ...dagstartPlan.structuroFill].map(
-      taskToDagstartCardLocal
-    );
+    return [
+      ...dagstartPlan.deadlineAutoFill,
+      ...dagstartPlan.recurringDueToday,
+      ...dagstartPlan.structuroFill,
+    ].map(taskToDagstartCardLocal);
   }, [dagstartPlan]);
 
   /** Sortering: deadlines eerst (overdue → datum → duur → titel), dan rest op duur. */
   const taskPool = useMemo((): DagstartTaskCard[] => {
     if (!energy) return [];
     const sorted = [...openTasksRaw].sort((a: any, b: any) => {
-      const deadlineRank =
-        rankTaskForDagstartSuggestions(a) - rankTaskForDagstartSuggestions(b);
-      if (deadlineRank !== 0) return deadlineRank;
-      if (
-        rankTaskForDagstartSuggestions(a) === 0 &&
-        rankTaskForDagstartSuggestions(b) === 0
-      ) {
+      const rankA = rankTaskForDagstartSuggestions(a);
+      const rankB = rankTaskForDagstartSuggestions(b);
+      if (rankA !== rankB) return rankA - rankB;
+      if (rankA === 0) {
         const dueDiff = compareDeadlineTasks(a, b);
         if (dueDiff !== 0) return dueDiff;
       }

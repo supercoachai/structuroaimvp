@@ -1,3 +1,6 @@
+import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import { isRecurringCompletedToday } from "@/lib/taskRecurrence";
+
 /** Bronnen die niet meetellen als openstaande backlog-taak. */
 export const OPEN_BACKLOG_EXCLUDED_SOURCES = [
   "medication",
@@ -15,8 +18,11 @@ export function isOpenBacklogTask(t: {
   notToday?: boolean;
   source?: string;
   priority?: number | null;
+  repeat?: string | null;
+  repeatExcludeDates?: string[] | null;
 }): boolean {
   if (!t || t.done || t.notToday) return false;
+  if (isRecurringCompletedToday(t, getCalendarDateAmsterdam())) return false;
   if (
     t.source &&
     (OPEN_BACKLOG_EXCLUDED_SOURCES as readonly string[]).includes(t.source)

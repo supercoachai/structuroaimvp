@@ -15,19 +15,23 @@ export function DeferredVercelObservability() {
     void Promise.all([
       import("@vercel/analytics/next"),
       import("@vercel/speed-insights/next"),
-    ]).then(([analyticsMod, speedMod]) => {
-      if (cancelled) return;
-      const beforeSend = <T extends { url?: string }>(event: T | null) =>
-        shouldSendProductAnalytics() ? event : null;
-      const { Analytics } = analyticsMod;
-      const { SpeedInsights } = speedMod;
-      setWidgets(
-        <>
-          <Analytics beforeSend={beforeSend} />
-          <SpeedInsights beforeSend={beforeSend} />
-        </>
-      );
-    });
+    ])
+      .then(([analyticsMod, speedMod]) => {
+        if (cancelled) return;
+        const beforeSend = <T extends { url?: string }>(event: T | null) =>
+          shouldSendProductAnalytics() ? event : null;
+        const { Analytics } = analyticsMod;
+        const { SpeedInsights } = speedMod;
+        setWidgets(
+          <>
+            <Analytics beforeSend={beforeSend} />
+            <SpeedInsights beforeSend={beforeSend} />
+          </>
+        );
+      })
+      .catch(() => {
+        /* Analytics optioneel; mag nooit de app breken */
+      });
     return () => {
       cancelled = true;
     };

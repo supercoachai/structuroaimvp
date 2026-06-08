@@ -18,7 +18,14 @@ import {
   type DurationValue,
   type NewTaskEnergyLevel,
   type NewTaskFlowPayload,
+  type NewTaskRepeatChoice,
+  type ScheduleDatePickId,
 } from "@/lib/newTask/newTaskFlowTypes";
+import { resolveScheduleYmdFromPick } from "@/lib/newTask/buildTaskFromFlowPayload";
+import { formatScheduleTime } from "@/lib/taskScheduleTime";
+import TaskRepeatPicker, {
+  type TaskRepeatSelection,
+} from "@/components/tasks/TaskRepeatPicker";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -99,8 +106,12 @@ export default function NewTaskFlow({
   const [energy, setEnergy] = useState<NewTaskEnergyLevel | null>(null);
   const [duration, setDuration] = useState<DurationValue | null>(null);
   const [customDuration, setCustomDuration] = useState("");
-  const [deadlinePick, setDeadlinePick] = useState<DeadlinePickId | null>(null);
+  const [scheduleDatePick, setScheduleDatePick] = useState<ScheduleDatePickId>("none");
+  const [scheduleCustomDate, setScheduleCustomDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState<{ hour: number; minute: number } | null>(null);
+  const [deadlinePick, setDeadlinePick] = useState<DeadlinePickId>("none");
   const [customDate, setCustomDate] = useState("");
+  const [repeatPick, setRepeatPick] = useState<NewTaskRepeatChoice>("none");
   const [microsteps, setMicrosteps] = useState<string[]>([]);
   const [microEditing, setMicroEditing] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -114,8 +125,12 @@ export default function NewTaskFlow({
     setEnergy(null);
     setDuration(null);
     setCustomDuration("");
-    setDeadlinePick(null);
+    setScheduleDatePick("none");
+    setScheduleCustomDate("");
+    setScheduleTime(null);
+    setDeadlinePick("none");
     setCustomDate("");
+    setRepeatPick("none");
     setMicrosteps([]);
     setMicroEditing(false);
   }, [skipTitle, hasPresetTitle, initialTitle]);
@@ -126,6 +141,12 @@ export default function NewTaskFlow({
       if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (repeatPick === "weekly" && scheduleDatePick === "none") {
+      setScheduleDatePick("today");
+    }
+  }, [repeatPick, scheduleDatePick]);
 
   const energyMeta = useMemo(
     () => NEW_TASK_ENERGIES.find((e) => e.id === energy),
@@ -148,6 +169,29 @@ export default function NewTaskFlow({
     if (deadlinePick === "custom" && customDate) return customDate;
     return null;
   }, [deadlinePick, customDate]);
+
+  const scheduleDateYmd = useMemo(
+    () => resolveScheduleYmdFromPick(scheduleDatePick, scheduleCustomDate),
+    [scheduleDatePick, scheduleCustomDate]
+  );
+
+  const scheduleChipText = useMemo(() => {
+    if (scheduleDatePick === "none") return t("newTask.scheduleChipNone");
+    const timeConnector = locale === "en" ? " at " : " om ";
+    const timeSuffix = scheduleTime
+      ? `${timeConnector}${formatScheduleTime(scheduleTime.hour, scheduleTime.minute)}`
+      : "";
+    let datePart: string;
+    if (scheduleDatePick === "tomorrow") datePart = t("newTask.deadlineTomorrow");
+    else if (scheduleDatePick === "custom" && scheduleCustomDate) {
+      datePart = new Date(`${scheduleCustomDate}T12:00:00`).toLocaleDateString(dateLocale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
+    } else datePart = t("newTask.deadlineToday");
+    return `${datePart}${timeSuffix}`;
+  }, [scheduleDatePick, scheduleCustomDate, scheduleTime, dateLocale, locale, t]);
 
   const deadlineChipText = useMemo(() => {
     if (!deadlinePick || deadlinePick === "none") return null;
@@ -201,8 +245,13 @@ export default function NewTaskFlow({
       title: trimmed,
       energy,
       durationMin: mins,
+      scheduleDate:
+        skipDeadline || scheduleDatePick === "none" ? undefined : scheduleDateYmd ?? undefined,
+      scheduleTime:
+        skipDeadline || scheduleDatePick === "none" ? null : scheduleTime,
       deadline: skipDeadline ? null : deadlinePayload,
       microsteps: microsteps.map((s) => s.trim()).filter(Boolean),
+      repeat: skipDeadline ? undefined : repeatPick,
     };
 
     setSaveBusy(true);
@@ -226,7 +275,11 @@ export default function NewTaskFlow({
     title,
     energy,
     resolvedDurationMin,
+    scheduleDatePick,
+    scheduleDateYmd,
+    scheduleTime,
     deadlinePayload,
+    repeatPick,
     microsteps,
     onSave,
     mode,
@@ -244,10 +297,15 @@ export default function NewTaskFlow({
   const progressIndex =
     step - (skipTitle ? 1 : 0) - (skipDeadline && step >= microStepIndex ? 1 : 0);
 
+  const deadlineStepReady =
+    deadlinePick != null &&
+    (deadlinePick !== "custom" || Boolean(customDate.trim())) &&
+    (scheduleDatePick !== "custom" || Boolean(scheduleCustomDate.trim()));
+
   const showFooterPrimary =
     (!skipTitle && step === 0) ||
     (step === 2 && duration === "custom") ||
-    (!skipDeadline && step === 3 && deadlinePick === "custom");
+    (!skipDeadline && step === 3 && deadlineStepReady);
 
   return (
     <div
@@ -313,6 +371,11 @@ export default function NewTaskFlow({
               <span>{durationText}</span>
             </AnswerChip>
           ) : null}
+          {!skipDeadline && step > 3 ? (
+            <AnswerChip onClick={() => setStep(3)}>
+              <span>{scheduleChipText}</span>
+            </AnswerChip>
+          ) : null}
           {!skipDeadline && deadlineChipText && step > 3 ? (
             <AnswerChip onClick={() => setStep(3)}>
               <span>{deadlineChipText}</span>
@@ -366,13 +429,18 @@ export default function NewTaskFlow({
 
         {!skipDeadline && step === 3 ? (
           <StepDeadline
+            scheduleDatePick={scheduleDatePick}
+            scheduleCustomDate={scheduleCustomDate}
+            scheduleTime={scheduleTime}
+            onScheduleDatePick={setScheduleDatePick}
+            onScheduleCustomChange={setScheduleCustomDate}
+            onScheduleTimeChange={setScheduleTime}
             value={deadlinePick}
             customDate={customDate}
-            onPick={(id) => {
-              setDeadlinePick(id);
-              if (id !== "custom") scheduleAdvance(4);
-            }}
+            repeatPick={repeatPick}
+            onPick={setDeadlinePick}
             onCustomChange={setCustomDate}
+            onRepeatChange={setRepeatPick}
             compact={compact}
           />
         ) : null}
@@ -443,12 +511,11 @@ export default function NewTaskFlow({
             </button>
           ) : null}
 
-          {!skipDeadline && step === 3 && deadlinePick === "custom" ? (
+          {!skipDeadline && step === 3 && deadlineStepReady ? (
             <button
               type="button"
-              disabled={!customDate}
-              onClick={() => customDate && setStep(4)}
-              className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] disabled:pointer-events-none disabled:opacity-35"
+              onClick={() => setStep(4)}
+              className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)]"
             >
               {t("newTask.continue")}
             </button>
@@ -696,62 +763,348 @@ function StepDuration({
   );
 }
 
+function newTaskRepeatToSelection(choice: NewTaskRepeatChoice): TaskRepeatSelection {
+  if (choice === "weekly") return { repeat: "weekly", repeatWeekdays: "all" };
+  if (choice === "weekdays") return { repeat: "daily", repeatWeekdays: "weekdays" };
+  if (choice === "daily") return { repeat: "daily", repeatWeekdays: "all" };
+  return { repeat: "none", repeatWeekdays: "all" };
+}
+
+function selectionToNewTaskRepeat(selection: TaskRepeatSelection): NewTaskRepeatChoice {
+  if (selection.repeat === "weekly") return "weekly";
+  if (selection.repeat === "daily" && selection.repeatWeekdays === "weekdays") {
+    return "weekdays";
+  }
+  if (selection.repeat === "daily") return "daily";
+  return "none";
+}
+
+type PlanField = "scheduleDate" | "deadline" | "repeat";
+
+function FlowMadLibsChip({
+  active,
+  children,
+  onClick,
+  tone = "neutral",
+}: {
+  active: boolean;
+  children: ReactNode;
+  onClick: () => void;
+  tone?: "deadline" | "neutral";
+}) {
+  const toneClass =
+    tone === "deadline"
+      ? active
+        ? "border-[var(--st-blue)] bg-[var(--st-blue-haze)] text-[var(--st-blue)]"
+        : "border-[var(--st-blue)]/35 bg-[var(--st-blue-haze)]/50 text-[var(--st-blue)]"
+      : active
+        ? "border-[var(--st-line-strong)] bg-white text-[var(--st-ink)] shadow-sm"
+        : "border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)] text-[var(--st-ink-soft,#2C3753)]";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center rounded-[10px] border px-2.5 py-0.5 text-[15px] font-semibold transition-colors ${toneClass}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StepDeadline({
+  scheduleDatePick,
+  scheduleCustomDate,
+  scheduleTime,
+  onScheduleDatePick,
+  onScheduleCustomChange,
+  onScheduleTimeChange,
   value,
   customDate,
+  repeatPick,
   onPick,
   onCustomChange,
+  onRepeatChange,
   compact,
 }: {
+  scheduleDatePick: ScheduleDatePickId;
+  scheduleCustomDate: string;
+  scheduleTime: { hour: number; minute: number } | null;
+  onScheduleDatePick: (id: ScheduleDatePickId) => void;
+  onScheduleCustomChange: (v: string) => void;
+  onScheduleTimeChange: (time: { hour: number; minute: number } | null) => void;
   value: DeadlinePickId | null;
   customDate: string;
+  repeatPick: NewTaskRepeatChoice;
   onPick: (id: DeadlinePickId) => void;
   onCustomChange: (v: string) => void;
+  onRepeatChange: (choice: NewTaskRepeatChoice) => void;
   compact?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const dateLocale = locale === "en" ? "en-US" : "nl-NL";
   const todayMin = getCalendarDateAmsterdam();
+  const [activeField, setActiveField] = useState<PlanField>("scheduleDate");
+  const scheduleTimeInputValue = scheduleTime
+    ? `${String(scheduleTime.hour).padStart(2, "0")}:${String(scheduleTime.minute).padStart(2, "0")}`
+    : "";
 
-  const options: { id: DeadlinePickId; labelKey: string }[] = [
+  const toggleField = (field: PlanField) => {
+    setActiveField(field);
+  };
+
+  const hasDeadline = value != null && value !== "none";
+  const isOneOffRepeat = repeatPick === "none";
+
+  const deadlineChipLabel = useMemo(() => {
+    if (value == null) return t("newTask.deadlineChipUnset");
+    if (value === "none") return t("newTask.deadlineChipNone");
+    if (value === "today") return t("newTask.deadlineToday").toLowerCase();
+    if (value === "tomorrow") return t("newTask.deadlineTomorrow").toLowerCase();
+    if (value === "custom" && customDate) {
+      return new Date(`${customDate}T12:00:00`).toLocaleDateString(dateLocale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
+    }
+    return t("newTask.deadlineCustom").toLowerCase();
+  }, [value, customDate, dateLocale, t]);
+
+  const scheduleDateChipLabel = useMemo(() => {
+    if (scheduleDatePick === "none") return t("newTask.scheduleChipNone");
+    const timeConnector = locale === "en" ? " at " : " om ";
+    const timeSuffix = scheduleTime
+      ? `${timeConnector}${formatScheduleTime(scheduleTime.hour, scheduleTime.minute)}`
+      : "";
+    let datePart: string;
+    if (scheduleDatePick === "tomorrow") {
+      datePart = t("newTask.deadlineTomorrow").toLowerCase();
+    } else if (scheduleDatePick === "custom" && scheduleCustomDate) {
+      datePart = new Date(`${scheduleCustomDate}T12:00:00`).toLocaleDateString(dateLocale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
+    } else {
+      datePart = t("newTask.deadlineToday").toLowerCase();
+    }
+    return `${datePart}${timeSuffix}`;
+  }, [scheduleDatePick, scheduleCustomDate, scheduleTime, dateLocale, locale, t]);
+
+  const repeatChipLabel = useMemo(() => {
+    const key =
+      repeatPick === "daily"
+        ? "repeatDaily"
+        : repeatPick === "weekdays"
+          ? "repeatWeekdays"
+          : repeatPick === "weekly"
+            ? "repeatWeekly"
+            : "repeatNone";
+    return t(`newTask.${key}`).toLowerCase();
+  }, [repeatPick, t]);
+
+  const deadlineOptions: { id: DeadlinePickId; labelKey: string }[] = [
     { id: "none", labelKey: "deadlineNone" },
     { id: "today", labelKey: "deadlineToday" },
     { id: "tomorrow", labelKey: "deadlineTomorrow" },
     { id: "custom", labelKey: "deadlineCustom" },
   ];
 
+  const scheduleDateOptions: { id: ScheduleDatePickId; labelKey: string }[] = [
+    ...(repeatPick !== "weekly"
+      ? [{ id: "none" as const, labelKey: "scheduleNone" }]
+      : []),
+    { id: "today", labelKey: "deadlineToday" },
+    { id: "tomorrow", labelKey: "deadlineTomorrow" },
+    { id: "custom", labelKey: "scheduleDateCustom" },
+  ];
+
+  const handleScheduleDatePick = (id: ScheduleDatePickId) => {
+    onScheduleDatePick(id);
+    if (id === "none") onScheduleTimeChange(null);
+  };
+
+  const scheduleDateChipButton = (
+    <FlowMadLibsChip
+      active={activeField === "scheduleDate"}
+      onClick={() => toggleField("scheduleDate")}
+    >
+      {scheduleDateChipLabel}
+    </FlowMadLibsChip>
+  );
+
+  const deadlineChipButton = (
+    <FlowMadLibsChip
+      active={activeField === "deadline"}
+      tone="deadline"
+      onClick={() => toggleField("deadline")}
+    >
+      {deadlineChipLabel}
+    </FlowMadLibsChip>
+  );
+
+  const repeatChipButton = (
+    <FlowMadLibsChip
+      active={activeField === "repeat"}
+      onClick={() => toggleField("repeat")}
+    >
+      {repeatChipLabel}
+    </FlowMadLibsChip>
+  );
+
   return (
     <div className="new-task-flow-step w-full">
-      <StepEyebrow>{t("newTask.eyebrowDeadline")}</StepEyebrow>
-      <StepQuestion compact={compact}>{t("newTask.qDeadline")}</StepQuestion>
-      <div className="flex flex-wrap gap-2">
-        {options.map((d) => {
-          const active = value === d.id;
-          return (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => onPick(d.id)}
-              className="rounded-[14px] border px-4 py-3 text-[15px] font-medium transition-all"
-              style={{
-                background: active ? "var(--st-blue-haze)" : "var(--st-surface-2,#F6F8FC)",
-                borderColor: active ? "var(--st-blue)" : "var(--st-line)",
-                color: active ? "var(--st-blue)" : "var(--st-ink)",
-                fontWeight: active ? 600 : 500,
-              }}
-            >
-              {t(`newTask.${d.labelKey}`)}
-            </button>
-          );
-        })}
-      </div>
-      {value === "custom" ? (
-        <div className="new-task-flow-date mt-3.5 rounded-[14px] bg-[var(--st-surface-2,#F6F8FC)] p-3.5">
-          <input
-            type="date"
-            min={todayMin}
-            value={customDate}
-            onChange={(e) => onCustomChange(e.target.value)}
-            className="w-full rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
+      <StepEyebrow>{t("newTask.eyebrowPlan")}</StepEyebrow>
+      <StepQuestion compact={compact}>{t("newTask.qPlan")}</StepQuestion>
+      <p className="mb-4 text-[15px] leading-relaxed text-[var(--st-muted)]">
+        {t("newTask.sentenceScheduleDatePrefix")}
+        {scheduleDateChipButton}
+        {hasDeadline ? (
+          <>
+            {t("newTask.sentenceDeadlinePrefix")}
+            {deadlineChipButton}
+          </>
+        ) : (
+          <>, {deadlineChipButton}</>
+        )}
+        {isOneOffRepeat ? (
+          <>, {repeatChipButton}</>
+        ) : (
+          <>
+            , {t("newTask.sentenceRepeat")} {repeatChipButton}
+          </>
+        )}
+        .
+      </p>
+
+      {activeField === "scheduleDate" ? (
+        <div className="mb-3 rounded-[16px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)]/80 p-3.5">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
+            {t("newTask.panelScheduleDate")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {scheduleDateOptions.map((d) => {
+              const active = scheduleDatePick === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => handleScheduleDatePick(d.id)}
+                  className="rounded-[14px] border px-4 py-2.5 text-sm font-medium transition-all"
+                  style={{
+                    background: active ? "var(--st-blue-haze)" : "white",
+                    borderColor: active ? "var(--st-blue)" : "var(--st-line)",
+                    color: active ? "var(--st-blue)" : "var(--st-ink)",
+                    fontWeight: active ? 600 : 500,
+                  }}
+                >
+                  {t(`newTask.${d.labelKey}`)}
+                </button>
+              );
+            })}
+          </div>
+          {scheduleDatePick === "custom" ? (
+            <div className="new-task-flow-date mt-3 rounded-[12px] bg-white p-3">
+              <input
+                type="date"
+                min={todayMin}
+                value={scheduleCustomDate}
+                onChange={(e) => onScheduleCustomChange(e.target.value)}
+                className="w-full rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
+              />
+            </div>
+          ) : null}
+          {scheduleDatePick !== "none" ? (
+            <>
+              <p className="mb-2 mt-3.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
+                {t("taskEditor.scheduleTimeLabel")}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="time"
+                  value={scheduleTimeInputValue}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) {
+                      onScheduleTimeChange(null);
+                      return;
+                    }
+                    const [h, m] = v.split(":").map(Number);
+                    if (!Number.isNaN(h) && !Number.isNaN(m)) {
+                      onScheduleTimeChange({ hour: h, minute: m });
+                    }
+                  }}
+                  className="min-w-[8.5rem] rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => onScheduleTimeChange(null)}
+                  className="rounded-[12px] border px-3.5 py-2.5 text-sm font-medium transition-all"
+                  style={{
+                    background: scheduleTime === null ? "var(--st-blue-haze)" : "white",
+                    borderColor: scheduleTime === null ? "var(--st-blue)" : "var(--st-line)",
+                    color: scheduleTime === null ? "var(--st-blue)" : "var(--st-ink)",
+                  }}
+                >
+                  {t("newTask.deadlineNone")}
+                </button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {activeField === "deadline" ? (
+        <div className="mb-3 rounded-[16px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)]/80 p-3.5">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
+            {t("newTask.panelDeadline")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {deadlineOptions.map((d) => {
+              const active = value === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => onPick(d.id)}
+                  className="rounded-[14px] border px-4 py-2.5 text-sm font-medium transition-all"
+                  style={{
+                    background: active ? "var(--st-blue-haze)" : "white",
+                    borderColor: active ? "var(--st-blue)" : "var(--st-line)",
+                    color: active ? "var(--st-blue)" : "var(--st-ink)",
+                    fontWeight: active ? 600 : 500,
+                  }}
+                >
+                  {t(`newTask.${d.labelKey}`)}
+                </button>
+              );
+            })}
+          </div>
+          {value === "custom" ? (
+            <div className="new-task-flow-date mt-3 rounded-[12px] bg-white p-3">
+              <input
+                type="date"
+                min={todayMin}
+                value={customDate}
+                onChange={(e) => onCustomChange(e.target.value)}
+                className="w-full rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {activeField === "repeat" ? (
+        <div className="rounded-[16px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)]/80 p-3.5">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
+            {t("newTask.panelRepeat")}
+          </p>
+          <TaskRepeatPicker
+            compact
+            labelPrefix="newTask"
+            value={newTaskRepeatToSelection(repeatPick)}
+            onChange={(selection) => onRepeatChange(selectionToNewTaskRepeat(selection))}
           />
         </div>
       ) : null}

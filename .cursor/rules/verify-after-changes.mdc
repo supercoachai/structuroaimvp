@@ -1,0 +1,37 @@
+---
+description: Na wijzigingen aan app-shell, routes, pagina's of webpack: altijd verify draaien
+globs:
+  - src/app/**
+  - src/components/layout/**
+  - src/components/AppProviders.tsx
+  - src/middleware.ts
+  - src/lib/supabase/middleware.ts
+  - src/lib/appShell.ts
+  - next.config.ts
+  - scripts/verify-*.mjs
+  - scripts/app-routes.mjs
+alwaysApply: false
+---
+
+# App verify na wijzigingen
+
+Bij wijzigingen aan routing, shell, pagina's, middleware of build-config:
+
+1. Draai **`npm run verify`** (volledig: unit + build + alle routes + JS-chunks).
+2. Als de dev-server al draait: **`npm run verify:quick`**.
+3. Rapporteer pas "klaar" als verify groen is.
+
+## Nieuwe pagina?
+
+Voeg de route toe aan `scripts/app-routes.mjs`. Verify faalt bewust als routes ontbreken.
+
+## Wat verify vangt
+
+- TypeScript/build fouten
+- HTTP 500 op routes
+- Kapotte webpack-chunks (404 JS/CSS, oorzaak leeg scherm)
+- Unit tests + NLP-parser regressie
+
+## Geen vervanging voor
+
+- Ingelogde flows (checkout, taak opslaan): handmatig of later E2E met auth.

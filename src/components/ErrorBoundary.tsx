@@ -3,6 +3,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { captureClientException } from '@/lib/posthog/captureExceptionClient';
 import { getErrorUiCopy } from '@/lib/i18n/clientLocale';
+import { normalizeError } from '@/lib/normalizeError';
 
 interface Props {
   children: ReactNode;
@@ -19,13 +20,14 @@ export default class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown): State {
+    return { hasError: true, error: normalizeError(error) };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Structuro Error:', error, errorInfo);
-    captureClientException(error, {
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    const err = normalizeError(error);
+    console.error('Structuro Error:', err, errorInfo);
+    captureClientException(err, {
       route: 'react-error-boundary',
       componentStack: errorInfo.componentStack ?? undefined,
     });

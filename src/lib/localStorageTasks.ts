@@ -165,7 +165,7 @@ export function saveTasksToStorage(tasks: LocalTask[]): void {
 }
 
 // Voeg een taak toe (controleert op duplicaten)
-export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'updated_at'>): LocalTask {
+export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'updated_at'> & { created_at?: string }): LocalTask {
   const tasks = getTasksFromStorage();
   
   // Genereer unieke ID
@@ -181,7 +181,7 @@ export function addTaskToStorage(task: Omit<LocalTask, 'id' | 'created_at' | 'up
   const newTask: LocalTask = {
     ...task,
     id: newId,
-    created_at: new Date().toISOString(),
+    created_at: task.created_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
   
@@ -325,7 +325,10 @@ export function updateTaskInStorage(taskId: string, updates: Partial<LocalTask>)
     notToday: safeUpdates.notToday !== undefined ? safeUpdates.notToday : (existingTask.notToday ?? false),
     isDeadline: (safeUpdates as any).isDeadline !== undefined ? (safeUpdates as any).isDeadline : (existingTask as any).isDeadline ?? false,
     category: (safeUpdates as any).category !== undefined ? (safeUpdates as any).category : (existingTask as any).category,
-    created_at: existingTask.created_at || new Date().toISOString(), // Behoud originele created_at of maak nieuwe
+    created_at:
+      (safeUpdates as { created_at?: string }).created_at !== undefined
+        ? (safeUpdates as { created_at: string }).created_at
+        : existingTask.created_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
   

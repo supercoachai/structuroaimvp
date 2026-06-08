@@ -95,6 +95,9 @@ function taskToRow(task: Partial<Task>, userId: string): Partial<TaskRow> & { us
     repeat_weekdays: task.repeatWeekdays ?? "all",
     repeat_exclude_dates: task.repeatExcludeDates,
   };
+  if (task.created_at) {
+    row.created_at = task.created_at;
+  }
   return row;
 }
 
@@ -173,6 +176,7 @@ export async function updateTaskInSupabase(
   if (updates.repeatUntil !== undefined) rowUpdates.repeat_until = updates.repeatUntil;
   if (updates.repeatWeekdays !== undefined) rowUpdates.repeat_weekdays = updates.repeatWeekdays;
   if (updates.repeatExcludeDates !== undefined) rowUpdates.repeat_exclude_dates = updates.repeatExcludeDates;
+  if (updates.created_at !== undefined) rowUpdates.created_at = updates.created_at;
 
   const { data, error } = await supabase
     .from("tasks")

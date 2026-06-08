@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { captureClientException } from "@/lib/posthog/captureExceptionClient";
 import { getErrorUiCopy, resolveClientLocale } from "@/lib/i18n/clientLocale";
+import { normalizeError } from "@/lib/normalizeError";
 
 export default function GlobalError({
   error,
@@ -14,9 +15,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    captureClientException(error, {
+    const normalized = normalizeError(error);
+    captureClientException(normalized, {
       route: "global",
-      digest: error.digest,
+      digest: "digest" in error ? error.digest : undefined,
       boundary: "global-error",
     });
   }, [error]);

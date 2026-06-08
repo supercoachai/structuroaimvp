@@ -22,6 +22,8 @@ import { SignupAttributionCapture } from "@/components/SignupAttributionCapture"
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 import { MarketingWaitlistConsent } from "@/components/posthog/MarketingWaitlistConsent";
 import AppLayout from "@/components/layout/AppLayout";
+import { ClientRuntimeGuards } from "@/components/ClientRuntimeGuards";
+import AppShellSuspenseFallback from "@/components/shell/AppShellSuspenseFallback";
 import { ToastHost } from "@/components/Toast";
 import { PrivacySetupGate } from "@/components/consent/PrivacySetupGate";
 import { shouldUseAppShell } from "@/lib/appShell";
@@ -58,7 +60,7 @@ function GaSessionAbandonListener() {
 function ConditionalAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (isWaitlistMarketingPath(pathname)) {
-    return <Suspense fallback={null}>{children}</Suspense>;
+    return <Suspense fallback={<AppShellSuspenseFallback />}>{children}</Suspense>;
   }
   const skipTaskProvider =
     pathname === "/abonnement" ||
@@ -73,7 +75,7 @@ function ConditionalAppShell({ children }: { children: ReactNode }) {
     <InfoDismissalsProvider>
       <SidebarProvider>
         <div className="flex h-full min-h-0 w-full flex-1 flex-col">
-          <Suspense fallback={null}>{content}</Suspense>
+          <Suspense fallback={<AppShellSuspenseFallback />}>{content}</Suspense>
         </div>
       </SidebarProvider>
     </InfoDismissalsProvider>
@@ -98,6 +100,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <AppOpenedTracker />
             <SignupAttributionCapture />
             <RemoveLegacyFocusDurationKey />
+            <ClientRuntimeGuards />
             <PasswordRecoveryRedirect />
             <AnalyticsInternalBridge />
             <Suspense fallback={null}>

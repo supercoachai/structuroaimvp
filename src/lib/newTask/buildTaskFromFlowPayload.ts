@@ -5,7 +5,32 @@ import {
 } from "@/lib/dagstartCookie";
 import { microStepId, type MicroStep } from "@/lib/microSteps";
 import type { Task } from "@/context/TaskContext";
-import type { NewTaskFlowPayload } from "./newTaskFlowTypes";
+import type { NewTaskFlowPayload, NewTaskRepeatChoice } from "./newTaskFlowTypes";
+import type { TaskRepeatWeekdays } from "@/lib/taskRecurrence";
+import { buildCreatedAtWithScheduleTime } from "@/lib/taskScheduleTime";
+
+function resolveRepeatFields(repeat?: NewTaskRepeatChoice): {
+  repeat: string;
+  repeatWeekdays: TaskRepeatWeekdays;
+} {
+  if (repeat === "daily") return { repeat: "daily", repeatWeekdays: "all" };
+  if (repeat === "weekdays") return { repeat: "daily", repeatWeekdays: "weekdays" };
+  if (repeat === "weekly") return { repeat: "weekly", repeatWeekdays: "all" };
+  return { repeat: "none", repeatWeekdays: "all" };
+}
+
+export function resolveScheduleYmdFromPick(
+  pick: "today" | "tomorrow" | "custom" | "none",
+  customYmd: string
+): string | null {
+  if (pick === "none") return null;
+  if (pick === "tomorrow") return getTomorrowCalendarDateAmsterdam();
+  if (pick === "custom" && /^\d{4}-\d{2}-\d{2}$/.test(customYmd)) {
+    return customYmd;
+  }
+  if (pick === "today") return getCalendarDateAmsterdam();
+  return null;
+}
 
 export function resolveDueAtFromDeadline(
   deadline: NewTaskFlowPayload["deadline"]
@@ -42,22 +67,40 @@ export function buildTaskFromFlowPayload(
 ): Omit<Task, "id"> {
   const minutes = Math.max(1, Math.min(480, payload.durationMin));
   const microSteps = buildMicroStepsFromTitles(payload.microsteps);
+  const repeatFields = resolveRepeatFields(payload.repeat);
+  const scheduleYmd =
+    payload.scheduleDate && /^\d{4}-\d{2}-\d{2}$/.test(payload.scheduleDate)
+      ? payload.scheduleDate
+      : null;
+  const dueAt = resolveDueAtFromDeadline(payload.deadline);
+  const createdAt =
+    scheduleYmd && payload.scheduleTime
+      ? buildCreatedAtWithScheduleTime(
+          scheduleYmd,
+          payload.scheduleTime.hour,
+          payload.scheduleTime.minute
+        )
+      : scheduleYmd && repeatFields.repeat === "weekly"
+        ? `${scheduleYmd}T12:00:00.000Z`
+        : undefined;
 
   return {
     title: payload.title.trim(),
     done: false,
     started: false,
     priority: null,
-    dueAt: resolveDueAtFromDeadline(payload.deadline),
+    dueAt,
     duration: minutes,
     estimatedDuration: minutes,
     notToday: false,
     source: "regular",
     reminders: [],
-    repeat: "none",
+    repeat: repeatFields.repeat,
+    repeatWeekdays: repeatFields.repeatWeekdays,
     impact: "🌱",
     energyLevel: payload.energy,
     microSteps,
+    ...(createdAt ? { created_at: createdAt } : {}),
     ...extras,
   };
 }

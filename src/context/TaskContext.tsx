@@ -19,6 +19,7 @@ import {
   subscribeToTasks,
 } from '../lib/supabase/tasksDb';
 import { toast } from '@/components/Toast';
+import { scheduleReminders } from '@/components/ReminderEngine';
 
 /** Tijdelijke id tijdens optimistic add; wordt vervangen zodra Supabase insert klaar is. */
 export const OPTIMISTIC_TASK_ID_PREFIX = 'structuro-pending:';
@@ -46,7 +47,7 @@ function buildOptimisticTask(input: Omit<Task, 'id'>, tempId: string): Task {
     energyLevel: input.energyLevel ?? 'medium',
     microSteps: Array.isArray(input.microSteps) ? input.microSteps : [],
     notToday: input.notToday ?? false,
-    created_at: now,
+    created_at: input.created_at ?? now,
     updated_at: now,
   };
 }
@@ -162,6 +163,7 @@ function mapTaskToLocalTask(task: Partial<Task>): Partial<LocalTask> {
     notToday: task.notToday || false,
     isDeadline: (task as any).isDeadline,
     category: (task as any).category,
+    ...(task.created_at ? { created_at: task.created_at } : {}),
   };
 }
 
@@ -210,6 +212,9 @@ function mapTaskUpdatesToLocalTask(updates: Partial<Task>): Partial<LocalTask> {
   // EnergyLevel: only if provided
   if ('energyLevel' in updates) {
     local.energyLevel = updates.energyLevel != null ? updates.energyLevel : undefined;
+  }
+  if ('created_at' in updates && updates.created_at) {
+    local.created_at = updates.created_at;
   }
 
   return local;
@@ -298,6 +303,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [authLoading, fetchTasks]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || tasksLoading) return;
+    scheduleReminders(tasks);
+  }, [tasks, tasksLoading]);
+
+  useEffect(() => {
     if (!user?.id) return;
     const unsub = subscribeToTasks(user.id, setTasks);
     return unsub;
@@ -343,7 +353,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         }
       }
       const localTaskData = mapTaskToLocalTask(task);
-      const newTask = addTaskToStorage(localTaskData as Omit<LocalTask, 'id' | 'created_at' | 'updated_at'>);
+      const newTask = addTaskToStorage(localTaskData as Omit<LocalTask, 'id' | 'created_at' | 'updated_at'> & { created_at?: string });
       const mappedTask = mapLocalTaskToTask(newTask);
       setTasks((prev) => (prev.some(t => t.id === mappedTask.id) ? prev : [mappedTask, ...prev]));
       if (typeof window !== 'undefined') {

@@ -12,6 +12,12 @@ import BottomTabNav from '../navigation/BottomTabNav';
 import DesktopSidebarNav from '../navigation/DesktopSidebarNav';
 import QuickTaskInput from '@/components/QuickTaskInput';
 import dynamic from 'next/dynamic';
+import { performClientLogout } from '@/lib/logoutClient';
+import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
+import { useSidebar } from '@/contexts/SidebarContext';
+import { useI18n } from '@/lib/i18n';
+import { TrialBanner } from '@/components/TrialBanner';
+import AppShellSuspenseFallback from '@/components/shell/AppShellSuspenseFallback';
 
 const DagstartOverlay = dynamic(
   () =>
@@ -20,14 +26,13 @@ const DagstartOverlay = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <div className="min-h-0 flex-1 bg-[#F1F3F8]" aria-hidden />,
+    loading: () => <AppShellSuspenseFallback />,
   }
 );
-import { performClientLogout } from '@/lib/logoutClient';
-import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
-import { useSidebar } from '@/contexts/SidebarContext';
-import { useI18n } from '@/lib/i18n';
-import { TrialBanner } from '@/components/TrialBanner';
+
+type ShellState =
+  | { status: "pending" }
+  | { status: "ready"; dagstartDone: boolean };
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -40,16 +45,19 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const { t } = useI18n();
   const { sidebarOpen, toggleSidebar, setSidebarOpen } = useSidebar();
 
-  /** Server en eerste client-render gelijk houden; echte waarden komen uit useLayoutEffect. */
-  const [shellReady, setShellReady] = useState(false);
-  const [dagstartDone, setDagstartDone] = useState<boolean | null>(null);
+  /** Atomische shell-state: geen frame met lege main (wit scherm). */
+  const [shell, setShell] = useState<ShellState>({ status: "pending" });
+  const shellReady = shell.status === "ready";
+  const dagstartDone = shell.status === "ready" ? shell.dagstartDone : null;
   const [dagstartPhase, setDagstartPhase] = useState<'energy' | 'tasks' | null>(null);
   const wasDagstartDoneRef = useRef(true);
 
   useLayoutEffect(() => {
     const next = isDagstartDoneTodayClient();
-    setDagstartDone((prev) => (prev === next ? prev : next));
-    setShellReady(true);
+    setShell((prev) => {
+      if (prev.status === "ready" && prev.dagstartDone === next) return prev;
+      return { status: "ready", dagstartDone: next };
+    });
   }, [pathname]);
 
   useEffect(() => {
@@ -58,7 +66,13 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
      * in tabs/devices, zonder agressief te pollen. Event listener doet het primaire werk,
      * de fallback-interval (30s) vangt edge-cases af waar het event niet vuurt.
      */
-    const onUpdate = () => setDagstartDone(isDagstartDoneTodayClient());
+    const onUpdate = () => {
+      const next = isDagstartDoneTodayClient();
+      setShell((prev) => {
+        if (prev.status === "ready" && prev.dagstartDone === next) return prev;
+        return { status: "ready", dagstartDone: next };
+      });
+    };
     const onFocus = () => onUpdate();
     window.addEventListener('structuro_tasks_updated', onUpdate);
     window.addEventListener('focus', onFocus);
@@ -73,9 +87,12 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
   const isFocusRoute = (pathname ?? '').startsWith('/focus');
   const isHomeRoute = pathname === '/';
   const isShutdownRoute = (pathname ?? '').startsWith('/shutdown');
+  /** Instellingen altijd bereikbaar, ook vóór dagstart vandaag. */
+  const isSettingsRoute = (pathname ?? '').startsWith('/settings');
   const shouldHideChrome = hideSidebar || isFocusRoute;
-  const inDagstartFlow = dagstartDone !== true;
-  const showSidebar = shellReady && dagstartDone === true;
+  const dagstartBlocksShell = dagstartDone !== true && !isSettingsRoute;
+  const inDagstartFlow = dagstartBlocksShell;
+  const showSidebar = shellReady && !dagstartBlocksShell;
   const mainNavLocked = inDagstartFlow;
 
   /** Bij start dagstart: sidebar ingeklapt zonder localStorage te overschrijven. */
@@ -95,7 +112,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     setDagstartCookieOnClient();
     setDagstartPhase(null);
     startTransition(() => {
-      setDagstartDone(true);
+      setShell({ status: "ready", dagstartDone: true });
     });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
@@ -136,8 +153,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     );
   }
 
-  const showDagstartOverlay = shellReady && dagstartDone === false;
-  const showMainContent = shellReady && dagstartDone === true;
+  const showDagstartOverlay = shellReady && dagstartBlocksShell;
+  const showMainContent = shellReady && !dagstartBlocksShell;
   const hideTopbarLogo = inDagstartFlow && dagstartPhase !== 'tasks';
 
   return (
@@ -196,7 +213,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            {dagstartDone === true ? (
+            {!dagstartBlocksShell ? (
               <Link
                 href="/settings"
                 className="inline-flex shrink-0 items-center justify-center rounded-xl p-2.5 text-[var(--st-muted)] transition-colors hover:bg-[var(--st-surface-2)] hover:text-[var(--st-ink)]"
@@ -227,7 +244,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
             }`}
           >
             {!shellReady ? (
-              <div className="min-h-0 flex-1 bg-[#F1F3F8]" aria-hidden />
+              <AppShellSuspenseFallback />
             ) : showDagstartOverlay ? (
               <DagstartOverlay
                 onComplete={handleDagstartComplete}
@@ -245,7 +262,9 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
               >
                 {children}
               </div>
-            ) : null}
+            ) : (
+              <AppShellSuspenseFallback />
+            )}
           </main>
 
           {!mainNavLocked && !isShutdownRoute ? <QuickTaskInput /> : null}
