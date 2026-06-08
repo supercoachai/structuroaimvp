@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -27,7 +27,7 @@ export default function PrivacySetupClient() {
   const [notificationBusy, setNotificationBusy] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const supported =
       "Notification" in window &&
@@ -41,15 +41,12 @@ export default function PrivacySetupClient() {
   }, []);
 
   const notificationsOn = notificationPermission === "granted";
-  const notificationsToggleDisabled =
-    notificationBusy ||
-    notificationPermission === "unsupported" ||
-    notificationPermission === "denied";
+  const notificationsToggleDisabled = notificationBusy;
 
   const handleEnableNotifications = async () => {
     if (notificationBusy) return;
     if (notificationPermission === "unsupported") {
-      toast(t("settings.notificationsUnsupported"));
+      toast.error(t("settings.notificationsUnsupported"));
       return;
     }
     setNotificationBusy(true);
@@ -68,14 +65,14 @@ export default function PrivacySetupClient() {
           ? Notification.permission
           : "default";
       setNotificationPermission(currentPermission);
-      if (sub) toast(t("settings.notificationsEnabled"));
+      if (sub) toast.success(t("settings.notificationsEnabled"));
       else if (currentPermission === "denied") {
-        toast(t("settings.notificationsDenied"));
+        toast.error(t("settings.notificationsDenied"));
       } else {
-        toast(t("settings.notificationsNoSubscription"));
+        toast.error(t("settings.notificationsNoSubscription"));
       }
     } catch (err) {
-      toast(t("settings.notificationsEnableFail", { detail: String(err) }));
+      toast.error(t("settings.notificationsEnableFail", { detail: String(err) }));
     } finally {
       setNotificationBusy(false);
     }
@@ -104,6 +101,11 @@ export default function PrivacySetupClient() {
   };
 
   const handleNotificationToggle = () => {
+    if (notificationBusy) return;
+    if (notificationPermission === "denied") {
+      toast.error(t("settings.notificationsDenied"));
+      return;
+    }
     if (notificationsOn) void handleDisableNotifications();
     else void handleEnableNotifications();
   };

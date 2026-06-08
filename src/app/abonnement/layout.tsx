@@ -1,6 +1,5 @@
 import { Hanken_Grotesk } from "next/font/google";
 import { AbonnementStripeWarmup } from "./AbonnementStripeWarmup";
-import { AbonnementToastHost } from "./AbonnementToastHost";
 import "./retention-paywall.css";
 
 const hanken = Hanken_Grotesk({
@@ -20,7 +19,6 @@ export default function AbonnementLayout({
       <div className={`retention-paywall ${hanken.className}`}>
       <AbonnementStripeWarmup />
       {children}
-      <AbonnementToastHost />
     </div>
     </>
   );

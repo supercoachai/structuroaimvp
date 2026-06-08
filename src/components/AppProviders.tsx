@@ -22,6 +22,7 @@ import { SignupAttributionCapture } from "@/components/SignupAttributionCapture"
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 import { MarketingWaitlistConsent } from "@/components/posthog/MarketingWaitlistConsent";
 import AppLayout from "@/components/layout/AppLayout";
+import { ToastHost } from "@/components/Toast";
 import { PrivacySetupGate } from "@/components/consent/PrivacySetupGate";
 import { shouldUseAppShell } from "@/lib/appShell";
 import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
@@ -108,6 +109,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <DeferredVercelObservability />
           </PostHogProvider>
           <CookieBanner />
+          <ToastHost />
         </ConsentProvider>
       </I18nProvider>
     </ErrorBoundary>

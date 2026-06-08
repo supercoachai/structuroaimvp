@@ -30,7 +30,7 @@ export function RegistrerenShell({
       className={
         isPlanPage
           ? "relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[var(--st-bg)] px-3 pt-[max(2.5rem,env(safe-area-inset-top))] pb-0 sm:px-4"
-          : "relative flex h-full min-h-0 w-full flex-1 items-start justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain bg-[var(--st-bg)] px-2 py-6 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))] sm:px-4"
+          : "relative flex h-full min-h-0 w-full flex-1 items-start justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain bg-[var(--st-bg)] px-4 py-6 pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))] sm:px-6"
       }
     >
       <button

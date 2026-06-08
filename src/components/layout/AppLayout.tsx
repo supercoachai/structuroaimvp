@@ -8,7 +8,6 @@ import {
   Bars3Icon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { ToastHost } from '../Toast';
 import BottomTabNav from '../navigation/BottomTabNav';
 import DesktopSidebarNav from '../navigation/DesktopSidebarNav';
 import QuickTaskInput from '@/components/QuickTaskInput';
@@ -116,7 +115,6 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         >
           {children}
         </main>
-        <ToastHost />
         {!isFocusRoute ? (
           <button
             type="button"
@@ -248,8 +246,6 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         </div>
 
         {!mainNavLocked ? <BottomTabNav className="md:hidden" /> : null}
-
-        <ToastHost />
       </div>
     </div>
   );

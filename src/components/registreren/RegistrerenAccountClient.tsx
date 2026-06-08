@@ -15,7 +15,7 @@ import {
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
-import { resolvePostSignupPath } from "@/lib/registrationGate";
+import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 import {
   DEFAULT_STRIPE_TRIAL_DAYS,
   isEventSignupSource,
@@ -71,7 +71,7 @@ function RegistrerenAccountInner() {
           .maybeSingle();
 
         window.location.replace(
-          resolvePostSignupPath(
+          resolveClientPostSignupPath(
             profile
               ? {
                   email: user.email,
@@ -142,7 +142,7 @@ function RegistrerenAccountInner() {
         .maybeSingle();
 
       window.location.assign(
-        resolvePostSignupPath(
+        resolveClientPostSignupPath(
           profile
             ? {
                 email: emailTrimmed,
@@ -175,7 +175,7 @@ function RegistrerenAccountInner() {
 
   return (
     <RegistrerenShell error={error}>
-      <div className="mx-auto mt-8 mb-6 max-w-md text-center">
+      <div className="mx-auto mt-8 mb-6 w-[90%] max-w-[25.2rem] text-center">
         <p className="mb-3">
           <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
             {t("registrerenPage.trialBadge", { days: String(trialDays) })}
@@ -189,7 +189,7 @@ function RegistrerenAccountInner() {
         </p>
       </div>
 
-      <div className="mx-auto w-full max-w-md space-y-4">
+      <div className="mx-auto w-[90%] max-w-[25.2rem] space-y-4">
         <div className="space-y-1">
           <label htmlFor="reg-name" className="block text-sm text-gray-500">
             {t("registrerenPage.nameLabel")}
@@ -246,9 +246,11 @@ function RegistrerenAccountInner() {
           {loading ? t("registrerenPage.submitBusy") : t("registrerenPage.continueBtn")}
         </button>
 
-        <p className="text-center text-xs leading-relaxed text-slate-500">
-          {t("registrerenPage.accountTrialAfter")}
-        </p>
+        {!eventSignupFlow ? (
+          <p className="text-center text-xs leading-relaxed text-slate-500">
+            {t("registrerenPage.accountTrialAfter")}
+          </p>
+        ) : null}
       </div>
 
       {!eventSignupFlow ? (
