@@ -31,6 +31,7 @@ import {
   formatRepeatLabel,
 } from "@/lib/taskRecurrence";
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
+import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -150,6 +151,16 @@ export default function NewTaskFlow({
     };
   }, []);
 
+  const handleRepeatChange = useCallback((choice: NewTaskRepeatChoice) => {
+    setRepeatPick(choice);
+    if (
+      (choice === "weekly" || choice === "interval") &&
+      scheduleDatePick === "none"
+    ) {
+      setScheduleDatePick("today");
+    }
+  }, [scheduleDatePick]);
+
   useEffect(() => {
     if (
       (repeatPick === "weekly" || repeatPick === "interval") &&
@@ -185,6 +196,25 @@ export default function NewTaskFlow({
     () => resolveScheduleYmdFromPick(scheduleDatePick, scheduleCustomDate),
     [scheduleDatePick, scheduleCustomDate]
   );
+
+  const repeatChipText = useMemo(() => {
+    if (repeatPick === "none") return null;
+    return formatRepeatLabel(
+      {
+        repeat:
+          repeatPick === "interval"
+            ? "interval"
+            : repeatPick === "weekly"
+              ? "weekly"
+              : "daily",
+        repeatWeekdays: repeatPick === "weekdays" ? "weekdays" : "all",
+        repeatIntervalDays:
+          repeatPick === "interval" ? repeatIntervalDays : undefined,
+      },
+      t,
+      "newTask"
+    );
+  }, [repeatPick, repeatIntervalDays, t]);
 
   const scheduleChipText = useMemo(() => {
     if (scheduleDatePick === "none") return t("newTask.scheduleChipNone");
@@ -322,6 +352,8 @@ export default function NewTaskFlow({
     (step === 2 && duration === "custom") ||
     (!skipDeadline && step === 3 && deadlineStepReady);
 
+  const showMicroSubmit = step === microStepIndex && microEditing;
+
   return (
     <div
       className={`new-task-flow flex min-h-0 flex-col overflow-hidden bg-[var(--st-surface,#fff)] ${
@@ -396,13 +428,18 @@ export default function NewTaskFlow({
               <span>{deadlineChipText}</span>
             </AnswerChip>
           ) : null}
+          {!skipDeadline && repeatChipText && step > 3 ? (
+            <AnswerChip onClick={() => setStep(3)}>
+              <span>{repeatChipText}</span>
+            </AnswerChip>
+          ) : null}
         </div>
       ) : null}
 
       <div
         className={`new-task-flow-stage flex min-h-0 flex-1 flex-col px-5 sm:px-6 ${
           embedded
-            ? "justify-start overflow-hidden py-1"
+            ? "justify-start overflow-y-auto overflow-x-hidden py-1"
             : "justify-center overflow-y-auto overflow-x-hidden py-4 sm:py-5"
         } ${compact && !embedded ? "py-3" : ""}`}
       >
@@ -456,7 +493,7 @@ export default function NewTaskFlow({
             repeatIntervalDays={repeatIntervalDays}
             onPick={setDeadlinePick}
             onCustomChange={setCustomDate}
-            onRepeatChange={setRepeatPick}
+            onRepeatChange={handleRepeatChange}
             onRepeatIntervalDaysChange={setRepeatIntervalDays}
             compact={compact}
           />
@@ -541,7 +578,18 @@ export default function NewTaskFlow({
             </button>
           ) : null}
 
-          {!showFooterPrimary ? <span /> : null}
+          {showMicroSubmit ? (
+            <button
+              type="button"
+              onClick={() => void persist()}
+              disabled={busy}
+              className="new-task-flow-link new-task-flow-link--primary ml-auto rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] disabled:pointer-events-none disabled:opacity-50"
+            >
+              {busy ? t("newTask.saving") : t("newTask.submit")}
+            </button>
+          ) : null}
+
+          {!showFooterPrimary && !showMicroSubmit ? <span /> : null}
         </div>
       ) : null}
     </div>
@@ -1141,27 +1189,32 @@ function StepDeadline({
         </div>
       ) : null}
 
-      {activeField === "repeat" ? (
-        <div className="rounded-[16px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)]/80 p-3.5">
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
-            {t("newTask.panelRepeat")}
-          </p>
-          <TaskRepeatPicker
-            compact
-            labelPrefix="newTask"
-            value={newTaskRepeatToSelection(repeatPick, repeatIntervalDays)}
-            onChange={(selection) => {
-              onRepeatChange(selectionToNewTaskRepeat(selection));
-              if (
-                selection.repeat === "interval" &&
-                selection.repeatIntervalDays != null
-              ) {
-                onRepeatIntervalDaysChange(selection.repeatIntervalDays);
-              }
-            }}
-          />
-        </div>
-      ) : null}
+      <div className="rounded-[16px] border border-[var(--st-line)] bg-[var(--st-surface-2,#F6F8FC)]/80 p-3.5">
+        <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--st-muted-2)]">
+          {t("newTask.panelRepeat")}
+        </p>
+        <TaskRepeatPicker
+          compact
+          labelPrefix="newTask"
+          value={newTaskRepeatToSelection(repeatPick, repeatIntervalDays)}
+          onChange={(selection) => {
+            const choice = selectionToNewTaskRepeat(selection);
+            onRepeatChange(choice);
+            if (
+              (selection.repeat === "weekly" || selection.repeat === "interval") &&
+              scheduleDatePick === "none"
+            ) {
+              onScheduleDatePick("today");
+            }
+            if (
+              selection.repeat === "interval" &&
+              selection.repeatIntervalDays != null
+            ) {
+              onRepeatIntervalDaysChange(selection.repeatIntervalDays);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -1211,12 +1264,7 @@ function StepMicro({
       setMicrosteps(result.steps);
       setEditing(true);
     } catch (error) {
-      const code = error instanceof Error ? error.message : "generation_failed";
-      if (code === "rate_limited") {
-        setSuggestError(t("newTask.microSuggestRateLimit"));
-      } else {
-        setSuggestError(t("newTask.microSuggestError"));
-      }
+      setSuggestError(microSuggestErrorMessage(error, t));
       setEditing(true);
       if (microsteps.length === 0) {
         setMicrosteps([""]);
@@ -1368,15 +1416,6 @@ function StepMicro({
           {t("newTask.microAddStep")}
         </button>
       </div>
-
-      <button
-        type="button"
-        onClick={() => void onSave()}
-        disabled={busy}
-        className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2.5 text-sm font-medium text-[var(--st-blue)] disabled:opacity-50"
-      >
-        {busy ? t("newTask.saving") : t("newTask.submit")}
-      </button>
     </div>
   );
 }

@@ -904,30 +904,57 @@ body {
 }
 
 .focus-screen__micro-card {
-  padding: clamp(10px, 1.8dvh, 14px) clamp(12px, 3vw, 18px);
+  --micro-card-px: clamp(12px, 3vw, 18px);
+  padding: clamp(10px, 1.8dvh, 14px) var(--micro-card-px);
+  overflow: visible;
 }
 
 .focus-screen__micro-steps-scroll {
-  max-height: clamp(112px, 20dvh, 176px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
-}
-
-.focus-screen__micro-steps-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.focus-screen__micro-steps-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  margin-inline: calc(-1 * var(--micro-card-px));
+  padding-inline: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-self: stretch;
 }
 
 .focus-screen__micro-card .focus-micro-step {
-  padding-block: clamp(2px, 0.6dvh, 6px);
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 0.625rem;
+  padding-block: clamp(6px, 1dvh, 10px);
+  padding-inline: var(--micro-card-px);
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.focus-screen__micro-card .focus-micro-step--active {
+  margin-inline: 0;
+  padding-block: clamp(8px, 1.2dvh, 12px);
+  border-color: rgba(167, 139, 250, 0.22);
+  border-left: 0;
+  border-right: 0;
+  background: rgba(139, 92, 246, 0.14);
+  box-shadow: inset 3px 0 0 #a78bfa;
+}
+
+.focus-screen__micro-card .focus-micro-step--active + .focus-micro-step {
+  margin-top: 1px;
+}
+
+.focus-screen__micro-card .focus-micro-step:has(+ .focus-micro-step--active) {
+  margin-bottom: 1px;
 }
 
 .focus-screen__micro-card .focus-micro-input-row {
@@ -1380,7 +1407,9 @@ body {
 }
 
 .new-task-flow--embedded .new-task-flow-stage {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .new-task-flow--embedded .new-task-flow-chip {

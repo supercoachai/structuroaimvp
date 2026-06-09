@@ -98,22 +98,27 @@ export function buildTaskFromFlowPayload(
     payload.scheduleDate && /^\d{4}-\d{2}-\d{2}$/.test(payload.scheduleDate)
       ? payload.scheduleDate
       : null;
+  const anchorYmd =
+    scheduleYmd ??
+    (repeatFields.repeat === "weekly" || repeatFields.repeat === "interval"
+      ? getCalendarDateAmsterdam()
+      : null);
   const dueAt = resolveDueAtFromDeadline(payload.deadline);
   const createdAt =
-    scheduleYmd && payload.scheduleTime
+    anchorYmd && payload.scheduleTime
       ? buildCreatedAtWithScheduleTime(
-          scheduleYmd,
+          anchorYmd,
           payload.scheduleTime.hour,
           payload.scheduleTime.minute
         )
-      : scheduleYmd &&
+      : anchorYmd &&
           (repeatFields.repeat === "weekly" || repeatFields.repeat === "interval")
-        ? `${scheduleYmd}T12:00:00.000Z`
+        ? `${anchorYmd}T12:00:00.000Z`
         : undefined;
 
   const repeatNextDueAt =
     repeatFields.repeat === "interval"
-      ? resolveInitialIntervalNextDueAt(scheduleYmd)
+      ? resolveInitialIntervalNextDueAt(anchorYmd)
       : undefined;
 
   return {

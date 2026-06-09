@@ -33,6 +33,7 @@ import {
 } from '@/lib/posthog/focusSessionEvents';
 import { useViewportContentFit } from '@/hooks/useViewportContentFit';
 import InfoButton from '@/components/info/InfoButton';
+import FocusMicroAiSuggest from '@/components/focus/FocusMicroAiSuggest';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -391,6 +392,12 @@ function FocusContent() {
     fetchTasks();
   };
 
+  const handleApplyAiMicroSteps = async (steps: MicroStep[]) => {
+    if (!currentTask) return;
+    await updateTask(currentTask.id, { microSteps: steps });
+    fetchTasks();
+  };
+
   const startSession = async () => {
     setShowFocusCard(false);
     setCountdownFadeOut(false);
@@ -672,6 +679,15 @@ function FocusContent() {
         <InfoButton infoId="microstappen" variant="onDark" autoIntro={false} />
       </div>
 
+      {existingMicroSteps.length === 0 && currentTask ? (
+        <FocusMicroAiSuggest
+          taskTitle={currentTask.title}
+          energyLevel={currentTask.energyLevel}
+          durationMin={getTaskDurationMinutes(currentTask)}
+          onApplySteps={handleApplyAiMicroSteps}
+        />
+      ) : null}
+
       {existingMicroSteps.length > 0 ? (
         <div className="focus-screen__micro-steps-scroll flex flex-col gap-1">
           {existingMicroSteps.map((step, idx) => {
@@ -682,11 +698,7 @@ function FocusContent() {
                 key={step.id}
                 type="button"
                 onClick={() => handleToggleMicroStep(step.id)}
-                className={`focus-micro-step flex w-full items-center gap-2.5 rounded-[10px] px-0 text-left transition-colors ${
-                  isActive
-                    ? 'border border-violet-400/30 bg-violet-500/15 -mx-1 px-3 py-2'
-                    : 'border border-transparent py-1.5'
-                }`}
+                className={`focus-micro-step${isActive ? ' focus-micro-step--active' : ''}`}
               >
                 {isDone ? (
                   <>

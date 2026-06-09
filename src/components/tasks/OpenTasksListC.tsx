@@ -4,8 +4,10 @@ import { useState } from "react";
 import { calendarDayDiff, parseDueCalendarDayAmsterdam } from "@/lib/dagstart/deadlineToday";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
-import { normalizeMicroSteps } from "@/lib/microSteps";
+import { normalizeMicroSteps, type MicroStep } from "@/lib/microSteps";
+import { formatRepeatLabel } from "@/lib/taskRecurrence";
 import { useI18n } from "@/lib/i18n";
+import MicroStepsEditor from "@/components/tasks/MicroStepsEditor";
 import "./open-tasks-list-c.css";
 
 const GROUPS = [
@@ -36,6 +38,7 @@ type OpenTasksListCProps = {
   onEdit: (task: TaskRow) => void;
   onDelete: (task: TaskRow) => void;
   onToggle: (task: TaskRow) => void;
+  onUpdateMicroSteps: (task: TaskRow, steps: MicroStep[]) => void | Promise<void>;
 };
 
 function deadlineColor(overdue: boolean, urgent: boolean): string {
@@ -197,9 +200,11 @@ export default function OpenTasksListC({
   onEdit,
   onDelete,
   onToggle,
+  onUpdateMicroSteps,
 }: OpenTasksListCProps) {
   const { t: tr, locale } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [microEditTaskId, setMicroEditTaskId] = useState<string | null>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     green: false,
     yellow: false,
@@ -278,91 +283,139 @@ export default function OpenTasksListC({
                         : task.repeat === "interval" && task.repeatNextDueAt
                           ? getListDeadlineMeta(task.repeatNextDueAt, locale)
                           : null;
-                      const microCount = normalizeMicroSteps(task.microSteps).length;
+                      const microSteps = normalizeMicroSteps(task.microSteps);
+                      const microCount = microSteps.length;
+                      const microDoneCount = microSteps.filter((s) => s.done).length;
+                      const repeatLabel = formatRepeatLabel(task, tr, "taskEditor");
                       const stepsLabel =
-                        locale === "en"
-                          ? `${microCount} steps`
-                          : `${microCount} stappen`;
+                        microDoneCount > 0
+                          ? tr("tasks.microStepsBadge", {
+                              done: String(microDoneCount),
+                              total: String(microCount),
+                            })
+                          : locale === "en"
+                            ? `${microCount} steps`
+                            : `${microCount} stappen`;
 
                       return (
                         <div
                           key={task.id}
-                          className={`lc-row${active ? " active" : ""}${isCompleting ? " is-done" : ""}`}
-                          onClick={() =>
-                            setSelectedId((id) => (id === task.id ? null : task.id))
-                          }
+                          className={`lc-row-wrap${active ? " active" : ""}${isCompleting ? " is-done" : ""}`}
                         >
-                          <TaskCheck
-                            color={group.color}
-                            done={isCompleting}
-                            alive={active && !isCompleting}
-                            label={tr("tasks.quickDoneTitle")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggle(task);
+                          <div
+                            className={`lc-row${active ? " active" : ""}`}
+                            onClick={() => {
+                              setSelectedId((id) => {
+                                const next = id === task.id ? null : task.id;
+                                if (next === task.id && microCount > 0) {
+                                  setMicroEditTaskId(task.id);
+                                } else if (next !== task.id) {
+                                  setMicroEditTaskId(null);
+                                }
+                                return next;
+                              });
                             }}
-                          />
-                          <div className="lc-main">
-                            <span className="lc-title">{task.title}</span>
-                            {(deadlineMeta || microCount > 0) && (
-                              <span className="lc-sub">
-                                {deadlineMeta ? (
-                                  <span
-                                    style={{
-                                      color: deadlineColor(
-                                        deadlineMeta.overdue,
-                                        deadlineMeta.urgent
-                                      ),
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {deadlineMeta.label}
-                                  </span>
-                                ) : null}
-                                {deadlineMeta && microCount > 0 ? (
-                                  <span className="lc-dotsep">·</span>
-                                ) : null}
-                                {microCount > 0 ? <span>{stepsLabel}</span> : null}
+                          >
+                            <TaskCheck
+                              color={group.color}
+                              done={isCompleting}
+                              alive={active && !isCompleting}
+                              label={tr("tasks.quickDoneTitle")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggle(task);
+                              }}
+                            />
+                            <div className="lc-main">
+                              <span className="lc-title">{task.title}</span>
+                              {(deadlineMeta || repeatLabel || microCount > 0) && (
+                                <span className="lc-sub">
+                                  {deadlineMeta ? (
+                                    <span
+                                      style={{
+                                        color: deadlineColor(
+                                          deadlineMeta.overdue,
+                                          deadlineMeta.urgent
+                                        ),
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {deadlineMeta.label}
+                                    </span>
+                                  ) : null}
+                                  {deadlineMeta && (repeatLabel || microCount > 0) ? (
+                                    <span className="lc-dotsep">·</span>
+                                  ) : null}
+                                  {repeatLabel ? <span>{repeatLabel}</span> : null}
+                                  {repeatLabel && microCount > 0 ? (
+                                    <span className="lc-dotsep">·</span>
+                                  ) : null}
+                                  {microCount > 0 ? (
+                                    <button
+                                      type="button"
+                                      className={`lc-micro-trigger${microDoneCount > 0 ? " lc-micro-trigger--progress" : ""}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedId(task.id);
+                                        setMicroEditTaskId(task.id);
+                                      }}
+                                    >
+                                      {stepsLabel}
+                                    </button>
+                                  ) : null}
+                                </span>
+                              )}
+                            </div>
+                            {mins ? <span className="lc-min">{mins}m</span> : null}
+                            {active ? (
+                              <div
+                                className="lc-actions"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  className="lc-act start"
+                                  style={{ "--lc-act-color": group.color } as React.CSSProperties}
+                                  aria-label={tr("tasks.playFocus")}
+                                  onClick={() => onStart(task)}
+                                >
+                                  <ListIcons kind="play" color="#fff" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lc-act"
+                                  aria-label={tr("tasks.edit")}
+                                  onClick={() => onEdit(task)}
+                                >
+                                  <ListIcons kind="edit" color="var(--st-muted)" size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lc-act"
+                                  aria-label={tr("tasks.deleteTitle")}
+                                  onClick={() => onDelete(task)}
+                                >
+                                  <ListIcons kind="trash" color="var(--st-muted)" size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="lc-chev">
+                                <ListIcons kind="chev" color="var(--st-muted-2)" size={14} />
                               </span>
                             )}
                           </div>
-                          {mins ? <span className="lc-min">{mins}m</span> : null}
-                          {active ? (
+
+                          {active && microCount > 0 && microEditTaskId === task.id ? (
                             <div
-                              className="lc-actions"
+                              className="lc-micro-panel"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
-                                type="button"
-                                className="lc-act start"
-                                style={{ "--lc-act-color": group.color } as React.CSSProperties}
-                                aria-label={tr("tasks.playFocus")}
-                                onClick={() => onStart(task)}
-                              >
-                                <ListIcons kind="play" color="#fff" size={12} />
-                              </button>
-                              <button
-                                type="button"
-                                className="lc-act"
-                                aria-label={tr("tasks.edit")}
-                                onClick={() => onEdit(task)}
-                              >
-                                <ListIcons kind="edit" color="var(--st-muted)" size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                className="lc-act"
-                                aria-label={tr("tasks.deleteTitle")}
-                                onClick={() => onDelete(task)}
-                              >
-                                <ListIcons kind="trash" color="var(--st-muted)" size={14} />
-                              </button>
+                              <MicroStepsEditor
+                                steps={microSteps}
+                                onChange={(steps) => onUpdateMicroSteps(task, steps)}
+                              />
                             </div>
-                          ) : (
-                            <span className="lc-chev">
-                              <ListIcons kind="chev" color="var(--st-muted-2)" size={14} />
-                            </span>
-                          )}
+                          ) : null}
                         </div>
                       );
                     })}

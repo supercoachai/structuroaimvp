@@ -28,6 +28,7 @@ import {
 import { getTodayMinutesProgress } from '@/lib/homeTodayProgress';
 import { getDayStartTimeOfDay } from '@/lib/dayStartGreeting';
 import { useViewportContentFit } from '@/hooks/useViewportContentFit';
+import FocusMicroAiSuggest from '@/components/focus/FocusMicroAiSuggest';
 
 export default function HomeCalm() {
   const { t, locale } = useI18n();
@@ -315,6 +316,20 @@ export default function HomeCalm() {
     } catch (e) {
       console.error(e);
       toast(t('tasks.toastAddErr'));
+    }
+  };
+
+  const applyHeroAiMicroSteps = async (steps: MicroStep[]) => {
+    if (!heroTask) return;
+    setHeroMicroSaving(true);
+    try {
+      await updateTask(heroTask.id, { microSteps: steps });
+    } catch (e) {
+      console.error(e);
+      toast(t('tasks.toastAddErr'));
+      throw e;
+    } finally {
+      setHeroMicroSaving(false);
     }
   };
 
@@ -633,6 +648,16 @@ export default function HomeCalm() {
                 </button>
               </div>
 
+              {heroMicroSteps.length === 0 && heroTask ? (
+                <FocusMicroAiSuggest
+                  taskTitle={heroTask.title}
+                  energyLevel={heroTask.energyLevel}
+                  durationMin={getTaskDurationMinutes(heroTask)}
+                  onApplySteps={applyHeroAiMicroSteps}
+                  disabled={heroMicroSaving}
+                />
+              ) : null}
+
               {heroMicroSteps.length > 0 ? (
                 <div className="focus-screen__micro-steps-scroll flex flex-col gap-1">
                   {heroMicroSteps.map((step, idx) => {
@@ -643,11 +668,7 @@ export default function HomeCalm() {
                         key={step.id}
                         type="button"
                         onClick={() => void toggleHeroMicroStep(step.id)}
-                        className={`focus-micro-step flex w-full items-center gap-2.5 rounded-[10px] px-0 text-left transition-colors ${
-                          isActive
-                            ? 'border border-violet-400/30 bg-violet-500/15 -mx-1 px-3 py-2'
-                            : 'border border-transparent py-1.5'
-                        }`}
+                        className={`focus-micro-step${isActive ? ' focus-micro-step--active' : ''}`}
                       >
                         {isDone ? (
                           <>

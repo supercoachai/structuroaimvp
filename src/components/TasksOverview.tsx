@@ -284,7 +284,7 @@ export default function TasksOverviewCalm() {
   }, [deferredTasks]);
 
   return (
-    <div className="min-h-full bg-[var(--st-bg)] px-5 pb-6 pt-6">
+    <div className="min-h-full bg-[var(--st-bg)] px-5 pb-28 pt-6">
       <main className="mx-auto flex w-full max-w-lg flex-col">
         <header className="mb-6 flex w-full flex-col items-start text-left">
           <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-[#0F172A]">
@@ -512,6 +512,9 @@ export default function TasksOverviewCalm() {
         onEdit={setEditing}
         onDelete={handleDeleteTask}
         onToggle={handleQuickCompleteFromCard}
+        onUpdateMicroSteps={async (task, steps) => {
+          await updateTask(task.id, { microSteps: steps });
+        }}
       />
 
         </div>

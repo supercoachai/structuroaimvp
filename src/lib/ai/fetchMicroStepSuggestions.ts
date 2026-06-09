@@ -1,3 +1,6 @@
+import { matchMicroStepTemplate } from "@/lib/ai/microStepTemplates";
+import { createClient } from "@/lib/supabase/client";
+
 export type FetchMicroStepSuggestionsInput = {
   title: string;
   energyLevel?: "low" | "medium" | "high" | null;
@@ -12,17 +15,48 @@ export type FetchMicroStepSuggestionsResult = {
   limit?: number;
 };
 
+async function ensureSupabaseSession(): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) return true;
+    const { data, error } = await supabase.auth.refreshSession();
+    return Boolean(data.session && !error);
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchMicroStepSuggestions(
   input: FetchMicroStepSuggestionsInput
 ): Promise<FetchMicroStepSuggestionsResult> {
+  const title = input.title.trim();
+  const locale = input.locale === "en" ? "en" : "nl";
+
+  const template = matchMicroStepTemplate(title, locale);
+  if (template) {
+    return {
+      steps: template.steps,
+      source: "template",
+    };
+  }
+
+  const hasSession = await ensureSupabaseSession();
+  if (!hasSession) {
+    throw new Error("unauthorized");
+  }
+
   const res = await fetch("/api/ai/suggest-micro-steps", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: input.title.trim(),
+      title,
       energyLevel: input.energyLevel ?? undefined,
       durationMin: input.durationMin ?? undefined,
-      locale: input.locale ?? "nl",
+      locale,
     }),
   });
 
@@ -43,6 +77,9 @@ export async function fetchMicroStepSuggestions(
   }
   if (res.status === 503 || data.error === "ai_not_configured") {
     throw new Error("ai_not_configured");
+  }
+  if (res.status === 500 && data.error === "quota_check_failed") {
+    throw new Error("quota_check_failed");
   }
   if (!res.ok || !data.ok || !Array.isArray(data.steps) || data.steps.length === 0) {
     throw new Error(data.error ?? "generation_failed");

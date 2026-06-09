@@ -118,6 +118,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       microSuggestAgain: "Opnieuw voorstellen",
       microSuggestLoading: "Stappen bedenken…",
       microSuggestError: "Kon geen suggesties ophalen. Voeg zelf stappen toe.",
+      microSuggestLogin:
+        "AI-suggesties werken na inloggen. Voeg zelf stappen toe, of log in en probeer opnieuw.",
+      microSuggestUnavailable:
+        "Suggesties zijn even niet beschikbaar. Probeer het opnieuw of voeg zelf stappen toe.",
       microSuggestRateLimit: "Daglimiet bereikt. Morgen weer, of typ zelf stappen.",
       microSuggestManual: "Zelf typen",
       submit: "Taak toevoegen →",
@@ -619,6 +623,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       countdownUp: "Nu aan zet",
       microTitle: "Microstappen",
       microHint: "Deel het op zoals jij wilt",
+      microAiCollapsed: "Structuro stelt micro-stappen voor",
+      microAiPrompt:
+        "Voelt de taak te groot? Structuro kan je helpen om ze op te delen in microstappen.",
       microPh: "Nieuwe stap toevoegen...",
       undo: "Ongedaan",
       stepsProgress: "{done} van {total} klaar",
@@ -819,6 +826,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       microSuggestAgain: "Suggest again",
       microSuggestLoading: "Thinking of steps…",
       microSuggestError: "Could not fetch suggestions. Add steps yourself.",
+      microSuggestLogin:
+        "AI suggestions require sign-in. Add steps yourself, or sign in and try again.",
+      microSuggestUnavailable:
+        "Suggestions are temporarily unavailable. Try again or add steps yourself.",
       microSuggestRateLimit: "Daily limit reached. Try again tomorrow, or type your own.",
       microSuggestManual: "Type myself",
       submit: "Add task →",
@@ -1318,6 +1329,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       countdownUp: "Up next",
       microTitle: "Micro-steps",
       microHint: "Split it up your way",
+      microAiCollapsed: "Structuro suggests micro-steps",
+      microAiPrompt:
+        "Does this task feel too big? Structuro can help you break it down into micro-steps.",
       microPh: "Add a new step...",
       undo: "Undo",
       stepsProgress: "{done} of {total} done",

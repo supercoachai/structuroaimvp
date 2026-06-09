@@ -18,15 +18,6 @@ type RequestBody = {
 };
 
 async function postSuggestMicroSteps(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  }
-
   let body: RequestBody;
   try {
     body = (await request.json()) as RequestBody;
@@ -70,6 +61,15 @@ async function postSuggestMicroSteps(request: Request) {
       remaining: null,
       limit: null,
     });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
   let quota;
