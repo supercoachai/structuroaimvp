@@ -12,3 +12,9 @@ test("matchMicroStepTemplate finds bed verschonen in Dutch", () => {
 test("matchMicroStepTemplate returns null for unknown task", () => {
   assert.equal(matchMicroStepTemplate("Quantum fysica samenvatting", "nl"), null);
 });
+
+test("matchMicroStepTemplate uses inbox-zero template for op nul krijgen", () => {
+  const hit = matchMicroStepTemplate("E-mail inbox op nul krijgen", "nl");
+  assert.ok(hit);
+  assert.match(hit.steps[3], /nul/i);
+});

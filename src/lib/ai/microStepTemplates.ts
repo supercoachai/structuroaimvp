@@ -32,12 +32,21 @@ const NL_TEMPLATES: Array<{ pattern: RegExp; steps: string[] }> = [
     ],
   },
   {
+    pattern: /inbox.*(nul|leeg|0)|e-?mail.*(nul|leeg|op\s*rui)/i,
+    steps: [
+      "Inbox openen, sorteer op oudste eerst",
+      "Verwijder spam, nieuwsbrieven en oude meldingen",
+      "Beantwoord, archiveer of verwijder elke resterende mail",
+      "Controleer: inbox staat op nul",
+    ],
+  },
+  {
     pattern: /e-?mail|inbox/i,
     steps: [
-      "Inbox openen en snel scannen",
-      "Belangrijke mails beantwoorden",
-      "Overige mails archiveren of verwijderen",
-      "Inbox leegmaken of bijna leeg",
+      "Inbox openen, sorteer op oudste eerst",
+      "Verwijder spam en nieuwsbrieven die weg kunnen",
+      "Beantwoord, archiveer of verwijder elke resterende mail",
+      "Controleer: inbox staat op nul",
     ],
   },
 ];
@@ -71,12 +80,21 @@ const EN_TEMPLATES: Array<{ pattern: RegExp; steps: string[] }> = [
     ],
   },
   {
+    pattern: /inbox.*(zero|empty|clear)|e-?mail.*(zero|empty|clear)/i,
+    steps: [
+      "Open inbox, sort oldest first",
+      "Delete spam, newsletters and old notifications",
+      "Reply, archive or delete each remaining email",
+      "Verify inbox is at zero",
+    ],
+  },
+  {
     pattern: /e-?mail|inbox/i,
     steps: [
-      "Open inbox and scan quickly",
-      "Reply to important messages",
-      "Archive or delete the rest",
-      "Leave inbox nearly empty",
+      "Open inbox, sort oldest first",
+      "Delete spam and newsletters that can go",
+      "Reply, archive or delete each remaining email",
+      "Verify inbox is at zero",
     ],
   },
 ];
