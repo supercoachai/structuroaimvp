@@ -26,6 +26,10 @@ import { formatScheduleTime } from "@/lib/taskScheduleTime";
 import TaskRepeatPicker, {
   type TaskRepeatSelection,
 } from "@/components/tasks/TaskRepeatPicker";
+import {
+  DEFAULT_INTERVAL_DAYS,
+  formatRepeatLabel,
+} from "@/lib/taskRecurrence";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -112,6 +116,8 @@ export default function NewTaskFlow({
   const [deadlinePick, setDeadlinePick] = useState<DeadlinePickId>("none");
   const [customDate, setCustomDate] = useState("");
   const [repeatPick, setRepeatPick] = useState<NewTaskRepeatChoice>("none");
+  const [repeatIntervalDays, setRepeatIntervalDays] =
+    useState(DEFAULT_INTERVAL_DAYS);
   const [microsteps, setMicrosteps] = useState<string[]>([]);
   const [microEditing, setMicroEditing] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -131,6 +137,7 @@ export default function NewTaskFlow({
     setDeadlinePick("none");
     setCustomDate("");
     setRepeatPick("none");
+    setRepeatIntervalDays(DEFAULT_INTERVAL_DAYS);
     setMicrosteps([]);
     setMicroEditing(false);
   }, [skipTitle, hasPresetTitle, initialTitle]);
@@ -143,7 +150,10 @@ export default function NewTaskFlow({
   }, []);
 
   useEffect(() => {
-    if (repeatPick === "weekly" && scheduleDatePick === "none") {
+    if (
+      (repeatPick === "weekly" || repeatPick === "interval") &&
+      scheduleDatePick === "none"
+    ) {
       setScheduleDatePick("today");
     }
   }, [repeatPick, scheduleDatePick]);
@@ -252,6 +262,10 @@ export default function NewTaskFlow({
       deadline: skipDeadline ? null : deadlinePayload,
       microsteps: microsteps.map((s) => s.trim()).filter(Boolean),
       repeat: skipDeadline ? undefined : repeatPick,
+      repeatIntervalDays:
+        skipDeadline || repeatPick !== "interval"
+          ? undefined
+          : repeatIntervalDays,
     };
 
     setSaveBusy(true);
@@ -438,9 +452,11 @@ export default function NewTaskFlow({
             value={deadlinePick}
             customDate={customDate}
             repeatPick={repeatPick}
+            repeatIntervalDays={repeatIntervalDays}
             onPick={setDeadlinePick}
             onCustomChange={setCustomDate}
             onRepeatChange={setRepeatPick}
+            onRepeatIntervalDaysChange={setRepeatIntervalDays}
             compact={compact}
           />
         ) : null}
@@ -763,14 +779,28 @@ function StepDuration({
   );
 }
 
-function newTaskRepeatToSelection(choice: NewTaskRepeatChoice): TaskRepeatSelection {
-  if (choice === "weekly") return { repeat: "weekly", repeatWeekdays: "all" };
+function newTaskRepeatToSelection(
+  choice: NewTaskRepeatChoice,
+  intervalDays: number
+): TaskRepeatSelection {
+  if (choice === "weekly") {
+    return { repeat: "weekly", repeatWeekdays: "all", repeatAnchor: "planned" };
+  }
+  if (choice === "interval") {
+    return {
+      repeat: "interval",
+      repeatWeekdays: "all",
+      repeatAnchor: "completion",
+      repeatIntervalDays: intervalDays,
+    };
+  }
   if (choice === "weekdays") return { repeat: "daily", repeatWeekdays: "weekdays" };
   if (choice === "daily") return { repeat: "daily", repeatWeekdays: "all" };
   return { repeat: "none", repeatWeekdays: "all" };
 }
 
 function selectionToNewTaskRepeat(selection: TaskRepeatSelection): NewTaskRepeatChoice {
+  if (selection.repeat === "interval") return "interval";
   if (selection.repeat === "weekly") return "weekly";
   if (selection.repeat === "daily" && selection.repeatWeekdays === "weekdays") {
     return "weekdays";
@@ -822,9 +852,11 @@ function StepDeadline({
   value,
   customDate,
   repeatPick,
+  repeatIntervalDays,
   onPick,
   onCustomChange,
   onRepeatChange,
+  onRepeatIntervalDaysChange,
   compact,
 }: {
   scheduleDatePick: ScheduleDatePickId;
@@ -836,9 +868,11 @@ function StepDeadline({
   value: DeadlinePickId | null;
   customDate: string;
   repeatPick: NewTaskRepeatChoice;
+  repeatIntervalDays: number;
   onPick: (id: DeadlinePickId) => void;
   onCustomChange: (v: string) => void;
   onRepeatChange: (choice: NewTaskRepeatChoice) => void;
+  onRepeatIntervalDaysChange: (days: number) => void;
   compact?: boolean;
 }) {
   const { t, locale } = useI18n();
@@ -893,16 +927,24 @@ function StepDeadline({
   }, [scheduleDatePick, scheduleCustomDate, scheduleTime, dateLocale, locale, t]);
 
   const repeatChipLabel = useMemo(() => {
-    const key =
-      repeatPick === "daily"
-        ? "repeatDaily"
-        : repeatPick === "weekdays"
-          ? "repeatWeekdays"
-          : repeatPick === "weekly"
-            ? "repeatWeekly"
-            : "repeatNone";
-    return t(`newTask.${key}`).toLowerCase();
-  }, [repeatPick, t]);
+    if (repeatPick === "none") return t("newTask.repeatNone").toLowerCase();
+    const label = formatRepeatLabel(
+      {
+        repeat:
+          repeatPick === "interval"
+            ? "interval"
+            : repeatPick === "weekly"
+              ? "weekly"
+              : "daily",
+        repeatWeekdays: repeatPick === "weekdays" ? "weekdays" : "all",
+        repeatIntervalDays:
+          repeatPick === "interval" ? repeatIntervalDays : undefined,
+      },
+      t,
+      "newTask"
+    );
+    return (label ?? t("newTask.repeatNone")).toLowerCase();
+  }, [repeatPick, repeatIntervalDays, t]);
 
   const deadlineOptions: { id: DeadlinePickId; labelKey: string }[] = [
     { id: "none", labelKey: "deadlineNone" },
@@ -912,7 +954,7 @@ function StepDeadline({
   ];
 
   const scheduleDateOptions: { id: ScheduleDatePickId; labelKey: string }[] = [
-    ...(repeatPick !== "weekly"
+    ...(repeatPick !== "weekly" && repeatPick !== "interval"
       ? [{ id: "none" as const, labelKey: "scheduleNone" }]
       : []),
     { id: "today", labelKey: "deadlineToday" },
@@ -1103,8 +1145,16 @@ function StepDeadline({
           <TaskRepeatPicker
             compact
             labelPrefix="newTask"
-            value={newTaskRepeatToSelection(repeatPick)}
-            onChange={(selection) => onRepeatChange(selectionToNewTaskRepeat(selection))}
+            value={newTaskRepeatToSelection(repeatPick, repeatIntervalDays)}
+            onChange={(selection) => {
+              onRepeatChange(selectionToNewTaskRepeat(selection));
+              if (
+                selection.repeat === "interval" &&
+                selection.repeatIntervalDays != null
+              ) {
+                onRepeatIntervalDaysChange(selection.repeatIntervalDays);
+              }
+            }}
           />
         </div>
       ) : null}

@@ -11,13 +11,17 @@ import {
   getCalendarDateAmsterdam,
   getTomorrowCalendarDateAmsterdam,
 } from "@/lib/dagstartCookie";
-import {
+import TaskRepeatPicker, {
   selectionFromTask,
   type TaskRepeatSelection,
 } from "@/components/tasks/TaskRepeatPicker";
+import {
+  buildRepeatFieldsFromSelection,
+  resolveInitialIntervalNextDueAt,
+} from "@/lib/taskRecurrence";
 import EnergyDotTask from "@/components/structuro/EnergyDotTask";
 import { appEnergyToSt } from "@/lib/structuro/energyTokens";
-import { repeatLabelKey } from "@/lib/taskRecurrence";
+import { formatRepeatLabel } from "@/lib/taskRecurrence";
 import {
   parseTaskSchedulePhrase,
   type DeadlinePreset,
@@ -38,6 +42,9 @@ export interface TaskScheduleEditorTask {
   reminders?: number[];
   repeat?: string;
   repeatWeekdays?: "all" | "weekdays" | "weekends" | string;
+  repeatAnchor?: "planned" | "completion" | string;
+  repeatIntervalDays?: number | null;
+  repeatNextDueAt?: string | null;
   duration?: number | null;
   estimatedDuration?: number | null;
   energyLevel?: string;
@@ -61,17 +68,6 @@ interface TaskScheduleEditorProps {
   onClose: () => void;
 }
 
-const REPEAT_OPTIONS: Array<{
-  repeat: TaskRepeatSelection["repeat"];
-  repeatWeekdays: TaskRepeatSelection["repeatWeekdays"];
-  labelKey: string;
-}> = [
-  { repeat: "none", repeatWeekdays: "all", labelKey: "repeatNone" },
-  { repeat: "daily", repeatWeekdays: "all", labelKey: "repeatDaily" },
-  { repeat: "daily", repeatWeekdays: "weekdays", labelKey: "repeatWeekdays" },
-  { repeat: "weekly", repeatWeekdays: "all", labelKey: "repeatWeekly" },
-];
-
 const DURATION_PRESETS = [5, 15, 30, 45, 60];
 
 type ScheduleDatePreset = "none" | "today" | "tomorrow" | "pick";
@@ -87,7 +83,10 @@ function taskHasPlannedSchedule(task: TaskScheduleEditorTask): boolean {
   if (extractScheduleTimeFromIso(task.dueAt) || extractScheduleTimeFromIso(task.created_at)) {
     return true;
   }
-  return task.repeat === "weekly" && Boolean(task.created_at);
+  return (
+    (task.repeat === "weekly" || task.repeat === "interval") &&
+    Boolean(task.created_at || task.repeatNextDueAt)
+  );
 }
 
 function initialScheduleDateState(task: TaskScheduleEditorTask): {
@@ -99,9 +98,11 @@ function initialScheduleDateState(task: TaskScheduleEditorTask): {
     return { preset: "none", ymd: today };
   }
   const weeklyAnchor =
-    task.repeat === "weekly" && task.created_at
+    (task.repeat === "weekly" || task.repeat === "interval") && task.created_at
       ? task.created_at.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? null
-      : null;
+      : task.repeat === "interval" && task.repeatNextDueAt
+        ? String(task.repeatNextDueAt).slice(0, 10)
+        : null;
   const ymd = resolveScheduleAnchorYmd({
     scheduleDateYmd: weeklyAnchor,
     weeklyAnchorYmd: weeklyAnchor,
@@ -308,12 +309,16 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
   };
 
   const repeatChipLabel = useMemo(() => {
-    const key = repeatLabelKey({
-      repeat: repeatSelection.repeat,
-      repeatWeekdays: repeatSelection.repeatWeekdays,
-    });
-    if (!key) return t("taskEditor.repeatNone").toLowerCase();
-    return t(`taskEditor.${key}`).toLowerCase();
+    const label = formatRepeatLabel(
+      {
+        repeat: repeatSelection.repeat,
+        repeatWeekdays: repeatSelection.repeatWeekdays,
+        repeatIntervalDays: repeatSelection.repeatIntervalDays,
+      },
+      t,
+      "taskEditor"
+    );
+    return (label ?? t("taskEditor.repeatNone")).toLowerCase();
   }, [repeatSelection, t]);
 
   const durationChipLabel =
@@ -336,12 +341,16 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
   const isOneOffRepeat = repeatSelection.repeat === "none";
 
   const previewRepeatLabel = useMemo(() => {
-    const key = repeatLabelKey({
-      repeat: repeatSelection.repeat,
-      repeatWeekdays: repeatSelection.repeatWeekdays,
-    });
-    if (!key) return null;
-    return t(`taskEditor.${key}`).toLowerCase();
+    const label = formatRepeatLabel(
+      {
+        repeat: repeatSelection.repeat,
+        repeatWeekdays: repeatSelection.repeatWeekdays,
+        repeatIntervalDays: repeatSelection.repeatIntervalDays,
+      },
+      t,
+      "taskEditor"
+    );
+    return label ? label.toLowerCase() : null;
   }, [repeatSelection, t]);
 
   const previewDeadline = useMemo(() => {
@@ -425,14 +434,27 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
     const remindersToSave =
       reminderMinutes !== null ? [reminderMinutes] : [];
 
+    const repeatFields = buildRepeatFieldsFromSelection({
+      ...repeatSelection,
+      repeatNextDueAt:
+        repeatSelection.repeat === "interval" && scheduleDatePreset !== "none"
+          ? resolveInitialIntervalNextDueAt(scheduleDateYmd)
+          : repeatSelection.repeat === "interval"
+            ? resolveInitialIntervalNextDueAt(getCalendarDateAmsterdam())
+            : null,
+    });
+
     const savePayload: TaskScheduleEditorTask = {
       ...task,
       title: title.trim() || task.title,
       dueAt,
       isDeadline,
       reminders: remindersToSave,
-      repeat: repeatSelection.repeat,
-      repeatWeekdays: repeatSelection.repeatWeekdays,
+      repeat: repeatFields.repeat ?? "none",
+      repeatWeekdays: repeatFields.repeatWeekdays ?? "all",
+      repeatAnchor: repeatFields.repeatAnchor ?? undefined,
+      repeatIntervalDays: repeatFields.repeatIntervalDays ?? undefined,
+      repeatNextDueAt: repeatFields.repeatNextDueAt ?? undefined,
       duration: duration || null,
       estimatedDuration: duration || null,
       energyLevel: energyLevel || "medium",
@@ -446,7 +468,10 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
         scheduleTime.hour,
         scheduleTime.minute
       );
-    } else if (repeatSelection.repeat === "weekly" && scheduleDatePreset !== "none") {
+    } else if (
+      (repeatSelection.repeat === "weekly" || repeatSelection.repeat === "interval") &&
+      scheduleDatePreset !== "none"
+    ) {
       savePayload.created_at = scheduleTime
         ? buildCreatedAtWithScheduleTime(
             scheduleDateYmd,
@@ -645,7 +670,8 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
             <div className="mb-3 flex flex-wrap gap-2">
               {(
                 [
-                  ...(repeatSelection.repeat !== "weekly"
+                  ...(repeatSelection.repeat !== "weekly" &&
+                  repeatSelection.repeat !== "interval"
                     ? ([["none", t("taskEditor.scheduleNone")]] as const)
                     : []),
                   ["today", t("taskEditor.deadlineToday")],
@@ -750,28 +776,11 @@ export default function TaskScheduleEditor({ task, onSave, onClose }: TaskSchedu
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500">
               {t("taskEditor.panelRepeat")}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {REPEAT_OPTIONS.map((opt) => {
-                const active =
-                  repeatSelection.repeat === opt.repeat &&
-                  repeatSelection.repeatWeekdays === opt.repeatWeekdays;
-                return (
-                  <button
-                    key={opt.labelKey}
-                    type="button"
-                    onClick={() =>
-                      setRepeatSelection({
-                        repeat: opt.repeat,
-                        repeatWeekdays: opt.repeatWeekdays,
-                      })
-                    }
-                    className={panelChipClass(active)}
-                  >
-                    {t(`taskEditor.${opt.labelKey}`)}
-                  </button>
-                );
-              })}
-            </div>
+            <TaskRepeatPicker
+              compact
+              value={repeatSelection}
+              onChange={setRepeatSelection}
+            />
           </div>
         ) : null}
 

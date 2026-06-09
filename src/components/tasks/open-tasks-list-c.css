@@ -1,0 +1,417 @@
+.open-tasks-list-c {
+  --lc-line: var(--st-line);
+  --lc-line-strong: var(--st-line-strong);
+}
+
+.open-tasks-list-c .lc-list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 12px;
+  flex-shrink: 0;
+}
+
+.open-tasks-list-c .lc-list-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--st-ink);
+  white-space: nowrap;
+}
+
+.open-tasks-list-c .lc-info-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--lc-line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 130ms;
+  background: transparent;
+  padding: 0;
+}
+
+.open-tasks-list-c .lc-info-dot:hover {
+  opacity: 0.75;
+}
+
+.open-tasks-list-c .lc-scroll {
+  padding: 0 0 20px;
+}
+
+.open-tasks-list-c .lc-group {
+  margin-bottom: 2px;
+}
+
+.open-tasks-list-c .lc-ghead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 20px 9px;
+  background: linear-gradient(180deg, #fff 70%, rgba(255, 255, 255, 0));
+  backdrop-filter: blur(2px);
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: opacity 140ms;
+}
+
+.open-tasks-list-c .lc-ghead:hover {
+  opacity: 0.78;
+}
+
+.open-tasks-list-c .lc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.open-tasks-list-c .lc-gname {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-ink-soft);
+}
+
+.open-tasks-list-c .lc-gcount {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--st-muted-2);
+  font-family: var(--st-mono);
+}
+
+.open-tasks-list-c .lc-line {
+  flex: 1;
+  height: 1px;
+  background: var(--lc-line);
+  margin-left: 4px;
+}
+
+.open-tasks-list-c .lc-gcaret {
+  display: flex;
+  flex-shrink: 0;
+  transition: transform 240ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.open-tasks-list-c .lc-rows {
+  display: flex;
+  flex-direction: column;
+  animation: lc-expand 220ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes lc-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.open-tasks-list-c .lc-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: background 130ms;
+  border-bottom: 1px solid var(--lc-line);
+}
+
+.open-tasks-list-c .lc-row:hover {
+  background: var(--st-surface-2);
+}
+
+.open-tasks-list-c .lc-row.active {
+  background: var(--st-surface-2);
+}
+
+.open-tasks-list-c .lc-row.is-done .lc-title {
+  text-decoration: line-through;
+  color: var(--st-muted-2);
+}
+
+.open-tasks-list-c .lc-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.open-tasks-list-c .lc-title {
+  font-size: 14.5px;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  color: var(--st-ink);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.open-tasks-list-c .lc-sub {
+  font-size: 11.5px;
+  color: var(--st-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.open-tasks-list-c .lc-dotsep {
+  color: var(--st-muted-2);
+}
+
+.open-tasks-list-c .lc-min {
+  font-family: var(--st-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--st-muted);
+  flex-shrink: 0;
+}
+
+.open-tasks-list-c .lc-chev {
+  display: flex;
+  flex-shrink: 0;
+  width: 14px;
+  opacity: 0.65;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.open-tasks-list-c .lc-row.active .lc-chev {
+  display: none;
+}
+
+.open-tasks-list-c .lc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  animation: lc-slidein 180ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes lc-slidein {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.open-tasks-list-c .lc-act {
+  all: unset;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--lc-line);
+  background: #fff;
+  transition: all 130ms;
+  box-sizing: border-box;
+}
+
+.open-tasks-list-c .lc-act:hover {
+  border-color: var(--lc-line-strong);
+}
+
+.open-tasks-list-c .lc-act.start {
+  background: var(--lc-act-color);
+  border-color: transparent;
+  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--lc-act-color) 55%, transparent);
+  animation: lc-start-invite 2.8s ease-in-out infinite;
+}
+
+.open-tasks-list-c .lc-act.start:hover {
+  animation: none;
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px -2px color-mix(in oklab, var(--lc-act-color) 70%, transparent);
+}
+
+.open-tasks-list-c .lc-check {
+  all: unset;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid var(--lc-check-color);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms;
+  box-sizing: border-box;
+}
+
+.open-tasks-list-c .lc-check.done {
+  background: var(--lc-check-color);
+}
+
+.open-tasks-list-c .lc-check.alive:not(.done) {
+  animation: lc-check-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes lc-check-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--lc-check-color) 0%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--lc-check-color) 18%, transparent);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes lc-start-invite {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--lc-act-color) 50%, transparent);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px -1px color-mix(in oklab, var(--lc-act-color) 62%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .open-tasks-list-c .lc-check.alive:not(.done),
+  .open-tasks-list-c .lc-act.start {
+    animation: none;
+  }
+}
+
+.open-tasks-list-c .lc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 35, 64, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: lc-fade-in 180ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes lc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.open-tasks-list-c .lc-modal-card {
+  background: var(--st-surface);
+  border-radius: 20px;
+  max-width: 480px;
+  width: calc(100% - 32px);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow:
+    0 1px 3px rgba(14, 23, 48, 0.1),
+    0 40px 80px -32px rgba(14, 23, 48, 0.28);
+  animation: lc-slide-up 220ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes lc-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.open-tasks-list-c .lc-modal-header {
+  padding: 28px 24px 16px;
+  border-bottom: 1px solid var(--lc-line);
+}
+
+.open-tasks-list-c .lc-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--st-ink);
+  letter-spacing: -0.015em;
+}
+
+.open-tasks-list-c .lc-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.open-tasks-list-c .lc-modal-item h4 {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--st-ink);
+  letter-spacing: -0.01em;
+}
+
+.open-tasks-list-c .lc-modal-item p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--st-muted);
+}
+
+.open-tasks-list-c .lc-modal-item strong {
+  color: var(--st-ink-soft);
+  font-weight: 600;
+}
+
+.open-tasks-list-c .lc-modal-footer {
+  padding: 20px 24px 28px;
+  border-top: 1px solid var(--lc-line);
+}
+
+.open-tasks-list-c .lc-modal-close {
+  all: unset;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 130ms;
+  background: var(--st-blue);
+  color: #fff;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.open-tasks-list-c .lc-modal-close:hover {
+  background: var(--st-blue-deep);
+}
+
+.open-tasks-list-c .lc-empty {
+  padding: 32px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--st-muted);
+}

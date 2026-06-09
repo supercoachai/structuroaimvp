@@ -8,7 +8,12 @@ export type NewTaskDeadlineChoice =
   | "tomorrow"
   | string;
 
-export type NewTaskRepeatChoice = "none" | "daily" | "weekdays" | "weekly";
+export type NewTaskRepeatChoice =
+  | "none"
+  | "daily"
+  | "weekdays"
+  | "weekly"
+  | "interval";
 
 export type NewTaskFlowPayload = {
   title: string;
@@ -21,6 +26,8 @@ export type NewTaskFlowPayload = {
   deadline: NewTaskDeadlineChoice;
   microsteps: string[];
   repeat?: NewTaskRepeatChoice;
+  /** Aantal dagen tussen herhalingen bij repeat: "interval". */
+  repeatIntervalDays?: number;
 };
 
 export type NewTaskEnergyOption = {

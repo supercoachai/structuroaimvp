@@ -31,6 +31,9 @@ export type TaskRow = {
   repeat_until?: string | null;
   repeat_weekdays?: string;
   repeat_exclude_dates?: string[];
+  repeat_anchor?: string | null;
+  repeat_interval_days?: number | null;
+  repeat_next_due_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -55,6 +58,9 @@ function rowToTask(row: TaskRow): Task {
     repeatUntil: row.repeat_until ?? undefined,
     repeatWeekdays: (row.repeat_weekdays as Task["repeatWeekdays"]) ?? "all",
     repeatExcludeDates: Array.isArray(row.repeat_exclude_dates) ? row.repeat_exclude_dates : undefined,
+    repeatAnchor: (row.repeat_anchor as Task["repeatAnchor"]) ?? undefined,
+    repeatIntervalDays: row.repeat_interval_days ?? undefined,
+    repeatNextDueAt: row.repeat_next_due_at ?? undefined,
     impact: row.impact,
     energyLevel: row.energy_level,
     estimatedDuration: row.estimated_duration ?? undefined,
@@ -94,6 +100,9 @@ function taskToRow(task: Partial<Task>, userId: string): Partial<TaskRow> & { us
     repeat_until: task.repeatUntil ?? null,
     repeat_weekdays: task.repeatWeekdays ?? "all",
     repeat_exclude_dates: task.repeatExcludeDates,
+    repeat_anchor: task.repeatAnchor ?? null,
+    repeat_interval_days: task.repeatIntervalDays ?? null,
+    repeat_next_due_at: task.repeatNextDueAt ?? null,
   };
   if (task.created_at) {
     row.created_at = task.created_at;
@@ -176,6 +185,13 @@ export async function updateTaskInSupabase(
   if (updates.repeatUntil !== undefined) rowUpdates.repeat_until = updates.repeatUntil;
   if (updates.repeatWeekdays !== undefined) rowUpdates.repeat_weekdays = updates.repeatWeekdays;
   if (updates.repeatExcludeDates !== undefined) rowUpdates.repeat_exclude_dates = updates.repeatExcludeDates;
+  if (updates.repeatAnchor !== undefined) rowUpdates.repeat_anchor = updates.repeatAnchor;
+  if (updates.repeatIntervalDays !== undefined) {
+    rowUpdates.repeat_interval_days = updates.repeatIntervalDays;
+  }
+  if (updates.repeatNextDueAt !== undefined) {
+    rowUpdates.repeat_next_due_at = updates.repeatNextDueAt;
+  }
   if (updates.created_at !== undefined) rowUpdates.created_at = updates.created_at;
 
   const { data, error } = await supabase

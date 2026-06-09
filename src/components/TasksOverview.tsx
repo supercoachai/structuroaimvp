@@ -15,12 +15,7 @@ import { useCheckIn } from "../hooks/useCheckIn";
 import { toast } from "./Toast";
 import { track } from "../shared/track";
 import TaskScheduleEditor from "./TaskScheduleEditor";
-import DeadlineLabel from "@/components/structuro/DeadlineLabel";
-import { getTaskDeadlineMeta } from "@/lib/taskDeadlineDisplay";
-import {
-  getTaskScheduleDisplayLabel,
-} from "@/lib/taskScheduleTime";
-import { normalizeMicroSteps, microStepId, type MicroStep, type MicroStepDifficulty } from "../lib/microSteps";
+import { normalizeMicroSteps } from "../lib/microSteps";
 import { compareDeadlineTasks } from "@/lib/dagstart/deadlineToday";
 import { isOpenBacklogTask } from "../lib/taskFilters";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
@@ -28,49 +23,21 @@ import { getTaskDurationMinutes } from "@/lib/taskDurationMinutes";
 import { maxSlotsForEnergy } from "@/lib/top3CurrentTask";
 import {
   CheckCircleIcon,
-  ChevronDownIcon,
   Square2StackIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import TaskCardActions from "@/components/tasks/TaskCardActions";
+import OpenTasksListC from "@/components/tasks/OpenTasksListC";
 import {
   buildRecurringCompletionUpdate,
   isRecurringTask,
-  repeatLabelKey,
+  formatRepeatLabel,
 } from "@/lib/taskRecurrence";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
 import NewTaskFlow from "@/components/newTask/NewTaskFlow";
 import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
 import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
 import { useI18n } from "@/lib/i18n";
-import EnergyIcon from "@/components/structuro/EnergyIcon";
-import EnergyDotTask from "@/components/structuro/EnergyDotTask";
-import { NEW_TASK_ENERGIES } from "@/lib/newTask/newTaskFlowTypes";
-import { appEnergyToSt } from "@/lib/structuro/energyTokens";
-
-const OPEN_ENERGY_SECTIONS = [
-  {
-    key: "green" as const,
-    bucket: NEW_TASK_ENERGIES[0],
-    titleKey: "tasks.colEasy" as const,
-    zoneTitleKey: "tasks.zoneEasy" as const,
-    zoneDescKey: "tasks.zoneEasyDesc" as const,
-  },
-  {
-    key: "yellow" as const,
-    bucket: NEW_TASK_ENERGIES[1],
-    titleKey: "tasks.colNormal" as const,
-    zoneTitleKey: "tasks.zoneNormal" as const,
-    zoneDescKey: "tasks.zoneNormalDesc" as const,
-  },
-  {
-    key: "red" as const,
-    bucket: NEW_TASK_ENERGIES[2],
-    titleKey: "tasks.colIntense" as const,
-    zoneTitleKey: "tasks.zoneHard" as const,
-    zoneDescKey: "tasks.zoneHardDesc" as const,
-  },
-] as const;
 /** ---- Theme (gebruikt design-systeem) ---- */
 const theme = {
   bg: designSystem.colors.background,
@@ -122,15 +89,8 @@ export default function TasksOverviewCalm() {
   
   // State voor nieuwe taak (step-flow)
   const [newTaskBusy, setNewTaskBusy] = useState(false);
-  const openTasksInfo = useDismissibleTooltip();
   const convertTaskInfo = useDismissibleTooltip();
-  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const [editing, setEditing] = useState<any>(null);
-  const [microStepDraft, setMicroStepDraft] = useState<{ title: string; minutes: number | null; difficulty: MicroStepDifficulty | null }>({
-    title: '',
-    minutes: null,
-    difficulty: null,
-  });
 
   // Parked thought -> task conversion modal state
   const [convertingThought, setConvertingThought] = useState<any>(null);
@@ -146,21 +106,6 @@ export default function TasksOverviewCalm() {
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(new Set());
   /** Pop-animatie op checkbox (task.id) */
   const [checkboxPopId, setCheckboxPopId] = useState<string | null>(null);
-  /** Lege taak: eerst knop "Microstappen toevoegen"; daarna invoer tonen */
-  const [microStepsAddOpenId, setMicroStepsAddOpenId] = useState<string | null>(null);
-
-  /** Alle open taken: Makkelijk / Normaal / Intensief elk inklapbaar, taken verticaal gestapeld */
-  const [openEnergySections, setOpenEnergySections] = useState<Record<"green" | "yellow" | "red", boolean>>({
-    green: false,
-    yellow: false,
-    red: false,
-  });
-
-  useEffect(() => {
-    setMicroStepDraft({ title: "", minutes: null, difficulty: null });
-    setMicroStepsAddOpenId(null);
-  }, [expandedTaskId]);
-
   // Bepaal max slots (zelfde regels als HomeCalm / getFirstOpenTop3Task)
   const maxSlots = useMemo(() => {
     if (!todayCheckIn) return 3;
@@ -189,56 +134,6 @@ export default function TasksOverviewCalm() {
     });
     return out;
   }, [todayCheckIn?.top3_task_ids, maxSlots, deferredTasks]);
-
-  const addMicroStepToTask = async (task: any) => {
-    const title = microStepDraft.title.trim();
-    if (!title) {
-      toast(tr("tasks.toastMiniFill"));
-      return;
-    }
-    const existing = normalizeMicroSteps(task.microSteps);
-    const next: MicroStep[] = [
-      ...existing,
-      {
-        id: microStepId(),
-        title,
-        minutes: null,
-        difficulty: null,
-        done: false,
-      }
-    ];
-    await updateTask(task.id, { microSteps: next });
-    setMicroStepDraft({ title: '', minutes: null, difficulty: null });
-    toast(tr("tasks.toastMiniAdded"));
-  };
-
-  const toggleMicroStepDone = async (task: any, stepId: string) => {
-    const steps = normalizeMicroSteps(task.microSteps);
-    const next = steps.map(s => (s.id === stepId ? { ...s, done: !s.done } : s));
-    await updateTask(task.id, { microSteps: next });
-  };
-
-  const promoteMicroStepToTask = async (task: any, stepId: string) => {
-    const steps = normalizeMicroSteps(task.microSteps);
-    const step = steps.find(s => s.id === stepId);
-    if (!step) return;
-    const nextSteps = steps.map(s => s.id === stepId ? { ...s, done: true } : s);
-
-    await addTask({
-      title: step.title,
-      done: false,
-      started: false,
-      priority: null,
-      energyLevel: step.difficulty || task.energyLevel || 'medium',
-      duration: (typeof step.minutes === 'number' && step.minutes > 0) ? step.minutes : null,
-      estimatedDuration: (typeof step.minutes === 'number' && step.minutes > 0) ? step.minutes : null,
-      notToday: false,
-      source: 'regular',
-    });
-
-    await updateTask(task.id, { microSteps: nextSteps });
-    toast(tr("tasks.toastMiniToTask"), { durationMs: 3000, replace: true });
-  };
 
   const handleNewTaskFlowSave = useCallback(async (payload: NewTaskFlowPayload) => {
     setNewTaskBusy(true);
@@ -283,7 +178,6 @@ export default function TasksOverviewCalm() {
   const handleDeleteTask = async (task: any) => {
     if (!confirm(tr("tasks.deleteConfirm"))) return;
     await deleteTask(task.id);
-    setExpandedTaskId((id) => (id === task.id ? null : id));
   };
 
   const handleQuickCompleteFromCard = (task: any) => {
@@ -312,7 +206,6 @@ export default function TasksOverviewCalm() {
           return next;
         });
         if (!isRecurringTask(task)) {
-          setExpandedTaskId((id) => (id === task.id ? null : id));
           setCompletedSectionOpen(true);
         }
       });
@@ -436,7 +329,7 @@ export default function TasksOverviewCalm() {
               );
             }
 
-            const repeatKey = repeatLabelKey(task);
+            const repeatLabel = formatRepeatLabel(task, tr, "taskEditor");
 
             return (
               <div
@@ -464,10 +357,10 @@ export default function TasksOverviewCalm() {
                   >
                     {mins} min
                   </p>
-                  {repeatKey ? (
+                  {repeatLabel ? (
                     <p className="mt-1 flex items-center gap-1 text-[12px] font-medium text-blue-600">
                       <ArrowPathIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                      {tr(`taskEditor.${repeatKey}`)}
+                      {repeatLabel}
                     </p>
                   ) : null}
                   {ms.length > 0 ? (
@@ -610,442 +503,16 @@ export default function TasksOverviewCalm() {
         />
       </section>
 
-      {/* SECTIE 4: Alle open taken – zwevende kaarten */}
-      <section id="alle-open-taken" className="bg-white rounded-3xl shadow-sm p-6 sm:p-8">
-        <div ref={openTasksInfo.wrapperRef} className="relative mb-4 w-full min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">{tr("tasks.sectionOpen")}</h2>
-            <button
-              type="button"
-              aria-label={tr("tasks.openInfoAria")}
-              aria-expanded={openTasksInfo.open}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white/70 text-[12px] leading-none text-slate-600 transition-colors hover:bg-white"
-              onClick={openTasksInfo.toggle}
-            >
-              i
-            </button>
-          </div>
-          {openTasksInfo.open ? (
-            <div
-              className="absolute left-0 right-0 top-full z-50 mt-2 w-full max-w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-lg sm:p-5"
-              role="tooltip"
-            >
-              <div className="mb-2 text-xs font-semibold text-gray-900 sm:text-sm">
-                {tr("tasks.zonesTitle")}
-              </div>
-              <p className="mb-4 text-xs leading-relaxed text-gray-700 sm:text-sm">
-                {tr("tasks.zonesIntro")}
-              </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                {OPEN_ENERGY_SECTIONS.map((section) => (
-                  <div
-                    key={section.key}
-                    className="min-w-0 rounded-xl border p-3"
-                    style={{
-                      borderColor: `${section.bucket.color}33`,
-                      background: section.bucket.haze,
-                    }}
-                  >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <EnergyIcon
-                        kind={section.bucket.iconKind}
-                        size={18}
-                        color={section.bucket.color}
-                      />
-                      <div
-                        className="text-xs font-semibold sm:text-sm"
-                        style={{ color: section.bucket.color }}
-                      >
-                        {tr(section.zoneTitleKey)}
-                      </div>
-                    </div>
-                    <p className="text-xs leading-relaxed text-gray-700">
-                      {tr(section.zoneDescKey)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
-        
-        {loading ? (
-          <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm animate-pulse">
-            {tr("tasks.loadingOpen")}
-          </div>
-        ) : openTasks.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm bg-gray-50 rounded-2xl shadow-sm">
-            {tr("tasks.noOpen")}
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col gap-3">
-              {OPEN_ENERGY_SECTIONS.map((section) => {
-                const { key, bucket, titleKey } = section;
-                const list = (openByEnergy as Record<typeof key, any[]>)[key];
-                const zoneOpen = openEnergySections[key];
-                return (
-                  <div
-                    key={key}
-                    className="overflow-hidden rounded-2xl border shadow-sm"
-                    style={{
-                      borderColor: `${bucket.color}28`,
-                      background: bucket.haze,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setOpenEnergySections((p) => ({ ...p, [key]: !p[key] }))
-                      }
-                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-white/50"
-                      aria-expanded={zoneOpen}
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <EnergyIcon
-                          kind={bucket.iconKind}
-                          size={20}
-                          color={bucket.color}
-                        />
-                        <span
-                          className="shrink-0 text-sm font-semibold"
-                          style={{ color: bucket.color }}
-                        >
-                          {tr(titleKey)}
-                        </span>
-                        <span
-                          className="font-mono tabular-nums rounded-lg px-2 py-0.5 text-xs font-semibold"
-                          style={{
-                            border: `1px solid ${bucket.color}40`,
-                            background: "white",
-                            color: bucket.color,
-                          }}
-                        >
-                          {list.length}
-                        </span>
-                      </div>
-                      <ChevronDownIcon
-                        className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
-                          zoneOpen ? "rotate-180" : ""
-                        }`}
-                        style={{ color: bucket.color }}
-                        aria-hidden
-                      />
-                    </button>
-                    {zoneOpen ? (
-                      <div
-                        className="border-t bg-white/70 px-3 pb-3 pt-2"
-                        style={{ borderColor: `${bucket.color}22` }}
-                      >
-                        {list.length === 0 ? (
-                          <p className="px-1 py-2 text-xs italic text-gray-500">{tr("tasks.noInCol")}</p>
-                        ) : (
-                          <div className="flex flex-col gap-3">
-                      {list.map((task: any) => {
-                        const isExpanded = expandedTaskId === task.id;
-                        const energyLevel = task.energyLevel || 'medium';
-                        const legacyOneOffDeadline =
-                          task.isDeadline == null &&
-                          Boolean(task.dueAt) &&
-                          (!task.repeat || task.repeat === "none");
-                        const showsDeadline = task.isDeadline || legacyOneOffDeadline;
-                        const deadlineMeta = showsDeadline
-                          ? getTaskDeadlineMeta(task.dueAt, locale)
-                          : null;
-                        const scheduleTimeLabel = !showsDeadline
-                          ? getTaskScheduleDisplayLabel(task, locale)
-                          : null;
-                        const isCompleting = completingTaskIds.has(task.id);
-                        const isPop = checkboxPopId === task.id;
-                        const isEasyColumn = key === "green";
-                        const microCount = normalizeMicroSteps(task.microSteps).length;
-                        const repeatKey = repeatLabelKey(task);
-
-                        return (
-                          <div
-                            key={task.id}
-                            className="group overflow-hidden rounded-2xl border border-gray-100 bg-white transition-all duration-200 hover:border-gray-200 hover:shadow-sm"
-                          >
-                            <div
-                              onClick={() => {
-                                if (microCount > 0) {
-                                  setExpandedTaskId(isExpanded ? null : task.id);
-                                }
-                              }}
-                              className={`flex min-w-0 flex-col gap-2 rounded-2xl p-4 transition-colors ${
-                                microCount > 0
-                                  ? "cursor-pointer hover:bg-gray-50/90"
-                                  : ""
-                              }`}
-                            >
-                              <div className="flex min-w-0 items-start gap-2 sm:gap-3">
-                                <span className="mt-0.5 shrink-0" aria-hidden>
-                                  <EnergyDotTask
-                                    energy={appEnergyToSt(energyLevel)}
-                                    size={10}
-                                  />
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex min-w-0 items-start justify-between gap-2">
-                                    <div
-                                      className={`min-w-0 flex-1 text-sm font-medium break-words transition-all duration-200 ${
-                                        isCompleting ? "text-gray-500 opacity-50 line-through" : "text-gray-900"
-                                      }`}
-                                    >
-                                      {task.title}
-                                    </div>
-                                    <div className="flex shrink-0 items-center gap-1">
-                                      <TaskCardActions
-                                        onPlay={() => startFocus(task)}
-                                        onEdit={() => setEditing(task)}
-                                        onDelete={() => void handleDeleteTask(task)}
-                                        playLabel={tr("tasks.playFocus")}
-                                        editLabel={tr("tasks.edit")}
-                                        deleteLabel={tr("tasks.deleteTitle")}
-                                        {...(isEasyColumn
-                                          ? {
-                                              onComplete: () => handleQuickCompleteFromCard(task),
-                                              completeLabel: tr("tasks.quickDoneTitle"),
-                                              completing: isCompleting,
-                                              completePop: isPop,
-                                            }
-                                          : {})}
-                                      />
-                                      {microCount > 0 ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setExpandedTaskId(isExpanded ? null : task.id);
-                                          }}
-                                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 shadow-sm transition-colors hover:bg-gray-50"
-                                          aria-label={tr("tasks.microPanelTitle")}
-                                          aria-expanded={isExpanded}
-                                        >
-                                          <ChevronDownIcon
-                                            className={`h-4 w-4 transition-transform duration-200 ${
-                                              isExpanded ? "rotate-0" : "-rotate-90"
-                                            }`}
-                                            aria-hidden
-                                          />
-                                        </button>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                  <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
-                                    {(task.duration || task.estimatedDuration) ? (
-                                      <span className="font-mono tabular-nums text-gray-400">
-                                        {task.duration || task.estimatedDuration} min
-                                      </span>
-                                    ) : null}
-                                    {(task.duration || task.estimatedDuration) &&
-                                    (deadlineMeta || scheduleTimeLabel) ? (
-                                      <span className="text-gray-300" aria-hidden>
-                                        ·
-                                      </span>
-                                    ) : null}
-                                    {deadlineMeta ? (
-                                      <DeadlineLabel
-                                        deadline={deadlineMeta.label}
-                                        overdue={deadlineMeta.overdue}
-                                        compact
-                                      />
-                                    ) : null}
-                                    {scheduleTimeLabel ? (
-                                      <>
-                                        {deadlineMeta ? (
-                                          <span className="text-gray-300" aria-hidden>
-                                            ·
-                                          </span>
-                                        ) : null}
-                                        <span className="text-gray-500">
-                                          {scheduleTimeLabel}
-                                        </span>
-                                      </>
-                                    ) : null}
-                                    {((task.duration || task.estimatedDuration) ||
-                                      deadlineMeta ||
-                                      scheduleTimeLabel) &&
-                                    microCount > 0 ? (
-                                      <span className="text-gray-300" aria-hidden>
-                                        ·
-                                      </span>
-                                    ) : null}
-                                    {repeatKey ? (
-                                      <>
-                                        {((task.duration || task.estimatedDuration) ||
-                                          deadlineMeta ||
-                                          scheduleTimeLabel) ? (
-                                          <span className="text-gray-300" aria-hidden>
-                                            ·
-                                          </span>
-                                        ) : null}
-                                        <span className="inline-flex items-center gap-0.5 font-medium text-blue-600">
-                                          <ArrowPathIcon className="h-3 w-3 shrink-0" aria-hidden />
-                                          {tr(`taskEditor.${repeatKey}`)}
-                                        </span>
-                                      </>
-                                    ) : null}
-                                    {microCount > 0 ? (
-                                      <>
-                                        {((task.duration || task.estimatedDuration) ||
-                                          deadlineMeta ||
-                                          scheduleTimeLabel ||
-                                          repeatKey) ? (
-                                          <span className="text-gray-300" aria-hidden>
-                                            ·
-                                          </span>
-                                        ) : null}
-                                        <span className="font-mono tabular-nums text-[#6B7280]">
-                                          {tr("tasks.microStepsCollapsed", {
-                                            n: String(microCount),
-                                          })}
-                                        </span>
-                                      </>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {isExpanded && (() => {
-                              const ms = normalizeMicroSteps(task.microSteps);
-                              const msDone = ms.filter((s) => s.done).length;
-                              const showMicroPanel =
-                                ms.length > 0 || microStepsAddOpenId === task.id;
-
-                              return (
-                              <div
-                                className="pt-5 pb-5 px-5 bg-gray-50/50 border-t border-gray-100"
-                                style={{ boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.03)' }}
-                              >
-                                <div className="flex flex-col gap-4">
-                                  <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 shadow-sm">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                      <div className="flex min-w-0 items-center gap-2">
-                                        <Square2StackIcon
-                                          className="h-4 w-4 shrink-0 text-violet-600"
-                                          aria-hidden
-                                        />
-                                        <span className="text-sm font-semibold text-gray-800">
-                                          {tr("tasks.microPanelTitle")}
-                                        </span>
-                                        {ms.length > 0 ? (
-                                          <span className="text-xs font-mono tabular-nums text-gray-500">
-                                            {msDone}/{ms.length}
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                      {!showMicroPanel ? (
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setMicroStepsAddOpenId(task.id);
-                                          }}
-                                          className="shrink-0 rounded-lg bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
-                                        >
-                                          {tr("tasks.addMicro")}
-                                        </button>
-                                      ) : null}
-                                    </div>
-
-                                    {showMicroPanel ? (
-                                      <div className="mt-3 space-y-2">
-                                        {ms.length > 0 ? (
-                                          <ul className="space-y-1.5">
-                                            {ms.map((step) => (
-                                              <li key={step.id} className="flex items-start gap-2">
-                                                <button
-                                                  type="button"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    void toggleMicroStepDone(task, step.id);
-                                                  }}
-                                                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                                                    step.done
-                                                      ? "border-emerald-500 bg-emerald-500"
-                                                      : "border-gray-300 bg-white hover:border-violet-400"
-                                                  }`}
-                                                  aria-label={
-                                                    step.done
-                                                      ? tr("tasks.stepUndoAria")
-                                                      : tr("tasks.stepCheckAria")
-                                                  }
-                                                >
-                                                  {step.done ? (
-                                                    <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-                                                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                  ) : null}
-                                                </button>
-                                                <span
-                                                  className={`min-w-0 flex-1 text-sm leading-snug ${
-                                                    step.done
-                                                      ? "text-gray-400 line-through"
-                                                      : "text-gray-800"
-                                                  }`}
-                                                >
-                                                  {step.title}
-                                                </span>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        ) : null}
-
-                                        <div className="flex gap-2 pt-0.5">
-                                          <input
-                                            type="text"
-                                            value={microStepDraft.title}
-                                            onChange={(e) =>
-                                              setMicroStepDraft((d) => ({
-                                                ...d,
-                                                title: e.target.value,
-                                              }))
-                                            }
-                                            onKeyDown={(e) => {
-                                              if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                void addMicroStepToTask(task);
-                                              }
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                            placeholder={tr("tasks.newMicroPh")}
-                                            className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                                          />
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              void addMicroStepToTask(task);
-                                            }}
-                                            className="shrink-0 rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
-                                          >
-                                            {tr("tasks.microAdd")}
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ) : null}
-                                  </div>
-
-                                </div>
-                              </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </section>
+      {/* SECTIE 4: Alle open taken — ontwerp C */}
+      <OpenTasksListC
+        loading={loading}
+        openByEnergy={openByEnergy}
+        completingTaskIds={completingTaskIds}
+        onStart={startFocus}
+        onEdit={setEditing}
+        onDelete={handleDeleteTask}
+        onToggle={handleQuickCompleteFromCard}
+      />
 
         </div>
       </main>
@@ -1064,6 +531,9 @@ export default function TasksOverviewCalm() {
                   reminders: updatedTask.reminders ?? [],
                   repeat: updatedTask.repeat ?? "none",
                   repeatWeekdays: updatedTask.repeatWeekdays ?? "all",
+                  repeatAnchor: updatedTask.repeatAnchor ?? "planned",
+                  repeatIntervalDays: updatedTask.repeatIntervalDays ?? null,
+                  repeatNextDueAt: updatedTask.repeatNextDueAt ?? null,
                   duration: updatedTask.duration ?? null,
                   estimatedDuration: updatedTask.estimatedDuration ?? null,
                   energyLevel: updatedTask.energyLevel ?? "medium",
@@ -1072,7 +542,6 @@ export default function TasksOverviewCalm() {
                     : {}),
                 });
                 setEditing(null);
-                setExpandedTaskId(null);
               }}
               onClose={() => setEditing(null)}
             />
@@ -1272,7 +741,6 @@ export default function TasksOverviewCalm() {
                       energyLevel: convertEnergy,
                     });
                     toast(tr('tasks.toastConverted'));
-                    setExpandedTaskId(null);
                     setConvertingThought(null);
                   } catch (err) {
                     console.error('Error converting thought:', err);

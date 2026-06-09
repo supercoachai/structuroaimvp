@@ -1028,6 +1028,58 @@ body {
   margin-top: clamp(8px, 1.5dvh, 20px) !important;
 }
 
+.home-screen__now-dot {
+  box-shadow: 0 0 0 3px rgba(22, 194, 90, 0.25);
+  animation: home-now-dot-pulse 2.4s ease-in-out infinite;
+}
+
+.home-screen__start-btn--invite {
+  animation: home-start-invite 2.8s ease-in-out infinite;
+}
+
+.home-screen__start-btn--invite:hover {
+  animation: none;
+}
+
+@keyframes home-now-dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(22, 194, 90, 0.22);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(22, 194, 90, 0.14);
+    transform: scale(1.08);
+  }
+}
+
+@keyframes home-start-invite {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 -2px 0 rgba(0, 80, 30, 0.25) inset,
+      0 2px 0 var(--st-green-deep),
+      0 4px 14px -4px rgba(22, 194, 90, 0.45);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.35) inset,
+      0 -2px 0 rgba(0, 80, 30, 0.25) inset,
+      0 2px 0 var(--st-green-deep),
+      0 8px 22px -4px rgba(22, 194, 90, 0.58);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-screen__now-dot,
+  .home-screen__start-btn--invite {
+    animation: none;
+  }
+}
+
 .home-dev-toolbar {
   top: max(3.5rem, calc(env(safe-area-inset-top, 0px) + 2.75rem));
   right: max(0.5rem, env(safe-area-inset-right, 0px));

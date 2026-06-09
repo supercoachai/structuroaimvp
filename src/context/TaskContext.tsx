@@ -72,6 +72,9 @@ export interface Task {
   repeatUntil?: string | null;
   repeatWeekdays?: 'all' | 'weekdays' | 'weekends';
   repeatExcludeDates?: string[];
+  repeatAnchor?: 'planned' | 'completion';
+  repeatIntervalDays?: number | null;
+  repeatNextDueAt?: string | null;
   impact?: string;
   energyLevel?: string;
   estimatedDuration?: number | null;
@@ -114,6 +117,9 @@ function mapLocalTaskToTask(localTask: LocalTask): Task {
     repeatUntil: localTask.repeatUntil ?? undefined,
     repeatWeekdays: localTask.repeatWeekdays ?? 'all',
     repeatExcludeDates: localTask.repeatExcludeDates ?? undefined,
+    repeatAnchor: (localTask as any).repeatAnchor ?? undefined,
+    repeatIntervalDays: (localTask as any).repeatIntervalDays ?? undefined,
+    repeatNextDueAt: (localTask as any).repeatNextDueAt ?? undefined,
     impact: localTask.impact,
     energyLevel: localTask.energyLevel,
     estimatedDuration: localTask.estimatedDuration,
@@ -156,6 +162,9 @@ function mapTaskToLocalTask(task: Partial<Task>): Partial<LocalTask> {
     repeatUntil: task.repeatUntil ?? null,
     repeatWeekdays: task.repeatWeekdays ?? 'all',
     repeatExcludeDates: task.repeatExcludeDates ?? undefined,
+    repeatAnchor: task.repeatAnchor ?? undefined,
+    repeatIntervalDays: task.repeatIntervalDays ?? undefined,
+    repeatNextDueAt: task.repeatNextDueAt ?? undefined,
     impact: task.impact || '🌱',
     energyLevel: task.energyLevel !== undefined && task.energyLevel !== null ? task.energyLevel : 'medium',
     estimatedDuration: task.estimatedDuration || null,
@@ -192,6 +201,9 @@ function mapTaskUpdatesToLocalTask(updates: Partial<Task>): Partial<LocalTask> {
   if ('repeatUntil' in updates) (local as any).repeatUntil = updates.repeatUntil ?? null;
   if ('repeatWeekdays' in updates) (local as any).repeatWeekdays = updates.repeatWeekdays ?? 'all';
   if ('repeatExcludeDates' in updates) (local as any).repeatExcludeDates = updates.repeatExcludeDates ?? undefined;
+  if ('repeatAnchor' in updates) (local as any).repeatAnchor = updates.repeatAnchor ?? null;
+  if ('repeatIntervalDays' in updates) (local as any).repeatIntervalDays = updates.repeatIntervalDays ?? null;
+  if ('repeatNextDueAt' in updates) (local as any).repeatNextDueAt = updates.repeatNextDueAt ?? null;
   if ('impact' in updates) local.impact = updates.impact ?? '🌱';
   if ('microSteps' in updates) local.microSteps = (updates.microSteps as any[]) ?? [];
   if ('notToday' in updates) local.notToday = updates.notToday ?? false;

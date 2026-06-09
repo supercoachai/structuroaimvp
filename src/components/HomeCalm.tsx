@@ -574,12 +574,12 @@ export default function HomeCalm() {
                 }}
               >
                 <span
+                  className="home-screen__now-dot"
                   style={{
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
                     background: 'var(--st-green)',
-                    boxShadow: '0 0 0 3px rgba(22,194,90,0.25)',
                   }}
                   aria-hidden
                 />
@@ -726,7 +726,7 @@ export default function HomeCalm() {
                   `/focus?task=${encodeURIComponent(heroTask.id)}&duration=${mins}`
                 );
               }}
-              className="home-screen__start-btn st-btn-primary st-btn-success w-full border-0"
+              className="home-screen__start-btn home-screen__start-btn--invite st-btn-primary st-btn-success w-full border-0"
             >
               <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
               {t('home.startFocus')}

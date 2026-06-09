@@ -35,6 +35,9 @@ export interface LocalTask {
   repeatUntil?: string | null;
   repeatWeekdays?: 'all' | 'weekdays' | 'weekends';
   repeatExcludeDates?: string[];
+  repeatAnchor?: 'planned' | 'completion';
+  repeatIntervalDays?: number | null;
+  repeatNextDueAt?: string | null;
   impact: string;
   energyLevel: string;
   estimatedDuration: number | null;

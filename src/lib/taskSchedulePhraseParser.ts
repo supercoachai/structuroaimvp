@@ -313,7 +313,11 @@ function applyWeeklyRecurrence(
   result: ParsedSchedulePhrase,
   hit: WeekdayRecurrenceHit
 ): void {
-  result.repeatSelection = { repeat: "weekly", repeatWeekdays: "all" };
+  result.repeatSelection = {
+    repeat: "weekly",
+    repeatWeekdays: "all",
+    repeatAnchor: "planned",
+  };
   result.weeklyAnchorYmd = nearestWeekdayYmd(hit.weekday);
   result.applied.push(`herhaling: wekelijks (${hit.label})`);
 }
@@ -480,10 +484,40 @@ export function parseTaskSchedulePhrase(raw: string): ParsedSchedulePhrase {
         );
         implicitDaypart = dailyDaypart;
         matched = true;
-      } else if (/\b(wekelijks|elke week|iedere week)\b/.test(text)) {
-        result.repeatSelection = { repeat: "weekly", repeatWeekdays: "all" };
-        result.applied.push("herhaling: wekelijks");
-        matched = true;
+      } else {
+        const intervalMatch = text.match(
+          /\b(?:elke|iedere|om de)\s+(\d{1,3})\s+dagen\b/
+        );
+        if (intervalMatch) {
+          const days = Math.max(1, Math.min(365, parseInt(intervalMatch[1], 10)));
+          result.repeatSelection = {
+            repeat: "interval",
+            repeatWeekdays: "all",
+            repeatAnchor: "completion",
+            repeatIntervalDays: days,
+          };
+          result.applied.push(`herhaling: elke ${days} dagen (na afvinken)`);
+          matched = true;
+        } else if (
+          /\b(om de twee weken|tweewekelijks)\b/.test(text)
+        ) {
+          result.repeatSelection = {
+            repeat: "interval",
+            repeatWeekdays: "all",
+            repeatAnchor: "completion",
+            repeatIntervalDays: 14,
+          };
+          result.applied.push("herhaling: elke 14 dagen (na afvinken)");
+          matched = true;
+        } else if (/\b(wekelijks|elke week|iedere week)\b/.test(text)) {
+          result.repeatSelection = {
+            repeat: "weekly",
+            repeatWeekdays: "all",
+            repeatAnchor: "planned",
+          };
+          result.applied.push("herhaling: wekelijks (vaste dag)");
+          matched = true;
+        }
       }
     }
   }

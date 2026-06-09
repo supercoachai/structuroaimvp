@@ -6,17 +6,40 @@ import {
 import { microStepId, type MicroStep } from "@/lib/microSteps";
 import type { Task } from "@/context/TaskContext";
 import type { NewTaskFlowPayload, NewTaskRepeatChoice } from "./newTaskFlowTypes";
-import type { TaskRepeatWeekdays } from "@/lib/taskRecurrence";
+import {
+  clampIntervalDays,
+  resolveInitialIntervalNextDueAt,
+  type TaskRepeatWeekdays,
+} from "@/lib/taskRecurrence";
 import { buildCreatedAtWithScheduleTime } from "@/lib/taskScheduleTime";
 
-function resolveRepeatFields(repeat?: NewTaskRepeatChoice): {
+function resolveRepeatFields(
+  repeat?: NewTaskRepeatChoice,
+  repeatIntervalDays?: number
+): {
   repeat: string;
   repeatWeekdays: TaskRepeatWeekdays;
+  repeatAnchor?: "planned" | "completion";
+  repeatIntervalDays?: number | null;
 } {
-  if (repeat === "daily") return { repeat: "daily", repeatWeekdays: "all" };
-  if (repeat === "weekdays") return { repeat: "daily", repeatWeekdays: "weekdays" };
-  if (repeat === "weekly") return { repeat: "weekly", repeatWeekdays: "all" };
-  return { repeat: "none", repeatWeekdays: "all" };
+  if (repeat === "daily") {
+    return { repeat: "daily", repeatWeekdays: "all", repeatAnchor: "planned" };
+  }
+  if (repeat === "weekdays") {
+    return { repeat: "daily", repeatWeekdays: "weekdays", repeatAnchor: "planned" };
+  }
+  if (repeat === "weekly") {
+    return { repeat: "weekly", repeatWeekdays: "all", repeatAnchor: "planned" };
+  }
+  if (repeat === "interval") {
+    return {
+      repeat: "interval",
+      repeatWeekdays: "all",
+      repeatAnchor: "completion",
+      repeatIntervalDays: clampIntervalDays(repeatIntervalDays),
+    };
+  }
+  return { repeat: "none", repeatWeekdays: "all", repeatAnchor: "planned" };
 }
 
 export function resolveScheduleYmdFromPick(
@@ -67,7 +90,10 @@ export function buildTaskFromFlowPayload(
 ): Omit<Task, "id"> {
   const minutes = Math.max(1, Math.min(480, payload.durationMin));
   const microSteps = buildMicroStepsFromTitles(payload.microsteps);
-  const repeatFields = resolveRepeatFields(payload.repeat);
+  const repeatFields = resolveRepeatFields(
+    payload.repeat,
+    payload.repeatIntervalDays
+  );
   const scheduleYmd =
     payload.scheduleDate && /^\d{4}-\d{2}-\d{2}$/.test(payload.scheduleDate)
       ? payload.scheduleDate
@@ -80,9 +106,15 @@ export function buildTaskFromFlowPayload(
           payload.scheduleTime.hour,
           payload.scheduleTime.minute
         )
-      : scheduleYmd && repeatFields.repeat === "weekly"
+      : scheduleYmd &&
+          (repeatFields.repeat === "weekly" || repeatFields.repeat === "interval")
         ? `${scheduleYmd}T12:00:00.000Z`
         : undefined;
+
+  const repeatNextDueAt =
+    repeatFields.repeat === "interval"
+      ? resolveInitialIntervalNextDueAt(scheduleYmd)
+      : undefined;
 
   return {
     title: payload.title.trim(),
@@ -97,6 +129,9 @@ export function buildTaskFromFlowPayload(
     reminders: [],
     repeat: repeatFields.repeat,
     repeatWeekdays: repeatFields.repeatWeekdays,
+    repeatAnchor: repeatFields.repeatAnchor,
+    repeatIntervalDays: repeatFields.repeatIntervalDays ?? undefined,
+    repeatNextDueAt,
     impact: "🌱",
     energyLevel: payload.energy,
     microSteps,

@@ -96,7 +96,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       repeatNone: "Eenmalig",
       repeatDaily: "Dagelijks",
       repeatWeekdays: "Werkdagen",
-      repeatWeekly: "Wekelijks",
+      repeatWeekly: "Wekelijks (vaste dag)",
+      repeatInterval: "Elke … dagen (na afvinken)",
+      repeatIntervalLabel: "Elke {n} dagen (na afvinken)",
+      repeatIntervalDaysLabel: "Elke",
+      repeatIntervalDaysSuffix: "dagen na afvinken",
       eyebrowSplit: "Opdelen",
       qMicro: "In micro-stappen?",
       microHint:
@@ -275,7 +279,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       repeatNone: "Eenmalig",
       repeatDaily: "Dagelijks",
       repeatWeekdays: "Werkdagen",
-      repeatWeekly: "Wekelijks",
+      repeatWeekly: "Wekelijks (vaste dag)",
+      repeatInterval: "Elke … dagen (na afvinken)",
+      repeatIntervalLabel: "Elke {n} dagen (na afvinken)",
+      repeatIntervalDaysLabel: "Elke",
+      repeatIntervalDaysSuffix: "dagen na afvinken",
       previewLabel: "Zo staat 'ie straks in je lijst",
       sentenceRepeat: "herhaalt",
       sentenceDuration: "kost ±",
@@ -508,6 +516,22 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       laterBtn: "Later",
       sectionOpen: "Alle open taken",
       openInfoAria: "Uitleg energie-zones en afvinken",
+      repeatInfoTitle: "Hoe werken herhalingen?",
+      repeatInfoOptionsTitle: "Wat zijn mijn opties?",
+      repeatInfoOptionsBody:
+        "Eenmalig, dagelijks, werkdagen, wekelijks (vaste dag), of elke X dagen na afvinken (bijv. elke 7 of 14 dagen).",
+      repeatInfoDayTitle: "Welke dag komt hij terug?",
+      repeatInfoDayBody:
+        "Dat hangt af van je keuze. Wekelijks (vaste dag): de geplande weekdag, niet de dag waarop je afvinkt. Elke X dagen (na afvinken): X dagen na het moment dat je hem deed.",
+      repeatInfoEnergyTitle: "Wat als ik geen energie heb?",
+      repeatInfoEnergyBody:
+        'De taak verdwijnt niet. Hij blijft in "alle open taken" staan en je kunt hem later alsnog afvinken. Geen stress, geen straf.',
+      repeatInfoShiftTitle: "Verschuift de dag mee met wanneer ik het doe?",
+      repeatInfoShiftBody:
+        "Bij wekelijks (vaste dag): nee, die dag blijft anker. Bij elke X dagen (na afvinken): ja, de volgende keer verschuift mee met wanneer je hem afvinkt.",
+      repeatInfoBiweeklyTitle: "Voorbeeld: bed verschonen",
+      repeatInfoBiweeklyBody:
+        "Gepland op vrijdag, zondag gedaan met elke 14 dagen na afvinken? Dan komt hij 14 dagen na zondag terug, niet weer op vrijdag.",
       zonesTitle: "Energie-zones",
       zonesIntro:
         "Alleen bij Makkelijk kun je een taak in de lijst meteen afvinken. Bij Normaal en Intensief niet: daar rond je af via Start → (focus) of door de taak te openen.",
@@ -767,7 +791,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       repeatNone: "One-off",
       repeatDaily: "Daily",
       repeatWeekdays: "Weekdays",
-      repeatWeekly: "Weekly",
+      repeatWeekly: "Weekly (fixed day)",
+      repeatInterval: "Every … days (after check-off)",
+      repeatIntervalLabel: "Every {n} days (after check-off)",
+      repeatIntervalDaysLabel: "Every",
+      repeatIntervalDaysSuffix: "days after check-off",
       eyebrowSplit: "Break down",
       qMicro: "Into micro-steps?",
       microHint:
@@ -943,7 +971,11 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       repeatNone: "One-off",
       repeatDaily: "Daily",
       repeatWeekdays: "Weekdays",
-      repeatWeekly: "Weekly",
+      repeatWeekly: "Weekly (fixed day)",
+      repeatInterval: "Every … days (after check-off)",
+      repeatIntervalLabel: "Every {n} days (after check-off)",
+      repeatIntervalDaysLabel: "Every",
+      repeatIntervalDaysSuffix: "days after check-off",
       previewLabel: "How it will look in your list",
       sentenceRepeat: "repeats",
       sentenceDuration: "takes ±",
@@ -1177,6 +1209,22 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       laterBtn: "Later",
       sectionOpen: "All open tasks",
       openInfoAria: "About energy zones and check-off",
+      repeatInfoTitle: "How do repeats work?",
+      repeatInfoOptionsTitle: "What are my options?",
+      repeatInfoOptionsBody:
+        "One-off, daily, weekdays, weekly (fixed day), or every X days after check-off (e.g. every 7 or 14 days).",
+      repeatInfoDayTitle: "Which day does it come back?",
+      repeatInfoDayBody:
+        "It depends on your choice. Weekly (fixed day): the planned weekday, not when you check it off. Every X days (after check-off): X days after you completed it.",
+      repeatInfoEnergyTitle: "What if I have no energy?",
+      repeatInfoEnergyBody:
+        'The task does not disappear. It stays in "all open tasks" and you can still check it off later. No stress, no penalty.',
+      repeatInfoShiftTitle: "Does the day shift when I complete it?",
+      repeatInfoShiftBody:
+        "Weekly (fixed day): no, that day stays the anchor. Every X days (after check-off): yes, the next due date follows when you check it off.",
+      repeatInfoBiweeklyTitle: "Example: changing the bed",
+      repeatInfoBiweeklyBody:
+        "Planned for Friday, done on Sunday with every 14 days after check-off? It returns 14 days after Sunday, not on Friday again.",
       zonesTitle: "Energy zones",
       zonesIntro:
         "Only Easy tasks can be checked off directly in the list. For Normal and Intense, finish via Start → (focus) or by opening the task.",

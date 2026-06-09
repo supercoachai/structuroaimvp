@@ -25,6 +25,9 @@ export type TaskPutCamelUpdates = {
   repeatUntil?: string | null;
   repeatWeekdays?: string;
   repeatExcludeDates?: string[];
+  repeatAnchor?: string | null;
+  repeatIntervalDays?: number | null;
+  repeatNextDueAt?: string | null;
   isDeadline?: boolean;
   category?: string;
 };
@@ -69,6 +72,13 @@ export function buildTaskPutDbUpdates(
   }
   if (updates.repeatExcludeDates !== undefined) {
     dbUpdates.repeat_exclude_dates = updates.repeatExcludeDates;
+  }
+  if (updates.repeatAnchor !== undefined) dbUpdates.repeat_anchor = updates.repeatAnchor;
+  if (updates.repeatIntervalDays !== undefined) {
+    dbUpdates.repeat_interval_days = updates.repeatIntervalDays;
+  }
+  if (updates.repeatNextDueAt !== undefined) {
+    dbUpdates.repeat_next_due_at = updates.repeatNextDueAt;
   }
   if (updates.isDeadline !== undefined) dbUpdates.is_deadline = updates.isDeadline;
   if (updates.category !== undefined) dbUpdates.category = updates.category;
