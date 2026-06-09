@@ -30,6 +30,7 @@ import {
   DEFAULT_INTERVAL_DAYS,
   formatRepeatLabel,
 } from "@/lib/taskRecurrence";
+import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -463,6 +464,9 @@ export default function NewTaskFlow({
 
         {step === microStepIndex ? (
           <StepMicro
+            title={title}
+            energy={energy}
+            durationMin={resolvedDurationMin()}
             microsteps={microsteps}
             setMicrosteps={setMicrosteps}
             editing={microEditing}
@@ -1163,6 +1167,9 @@ function StepDeadline({
 }
 
 function StepMicro({
+  title,
+  energy,
+  durationMin,
   microsteps,
   setMicrosteps,
   editing,
@@ -1172,6 +1179,9 @@ function StepMicro({
   compact,
   embedded,
 }: {
+  title: string;
+  energy: NewTaskEnergyLevel | null;
+  durationMin: number | null;
   microsteps: string[];
   setMicrosteps: (v: string[]) => void;
   editing: boolean;
@@ -1181,7 +1191,40 @@ function StepMicro({
   compact?: boolean;
   embedded?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+
+  const requestSuggestions = useCallback(async () => {
+    const trimmedTitle = String(title ?? "").trim();
+    if (!trimmedTitle) return;
+
+    setSuggestLoading(true);
+    setSuggestError(null);
+    try {
+      const result = await fetchMicroStepSuggestions({
+        title: trimmedTitle,
+        energyLevel: energy,
+        durationMin: durationMin,
+        locale: locale === "en" ? "en" : "nl",
+      });
+      setMicrosteps(result.steps);
+      setEditing(true);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "generation_failed";
+      if (code === "rate_limited") {
+        setSuggestError(t("newTask.microSuggestRateLimit"));
+      } else {
+        setSuggestError(t("newTask.microSuggestError"));
+      }
+      setEditing(true);
+      if (microsteps.length === 0) {
+        setMicrosteps([""]);
+      }
+    } finally {
+      setSuggestLoading(false);
+    }
+  }, [title, energy, durationMin, locale, microsteps.length, setMicrosteps, setEditing, t]);
 
   const addStep = () => {
     setMicrosteps([...microsteps, ""]);
@@ -1236,19 +1279,17 @@ function StepMicro({
           </button>
           <button
             type="button"
-            onClick={() => {
-              setEditing(true);
-              addStep();
-            }}
-            className={`flex flex-col items-center gap-0.5 rounded-[18px] border border-[var(--st-blue)] bg-[var(--st-blue-haze)] transition-all ${
+            onClick={() => void requestSuggestions()}
+            disabled={suggestLoading || busy}
+            className={`flex flex-col items-center gap-0.5 rounded-[18px] border border-[var(--st-blue)] bg-[var(--st-blue-haze)] transition-all disabled:opacity-60 ${
               embedded ? "px-2 py-3" : "gap-1 px-3 py-5"
             }`}
           >
             <span className={`font-medium text-[var(--st-blue)] ${embedded ? "text-sm" : "text-base"}`}>
-              {t("newTask.microYes")}
+              {suggestLoading ? t("newTask.microSuggestLoading") : t("newTask.microYes")}
             </span>
             <span className={`text-[var(--st-muted-2)] ${embedded ? "text-[10px]" : "text-[11px]"}`}>
-              {t("newTask.microYesSub")}
+              {t("newTask.microSuggestBtn")}
             </span>
           </button>
         </div>
@@ -1262,6 +1303,34 @@ function StepMicro({
       <StepQuestion compact={compact} embedded={embedded}>
         {t("newTask.qMicroFirst")}
       </StepQuestion>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void requestSuggestions()}
+          disabled={suggestLoading || busy}
+          className="rounded-xl border border-[var(--st-blue)] bg-[var(--st-blue-haze)] px-3.5 py-2 text-[13px] font-semibold text-[var(--st-blue)] transition-colors hover:bg-white disabled:opacity-60"
+        >
+          {suggestLoading ? t("newTask.microSuggestLoading") : t("newTask.microSuggestAgain")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSuggestError(null);
+            if (microsteps.length === 0) addStep();
+            else setEditing(true);
+          }}
+          className="rounded-xl border border-[var(--st-line)] bg-white px-3.5 py-2 text-[13px] font-medium text-[var(--st-muted)] transition-colors hover:border-[var(--st-line-strong)]"
+        >
+          {t("newTask.microSuggestManual")}
+        </button>
+      </div>
+
+      {suggestError ? (
+        <p className="mb-3 text-[13px] leading-relaxed text-[var(--st-red-deep,#EF4444)]">
+          {suggestError}
+        </p>
+      ) : null}
 
       <div className="mb-3.5 flex flex-col gap-1.5">
         {microsteps.map((s, i) => (
