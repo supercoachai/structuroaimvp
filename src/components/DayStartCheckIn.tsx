@@ -225,7 +225,6 @@ export default function DayStartCheckIn({
     if (dagstartGaOpenedRef.current) return;
     dagstartGaOpenedRef.current = true;
     trackDagstartOpened();
-    captureProductEvent("dagstart_started");
   }, []);
 
   const [energyOnboardingHintHidden, setEnergyOnboardingHintHidden] = useState(false);
@@ -1500,7 +1499,10 @@ export default function DayStartCheckIn({
       track('day_start_checkin', { energyLevel, top3Count: filledSlots });
 
       captureProductEvent("dagstart_completed", {
+        energy_level: energyLevel,
         tasks_selected_count: filledSlots,
+        has_cycle_phase: Boolean(cycleConsentOn && computePhaseToday()),
+        source: firstTimeOnboarding ? "onboarding" : "app",
       });
       
       if (firstTimeOnboarding) {

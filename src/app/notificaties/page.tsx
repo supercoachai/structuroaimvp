@@ -411,11 +411,11 @@ export default function HerinneringenPage() {
                     marginBottom: 0,
                   }}
                 >
-                  Voeg afspraken toe in Agenda & Planning.
+                  Voeg herinneringen toe bij je taken.
                 </p>
                 <button
                   type="button"
-                  onClick={() => router.push("/agenda")}
+                  onClick={() => router.push("/todo")}
                   style={{
                     marginTop: 14,
                     padding: "10px 18px",
@@ -515,7 +515,7 @@ export default function HerinneringenPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => router.push("/agenda")}
+                        onClick={() => router.push("/todo")}
                         style={{
                           padding: "8px 12px",
                           borderRadius: 10,

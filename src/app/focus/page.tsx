@@ -31,9 +31,8 @@ import {
   captureFocusSessionEndedEarly,
   type FocusSessionOutcomePayload,
 } from '@/lib/posthog/focusSessionEvents';
-import { useViewportContentFit } from '@/hooks/useViewportContentFit';
+import FocusMicroStepsCard from '@/components/focus/FocusMicroStepsCard';
 import InfoButton from '@/components/info/InfoButton';
-import FocusMicroAiSuggest from '@/components/focus/FocusMicroAiSuggest';
 import {
   ChevronRightIcon,
   SparklesIcon,
@@ -53,16 +52,6 @@ const countdownDigitStyle = `
     animation: structuro-countdown-pulse 1s ease-in-out forwards;
   }
 `;
-
-const FOCUS_FIT_MIN_SCALE = 0.62;
-
-function useFocusContentFit(
-  viewportRef: React.RefObject<HTMLDivElement | null>,
-  contentRef: React.RefObject<HTMLDivElement | null>,
-  deps: unknown[]
-) {
-  return useViewportContentFit(viewportRef, contentRef, deps, FOCUS_FIT_MIN_SCALE);
-}
 
 function FocusContent() {
   const fireCompletionConfetti = useCallback(() => {
@@ -97,8 +86,6 @@ function FocusContent() {
   const [microUndoSnapshot, setMicroUndoSnapshot] = useState<MicroStep[] | null>(null);
   const microUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const parkThoughtInputRef = useRef<HTMLInputElement | null>(null);
-  const focusFitViewportRef = useRef<HTMLDivElement | null>(null);
-  const focusFitContentRef = useRef<HTMLDivElement | null>(null);
 
   const currentTask = useMemo(() => {
     const taskParam = searchParams?.get('task');
@@ -633,8 +620,34 @@ function FocusContent() {
 
   // ─── Derived data ─────────────────────────────
   const existingMicroSteps = normalizeMicroSteps(currentTask?.microSteps);
-  const completedStepsCount = existingMicroSteps.filter(s => s.done).length;
-  const activeStepIdx = existingMicroSteps.findIndex(s => !s.done);
+  const activeStepIdx = useMemo(() => {
+    const idx = existingMicroSteps.findIndex((step) => !step.done);
+    return idx === -1 ? existingMicroSteps.length : idx;
+  }, [existingMicroSteps]);
+
+  const microStepsSection =
+    currentTask ? (
+      <FocusMicroStepsCard
+        taskId={currentTask.id}
+        taskTitle={currentTask.title}
+        steps={existingMicroSteps}
+        activeStepIdx={activeStepIdx}
+        energyLevel={currentTask.energyLevel}
+        durationMin={getTaskDurationMinutes(currentTask)}
+        inlineNewStep={inlineNewStep}
+        onInlineNewStepChange={setInlineNewStep}
+        onInlineAddStep={() => void handleInlineAddStep()}
+        onToggleStep={handleToggleMicroStep}
+        onApplyAiSteps={handleApplyAiMicroSteps}
+        microUndoSnapshot={microUndoSnapshot}
+        onUndo={handleUndoMicrostep}
+        className="h-full min-h-0 rounded-2xl border border-white/[0.07] bg-white/[0.04]"
+        headerAction={
+          <InfoButton infoId="microstappen" variant="onDark" autoIntro={false} />
+        }
+      />
+    ) : null;
+
   const el = currentTask?.energyLevel || "medium";
   const energyLabel =
     el === "low"
@@ -664,142 +677,8 @@ function FocusContent() {
         : 0;
   const ringDashOffset = RING_C * (1 - progressRatio);
 
-  // ─── Microstappen (donker scherm, zelfde logica als design-mock) ───────────────
-  const microStepsSection = (
-    <div className="focus-screen__micro-card rounded-2xl border border-white/[0.07] bg-white/[0.04]">
-      <div className="mb-2 flex items-center gap-2 sm:mb-3">
-        <svg className="h-3.5 w-3.5 shrink-0 text-violet-400/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M12 2 2 7l10 5 10-5-10-5z" />
-          <path d="m2 17 10 5 10-5" />
-          <path d="m2 12 10 5 10-5" />
-        </svg>
-        <span className="min-w-0 flex-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
-          {tr("focus.microTitle")}
-        </span>
-        <InfoButton infoId="microstappen" variant="onDark" autoIntro={false} />
-      </div>
-
-      {existingMicroSteps.length === 0 && currentTask ? (
-        <FocusMicroAiSuggest
-          taskTitle={currentTask.title}
-          energyLevel={currentTask.energyLevel}
-          durationMin={getTaskDurationMinutes(currentTask)}
-          onApplySteps={handleApplyAiMicroSteps}
-        />
-      ) : null}
-
-      {existingMicroSteps.length > 0 ? (
-        <div className="focus-screen__micro-steps-scroll flex flex-col gap-1">
-          {existingMicroSteps.map((step, idx) => {
-            const isDone = Boolean(step.done);
-            const isActive = !isDone && idx === activeStepIdx;
-            return (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => handleToggleMicroStep(step.id)}
-                className={`focus-micro-step${isActive ? ' focus-micro-step--active' : ''}`}
-              >
-                {isDone ? (
-                  <>
-                    <svg className="h-4 w-4 shrink-0 text-[#22c55e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                    <span className="text-[13.5px] text-[#94A3B8] line-through">{step.title}</span>
-                  </>
-                ) : isActive ? (
-                  <>
-                    <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
-                    <span className="text-[13.5px] font-semibold text-white">{step.title}</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[#64748B]" />
-                    <span className="text-[13.5px] text-[#94A3B8]">{step.title}</span>
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
-      <div className="focus-micro-input-row mt-2 flex items-center gap-2 sm:mt-3">
-        <input
-          type="text"
-          value={inlineNewStep}
-          onChange={(e) => setInlineNewStep(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleInlineAddStep();
-            }
-          }}
-          placeholder={tr("focus.microPh")}
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
-        />
-        <button
-          type="button"
-          onClick={handleInlineAddStep}
-          disabled={!inlineNewStep.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg font-light text-white transition hover:bg-white/15 disabled:opacity-40"
-        >
-          +
-        </button>
-      </div>
-
-      {microUndoSnapshot && (
-        <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={handleUndoMicrostep}
-            className="text-xs font-medium text-[#94A3B8] underline decoration-white/20 underline-offset-2 hover:text-white"
-          >
-            {tr("focus.undo")}
-          </button>
-        </div>
-      )}
-
-      {existingMicroSteps.length > 0 && (
-        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-          <span className="text-sm text-[#64748B]">
-            {tr("focus.stepsProgress", {
-              done: String(completedStepsCount),
-              total: String(existingMicroSteps.length),
-            })}
-          </span>
-          <div className="flex gap-1.5">
-            {existingMicroSteps.map((step, idx) => (
-              <div
-                key={step.id}
-                className={`h-2 w-6 rounded-full transition-colors ${
-                  step.done ? 'bg-[#22c55e]' : idx === activeStepIdx ? 'bg-violet-500' : 'bg-white/20'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   /** Parkeerbalk alleen tijdens actieve focus (timer) of tijd-voorbij-flow, niet vóór Start. */
   const showParkBarInFocus = timerActive || showTimeUpPrompt;
-
-  const focusFitLayout = useFocusContentFit(
-    focusFitViewportRef,
-    focusFitContentRef,
-    [
-      currentTask?.id,
-      currentTask?.title,
-      existingMicroSteps.length,
-      timerActive,
-      showTimeUpPrompt,
-      showCountdown,
-      duration,
-    ]
-  );
 
   const isPreSession = !timerActive && !showTimeUpPrompt;
 
@@ -1016,28 +895,9 @@ function FocusContent() {
           )}
         </div>
 
-        <div ref={focusFitViewportRef} className="focus-screen__fit-viewport">
-          <div
-            className="mx-auto flex w-full max-w-md justify-center"
-            style={
-              focusFitLayout.scale < 0.995 && focusFitLayout.fittedHeight > 0
-                ? { height: focusFitLayout.fittedHeight, maxHeight: '100%' }
-                : undefined
-            }
-          >
-            <div
-              ref={focusFitContentRef}
-              className="focus-screen__fit-content"
-              style={
-                focusFitLayout.scale < 0.995
-                  ? {
-                      transform: `scale(${focusFitLayout.scale})`,
-                      transformOrigin: 'top center',
-                    }
-                  : undefined
-              }
-            >
-            <div className="text-center">
+        <div className="focus-screen__fit-viewport">
+          <div className="focus-screen__fit-content">
+            <div className="shrink-0 text-center">
               <div className="flex items-center justify-center gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#94A3B8] sm:text-[11px]">
                   {tr("focus.nuAanZet")}
@@ -1085,12 +945,11 @@ function FocusContent() {
               </div>
             </div>
 
-            <div className="w-full">{microStepsSection}</div>
+            <div className="min-h-0 w-full flex-1">{microStepsSection}</div>
 
             {focusSessionActions ? (
-              <div className="focus-screen__actions flex flex-col gap-2">{focusSessionActions}</div>
+              <div className="focus-screen__actions flex shrink-0 flex-col gap-2">{focusSessionActions}</div>
             ) : null}
-          </div>
           </div>
         </div>
 

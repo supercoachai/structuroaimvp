@@ -27,8 +27,12 @@ import {
 } from '@/lib/top3CurrentTask';
 import { getTodayMinutesProgress } from '@/lib/homeTodayProgress';
 import { getDayStartTimeOfDay } from '@/lib/dayStartGreeting';
-import { useViewportContentFit } from '@/hooks/useViewportContentFit';
-import FocusMicroAiSuggest from '@/components/focus/FocusMicroAiSuggest';
+import FocusMicroStepsCard from '@/components/focus/FocusMicroStepsCard';
+import ShutdownPromptInline, {
+  isShutdownPromptDismissedToday,
+} from '@/components/shutdown/ShutdownPromptInline';
+import { captureProductEvent } from '@/lib/posthog/track';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
 
 export default function HomeCalm() {
   const { t, locale } = useI18n();
@@ -45,8 +49,6 @@ export default function HomeCalm() {
   const [heroTaskIndex, setHeroTaskIndex] = useState(0);
   const [dateTimeLine, setDateTimeLine] = useState('');
   const [greetingWord, setGreetingWord] = useState('');
-  const homeFitViewportRef = useRef<HTMLDivElement | null>(null);
-  const homeFitContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const checkProtected = async () => {
@@ -63,12 +65,37 @@ export default function HomeCalm() {
     checkProtected();
   }, []);
 
+  const [showShutdownPrompt, setShowShutdownPrompt] = useState(false);
+  const prevOpenTop3CountRef = useRef<number | null>(null);
+
   const dashboardReady = !loading && !checkInLoading;
 
   const openTop3Tasks = useMemo(
     () => getOpenTop3Tasks(tasks, todayCheckIn),
     [tasks, todayCheckIn]
   );
+
+  useEffect(() => {
+    const ids = todayCheckIn?.top3_task_ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      prevOpenTop3CountRef.current = openTop3Tasks.length;
+      return;
+    }
+    const openCount = openTop3Tasks.length;
+    const prev = prevOpenTop3CountRef.current;
+    prevOpenTop3CountRef.current = openCount;
+
+    if (
+      prev === 1 &&
+      openCount === 0 &&
+      !isShutdownPromptDismissedToday()
+    ) {
+      setShowShutdownPrompt(true);
+      captureProductEvent(ANALYTICS_EVENTS.shutdown_prompt_shown, {
+        source: "last_task_complete",
+      });
+    }
+  }, [openTop3Tasks.length, todayCheckIn?.top3_task_ids]);
 
   useEffect(() => {
     setHeroTaskIndex(0);
@@ -355,22 +382,6 @@ export default function HomeCalm() {
     void restartDagstartForDev();
   };
 
-  const homeFitLayout = useViewportContentFit(
-    homeFitViewportRef,
-    homeFitContentRef,
-    [
-      userName,
-      heroTask?.id,
-      heroTask?.title,
-      heroMicroSteps.length,
-      todaySlotProgress?.current,
-      allNonMedicationDone,
-      loading,
-      checkInLoading,
-      showNamePrompt,
-    ]
-  );
-
   return (
     <>
       {devResetToolbarOn && (
@@ -405,28 +416,12 @@ export default function HomeCalm() {
         </div>
       )}
       <div className="home-screen flex min-h-0 flex-1 flex-col text-[var(--st-ink)]">
-        <div ref={homeFitViewportRef} className="home-screen__fit-viewport">
-          <div
-            className="mx-auto flex w-full justify-center"
-            style={
-              homeFitLayout.scale < 0.995 && homeFitLayout.fittedHeight > 0
-                ? { height: homeFitLayout.fittedHeight, maxHeight: '100%' }
-                : undefined
-            }
-          >
-            <div
-              ref={homeFitContentRef}
-              className="home-screen__fit-content px-5 pt-3 pb-1"
-              style={
-                homeFitLayout.scale < 0.995
-                  ? {
-                      transform: `scale(${homeFitLayout.scale})`,
-                      transformOrigin: 'top center',
-                    }
-                  : undefined
-              }
-            >
-            <div className="mx-auto flex w-full max-w-md flex-col gap-[clamp(8px,1.6dvh,20px)]">
+        <div className="home-screen__fit-viewport">
+          <div className="home-screen__fit-content px-5 pt-3 pb-1">
+            <div className="home-screen__main-column mx-auto w-full max-w-md">
+        {showShutdownPrompt ? (
+          <ShutdownPromptInline onDismiss={() => setShowShutdownPrompt(false)} />
+        ) : null}
         <header className="w-full shrink-0">
           <p
             className="home-screen__greeting-sub"
@@ -483,7 +478,8 @@ export default function HomeCalm() {
         </header>
 
         {todaySlotProgress && todayMinutesProgress ? (
-          <HomeTodayProgress
+          <div className="home-screen__progress shrink-0">
+            <HomeTodayProgress
             current={todaySlotProgress.current}
             total={todaySlotProgress.total}
             doneMinutes={todayMinutesProgress.done}
@@ -497,6 +493,7 @@ export default function HomeCalm() {
               total: String(todayMinutesProgress.total),
             })}
           />
+          </div>
         ) : null}
 
         {/* Naam prompt modal */}
@@ -571,14 +568,14 @@ export default function HomeCalm() {
 
         {dashboardReady && heroTask && (
           <section
-            className="home-screen__hero shrink-0 rounded-[20px] text-white"
+            className="home-screen__hero rounded-[20px] text-white"
             style={{
               background: 'var(--st-night)',
               boxShadow:
                 '0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 44px -16px rgba(14,23,48,0.35), 0 28px 60px -28px rgba(45,91,251,0.20)',
             }}
           >
-            <div className="mb-2.5 flex items-center justify-between gap-2">
+            <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
               <span
                 className="inline-flex items-center gap-2"
                 style={{
@@ -615,29 +612,27 @@ export default function HomeCalm() {
                 {t('home.coreFocus')}
               </span>
             </div>
-            <h2 className="home-screen__hero-title font-semibold leading-snug tracking-tight">
+            <h2 className="home-screen__hero-title shrink-0 font-semibold leading-snug tracking-tight">
               {heroTask.title}
             </h2>
 
-            <div className="focus-screen__micro-card rounded-2xl border border-white/[0.07] bg-white/[0.04]">
-              <div className="mb-3 flex items-center gap-2">
-                <svg
-                  className="h-3.5 w-3.5 shrink-0 text-violet-400/90"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M12 2 2 7l10 5 10-5-10-5z" />
-                  <path d="m2 17 10 5 10-5" />
-                  <path d="m2 12 10 5 10-5" />
-                </svg>
-                <span className="min-w-0 flex-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#94A3B8]">
-                  {t('focus.microTitle')}
-                </span>
+            <FocusMicroStepsCard
+              taskId={heroTask.id}
+              taskTitle={heroTask.title}
+              steps={heroMicroSteps}
+              activeStepIdx={heroMicroActiveIdx}
+              energyLevel={heroTask.energyLevel}
+              durationMin={getTaskDurationMinutes(heroTask)}
+              inlineNewStep={heroMicroDraft}
+              onInlineNewStepChange={setHeroMicroDraft}
+              onInlineAddStep={() => void addHeroMicroStep()}
+              onToggleStep={(stepId) => void toggleHeroMicroStep(stepId)}
+              onApplyAiSteps={applyHeroAiMicroSteps}
+              inputDisabled={heroMicroSaving}
+              aiDisabled={heroMicroSaving}
+              inputPlaceholder={t('home.microStepsAdd')}
+              className="home-screen__hero-micro-card rounded-2xl border border-white/[0.07] bg-white/[0.04]"
+              headerAction={
                 <button
                   type="button"
                   className="shrink-0 rounded-lg p-1 text-[#64748B] transition-colors hover:bg-white/5 hover:text-[#94A3B8] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
@@ -646,97 +641,10 @@ export default function HomeCalm() {
                 >
                   <InformationCircleIcon className="h-4 w-4" aria-hidden />
                 </button>
-              </div>
+              }
+            />
 
-              {heroMicroSteps.length === 0 && heroTask ? (
-                <FocusMicroAiSuggest
-                  taskTitle={heroTask.title}
-                  energyLevel={heroTask.energyLevel}
-                  durationMin={getTaskDurationMinutes(heroTask)}
-                  onApplySteps={applyHeroAiMicroSteps}
-                  disabled={heroMicroSaving}
-                />
-              ) : null}
-
-              {heroMicroSteps.length > 0 ? (
-                <div className="focus-screen__micro-steps-scroll flex flex-col gap-1">
-                  {heroMicroSteps.map((step, idx) => {
-                    const isDone = Boolean(step.done);
-                    const isActive = !isDone && idx === heroMicroActiveIdx;
-                    return (
-                      <button
-                        key={step.id}
-                        type="button"
-                        onClick={() => void toggleHeroMicroStep(step.id)}
-                        className={`focus-micro-step${isActive ? ' focus-micro-step--active' : ''}`}
-                      >
-                        {isDone ? (
-                          <>
-                            <svg
-                              className="h-4 w-4 shrink-0 text-[#22c55e]"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden
-                            >
-                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                              <polyline points="22 4 12 14.01 9 11.01" />
-                            </svg>
-                            <span className="text-[13.5px] text-[#94A3B8] line-through">{step.title}</span>
-                          </>
-                        ) : isActive ? (
-                          <>
-                            <div className="h-4 w-4 shrink-0 rounded-full border-2 border-violet-400" />
-                            <span className="text-[13.5px] font-semibold text-white">{step.title}</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-4 w-4 shrink-0 rounded-full border-2 border-[#64748B]" />
-                            <span className="text-[13.5px] text-[#94A3B8]">{step.title}</span>
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-
-              <div className="focus-micro-input-row mt-2 flex items-center gap-2 sm:mt-3">
-                <label htmlFor="home-hero-micro" className="sr-only">
-                  {t('focus.microPh')}
-                </label>
-                <input
-                  id="home-hero-micro"
-                  type="text"
-                  value={heroMicroDraft}
-                  onChange={(e) => setHeroMicroDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      void addHeroMicroStep();
-                    }
-                  }}
-                  disabled={heroMicroSaving}
-                  placeholder={t('home.microStepsAdd')}
-                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-[#64748B] focus:border-violet-400/40 focus:outline-none focus:ring-1 focus:ring-violet-500/30 disabled:opacity-50"
-                  autoComplete="off"
-                  enterKeyHint="done"
-                />
-                <button
-                  type="button"
-                  onClick={() => void addHeroMicroStep()}
-                  disabled={heroMicroSaving || !heroMicroDraft.trim()}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg font-light text-white transition hover:bg-white/15 disabled:opacity-40"
-                  aria-label={t('tasks.microAdd')}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
+            <div className="home-screen__hero-actions">
             <button
               type="button"
               onClick={async () => {
@@ -769,6 +677,7 @@ export default function HomeCalm() {
                 {t('home.pickOtherTask')}
               </button>
             ) : null}
+            </div>
           </section>
         )}
 
@@ -882,7 +791,6 @@ export default function HomeCalm() {
           </section>
         )}
             </div>
-          </div>
           </div>
         </div>
       </div>

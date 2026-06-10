@@ -4,9 +4,10 @@ import {
   normalizeSignupSourceKey,
   resolveStripeTrialDaysForSignupSource,
 } from "@/lib/stripe/trialConfig";
+import { captureFirstTouchAttribution } from "@/lib/posthog/firstTouchAttribution";
 
-const SOURCE_KEY = "signup_source";
-const CAMPAIGN_KEY = "signup_utm_campaign";
+export const SOURCE_KEY = "signup_source";
+export const CAMPAIGN_KEY = "signup_utm_campaign";
 export const PENDING_SIGNUP_KEY = "structuro_pending_signup";
 const LEGACY_KEY = "STRUCTURO_ATTRIBUTION_SOURCE";
 
@@ -19,8 +20,9 @@ function sanitizeAttributionValue(
   return t.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
-/** Eerste paginaweergave: utm_source / ?source= in sessionStorage (first-touch). */
+/** Eerste paginaweergave: utm_source / ?source= in sessionStorage + st_attr cookie. */
 export function captureUtmOnFirstVisit(): void {
+  captureFirstTouchAttribution();
   if (typeof window === "undefined") return;
   try {
     if (sessionStorage.getItem(SOURCE_KEY)) return;

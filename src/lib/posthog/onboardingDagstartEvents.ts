@@ -18,7 +18,6 @@ export function captureDagstartEventsFromOnboardingFinish(
   energy: AppEnergy,
   taskCount = 1
 ) {
-  captureProductEvent("dagstart_started", { source: "onboarding" });
   captureProductEvent("dagstart_energy_chosen", {
     energy_level: energy,
     level: appEnergyToDagstartId(energy),

@@ -39,6 +39,9 @@ export function profileHasAppAccessOrGrace(row: {
   last_dagstart_date: string | null | undefined;
   signup_source?: string | null | undefined;
 }): boolean {
+  const status = row.subscription_status;
+  if (status === "trial_expired") return false;
+
   if (profileHasAppAccess(row)) return true;
   // Event-QR (bijv. café): 14 dagen app-toegang zonder Stripe bij signup
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;

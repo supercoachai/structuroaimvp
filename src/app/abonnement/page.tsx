@@ -11,6 +11,7 @@ import { PaywallShell } from "@/components/subscription/PaywallShell";
 import { RetentionPaywallStats } from "@/components/subscription/RetentionPaywallStats";
 import { RetentionPaywallStatsFallback } from "@/components/subscription/RetentionPaywallStatsFallback";
 import { AbonnementStripeSync } from "./AbonnementStripeSync";
+import { AbonnementPaywallAnalytics } from "./AbonnementPaywallAnalytics";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
 
   return (
     <>
+      <AbonnementPaywallAnalytics reason={reason} />
       <PaywallShell
         reason={reason}
         trialDays={trialDays}

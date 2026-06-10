@@ -7,7 +7,6 @@ import { useI18n } from '@/lib/i18n';
 import {
   HomeIcon,
   ClipboardDocumentCheckIcon,
-  CalendarIcon,
   BellIcon,
   FireIcon,
   Cog6ToothIcon,
@@ -81,13 +80,6 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
         icon: HomeIcon,
         description: t('sidebar.nav.overviewDesc'),
         accent: '#3b82f6',
-      },
-      {
-        name: t('sidebar.nav.agenda'),
-        href: '/agenda',
-        icon: CalendarIcon,
-        description: t('sidebar.nav.agendaDesc'),
-        accent: '#6366f1',
       },
       {
         name: t('sidebar.nav.reminders'),

@@ -623,6 +623,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       countdownUp: "Nu aan zet",
       microTitle: "Microstappen",
       microHint: "Deel het op zoals jij wilt",
+      microExpandAria: "Microstappen uitklappen",
+      microCollapseAria: "Microstappen inklappen",
+      microSummaryEmpty: "Nog geen stappen",
       microAiCollapsed: "Structuro stelt micro-stappen voor",
       microAiPrompt:
         "Voelt de taak te groot? Structuro kan je helpen om ze op te delen in microstappen.",
@@ -1329,6 +1332,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       countdownUp: "Up next",
       microTitle: "Micro-steps",
       microHint: "Split it up your way",
+      microExpandAria: "Expand micro-steps",
+      microCollapseAria: "Collapse micro-steps",
+      microSummaryEmpty: "No steps yet",
       microAiCollapsed: "Structuro suggests micro-steps",
       microAiPrompt:
         "Does this task feel too big? Structuro can help you break it down into micro-steps.",

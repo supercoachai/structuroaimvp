@@ -16,12 +16,38 @@
 
   var SCROLL_MILESTONES_PCT = [25, 50, 75, 100];
 
-  function capturePh(event, props) {
+  function capturePh(event, props, options) {
     try {
       if (window.posthog && typeof window.posthog.capture === "function") {
-        window.posthog.capture(event, props || {});
+        window.posthog.capture(event, props || {}, options || {});
       }
     } catch (e) {}
+  }
+
+  function attachCtaClicks() {
+    if (window.__structuroEuCtaBound) return;
+    window.__structuroEuCtaBound = true;
+
+    document.addEventListener(
+      "click",
+      function (e) {
+        var target = e.target;
+        if (!target || !target.closest) return;
+        var el = target.closest("[data-ph-cta]");
+        if (!el) return;
+        var ctaId = el.getAttribute("data-ph-cta");
+        if (!ctaId) return;
+        capturePh(
+          "cta_clicked",
+          {
+            cta_id: ctaId,
+            page_path: window.location.pathname || "/",
+          },
+          { send_instantly: true }
+        );
+      },
+      true
+    );
   }
 
   function captureGa(name, props) {
@@ -246,6 +272,7 @@
     attachSectionVisibility();
     attachFaqToggle();
     attachPricingViewed();
+    attachCtaClicks();
   }
 
   function bootstrap() {

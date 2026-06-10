@@ -11,6 +11,11 @@ export function resolveRetentionPaywallReason(row: {
   created_at: string | null | undefined;
   signup_source: string | null | undefined;
 }): RetentionPaywallReason | null {
+  const status = row.subscription_status;
+  if (status === "trial_expired") {
+    return "trial_expired";
+  }
+
   if (
     profileHasAppAccess({
       subscription_status: row.subscription_status,
@@ -20,7 +25,6 @@ export function resolveRetentionPaywallReason(row: {
     return null;
   }
 
-  const status = row.subscription_status;
   if (
     status === "cancelled" ||
     status === "expired" ||

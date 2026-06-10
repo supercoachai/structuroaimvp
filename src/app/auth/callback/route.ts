@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { captureRegistrationFunnelServer } from '@/lib/posthog/registrationFunnelAnalytics'
+import { parseStAttrFromRequest } from '@/lib/posthog/firstTouchAttribution'
 
 function redirectToAuthError(
   origin: string,
@@ -31,6 +33,20 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const { data: userData } = await supabase.auth.getUser()
+      const user = userData.user
+      if (user?.id && user.created_at) {
+        const createdMs = new Date(user.created_at).getTime()
+        const ageMs = Date.now() - createdMs
+        if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < 5 * 60 * 1000) {
+          const attr = parseStAttrFromRequest(request)
+          void captureRegistrationFunnelServer(user.id, 'signup_completed', {
+            signup_source: attr?.source ?? 'direct',
+            utm_campaign: attr?.utm_campaign ?? null,
+          })
+        }
+      }
+
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before reverse proxy
       const isLocalEnv = process.env.NODE_ENV === 'development'
       const target = isLocalEnv

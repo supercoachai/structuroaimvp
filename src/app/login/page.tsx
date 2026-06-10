@@ -2,7 +2,7 @@
 
 import { useState, useLayoutEffect, Suspense, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import LoginSuccessSplash from '@/components/LoginSuccessSplash';
 import {
   clearStructuroLocalModeCookie,
@@ -175,16 +175,15 @@ function LoginPageInner() {
   const [logoError, setLogoError] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const splashTargetRef = useRef<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [localDevHost, setLocalDevHost] = useState(false);
 
   const handleSplashDone = useCallback(() => {
     const target = splashTargetRef.current ?? '/';
     splashTargetRef.current = null;
-    router.push(target);
-    router.refresh();
-  }, [router]);
+    // Volledige navigatie zodat middleware de auth-cookies direct ziet (router.push alleen is onbetrouwbaar).
+    window.location.assign(target);
+  }, []);
 
   useLayoutEffect(() => {
     try {
@@ -245,11 +244,6 @@ function LoginPageInner() {
   };
 
   const handleResetEmail = async () => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setError(t('login.noServer'));
-      return;
-    }
     const trimmed = email.trim();
     if (!trimmed) {
       setError(t('login.emailRequired'));
@@ -259,18 +253,34 @@ function LoginPageInner() {
     setError(null);
     setMessage(null);
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const nextPath = '/auth/wachtwoord-instellen';
-      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
-        trimmed,
-        { redirectTo }
-      );
-      if (resetErr) throw resetErr;
-      setMessage(t('login.resetSent'));
+      const res = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const payload = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+
+      if (!res.ok || !payload?.ok) {
+        const code = payload?.error ?? "send_failed";
+        if (code === "rate_limit_email") {
+          setError(t("login.errRateLimitEmail"));
+        } else if (code === "rate_limit" || code === "rate_limited") {
+          setError(t("login.errRateLimit"));
+        } else if (code === "invalid_email") {
+          setError(t("login.emailRequired"));
+        } else {
+          setError(t("login.sendFailed"));
+        }
+        return;
+      }
+
+      setMessage(t("login.resetSent"));
       setForgotPassword(false);
     } catch (err: unknown) {
-      const raw = err instanceof Error ? err.message : t('login.sendFailed');
+      const raw = err instanceof Error ? err.message : t("login.sendFailed");
       setError(mapPasswordResetError(raw, t));
     } finally {
       setLoading(false);
@@ -321,6 +331,7 @@ function LoginPageInner() {
           setMessage(t('login.signupDone'));
           clearStructuroLocalModeCookie();
           clearCheckoutReturn();
+          await supabase.auth.getSession();
           splashTargetRef.current = '/';
           setShowSplash(true);
         }
@@ -335,6 +346,8 @@ function LoginPageInner() {
         if (data.user) {
           clearStructuroLocalModeCookie();
           clearCheckoutReturn();
+          // Wacht tot sessie-cookies weggeschreven zijn vóór redirect (anders ziet middleware geen sessie).
+          await supabase.auth.getSession();
           const next = searchParams?.get("next") ?? null;
           splashTargetRef.current = await resolvePostLoginPath(
             data.user.id,

@@ -71,7 +71,9 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname.startsWith("/api/checkout/resume-session") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/stripe/checkout") ||
-    pathname.startsWith("/api/checkout/create-session")
+    pathname.startsWith("/api/checkout/create-session") ||
+    pathname.startsWith("/api/cron/expire-trials") ||
+    pathname.startsWith("/api/auth/request-password-reset")
   );
 }
 

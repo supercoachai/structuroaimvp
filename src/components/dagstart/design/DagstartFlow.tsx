@@ -25,7 +25,9 @@ import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
 import { captureProductEvent } from "@/lib/posthog/track";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
+import { ensureFirstDagstartWelcomeTask } from "@/lib/onboardingWelcomeTask";
 import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
+import DagstartEmptySelectionHint from "@/components/dagstart/DagstartEmptySelectionHint";
 import { toast } from "@/components/Toast";
 import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
 import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
@@ -108,19 +110,13 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   const [overflowBusy, setOverflowBusy] = useState(false);
   /** Forceert remount van stap-2 substeps zodat lokale state (selecties, swipe-queue) opnieuw begint. */
   const [step2Key, setStep2Key] = useState(0);
-
-  /**
-   * Mount-guard: PostHog fired `dagstart_started` één keer per actieve sessie.
-   * Voorheen vuurde het event bij elke remount (reload, back-navigatie, parent re-render),
-   * waardoor de funnel-ratio dagstart_started/dagstart_completed structureel scheef stond.
-   */
-  const hasFiredStart = useRef(false);
+  const [showEmptySelectionHint, setShowEmptySelectionHint] = useState(false);
+  const emptySelectionDismissedRef = useRef(false);
+  const welcomeTaskEnsuredRef = useRef(false);
+  const pendingFinishIdsRef = useRef<string[] | null>(null);
 
   useEffect(() => {
     trackDagstartOpened();
-    if (hasFiredStart.current) return;
-    hasFiredStart.current = true;
-    captureProductEvent("dagstart_started");
   }, []);
 
   useEffect(() => {
@@ -243,7 +239,23 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
     setExtraDeadlineSlots(0);
     setOverflowConfirmedIds([]);
     setOverflowModal(null);
+    setShowEmptySelectionHint(false);
+    emptySelectionDismissedRef.current = false;
   }, [step, step2Key, dagstartPlan]);
+
+  useEffect(() => {
+    if (step !== 2 || !authUser?.id || welcomeTaskEnsuredRef.current) return;
+    if (taskPool.length > 0) return;
+    welcomeTaskEnsuredRef.current = true;
+    void (async () => {
+      try {
+        const created = await ensureFirstDagstartWelcomeTask(authUser.id);
+        if (created) await fetchTasks();
+      } catch (err) {
+        console.warn("[dagstart] welcome task:", err);
+      }
+    })();
+  }, [step, authUser?.id, taskPool.length, fetchTasks]);
 
   const requestDeadlineOverflow = useCallback(
     (task: DagstartTaskCard, onConfirm?: () => void) => {
@@ -281,7 +293,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
     setOverflowModal(null);
   }, [overflowModal, overflowBusy]);
 
-  const finishWithPicks = useCallback(
+  const completeDagstart = useCallback(
     async (pickedIds: string[]) => {
       if (!energy || submitting) return;
       const tasksById = new Map(taskPool.map((t) => [t.id, t]));
@@ -331,7 +343,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
           energy_level: appEnergy,
           tasks_selected_count: top3.length,
           has_cycle_phase: Boolean(cyclePhase),
-          source: "dagstart_flow",
+          source: "app",
           energy: appEnergy,
           task_count: top3.length,
         });
@@ -344,7 +356,97 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         setSubmitting(false);
       }
     },
-    [energy, submitting, computePhaseToday, saveCheckIn, authUser?.id, maxSlots, extraDeadlineSlots, taskPool]
+    [
+      energy,
+      submitting,
+      computePhaseToday,
+      saveCheckIn,
+      authUser?.id,
+      maxSlots,
+      extraDeadlineSlots,
+      taskPool,
+    ]
+  );
+
+  const finishWithPicks = useCallback(
+    async (pickedIds: string[]) => {
+      if (!energy || submitting) return;
+      const tasksById = new Map(taskPool.map((t) => [t.id, t]));
+      const savedIds = clampDagstartSelection(
+        pickedIds,
+        tasksById,
+        maxSlots,
+        extraDeadlineSlots
+      );
+      const top3 = resolveDagstartSavedTaskIds(
+        savedIds,
+        maxSlots,
+        extraDeadlineSlots
+      ).filter((id) => id && !id.startsWith(OPTIMISTIC_TASK_ID_PREFIX));
+
+      if (
+        top3.length === 0 &&
+        !emptySelectionDismissedRef.current &&
+        !showEmptySelectionHint
+      ) {
+        pendingFinishIdsRef.current = pickedIds;
+        setShowEmptySelectionHint(true);
+        return;
+      }
+
+      pendingFinishIdsRef.current = null;
+      setShowEmptySelectionHint(false);
+      await completeDagstart(pickedIds);
+    },
+    [
+      energy,
+      submitting,
+      taskPool,
+      maxSlots,
+      extraDeadlineSlots,
+      showEmptySelectionHint,
+      completeDagstart,
+    ]
+  );
+
+  const handleEmptyHintDismiss = useCallback(() => {
+    emptySelectionDismissedRef.current = true;
+    setShowEmptySelectionHint(false);
+    const ids = pendingFinishIdsRef.current ?? [];
+    pendingFinishIdsRef.current = null;
+    void completeDagstart(ids);
+  }, [completeDagstart]);
+
+  const handleEmptyHintAddTask = useCallback(
+    async (title: string) => {
+      if (!energy) return;
+      const appEnergy = dagstartIdToAppEnergy(energy);
+      const task = await addTask({
+        title,
+        done: false,
+        started: false,
+        priority: 1,
+        dueAt: null,
+        duration: 2,
+        source: "manual",
+        reminders: [],
+        repeat: "none",
+        impact: "🚀",
+        energyLevel: appEnergy,
+        estimatedDuration: 2,
+        microSteps: [],
+        notToday: false,
+      });
+      emptySelectionDismissedRef.current = true;
+      setShowEmptySelectionHint(false);
+      pendingFinishIdsRef.current = null;
+      if (task?.id) {
+        await completeDagstart([String(task.id)]);
+      } else {
+        await completeDagstart([]);
+      }
+    },
+    [energy, addTask, completeDagstart]
   );
 
   const picksForDone = useMemo((): DagstartTaskCard[] => {
@@ -437,6 +539,14 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
           {step === 1 ? (
             <StepChoice energy={energy} onPick={handleChoicePick} />
+          ) : null}
+
+          {showEmptySelectionHint ? (
+            <DagstartEmptySelectionHint
+              onAddQuickTask={handleEmptyHintAddTask}
+              onDismiss={handleEmptyHintDismiss}
+              busy={submitting}
+            />
           ) : null}
 
           {step === 2 && choice === "structuro" ? (

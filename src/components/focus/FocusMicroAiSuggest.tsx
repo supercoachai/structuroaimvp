@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
@@ -10,6 +10,8 @@ import {
   type MicroStepDifficulty,
 } from "@/lib/microSteps";
 import { useI18n } from "@/lib/i18n";
+import { captureProductEvent } from "@/lib/posthog/track";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type FocusMicroAiSuggestProps = {
   taskTitle: string;
@@ -36,14 +38,23 @@ export default function FocusMicroAiSuggest({
   disabled = false,
 }: FocusMicroAiSuggestProps) {
   const { t, locale } = useI18n();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasShownRef = useRef(false);
 
   useEffect(() => {
-    setExpanded(false);
+    setExpanded(true);
     setError(null);
   }, [taskTitle]);
+
+  useEffect(() => {
+    if (hasShownRef.current || disabled) return;
+    hasShownRef.current = true;
+    captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_shown, {
+      source: "focus",
+    });
+  }, [disabled]);
 
   const requestSuggestions = useCallback(async () => {
     const trimmedTitle = taskTitle.trim();
@@ -68,6 +79,10 @@ export default function FocusMicroAiSuggest({
         done: false,
       }));
       await onApplySteps(steps);
+      captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_accepted, {
+        source: "focus",
+        step_count: steps.length,
+      });
     } catch (err) {
       setError(microSuggestErrorMessage(err, t));
     } finally {

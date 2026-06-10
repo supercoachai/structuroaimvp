@@ -43,7 +43,6 @@ export const APP_ROUTES = [
   { path: "/focus", kind: "app", status: [200, 307, 308], verifyChunks: true },
   { path: "/shutdown", kind: "app", status: [200, 307, 308], verifyChunks: true },
   { path: "/dagstart", kind: "app", status: [200, 307, 308], verifyChunks: true },
-  { path: "/agenda", kind: "app", status: [200, 307, 308], verifyChunks: true },
   { path: "/notificaties", kind: "app", status: [200, 307, 308], verifyChunks: true },
 
   // —— Dev-only (ok in dev-build, mag redirect in prod) ——
@@ -56,6 +55,13 @@ export const APP_ROUTES = [
   { path: "/api/stripe/config", kind: "api", status: [200, 401, 404, 405, 503] },
   { path: "/api/posthog-error-test", kind: "api", status: [404] },
   { path: "/api/dev/signup", kind: "api", method: "POST", status: [404, 405] },
+  { path: "/api/cron/expire-trials", kind: "api", status: [200, 401, 405] },
+  {
+    path: "/api/auth/request-password-reset",
+    kind: "api",
+    method: "POST",
+    status: [200, 400, 429, 502, 503, 405],
+  },
 ];
 
 /** Teksten die wijzen op een kapotte pagina in HTML. */

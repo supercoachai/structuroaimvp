@@ -9,6 +9,9 @@ export const CHECKOUT_METADATA_WELCOME_TASK = "add_welcome_task";
 
 export const WELCOME_TASK_TITLE = "Abonnement opzeggen";
 
+/** Eerste dagstart: taak om afronden te ervaren (los van checkout-welkomstaak). */
+export const FIRST_DAGSTART_WELCOME_TASK_TITLE = "Vink dit af — zo voelt afronden";
+
 export function welcomeTaskEnabledFromCheckoutMetadata(
   metadata: Record<string, string> | null | undefined
 ): boolean {
@@ -76,6 +79,48 @@ export async function createOnboardingWelcomeTask(userId: string): Promise<boole
     energyLevel: "low",
     estimatedDuration: null,
     microSteps: buildWelcomeMicroSteps(),
+    notToday: false,
+  });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
+  }
+
+  return true;
+}
+
+/** Injecteer welkomstaak bij lege takenpool (eerste dagstart / onboarding). */
+export async function ensureFirstDagstartWelcomeTask(
+  userId: string
+): Promise<boolean> {
+  const supabase = createClient();
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("source", "onboarding_welcome")
+    .eq("title", FIRST_DAGSTART_WELCOME_TASK_TITLE)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return false;
+  }
+
+  await addTaskToSupabase(userId, {
+    title: FIRST_DAGSTART_WELCOME_TASK_TITLE,
+    done: false,
+    started: false,
+    priority: 1,
+    dueAt: null,
+    duration: 2,
+    source: "onboarding_welcome",
+    reminders: [],
+    repeat: "none",
+    impact: "🚀",
+    energyLevel: "low",
+    estimatedDuration: 2,
+    microSteps: [],
     notToday: false,
   });
 
