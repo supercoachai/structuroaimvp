@@ -17,6 +17,7 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/inschrijven',
     '/privacy',
     '/terms',
+    '/activiteit',
   ];
   return barePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
