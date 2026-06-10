@@ -1,6 +1,6 @@
 // Direct server-entry import voorkomt dat browser-client code in Edge-bundel meegetrokken wordt.
 import { createServerClient } from "@supabase/ssr/dist/module/createServerClient";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase/authStorage";
 import {
   STRUCTURO_DAGSTART_COOKIE,
@@ -16,6 +16,10 @@ import {
   requiresPaidSubscriptionBeforeOnboarding,
 } from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
+import {
+  shouldTouchLastSeen,
+  touchProfileLastSeenAt,
+} from "../activity/lastSeen";
 import { PRIVACY_SETUP_DONE_COOKIE } from "../privacySetup";
 import {
   isRegistrationAppRoute,
@@ -90,6 +94,8 @@ function isAnonymousPublicPage(pathname: string): boolean {
   return (
     pathname === "/wachtlijst" ||
     pathname.startsWith("/wachtlijst/") ||
+    pathname === "/activiteit/admin" ||
+    pathname.startsWith("/activiteit/admin/") ||
     pathname === "/inschrijven" ||
     pathname.startsWith("/inschrijven/") ||
     pathname === "/registreren" ||
@@ -139,7 +145,10 @@ function redirectAdhdCafeToRegistreren(request: NextRequest): NextResponse | nul
   return NextResponse.redirect(url, 302);
 }
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+  event?: NextFetchEvent
+) {
   const pathname = request.nextUrl.pathname;
 
   const adhdCafeRedirect = redirectAdhdCafeToRegistreren(request);
@@ -260,12 +269,13 @@ export async function updateSession(request: NextRequest) {
   let subscriptionPeriodEnd: string | null | undefined;
   let profileCreatedAt: string | null | undefined;
   let profileSignupSource: string | null | undefined;
+  let profileLastSeenAt: string | null | undefined;
 
   if (user) {
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source"
+        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source, last_seen_at"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -291,8 +301,22 @@ export async function updateSession(request: NextRequest) {
         prof.created_at != null ? String(prof.created_at) : null;
       profileSignupSource =
         typeof prof.signup_source === "string" ? prof.signup_source : null;
+      profileLastSeenAt =
+        prof.last_seen_at != null ? String(prof.last_seen_at) : null;
     } else {
       onboardingCompleted = false;
+    }
+
+    if (
+      shouldTouchLastSeen(profileLastSeenAt) &&
+      !pathname.startsWith("/activiteit/admin")
+    ) {
+      const touch = touchProfileLastSeenAt(supabase, user.id);
+      if (event?.waitUntil) {
+        event.waitUntil(touch);
+      } else {
+        void touch;
+      }
     }
 
     const forceOnboardingDev =

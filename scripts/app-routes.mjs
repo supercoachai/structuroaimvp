@@ -31,6 +31,7 @@ export const APP_ROUTES = [
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
   { path: "/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
+  { path: "/activiteit/admin", kind: "public", status: [200], needles: ["niet gevonden"] },
   { path: "/inschrijven", kind: "public", status: [200, 307, 308] },
   { path: "/uitleg", kind: "public", status: [200] },
   { path: "/auth/auth-code-error", kind: "public", status: [200] },

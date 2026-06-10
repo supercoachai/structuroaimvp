@@ -1,10 +1,10 @@
 import { updateSession } from './lib/supabase/middleware'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Zelfde gedrag als productie (login, dagstart-cookie). Lokaal: zorg voor geldige Supabase-env of local_mode-cookie.
   try {
-    return await updateSession(request)
+    return await updateSession(request, event)
   } catch (err) {
     console.error('[Structuro middleware]', err)
     // Voorkomt totale 500 bij onverwachte Edge/runtime-fouten (corrupte cookies, bundel, enz.)
