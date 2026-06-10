@@ -75,7 +75,13 @@ export function captureProductEvent(
     return;
   }
   try {
-    posthog.capture(event, properties);
+    posthog.capture(event, properties, {
+      transport:
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+          ? "sendBeacon"
+          : "XHR",
+    });
     debugLog("product", event, "sent", properties);
   } catch {
     debugLog("product", event, "capture-error", properties);
@@ -100,7 +106,13 @@ export function captureAnonymousEvent(
     return;
   }
   try {
-    posthog.capture(event, properties);
+    posthog.capture(event, properties, {
+      transport:
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+          ? "sendBeacon"
+          : "XHR",
+    });
     debugLog("anonymous", event, "sent", properties);
   } catch {
     debugLog("anonymous", event, "capture-error", properties);
@@ -125,7 +137,13 @@ export function captureMarketingEvent(
     return;
   }
   try {
-    posthog.capture(event, properties);
+    posthog.capture(event, properties, {
+      transport:
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+          ? "sendBeacon"
+          : "XHR",
+    });
     debugLog("marketing", event, "sent", properties);
   } catch {
     debugLog("marketing", event, "capture-error", properties);

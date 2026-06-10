@@ -16,6 +16,10 @@ import {
   mapStripeSubscriptionStatus,
   profileFieldsFromStripeSubscription,
 } from "@/lib/stripe/syncProfileSubscription";
+import {
+  applyStripeProfileUpdateByUserIdIfFresh,
+  applyStripeProfileUpdateIfFresh,
+} from "@/lib/stripe/webhookProfileUpdate";
 
 /** PostHog is best-effort: mag geen Stripe-retry triggeren na geslaagde DB-write. */
 async function safeCapture(
@@ -107,13 +111,15 @@ async function postStripeWebhook(request: Request) {
           subscription.items.data[0]?.price?.id ?? ""
         );
 
-        await profileDb
-          .from("profiles")
-          .update({
+        await applyStripeProfileUpdateByUserIdIfFresh(
+          profileDb,
+          userId,
+          event,
+          {
             ...profileFieldsFromStripeSubscription(subscription, customerId),
             subscription_plan: plan,
-          })
-          .eq("id", userId);
+          }
+        );
 
         const { data: startedProf } = await profileDb
           .from("profiles")
@@ -141,21 +147,15 @@ async function postStripeWebhook(request: Request) {
         const priceId = subscription.items.data[0]?.price?.id;
         const plan = planFromStripePriceId(priceId ?? "");
 
-        const { error: upErr } = await profileDb
-          .from("profiles")
-          .update({
-            subscription_status: status,
-            subscription_plan: plan,
-            stripe_subscription_id: subscription.id,
-            subscription_current_period_end: new Date(
-              subscriptionCurrentPeriodEndUnix(subscription) * 1000
-            ).toISOString(),
-            cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
-          })
-          .eq("stripe_customer_id", customerId);
-        if (upErr) {
-          console.error("subscription.updated profile update", upErr);
-        }
+        await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
+          subscription_status: status,
+          subscription_plan: plan,
+          stripe_subscription_id: subscription.id,
+          subscription_current_period_end: new Date(
+            subscriptionCurrentPeriodEndUnix(subscription) * 1000
+          ).toISOString(),
+          cancel_at_period_end: Boolean(subscription.cancel_at_period_end),
+        });
         break;
       }
 
@@ -177,15 +177,12 @@ async function postStripeWebhook(request: Request) {
         const periodEnd = new Date(periodEndSec * 1000).toISOString();
         const pastPeriod = Date.now() > periodEndSec * 1000;
         const nextStatus = pastPeriod ? "expired" : "cancelled";
-        await profileDb
-          .from("profiles")
-          .update({
-            subscription_status: nextStatus,
-            subscription_current_period_end: periodEnd,
-            stripe_subscription_id: null,
-            cancel_at_period_end: false,
-          })
-          .eq("stripe_customer_id", customerId);
+        await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
+          subscription_status: nextStatus,
+          subscription_current_period_end: periodEnd,
+          stripe_subscription_id: null,
+          cancel_at_period_end: false,
+        });
 
         const delRow = deletedProf as { id: string; created_at: string | null } | null;
         if (delRow?.id) {
@@ -202,10 +199,9 @@ async function postStripeWebhook(request: Request) {
         const customerId =
           typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
         if (!customerId) break;
-        await profileDb
-          .from("profiles")
-          .update({ subscription_status: "past_due" })
-          .eq("stripe_customer_id", customerId);
+        await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
+          subscription_status: "past_due",
+        });
         break;
       }
 
@@ -222,13 +218,10 @@ async function postStripeWebhook(request: Request) {
           const sub = await stripe.subscriptions.retrieve(subId);
           periodEndIso = new Date(subscriptionCurrentPeriodEndUnix(sub) * 1000).toISOString();
         }
-        await profileDb
-          .from("profiles")
-          .update({
-            subscription_status: "active",
-            ...(periodEndIso ? { subscription_current_period_end: periodEndIso } : {}),
-          })
-          .eq("stripe_customer_id", customerId);
+        await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
+          subscription_status: "active",
+          ...(periodEndIso ? { subscription_current_period_end: periodEndIso } : {}),
+        });
         break;
       }
 
@@ -251,13 +244,10 @@ async function postStripeWebhook(request: Request) {
             ? charge.customer
             : charge.customer?.id ?? null;
         if (!customerId) break;
-        await profileDb
-          .from("profiles")
-          .update({
-            subscription_status: "refunded",
-            refunded_at: new Date().toISOString(),
-          })
-          .eq("stripe_customer_id", customerId);
+        await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
+          subscription_status: "refunded",
+          refunded_at: new Date().toISOString(),
+        });
         break;
       }
 

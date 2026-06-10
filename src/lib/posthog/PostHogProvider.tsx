@@ -24,5 +24,18 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     prevConsentRef.current = consent;
   }, [consent]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPageHide = () => {
+      try {
+        posthog.capture("app_pagehide", {}, { transport: "sendBeacon" });
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
+
   return <PHProvider client={posthog}>{children}</PHProvider>;
 }

@@ -12,9 +12,15 @@ export function profileHasAppAccess(row: {
   if (s === "refunded" || s === "past_due" || s === "expired") return false;
   if (s === "active") return true;
   if (s === "trialing") {
-    // Handmatig verlengde proeftijd: toegang tot en met subscription_current_period_end
     const end = row.subscription_current_period_end;
-    if (!end) return true; // geen einddatum ingesteld → toegang toestaan
+    if (!end) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "[subscriptionAccess] trialing zonder subscription_current_period_end: toegang geweigerd"
+        );
+      }
+      return false;
+    }
     return new Date(end).getTime() > Date.now();
   }
   if (s === "cancelled") {

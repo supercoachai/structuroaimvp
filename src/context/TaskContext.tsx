@@ -18,6 +18,8 @@ import {
   deleteTaskFromSupabase,
   subscribeToTasks,
 } from '../lib/supabase/tasksDb';
+import { removeTaskIdFromTodayTop3 } from '../lib/supabase/top3Repair';
+import { getCalendarDateAmsterdam } from '../lib/dagstartCookie';
 import { toast } from '@/components/Toast';
 import { scheduleReminders } from '@/components/ReminderEngine';
 
@@ -448,6 +450,18 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         await deleteTaskFromSupabase(user.id, id);
+        try {
+          await removeTaskIdFromTodayTop3(
+            user.id,
+            getCalendarDateAmsterdam(),
+            id
+          );
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
+          }
+        } catch (top3Err) {
+          console.warn("TaskContext: top3 cleanup after delete failed", top3Err);
+        }
         setTasks((prev) => prev.filter((t) => t.id !== id));
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('structuro_tasks_updated'));
         return;

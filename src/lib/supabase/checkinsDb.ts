@@ -104,7 +104,7 @@ export async function upsertCheckInToSupabase(
  * Alleen echte, open, actieve taken van deze gebruiker (geen ghost-ids).
  * Geen filter op created_at: backlog van eerdere dagen mag in top3.
  */
-async function sanitizeTop3TaskIdsForDate(
+export async function sanitizeTop3TaskIdsForDate(
   userId: string,
   candidateIds: string[]
 ): Promise<string[]> {

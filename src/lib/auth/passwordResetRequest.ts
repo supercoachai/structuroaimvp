@@ -27,11 +27,14 @@ async function lookupUserIdByEmail(email: string): Promise<string | null> {
   const admin = createServiceRoleClient();
   if (!admin) return null;
 
-  const { data, error } = await admin
+  const { data, error } = (await admin
     .from("profiles")
     .select("id")
     .eq("email", email)
-    .maybeSingle();
+    .maybeSingle()) as {
+    data: { id: string } | null;
+    error: { message: string } | null;
+  };
 
   if (error || !data?.id) return null;
   return String(data.id);

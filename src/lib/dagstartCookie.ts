@@ -32,9 +32,9 @@ export function getCalendarDateAmsterdam(now: Date = new Date()): string {
 export function getDayOfYearAmsterdam(now: Date = new Date()): number {
   const cal = getCalendarDateAmsterdam(now);
   const [y, m, d] = cal.split("-").map(Number);
-  const start = new Date(y, 0, 0);
-  const current = new Date(y, m - 1, d);
-  return Math.floor((current.getTime() - start.getTime()) / 86_400_000);
+  const start = Date.UTC(y, 0, 1);
+  const current = Date.UTC(y, m - 1, d);
+  return Math.floor((current - start) / 86_400_000) + 1;
 }
 
 /** Morgen-kalenderdag in Europe/Amsterdam (YYYY-MM-DD), benadering via +24 uur. */

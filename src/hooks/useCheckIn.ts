@@ -8,6 +8,7 @@ import {
   upsertCheckInToSupabase,
   type CheckInPayload,
 } from "@/lib/supabase/checkinsDb";
+import { loadAndRepairCheckInTop3 } from "@/lib/supabase/top3Repair";
 import type { CyclePhase } from "@/lib/cycle/types";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
@@ -44,7 +45,7 @@ export function useCheckIn(): {
     try {
       if (user?.id) {
         try {
-          const row = await getCheckInFromSupabase(user.id, date);
+          const row = await loadAndRepairCheckInTop3(user.id, date);
           if (row) {
             setCheckIn({
               date: row.date,

@@ -1,5 +1,28 @@
 import assert from "node:assert/strict";
-import { profileHasAppAccessOrGrace } from "./subscriptionAccess";
+import {
+  profileHasAppAccess,
+  profileHasAppAccessOrGrace,
+} from "./subscriptionAccess";
+
+assert.equal(
+  profileHasAppAccess({
+    subscription_status: "trialing",
+    subscription_current_period_end: null,
+  }),
+  false,
+  "trialing zonder einddatum: geen toegang"
+);
+
+assert.equal(
+  profileHasAppAccess({
+    subscription_status: "trialing",
+    subscription_current_period_end: new Date(
+      Date.now() + 86_400_000
+    ).toISOString(),
+  }),
+  true,
+  "trialing met toekomstige einddatum: toegang"
+);
 
 assert.equal(
   profileHasAppAccessOrGrace({

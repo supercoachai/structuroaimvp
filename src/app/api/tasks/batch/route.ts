@@ -3,6 +3,8 @@ import { LENGTH_LIMITS, firstLengthError, validateLength } from '@/lib/validateL
 import { withApiErrorTracking } from '@/lib/posthog/withApiErrorTracking'
 import { NextResponse } from 'next/server'
 
+const MAX_BATCH = 100;
+
 async function postTasksBatch(request: Request) {
   const supabase = await createClient()
   
@@ -15,6 +17,13 @@ async function postTasksBatch(request: Request) {
 
   if (!Array.isArray(tasks)) {
     return NextResponse.json({ error: 'Tasks must be an array' }, { status: 400 })
+  }
+
+  if (tasks.length > MAX_BATCH) {
+    return NextResponse.json(
+      { error: `Maximaal ${MAX_BATCH} taken per request` },
+      { status: 400 }
+    )
   }
 
   for (let i = 0; i < tasks.length; i++) {
