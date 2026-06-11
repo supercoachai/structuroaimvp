@@ -76,7 +76,7 @@ function ListIcons({
   color = "currentColor",
   size = 15,
 }: {
-  kind: "play" | "edit" | "trash" | "chev" | "caret" | "info";
+  kind: "play" | "edit" | "trash" | "check" | "chev" | "caret" | "info";
   color?: string;
   size?: number;
 }) {
@@ -119,6 +119,20 @@ function ListIcons({
       </svg>
     );
   }
+  if (kind === "check") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path
+          d="M3.5 8.2l3 3 6-6.5"
+          stroke={color}
+          strokeWidth="1.8"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
   if (kind === "chev") {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -152,43 +166,6 @@ function ListIcons({
       <circle cx="9" cy="9" r="7" stroke={color} strokeWidth="1.4" />
       <path d="M9 8v4M9 6h.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </svg>
-  );
-}
-
-function TaskCheck({
-  color,
-  done,
-  alive,
-  onClick,
-  label,
-}: {
-  color: string;
-  done: boolean;
-  alive?: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      className={`lc-check${done ? " done" : ""}${alive ? " alive" : ""}`}
-      style={{ "--lc-check-color": color } as React.CSSProperties}
-      onClick={onClick}
-      aria-label={label}
-    >
-      {done ? (
-        <svg width={10} height={10} viewBox="0 0 12 12" aria-hidden>
-          <path
-            d="M2 6l3 3 5-6"
-            stroke="#fff"
-            strokeWidth="1.8"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
-    </button>
   );
 }
 
@@ -316,15 +293,10 @@ export default function OpenTasksListC({
                               });
                             }}
                           >
-                            <TaskCheck
-                              color={group.color}
-                              done={isCompleting}
-                              alive={active && !isCompleting}
-                              label={tr("tasks.quickDoneTitle")}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggle(task);
-                              }}
+                            <span
+                              className="lc-energy-dot"
+                              style={{ background: group.color }}
+                              aria-hidden
                             />
                             <div className="lc-main">
                               <span className="lc-title">{task.title}</span>
@@ -396,6 +368,19 @@ export default function OpenTasksListC({
                                   onClick={() => onDelete(task)}
                                 >
                                   <ListIcons kind="trash" color="var(--st-muted)" size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`lc-act complete${isCompleting ? " done" : ""}`}
+                                  aria-label={tr("tasks.quickDoneTitle")}
+                                  disabled={isCompleting}
+                                  onClick={() => onToggle(task)}
+                                >
+                                  <ListIcons
+                                    kind="check"
+                                    color={isCompleting ? "#fff" : "#059669"}
+                                    size={14}
+                                  />
                                 </button>
                               </div>
                             ) : (

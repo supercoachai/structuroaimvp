@@ -174,7 +174,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 0 20px 12px 51px;
+  padding: 0 20px 12px 39px;
   animation: lc-expand 200ms cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
@@ -415,40 +415,27 @@
   box-shadow: 0 4px 14px -2px color-mix(in oklab, var(--lc-act-color) 70%, transparent);
 }
 
-.open-tasks-list-c .lc-check {
-  all: unset;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
+.open-tasks-list-c .lc-energy-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 2px solid var(--lc-check-color);
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 150ms;
-  box-sizing: border-box;
+  pointer-events: none;
 }
 
-.open-tasks-list-c .lc-check.done {
-  background: var(--lc-check-color);
+.open-tasks-list-c .lc-act.complete {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
 }
 
-.open-tasks-list-c .lc-check.alive:not(.done) {
-  animation: lc-check-pulse 2.4s ease-in-out infinite;
+.open-tasks-list-c .lc-act.complete:hover {
+  border-color: #6ee7b7;
+  background: #d1fae5;
 }
 
-@keyframes lc-check-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--lc-check-color) 0%, transparent);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 0 5px color-mix(in oklab, var(--lc-check-color) 18%, transparent);
-    transform: scale(1.04);
-  }
+.open-tasks-list-c .lc-act.complete.done {
+  border-color: #10b981;
+  background: #10b981;
 }
 
 @keyframes lc-start-invite {
@@ -464,7 +451,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .open-tasks-list-c .lc-check.alive:not(.done),
   .open-tasks-list-c .lc-act.start {
     animation: none;
   }

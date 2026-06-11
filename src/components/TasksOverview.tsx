@@ -330,11 +330,15 @@ export default function TasksOverviewCalm() {
             }
 
             const repeatLabel = formatRepeatLabel(task, tr, "taskEditor");
+            const isCompleting = completingTaskIds.has(task.id);
+            const isPop = checkboxPopId === task.id;
 
             return (
               <div
                 key={priority}
-                className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left ${tint.card}`}
+                className={`flex w-full items-center gap-4 rounded-3xl border p-5 text-left transition-opacity duration-200 ${tint.card}${
+                  isCompleting ? " opacity-60" : ""
+                }`}
               >
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[17px] font-bold leading-none ${tint.badge} ${tint.num}`}
@@ -379,6 +383,10 @@ export default function TasksOverviewCalm() {
                   onPlay={() => startFocus(task)}
                   onEdit={() => setEditing(task)}
                   onDelete={() => void handleDeleteTask(task)}
+                  onComplete={() => handleQuickCompleteFromCard(task)}
+                  completeLabel={tr("tasks.quickDoneTitle")}
+                  completing={isCompleting}
+                  completePop={isPop}
                   playLabel={tr("tasks.playFocus")}
                   editLabel={tr("tasks.edit")}
                   deleteLabel={tr("tasks.deleteTitle")}
