@@ -69,6 +69,20 @@ const paidProfile = {
     };
     assert.equal(requiresPaidSubscriptionBeforeOnboarding(stripeTrialProfile), false);
     assert.equal(preOnboardingPath(stripeTrialProfile), "/onboarding");
+
+    const trialProfile = {
+      ...unpaidProfile,
+      created_at: new Date().toISOString(),
+    };
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(trialProfile), false);
+    assert.equal(preOnboardingPath(trialProfile), "/onboarding");
+
+    const expiredTrialProfile = {
+      ...unpaidProfile,
+      created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(expiredTrialProfile), true);
+    assert.equal(preOnboardingPath(expiredTrialProfile), "/registreren/plan");
   });
 }
 
