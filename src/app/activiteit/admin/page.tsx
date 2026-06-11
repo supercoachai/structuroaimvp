@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { cookies } from "next/headers";
 import {
   fetchDailyActivityReport,
   type DailyActivityRow,
 } from "@/lib/activity/dailyActivityReport";
-import { isActivityAdminSecretValid } from "@/lib/activity/activityAdminSecret";
+import { adminCookieName, verifyAdminCookie } from "@/lib/admin/adminSession";
+import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
 export const metadata: Metadata = {
@@ -42,14 +44,20 @@ export default async function ActiviteitAdminPage({
   searchParams: Promise<{ k?: string; date?: string }>;
 }) {
   const params = await searchParams;
-  const k = params.k ?? "";
   const today = getCalendarDateAmsterdam();
   const date = (params.date ?? today).trim();
 
-  if (!isActivityAdminSecretValid(k)) {
+  const cookieStore = await cookies();
+  const authed = verifyAdminCookie(
+    "activity",
+    cookieStore.get(adminCookieName("activity"))?.value
+  );
+
+  if (!authed) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[var(--st-bg)] px-4 text-sm text-slate-500">
-        Niet gevonden
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 bg-[var(--st-bg)] px-4">
+        <p className="text-sm text-slate-500">Privé-dashboard</p>
+        <AdminLoginForm scope="activity" />
       </div>
     );
   }
@@ -98,7 +106,6 @@ export default async function ActiviteitAdminPage({
         </p>
 
         <form className="mb-8 flex flex-wrap items-end gap-3" method="get">
-          <input type="hidden" name="k" value={k} />
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-500">
             Andere dag
             <input
@@ -116,7 +123,7 @@ export default async function ActiviteitAdminPage({
           </button>
           {report.date !== today ? (
             <Link
-              href={`/activiteit/admin?k=${encodeURIComponent(k)}&date=${today}`}
+              href={`/activiteit/admin?date=${today}`}
               className="text-sm text-slate-600 underline"
             >
               Terug naar vandaag

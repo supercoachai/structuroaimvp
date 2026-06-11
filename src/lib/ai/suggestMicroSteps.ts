@@ -185,7 +185,7 @@ export async function suggestMicroSteps(
       first = retry;
       validationError = null;
     } else {
-      first = retry;
+      throw new Error("invalid_micro_steps");
     }
   }
 

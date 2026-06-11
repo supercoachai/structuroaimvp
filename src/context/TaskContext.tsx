@@ -22,6 +22,8 @@ import { removeTaskIdFromTodayTop3 } from '../lib/supabase/top3Repair';
 import { getCalendarDateAmsterdam } from '../lib/dagstartCookie';
 import { toast } from '@/components/Toast';
 import { scheduleReminders } from '@/components/ReminderEngine';
+import { migrateLocalTasksToSupabase } from '@/lib/migrateLocalTasksToSupabase';
+import type { MicroStep } from '@/lib/microSteps';
 
 /** Tijdelijke id tijdens optimistic add; wordt vervangen zodra Supabase insert klaar is. */
 export const OPTIMISTIC_TASK_ID_PREFIX = 'structuro-pending:';
@@ -80,7 +82,7 @@ export interface Task {
   impact?: string;
   energyLevel?: string;
   estimatedDuration?: number | null;
-  microSteps?: any[];
+  microSteps?: MicroStep[];
   notToday?: boolean;
   isDeadline?: boolean;
   category?: string;
@@ -305,7 +307,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     } catch (err: any) {
       setError(err?.message ?? 'Fout bij laden taken');
       console.error('❌ TaskContext: Error fetching tasks:', err);
-      setTasks([]);
     } finally {
       setTasksLoading(false);
     }
@@ -315,6 +316,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (authLoading) return;
     fetchTasks();
   }, [authLoading, fetchTasks]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    void migrateLocalTasksToSupabase(user.id).then((count) => {
+      if (!cancelled && count > 0) {
+        void fetchTasks();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, fetchTasks]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || tasksLoading) return;

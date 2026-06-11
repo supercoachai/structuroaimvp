@@ -9,5 +9,5 @@ export function AbonnementStripeWarmup() {
     preloadStripeWallet();
   }, []);
 
-  return <Script src="https://js.stripe.com/v3/" strategy="beforeInteractive" />;
+  return <Script src="https://js.stripe.com/v3/" strategy="afterInteractive" />;
 }

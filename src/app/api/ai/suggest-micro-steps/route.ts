@@ -6,7 +6,10 @@ import {
   firstLengthError,
   validateLength,
 } from "@/lib/validateLength";
-import { consumeMicroStepsAiQuota } from "@/lib/ai/microStepsRateLimit";
+import {
+  consumeMicroStepsAiQuota,
+  peekMicroStepsAiQuota,
+} from "@/lib/ai/microStepsRateLimit";
 import { matchMicroStepTemplate } from "@/lib/ai/microStepTemplates";
 import { suggestMicroSteps } from "@/lib/ai/suggestMicroSteps";
 
@@ -72,9 +75,9 @@ async function postSuggestMicroSteps(request: Request) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  let quota;
+  let peekQuota;
   try {
-    quota = await consumeMicroStepsAiQuota(supabase);
+    peekQuota = await peekMicroStepsAiQuota(supabase);
   } catch {
     return NextResponse.json(
       { ok: false, error: "quota_check_failed" },
@@ -82,13 +85,13 @@ async function postSuggestMicroSteps(request: Request) {
     );
   }
 
-  if (!quota.allowed) {
+  if (!peekQuota.allowed) {
     return NextResponse.json(
       {
         ok: false,
         error: "rate_limited",
-        limit: quota.limit,
-        remaining: quota.remaining,
+        limit: peekQuota.limit,
+        remaining: peekQuota.remaining,
       },
       { status: 429 }
     );
@@ -101,6 +104,13 @@ async function postSuggestMicroSteps(request: Request) {
       durationMin,
       locale,
     });
+
+    let quota = peekQuota;
+    try {
+      quota = await consumeMicroStepsAiQuota(supabase);
+    } catch {
+      console.error("suggest-micro-steps: quota consume after success failed");
+    }
 
     return NextResponse.json({
       ok: true,
@@ -115,6 +125,12 @@ async function postSuggestMicroSteps(request: Request) {
       return NextResponse.json(
         { ok: false, error: "ai_not_configured" },
         { status: 503 }
+      );
+    }
+    if (message === "invalid_micro_steps") {
+      return NextResponse.json(
+        { ok: false, error: "generation_failed" },
+        { status: 500 }
       );
     }
     console.error("suggest-micro-steps:", error);

@@ -1,4 +1,9 @@
+import { cookies } from "next/headers";
 import { getAppOrigin } from "@/lib/appUrl";
+import {
+  CHECKOUT_RESUME_COOKIE,
+  verifyCheckoutResumeToken,
+} from "@/lib/checkoutResumeBinding";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
@@ -11,7 +16,7 @@ const MAX_SESSION_AGE_MS = 48 * 60 * 60 * 1000;
 
 /**
  * Na Stripe-checkout: stille sessie-herstel via magic link token.
- * Alleen als checkout session_id betaald is (cs_… als eenmalig bewijs).
+ * Vereist: betaalde session_id + gebonden browser-cookie + eenmalig gebruik.
  */
 async function postResumeSession(request: Request) {
   if (!isRegistrationCheckoutEnabled()) {
@@ -30,6 +35,12 @@ async function postResumeSession(request: Request) {
     return NextResponse.json({ error: "invalid_session_id" }, { status: 400 });
   }
 
+  const cookieStore = await cookies();
+  const resumeCookie = cookieStore.get(CHECKOUT_RESUME_COOKIE)?.value;
+  if (!verifyCheckoutResumeToken(resumeCookie, sessionId)) {
+    return NextResponse.json({ error: "session_not_bound" }, { status: 403 });
+  }
+
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
@@ -38,6 +49,17 @@ async function postResumeSession(request: Request) {
   const admin = createServiceRoleClient();
   if (!admin) {
     return NextResponse.json({ error: "service_role_key_missing" }, { status: 503 });
+  }
+
+  const resumeEventId = `checkout_resume:${sessionId}`;
+  const { data: usedRow } = await admin
+    .from("stripe_processed_events")
+    .select("event_id")
+    .eq("event_id", resumeEventId)
+    .maybeSingle();
+
+  if ((usedRow as { event_id?: string } | null)?.event_id) {
+    return NextResponse.json({ error: "session_already_used" }, { status: 409 });
   }
 
   const stripe = createStripeServerClient(stripeKey);
@@ -93,10 +115,40 @@ async function postResumeSession(request: Request) {
     return NextResponse.json({ error: "session_token_failed" }, { status: 500 });
   }
 
-  return NextResponse.json({
+  const eventsDb = admin as unknown as {
+    from: (name: string) => {
+      insert: (row: {
+        event_id: string;
+        event_type: string;
+        processed_at: string;
+      }) => Promise<{ error: { code?: string; message: string } | null }>;
+    };
+  };
+
+  const { error: markErr } = await eventsDb.from("stripe_processed_events").insert({
+    event_id: resumeEventId,
+    event_type: "checkout.resume_session",
+    processed_at: new Date().toISOString(),
+  });
+
+  if (markErr) {
+    if (markErr.code === "23505") {
+      return NextResponse.json({ error: "session_already_used" }, { status: 409 });
+    }
+    console.error("[checkout/resume-session] mark used", markErr);
+    return NextResponse.json({ error: "session_mark_failed" }, { status: 500 });
+  }
+
+  const res = NextResponse.json({
     token_hash: linkData.properties.hashed_token,
     email,
   });
+  res.cookies.set(CHECKOUT_RESUME_COOKIE, "", {
+    httpOnly: true,
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
 }
 
 export const POST = withApiErrorTracking(

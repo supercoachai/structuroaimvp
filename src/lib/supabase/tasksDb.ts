@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Task } from "@/context/TaskContext";
 import { LENGTH_LIMITS, validateLength } from "@/lib/validateLength";
+import { normalizeMicroSteps } from "@/lib/microSteps";
 
 export type TaskRow = {
   id: string;
@@ -64,7 +65,7 @@ function rowToTask(row: TaskRow): Task {
     impact: row.impact,
     energyLevel: row.energy_level,
     estimatedDuration: row.estimated_duration ?? undefined,
-    microSteps: Array.isArray(row.micro_steps) ? row.micro_steps : [],
+    microSteps: normalizeMicroSteps(row.micro_steps),
     notToday: row.not_today,
     isDeadline: row.is_deadline,
     category: row.category,
@@ -220,13 +221,27 @@ export async function deleteTaskFromSupabase(
   if (error) throw new Error(error.message);
 }
 
+type TasksUpdater = (updater: (prev: Task[]) => Task[]) => void;
+
+/**
+ * Realtime delta-sync: past per event alleen de gewijzigde rij toe in plaats van
+ * een volledige tabel-refetch. INSERT voegt toe (idempotent t.o.v. optimistic),
+ * UPDATE vervangt, DELETE verwijdert op id.
+ */
 export function subscribeToTasks(
   userId: string,
-  onPayload: (tasks: Task[]) => void
+  applyChange: TasksUpdater
 ): () => void {
   const supabase = createClient();
+
+  function sortByCreatedDesc(list: Task[]): Task[] {
+    return [...list].sort((a, b) =>
+      (b.created_at ?? "").localeCompare(a.created_at ?? "")
+    );
+  }
+
   const channel = supabase
-    .channel("tasks-changes")
+    .channel(`tasks-changes:${userId}`)
     .on(
       "postgres_changes",
       {
@@ -235,9 +250,29 @@ export function subscribeToTasks(
         table: "tasks",
         filter: `user_id=eq.${userId}`,
       },
-      async () => {
-        const list = await fetchTasksFromSupabase(userId);
-        onPayload(list);
+      (payload: {
+        eventType: "INSERT" | "UPDATE" | "DELETE";
+        new: Record<string, unknown> | null;
+        old: Record<string, unknown> | null;
+      }) => {
+        if (payload.eventType === "DELETE") {
+          const oldId = (payload.old?.id as string | undefined) ?? null;
+          if (!oldId) return;
+          applyChange((prev) => prev.filter((t) => t.id !== oldId));
+          return;
+        }
+
+        const row = payload.new;
+        if (!row || typeof row.id !== "string") return;
+        const task = rowToTask(row as unknown as TaskRow);
+
+        applyChange((prev) => {
+          const exists = prev.some((t) => t.id === task.id);
+          if (exists) {
+            return prev.map((t) => (t.id === task.id ? { ...t, ...task } : t));
+          }
+          return sortByCreatedDesc([task, ...prev]);
+        });
       }
     )
     .subscribe();

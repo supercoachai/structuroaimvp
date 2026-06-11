@@ -15,18 +15,25 @@ export function microStepId(): string {
 export function normalizeMicroSteps(input: any): MicroStep[] {
   if (!Array.isArray(input)) return [];
 
+  const seenIds = new Set<string>();
+
   // Backwards compatibility: older storage used string[]
   return input
     .map((raw, idx) => {
       if (typeof raw === 'string') {
         const t = raw.trim();
         if (!t) return null;
-        return { id: `ms_legacy_${idx}_${t.slice(0, 12)}`, title: t, minutes: null, difficulty: null, done: false } as MicroStep;
+        let id = `ms_legacy_${idx}_${t.slice(0, 12)}`;
+        if (seenIds.has(id)) id = `${id}_${idx}`;
+        seenIds.add(id);
+        return { id, title: t, minutes: null, difficulty: null, done: false } as MicroStep;
       }
       if (raw && typeof raw === 'object') {
         const title = String(raw.title ?? raw.text ?? '').trim();
         if (!title) return null;
-        const id = String(raw.id ?? `ms_legacy_${idx}_${title.slice(0, 12)}`);
+        let id = String(raw.id ?? `ms_legacy_${idx}_${title.slice(0, 12)}`);
+        if (seenIds.has(id)) id = `${id}_${idx}`;
+        seenIds.add(id);
         const minutesRaw = raw.minutes ?? raw.duration ?? raw.estimatedDuration ?? null;
         const minutes =
           typeof minutesRaw === 'number' && Number.isFinite(minutesRaw) ? minutesRaw :
@@ -41,6 +48,11 @@ export function normalizeMicroSteps(input: any): MicroStep[] {
       return null;
     })
     .filter(Boolean) as MicroStep[];
+}
+
+/** Stappen met een zichtbare titel — gebruik voor lijst én voortgangsteller. */
+export function visibleMicroSteps(steps: MicroStep[]): MicroStep[] {
+  return steps.filter((step) => step.title.trim().length > 0);
 }
 
 export function nextUndoneIndex(steps: MicroStep[]): number {

@@ -71,8 +71,8 @@ export default function FocusMicroAiSuggest({
         locale: locale === "en" ? "en" : "nl",
       });
       const difficulty = energy ?? "medium";
-      const steps: MicroStep[] = result.steps.map((title) => ({
-        id: microStepId(),
+      const steps: MicroStep[] = result.steps.map((title, idx) => ({
+        id: `${microStepId()}_${idx}`,
         title,
         minutes: null,
         difficulty,
@@ -100,7 +100,7 @@ export default function FocusMicroAiSuggest({
   ]);
 
   return (
-    <div className="mb-2 sm:mb-3">
+    <div className="focus-micro-ai-suggest mb-2 sm:mb-3">
       <button
         type="button"
         onClick={() => setExpanded((open) => !open)}

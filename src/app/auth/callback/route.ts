@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { captureRegistrationFunnelServer } from '@/lib/posthog/registrationFunnelAnalytics'
 import { parseStAttrFromRequest } from '@/lib/posthog/firstTouchAttribution'
+import { buildTrustedRedirectUrl, sanitizeNextPath } from '@/lib/safeRedirect'
 
 function redirectToAuthError(
   origin: string,
@@ -14,7 +15,7 @@ function redirectToAuthError(
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = sanitizeNextPath(searchParams.get('next'))
 
   const authError = searchParams.get('error')
   const authErrorCode = searchParams.get('error_code')
@@ -47,13 +48,8 @@ export async function GET(request: Request) {
         }
       }
 
-      const forwardedHost = request.headers.get('x-forwarded-host') // original origin before reverse proxy
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      const target = isLocalEnv
-        ? `${origin}${next}`
-        : forwardedHost
-          ? `https://${forwardedHost}${next}`
-          : `${origin}${next}`
+      const forwardedHost = request.headers.get('x-forwarded-host')
+      const target = buildTrustedRedirectUrl(origin, forwardedHost, next)
       const res = NextResponse.redirect(target)
       res.cookies.set('structuro_local_mode', '', {
         path: '/',

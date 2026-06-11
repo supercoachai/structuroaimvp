@@ -85,8 +85,13 @@ export async function fetchMicroStepSuggestions(
     throw new Error(data.error ?? "generation_failed");
   }
 
+  const steps = data.steps.map((s) => String(s).trim()).filter(Boolean);
+  if (steps.length !== 4) {
+    throw new Error("invalid_step_count");
+  }
+
   return {
-    steps: data.steps.map((s) => String(s).trim()).filter(Boolean),
+    steps,
     source: data.source === "template" ? "template" : "ai",
     remaining: data.remaining,
     limit: data.limit,

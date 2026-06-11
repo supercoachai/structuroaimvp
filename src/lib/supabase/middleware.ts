@@ -72,7 +72,9 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname.startsWith("/api/waitlist/join") ||
     pathname.startsWith("/api/analytics/waitlist-conversion") ||
     pathname.startsWith("/api/checkout/session-status") ||
+    pathname.startsWith("/api/checkout/bind-session") ||
     pathname.startsWith("/api/checkout/resume-session") ||
+    pathname.startsWith("/api/admin/login") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/stripe/checkout") ||
     pathname.startsWith("/api/checkout/create-session") ||

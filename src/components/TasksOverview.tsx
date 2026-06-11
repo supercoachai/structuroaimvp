@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useDeferredValue, startTransition, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useDismissibleTooltip } from "@/hooks/useDismissibleTooltip";
 import {
   trackFocusModeStarted,
@@ -34,7 +35,9 @@ import {
   formatRepeatLabel,
 } from "@/lib/taskRecurrence";
 import GeparkeerdeGedachtenSection from "./GeparkeerdeGedachtenSection";
-import NewTaskFlow from "@/components/newTask/NewTaskFlow";
+const NewTaskFlow = dynamic(() => import("@/components/newTask/NewTaskFlow"), {
+  ssr: false,
+});
 import { buildTaskFromFlowPayload } from "@/lib/newTask/buildTaskFromFlowPayload";
 import type { NewTaskFlowPayload } from "@/lib/newTask/newTaskFlowTypes";
 import { useI18n } from "@/lib/i18n";

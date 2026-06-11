@@ -5,6 +5,13 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+function assertCronAuthorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) return process.env.NODE_ENV === "development";
+  const auth = request.headers.get("authorization");
+  return auth === `Bearer ${secret}`;
+}
+
 function hostnameFromOrigin(origin: string): string | null {
   try {
     return new URL(origin).hostname;
@@ -13,7 +20,11 @@ function hostnameFromOrigin(origin: string): string | null {
   }
 }
 
-async function postEnsurePaymentDomain() {
+async function postEnsurePaymentDomain(request: Request) {
+  if (!assertCronAuthorized(request)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const stripe = await createStripeServerClientFromEnv();
   if (!stripe) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });

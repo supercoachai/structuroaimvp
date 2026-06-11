@@ -346,6 +346,21 @@ export default function HomeCalm() {
     }
   };
 
+  const removeHeroMicroStep = async (stepId: string) => {
+    if (!heroTask) return;
+    const steps = normalizeMicroSteps(heroTask.microSteps);
+    const next = steps.filter((s) => s.id !== stepId);
+    setHeroMicroSaving(true);
+    try {
+      await updateTask(heroTask.id, { microSteps: next });
+    } catch (e) {
+      console.error(e);
+      toast(t('tasks.toastAddErr'));
+    } finally {
+      setHeroMicroSaving(false);
+    }
+  };
+
   const applyHeroAiMicroSteps = async (steps: MicroStep[]) => {
     if (!heroTask) return;
     setHeroMicroSaving(true);
@@ -627,6 +642,7 @@ export default function HomeCalm() {
               onInlineNewStepChange={setHeroMicroDraft}
               onInlineAddStep={() => void addHeroMicroStep()}
               onToggleStep={(stepId) => void toggleHeroMicroStep(stepId)}
+              onRemoveStep={(stepId) => void removeHeroMicroStep(stepId)}
               onApplyAiSteps={applyHeroAiMicroSteps}
               inputDisabled={heroMicroSaving}
               aiDisabled={heroMicroSaving}

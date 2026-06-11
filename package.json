@@ -19,6 +19,11 @@
     "start": "npm run free:3000 && next start",
     "start:prod": "npm run build && npm run start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:legacy": "node scripts/run-legacy-tests.mjs",
+    "test:all": "vitest run && node scripts/run-legacy-tests.mjs",
     "test:task-put": "npx --yes tsx src/lib/buildTaskPutDbUpdates.test.ts",
     "test:focus-events": "npx --yes tsx src/lib/posthog/focusSessionEvents.test.ts",
     "supabase:start": "supabase start",
@@ -64,10 +69,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9",
     "eslint-config-next": "15.5.12",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }

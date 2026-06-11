@@ -35,7 +35,7 @@ import FocusMicroStepsCard from '@/components/focus/FocusMicroStepsCard';
 import InfoButton from '@/components/info/InfoButton';
 import {
   ChevronRightIcon,
-  SparklesIcon,
+  StarIcon,
   PauseIcon,
   PlayIcon,
   CheckIcon,
@@ -83,8 +83,6 @@ function FocusContent() {
   const [showFocusCard, setShowFocusCard] = useState(true);
   const [inlineNewStep, setInlineNewStep] = useState('');
   const [isAirlockActive, setIsAirlockActive] = useState(false);
-  const [microUndoSnapshot, setMicroUndoSnapshot] = useState<MicroStep[] | null>(null);
-  const microUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const parkThoughtInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentTask = useMemo(() => {
@@ -103,14 +101,6 @@ function FocusContent() {
       .then(setParkedCount)
       .catch(() => setParkedCount(0));
   }, [user?.id]);
-
-  useEffect(() => {
-    const handleTaskUpdate = () => { fetchTasks(); };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('structuro_tasks_updated', handleTaskUpdate);
-      return () => { window.removeEventListener('structuro_tasks_updated', handleTaskUpdate); };
-    }
-  }, [fetchTasks]);
 
   const [duration, setDuration] = useState(() => {
     const qp = searchParams?.get('duration');
@@ -318,7 +308,7 @@ function FocusContent() {
     tick();
     const timer = setInterval(tick, 250);
     return () => clearInterval(timer);
-  }, [isRunning, isPaused, timeLeft, taskTitle, duration, locale, captureFocusOutcomeOnce]);
+  }, [isRunning, isPaused, taskTitle, duration, locale, captureFocusOutcomeOnce]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -326,15 +316,12 @@ function FocusContent() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleUndoMicrostep = useCallback(() => {
-    if (!currentTask || !microUndoSnapshot) return;
-    if (microUndoTimerRef.current) {
-      clearTimeout(microUndoTimerRef.current);
-      microUndoTimerRef.current = null;
-    }
-    void updateTask(currentTask.id, { microSteps: microUndoSnapshot });
-    setMicroUndoSnapshot(null);
-  }, [currentTask, microUndoSnapshot, updateTask]);
+  const handleRemoveMicroStep = (stepId: string) => {
+    if (!currentTask) return;
+    const steps = normalizeMicroSteps(currentTask.microSteps);
+    const next = steps.filter((s) => s.id !== stepId);
+    void updateTask(currentTask.id, { microSteps: next });
+  };
 
   const handleToggleMicroStep = (stepId: string) => {
     if (!currentTask) return;
@@ -343,21 +330,8 @@ function FocusContent() {
     if (idx < 0) return;
     const wasDone = Boolean(steps[idx]?.done);
     const next = steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
-    const nowDone = Boolean(next[idx]?.done);
-    if (!wasDone && nowDone) {
+    if (!wasDone && Boolean(next[idx]?.done)) {
       triggerHaptic(HAPTIC_PATTERNS.MICROSTEP_DONE);
-      if (microUndoTimerRef.current) clearTimeout(microUndoTimerRef.current);
-      setMicroUndoSnapshot(steps.map(s => ({ ...s })));
-      microUndoTimerRef.current = setTimeout(() => {
-        setMicroUndoSnapshot(null);
-        microUndoTimerRef.current = null;
-      }, 400);
-    } else {
-      setMicroUndoSnapshot(null);
-      if (microUndoTimerRef.current) {
-        clearTimeout(microUndoTimerRef.current);
-        microUndoTimerRef.current = null;
-      }
     }
     void updateTask(currentTask.id, { microSteps: next });
   };
@@ -376,13 +350,12 @@ function FocusContent() {
     };
     await updateTask(currentTask.id, { microSteps: [...steps, newStep] });
     setInlineNewStep('');
-    fetchTasks();
   };
 
   const handleApplyAiMicroSteps = async (steps: MicroStep[]) => {
     if (!currentTask) return;
-    await updateTask(currentTask.id, { microSteps: steps });
-    fetchTasks();
+    const normalized = normalizeMicroSteps(steps);
+    await updateTask(currentTask.id, { microSteps: normalized });
   };
 
   const startSession = async () => {
@@ -491,11 +464,6 @@ function FocusContent() {
       setIsPaused(false);
       setCompleted(false);
       setShowTimeUpPrompt(false);
-      setMicroUndoSnapshot(null);
-      if (microUndoTimerRef.current) {
-        clearTimeout(microUndoTimerRef.current);
-        microUndoTimerRef.current = null;
-      }
       void updateTask(currentTask.id, {
         done: true,
         completedAt: new Date().toISOString(),
@@ -638,10 +606,12 @@ function FocusContent() {
         onInlineNewStepChange={setInlineNewStep}
         onInlineAddStep={() => void handleInlineAddStep()}
         onToggleStep={handleToggleMicroStep}
+        onRemoveStep={handleRemoveMicroStep}
         onApplyAiSteps={handleApplyAiMicroSteps}
-        microUndoSnapshot={microUndoSnapshot}
-        onUndo={handleUndoMicrostep}
-        className="h-full min-h-0 rounded-2xl border border-white/[0.07] bg-white/[0.04]"
+        forceCollapsed={showTimeUpPrompt}
+        className={`rounded-2xl border border-white/[0.07] bg-white/[0.04] ${
+          showTimeUpPrompt ? "shrink-0" : "min-h-0 flex-1"
+        }`}
         headerAction={
           <InfoButton infoId="microstappen" variant="onDark" autoIntro={false} />
         }
@@ -658,7 +628,7 @@ function FocusContent() {
 
   const taskParam = searchParams?.get('task');
   const resolvingTask =
-    tasksLoading ||
+    (tasksLoading && tasks.length === 0) ||
     checkInLoading ||
     (Boolean(taskParam) && tasks.length === 0);
 
@@ -681,6 +651,42 @@ function FocusContent() {
   const showParkBarInFocus = timerActive || showTimeUpPrompt;
 
   const isPreSession = !timerActive && !showTimeUpPrompt;
+
+  const submitParkThought = (raw: string) => {
+    const value = raw.trim();
+    if (!value) return;
+    void handleParkThought(value);
+    if (parkThoughtInputRef.current) parkThoughtInputRef.current.value = "";
+  };
+
+  const parkThoughtField = showParkBarInFocus ? (
+    <form
+      className="focus-screen__park-field"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const input = e.currentTarget.querySelector("input") as HTMLInputElement | null;
+        if (input) submitParkThought(input.value);
+      }}
+    >
+      <StarIcon className="focus-screen__park-field-icon" aria-hidden />
+      <input
+        ref={parkThoughtInputRef}
+        name="park-thought"
+        type="text"
+        placeholder={tr("focus.parkPlaceholder")}
+        className="focus-screen__park-field-input"
+        autoComplete="off"
+      />
+      <button type="submit" className="focus-screen__park-field-save">
+        {tr("focus.parkSave")}
+      </button>
+      {user?.id && parkedCount > 0 ? (
+        <span className="sr-only">
+          {tr("focus.parkedCountSr", { n: String(parkedCount) })}
+        </span>
+      ) : null}
+    </form>
+  ) : null;
 
   const focusSessionActions = showTimeUpPrompt ? (
     <>
@@ -728,56 +734,60 @@ function FocusContent() {
       >
         {tr("focus.extendWith", { n: String(extendMinutes) })}
       </button>
+      {parkThoughtField}
     </>
   ) : timerActive ? (
-    <div className="focus-screen__timer-actions">
-      <button
-        type="button"
-        onClick={pauseSession}
-        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
-      >
-        {isPaused ? (
-          <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
-        ) : (
-          <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
-        )}
-        {isPaused ? tr("focus.resume") : tr("focus.pause")}
-      </button>
-      <button
-        type="button"
-        onClick={extendSession}
-        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
-      >
-        <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
-        {tr("focus.addFiveMin")}
-      </button>
+    <div className="focus-screen__session-controls">
       <button
         type="button"
         onClick={handleVoltooienClick}
-        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
+        className="focus-screen__complete-btn"
       >
-        <CheckIcon className="h-4 w-4 shrink-0" aria-hidden />
-        {tr("focus.finish")}
+        <CheckIcon className="h-5 w-5 shrink-0" aria-hidden />
+        {tr("focus.completeBtn")}
       </button>
-      <button
-        type="button"
-        onClick={stopSession}
-        className="mx-auto flex items-center gap-2 font-medium text-[#94A3B8] transition hover:text-white"
-      >
-        <svg
-          className="h-4 w-4 shrink-0"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
+      <div className="focus-screen__toolbar" role="toolbar">
+        <button
+          type="button"
+          onClick={pauseSession}
+          className="focus-screen__toolbar-btn"
         >
-          <rect x="7" y="7" width="10" height="10" rx="1.5" />
-        </svg>
-        {tr("focus.stop")}
-      </button>
+          {isPaused ? (
+            <PlayIcon className="h-4 w-4 shrink-0" aria-hidden />
+          ) : (
+            <PauseIcon className="h-4 w-4 shrink-0" aria-hidden />
+          )}
+          <span>{isPaused ? tr("focus.resumeShort") : tr("focus.pauseShort")}</span>
+        </button>
+        <button
+          type="button"
+          onClick={extendSession}
+          className="focus-screen__toolbar-btn"
+        >
+          <ClockIcon className="h-4 w-4 shrink-0" aria-hidden />
+          <span>{tr("focus.addFiveShort")}</span>
+        </button>
+        <button
+          type="button"
+          onClick={stopSession}
+          className="focus-screen__toolbar-btn"
+        >
+          <svg
+            className="h-4 w-4 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="7" y="7" width="10" height="10" rx="1.5" />
+          </svg>
+          <span>{tr("focus.stopShort")}</span>
+        </button>
+      </div>
+      {parkThoughtField}
     </div>
   ) : null;
 
@@ -897,12 +907,25 @@ function FocusContent() {
 
         <div className="focus-screen__fit-viewport">
           <div className="focus-screen__fit-content">
-            <div className="shrink-0 text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#94A3B8] sm:text-[11px]">
+            <div className="focus-screen__task-header shrink-0 text-center">
+              <div className="flex items-center justify-center">
+                <span
+                  className="focus-screen__now-label inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] sm:text-[11px]"
+                  style={{ color: "var(--st-green)" }}
+                >
+                  <span className="focus-screen__now-dot-wrap" aria-hidden>
+                    <span
+                      className="home-screen__now-dot"
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "var(--st-green)",
+                      }}
+                    />
+                  </span>
                   {tr("focus.nuAanZet")}
-                </p>
-                <InfoButton infoId="timer" variant="onDark" />
+                </span>
               </div>
               <h1 className="focus-screen__title mt-1.5 line-clamp-2 text-[23px] font-bold leading-tight tracking-tight text-white sm:mt-2.5">
                 {currentTask.title}
@@ -945,10 +968,22 @@ function FocusContent() {
               </div>
             </div>
 
-            <div className="min-h-0 w-full flex-1">{microStepsSection}</div>
+            <div
+              className={`w-full ${
+                showTimeUpPrompt ? "shrink-0" : "min-h-0 flex-1"
+              }`}
+            >
+              {microStepsSection}
+            </div>
 
             {focusSessionActions ? (
-              <div className="focus-screen__actions flex shrink-0 flex-col gap-2">{focusSessionActions}</div>
+              <div
+                className={`focus-screen__actions flex shrink-0 flex-col gap-2${
+                  showParkBarInFocus ? " focus-screen__actions--with-park" : ""
+                }`}
+              >
+                {focusSessionActions}
+              </div>
             ) : null}
           </div>
         </div>
@@ -959,56 +994,6 @@ function FocusContent() {
           </div>
         ) : null}
 
-        {showParkBarInFocus ? (
-          <div
-            className="flex shrink-0 flex-col border-t border-white/10 bg-[#1a1d24]"
-            style={{
-              paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))',
-            }}
-          >
-            <div className="mx-auto flex w-full max-w-lg items-center gap-2 px-4 py-2 sm:gap-3 sm:py-3">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const input = e.currentTarget.querySelector('input') as HTMLInputElement;
-                  if (input && input.value.trim()) {
-                    handleParkThought(input.value.trim());
-                    input.value = '';
-                  }
-                }}
-                className="min-w-0 flex-1"
-              >
-                <div className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 sm:px-4 sm:py-3">
-                  <SparklesIcon className="h-4 w-4 shrink-0 text-[#94a3b8]" aria-hidden />
-                  <input
-                    ref={parkThoughtInputRef}
-                    name="park-thought"
-                    type="text"
-                    placeholder={tr("focus.parkPlaceholder")}
-                    className="min-w-0 flex-1 bg-transparent text-sm text-[#e2e8f0] placeholder:text-white/40 focus:outline-none"
-                  />
-                </div>
-              </form>
-              <button
-                type="button"
-                onClick={() => {
-                  const v = parkThoughtInputRef.current?.value?.trim();
-                  if (!v) return;
-                  void handleParkThought(v);
-                  parkThoughtInputRef.current!.value = "";
-                }}
-                className="flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-5 sm:py-3 sm:text-sm"
-              >
-                {tr("focus.parkAction")}
-              </button>
-            </div>
-            {user?.id && parkedCount > 0 ? (
-              <span className="sr-only">
-                {tr("focus.parkedCountSr", { n: String(parkedCount) })}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     </>
   );

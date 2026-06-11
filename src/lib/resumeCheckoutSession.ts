@@ -24,6 +24,19 @@ export async function resumeCheckoutSession(
   let tokenHash: string;
   let email: string;
   try {
+    const bindRes = await fetch("/api/checkout/bind-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+    if (bindRes.status === 409) {
+      return { ok: false, reason: "not_paid" };
+    }
+    if (!bindRes.ok) {
+      return { ok: false, reason: "failed" };
+    }
+
     const res = await fetch("/api/checkout/resume-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
