@@ -47,7 +47,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
 <!-- Vercel Web Analytics (statische HTML; geen Next.js-pakket nodig) -->
 <script>
@@ -82,7 +82,7 @@ img{max-width:100%;height:auto;}
 .container{max-width:1100px;margin:0 auto;padding:0 24px;}
 
 /* Scroll offset for sticky nav */
-#loop, #voor-vrouwen, #waarom, #prijs, #faq, #verhalen, #brein-termen, #wachtlijst, #eu-sluitstuk, #waarom-nodig, #gezien-in, #dagstart-preview {
+#loop, #voor-vrouwen, #founder, #prijs, #faq, #verhalen, #brein-termen, #wachtlijst, #eu-sluitstuk, #waarom-nodig, #gezien-in, #dagstart-preview {
   scroll-margin-top: 88px;
 }
 
@@ -478,20 +478,63 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .live-demo-reset-outside{margin-top:10px;appearance:none;border:none;background:transparent;color:var(--night-muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 .live-demo-restart{margin-top:12px;appearance:none;border:1px solid #E2E8F0;background:#fff;color:#475569;padding:10px 14px;border-radius:12px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer;width:100%;transition:border-color 150ms,color 150ms,background 150ms;}
 .live-demo-restart:hover{border-color:var(--blue);color:var(--blue);background:#F8FAFF;}
-.quote-section{padding:80px 0;}
-.quote-section .section-eyebrow{text-align:center;}
-.quote-section h2{text-align:center;margin-bottom:40px;}
-.psych-terms{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:72px 0;}
-.psych-terms .section-eyebrow{text-align:center;}
-.psych-terms h2{text-align:center;margin-bottom:12px;}
-.psych-terms .lede-2{text-align:center;margin:0 auto 36px;}
-.psych-grid{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-@media(max-width:900px){.psych-grid{grid-template-columns:1fr;}}
-.psych-card{background:linear-gradient(180deg,#fff 0%,#F8FAFF 100%);border:1px solid var(--border);border-radius:18px;padding:22px 20px;position:relative;overflow:hidden;}
-.psych-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),#5A84F9);}
-.psych-card h3{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
-.psych-card p{margin:0;font-size:13.5px;line-height:1.55;color:var(--sub);}
-.psych-card-tag{display:inline-block;margin-bottom:10px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);}
+/* ── Van testers (interactieve testimonials) ── */
+.vt-section{background:#E8EDF9;}
+.vt-wrap{max-width:1080px;margin:0 auto;padding:96px 40px 110px;}
+.vt-head{text-align:center;max-width:720px;margin:0 auto 40px;}
+.vt-eyebrow{font-family:'Hanken Grotesk',var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);}
+.vt-head h2{margin:14px 0 0;font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
+.vt-root{max-width:760px;margin:0 auto;}
+.vt-prompt{text-align:center;font-family:'Hanken Grotesk',var(--font);font-size:15px;font-weight:600;color:#6B7280;margin-bottom:16px;}
+.vt-tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
+.vt-tab{font-family:'Hanken Grotesk',var(--font);font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap;padding:11px 20px;border-radius:999px;border:1px solid rgba(26,35,64,.08);background:#fff;color:#2C3753;box-shadow:0 1px 2px rgba(14,23,48,.04);transition:all .18s;}
+.vt-tab.is-active{border-color:var(--blue);background:var(--blue);color:#fff;box-shadow:0 8px 18px -8px rgba(59,107,247,.5);}
+.vt-card{background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:22px;padding:38px 40px;box-shadow:0 30px 70px -42px rgba(14,23,48,.28);transition:box-shadow .25s;}
+.vt-quote-mark{margin-bottom:14px;display:block;}
+.vt-quote-text{margin:0;font-family:'Schibsted Grotesk',var(--font);font-weight:600;font-size:clamp(22px,2.6vw,30px);line-height:1.36;letter-spacing:-.02em;color:#1A2340;text-wrap:balance;}
+.vt-footer{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid rgba(26,35,64,.05);}
+.vt-avatar{width:46px;height:46px;border-radius:12px;background:linear-gradient(180deg,#5A84F9,var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:19px;flex-shrink:0;}
+.vt-name{font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:17px;color:#1A2340;}
+.vt-role{font-family:'Hanken Grotesk',var(--font);font-size:14px;color:#6B7280;}
+@media(max-width:760px){.vt-wrap{padding-left:22px!important;padding-right:22px!important;}.vt-card{padding:30px 24px;}}
+/* ── Zelftest (welke hiervan ben jij) ── */
+.zt-section{background:#fff;}
+.zt-wrap{max-width:1080px;margin:0 auto;padding:96px 40px 110px;}
+.zt-head{text-align:center;max-width:720px;margin:0 auto 40px;}
+.zt-eyebrow{font-family:'Hanken Grotesk',var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);}
+.zt-head h2{margin:14px 0 0;font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
+.zt-lede{margin:16px 0 0;font-family:'Hanken Grotesk',var(--font);font-size:18px;line-height:1.5;color:#6B7280;text-wrap:balance;}
+.zt-root{max-width:780px;margin:0 auto;}
+.zt-sticky{position:sticky;top:16px;z-index:5;display:flex;align-items:center;gap:18px;background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:16px;padding:16px 22px;margin-bottom:18px;box-shadow:0 16px 36px -22px rgba(14,23,48,.3);transition:background .3s,border-color .3s;}
+.zt-sticky.is-filled{background:#1A2340;border-color:#1A2340;}
+.zt-dots{display:flex;gap:5px;flex:0 0 auto;}
+.zt-dot{width:12px;height:12px;border-radius:999px;background:rgba(26,35,64,.08);transition:background .25s;}
+.zt-dot.is-on{background:var(--blue);}
+.zt-dot.is-idle-dark{background:rgba(255,255,255,.18);}
+.zt-sticky-copy{flex:1;}
+.zt-sticky-title{font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:17px;color:#1A2340;letter-spacing:-.01em;transition:color .3s;}
+.zt-sticky.is-filled .zt-sticky-title{color:#fff;}
+.zt-sticky-sub{font-family:'Hanken Grotesk',var(--font);font-size:14px;color:#6B7280;margin-top:2px;transition:color .3s;}
+.zt-sticky.is-filled .zt-sticky-sub{color:rgba(255,255,255,.7);}
+.zt-rows{display:flex;flex-direction:column;gap:10px;}
+.zt-row{background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:16px;box-shadow:0 1px 2px rgba(14,23,48,.03);transition:border-color .2s,box-shadow .25s;overflow:hidden;}
+.zt-row.is-on{border-color:var(--blue);box-shadow:0 16px 40px -26px rgba(59,107,247,.4);}
+.zt-row-btn{width:100%;text-align:left;border:0;background:none;cursor:pointer;display:flex;align-items:center;gap:16px;padding:20px 22px;font:inherit;}
+.zt-check{flex:0 0 auto;width:30px;height:30px;border-radius:999px;border:2px solid rgba(26,35,64,.08);background:transparent;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+.zt-check svg{transform:scale(.4);opacity:0;transition:all .18s;}
+.zt-row.is-on .zt-check{border-color:var(--blue);background:var(--blue);}
+.zt-row.is-on .zt-check svg{transform:scale(1);opacity:1;}
+.zt-row-short{flex:1;font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:clamp(17px,1.9vw,21px);letter-spacing:-.015em;color:#1A2340;line-height:1.25;}
+.zt-row-hint{flex:0 0 auto;font-family:'Hanken Grotesk',var(--font);font-weight:700;font-size:13px;color:#9AA3B8;transition:color .2s;white-space:nowrap;}
+.zt-row.is-on .zt-row-hint{color:var(--blue);}
+.zt-row-panel-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.3,.8,.3,1);}
+.zt-row-panel-wrap.is-open{grid-template-rows:1fr;}
+.zt-row-panel{overflow:hidden;}
+.zt-row-panel-inner{margin:0 22px 22px 68px;padding:18px 20px;background:#F5F7FC;border-radius:14px;}
+.zt-panel-tag{font-family:'Hanken Grotesk',var(--font);font-weight:800;font-size:11px;letter-spacing:.16em;color:var(--blue);margin-bottom:8px;}
+.zt-panel-title{font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:17px;color:#1A2340;margin-bottom:6px;letter-spacing:-.01em;}
+.zt-panel-body{margin:0;font-family:'Hanken Grotesk',var(--font);font-size:16.5px;line-height:1.6;color:#2C3753;}
+@media(max-width:760px){.zt-wrap{padding-left:22px!important;padding-right:22px!important;}.zt-row-panel-inner{margin-left:22px;}}
 /* ── Cyclus teaser (homepage) ── */
 .cycle-teaser{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:56px 0;}
 .cycle-teaser-inner{max-width:640px;margin:0 auto;text-align:center;}
@@ -512,15 +555,6 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .ss-label strong{font-size:14px;font-weight:700;color:var(--text);display:block;}
 .ss-label span{font-size:12.5px;color:var(--sub);margin-top:3px;display:block;}
 
-/* ── Quotes ── */
-.quote-section{background:var(--bg);}
-.quote-grid{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-@media(max-width:900px){.quote-grid{grid-template-columns:1fr;}}
-.quote-card{background:linear-gradient(180deg,#fff 0%,#F8FAFF 100%);border:1px solid var(--border);border-radius:22px;padding:0;position:relative;overflow:hidden;display:flex;flex-direction:column;}
-.quote-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),#5A84F9);z-index:1;}
-.quote-inner-hover{display:flex;flex-direction:column;flex:1;padding:28px 26px 22px;min-height:240px;}
-.quote-mark{position:absolute;top:14px;left:22px;font-size:64px;line-height:1;color:rgba(59,107,247,.12);user-select:none;pointer-events:none;}
-
 /* Lightbox */
 .lightbox{display:none;position:fixed;inset:0;background:rgba(10,10,15,.88);z-index:1000;align-items:center;justify-content:center;}
 .lightbox.open{display:flex;}
@@ -528,15 +562,6 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .lightbox-inner img{max-height:82vh;max-width:90vw;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.5);object-fit:contain;}
 .lightbox-close{position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:17px;background:var(--white);border:none;cursor:pointer;font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);}
 .lightbox-label{font-size:14px;font-weight:600;color:rgba(255,255,255,.7);}
-.quote-text{position:relative;z-index:1;font-size:15px;line-height:1.62;font-weight:400;color:var(--text);text-wrap:pretty;flex:1;margin:12px 0 0;}
-.quote-footer{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
-.quote-avatar{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;background:linear-gradient(135deg,var(--blue) 0%,#5A84F9 100%);box-shadow:0 4px 12px rgba(59,107,247,.22);}
-.quote-meta{min-width:0;text-align:left;}
-.quote-name{font-weight:700;font-size:14px;color:var(--text);}
-.quote-sub{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4;}
-.quote-cta-row{text-align:center;margin-top:44px;}
-.quote-cta-label{font-size:16px;color:var(--sub);margin-bottom:16px;}
-
 /* ── Empathy ── */
 .empathy{background:#0B1220;color:#fff;padding:100px 0!important;}
 .empathy .container{max-width:720px;}
@@ -546,27 +571,16 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .empathy-body p.empathy-close{color:rgba(255,255,255,.92);font-size:18px;line-height:1.6;margin-top:28px;padding-top:28px;border-top:1px solid rgba(255,255,255,.08);}
 @media(max-width:720px){.empathy{padding:72px 0!important;}.empathy-body p{font-size:18px;}.empathy-body p.empathy-soft,.empathy-body p.empathy-close{font-size:16px;}}
 
-/* ── Manifesto ── */
-.manifesto{background:var(--dark);color:#fff;position:relative;overflow:hidden;}
-.manifesto-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;}
-@media(max-width:900px){.manifesto-grid{grid-template-columns:1fr;gap:40px;}}
-.manifesto h2{color:#fff;}
-.manifesto p{color:rgba(255,255,255,.72);font-size:17px;line-height:1.65;max-width:520px;}
-.manifesto-eyebrow{color:#93C5FD;}
-.crossed-list{list-style:none;padding:0;margin:28px 0 0;display:flex;flex-direction:column;gap:10px;}
-.crossed-list li{display:flex;align-items:center;gap:12px;font-size:15px;color:rgba(255,255,255,.5);text-decoration:line-through;}
-.x-mark{width:22px;height:22px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#fca5a5;flex-shrink:0;}
-.v-mark{width:22px;height:22px;border-radius:11px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;color:var(--green);flex-shrink:0;}
-.check-list{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:10px;}
-.check-list li{display:flex;align-items:center;gap:12px;font-size:15px;color:#fff;font-weight:500;}
-.founder-card{margin-top:56px;padding:36px 40px;background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.03) 100%);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-xl);max-width:820px;display:flex;align-items:center;gap:36px;box-shadow:0 20px 50px rgba(0,0,0,.18);}
-.founder-photo-wrap{flex-shrink:0;width:120px;height:120px;border-radius:50%;padding:3px;background:linear-gradient(145deg,#93C5FD,#3B6BF7 55%,#1E47D6);box-shadow:0 12px 36px rgba(59,107,247,.35);}
-.founder-photo{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:3px solid #242E52;}
+/* ── Founder ── */
+.founder-section{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:72px 0;}
+.founder-card{margin:0 auto;padding:36px 40px;background:linear-gradient(180deg,#fff 0%,#F8FAFF 100%);border:1px solid var(--border);border-radius:var(--r-xl);max-width:820px;display:flex;align-items:center;gap:36px;box-shadow:0 20px 50px rgba(15,23,42,.06);}
+.founder-photo-wrap{flex-shrink:0;width:120px;height:120px;border-radius:50%;padding:3px;background:linear-gradient(145deg,#93C5FD,#3B6BF7 55%,#1E47D6);box-shadow:0 12px 36px rgba(59,107,247,.25);}
+.founder-photo{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:3px solid #fff;}
 .founder-body{min-width:0;flex:1;}
-.founder-quote-text{margin:0;font-size:19px;line-height:1.65;font-style:italic;color:rgba(255,255,255,.92);letter-spacing:-.01em;}
-.founder-meta{margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1);}
-.founder-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.01em;}
-.founder-role{margin-top:4px;font-size:13px;font-weight:600;color:#93C5FD;letter-spacing:.02em;text-transform:uppercase;}
+.founder-quote-text{margin:0;font-size:19px;line-height:1.65;font-style:italic;color:var(--text);letter-spacing:-.01em;}
+.founder-meta{margin-top:22px;padding-top:18px;border-top:1px solid var(--border);}
+.founder-name{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+.founder-role{margin-top:4px;font-size:13px;font-weight:600;color:var(--blue);letter-spacing:.02em;text-transform:uppercase;}
 @media(max-width:720px){
   .founder-card{flex-direction:column;text-align:center;padding:32px 24px 28px;gap:24px;}
   .founder-photo-wrap{width:104px;height:104px;}
@@ -575,6 +589,13 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 }
 
 /* ── Pricing ── */
+.pricing-collapse{max-width:820px;margin:0 auto;}
+.pricing-collapse > summary{list-style:none;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:0;}
+.pricing-collapse > summary::-webkit-details-marker{display:none;}
+.pricing-collapse > summary::after{content:'';width:10px;height:10px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:rotate(45deg);transition:transform 200ms;flex-shrink:0;margin-top:18px;}
+.pricing-collapse[open] > summary::after{transform:rotate(-135deg);}
+.pricing-head--summary{flex:1;min-width:0;text-align:center;}
+.pricing-collapse-body{padding-top:8px;}
 .pricing-grid{display:grid;grid-template-columns:1fr;gap:22px;margin-top:48px;max-width:480px;margin-left:auto;margin-right:auto;}
 .pricing-yearly-link{margin-top:14px;text-align:center;font-size:12.5px;color:var(--sub);line-height:1.5;}
 .pricing-yearly-link button,.pricing-yearly-link a{background:none;border:none;padding:0;font:inherit;font-weight:600;color:var(--blue);cursor:pointer;text-decoration:none;}
@@ -722,18 +743,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 .step:nth-child(2).visible { animation-delay: 120ms; }
 .step:nth-child(3).visible { animation-delay: 240ms; }
 
-/* Quote cards stagger */
-.quote-card {
-  opacity: 0;
-  will-change: transform, opacity;
-}
-.quote-card.visible {
-  animation: revealUp3D 0.68s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.quote-card:nth-child(1).visible { animation-delay: 0ms; }
-.quote-card:nth-child(2).visible { animation-delay: 110ms; }
-.quote-card:nth-child(3).visible { animation-delay: 220ms; }
-
 /* Pricing cards */
 .pricing-card {
   opacity: 0;
@@ -780,14 +789,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   .step:nth-child(1) { animation-delay: 0ms; }
   .step:nth-child(2) { animation-delay: 0ms; } /* scroll-driven ignores delay, handled by range offset */
   .step.visible { animation: scrollReveal3D linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; }
-
-  .quote-card {
-    opacity: 1;
-    animation: scrollReveal3D linear both;
-    animation-timeline: view();
-    animation-range: entry 0% cover 30%;
-  }
-  .quote-card.visible { animation: scrollReveal3D linear both; animation-timeline: view(); animation-range: entry 0% cover 30%; }
 
   .pricing-card {
     opacity: 1;
@@ -843,7 +844,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .reveal, .step, .quote-card, .pricing-card, .faq-item, .trust-grid > div {
+  .reveal, .step, .pricing-card, .faq-item, .trust-grid > div {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -882,18 +883,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 .pricing-card:hover .pricing-inner-hover {
   transform: translateY(-8px);
-}
-
-/* ── 3D Quote cards ── */
-/* Hover via inner wrapper so scroll-driven animation is untouched */
-.quote-card:hover {
-  box-shadow: 0 16px 40px rgba(15,23,42,.10);
-}
-.quote-inner-hover {
-  transition: transform 0.35s cubic-bezier(0.23,1,0.32,1);
-}
-.quote-card:hover .quote-inner-hover {
-  transform: translateY(-6px);
 }
 
 /* ── Gradient mesh hero bg ── */
@@ -1421,19 +1410,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   }
 }
 
-@media (max-width: 560px) {
-  .quote-mark {
-    font-size: 48px;
-    top: 14px;
-    left: 18px;
-  }
-  .quote-card {
-    padding: 26px 20px 28px;
-  }
-  .quote-text {
-    padding-top: 8px;
-  }
-}
 
 @media (max-width: 520px) {
   .eyebrow {
@@ -1642,8 +1618,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     .reveal.visible,
     .step,
     .step.visible,
-    .quote-card,
-    .quote-card.visible,
     .pricing-card,
     .pricing-card.visible,
     .faq-item,
@@ -1697,7 +1671,6 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <a href="#loop" data-ph-cta="nav_loop" data-i18n="nav_how">Hoe het werkt</a>
       <a href="#waarom-nodig" data-ph-cta="nav_waarom_nodig" data-i18n="nav_waarom">Waarom</a>
       <a href="/cyclus/" data-ph-cta="nav_voor_vrouwen" data-i18n="nav_vrouwen">Cyclus</a>
-      <a href="#waarom" data-ph-cta="nav_waarom_anders" data-i18n="nav_why">Waarom anders</a>
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
@@ -1964,93 +1937,26 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   </div>
 </section>
 
-<!-- Social proof quotes -->
-<section class="quote-section reveal" id="verhalen">
-  <div class="container">
-    <div class="section-eyebrow" data-i18n="verhalen_eyebrow">Van testers</div>
-    <h2 data-i18n="verhalen_h2">Afgesloten zonder schuldgevoel</h2>
-    <div class="quote-grid">
-      <blockquote class="quote-card">
-        <div class="quote-inner-hover">
-          <span class="quote-mark" aria-hidden="true">"</span>
-          <p class="quote-text" data-i18n="quote1_text">Eerlijk? Ik sloot voor het eerst in maanden een dag af zonder dat schuldgevoel om half tien. Alleen dát was het al waard.</p>
-          <footer class="quote-footer">
-            <div class="quote-avatar" aria-hidden="true">L</div>
-            <div class="quote-meta">
-              <div class="quote-name" data-i18n="quote1_name">Lisa, 31</div>
-              <div class="quote-sub" data-i18n="quote1_sub">Tester · ADHD sinds haar twintigste</div>
-            </div>
-          </footer>
-        </div>
-      </blockquote>
-      <blockquote class="quote-card">
-        <div class="quote-inner-hover">
-          <span class="quote-mark" aria-hidden="true">"</span>
-          <p class="quote-text" data-i18n="quote2_text">Ik hing al maanden op de rand van een burn-out. Eén taak per dag klinkt belachelijk, maar het haalde de druk weg. Ik kom eindelijk weer boven water.</p>
-          <footer class="quote-footer">
-            <div class="quote-avatar" aria-hidden="true">S</div>
-            <div class="quote-meta">
-              <div class="quote-name" data-i18n="quote2_name">Sven, 34</div>
-              <div class="quote-sub" data-i18n="quote2_sub">Tester · werkte 50 uur per week</div>
-            </div>
-          </footer>
-        </div>
-      </blockquote>
-      <blockquote class="quote-card">
-        <div class="quote-inner-hover">
-          <span class="quote-mark" aria-hidden="true">"</span>
-          <p class="quote-text" data-i18n="quote3_text">In mijn luteale fase was ik altijd knock-out. Nu past Structuro m'n dag aan m'n cyclus aan, en eindelijk voelt dat niet meer als falen.</p>
-          <footer class="quote-footer">
-            <div class="quote-avatar" aria-hidden="true">S</div>
-            <div class="quote-meta">
-              <div class="quote-name" data-i18n="quote3_name">Sanne, 36</div>
-              <div class="quote-sub" data-i18n="quote3_sub">Tester · moeder van twee</div>
-            </div>
-          </footer>
-        </div>
-      </blockquote>
+<!-- Van testers -->
+<section class="vt-section reveal" id="verhalen">
+  <div class="vt-wrap">
+    <div class="vt-head">
+      <div class="vt-eyebrow" data-i18n="verhalen_eyebrow">Van testers</div>
+      <h2 data-i18n="verhalen_h2">Afgesloten zonder schuldgevoel</h2>
     </div>
+    <div id="landingTestimonialsMount"></div>
   </div>
 </section>
 
-<!-- Psychologische termen -->
-<section class="psych-terms reveal" id="brein-termen">
-  <div class="container">
-    <div class="section-eyebrow" data-i18n="psych_eyebrow">Waarom dit werkt</div>
-    <h2 data-i18n="psych_h2">Gebouwd op hoe ADHD-breinen vastlopen</h2>
-    <p class="lede-2" data-i18n="psych_lede">Geen placebo-productiviteit. Structuro pakt de echte knelpunten aan.</p>
-    <div class="psych-grid">
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag1">Executief</span>
-        <h3 data-i18n="psych_h3_1">Taakinitiatie</h3>
-        <p data-i18n="psych_p1">Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.</p>
-      </article>
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag2">Cognitief</span>
-        <h3 data-i18n="psych_h3_2">Werkgeheugen-overload</h3>
-        <p data-i18n="psych_p2">Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te doen in plaats van te onthouden.</p>
-      </article>
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag3">Dopamine</span>
-        <h3 data-i18n="psych_h3_3">Energie en motivatie</h3>
-        <p data-i18n="psych_p3">ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.</p>
-      </article>
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag4">Tijd</span>
-        <h3 data-i18n="psych_h3_4">Tijdblindheid</h3>
-        <p data-i18n="psych_p4">Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.</p>
-      </article>
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag5">Cyclus</span>
-        <h3 data-i18n="psych_h3_5">Hormonen en focus</h3>
-        <p data-i18n="psych_p5">Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.</p>
-      </article>
-      <article class="psych-card">
-        <span class="psych-card-tag" data-i18n="psych_tag6">Rust</span>
-        <h3 data-i18n="psych_h3_6">Burn-out preventie</h3>
-        <p data-i18n="psych_p6">Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.</p>
-      </article>
+<!-- Zelftest -->
+<section class="zt-section reveal" id="brein-termen">
+  <div class="zt-wrap">
+    <div class="zt-head">
+      <div class="zt-eyebrow" data-i18n="psych_eyebrow">Waarom dit werkt</div>
+      <h2 data-i18n="psych_h2">Welke hiervan ben jij?</h2>
+      <p class="zt-lede" data-i18n="psych_lede">Tik aan wat je herkent. Je krijgt precies het antwoord dat erbij hoort, en niets meer.</p>
     </div>
+    <div id="landingZelftestMount"></div>
   </div>
 </section>
 
@@ -2066,6 +1972,24 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <p class="empathy-stat-text" data-i18n="waarom_sub">Van de 50 ADHD'ers die we voor Structuro persoonlijk interviewden, vertelde 95% over burn-out: doorgemaakt, lopend, of net op de rand.</p>
       </div>
       <p class="empathy-close" data-i18n="empathy_p4">Structuro lost geen burn-out op, maar het geeft je één werkbare dag tegelijk zonder het gevoel dat je de rest ook al had moeten doen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Founder -->
+<section class="founder-section reveal" id="founder">
+  <div class="container">
+    <div class="founder-card">
+      <div class="founder-photo-wrap">
+        <img class="founder-photo" src="/uploads/founder-niels.png" alt="Niels van den Hurk" width="120" height="120"/>
+      </div>
+      <div class="founder-body">
+        <blockquote class="founder-quote-text" data-i18n="founder_quote">"Structuro is niet voor iedereen. Het is voor wie z'n brein anders werkt en daar eindelijk een app voor zoekt die dat snapt."</blockquote>
+        <div class="founder-meta">
+          <div class="founder-name" data-i18n="founder_name">Niels van den Hurk</div>
+          <div class="founder-role" data-i18n="founder_role">Founder met ADHD</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -2270,59 +2194,18 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   </div>
 </section>
 
-<!-- Manifesto -->
-<section class="manifesto reveal" id="waarom">
-  <div class="container">
-    <div class="manifesto-grid">
-      <div>
-        <div class="section-eyebrow manifesto-eyebrow" data-i18n="manifesto_eyebrow">Waarom anders</div>
-        <h2 data-i18n="manifesto_h2">Geen weekplanner. Geen planboard. Bewust.</h2>
-        <p data-i18n="manifesto_p">Alles wat je ziet, bezet ruimte in je hoofd. Structuro verbergt de chaos zodat jij de rust hebt om te starten.</p>
-      </div>
-      <div>
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--dark-sub);margin-bottom:14px;" data-i18n="manifesto_not_title">Wat je niet vindt</div>
-        <ul class="crossed-list">
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not1">Eindeloze takenlijsten</span></li>
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not2">Kanban-borden</span></li>
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not3">Streaks, levels, productiviteits-XP</span></li>
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not4">Weekplanners vol vakjes</span></li>
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not5">"Achterstallig" als verwijt</span></li>
-          <li><span class="x-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span><span data-i18n="manifesto_not6">Geen MS To Do, geen Todoist, geen Notion. Dat probeerde je al. Het lukte niet.</span></li>
-        </ul>
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--dark-sub);margin:28px 0 14px;" data-i18n="manifesto_yes_title">Wat je wel vindt</div>
-        <ul class="check-list">
-          <li><span class="v-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span data-i18n="manifesto_yes1">Eén taak die er nu toe doet</span></li>
-          <li><span class="v-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span data-i18n="manifesto_yes2">De eerste stap zo klein dat je geen excuus hebt</span></li>
-          <li><span class="v-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span data-i18n="manifesto_yes3">Een afsluitritueel dat je hoofd leegt</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Founder -->
-    <div class="founder-card">
-      <div class="founder-photo-wrap">
-        <img class="founder-photo" src="/uploads/founder-niels.png" alt="Niels van den Hurk" width="120" height="120"/>
-      </div>
-      <div class="founder-body">
-        <blockquote class="founder-quote-text" data-i18n="founder_quote">"Structuro is niet voor iedereen. Het is voor wie z'n brein anders werkt en daar eindelijk een app voor zoekt die dat snapt."</blockquote>
-        <div class="founder-meta">
-          <div class="founder-name" data-i18n="founder_name">Niels van den Hurk</div>
-          <div class="founder-role" data-i18n="founder_role">Founder met ADHD</div>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:40px;text-align:center;">
-      <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="manifesto_cta_click" data-ph-cta="manifesto"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span></a>
-    </div>
-  </div>
-</section>
-
 <!-- Pricing -->
 <section id="prijs" class="reveal">
   <div class="container">
+    <details class="pricing-collapse">
+      <summary class="pricing-collapse-summary">
+        <div class="pricing-head pricing-head--summary">
+          <div class="section-eyebrow" data-i18n="pricing_eyebrow">Prijs</div>
+          <h2 data-i18n="pricing_h2">Eerlijk. Eén prijs. Zeg op wanneer je wil.</h2>
+        </div>
+      </summary>
+      <div class="pricing-collapse-body">
     <div class="center pricing-head">
-      <div class="section-eyebrow" data-i18n="pricing_eyebrow">Prijs</div>
-      <h2 data-i18n="pricing_h2">Eerlijk. Eén prijs. Zeg op wanneer je wil.</h2>
       <p class="lede-2" style="margin:0 auto;" data-i18n="pricing_lede">3 dagen gratis uitproberen. Daarna €12,99 per maand. Opzegbaar wanneer je wilt.</p>
       <div class="pricing-money-back" style="max-width:520px;margin:18px auto 0;text-align:center;">
         <p style="font-size:15px;font-weight:600;color:var(--text);margin:0;" data-i18n="money_back_title">Werkt het niet? Geld terug, geen vragen.</p>
@@ -2409,6 +2292,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <a href="https://www.structuro.ai/registreren" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
       </p>
     </div>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -2613,7 +2498,7 @@ const childObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.10 });
 
-document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div, .quote-card').forEach(el => {
+document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div').forEach(el => {
   childObserver.observe(el);
 });
 
@@ -2698,8 +2583,8 @@ const TRANSLATIONS = {
     quote3_name: 'Sanne, 36',
     quote3_sub: 'Tester · moeder van twee',
     psych_eyebrow: 'Waarom dit werkt',
-    psych_h2: 'Gebouwd op hoe ADHD-breinen vastlopen',
-    psych_lede: 'Geen placebo-productiviteit. Structuro pakt de echte knelpunten aan.',
+    psych_h2: 'Welke hiervan ben jij?',
+    psych_lede: 'Tik aan wat je herkent. Je krijgt precies het antwoord dat erbij hoort, en niets meer.',
     psych_tag1: 'Executief', psych_h3_1: 'Taakinitiatie',
     psych_p1: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
     psych_tag2: 'Cognitief', psych_h3_2: 'Werkgeheugen-overload',
@@ -2883,8 +2768,8 @@ const TRANSLATIONS = {
     quote3_name: 'Sanne, 36',
     quote3_sub: 'Tester · mother of two',
     psych_eyebrow: 'Why this works',
-    psych_h2: 'Built around how ADHD brains get stuck',
-    psych_lede: 'No placebo productivity. Structuro tackles the real bottlenecks.',
+    psych_h2: 'Which of these is you?',
+    psych_lede: 'Tap what you recognise. You get exactly the answer that fits, and nothing more.',
     psych_tag1: 'Executive', psych_h3_1: 'Task initiation',
     psych_p1: 'Knowing what to do is not the same as starting. Structuro makes the first step small enough that your brain doesn\'t have to fight resistance.',
     psych_tag2: 'Cognitive', psych_h3_2: 'Working memory overload',
@@ -3033,5 +2918,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/js/landing-audit.js?v=20260611g"></script>
 <script src="/js/landing-dagstart-preview.js?v=20260611c"></script>
 <script src="/js/landing-live-demo.js?v=20260611f"></script>
+<script src="/js/landing-testimonials.js?v=20260613a"></script>
+<script src="/js/landing-zelftest.js?v=20260613a"></script>
 </body>
 </html>
