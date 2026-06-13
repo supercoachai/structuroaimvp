@@ -408,7 +408,8 @@ export async function updateSession(
     if (
       !pathname.startsWith("/onboarding") &&
       !onPasswordRecovery &&
-      !onRegistrationFlow
+      !onRegistrationFlow &&
+      !pathname.startsWith("/api/")
     ) {
       const url = request.nextUrl.clone();
       url.pathname = payBeforeOnboarding ? "/registreren/plan" : "/onboarding";

@@ -60,6 +60,17 @@ export async function fetchMicroStepSuggestions(
     }),
   });
 
+  if (res.status === 401) {
+    throw new Error("unauthorized");
+  }
+  if (res.redirected || res.type === "opaqueredirect") {
+    throw new Error("request_blocked");
+  }
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("request_blocked");
+  }
+
   const data = (await res.json().catch(() => ({}))) as {
     ok?: boolean;
     error?: string;
@@ -69,9 +80,6 @@ export async function fetchMicroStepSuggestions(
     limit?: number;
   };
 
-  if (res.status === 401) {
-    throw new Error("unauthorized");
-  }
   if (res.status === 429 || data.error === "rate_limited") {
     throw new Error("rate_limited");
   }
