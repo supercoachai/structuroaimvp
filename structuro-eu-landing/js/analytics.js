@@ -4,10 +4,13 @@
   /** Sectie-id's voor zichtbaarheid (waar gebruikers naar scrollen). */
   var EU_SECTION_IDS = [
     "hero",
+    "gezien-in",
+    "dagstart-preview",
     "waarom-nodig",
     "loop",
     "voor-vrouwen",
     "verhalen",
+    "brein-termen",
     "waarom",
     "prijs",
     "faq",

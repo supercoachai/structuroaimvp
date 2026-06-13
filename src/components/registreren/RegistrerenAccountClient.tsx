@@ -245,12 +245,6 @@ function RegistrerenAccountInner() {
         >
           {loading ? t("registrerenPage.submitBusy") : t("registrerenPage.continueBtn")}
         </button>
-
-        {!eventSignupFlow ? (
-          <p className="text-center text-xs leading-relaxed text-slate-500">
-            {t("registrerenPage.accountTrialAfter")}
-          </p>
-        ) : null}
       </div>
 
       {!eventSignupFlow ? (

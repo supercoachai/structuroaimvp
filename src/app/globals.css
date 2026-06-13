@@ -2484,9 +2484,12 @@ body {
 }
 .ds-swipe-card.is-top {
   position: relative;
-  cursor: grab;
 }
-.ds-swipe-card.is-top:active {
+.ds-swipe-card-drag {
+  cursor: grab;
+  touch-action: pan-y;
+}
+.ds-swipe-card-drag:active {
   cursor: grabbing;
 }
 .ds-swipe-intent {
@@ -2559,6 +2562,8 @@ body {
   border-radius: 11px;
   font-size: 13px;
   box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .ds-swipe-action.skip {
   font-weight: 500;

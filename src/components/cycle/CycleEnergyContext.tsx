@@ -130,6 +130,22 @@ export default function CycleEnergyContext({
   );
 
   useEffect(() => {
+    if (!onboardingCompact) return;
+    if (ringIntroSpin) {
+      setIntroPulse(false);
+      return;
+    }
+    if (typeof onboardingRevealPart === "number" && onboardingRevealPart < 2) {
+      setIntroPulse(false);
+      return;
+    }
+    setIntroPulse(true);
+    const timer = window.setTimeout(() => setIntroPulse(false), 3000);
+    return () => window.clearTimeout(timer);
+  }, [onboardingCompact, onboardingRevealPart, ringIntroSpin]);
+
+  useEffect(() => {
+    if (onboardingCompact) return;
     if (ringIntroSpin) {
       setIntroPulse(false);
       return;
@@ -238,7 +254,11 @@ export default function CycleEnergyContext({
             <div className={`st-cycle-row${stagedOnboarding ? " ob-cycle-part-in" : ""}`}>
               <span className="st-cycle-eyebrow inline-flex items-center gap-1">
                 {t("cycle.contextEyebrow")}
-                <InfoButton infoId="cyclus" />
+                <InfoButton
+                  infoId="cyclus"
+                  autoIntro={!onboardingCompact}
+                  pulse={onboardingCompact ? introPulse : false}
+                />
               </span>
               <span className="st-cycle-day st-mono">
                 {t("cycle.contextDayCounter", {

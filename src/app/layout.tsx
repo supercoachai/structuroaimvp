@@ -44,7 +44,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="nl" translate="no" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="nl"
+      translate="no"
+      suppressHydrationWarning
+      className={`${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{

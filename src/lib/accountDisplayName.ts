@@ -17,20 +17,17 @@ export async function persistPreferredDisplayName(
   }
 
   try {
-    const supabase = createClient();
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: user.id,
-        display_name: trimmed,
-        preferred_name: trimmed,
-        ...(user.email ? { email: user.email } : {}),
-      },
-      { onConflict: "id" }
-    );
-    if (error) {
-      return { error: error.message };
+    const res = await fetch("/api/profile/display-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: trimmed }),
+    });
+    const payload = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      return { error: payload.error ?? `HTTP ${res.status}` };
     }
 
+    const supabase = createClient();
     const { error: authError } = await supabase.auth.updateUser({
       data: { full_name: trimmed },
     });
@@ -57,20 +54,17 @@ export async function clearPreferredDisplayName(
     return { error: "Geen actieve sessie" };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      display_name: null,
-      preferred_name: null,
-      ...(user.email ? { email: user.email } : {}),
-    },
-    { onConflict: "id" }
-  );
-  if (error) {
-    return { error: error.message };
+  const res = await fetch("/api/profile/display-name", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName: "" }),
+  });
+  const payload = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) {
+    return { error: payload.error ?? `HTTP ${res.status}` };
   }
 
+  const supabase = createClient();
   const { error: authError } = await supabase.auth.updateUser({
     data: { full_name: "" },
   });

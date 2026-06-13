@@ -27,7 +27,7 @@ import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 import { useClientMounted } from "@/hooks/useClientMounted";
 
 function RegistrerenPlanInner() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -44,6 +44,7 @@ function RegistrerenPlanInner() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [trialDays, setTrialDays] = useState<number | null>(null);
+  const [showYearlyOption, setShowYearlyOption] = useState(false);
   const mounted = useClientMounted();
   const planViewTrackedRef = useRef(false);
 
@@ -309,17 +310,29 @@ function RegistrerenPlanInner() {
               {t("registrerenPage.planTrialFootnote")}
             </p>
 
-            <p className="text-xs text-slate-400">
-              {locale === "en" ? "Prefer yearly?" : "Liever jaarlijks?"}{" "}
+            <p className="text-xs leading-relaxed text-slate-400">
+              {t("registrerenPage.renewalDisclosure")}
+            </p>
+
+            {showYearlyOption ? (
               <button
                 type="button"
                 disabled={checkoutLoading}
                 onClick={() => void handleStartYearly()}
-                className="font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {locale === "en" ? "€119/year" : "€119/jaar"}
+                {t("registrerenPage.planYearlyCta")}
               </button>
-            </p>
+            ) : (
+              <button
+                type="button"
+                disabled={checkoutLoading}
+                onClick={() => setShowYearlyOption(true)}
+                className="text-xs text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("registrerenPage.planYearlyReveal")}
+              </button>
+            )}
 
             <p>
               <button

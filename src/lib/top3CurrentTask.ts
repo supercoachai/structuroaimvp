@@ -97,15 +97,26 @@ export function getFirstOpenTop3Task<T extends Top3TaskLike & { id: string }>(
   return getOpenTop3Tasks(tasks, checkIn)[0] ?? null;
 }
 
+/** Gekozen top3-ids vandaag (energie-max, lege ids weg). */
+export function getSelectedTop3Ids(
+  checkIn: CheckInForTop3 | null | undefined
+): string[] {
+  const rawIds = checkIn?.top3_task_ids;
+  if (!Array.isArray(rawIds) || rawIds.length === 0) return [];
+  const max = maxSlotsForEnergy(checkIn?.energy_level);
+  return rawIds
+    .slice(0, max)
+    .map((id) => String(id).trim())
+    .filter(Boolean);
+}
+
 export function getTop3SlotPosition(
   taskId: string,
   checkIn: CheckInForTop3 | null | undefined
 ): { current: number; total: number } | null {
-  const rawIds = checkIn?.top3_task_ids;
-  if (!Array.isArray(rawIds) || rawIds.length === 0) return null;
-  const total = maxSlotsForEnergy(checkIn?.energy_level);
-  const ids = rawIds.slice(0, total);
-  const idx = ids.findIndex((id) => String(id) === String(taskId));
+  const ids = getSelectedTop3Ids(checkIn);
+  if (ids.length === 0) return null;
+  const idx = ids.findIndex((id) => id === String(taskId));
   if (idx < 0) return null;
-  return { current: idx + 1, total };
+  return { current: idx + 1, total: ids.length };
 }

@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <title>Structuro, Productiviteitsapp voor ADHD-breinen</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <meta name="description" content="De ADHD-app voor breinen die vastlopen op executie, niet op inzicht."/>
 <link rel="icon" href="/uploads/logo-structuro.png" type="image/png"/>
 <link rel="apple-touch-icon" href="/uploads/logo-structuro.png"/>
@@ -79,7 +82,7 @@ img{max-width:100%;height:auto;}
 .container{max-width:1100px;margin:0 auto;padding:0 24px;}
 
 /* Scroll offset for sticky nav */
-#loop, #voor-vrouwen, #waarom, #prijs, #faq, #verhalen, #wachtlijst, #eu-sluitstuk, #waarom-nodig {
+#loop, #voor-vrouwen, #waarom, #prijs, #faq, #verhalen, #brein-termen, #wachtlijst, #eu-sluitstuk, #waarom-nodig, #gezien-in, #dagstart-preview {
   scroll-margin-top: 88px;
 }
 
@@ -113,10 +116,19 @@ img{max-width:100%;height:auto;}
 }
 @media(max-width:720px){
   .nav-links a:not(.nav-cta){display:none;}
+  .nav-inner{gap:10px;height:auto;min-height:60px;padding:6px 0;}
+  .logo{flex:0 0 auto;z-index:2;max-width:38%;}
+  .logo-img{height:36px;max-width:100%;object-fit:contain;object-position:left center;}
+  .nav-links{flex:1 1 0;min-width:0;gap:8px;justify-content:flex-end;}
+  .nav-cta{padding:8px 12px;font-size:12.5px;min-width:0;flex-shrink:1;}
+  .nav-cta [data-cta-dynamic]{display:block;max-width:118px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lang-switcher{margin-left:0;padding-left:8px;flex-shrink:0;}
+  .lang-btn span{display:none;}
+  .lang-btn{padding:6px 8px;min-width:36px;min-height:36px;}
 }
 
 /* ── Hero ── */
-.hero{padding:72px 0 88px;position:relative;overflow:hidden;}
+.hero{padding:72px 0 88px;position:relative;overflow-x:clip;overflow-y:visible;}
 
 .hero-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:64px;align-items:center;}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:48px;}.hero{padding:52px 0 64px;}.hero-cta{flex-wrap:wrap;width:100%;max-width:100%;}.hero-cta .btn-primary,.hero-cta .btn-secondary{white-space:normal;flex:1 1 auto;min-width:0;justify-content:center;}}
@@ -151,6 +163,43 @@ h1 .stuck::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:
 .phone-bg-blob{position:absolute;width:380px;height:380px;background:radial-gradient(circle,rgba(37,99,235,.09),transparent 70%);top:-40px;right:-40px;border-radius:50%;z-index:-1;}
 .phone{background:#0a0a0c;border-radius:38px;padding:7px;box-shadow:0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,.06);}
 .hero-phone{width:280px;max-width:100%;margin-left:auto;margin-right:auto;overflow:hidden;position:relative;}
+
+/* ── iPhone frame details (titanium rand, zijknoppen, Dynamic Island) ── */
+.hero-phone--demo{
+  overflow:visible;
+  background:linear-gradient(155deg,#3d4148 0%,#17181c 18%,#0a0a0c 50%,#17181c 84%,#2c2f35 100%);
+  box-shadow:
+    0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),
+    inset 0 0 0 1.5px rgba(120,128,140,.35),
+    inset 0 1px 0 rgba(255,255,255,.14);
+}
+.iphone-side{
+  position:absolute;width:3.5px;border-radius:2px;z-index:0;
+  background:linear-gradient(90deg,#42464e,#1b1d22 60%,#101114);
+}
+.iphone-side--action{left:-3px;top:17%;height:3.2%;}
+.iphone-side--volup{left:-3px;top:23%;height:6%;}
+.iphone-side--voldown{left:-3px;top:30.5%;height:6%;}
+.iphone-side--power{right:-3px;top:24.5%;height:9.5%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114);}
+.iphone-side--camctl{right:-3px;top:38.5%;height:4.2%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114);}
+.iphone-island{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  width:35%;max-width:100px;height:25px;
+  background:#000;border-radius:999px;z-index:6;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding-right:7px;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+  pointer-events:none;
+}
+.iphone-island-cam{
+  width:11px;height:11px;border-radius:50%;position:relative;flex-shrink:0;
+  background:radial-gradient(circle at 35% 32%,#232c40 0%,#0c0f18 48%,#000 100%);
+  box-shadow:inset 0 0 3px rgba(90,130,255,.4),0 0 0 1.5px rgba(255,255,255,.05);
+}
+.iphone-island-cam::after{
+  content:'';position:absolute;top:2px;left:2.5px;width:3px;height:3px;border-radius:50%;
+  background:radial-gradient(circle,rgba(140,175,255,.85),rgba(140,175,255,0) 80%);
+}
 .hero-phone-slides{width:100%;aspect-ratio:471/1024;border-radius:32px;overflow:hidden;position:relative;background:#F0F2F8;}
 .hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;transition:opacity 700ms ease;border-radius:32px;background:#F0F2F8;}
 .hero-slide.active{opacity:1;}
@@ -165,8 +214,107 @@ section{padding:88px 0;}
 h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spacing:-.03em;line-height:1.15;text-wrap:balance;}
 .lede-2{margin:0;font-size:17px;color:var(--sub);line-height:1.6;max-width:560px;}
 
+/* ── Gezien in marquee (full-width, zelfde achtergrond als pagina) ── */
+.media-seen-wrap{width:100%;padding:0;background:var(--bg);}
+.hero .media-seen-wrap{margin-top:0;}
+.media-seen{
+  width:100%;max-width:none;margin:0;
+  border-radius:0;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  padding:10px 0 14px;
+  position:relative;overflow:hidden;
+}
+.media-seen-label{
+  text-align:center;
+  font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+  color:#8893AB;margin-bottom:10px;
+}
+.media-seen-mask{
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  overflow:hidden;
+}
+.media-seen-track{
+  display:flex;width:max-content;align-items:center;gap:72px;padding:4px 48px;
+  animation:media-seen-scroll 80s linear infinite;
+}
+.media-seen-mask:hover .media-seen-track{animation-play-state:paused;}
+@keyframes media-seen-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.media-seen-cell{flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
+.media-seen-bob{animation:none;}
+.media-seen-cell a{display:flex;align-items:center;justify-content:center;}
+.media-seen-logo{
+  display:block;width:auto;max-width:none;object-fit:contain;
+  transition:transform .35s cubic-bezier(.2,.9,.25,1),filter .35s;
+  filter:drop-shadow(0 4px 10px rgba(14,23,48,.08));
+}
+.media-seen-cell:hover .media-seen-logo{transform:scale(1.06);}
+.media-seen-logo--ed,.media-seen-logo--ad,.media-seen-logo--bd{height:46px;border-radius:10px;}
+.media-seen-logo--impuls{height:37px;}
+.media-seen-logo--adhd{height:46px;}
+@media(max-width:680px){
+  .media-seen{padding:8px 0 12px;}
+  .media-seen-label{margin-bottom:8px;letter-spacing:.16em;}
+  .media-seen-track{gap:48px;padding:4px 28px;}
+  .media-seen-logo--ed,.media-seen-logo--ad,.media-seen-logo--bd{height:32px;border-radius:7px;}
+  .media-seen-logo--impuls{height:26px;}
+  .media-seen-logo--adhd{height:32px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .media-seen-track,.media-seen-bob{animation:none!important;}
+}
+
+/* ── Phones showcase (3-stappen dagstart, swipe) ── */
+.phones-showcase{background:var(--bg);padding:40px 0 80px;overflow-x:clip;overflow-y:visible;}
+.phones-showcase-head{text-align:center;max-width:640px;margin:0 auto 40px;}
+.phones-carousel-outer{margin:0 -24px;overflow:visible;}
+.phones-carousel-track{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:8px 32px 16px;scrollbar-width:none;}
+.phones-carousel-track::-webkit-scrollbar{display:none;}
+.phones-carousel-slide{flex:0 0 min(280px,calc(100vw - 72px));scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;}
+.phones-carousel-slide:nth-child(1) .phones-carousel-tilt{transform:rotate(-2deg);}
+.phones-carousel-slide:nth-child(3) .phones-carousel-tilt{transform:rotate(2deg);}
+.phones-carousel-tilt{transition:transform .3s ease;width:100%;max-width:260px;overflow:visible;}
+.phones-carousel-phone{margin:0 auto;width:100%;overflow:visible;}
+.phones-screen-wrap{position:relative;width:100%;aspect-ratio:471/1024;border-radius:32px;overflow:hidden;background:#F0F2F8;}
+.phones-screen-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;}
+.phones-interactive-layer{position:absolute;left:0;right:0;bottom:30%;display:flex;align-items:center;justify-content:center;padding:0 10%;pointer-events:none;}
+.phones-interactive-layer .preview-energy-btns{pointer-events:auto;display:flex;gap:6px;width:100%;max-width:220px;}
+.preview-energy-btn{flex:1;border:1.5px solid rgba(26,35,64,.12);background:rgba(255,255,255,.94);border-radius:999px;padding:8px 4px;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s ease;backdrop-filter:blur(4px);}
+.preview-energy-btn:hover{border-color:var(--blue);color:var(--blue);}
+.preview-energy-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(59,107,247,.35);}
+.phone-step-meta{text-align:center;margin-top:18px;max-width:260px;}
+.phone-step-num{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-s);padding:4px 10px;border-radius:999px;margin-bottom:10px;}
+.phone-step-meta h3{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0 0 8px;}
+.phone-step-meta p{font-size:14px;line-height:1.55;color:var(--sub);margin:0;}
+.phone-step-meta .preview-dynamic{color:var(--blue);font-weight:600;}
+.phones-carousel-dots{display:flex;gap:8px;justify-content:center;margin-top:8px;}
+.phones-carousel-dot{width:7px;height:7px;border-radius:4px;background:var(--border);border:none;padding:0;cursor:pointer;transition:all 250ms;}
+.phones-carousel-dot.active{width:22px;background:var(--blue);}
+.phones-swipe-hint{text-align:center;font-size:12px;color:var(--place);margin-top:10px;}
+@media(min-width:960px){
+  .phones-carousel-outer{margin:0;}
+  .phones-carousel-track{overflow-x:visible;justify-content:center;padding:8px 0 16px;gap:28px;}
+  .phones-carousel-slide{flex:0 0 260px;}
+  .phones-swipe-hint{display:none;}
+}
+@media(max-width:720px){.phones-showcase{padding:64px 0;}}
+@media(prefers-reduced-motion:reduce){.phones-carousel-slide:nth-child(1) .phones-carousel-tilt,.phones-carousel-slide:nth-child(3) .phones-carousel-tilt{transform:none;}}
+
+/* ── Hero positioning line ── */
+.hero-positioning{margin:20px 0 28px;font-size:15px;line-height:1.55;color:var(--sub);max-width:480px;font-weight:500;}
+.hero-positioning .hero-positioning-gap{display:block;height:10px;}
+.hero-positioning-brand{font-weight:700;color:var(--blue);}
+
+/* ── Footer social ── */
+.footer-social{display:flex;align-items:center;gap:10px;}
+.footer-social a{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--border);color:var(--sub);transition:color .2s,border-color .2s,background .2s;}
+.footer-social a:hover{color:var(--text);border-color:rgba(26,35,64,.22);background:var(--bg);}
+.footer-social svg{width:18px;height:18px;}
+
 /* ── Trust bar ── */
-.trust{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 0;}
+.trust{background:var(--bg);border:none;padding:28px 0 20px;}
 .trust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center;}
 @media(max-width:720px){.trust-grid{grid-template-columns:1fr;gap:22px;}}
 .trust-stat-num{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--text);}
@@ -201,6 +349,149 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .energy-btn:hover{border-color:rgba(147,197,253,.45);}
 .energy-btn.active{background:linear-gradient(180deg,#5A84F9,var(--blue) 55%,var(--blue-h));border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(59,107,247,.35);}
 .energy-result{font-size:15px;line-height:1.6;color:var(--night-ink);min-height:3.2em;margin:0;}
+.hero-phone-demo-shell{width:100%;aspect-ratio:471/1024;border-radius:32px;overflow:hidden;background:#F8FAFC;}
+.live-demo-mount-loop{margin-top:48px;display:none;}
+.live-demo{margin-top:0;max-width:420px;margin-left:auto;margin-right:auto;text-align:center;}
+.live-demo--flat{margin-top:48px;}
+.live-demo--in-phone{max-width:100%;width:100%;margin:0;}
+.live-demo--in-phone .live-demo-label,.live-demo--in-phone .live-demo-hint,.live-demo--in-phone .live-demo-reset-outside{display:none;}
+.live-demo .live-demo-progress{display:none;}
+.live-demo--in-phone .live-demo-progress-dot{background:rgba(59,107,247,.2);}
+.live-demo--in-phone .live-demo-progress-dot.active{background:var(--blue);}
+.live-demo--in-phone .live-demo-progress-dot.done{background:rgba(59,107,247,.45);}
+.live-demo--in-phone .live-demo-phone{background:none;padding:0;box-shadow:none;border-radius:0;}
+.live-demo--in-phone .live-demo-screen{border-radius:32px;min-height:0;height:100%;max-height:none;aspect-ratio:471/1024;padding:10px 10px 12px;font-size:11px;}
+.live-demo--in-phone .live-demo-energy-q{font-size:16px;}
+.live-demo--in-phone .live-demo-title{font-size:17px;}
+.live-demo--in-phone .live-demo-battery-wrap{width:108px;height:108px;margin:4px auto 10px;}
+.live-demo--in-phone .live-demo-battery-core{inset:22px;}
+.live-demo--in-phone .live-demo-choice-grid{gap:8px;margin-top:12px;}
+.live-demo--in-phone .live-demo-choice{padding:12px 8px;}
+.live-demo-energy-top{width:100%;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;}
+.live-demo--in-phone .live-demo-energy-top{margin-bottom:4px;padding-inline:12%;}
+.live-demo--in-phone .live-demo-greeting{font-size:7.7px;letter-spacing:.14em;padding-top:5px;}
+.live-demo--in-phone .live-demo-cycle-btn{min-width:36px;height:25px;padding:0 6px 0 4px;border-radius:14px;font-size:7px;gap:3px;}
+.live-demo--in-phone .live-demo-cycle-ring-icon{width:15px;height:15px;}
+.live-demo--in-phone .live-demo-cycle-btn-label{font-size:6.3px;}
+.live-demo--in-phone .live-demo-cycle-btn-day{font-size:9px;}
+.live-demo-cycle-btn{position:static;flex-shrink:0;}
+.live-demo-greeting{margin:0;text-align:left;flex:1;padding-top:8px;}
+.live-demo-phase--energy{padding-bottom:18px;}
+.live-demo--in-phone .live-demo-phase--energy{padding-bottom:28px;}
+.live-demo--in-phone .live-demo-screen{padding:44px 14px 18px;}
+.live-demo-match{margin-top:8px;margin-bottom:14px;}
+.live-demo-label{font-size:14px;font-weight:600;color:var(--night-muted);margin:0 0 12px;}
+.live-demo-progress{display:flex;justify-content:center;gap:6px;margin-bottom:14px;}
+.live-demo-progress-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:background 200ms,transform 200ms;}
+.live-demo-progress-dot.active{background:var(--blue);transform:scale(1.15);}
+.live-demo-progress-dot.done{background:rgba(147,197,253,.55);}
+.live-demo-phone{background:linear-gradient(145deg,#1a1f2e,#0f1419);border-radius:36px;padding:12px;box-shadow:0 24px 48px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08);}
+.live-demo-topbar{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 10px;font-size:11px;font-weight:600;color:#94A3B8;letter-spacing:.04em;}
+.live-demo-topbar-brand{color:#E2E8F0;}
+.live-demo-back-row{text-align:left;margin-bottom:4px;}
+.live-demo-back{appearance:none;border:none;background:transparent;color:#64748B;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px;}
+.live-demo-back:hover{background:#F1F5F9;}
+.live-demo-back[hidden]{display:none!important;}
+.live-demo-screen{background:#F8FAFC;border-radius:28px;min-height:480px;max-height:min(72vh,560px);padding:16px 14px 18px;text-align:left;display:flex;flex-direction:column;overflow:hidden;}
+.live-demo-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;}
+.live-demo-phase{flex:1;display:flex;flex-direction:column;gap:12px;min-height:100%;}
+.live-demo-phase[hidden]{display:none!important;}
+.live-demo-phase--energy{align-items:center;text-align:center;position:relative;padding-top:2px;}
+.live-demo-cycle-btn{appearance:none;border:2px solid #F59E0B;background:#fff;min-width:52px;height:36px;padding:0 8px 0 6px;border-radius:20px;font:inherit;font-size:10px;font-weight:700;color:#B45309;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,.25);display:flex;align-items:center;gap:5px;z-index:3;}
+.live-demo-cycle-btn[aria-expanded="true"]{box-shadow:0 0 0 3px rgba(245,158,11,.35);}
+.live-demo-cycle-btn--pulse{animation:live-demo-cycle-pulse 2s ease-in-out infinite;}
+@keyframes live-demo-cycle-pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.45),0 4px 12px rgba(245,158,11,.25);}50%{box-shadow:0 0 0 8px rgba(245,158,11,0),0 4px 16px rgba(245,158,11,.35);}}
+.live-demo-cycle-ring-icon{width:22px;height:22px;flex-shrink:0;}
+.live-demo-cycle-btn-label{text-transform:uppercase;letter-spacing:.06em;font-size:9px;line-height:1;}
+.live-demo-cycle-btn-day{font-size:13px;font-variant-numeric:tabular-nums;}
+.live-demo-cycle-tracker-title{margin:0 0 6px;font-size:13px;font-weight:700;color:#0F172A;}
+.live-demo-cycle-tracker-lede{margin:0 0 10px;font-size:12px;color:#64748B;line-height:1.45;}
+.live-demo-cycle-more{display:inline-flex;margin-top:10px;font-size:12px;font-weight:600;color:var(--blue);text-decoration:none;}
+.live-demo-cycle-more:hover{text-decoration:underline;}
+.live-demo-battery-icon{display:flex;align-items:center;justify-content:center;height:16px;color:inherit;}
+.live-demo-energy-btn.active .live-demo-battery-icon{color:#1E47D6;}
+.live-demo-energy-q{font-size:20px;font-weight:600;color:#0F172A;margin:0 0 8px;letter-spacing:-.02em;}
+.live-demo-battery-wrap{width:140px;height:140px;position:relative;margin:8px auto 16px;}
+.live-demo-battery-core{position:absolute;inset:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(245,158,11,.55),rgba(245,158,11,.15) 55%,transparent 75%);transition:background 500ms;}
+.live-demo-energy-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;}
+.live-demo-energy-btn{appearance:none;border:1px solid #E2E8F0;background:#fff;color:#334155;padding:10px 14px;border-radius:14px;font:inherit;font-weight:600;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:88px;transition:border-color 140ms,background 140ms;}
+.live-demo-energy-btn:hover{border-color:#93C5FD;}
+.live-demo-energy-btn.active{background:#EFF6FF;border-color:rgba(59,107,247,.35);color:#1E47D6;}
+.live-demo-bars{display:flex;gap:2px;align-items:flex-end;height:14px;}
+.live-demo-bar{width:4px;border-radius:2px;background:#CBD5E1;}
+.live-demo-bar.on{background:currentColor;}
+.live-demo-cycle-card{width:100%;text-align:left;padding:14px;border-radius:14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.28);margin-top:8px;}
+.live-demo-cycle-card[hidden]{display:none!important;}
+.live-demo-cycle-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.live-demo-cycle-dot{width:8px;height:8px;border-radius:50%;background:#F59E0B;}
+.live-demo-cycle-phase{font-size:13px;font-weight:600;color:#0F172A;}
+.live-demo-cycle-day{font-size:11px;color:#64748B;font-variant-numeric:tabular-nums;}
+.live-demo-cycle-bio{font-size:12px;color:#64748B;margin:0 0 8px;}
+.live-demo-cycle-tip{font-size:12px;color:#334155;line-height:1.5;margin:0;}
+.live-demo-greeting{font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:#94A3B8;}
+.live-demo-match{display:inline-block;font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;}
+.live-demo-match--match{background:rgba(16,185,129,.12);color:#047857;border:1px solid rgba(16,185,129,.35);}
+.live-demo-match--soft{background:rgba(245,158,11,.12);color:#B45309;border:1px solid rgba(245,158,11,.35);}
+.live-demo-match--strong{background:rgba(244,63,94,.1);color:#BE123C;border:1px solid rgba(244,63,94,.3);}
+.live-demo-eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#94A3B8;margin:0;}
+.live-demo-title{font-size:20px;font-weight:600;color:#0F172A;margin:4px 0 0;letter-spacing:-.02em;}
+.live-demo-sub{font-size:13px;color:#64748B;line-height:1.5;margin:6px 0 0;}
+.live-demo-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
+.live-demo-choice{appearance:none;border:1px solid #E2E8F0;background:#fff;border-radius:18px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transition:border-color 160ms,background 160ms;}
+.live-demo-choice:hover{border-color:rgba(59,107,247,.35);}
+.live-demo-choice--primary{background:#EFF6FF;border-color:rgba(59,107,247,.3);}
+.live-demo-choice-icon{width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,107,247,.2);}
+.live-demo-choice-title{font-size:14px;font-weight:600;color:#1E47D6;}
+.live-demo-choice-sub{font-size:11px;color:#64748B;line-height:1.4;}
+.live-demo-task-list{display:flex;flex-direction:column;gap:8px;margin:16px 0 12px;flex:1;min-height:0;overflow-y:auto;}
+.live-demo-task-row{appearance:none;border:1px solid #E2E8F0;background:transparent;border-radius:14px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;text-align:left;transition:background 160ms,border-color 160ms;}
+.live-demo-task-row.on{background:#EFF6FF;border-color:rgba(59,107,247,.3);}
+.live-demo-task-row.off .live-demo-task-title{text-decoration:line-through;color:#94A3B8;}
+.live-demo-task-check{width:22px;height:22px;border-radius:50%;border:1.5px solid #94A3B8;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.live-demo-task-row.on .live-demo-task-check{background:var(--blue);border-color:var(--blue);}
+.live-demo-task-title{flex:1;font-size:14px;font-weight:500;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.live-demo-task-mins{font-size:11px;color:#94A3B8;font-variant-numeric:tabular-nums;}
+.live-demo-task-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:auto;padding-top:8px;}
+.live-demo-link{appearance:none;border:none;background:transparent;font:inherit;font-size:13px;color:#64748B;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.live-demo-primary{appearance:none;border:none;background:var(--blue);color:#fff;padding:12px 18px;border-radius:999px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;}
+.live-demo-primary:disabled{opacity:.45;cursor:not-allowed;}
+.live-demo-selection-meta{text-align:center;font-size:12px;color:#94A3B8;margin-bottom:12px;}
+.live-demo-swipe-card{background:#fff;border:1px solid #E2E8F0;border-radius:18px;padding:20px 16px;min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:8px;margin:16px 0 12px;box-shadow:0 8px 24px rgba(15,23,42,.06);}
+.live-demo-swipe-title{font-size:17px;font-weight:600;color:#0F172A;margin:0;}
+.live-demo-swipe-mins{font-size:12px;color:#94A3B8;}
+.live-demo-swipe-actions{display:flex;justify-content:center;gap:20px;margin-bottom:8px;}
+.live-demo-swipe-btn{appearance:none;border:1px solid #E2E8F0;background:#fff;width:52px;height:52px;border-radius:50%;font-size:20px;cursor:pointer;}
+.live-demo-swipe-btn--keep{color:#047857;border-color:rgba(16,185,129,.35);}
+.live-demo-done{align-items:center;text-align:center;padding-top:12px;}
+.live-demo-done-icon{width:56px;height:56px;border-radius:50%;background:#22C55E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 16px;box-shadow:0 12px 28px rgba(34,197,94,.35);}
+.live-demo-done-list{width:100%;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:8px;margin:16px 0;text-align:left;}
+.live-demo-done-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #F1F5F9;font-size:14px;color:#0F172A;}
+.live-demo-done-item:last-child{border-bottom:none;}
+.live-demo-app-bar{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:#64748B;margin-bottom:12px;}
+.live-demo-slots{color:var(--blue);}
+.live-demo-hero-card{background:#fff;border:1px solid #E2E8F0;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.08);flex:1;}
+.live-demo-hero-label{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:8px;}
+.live-demo-hero-card h4{margin:0 0 10px;font-size:18px;font-weight:700;color:#0F172A;line-height:1.35;}
+.live-demo-micro{margin:0 0 16px;font-size:13px;color:#64748B;line-height:1.5;}
+.live-demo-cta{appearance:none;border:none;background:var(--blue);color:#fff;padding:12px 18px;border-radius:12px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;width:100%;}
+.live-demo-hint{font-size:14px;line-height:1.55;color:var(--night-muted);margin:16px 0 0;min-height:2.4em;}
+.live-demo-reset-outside{margin-top:10px;appearance:none;border:none;background:transparent;color:var(--night-muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.live-demo-restart{margin-top:12px;appearance:none;border:1px solid #E2E8F0;background:#fff;color:#475569;padding:10px 14px;border-radius:12px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer;width:100%;transition:border-color 150ms,color 150ms,background 150ms;}
+.live-demo-restart:hover{border-color:var(--blue);color:var(--blue);background:#F8FAFF;}
+.quote-section{padding:80px 0;}
+.quote-section .section-eyebrow{text-align:center;}
+.quote-section h2{text-align:center;margin-bottom:40px;}
+.psych-terms{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:72px 0;}
+.psych-terms .section-eyebrow{text-align:center;}
+.psych-terms h2{text-align:center;margin-bottom:12px;}
+.psych-terms .lede-2{text-align:center;margin:0 auto 36px;}
+.psych-grid{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:900px){.psych-grid{grid-template-columns:1fr;}}
+.psych-card{background:linear-gradient(180deg,#fff 0%,#F8FAFF 100%);border:1px solid var(--border);border-radius:18px;padding:22px 20px;position:relative;overflow:hidden;}
+.psych-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),#5A84F9);}
+.psych-card h3{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+.psych-card p{margin:0;font-size:13.5px;line-height:1.55;color:var(--sub);}
+.psych-card-tag{display:inline-block;margin-bottom:10px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);}
 /* ── Cyclus teaser (homepage) ── */
 .cycle-teaser{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:56px 0;}
 .cycle-teaser-inner{max-width:640px;margin:0 auto;text-align:center;}
@@ -225,8 +516,10 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .quote-section{background:var(--bg);}
 .quote-grid{max-width:1060px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 @media(max-width:900px){.quote-grid{grid-template-columns:1fr;}}
-.quote-card{background:var(--white);border:1px solid var(--border);border-radius:22px;padding:32px;position:relative;}
-.quote-mark{position:absolute;top:18px;left:24px;font-size:72px;line-height:1;color:var(--blue-s);user-select:none;}
+.quote-card{background:linear-gradient(180deg,#fff 0%,#F8FAFF 100%);border:1px solid var(--border);border-radius:22px;padding:0;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.quote-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),#5A84F9);z-index:1;}
+.quote-inner-hover{display:flex;flex-direction:column;flex:1;padding:28px 26px 22px;min-height:240px;}
+.quote-mark{position:absolute;top:14px;left:22px;font-size:64px;line-height:1;color:rgba(59,107,247,.12);user-select:none;pointer-events:none;}
 
 /* Lightbox */
 .lightbox{display:none;position:fixed;inset:0;background:rgba(10,10,15,.88);z-index:1000;align-items:center;justify-content:center;}
@@ -235,11 +528,12 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .lightbox-inner img{max-height:82vh;max-width:90vw;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.5);object-fit:contain;}
 .lightbox-close{position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:17px;background:var(--white);border:none;cursor:pointer;font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.2);}
 .lightbox-label{font-size:14px;font-weight:600;color:rgba(255,255,255,.7);}
-.quote-text{position:relative;font-size:16px;line-height:1.6;font-weight:400;color:var(--text);text-wrap:pretty;margin-bottom:20px;}
-.quote-author{display:flex;align-items:center;gap:12px;margin-top:auto;}
-.quote-avatar{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;}
-.quote-name{font-weight:700;font-size:14px;}
-.quote-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.quote-text{position:relative;z-index:1;font-size:15px;line-height:1.62;font-weight:400;color:var(--text);text-wrap:pretty;flex:1;margin:12px 0 0;}
+.quote-footer{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.quote-avatar{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;background:linear-gradient(135deg,var(--blue) 0%,#5A84F9 100%);box-shadow:0 4px 12px rgba(59,107,247,.22);}
+.quote-meta{min-width:0;text-align:left;}
+.quote-name{font-weight:700;font-size:14px;color:var(--text);}
+.quote-sub{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4;}
 .quote-cta-row{text-align:center;margin-top:44px;}
 .quote-cta-label{font-size:16px;color:var(--sub);margin-bottom:16px;}
 
@@ -691,8 +985,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 /* Mobile hero phone — flat, betrouwbaar op touch (geen 3D) */
 .hero-phone-mobile {
   display: none;
-  padding: 8px 0 0;
-  margin-top: 40px;
+  padding: 12px 0 0;
+  margin-top: 0;
   width: 100%;
   max-width: 100%;
   overflow: visible;
@@ -750,21 +1044,19 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
   .phone-bg-blob { display: none; }
   section, .hero, .trust, .manifesto { overflow-x: clip; max-width: 100%; }
   .hero { padding-bottom: 0; overflow-x: clip; overflow-y: visible; }
+  .hero .media-seen-wrap {
+    margin-top: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .hero .media-seen {
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
   .hero-phone-mobile {
+    padding-top: 8px;
     padding-bottom: 36px;
     margin-bottom: 0;
-  }
-  .hero-phone-mobile::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw;
-    top: 0;
-    bottom: 0;
-    background: var(--bg);
-    z-index: -1;
-    pointer-events: none;
   }
   .hero-phone-mobile .phone-tilt-wrap--mobile {
     padding-bottom: 16px;
@@ -776,6 +1068,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 @media(min-width:901px) {
   .hero-phone-mobile { display: none !important; }
+  .hero .media-seen-wrap { margin-top: 20px; }
+  .hero { padding-bottom: 40px; }
 }
 
 /* ── Glow CTA button ── */
@@ -1111,21 +1405,10 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 
 @media (max-width: 720px) {
-  .nav-inner {
-    min-height: 64px;
-  }
-  .lang-btn {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 8px 10px;
-    box-sizing: border-box;
-    justify-content: center;
-  }
   .nav-cta {
-    padding: 10px 16px;
-    min-height: 44px;
     display: inline-flex;
     align-items: center;
+    min-height: 40px;
   }
 }
 
@@ -1349,7 +1632,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 }
 /* ── Mobile: geen horizontale scroll, geen 3D reveal-offset ── */
 @media (max-width: 900px) {
-  .nav-inner { min-width: 0; overflow: hidden; }
+  .nav-inner { min-width: 0; }
   .nav-links { min-width: 0; flex-shrink: 1; }
   .hero-mesh::before,
   .hero-mesh::after,
@@ -1418,7 +1701,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic data-i18n="nav_cta">Start gratis proefperiode</span></a>
+      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic>Start gratis</span></a>
       <!-- Language switcher -->
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')" aria-label="Nederlands">
@@ -1454,9 +1737,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         <span data-i18n="hero_eyebrow">Voor ADHD-breinen die vastlopen op executie</span>
       </span>
       <h1 data-i18n="hero_h1">Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.</h1>
-      <p class="hero-lede" data-i18n="hero_lede">
-        Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.
-      </p>
+      <p class="hero-positioning" data-i18n="hero_positioning">Gebruik andere apps om alles bij te houden.<span class="hero-positioning-gap" aria-hidden="true"></span>Gebruik <span class="hero-positioning-brand">Structuro</span> om het ook daadwerkelijk te doen.</p>
       <div class="hero-cta">
         <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span>
           <span class="arrow-r">
@@ -1497,15 +1778,14 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 
     <div class="phone-tilt-wrap phone-tilt-wrap--desktop" style="position:relative;">
       <div class="phone-tilt" id="phoneTilt">
-        <div class="phone hero-phone">
-          <div class="hero-phone-slides" id="heroSlides">
-            <img src="uploads/IMG_6890.PNG" alt="Structuro Dagstart: hoe is je energie?" class="hero-slide hero-slide-desktop active"/>
-            <img src="uploads/IMG_6891.PNG" alt="Structuro dashboard vandaag" class="hero-slide hero-slide-desktop"/>
-            <img src="uploads/IMG_6893.PNG" alt="Structuro Focus sessie starten" class="hero-slide hero-slide-desktop"/>
-            <img src="uploads/IMG_6894.PNG" alt="Structuro Focus modus met timer" class="hero-slide hero-slide-desktop"/>
-            <img src="uploads/IMG_6895.PNG" alt="Structuro Dagafsluiting: dit heb je gedaan" class="hero-slide hero-slide-desktop"/>
-            <img src="uploads/IMG_6896.PNG" alt="Structuro Dagafsluiting: hoe voelt het?" class="hero-slide hero-slide-desktop"/>
-          </div>
+        <div class="phone hero-phone hero-phone--demo">
+          <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
+          <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
+          <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
+          <span class="iphone-side iphone-side--power" aria-hidden="true"></span>
+          <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
+          <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
+          <div class="hero-phone-demo-shell" id="liveDemoMountHero"></div>
         </div>
         <!-- Floating badges — concept-uitleggend, niet UI-spiegelend -->
         <div class="phone-float-badge badge-right" style="top:22%;">
@@ -1517,44 +1797,67 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
           <div class="badge-sub" data-i18n="badge2_sub">Bewust klein gehouden</div>
         </div>
       </div>
-      <!-- Dots -->
-      <div class="hero-phone-dots" id="heroDots" style="position:relative;z-index:2;">
-        <span class="hero-dot hero-dot-desktop active" onclick="goHeroSlide(0)"></span>
-        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(1)"></span>
-        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(2)"></span>
-        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(3)"></span>
-        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(4)"></span>
-        <span class="hero-dot hero-dot-desktop" onclick="goHeroSlide(5)"></span>
-      </div>
     </div>
   </div>
+<!-- Gezien in -->
+<div class="media-seen-wrap reveal" id="gezien-in">
+  <section class="media-seen" aria-label="Gezien in de media">
+    <div class="media-seen-label" data-i18n="media_eyebrow">Gezien in</div>
+    <div class="media-seen-mask">
+      <div class="media-seen-track">
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ed" aria-label="Artikel in Eindhovens Dagblad"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="Eindhovens Dagblad" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ad" aria-label="Artikel in Algemeen Dagblad"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="Algemeen Dagblad" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_bd" aria-label="Artikel in Brabants Dagblad"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="Brabants Dagblad" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_impuls" aria-label="Artikel op Impuls en Woortblind"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" srcset="/uploads/media/impuls-woortblind.png 1x, /uploads/media/impuls-woortblind-2x.png 2x" alt="Impuls en Woortblind" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_adhd_cafe" aria-label="ADHD Café artikel"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" srcset="/uploads/media/adhd-cafe.png 1x, /uploads/media/adhd-cafe.png 2x" alt="ADHD Café" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
   <div class="hero-phone-mobile reveal" id="heroPhoneMobile">
     <div class="container">
       <div class="hero-phone-mobile-bridge" aria-hidden="true"></div>
       <div class="hero-phone-mobile-head">
         <div class="section-eyebrow" data-i18n="hero_phone_mobile_eyebrow">Zo ziet Structuro eruit</div>
-        <p data-i18n="hero_phone_mobile_lede">Swipe door de app. Geen overload, wel structuur.</p>
+        <p data-i18n="hero_phone_mobile_lede">Probeer de dagstart hieronder. Kies je energie en zie hoe Structuro werkt.</p>
       </div>
       <div class="phone-tilt-wrap phone-tilt-wrap--mobile">
         <div class="phone-tilt phone-tilt--mobile" id="phoneTiltMobile">
-          <div class="phone hero-phone">
-            <div class="hero-phone-slides" id="heroSlidesMobile">
-              <img src="uploads/IMG_6890.PNG" alt="Structuro Dagstart: hoe is je energie?" class="hero-slide hero-slide-mobile active"/>
-              <img src="uploads/IMG_6891.PNG" alt="Structuro dashboard vandaag" class="hero-slide hero-slide-mobile"/>
-              <img src="uploads/IMG_6893.PNG" alt="Structuro Focus sessie starten" class="hero-slide hero-slide-mobile"/>
-              <img src="uploads/IMG_6894.PNG" alt="Structuro Focus modus met timer" class="hero-slide hero-slide-mobile"/>
-              <img src="uploads/IMG_6895.PNG" alt="Structuro Dagafsluiting: dit heb je gedaan" class="hero-slide hero-slide-mobile"/>
-              <img src="uploads/IMG_6896.PNG" alt="Structuro Dagafsluiting: hoe voelt het?" class="hero-slide hero-slide-mobile"/>
-            </div>
+          <div class="phone hero-phone hero-phone--demo">
+            <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
+            <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
+            <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
+            <span class="iphone-side iphone-side--power" aria-hidden="true"></span>
+            <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
+            <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
+            <div class="hero-phone-demo-shell" id="liveDemoMountHeroMobile"></div>
           </div>
-        </div>
-        <div class="hero-phone-dots" id="heroDotsMobile">
-          <span class="hero-dot hero-dot-mobile active" onclick="goHeroSlideMobile(0)"></span>
-          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(1)"></span>
-          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(2)"></span>
-          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(3)"></span>
-          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(4)"></span>
-          <span class="hero-dot hero-dot-mobile" onclick="goHeroSlideMobile(5)"></span>
         </div>
       </div>
     </div>
@@ -1570,15 +1873,186 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <div class="trust-stat-label" data-i18n="trust_stat1">Gebouwd met ADHD'ers</div>
     </div>
     <div>
-      <div class="trust-stat-num" data-i18n="trust_stat2_num">500+</div>
-      <div class="trust-stat-label" data-i18n="trust_stat2">uur onderzoeksdata</div>
+      <div class="trust-stat-num" data-i18n="trust_stat2_num">95%</div>
+      <div class="trust-stat-label" data-i18n="trust_stat2">herkende burn-out in interviews</div>
     </div>
     <div>
-      <div class="trust-stat-num" data-i18n="trust_stat3_num">100%</div>
-      <div class="trust-stat-label" data-i18n="trust_stat3">afgestemd op jouw brein</div>
+      <div class="trust-stat-num" data-i18n="trust_stat3_num">0</div>
+      <div class="trust-stat-label" data-i18n="trust_stat3">streaks, badges of achterstallig-meldingen</div>
     </div>
   </div>
 </div>
+
+<!-- 3-telefoon dagstart preview -->
+<section class="phones-showcase reveal" id="dagstart-preview">
+  <div class="container">
+    <div class="phones-showcase-head">
+      <div class="section-eyebrow" data-i18n="phones_eyebrow">Zo werkt je eerste dag</div>
+      <h2 data-i18n="phones_h2">Drie stappen. Negentig seconden. Dan doen.</h2>
+      <p class="lede-2" style="margin:14px auto 0;" data-i18n="phones_lede">Geen account nodig om te begrijpen hoe Structuro anders is.</p>
+    </div>
+    <div class="phones-carousel-outer">
+      <div class="phones-carousel-track" id="phonesCarouselTrack" role="list" aria-label="Dagstart stappen">
+        <article class="phones-carousel-slide" role="listitem">
+          <div class="phones-carousel-tilt">
+            <div class="phone hero-phone hero-phone--demo phones-carousel-phone">
+              <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--power" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
+              <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
+              <div class="phones-screen-wrap">
+                <img src="uploads/IMG_6890.PNG" alt="Structuro: energie kiezen bij dagstart" class="phones-screen-img" loading="lazy"/>
+              </div>
+            </div>
+          </div>
+          <div class="phone-step-meta">
+            <span class="phone-step-num">01</span>
+            <h3 data-i18n="phone_step1_h">Hoe vol is je batterij?</h3>
+            <p data-i18n="phone_step1_p">Eerst je energie. Dan past Structuro de dag aan wat je brein aankan.</p>
+          </div>
+        </article>
+        <article class="phones-carousel-slide" role="listitem">
+          <div class="phones-carousel-tilt">
+            <div class="phone hero-phone hero-phone--demo phones-carousel-phone">
+              <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--power" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
+              <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
+              <div class="phones-screen-wrap">
+                <img src="uploads/IMG_6891.PNG" alt="Structuro: maximaal 3 taken voor vandaag" class="phones-screen-img" loading="lazy"/>
+              </div>
+            </div>
+          </div>
+          <div class="phone-step-meta">
+            <span class="phone-step-num">02</span>
+            <h3 data-i18n="phone_step2_h">Kies max 3 taken</h3>
+            <p><span class="preview-dynamic" id="previewStep2Dynamic">Max 3 taken</span>. <span data-i18n="phone_step2_p">Structuro stelt voor, of jij kiest zelf.</span></p>
+          </div>
+        </article>
+        <article class="phones-carousel-slide" role="listitem">
+          <div class="phones-carousel-tilt">
+            <div class="phone hero-phone hero-phone--demo phones-carousel-phone">
+              <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--power" aria-hidden="true"></span>
+              <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
+              <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
+              <div class="phones-screen-wrap">
+                <img src="uploads/IMG_6893.PNG" alt="Structuro: focus sessie starten" class="phones-screen-img" loading="lazy"/>
+              </div>
+            </div>
+          </div>
+          <div class="phone-step-meta">
+            <span class="phone-step-num">03</span>
+            <h3 data-i18n="phone_step3_h">Begin met één stap</h3>
+            <p data-i18n="phone_step3_p">Focus-modus met timer en microstappen. Klein genoeg om te starten.</p>
+          </div>
+        </article>
+      </div>
+      <div class="phones-carousel-dots" role="tablist" aria-label="Dagstart stappen">
+        <button type="button" class="phones-carousel-dot active" data-slide="0" aria-label="Stap 1" aria-current="true"></button>
+        <button type="button" class="phones-carousel-dot" data-slide="1" aria-label="Stap 2"></button>
+        <button type="button" class="phones-carousel-dot" data-slide="2" aria-label="Stap 3"></button>
+      </div>
+      <p class="phones-swipe-hint" data-i18n="phones_swipe_hint">Swipe door de stappen</p>
+    </div>
+  </div>
+</section>
+
+<!-- Social proof quotes -->
+<section class="quote-section reveal" id="verhalen">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="verhalen_eyebrow">Van testers</div>
+    <h2 data-i18n="verhalen_h2">Afgesloten zonder schuldgevoel</h2>
+    <div class="quote-grid">
+      <blockquote class="quote-card">
+        <div class="quote-inner-hover">
+          <span class="quote-mark" aria-hidden="true">"</span>
+          <p class="quote-text" data-i18n="quote1_text">Eerlijk? Ik sloot voor het eerst in maanden een dag af zonder dat schuldgevoel om half tien. Alleen dát was het al waard.</p>
+          <footer class="quote-footer">
+            <div class="quote-avatar" aria-hidden="true">L</div>
+            <div class="quote-meta">
+              <div class="quote-name" data-i18n="quote1_name">Lisa, 31</div>
+              <div class="quote-sub" data-i18n="quote1_sub">Tester · ADHD sinds haar twintigste</div>
+            </div>
+          </footer>
+        </div>
+      </blockquote>
+      <blockquote class="quote-card">
+        <div class="quote-inner-hover">
+          <span class="quote-mark" aria-hidden="true">"</span>
+          <p class="quote-text" data-i18n="quote2_text">Ik hing al maanden op de rand van een burn-out. Eén taak per dag klinkt belachelijk, maar het haalde de druk weg. Ik kom eindelijk weer boven water.</p>
+          <footer class="quote-footer">
+            <div class="quote-avatar" aria-hidden="true">S</div>
+            <div class="quote-meta">
+              <div class="quote-name" data-i18n="quote2_name">Sven, 34</div>
+              <div class="quote-sub" data-i18n="quote2_sub">Tester · werkte 50 uur per week</div>
+            </div>
+          </footer>
+        </div>
+      </blockquote>
+      <blockquote class="quote-card">
+        <div class="quote-inner-hover">
+          <span class="quote-mark" aria-hidden="true">"</span>
+          <p class="quote-text" data-i18n="quote3_text">In mijn luteale fase was ik altijd knock-out. Nu past Structuro m'n dag aan m'n cyclus aan, en eindelijk voelt dat niet meer als falen.</p>
+          <footer class="quote-footer">
+            <div class="quote-avatar" aria-hidden="true">S</div>
+            <div class="quote-meta">
+              <div class="quote-name" data-i18n="quote3_name">Sanne, 36</div>
+              <div class="quote-sub" data-i18n="quote3_sub">Tester · moeder van twee</div>
+            </div>
+          </footer>
+        </div>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- Psychologische termen -->
+<section class="psych-terms reveal" id="brein-termen">
+  <div class="container">
+    <div class="section-eyebrow" data-i18n="psych_eyebrow">Waarom dit werkt</div>
+    <h2 data-i18n="psych_h2">Gebouwd op hoe ADHD-breinen vastlopen</h2>
+    <p class="lede-2" data-i18n="psych_lede">Geen placebo-productiviteit. Structuro pakt de echte knelpunten aan.</p>
+    <div class="psych-grid">
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag1">Executief</span>
+        <h3 data-i18n="psych_h3_1">Taakinitiatie</h3>
+        <p data-i18n="psych_p1">Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.</p>
+      </article>
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag2">Cognitief</span>
+        <h3 data-i18n="psych_h3_2">Werkgeheugen-overload</h3>
+        <p data-i18n="psych_p2">Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te doen in plaats van te onthouden.</p>
+      </article>
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag3">Dopamine</span>
+        <h3 data-i18n="psych_h3_3">Energie en motivatie</h3>
+        <p data-i18n="psych_p3">ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.</p>
+      </article>
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag4">Tijd</span>
+        <h3 data-i18n="psych_h3_4">Tijdblindheid</h3>
+        <p data-i18n="psych_p4">Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.</p>
+      </article>
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag5">Cyclus</span>
+        <h3 data-i18n="psych_h3_5">Hormonen en focus</h3>
+        <p data-i18n="psych_p5">Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.</p>
+      </article>
+      <article class="psych-card">
+        <span class="psych-card-tag" data-i18n="psych_tag6">Rust</span>
+        <h3 data-i18n="psych_h3_6">Burn-out preventie</h3>
+        <p data-i18n="psych_p6">Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.</p>
+      </article>
+    </div>
+  </div>
+</section>
 
 <!-- Empathy / burn-out (95%) -->
 <section class="empathy reveal" id="waarom-nodig">
@@ -1652,14 +2126,133 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
         </div>
       </div>
     </div>
-    <div class="energy-demo" id="energyDemo">
-      <p class="energy-demo-label" data-i18n="energy_demo_label">Probeer het zelf: wat zou Structuro vandaag voorstellen?</p>
-      <div class="energy-btns" role="group" aria-label="Energieniveau">
-        <button type="button" class="energy-btn" data-energy="low" aria-pressed="false" data-i18n="energy_low">Laag</button>
-        <button type="button" class="energy-btn" data-energy="normal" aria-pressed="false" data-i18n="energy_normal">Normaal</button>
-        <button type="button" class="energy-btn" data-energy="high" aria-pressed="false" data-i18n="energy_high">Hoog</button>
+    <div class="live-demo-mount-loop" id="liveDemoMountLoop">
+    <div class="live-demo live-demo--flat" id="liveDemo">
+      <p class="live-demo-label" data-i18n="live_demo_label">Probeer de volledige dagstart</p>
+      <div class="live-demo-progress" id="liveDemoProgress" aria-hidden="true">
+        <span class="live-demo-progress-dot" data-step-dot="energy"></span>
+        <span class="live-demo-progress-dot" data-step-dot="choice"></span>
+        <span class="live-demo-progress-dot" data-step-dot="tasks"></span>
+        <span class="live-demo-progress-dot" data-step-dot="done"></span>
+        <span class="live-demo-progress-dot" data-step-dot="home"></span>
       </div>
-      <p class="energy-result" id="energyResult" data-i18n="energy_prompt">Klik op een energieniveau en zie wat Structuro vandaag zou voorstellen.</p>
+      <div class="live-demo-phone">
+        <div class="live-demo-screen">
+          <div class="live-demo-topbar">
+            <span class="live-demo-topbar-brand">Structuro</span>
+            <span data-i18n="live_demo_topbar">Dagstart</span>
+          </div>
+          <div class="live-demo-back-row">
+            <button type="button" class="live-demo-back" id="liveDemoBack" hidden aria-label="Terug">←</button>
+          </div>
+          <div class="live-demo-body">
+            <div class="live-demo-phase live-demo-phase--energy" id="liveDemoPhaseEnergy">
+              <div class="live-demo-energy-top">
+                <p class="live-demo-greeting" id="liveDemoGreeting">Goedemorgen</p>
+                <button type="button" class="live-demo-cycle-btn live-demo-cycle-btn--pulse" id="liveDemoCycleBtn" aria-expanded="false" aria-label="Cyclus tracker, dag 14 van 28">
+                  <svg class="live-demo-cycle-ring-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#FDE68A" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/></svg>
+                  <span class="live-demo-cycle-btn-label" data-i18n="live_demo_cycle_label">Cyclus</span>
+                  <span class="live-demo-cycle-btn-day">14</span>
+                </button>
+              </div>
+              <div class="live-demo-battery-wrap" aria-hidden="true">
+                <div class="live-demo-battery-core" id="liveDemoBatteryCore"></div>
+              </div>
+              <h3 class="live-demo-energy-q" data-i18n="live_demo_energy_title">Hoe is je energie?</h3>
+              <div class="live-demo-energy-btns" role="group" aria-label="Energieniveau">
+                <button type="button" class="live-demo-energy-btn" data-live-energy="low" aria-pressed="false">
+                  <span class="live-demo-battery-icon" data-battery-level="1" data-battery-filled="1" data-battery-color="#10B981" aria-hidden="true"></span>
+                  <span data-i18n="energy_low">Laag</span>
+                </button>
+                <button type="button" class="live-demo-energy-btn" data-live-energy="normal" aria-pressed="false">
+                  <span class="live-demo-battery-icon" data-battery-level="2" data-battery-filled="2" data-battery-color="#3B6BF7" aria-hidden="true"></span>
+                  <span data-i18n="energy_normal">Normaal</span>
+                </button>
+                <button type="button" class="live-demo-energy-btn" data-live-energy="high" aria-pressed="false">
+                  <span class="live-demo-battery-icon" data-battery-level="3" data-battery-filled="3" data-battery-color="#8B5CF6" aria-hidden="true"></span>
+                  <span data-i18n="energy_high">Hoog</span>
+                </button>
+              </div>
+              <div class="live-demo-cycle-card" id="liveDemoCycleCard" hidden>
+                <p class="live-demo-cycle-tracker-title" data-i18n="live_demo_cycle_tracker">Cyclus tracker</p>
+                <p class="live-demo-cycle-tracker-lede" data-i18n="live_demo_cycle_tracker_lede">Structuro houdt je cyclusfase bij en helpt je inschatten hoeveel je vandaag aankunt.</p>
+                <div class="live-demo-cycle-head">
+                  <span class="live-demo-cycle-dot" aria-hidden="true"></span>
+                  <span class="live-demo-cycle-phase" id="liveDemoCyclePhase">Ovulatie</span>
+                  <span class="live-demo-cycle-day" id="liveDemoCycleDay">Dag 14/28</span>
+                </div>
+                <p class="live-demo-cycle-bio" id="liveDemoCycleBio"></p>
+                <p class="live-demo-cycle-tip" id="liveDemoCycleTip"></p>
+                <a href="/cyclus/" class="live-demo-cycle-more" data-i18n="live_demo_cycle_more" data-ph-cta="live_demo_cycle_more">Meer over ADHD en cyclus →</a>
+              </div>
+              <span class="live-demo-match" id="liveDemoEnergyMatch" hidden></span>
+            </div>
+            <div class="live-demo-phase" id="liveDemoPhaseChoice" hidden>
+              <p class="live-demo-eyebrow" data-i18n="live_demo_choice_eyebrow">Vandaag</p>
+              <h3 class="live-demo-title" data-i18n="live_demo_choice_title">Wie kiest je taken?</h3>
+              <p class="live-demo-sub" data-i18n="live_demo_choice_sub">Structuro voor je laten denken, of liever zelf swipen?</p>
+              <div class="live-demo-choice-grid">
+                <button type="button" class="live-demo-choice live-demo-choice--primary" data-live-choice="structuro">
+                  <span class="live-demo-choice-icon" aria-hidden="true">✦</span>
+                  <span class="live-demo-choice-title" data-i18n="live_demo_choice_structuro">Structuro kiest</span>
+                  <span class="live-demo-choice-sub" data-i18n="live_demo_choice_structuro_sub">Suggesties op basis van energie</span>
+                </button>
+                <button type="button" class="live-demo-choice" data-live-choice="self">
+                  <span class="live-demo-choice-icon" aria-hidden="true">⇆</span>
+                  <span class="live-demo-choice-title" data-i18n="live_demo_choice_self">Zelf swipen</span>
+                  <span class="live-demo-choice-sub" data-i18n="live_demo_choice_self_sub">Links weg, rechts houden</span>
+                </button>
+              </div>
+            </div>
+            <div class="live-demo-phase" id="liveDemoPhaseSuggested" hidden>
+              <p class="live-demo-eyebrow" data-i18n="live_demo_suggest_eyebrow">Voor jou</p>
+              <h3 class="live-demo-title" data-i18n="live_demo_suggest_title">Dit stelt Structuro voor.</h3>
+              <p class="live-demo-sub" id="liveDemoSuggestSub"></p>
+              <div class="live-demo-task-list" id="liveDemoTaskList"></div>
+              <p class="live-demo-selection-meta" id="liveDemoSelectionMeta"></p>
+              <div class="live-demo-task-footer">
+                <button type="button" class="live-demo-link" id="liveDemoSwitchSwipe" data-i18n="live_demo_switch_swipe">liever swipen</button>
+                <button type="button" class="live-demo-primary" id="liveDemoAccept" data-i18n="live_demo_accept">Start mijn dag →</button>
+              </div>
+            </div>
+            <div class="live-demo-phase" id="liveDemoPhaseSwipe" hidden>
+              <p class="live-demo-eyebrow" data-i18n="live_demo_swipe_eyebrow">Vandaag</p>
+              <h3 class="live-demo-title" data-i18n="live_demo_swipe_title">Swipe wat past</h3>
+              <p class="live-demo-sub" id="liveDemoSwipeSub"></p>
+              <div class="live-demo-swipe-card" id="liveDemoSwipeCard"></div>
+              <div class="live-demo-swipe-actions">
+                <button type="button" class="live-demo-swipe-btn" data-swipe="skip" aria-label="Overslaan">↩</button>
+                <button type="button" class="live-demo-swipe-btn live-demo-swipe-btn--keep" data-swipe="keep" aria-label="Houden">✓</button>
+              </div>
+              <p class="live-demo-selection-meta" id="liveDemoSwipeMeta"></p>
+              <button type="button" class="live-demo-primary" id="liveDemoSwipeDone" style="align-self:center;margin-top:auto;" data-i18n="live_demo_swipe_done">Klaar →</button>
+            </div>
+            <div class="live-demo-phase live-demo-done" id="liveDemoPhaseDone" hidden>
+              <div class="live-demo-done-icon" aria-hidden="true">✓</div>
+              <h3 class="live-demo-title" data-i18n="live_demo_done_title">Dagstart afgerond.</h3>
+              <p class="live-demo-sub" id="liveDemoDoneSummary"></p>
+              <div class="live-demo-done-list" id="liveDemoDoneList"></div>
+              <button type="button" class="live-demo-primary" id="liveDemoDashboard" data-i18n="live_demo_dashboard">Naar dashboard →</button>
+            </div>
+            <div class="live-demo-phase" id="liveDemoPhaseHome" hidden>
+              <div class="live-demo-app-bar">
+                <span id="liveDemoTodayLabel">Vandaag</span>
+                <span class="live-demo-slots" id="liveDemoHeroSlots"></span>
+              </div>
+              <div class="live-demo-hero-card">
+                <span class="live-demo-hero-label" id="liveDemoHeroLabel">Nu aan zet</span>
+                <h4 id="liveDemoHeroTitle"></h4>
+                <p class="live-demo-micro" id="liveDemoMicro">Eerste stap: open je inbox</p>
+                <button type="button" class="live-demo-cta" id="liveDemoCta">Start focus</button>
+              </div>
+              <button type="button" class="live-demo-restart" id="liveDemoRestart" data-i18n="live_demo_restart">↻ Demo opnieuw doorlopen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="live-demo-hint" id="liveDemoHint"></p>
+      <button type="button" class="live-demo-reset-outside" id="liveDemoReset" data-i18n="live_demo_reset">Opnieuw proberen</button>
+    </div>
     </div>
   </div>
 </section>
@@ -1879,7 +2472,20 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
     </div>
     <div class="footer-bottom">
-      <div>© 2026 Structuro · <span data-i18n="footer_made">Gemaakt in Nederland</span></div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;">
+        <span>© 2026 Structuro · <span data-i18n="footer_made">Gemaakt in Nederland</span></span>
+        <div class="footer-social" aria-label="Sociale media">
+          <a href="https://www.instagram.com/structuroapp/" target="_blank" rel="noopener noreferrer" data-ph-cta="social_instagram" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <a href="https://www.tiktok.com/@structuroapp" target="_blank" rel="noopener noreferrer" data-ph-cta="social_tiktok" aria-label="TikTok">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/></svg>
+          </a>
+          <a href="https://www.linkedin.com/company/structuro-ai/" target="_blank" rel="noopener noreferrer" data-ph-cta="social_linkedin" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.38V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zm1.78 13.02H3.56V9h3.56v11.45z"/></svg>
+          </a>
+        </div>
+      </div>
       <div class="footer-legal">
         <a href="/privacy/" data-i18n="footer_privacy">Privacy policy</a>
         <a href="/terms/" data-i18n="footer_terms">Algemene voorwaarden</a>
@@ -1891,8 +2497,8 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
 </footer>
 
 
-<script src="/js/ph-config.js"></script>
-<script src="/js/analytics.js"></script>
+<script src="/js/ph-config.js?v=20260611c"></script>
+<script src="/js/analytics.js?v=20260611c"></script>
 
 <script>
 // Hero phone slideshow (desktop + mobile in sync)
@@ -1914,7 +2520,12 @@ function setHeroSlideAt(idx) {
 function goHeroSlide(n) { setHeroSlideAt(n); }
 function goHeroSlideMobile(n) { setHeroSlideAt(n); }
 
-setInterval(() => setHeroSlideAt(heroIdx + 1), 6000);
+if (heroSlidesMobile.length > 0) {
+  setInterval(() => {
+    if (window.matchMedia('(min-width: 901px)').matches) return;
+    setHeroSlideAt(heroIdx + 1);
+  }, 6000);
+}
 
 // 3D phone tilt on mouse move
 const phoneTilt = document.getElementById('phoneTilt');
@@ -2002,7 +2613,7 @@ const childObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.10 });
 
-document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div').forEach(el => {
+document.querySelectorAll('.step, .pricing-card, .faq-item, .trust-grid > div, .quote-card').forEach(el => {
   childObserver.observe(el);
 });
 
@@ -2015,7 +2626,8 @@ const TRANSLATIONS = {
     payment_trust_label: 'Veilig betalen via Stripe',
     hero_eyebrow: 'Voor ADHD-breinen die vastlopen op executie',
     hero_h1: 'Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.',
-    hero_lede: 'Morgenochtend kies je één keer je energie. Daarna 1, 2 of 3 taken voor de dag. Meer niet. Geen lijsten, geen schuld.',
+    hero_positioning: 'Gebruik andere apps om alles bij te houden.<span class="hero-positioning-gap" aria-hidden="true"></span>Gebruik <span class="hero-positioning-brand">Structuro</span> om het ook daadwerkelijk te doen.',
+    media_eyebrow: 'Gezien in',
     trust_check1: '3 dagen gratis uitproberen, daarna pas betalen',
     trust_check2: 'Klaar in 90 seconden om in te stellen',
     trust_check3: '14 dagen geld terug. Mail ons, reactie binnen één werkdag.',
@@ -2024,12 +2636,22 @@ const TRANSLATIONS = {
     badge2_title: 'Maximaal 3 taken per dag', badge2_sub: 'Bewust klein gehouden',
     trust_stat1_num: '100+',
     trust_stat1: "Gebouwd met ADHD'ers",
-    trust_stat2_num: '500+',
-    trust_stat2: 'uur onderzoeksdata',
-    trust_stat3_num: '100%',
-    trust_stat3: 'afgestemd op jouw brein',
+    trust_stat2_num: '95%',
+    trust_stat2: 'herkende burn-out in interviews',
+    trust_stat3_num: '0',
+    trust_stat3: 'streaks, badges of achterstallig-meldingen',
+    phones_eyebrow: 'Zo werkt je eerste dag',
+    phones_h2: 'Drie stappen. Negentig seconden. Dan doen.',
+    phones_lede: 'Geen account nodig om te begrijpen hoe Structuro anders is.',
+    phone_step1_h: 'Hoe vol is je batterij?',
+    phone_step1_p: 'Eerst je energie. Dan past Structuro de dag aan wat je brein aankan.',
+    phone_step2_h: 'Kies max 3 taken',
+    phone_step2_p: 'Structuro stelt voor, of jij kiest zelf. Geen eindeloze lijst.',
+    phone_step3_h: 'Begin met één stap',
+    phone_step3_p: 'Focus-modus met timer en microstappen. Klein genoeg om te starten.',
+    phones_swipe_hint: 'Swipe door de stappen',
     hero_phone_mobile_eyebrow: 'Zo ziet Structuro eruit',
-    hero_phone_mobile_lede: 'Swipe door de app. Geen overload, wel structuur.',
+    hero_phone_mobile_lede: 'Probeer de dagstart hieronder. Kies je energie en zie hoe Structuro werkt.',
     loop_eyebrow: 'De dagelijkse loop', loop_h2: 'Geen overzicht. Een ritme.',
     loop_lede: 'Drie momenten per dag. Open, doen, afsluiten. Meer hoeft niet.',
     step1_sub: 'Energie check', step1_h3: 'Hoe vol is je batterij vandaag?',
@@ -2038,9 +2660,58 @@ const TRANSLATIONS = {
     step2_p: 'Met lage energie 1 taak. Met hoge energie 3. Geen oneindige to-do lijst die alleen maar groeit.',
     step3_sub: 'Sluit je dag af', step3_h3: 'Klaar is klaar.',
     step3_p: "Een ritueel van 2 minuten dat je hoofd leegmaakt voor morgen. Geen backlog die je achtervolgt 's avonds.",
-    energy_demo_label: 'Probeer het zelf: wat zou Structuro vandaag voorstellen?',
+    live_demo_label: 'Probeer de volledige dagstart',
+    live_demo_topbar: 'Dagstart',
+    live_demo_energy_title: 'Hoe is je energie?',
+    live_demo_choice_eyebrow: 'Vandaag',
+    live_demo_choice_title: 'Wie kiest je taken?',
+    live_demo_choice_sub: 'Structuro voor je laten denken, of liever zelf swipen?',
+    live_demo_choice_structuro: 'Structuro kiest',
+    live_demo_choice_structuro_sub: 'Suggesties op basis van energie',
+    live_demo_choice_self: 'Zelf swipen',
+    live_demo_choice_self_sub: 'Links weg, rechts houden',
+    live_demo_suggest_eyebrow: 'Voor jou',
+    live_demo_suggest_title: 'Dit stelt Structuro voor.',
+    live_demo_switch_swipe: 'liever swipen',
+    live_demo_accept: 'Start mijn dag →',
+    live_demo_swipe_eyebrow: 'Vandaag',
+    live_demo_swipe_title: 'Swipe wat past',
+    live_demo_swipe_done: 'Klaar →',
+    live_demo_done_title: 'Dagstart afgerond.',
+    live_demo_dashboard: 'Naar dashboard →',
+    live_demo_reset: 'Opnieuw proberen',
+    live_demo_restart: '↻ Demo opnieuw doorlopen',
+    live_demo_cycle_label: 'Cyclus',
+    live_demo_cycle_tracker: 'Cyclus tracker',
+    live_demo_cycle_tracker_lede: 'Structuro houdt je cyclusfase bij en helpt je inschatten hoeveel je vandaag aankunt.',
+    live_demo_cycle_more: 'Meer over ADHD en cyclus →',
     energy_low: 'Laag', energy_normal: 'Normaal', energy_high: 'Hoog',
-    energy_prompt: 'Klik op een energieniveau en zie wat Structuro vandaag zou voorstellen.',
+    verhalen_eyebrow: 'Van testers',
+    verhalen_h2: 'Afgesloten zonder schuldgevoel',
+    quote1_text: 'Eerlijk? Ik sloot voor het eerst in maanden een dag af zonder dat schuldgevoel om half tien. Alleen dát was het al waard.',
+    quote1_name: 'Lisa, 31',
+    quote1_sub: 'Tester · ADHD sinds haar twintigste',
+    quote2_text: 'Ik hing al maanden op de rand van een burn-out. Eén taak per dag klinkt belachelijk, maar het haalde de druk weg. Ik kom eindelijk weer boven water.',
+    quote2_name: 'Sven, 34',
+    quote2_sub: 'Tester · werkte 50 uur per week',
+    quote3_text: 'In mijn luteale fase was ik altijd knock-out. Nu past Structuro m\'n dag aan m\'n cyclus aan, en eindelijk voelt dat niet meer als falen.',
+    quote3_name: 'Sanne, 36',
+    quote3_sub: 'Tester · moeder van twee',
+    psych_eyebrow: 'Waarom dit werkt',
+    psych_h2: 'Gebouwd op hoe ADHD-breinen vastlopen',
+    psych_lede: 'Geen placebo-productiviteit. Structuro pakt de echte knelpunten aan.',
+    psych_tag1: 'Executief', psych_h3_1: 'Taakinitiatie',
+    psych_p1: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
+    psych_tag2: 'Cognitief', psych_h3_2: 'Werkgeheugen-overload',
+    psych_p2: 'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te doen in plaats van te onthouden.',
+    psych_tag3: 'Dopamine', psych_h3_3: 'Energie en motivatie',
+    psych_p3: 'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',
+    psych_tag4: 'Tijd', psych_h3_4: 'Tijdblindheid',
+    psych_p4: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
+    psych_tag5: 'Cyclus', psych_h3_5: 'Hormonen en focus',
+    psych_p5: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
+    psych_tag6: 'Rust', psych_h3_6: 'Burn-out preventie',
+    psych_p6: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
     empathy_eyebrow: 'Klinkt dit bekend?',
     empathy_p1: 'Je hebt een to-do lijst van 47 items die je al drie weken niet aanraakt. Je weet precies wat je moet doen. Maar je begint niet.',
     empathy_p2: 'En aan het einde van de dag voel je je schuldig, niet omdat je lui bent, maar omdat je brein gewoon niet meewerkte.',
@@ -2140,7 +2811,8 @@ const TRANSLATIONS = {
     payment_trust_label: 'Secure checkout with Stripe',
     hero_eyebrow: 'For ADHD brains that get stuck on execution',
     hero_h1: 'You know what you<br/>need to do.<br/>You just don\'t <span class="stuck">start</span>.',
-    hero_lede: 'Tomorrow morning you pick your energy once. Then 1, 2 or 3 tasks for the day. Nothing more. No lists, no guilt.',
+    hero_positioning: 'Use other apps to keep track of everything.<span class="hero-positioning-gap" aria-hidden="true"></span>Use <span class="hero-positioning-brand">Structuro</span> to actually do it.',
+    media_eyebrow: 'As seen in',
     trust_check1: '3 days free to try, pay only after',
     trust_check2: 'Ready in 90 seconds to set up',
     trust_check3: '14-day money-back. Email us, reply within one business day.',
@@ -2149,12 +2821,22 @@ const TRANSLATIONS = {
     badge2_title: 'Max 3 tasks per day', badge2_sub: 'Intentionally small',
     trust_stat1_num: '100+',
     trust_stat1: 'Built with people with ADHD',
-    trust_stat2_num: '500+',
-    trust_stat2: 'hours of research data',
-    trust_stat3_num: '100%',
-    trust_stat3: 'tuned to your brain',
+    trust_stat2_num: '95%',
+    trust_stat2: 'recognized burnout in interviews',
+    trust_stat3_num: '0',
+    trust_stat3: 'streaks, badges, or overdue reminders',
+    phones_eyebrow: 'How your first day works',
+    phones_h2: 'Three steps. Ninety seconds. Then do.',
+    phones_lede: 'No account needed to understand how Structuro is different.',
+    phone_step1_h: 'How full is your battery?',
+    phone_step1_p: 'Energy first. Then Structuro shapes the day to what your brain can handle.',
+    phone_step2_h: 'Pick up to 3 tasks',
+    phone_step2_p: 'Structuro suggests, or you choose yourself. No endless list.',
+    phone_step3_h: 'Start with one step',
+    phone_step3_p: 'Focus mode with timer and micro steps. Small enough to begin.',
+    phones_swipe_hint: 'Swipe through the steps',
     hero_phone_mobile_eyebrow: 'This is what Structuro looks like',
-    hero_phone_mobile_lede: 'Swipe through the app. No overload, just structure.',
+    hero_phone_mobile_lede: 'Try the day start below. Pick your energy and see how Structuro works.',
     loop_eyebrow: 'The daily loop', loop_h2: 'No overview. A rhythm.',
     loop_lede: 'Three moments a day. Open, do, close. That\'s all it takes.',
     step1_sub: 'Energy check', step1_h3: 'How full is your battery today?',
@@ -2163,9 +2845,58 @@ const TRANSLATIONS = {
     step2_p: 'Low energy? One task. High energy? Three. No endless to-do list that just keeps growing.',
     step3_sub: 'Close your day', step3_h3: 'Done is done.',
     step3_p: 'A 2-minute ritual that clears your head for tomorrow. No backlog haunting you in the evening.',
-    energy_demo_label: 'Try it: what would Structuro suggest today?',
+    live_demo_label: 'Try the full day start',
+    live_demo_topbar: 'Day start',
+    live_demo_energy_title: 'How is your energy?',
+    live_demo_choice_eyebrow: 'Today',
+    live_demo_choice_title: 'Who picks your tasks?',
+    live_demo_choice_sub: 'Let Structuro suggest, or swipe yourself?',
+    live_demo_choice_structuro: 'Structuro picks',
+    live_demo_choice_structuro_sub: 'Suggestions based on energy',
+    live_demo_choice_self: 'Swipe yourself',
+    live_demo_choice_self_sub: 'Left skip, right keep',
+    live_demo_suggest_eyebrow: 'For you',
+    live_demo_suggest_title: 'Structuro suggests this.',
+    live_demo_switch_swipe: 'prefer swiping',
+    live_demo_accept: 'Start my day →',
+    live_demo_swipe_eyebrow: 'Today',
+    live_demo_swipe_title: 'Swipe what fits',
+    live_demo_swipe_done: 'Done →',
+    live_demo_done_title: 'Day start complete.',
+    live_demo_dashboard: 'Go to dashboard →',
+    live_demo_reset: 'Try again',
+    live_demo_restart: '↻ Restart the demo',
+    live_demo_cycle_label: 'Cycle',
+    live_demo_cycle_tracker: 'Cycle tracker',
+    live_demo_cycle_tracker_lede: 'Structuro tracks your cycle phase and helps you gauge how much you can handle today.',
+    live_demo_cycle_more: 'More on ADHD and your cycle →',
     energy_low: 'Low', energy_normal: 'Normal', energy_high: 'High',
-    energy_prompt: 'Click an energy level to see what Structuro would suggest today.',
+    verhalen_eyebrow: 'From testers',
+    verhalen_h2: 'Closed the day without guilt',
+    quote1_text: 'Honestly? For the first time in months I closed a day without that guilt at half past nine. That alone was worth it.',
+    quote1_name: 'Lisa, 31',
+    quote1_sub: 'Tester · ADHD since her twenties',
+    quote2_text: 'I had been on the edge of burnout for months. One task a day sounds ridiculous, but it took the pressure off. I\'m finally coming up for air again.',
+    quote2_name: 'Sven, 34',
+    quote2_sub: 'Tester · worked 50 hours a week',
+    quote3_text: 'In my luteal phase I was always wiped out. Now Structuro adapts my day to my cycle, and it finally doesn\'t feel like failing.',
+    quote3_name: 'Sanne, 36',
+    quote3_sub: 'Tester · mother of two',
+    psych_eyebrow: 'Why this works',
+    psych_h2: 'Built around how ADHD brains get stuck',
+    psych_lede: 'No placebo productivity. Structuro tackles the real bottlenecks.',
+    psych_tag1: 'Executive', psych_h3_1: 'Task initiation',
+    psych_p1: 'Knowing what to do is not the same as starting. Structuro makes the first step small enough that your brain doesn\'t have to fight resistance.',
+    psych_tag2: 'Cognitive', psych_h3_2: 'Working memory overload',
+    psych_p2: 'A long to-do list eats working memory. Structuro shows at most three tasks, so your head has room to do instead of remember.',
+    psych_tag3: 'Dopamine', psych_h3_3: 'Energy and motivation',
+    psych_p3: 'ADHD brains have shifting dopamine. That\'s why day start begins with energy, not a fixed task list that overloads you.',
+    psych_tag4: 'Time', psych_h3_4: 'Time blindness',
+    psych_p4: 'If you don\'t have an internal clock, a daily loop with closure helps. Done is done, without guilt over what you didn\'t do.',
+    psych_tag5: 'Cycle', psych_h3_5: 'Hormones and focus',
+    psych_p5: 'Estrogen and progesterone steer dopamine too. Structuro adapts your workload to your cycle phase, without comparing you to yesterday.',
+    psych_tag6: 'Rest', psych_h3_6: 'Burnout prevention',
+    psych_p6: 'Chronic overstimulation and guilt drain energy. Fewer choices per day means less decision fatigue and more recovery.',
     empathy_eyebrow: 'Sound familiar?',
     empathy_p1: 'You have a to-do list of 47 items you haven\'t touched in three weeks. You know exactly what to do. But you don\'t start.',
     empathy_p2: 'And at the end of the day you feel guilty, not because you\'re lazy, but because your brain just wouldn\'t cooperate.',
@@ -2269,6 +3000,8 @@ function setLang(lang) {
   localStorage.setItem('structuro_lang', lang);
   applyTranslations();
   if (typeof window.refreshLandingDynamic === 'function') window.refreshLandingDynamic();
+  if (typeof window.refreshPreviewEnergyCopy === 'function') window.refreshPreviewEnergyCopy();
+  if (typeof window.refreshLiveDemoCopy === 'function') window.refreshLiveDemoCopy();
   if (typeof window.updateCycleText === 'function') window.updateCycleText(lang);
   document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
   document.getElementById('btnEN').classList.toggle('active', lang === 'en');
@@ -2279,6 +3012,7 @@ function applyTranslations() {
   const t = TRANSLATIONS[currentLang];
   // Regular text nodes
   document.querySelectorAll('[data-i18n]').forEach(el => {
+    if (el.hasAttribute('data-cta-dynamic')) return;
     const key = el.getAttribute('data-i18n');
     if (t[key] !== undefined) el.innerHTML = t[key];
   });
@@ -2296,6 +3030,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 </script>
-<script src="/js/landing-audit.js"></script>
+<script src="/js/landing-audit.js?v=20260611g"></script>
+<script src="/js/landing-dagstart-preview.js?v=20260611c"></script>
+<script src="/js/landing-live-demo.js?v=20260611f"></script>
 </body>
 </html>

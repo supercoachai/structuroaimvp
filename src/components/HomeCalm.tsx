@@ -22,8 +22,8 @@ import { useI18n } from '@/lib/i18n';
 import HomeTodayProgress from '@/components/home/HomeTodayProgress';
 import {
   getOpenTop3Tasks,
+  getSelectedTop3Ids,
   getTop3SlotPosition,
-  maxSlotsForEnergy,
 } from '@/lib/top3CurrentTask';
 import { getTodayMinutesProgress } from '@/lib/homeTodayProgress';
 import { getDayStartTimeOfDay } from '@/lib/dayStartGreeting';
@@ -104,9 +104,9 @@ export default function HomeCalm() {
   const heroTask = openTop3Tasks[heroTaskIndex % Math.max(openTop3Tasks.length, 1)] ?? null;
 
   const todaySlotProgress = useMemo(() => {
-    const ids = todayCheckIn?.top3_task_ids;
-    if (!Array.isArray(ids) || ids.length === 0) return null;
-    const total = maxSlotsForEnergy(todayCheckIn?.energy_level);
+    const selectedIds = getSelectedTop3Ids(todayCheckIn);
+    if (selectedIds.length === 0) return null;
+    const total = selectedIds.length;
     if (heroTask) {
       const pos = getTop3SlotPosition(heroTask.id, todayCheckIn);
       if (pos) return pos;

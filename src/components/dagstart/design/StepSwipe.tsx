@@ -336,11 +336,11 @@ export default function StepSwipe({
       {!selectionComplete ? (
         <>
           <div className="ds-eyebrow">Stel samen</div>
-          <h2 className="ds-title">Veeg per taak.</h2>
+          <h2 className="ds-title">Veeg of tik per taak.</h2>
           {maxSlots > 0 ? (
             <p className="ds-sub">
               Max {maxSlots} {maxSlots === 1 ? "taak" : "taken"} bij{" "}
-              {energyLabel(maxSlots)} energie.
+              {energyLabel(maxSlots)} energie. Veeg de kaart of gebruik de knoppen.
             </p>
           ) : null}
         </>
@@ -489,10 +489,6 @@ function SwipeCard({
   return (
     <div
       ref={ref}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
       className={`ds-swipe-card${isTop ? " is-top" : ""}`}
       style={{
         transform: `translate(${isTop ? drag.x : 0}px, ${baseY}px) scale(${baseScale}) rotate(${
@@ -512,27 +508,36 @@ function SwipeCard({
         </div>
       ) : null}
 
-      <div className="ds-swipe-card-top">
-        <Battery level={e.level} color={e.color} size={20} />
-        <span className="ds-swipe-duration">{task.minutes} min</span>
-      </div>
-
-      <h3 className="ds-swipe-title">{task.title}</h3>
-
-      {task.deadline ? (
-        <div
-          className="ds-swipe-deadline"
-          data-overdue={task.overdue ? "true" : undefined}
-        >
-          {task.deadline}
+      <div
+        className="ds-swipe-card-drag"
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
+        <div className="ds-swipe-card-top">
+          <Battery level={e.level} color={e.color} size={20} />
+          <span className="ds-swipe-duration">{task.minutes} min</span>
         </div>
-      ) : null}
+
+        <h3 className="ds-swipe-title">{task.title}</h3>
+
+        {task.deadline ? (
+          <div
+            className="ds-swipe-deadline"
+            data-overdue={task.overdue ? "true" : undefined}
+          >
+            {task.deadline}
+          </div>
+        ) : null}
+      </div>
 
       {isTop ? (
         <div className="ds-swipe-actions">
           <button
             type="button"
             className="ds-swipe-action skip"
+            aria-label="Niet nu"
             onClick={() => {
               setDrag({ x: -500, active: false });
               setTimeout(() => onDecide("skip"), 220);
@@ -543,6 +548,7 @@ function SwipeCard({
           <button
             type="button"
             className="ds-swipe-action keep"
+            aria-label="Vandaag"
             disabled={keepDisabled}
             style={keepDisabled ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
             onClick={() => {

@@ -51,6 +51,8 @@ import { toast } from "@/components/Toast";
 import { captureProductEvent } from "@/lib/posthog/track";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
 import { captureDagstartEventsFromOnboardingFinish } from "@/lib/posthog/onboardingDagstartEvents";
+import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
+import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
 
 /** Lege cirkel voor microstep-indicator (één lightweight DOM-node). */
 function MicroStepCircleOutline({ className }: { className?: string }) {
@@ -186,17 +188,20 @@ function ObNavIconBadge({
   );
 }
 
-const STEP_COUNT = 12;
+const STEP_COUNT = 10;
 /** Horizontale slide tussen stappen (bewust rustig). */
 const SLIDE_MS = 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
+const NAME_SLIDE_INDEX = 0;
+const WELCOME_SLIDE_INDEX = 1;
+const ENERGY_SLIDE_INDEX = 2;
+const PICK_CHOICE_SLIDE_INDEX = 3;
+const FOCUS_MODE_SLIDE_INDEX = 4;
 /** Gecombineerde microstappen + parkeren-demo (0-based stap-index). */
 const MICRO_MERGED_SLIDE_INDEX = 5;
-const NAME_SLIDE_INDEX = 6;
-const CYCLE_OPT_IN_SLIDE_INDEX = 7;
-const PERSONAL_WELCOME_SLIDE_INDEX = CYCLE_OPT_IN_SLIDE_INDEX + 1;
-const FIRST_DAY_SLIDE_INDEX = 9;
+const CYCLE_OPT_IN_SLIDE_INDEX = 6;
+const FIRST_DAY_SLIDE_INDEX = 7;
 /** Eerste-dagstart: opbouw in stappen (greeting → intro → cyclus-hint → kaart → footnote → energie). */
 const FIRST_DAY_REVEAL_GREETING = 1;
 const FIRST_DAY_REVEAL_INTRO = 2;
@@ -265,7 +270,6 @@ export default function OnboardingFlowContent({
   const parkDemoText = useMemo(() => t("onboarding.parkDemoTyping"), [t]);
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
-  const [nameSkipped, setNameSkipped] = useState(false);
   const onboardingStartedAtRef = useRef<number>(Date.now());
   const [saving, setSaving] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -278,7 +282,6 @@ export default function OnboardingFlowContent({
   const [microDemoStage, setMicroDemoStage] = useState(0);
   const [energyStage, setEnergyStage] = useState(0);
   const [pickChoiceStage, setPickChoiceStage] = useState(0);
-  const [focuspuntenStage, setFocuspuntenStage] = useState(0);
   const [focusModeStage, setFocusModeStage] = useState(0);
   const [parkerenStage, setParkerenStage] = useState(0);
   const [parkerenTypedChars, setParkerenTypedChars] = useState(0);
@@ -308,6 +311,8 @@ export default function OnboardingFlowContent({
   const [firstDayUseMicroSteps, setFirstDayUseMicroSteps] = useState<boolean | null>(null);
   const [firstDayMicroTitles, setFirstDayMicroTitles] = useState<string[]>([]);
   const [firstDayMicroInput, setFirstDayMicroInput] = useState("");
+  const [firstDayMicroAiLoading, setFirstDayMicroAiLoading] = useState(false);
+  const [firstDayMicroAiError, setFirstDayMicroAiError] = useState<string | null>(null);
   const [welcomeTaskPreview, setWelcomeTaskPreview] = useState<{
     id: string;
     title: string;
@@ -335,7 +340,9 @@ export default function OnboardingFlowContent({
   const firstDayDurationBlockRef = useRef<HTMLDivElement | null>(null);
   const firstTaskDurationInputRef = useRef<HTMLInputElement | null>(null);
   const firstDayBeginCtaRef = useRef<HTMLButtonElement | null>(null);
+  const firstDayMicroBlockRef = useRef<HTMLDivElement | null>(null);
   const durationAutoFocusDoneRef = useRef(false);
+  const minutesScrollDoneRef = useRef(false);
   const reduceMotionRef = useRef(false);
 
   /** Cyclus-stap (optioneel, alle gebruikers): 'intro' = drie keuzes, 'setup' = datum + lengte. */
@@ -402,6 +409,22 @@ export default function OnboardingFlowContent({
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (firstName.trim()) return;
+    const metaName = user?.user_metadata?.full_name;
+    if (typeof metaName === "string" && metaName.trim()) {
+      const first = metaName.trim().split(/\s+/)[0] ?? metaName.trim();
+      setFirstName(first);
+      return;
+    }
+    try {
+      const stored = window.localStorage.getItem("structuro_user_name");
+      if (stored?.trim()) setFirstName(stored.trim());
+    } catch {
+      /* ignore */
+    }
+  }, [user, firstName]);
 
   useEffect(() => {
     let cancelled = false;
@@ -536,6 +559,29 @@ export default function OnboardingFlowContent({
       durationAutoFocusDoneRef.current = false;
     }
   }, [firstTaskTitle]);
+
+  /** Na geldige minuten: scroll naar microstappen en sectie openen. */
+  useEffect(() => {
+    if (step !== FIRST_DAY_SLIDE_INDEX) {
+      minutesScrollDoneRef.current = false;
+      return;
+    }
+    if (!firstDayMinutesOk) {
+      minutesScrollDoneRef.current = false;
+      return;
+    }
+    if (minutesScrollDoneRef.current) return;
+    minutesScrollDoneRef.current = true;
+    setFirstDayUseMicroSteps((prev) => (prev == null ? true : prev));
+    const instant = reduceMotionRef.current;
+    const timer = window.setTimeout(() => {
+      firstDayMicroBlockRef.current?.scrollIntoView({
+        behavior: instant ? "auto" : "smooth",
+        block: "start",
+      });
+    }, instant ? 0 : 360);
+    return () => clearTimeout(timer);
+  }, [step, firstDayMinutesOk]);
 
   /** Minuten ongeldig: micro-keuze resetten */
   useEffect(() => {
@@ -752,7 +798,7 @@ export default function OnboardingFlowContent({
 
   /** Welkom: logo + titel, zin 1 letter voor letter (rustig), kernwoorden in blauw, slot letter voor letter. */
   useEffect(() => {
-    if (step !== 0) {
+    if (step !== WELCOME_SLIDE_INDEX) {
       if (welcomeTypingIntervalRef.current) {
         clearInterval(welcomeTypingIntervalRef.current);
         welcomeTypingIntervalRef.current = null;
@@ -969,7 +1015,7 @@ export default function OnboardingFlowContent({
   }, [step, cycleStage]);
 
   useEffect(() => {
-    if (step !== 1) { setEnergyStage(0); return; }
+    if (step !== ENERGY_SLIDE_INDEX) { setEnergyStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setEnergyStage(4); return; }
     setEnergyStage(0);
@@ -981,7 +1027,7 @@ export default function OnboardingFlowContent({
   }, [step]);
 
   useEffect(() => {
-    if (step !== 2) { setPickChoiceStage(0); return; }
+    if (step !== PICK_CHOICE_SLIDE_INDEX) { setPickChoiceStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setPickChoiceStage(3); return; }
     setPickChoiceStage(0);
@@ -992,18 +1038,7 @@ export default function OnboardingFlowContent({
   }, [step]);
 
   useEffect(() => {
-    if (step !== 3) { setFocuspuntenStage(0); return; }
-    const rm = reduceMotionRef.current;
-    if (rm) { setFocuspuntenStage(3); return; }
-    setFocuspuntenStage(0);
-    const t1 = setTimeout(() => setFocuspuntenStage(1), 1000);
-    const t2 = setTimeout(() => setFocuspuntenStage(2), 1800);
-    const t3 = setTimeout(() => setFocuspuntenStage(3), 2600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [step]);
-
-  useEffect(() => {
-    if (step !== 4) { setFocusModeStage(0); return; }
+    if (step !== FOCUS_MODE_SLIDE_INDEX) { setFocusModeStage(0); return; }
     const rm = reduceMotionRef.current;
     if (rm) { setFocusModeStage(3); return; }
     setFocusModeStage(0);
@@ -1025,6 +1060,38 @@ export default function OnboardingFlowContent({
     return () => clearInterval(interval);
   }, [parkerenStage, parkDemoText]);
 
+  const requestFirstDayMicroAi = useCallback(async () => {
+    const title = firstTaskTitle.trim();
+    if (!title || firstDayMicroAiLoading) return;
+    setFirstDayMicroAiLoading(true);
+    setFirstDayMicroAiError(null);
+    try {
+      const result = await fetchMicroStepSuggestions({
+        title,
+        energyLevel: firstDayEnergy ?? null,
+        durationMin: firstTaskEstimatedMinutes ?? null,
+        locale: locale === "en" ? "en" : "nl",
+      });
+      const steps = result.steps.map((line) => line.trim()).filter(Boolean);
+      if (steps.length === 0) {
+        setFirstDayMicroAiError(t("newTask.microSuggestError"));
+        return;
+      }
+      setFirstDayMicroTitles(steps);
+    } catch (err) {
+      setFirstDayMicroAiError(microSuggestErrorMessage(err, t));
+    } finally {
+      setFirstDayMicroAiLoading(false);
+    }
+  }, [
+    firstTaskTitle,
+    firstDayEnergy,
+    firstTaskEstimatedMinutes,
+    firstDayMicroAiLoading,
+    locale,
+    t,
+  ]);
+
   const goNext = useCallback(async () => {
     if (step >= STEP_COUNT - 1) return;
     if (step === MICRO_MERGED_SLIDE_INDEX && parkerenStage < 4) return;
@@ -1035,39 +1102,37 @@ export default function OnboardingFlowContent({
     }
     if (step === NAME_SLIDE_INDEX) {
       const name = firstName.trim();
-      if (name.length < 2 && !nameSkipped) return;
-      if (name.length >= 2) {
-        if (user?.id) {
-          setSaving(true);
-          try {
-            const { error } = await persistPreferredDisplayName(user, name);
-            if (error) {
-              toast(t("onboarding.toastNameErr", { detail: String(error) }));
-              return;
-            }
-          } catch (e) {
-            toast(
-              t("onboarding.toastNameErr", {
-                detail: e instanceof Error ? e.message : String(e),
-              })
-            );
+      if (name.length < 2) return;
+      if (user?.id) {
+        setSaving(true);
+        try {
+          const { error } = await persistPreferredDisplayName(user, name);
+          if (error) {
+            toast(t("onboarding.toastNameErr", { detail: String(error) }));
             return;
-          } finally {
-            setSaving(false);
           }
-        } else {
-          try {
-            window.localStorage.setItem("structuro_user_name", name);
-          } catch {
-            /* ignore */
-          }
+        } catch (e) {
+          toast(
+            t("onboarding.toastNameErr", {
+              detail: e instanceof Error ? e.message : String(e),
+            })
+          );
+          return;
+        } finally {
+          setSaving(false);
+        }
+      } else {
+        try {
+          window.localStorage.setItem("structuro_user_name", name);
+        } catch {
+          /* ignore */
         }
       }
       setStep((s) => s + 1);
       return;
     }
     setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
-  }, [step, firstName, nameSkipped, user, firstDayReady, parkerenStage, t]);
+  }, [step, firstName, user, firstDayReady, parkerenStage, t]);
 
   const goPrev = useCallback(() => {
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
@@ -1080,29 +1145,18 @@ export default function OnboardingFlowContent({
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
     cycleWelcomeCrossfadeTimersRef.current = [];
     setCycleWelcomeCrossfade("idle");
-    setStep(PERSONAL_WELCOME_SLIDE_INDEX);
+    setStep(FIRST_DAY_SLIDE_INDEX);
   }, []);
 
-  const advanceFromCycleToPersonalWelcome = useCallback(() => {
+  const advanceFromCycleToFirstDay = useCallback(() => {
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
     cycleWelcomeCrossfadeTimersRef.current = [];
+    setCycleWelcomeCrossfade("idle");
+    setStep(FIRST_DAY_SLIDE_INDEX);
+  }, []);
 
-    if (reduceMotionRef.current) {
-      setCycleWelcomeCrossfade("idle");
-      setStep(PERSONAL_WELCOME_SLIDE_INDEX);
-      return;
-    }
-
-    setCycleWelcomeCrossfade("out");
-    const fadeOutTimer = window.setTimeout(() => {
-      setStep(PERSONAL_WELCOME_SLIDE_INDEX);
-      setCycleWelcomeCrossfade("in");
-      const fadeInTimer = window.setTimeout(() => {
-        setCycleWelcomeCrossfade("idle");
-      }, CYCLE_WELCOME_FADE_IN_MS);
-      cycleWelcomeCrossfadeTimersRef.current.push(fadeInTimer);
-    }, CYCLE_WELCOME_FADE_OUT_MS);
-    cycleWelcomeCrossfadeTimersRef.current.push(fadeOutTimer);
+  const skipTourToCycle = useCallback(() => {
+    setStep(CYCLE_OPT_IN_SLIDE_INDEX);
   }, []);
 
   useEffect(() => {
@@ -1115,13 +1169,13 @@ export default function OnboardingFlowContent({
   const goToStep = useCallback(
     (index: number) => {
       let i = Math.max(0, Math.min(STEP_COUNT - 1, index));
-      const nameStepComplete = firstName.trim().length >= 2 || nameSkipped;
+      const nameStepComplete = firstName.trim().length >= 2;
       if (!nameStepComplete && i > NAME_SLIDE_INDEX) {
         i = NAME_SLIDE_INDEX;
       }
       setStep(i);
     },
-    [firstName, nameSkipped]
+    [firstName]
   );
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -1341,7 +1395,7 @@ export default function OnboardingFlowContent({
   );
 
   const nameOk = firstName.trim().length >= 2;
-  const nameStepComplete = nameOk || nameSkipped;
+  const nameStepComplete = nameOk;
   const slideUsesCrossfade = cycleWelcomeCrossfade !== "idle";
 
   const backBtn = step > 0 && (
@@ -1371,7 +1425,37 @@ export default function OnboardingFlowContent({
                 : `transform ${SLIDE_MS}ms ${EASE}`,
             }}
           >
-            {/* ── 1 — Welkom (geanimeerde intro) ── */}
+            {/* ── 1 — Naam ── */}
+            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
+              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
+                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
+                <div className="flex flex-col items-center text-center">
+                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.nameTitle")}</h2>
+                <p className="mt-3 text-sm text-gray-600">{t("onboarding.nameSubtitle")}</p>
+                <input
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && nameOk && !saving) void goNext(); }}
+                  placeholder={t("onboarding.namePh")}
+                  className="mt-8 w-full max-w-sm px-4 py-3.5 rounded-xl border border-gray-200 text-center text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                />
+                <button
+                  type="button"
+                  disabled={!nameOk || saving}
+                  onClick={() => void goNext()}
+                  className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-[700ms]"
+                >
+                  {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
+                </button>
+                </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 2 — Welkom (geanimeerde intro) ── */}
             <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
               <style>{`
                 @keyframes ob-welcome-blue-in {
@@ -1463,6 +1547,15 @@ export default function OnboardingFlowContent({
                     }`}
                   >
                     {t("onboarding.welcomeCta")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={skipTourToCycle}
+                    className={`mt-4 text-sm font-medium text-gray-500 transition hover:text-gray-700 ${
+                      welcomeShowCta ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+                    }`}
+                  >
+                    {t("onboarding.welcomeSkipTour")}
                   </button>
                   </div>
                 </div>
@@ -1557,56 +1650,7 @@ export default function OnboardingFlowContent({
               </div>
             </section>
 
-            {/* ── 4 — Focuspunten ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
-              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
-                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
-                <div className="flex flex-col items-center text-center">
-                <CheckIcon className="w-14 h-14 text-emerald-600 mb-4" strokeWidth={2} aria-hidden />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.focusPointsTitle")}</h2>
-                <div className={OB_INTRO_OUTER}>
-                  <p className={OB_INTRO_P}>{t("onboarding.focusPointsBody")}</p>
-                </div>
-                <ul className="mt-8 w-full max-w-md space-y-2.5 text-left">
-                  {[
-                    { n: "1", label: t("onboarding.fp1Label"), sub: t("onboarding.fp1Sub"), idx: 1 },
-                    { n: "2", label: t("onboarding.fp2Label"), sub: t("onboarding.fp2Sub"), idx: 2 },
-                    { n: "3", label: t("onboarding.fp3Label"), sub: t("onboarding.fp3Sub"), idx: 3 },
-                  ].map((r) => (
-                    <li
-                      key={r.n}
-                      className={`rounded-xl border border-[var(--st-line)] bg-white p-3 shadow-sm cursor-default transition-all duration-[1000ms] ease-out ${
-                        focuspuntenStage >= r.idx ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span
-                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-white"
-                          style={{
-                            background: "linear-gradient(180deg, #5A84F9, var(--st-blue-deep))",
-                          }}
-                        >
-                          {r.n}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--st-muted)]">
-                            {r.label}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-[var(--st-muted-2)]">{r.sub}</p>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  {t("onboarding.next")}
-                </button>
-                </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ── 4 — Focus modus ── */}
+            {/* ── 5 — Focus modus ── */}
             <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
               <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
                 <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
@@ -1871,47 +1915,6 @@ export default function OnboardingFlowContent({
               </div>
             </section>
 
-            {/* ── 6 — Naam ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
-              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
-                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
-                <div className="flex flex-col items-center text-center">
-                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.nameTitle")}</h2>
-                <p className="mt-3 text-sm text-gray-600">{t("onboarding.nameSubtitle")}</p>
-                <input
-                  type="text"
-                  autoComplete="given-name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && nameOk && !saving) void goNext(); }}
-                  placeholder={t("onboarding.namePh")}
-                  className="mt-8 w-full max-w-sm px-4 py-3.5 rounded-xl border border-gray-200 text-center text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                />
-                <button
-                  type="button"
-                  disabled={!nameOk || saving}
-                  onClick={() => void goNext()}
-                  className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-[700ms]"
-                >
-                  {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
-                </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => {
-                    setNameSkipped(true);
-                    setStep((s) => s + 1);
-                  }}
-                  className="mt-4 text-sm font-medium text-gray-500 transition hover:text-gray-700 disabled:opacity-40"
-                >
-                  {t("onboarding.nameSkip")}
-                </button>
-                </div>
-                </div>
-              </div>
-            </section>
-
             {/* ── 7 — Cyclus-tracking (optioneel, alle gebruikers) ── */}
             <section
               data-ob-slide
@@ -1987,7 +1990,7 @@ export default function OnboardingFlowContent({
                               setCyclePeriodStart(periodStart);
                               setCycleAverageLength(length);
                               setCycleMenstruationDuration(menstruationDuration);
-                              advanceFromCycleToPersonalWelcome();
+                              advanceFromCycleToFirstDay();
                             }}
                             secondaryAction={{
                               label: t("cycle.optInNo"),
@@ -2005,54 +2008,7 @@ export default function OnboardingFlowContent({
               </div>
             </section>
 
-            {/* ── 8 — Persoonlijk welkom ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
-              <style>{`
-                @keyframes ob-personal-welcome-in {
-                  from { opacity: 0; transform: translateY(10px); }
-                  to { opacity: 1; transform: translateY(0); }
-                }
-                .ob-personal-welcome-in {
-                  animation: ob-personal-welcome-in ${CYCLE_WELCOME_FADE_IN_MS}ms cubic-bezier(0.22, 1, 0.36, 1) both;
-                }
-                @media (prefers-reduced-motion: reduce) {
-                  .ob-personal-welcome-in { animation: none !important; }
-                }
-              `}</style>
-              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
-                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
-                <div
-                  className={`flex flex-col items-center text-center ${
-                    cycleWelcomeCrossfade === "in" ? "ob-personal-welcome-in" : ""
-                  } ${
-                    cycleWelcomeCrossfade === "out" ? "opacity-0" : "opacity-100"
-                  }`}
-                >
-                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {nameStepComplete && firstName.trim()
-                    ? t("onboarding.welcomePersonalGreeting", {
-                        name: firstName.trim(),
-                      })
-                    : t("onboarding.welcomePersonalGreetingNoName")}
-                </p>
-                <p className="mt-4 text-base leading-relaxed text-gray-700">
-                  {t("onboarding.personalBodyStart")}
-                  <span className="font-semibold text-blue-600">{t("onboarding.personalCalm")}</span>,{" "}
-                  <span className="font-semibold text-blue-600">{t("onboarding.personalFocus")}</span>
-                  {t("onboarding.personalBetweenFocusStruct")}
-                  <span className="font-semibold text-blue-600">{t("onboarding.personalStructure")}</span>
-                  {t("onboarding.personalBodyEnd")}
-                </p>
-                <button type="button" onClick={() => void goNext()} className="mt-10 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md transition-all duration-[700ms]">
-                  {t("onboarding.continue")}
-                </button>
-                </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ── 9 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
+            {/* ── 8 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
             <section
               data-ob-slide
               className="box-border flex h-full min-h-0 w-screen shrink-0 flex-col overflow-hidden"
@@ -2198,9 +2154,11 @@ export default function OnboardingFlowContent({
                             cyclePreviewProfile ? "mt-8" : "mt-10"
                           }`}
                         >
-                          <p className="ob-first-day-reveal-in mb-5 text-center text-base font-medium text-gray-800">
-                            {t("onboarding.firstDayEnergyQuestion")}
-                          </p>
+                          {cyclePreviewProfile ? (
+                            <p className="ob-first-day-reveal-in mb-5 text-center text-base font-medium text-gray-800">
+                              {t("onboarding.firstDayEnergyQuestion")}
+                            </p>
+                          ) : null}
                           <ObEnergyCardPicker
                             value={firstDayEnergy}
                             onChange={setFirstDayEnergy}
@@ -2335,7 +2293,10 @@ export default function OnboardingFlowContent({
                       ) : null}
 
                       {firstDayDurationVisible && firstDayMinutesOk ? (
-                        <div className="animate-fade-in mt-8 w-full space-y-4 text-center">
+                        <div
+                          ref={firstDayMicroBlockRef}
+                          className="animate-fade-in mt-8 w-full space-y-4 text-center"
+                        >
                           <p className="text-base font-medium text-gray-800">{t("onboarding.firstDayMicroQ")}</p>
                           <p className="text-sm text-gray-500">{t("onboarding.firstDayMicroHint")}</p>
                           <div className="flex justify-center gap-2">
@@ -2401,9 +2362,35 @@ export default function OnboardingFlowContent({
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="mb-2 text-center text-xs text-gray-600">
-                                  {t("onboarding.firstDayMicroNeedOne")}
-                                </p>
+                                <>
+                                  <p className="mb-3 text-center text-xs text-gray-600">
+                                    {t("onboarding.firstDayMicroNeedOne")}
+                                  </p>
+                                  <div className="mb-4 rounded-xl border border-violet-200 bg-white/90 p-3">
+                                    <p className="text-sm leading-relaxed text-gray-600">
+                                      {t("focus.microAiPrompt")}
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => void requestFirstDayMicroAi()}
+                                      disabled={firstDayMicroAiLoading}
+                                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-300 bg-violet-100/80 px-3 py-2.5 text-sm font-semibold text-violet-900 transition hover:bg-violet-100 disabled:opacity-50"
+                                    >
+                                      <SparklesIcon className="h-4 w-4 shrink-0" aria-hidden />
+                                      {firstDayMicroAiLoading
+                                        ? t("newTask.microSuggestLoading")
+                                        : t("newTask.microSuggestBtn")}
+                                    </button>
+                                    {firstDayMicroAiError ? (
+                                      <p className="mt-2 text-xs leading-relaxed text-rose-600">
+                                        {firstDayMicroAiError}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <p className="mb-2 text-center text-xs font-medium text-gray-500">
+                                    {t("newTask.microSuggestManual")}
+                                  </p>
+                                </>
                               )}
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                                 <input
@@ -2417,6 +2404,7 @@ export default function OnboardingFlowContent({
                                     if (!microLine) return;
                                     setFirstDayMicroTitles((prev) => [...prev, microLine]);
                                     setFirstDayMicroInput("");
+                                    setFirstDayMicroAiError(null);
                                   }}
                                   placeholder={t("onboarding.firstDayMicroInputPh")}
                                   className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
@@ -2428,6 +2416,7 @@ export default function OnboardingFlowContent({
                                     if (!microLine) return;
                                     setFirstDayMicroTitles((prev) => [...prev, microLine]);
                                     setFirstDayMicroInput("");
+                                    setFirstDayMicroAiError(null);
                                   }}
                                   className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
                                 >

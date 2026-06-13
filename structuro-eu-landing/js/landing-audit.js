@@ -3,9 +3,13 @@
 
   function updateCtaCopy() {
     var lang = window.currentLang || 'nl';
-    var text = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
+    var fullText = lang === 'en' ? 'Start your first day' : 'Start je eerste dag';
+    var navText = lang === 'en' ? 'Start free' : 'Start gratis';
     document.querySelectorAll('[data-cta-dynamic]').forEach(function (el) {
-      el.textContent = text;
+      el.textContent = el.closest('.nav-cta') ? navText : fullText;
+    });
+    document.querySelectorAll('.nav-cta').forEach(function (el) {
+      el.setAttribute('aria-label', fullText);
     });
   }
 
