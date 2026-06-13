@@ -35,7 +35,6 @@
   if (!mount) return;
 
   var active = 0;
-  var promptEl;
   var tabsEl;
   var quoteEl;
   var nameEl;
@@ -47,11 +46,6 @@
 
     var root = document.createElement('div');
     root.className = 'vt-root';
-
-    promptEl = document.createElement('div');
-    promptEl.className = 'vt-prompt';
-    promptEl.textContent = 'Wat speelt er bij jou?';
-    root.appendChild(promptEl);
 
     tabsEl = document.createElement('div');
     tabsEl.className = 'vt-tabs';

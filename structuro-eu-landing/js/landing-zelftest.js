@@ -41,7 +41,12 @@
   ];
 
   var mount = document.getElementById('landingZelftestMount');
-  if (!mount) return;
+  var stickyHost = document.getElementById('landingZelftestSticky');
+  var pinShell = document.getElementById('landingZelftestPinShell');
+  var pinBlock = document.getElementById('landingZelftestPinBlock');
+  var pinSpacer = pinShell ? pinShell.querySelector('.zt-pin-spacer') : null;
+  var sectionEl = document.getElementById('brein-termen');
+  if (!mount || !stickyHost || !pinShell || !pinBlock || !pinSpacer || !sectionEl) return;
 
   var picked = {};
   var stickyEl;
@@ -49,6 +54,67 @@
   var stickyTitleEl;
   var stickySubEl;
   var rowsEl;
+  var pinned = false;
+  var rafPending = false;
+
+  function navOffset() {
+    var nav = document.querySelector('.nav');
+    if (!nav) return window.innerWidth <= 760 ? 72 : 88;
+    return Math.ceil(nav.getBoundingClientRect().height) + 12;
+  }
+
+  function pinBlockHeight() {
+    return pinBlock.offsetHeight;
+  }
+
+  function setPinned(next) {
+    if (pinned === next) {
+      if (next) applyFixedMetrics();
+      return;
+    }
+    pinned = next;
+    pinShell.classList.toggle('is-pinned', next);
+    pinBlock.classList.toggle('is-fixed', next);
+    if (next) {
+      pinSpacer.style.height = pinBlockHeight() + 'px';
+      applyFixedMetrics();
+    } else {
+      pinSpacer.style.height = '0px';
+      pinBlock.style.removeProperty('left');
+      pinBlock.style.removeProperty('width');
+    }
+  }
+
+  function applyFixedMetrics() {
+    if (!pinned) return;
+    var shellRect = pinShell.getBoundingClientRect();
+    var top = navOffset();
+    pinBlock.style.setProperty('--zt-pin-top', top + 'px');
+    pinBlock.style.left = shellRect.left + 'px';
+    pinBlock.style.width = shellRect.width + 'px';
+    pinSpacer.style.height = pinBlockHeight() + 'px';
+  }
+
+  function updateStickyPin() {
+    rafPending = false;
+    if (!stickyEl) return;
+
+    var top = navOffset();
+    var shellRect = pinShell.getBoundingClientRect();
+    var sectionRect = sectionEl.getBoundingClientRect();
+    var blockH = pinBlockHeight();
+    var shouldPin =
+      shellRect.top <= top &&
+      sectionRect.bottom > top + blockH + 8;
+
+    setPinned(shouldPin);
+  }
+
+  function queueStickyPin() {
+    if (rafPending) return;
+    rafPending = true;
+    window.requestAnimationFrame(updateStickyPin);
+  }
 
   function countPicked() {
     var n = 0;
@@ -89,6 +155,8 @@
       dots[i].classList.toggle('is-on', !!picked[i]);
       dots[i].classList.toggle('is-idle-dark', count > 0 && !picked[i]);
     }
+
+    queueStickyPin();
   }
 
   function syncRow(k) {
@@ -102,6 +170,7 @@
     if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
     if (hint) hint.textContent = on ? 'Ja, dit ben ik' : 'Herken je dit?';
     if (panelWrap) panelWrap.classList.toggle('is-open', on);
+    window.requestAnimationFrame(queueStickyPin);
   }
 
   function toggle(k) {
@@ -110,11 +179,19 @@
     syncSticky();
   }
 
-  function build() {
-    mount.innerHTML = '';
+  function bindStickyPin() {
+    window.addEventListener('scroll', queueStickyPin, { passive: true });
+    window.addEventListener('resize', queueStickyPin, { passive: true });
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(queueStickyPin);
+      ro.observe(pinBlock);
+      if (stickyEl) ro.observe(stickyEl);
+    }
+  }
 
-    var root = document.createElement('div');
-    root.className = 'zt-root';
+  function build() {
+    stickyHost.innerHTML = '';
+    mount.innerHTML = '';
 
     stickyEl = document.createElement('div');
     stickyEl.className = 'zt-sticky';
@@ -137,7 +214,11 @@
     stickyCopy.appendChild(stickyTitleEl);
     stickyCopy.appendChild(stickySubEl);
     stickyEl.appendChild(stickyCopy);
-    root.appendChild(stickyEl);
+
+    stickyHost.appendChild(stickyEl);
+
+    var root = document.createElement('div');
+    root.className = 'zt-root';
 
     rowsEl = document.createElement('div');
     rowsEl.className = 'zt-rows';
@@ -199,6 +280,8 @@
     root.appendChild(rowsEl);
     mount.appendChild(root);
     syncSticky();
+    bindStickyPin();
+    queueStickyPin();
   }
 
   build();

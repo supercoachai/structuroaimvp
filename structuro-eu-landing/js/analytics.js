@@ -4,6 +4,7 @@
   /** Sectie-id's voor zichtbaarheid (waar gebruikers naar scrollen). */
   var EU_SECTION_IDS = [
     "hero",
+    "brein-termen",
     "gezien-in",
     "dagstart-preview",
     "waarom-nodig",
@@ -11,7 +12,6 @@
     "voor-vrouwen",
     "founder",
     "verhalen",
-    "brein-termen",
     "prijs",
     "faq",
     "eu-sluitstuk",
