@@ -28,16 +28,6 @@ async function postDisplayName(request: Request) {
     return NextResponse.json({ error: "Server configuration error" }, { status: 503 });
   }
 
-  const { data: existing, error: readError } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (readError) {
-    return NextResponse.json({ error: readError.message }, { status: 500 });
-  }
-
   const patch = raw
     ? {
         display_name: raw,
@@ -50,12 +40,10 @@ async function postDisplayName(request: Request) {
         ...(user.email ? { email: user.email } : {}),
       };
 
-  let writeError;
-  if (existing?.id) {
-    ({ error: writeError } = await admin.from("profiles").update(patch).eq("id", user.id));
-  } else {
-    ({ error: writeError } = await admin.from("profiles").insert({ id: user.id, ...patch }));
-  }
+  const { error: writeError } = await admin.from("profiles").upsert(
+    { id: user.id, ...patch },
+    { onConflict: "id" }
+  );
 
   if (writeError) {
     return NextResponse.json({ error: writeError.message }, { status: 500 });
