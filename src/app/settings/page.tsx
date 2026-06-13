@@ -150,7 +150,7 @@ export default function SettingsPage() {
       } catch { /* ignore */ }
       clearLocalOnboardingDoneCookieOnClient();
     }
-    window.location.assign(`${window.location.origin}/onboarding`);
+    window.location.assign(`${window.location.origin}/onboarding?replay=1`);
   };
 
   const handleSaveName = async () => {

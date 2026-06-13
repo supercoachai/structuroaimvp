@@ -63,6 +63,22 @@ export function preOnboardingPath(
     : "/onboarding";
 }
 
+export type OnboardingReplayBypass = {
+  replayQuery?: boolean;
+  privacySetupDone?: boolean;
+  lastDagstartDate?: string | null | undefined;
+};
+
+/** Bestaande gebruiker die de intro opnieuw bekijkt: geen Stripe-checkout. */
+export function canAccessOnboardingWithoutCheckout(
+  bypass: OnboardingReplayBypass
+): boolean {
+  if (bypass.replayQuery) return true;
+  if (bypass.privacySetupDone) return true;
+  if (bypass.lastDagstartDate) return true;
+  return false;
+}
+
 /** Na account aanmaken of sessie-check op /registreren: welkom, plan of onboarding. */
 export function resolvePostSignupPath(
   profile: ProfileSubscriptionRow | null | undefined,

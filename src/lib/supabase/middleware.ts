@@ -13,6 +13,7 @@ import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
 import {
   preOnboardingPath,
+  canAccessOnboardingWithoutCheckout,
   requiresPaidSubscriptionBeforeOnboarding,
 } from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
@@ -390,6 +391,13 @@ export async function updateSession(
       pathname.startsWith("/auth/wachtwoord-instellen/");
     const onRegistrationFlow =
       isRegistrationCheckoutEnabled() && isRegistrationAppRoute(pathname);
+    const privacySetupDone =
+      request.cookies.get(PRIVACY_SETUP_DONE_COOKIE)?.value === "1";
+    const onboardingReplayBypass = canAccessOnboardingWithoutCheckout({
+      replayQuery: request.nextUrl.searchParams.get("replay") === "1",
+      privacySetupDone,
+      lastDagstartDate: profileLastDagstartDate,
+    });
     const payBeforeOnboarding = requiresPaidSubscriptionBeforeOnboarding({
       email: user.email ?? null,
       profileRowReadOk,
@@ -398,8 +406,10 @@ export async function updateSession(
       created_at: profileCreatedAt,
       signup_source: profileSignupSource,
     });
+    const blockOnboardingForCheckout =
+      payBeforeOnboarding && !onboardingReplayBypass;
 
-    if (pathname.startsWith("/onboarding") && payBeforeOnboarding) {
+    if (pathname.startsWith("/onboarding") && blockOnboardingForCheckout) {
       const url = request.nextUrl.clone();
       url.pathname = "/registreren/plan";
       return NextResponse.redirect(url, 302);
@@ -412,7 +422,9 @@ export async function updateSession(
       !pathname.startsWith("/api/")
     ) {
       const url = request.nextUrl.clone();
-      url.pathname = payBeforeOnboarding ? "/registreren/plan" : "/onboarding";
+      url.pathname = blockOnboardingForCheckout
+        ? "/registreren/plan"
+        : "/onboarding";
       return NextResponse.redirect(url, 302);
     }
     return supabaseResponse;

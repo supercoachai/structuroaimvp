@@ -3,6 +3,7 @@
  */
 import assert from "node:assert/strict";
 import {
+  canAccessOnboardingWithoutCheckout,
   preOnboardingPath,
   requiresPaidSubscriptionBeforeOnboarding,
 } from "./registrationGate";
@@ -112,6 +113,24 @@ const paidProfile = {
     };
     assert.equal(requiresPaidSubscriptionBeforeOnboarding(cafeProfile), false);
     assert.equal(preOnboardingPath(cafeProfile), "/onboarding");
+  });
+}
+
+{
+  withEnv("production", "1", () => {
+    assert.equal(
+      canAccessOnboardingWithoutCheckout({ replayQuery: true }),
+      true
+    );
+    assert.equal(
+      canAccessOnboardingWithoutCheckout({ privacySetupDone: true }),
+      true
+    );
+    assert.equal(
+      canAccessOnboardingWithoutCheckout({ lastDagstartDate: "2026-06-01" }),
+      true
+    );
+    assert.equal(canAccessOnboardingWithoutCheckout({}), false);
   });
 }
 
