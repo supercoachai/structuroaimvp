@@ -14,22 +14,23 @@ export async function completeOnboardingProfile(
 ): Promise<{ error: string | null }> {
   const clean = (displayName.trim() || "Gebruiker").slice(0, 200);
   try {
-    const supabase = createClient();
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: user.id,
-        onboarding_completed: true,
-        onboarding_version: ONBOARDING_VERSION_CURRENT,
-        display_name: clean,
-        preferred_name: clean,
-        ...(user.email ? { email: user.email } : {}),
-      },
-      { onConflict: "id" }
-    );
-    if (error) {
-      return { error: error.message };
+    const res = await fetch("/api/profile/complete-onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: clean }),
+    });
+    const payload = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      return { error: payload.error ?? `HTTP ${res.status}` };
     }
-    await supabase.auth.updateUser({ data: { full_name: clean } });
+
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { full_name: clean },
+    });
+    if (authError) {
+      return { error: authError.message };
+    }
     try {
       if (typeof window !== "undefined") {
         window.localStorage.setItem("structuro_user_name", clean);

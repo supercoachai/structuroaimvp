@@ -153,6 +153,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     redirectLogin: "Je wordt doorgestuurd naar inloggen…",
     noSession: "Geen actieve sessie. Even geduld.",
     toastNameErr: "Kon naam niet opslaan: {detail}",
+    toastFinishErr: "Kon onboarding niet afronden: {detail}. Probeer opnieuw.",
     defaultUser: "Gebruiker",
   },
   en: {
@@ -306,6 +307,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     redirectLogin: "Redirecting you to sign in…",
     noSession: "No active session. One moment.",
     toastNameErr: "Could not save name: {detail}",
+    toastFinishErr: "Could not finish onboarding: {detail}. Try again.",
     defaultUser: "User",
   },
 };

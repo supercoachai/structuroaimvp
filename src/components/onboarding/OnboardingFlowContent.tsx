@@ -1333,11 +1333,12 @@ export default function OnboardingFlowContent({
         }
       }
       if (user?.id) {
-        try {
-          const { error } = await completeOnboardingProfile(user, displayName);
-          if (error) console.error("Onboarding finish error:", error);
-        } catch (e) {
-          console.error("Onboarding finish error:", e);
+        const { error } = await completeOnboardingProfile(user, displayName);
+        if (error) {
+          console.error("Onboarding finish error:", error);
+          toast(t("onboarding.toastFinishErr", { detail: String(error) }));
+          setFinishing(false);
+          return;
         }
       } else {
         setLocalOnboardingCompleted();
@@ -1362,13 +1363,20 @@ export default function OnboardingFlowContent({
       }
     } catch (e) {
       console.error("Onboarding finish error:", e);
+      toast(
+        t("onboarding.toastFinishErr", {
+          detail: e instanceof Error ? e.message : String(e),
+        })
+      );
+      setFinishing(false);
+      return;
     }
     captureProductEvent("onboarding_completed", {
       duration_bucket: onboardingDurationBucket(
         Date.now() - onboardingStartedAtRef.current
       ),
     });
-    window.location.assign("/consent");
+    window.location.assign("/");
   };
 
   const obLanguageToggle = (
