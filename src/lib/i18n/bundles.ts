@@ -392,7 +392,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errNameRequired: "Vul je naam in.",
       errPasswordWeak: "Wachtwoord moet minimaal 8 tekens zijn.",
       errEmailInUse: "Dit e-mailadres is al in gebruik. Log in om verder te gaan.",
-      errEmailInvalid: "Vul een geldig e-mailadres in.",
+      errEmailInvalid:
+        "Dit e-mailadres wordt niet geaccepteerd. Gebruik een echt adres waar je mail kunt ontvangen, bijvoorbeeld Gmail of Outlook.",
       errNetwork: "Netwerkfout. Probeer het opnieuw.",
       errDevServiceRole:
         "Lokaal account aanmaken vereist SUPABASE_SERVICE_ROLE_KEY in .env.local.",
@@ -882,7 +883,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errNameRequired: "Enter your name.",
       errPasswordWeak: "Password must be at least 8 characters.",
       errEmailInUse: "This email is already in use. Sign in to continue.",
-      errEmailInvalid: "Enter a valid email address.",
+      errEmailInvalid:
+        "This email address is not accepted. Use a real inbox you can receive mail at, such as Gmail or Outlook.",
       errNetwork: "Network error. Please try again.",
       errDevServiceRole:
         "Local signup requires SUPABASE_SERVICE_ROLE_KEY in .env.local.",

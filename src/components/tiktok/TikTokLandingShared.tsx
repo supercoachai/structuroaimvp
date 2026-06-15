@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import type { LpCampaign } from "@/lib/tiktok/lpConfig";
-import { TIKTOK_TRIAL_DAYS } from "@/lib/tiktokLanding";
+import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
 import { getLpThemeTokens } from "@/lib/tiktok/lpTheme";
 
 export type TikTokHeroShellProps = {
   campaign: LpCampaign;
+  heroId: LpHeroId;
   signupHref: string;
   onCtaClick: () => void;
   footerNote?: string;
@@ -21,13 +21,14 @@ export type TikTokHeroLayoutProps = TikTokHeroShellProps & {
 
 export function TikTokLandingShell({
   campaign,
+  heroId,
   signupHref,
   onCtaClick,
   children,
   footerNote,
   mainClassName = "",
 }: TikTokHeroLayoutProps) {
-  const theme = getLpThemeTokens(campaign);
+  const theme = getLpThemeTokens(campaign, heroId);
   const [logoError, setLogoError] = useState(false);
 
   return (
@@ -56,7 +57,7 @@ export function TikTokLandingShell({
       </header>
 
       <main
-        className={`mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-32 pt-2 ${mainClassName}`}
+        className={`mx-auto flex w-full max-w-md flex-1 flex-col justify-start px-5 pb-32 pt-2 md:justify-center md:pb-36 md:pt-0 ${mainClassName}`}
       >
         {children}
       </main>
@@ -69,12 +70,6 @@ export function TikTokLandingShell({
         }}
       >
         <div className="mx-auto w-full max-w-md">
-          <p
-            className="mb-2 text-center text-xs font-medium"
-            style={{ color: theme.isDark ? "#86efac" : "#065f46" }}
-          >
-            {TIKTOK_TRIAL_DAYS} dagen gratis proberen
-          </p>
           <Link
             href={signupHref}
             onClick={onCtaClick}
@@ -100,12 +95,14 @@ export function TikTokLandingShell({
 
 export function TikTokEyebrow({
   campaign,
+  heroId,
   children,
 }: {
   campaign: LpCampaign;
+  heroId?: LpHeroId;
   children: React.ReactNode;
 }) {
-  const theme = getLpThemeTokens(campaign);
+  const theme = getLpThemeTokens(campaign, heroId);
   return (
     <p
       className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowClass}`}
@@ -118,14 +115,16 @@ export function TikTokEyebrow({
 
 export function TikTokHeadline({
   campaign,
+  heroId,
   children,
   centered = false,
 }: {
   campaign: LpCampaign;
+  heroId?: LpHeroId;
   children: React.ReactNode;
   centered?: boolean;
 }) {
-  const theme = getLpThemeTokens(campaign);
+  const theme = getLpThemeTokens(campaign, heroId);
   return (
     <h1
       className={`mt-3 text-[1.65rem] leading-tight sm:text-3xl ${theme.headlineClass} ${
@@ -140,14 +139,16 @@ export function TikTokHeadline({
 
 export function TikTokSubline({
   campaign,
+  heroId,
   children,
   centered = false,
 }: {
   campaign: LpCampaign;
+  heroId?: LpHeroId;
   children: React.ReactNode;
   centered?: boolean;
 }) {
-  const theme = getLpThemeTokens(campaign);
+  const theme = getLpThemeTokens(campaign, heroId);
   return (
     <p
       className={`mt-4 text-base leading-relaxed ${centered ? "text-center" : "text-left"}`}

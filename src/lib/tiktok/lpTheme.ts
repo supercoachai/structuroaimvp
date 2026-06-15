@@ -1,4 +1,4 @@
-import type { LpCampaign } from "@/lib/tiktok/lpConfig";
+import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
 
 export type LpThemeTokens = {
   pageBg: string;
@@ -12,8 +12,15 @@ export type LpThemeTokens = {
   isDark: boolean;
 };
 
-export function getLpThemeTokens(campaign: LpCampaign): LpThemeTokens {
-  switch (campaign.theme) {
+/** Hero C is dark-focus; andere heroes op lichte achtergrond, ook bij theme: dark campagnes. */
+export function getLpThemeTokens(
+  campaign: LpCampaign,
+  heroId?: LpHeroId
+): LpThemeTokens {
+  const theme =
+    campaign.theme === "dark" && heroId !== "C" ? "light" : campaign.theme;
+
+  switch (theme) {
     case "warm":
       return {
         pageBg: "#F4F1E9",

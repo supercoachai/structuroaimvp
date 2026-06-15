@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
+import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -120,9 +121,13 @@ function RegistrerenAccountInner() {
       }
 
       const nameTrimmed = name.trim();
-      const emailTrimmed = email.trim().toLowerCase();
+      const emailTrimmed = normalizeSignupEmail(email);
       if (!nameTrimmed) {
         setError(t("registrerenPage.errNameRequired"));
+        return;
+      }
+      if (!emailTrimmed || !isSignupEmailFormatValid(email)) {
+        setError(t("registrerenPage.errEmailInvalid"));
         return;
       }
 

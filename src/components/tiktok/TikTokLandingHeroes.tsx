@@ -28,13 +28,27 @@ const DEMO_TASKS: Record<DemoEnergy, string[]> = {
 };
 
 export function HeroLayoutA(props: HeroProps) {
-  const { campaign } = props;
+  const { campaign, heroId } = props;
+  const theme = getLpThemeTokens(campaign, heroId);
+
   return (
-    <TikTokLandingShell {...props}>
-      <TikTokEyebrow campaign={campaign}>Voor ADHD-breinen</TikTokEyebrow>
-      <TikTokHeadline campaign={campaign}>{campaign.headline}</TikTokHeadline>
-      <TikTokSubline campaign={campaign}>{campaign.subline}</TikTokSubline>
-      <p className="mt-8 text-center text-xs leading-relaxed" style={{ color: getLpThemeTokens(campaign).muted }}>
+    <TikTokLandingShell
+      {...props}
+      mainClassName="md:items-center md:text-center"
+    >
+      <TikTokEyebrow campaign={campaign} heroId={heroId}>
+        Voor ADHD-breinen
+      </TikTokEyebrow>
+      <TikTokHeadline campaign={campaign} heroId={heroId}>
+        {campaign.headline}
+      </TikTokHeadline>
+      <TikTokSubline campaign={campaign} heroId={heroId}>
+        {campaign.subline}
+      </TikTokSubline>
+      <p
+        className="mt-8 text-center text-xs leading-relaxed"
+        style={{ color: theme.muted }}
+      >
         Wetenschappelijk onderbouwd. Gebouwd voor executie, niet voor inzicht.
       </p>
     </TikTokLandingShell>
@@ -42,15 +56,19 @@ export function HeroLayoutA(props: HeroProps) {
 }
 
 export function HeroLayoutB(props: HeroProps) {
-  const { campaign } = props;
-  const theme = getLpThemeTokens(campaign);
+  const { campaign, heroId } = props;
+  const theme = getLpThemeTokens(campaign, heroId);
   const [energy, setEnergy] = useState<DemoEnergy>("Midden");
   const tasks = DEMO_TASKS[energy];
 
   return (
     <TikTokLandingShell {...props}>
-      <TikTokHeadline campaign={campaign}>{campaign.headline}</TikTokHeadline>
-      <TikTokSubline campaign={campaign}>{campaign.subline}</TikTokSubline>
+      <TikTokHeadline campaign={campaign} heroId={heroId}>
+        {campaign.headline}
+      </TikTokHeadline>
+      <TikTokSubline campaign={campaign} heroId={heroId}>
+        {campaign.subline}
+      </TikTokSubline>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: theme.inkSoft }}>
         Tik hieronder je energie. Zo ziet Structuro morgenochtend eruit.
       </p>
@@ -109,8 +127,8 @@ export function HeroLayoutB(props: HeroProps) {
 }
 
 export function HeroLayoutC(props: HeroProps) {
-  const { campaign } = props;
-  const theme = getLpThemeTokens(campaign);
+  const { campaign, heroId } = props;
+  const theme = getLpThemeTokens(campaign, heroId);
 
   return (
     <TikTokLandingShell {...props}>
@@ -121,8 +139,12 @@ export function HeroLayoutC(props: HeroProps) {
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
         Voor breinen die vastlopen op starten
       </div>
-      <TikTokHeadline campaign={campaign}>{campaign.headline}</TikTokHeadline>
-      <TikTokSubline campaign={campaign}>{campaign.subline}</TikTokSubline>
+      <TikTokHeadline campaign={campaign} heroId={heroId}>
+        {campaign.headline}
+      </TikTokHeadline>
+      <TikTokSubline campaign={campaign} heroId={heroId}>
+        {campaign.subline}
+      </TikTokSubline>
       <p className="mt-6 text-sm" style={{ color: theme.muted }}>
         Eén keer &apos;s ochtends je energie kiezen. Structuro zet 1, 2 of 3 taken klaar. Meer niet.
       </p>
@@ -131,28 +153,26 @@ export function HeroLayoutC(props: HeroProps) {
 }
 
 export function HeroLayoutD(props: HeroProps) {
-  const { campaign } = props;
-  const theme = getLpThemeTokens(campaign);
+  const { campaign, heroId } = props;
 
   return (
     <TikTokLandingShell {...props} mainClassName="items-center text-center">
-      <TikTokEyebrow campaign={campaign}>Voor het ADHD-brein</TikTokEyebrow>
-      <TikTokHeadline campaign={campaign} centered>
+      <TikTokEyebrow campaign={campaign} heroId={heroId}>
+        Voor het ADHD-brein
+      </TikTokEyebrow>
+      <TikTokHeadline campaign={campaign} heroId={heroId} centered>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} centered>
+      <TikTokSubline campaign={campaign} heroId={heroId} centered>
         {campaign.subline}
       </TikTokSubline>
-      <p className="mt-6 text-sm" style={{ color: theme.muted }}>
-        3 dagen gratis · daarna pas betalen
-      </p>
     </TikTokLandingShell>
   );
 }
 
 export function HeroLayoutE(props: HeroProps) {
-  const { campaign } = props;
-  const theme = getLpThemeTokens(campaign);
+  const { campaign, heroId } = props;
+  const theme = getLpThemeTokens(campaign, heroId);
 
   return (
     <TikTokLandingShell {...props}>
@@ -160,8 +180,12 @@ export function HeroLayoutE(props: HeroProps) {
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
         Voor ADHD-breinen die vastlopen
       </div>
-      <TikTokHeadline campaign={campaign}>{campaign.headline}</TikTokHeadline>
-      <TikTokSubline campaign={campaign}>{campaign.subline}</TikTokSubline>
+      <TikTokHeadline campaign={campaign} heroId={heroId}>
+        {campaign.headline}
+      </TikTokHeadline>
+      <TikTokSubline campaign={campaign} heroId={heroId}>
+        {campaign.subline}
+      </TikTokSubline>
 
       <ol className="relative mt-8 space-y-4 pl-2">
         <div
