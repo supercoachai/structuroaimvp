@@ -18,6 +18,10 @@ import {
 } from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
 import {
+  isPasswordCreatePath,
+  PASSWORD_CREATE_PATH,
+} from "../auth/passwordSetupProfile";
+import {
   shouldTouchLastSeen,
   touchProfileLastSeenAt,
 } from "../activity/lastSeen";
@@ -272,6 +276,7 @@ export async function updateSession(
   }
 
   let onboardingCompleted = true;
+  let passwordSetupCompleted = true;
   let profileLastDagstartDate: string | null | undefined = undefined;
   let profileRowReadOk = false;
   let subscriptionStatus: string | null | undefined;
@@ -284,7 +289,7 @@ export async function updateSession(
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source, last_seen_at"
+        "onboarding_completed, onboarding_version, password_setup_completed, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source, last_seen_at"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -294,6 +299,7 @@ export async function updateSession(
         prof.onboarding_completed,
         prof.onboarding_version as number | null | undefined
       );
+      passwordSetupCompleted = prof.password_setup_completed === true;
       profileLastDagstartDate =
         prof.last_dagstart_date != null
           ? String(prof.last_dagstart_date).slice(0, 10)
@@ -438,6 +444,35 @@ export async function updateSession(
 
   const privacySetupDone =
     request.cookies.get(PRIVACY_SETUP_DONE_COOKIE)?.value === "1";
+
+  if (
+    onboardingCompleted &&
+    profileRowReadOk &&
+    !passwordSetupCompleted &&
+    !isProtectedTestAccount(user.email ?? null)
+  ) {
+    if (
+      !isPasswordCreatePath(pathname) &&
+      !pathname.startsWith("/auth/callback") &&
+      !pathname.startsWith("/auth/auth-code-error") &&
+      !pathname.startsWith("/api/")
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = PASSWORD_CREATE_PATH;
+      return NextResponse.redirect(url, 302);
+    }
+  }
+
+  if (
+    onboardingCompleted &&
+    profileRowReadOk &&
+    passwordSetupCompleted &&
+    isPasswordCreatePath(pathname)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = privacySetupDone ? "/" : "/consent";
+    return NextResponse.redirect(url, 302);
+  }
 
   if (onboardingCompleted && !privacySetupDone) {
     const onConsentPath =

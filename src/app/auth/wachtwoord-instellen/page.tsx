@@ -8,6 +8,7 @@ import {
   clearAuthHashFromUrl,
   parseAuthHashFragment,
 } from "@/lib/auth/recoveryHash";
+import { markPasswordSetupCompleted } from "@/lib/auth/passwordSetupProfile";
 import { useI18n } from "@/lib/i18n";
 
 export default function WachtwoordInstellenPage() {
@@ -121,6 +122,12 @@ export default function WachtwoordInstellenPage() {
       if (upErr) {
         setError(upErr.message || t("passwordSetup.errSave"));
         return;
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.id) {
+        await markPasswordSetupCompleted(supabase, user.id);
       }
       await supabase.auth.signOut();
       router.push("/login?wachtwoord=bijgewerkt");

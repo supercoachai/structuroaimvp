@@ -19,6 +19,7 @@ import { ST_ENERGY_DOT, type StEnergyId } from "@/lib/structuro/energyTokens";
 import type { User } from "@supabase/supabase-js";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { completeOnboardingProfile } from "@/lib/onboardingMutations";
+import { PASSWORD_CREATE_PATH } from "@/lib/auth/passwordSetupProfile";
 import CycleSetupForm from "@/components/cycle/CycleSetupForm";
 import InfoButton from "@/components/info/InfoButton";
 import CycleEnergyContext from "@/components/cycle/CycleEnergyContext";
@@ -1390,7 +1391,7 @@ export default function OnboardingFlowContent({
         Date.now() - onboardingStartedAtRef.current
       ),
     });
-    window.location.assign("/");
+    window.location.assign(user?.id ? PASSWORD_CREATE_PATH : "/");
   };
 
   const obLanguageToggle = (

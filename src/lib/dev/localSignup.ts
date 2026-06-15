@@ -66,5 +66,10 @@ export async function createLocalDevUser(
     return { ok: false, error: "create_failed", status: 500 };
   }
 
+  await admin
+    .from("profiles")
+    .update({ password_setup_completed: true })
+    .eq("id", data.user.id);
+
   return { ok: true, userId: data.user.id };
 }

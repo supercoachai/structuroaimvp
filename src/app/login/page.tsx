@@ -30,6 +30,7 @@ import {
   readCheckoutReturn,
 } from '@/lib/checkoutReturnStorage';
 import { resolvePostLoginPathFromProfile } from '@/lib/postAuthRouting';
+import { markPasswordSetupCompleted } from '@/lib/auth/passwordSetupProfile';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -327,6 +328,7 @@ function LoginPageInner() {
 
         if (data.user) {
           await persistSignupAttributionToProfile(data.user.id);
+          await markPasswordSetupCompleted(supabase, data.user.id);
           queueSignupCompletedForAnalytics();
           setMessage(t('login.signupDone'));
           clearStructuroLocalModeCookie();
