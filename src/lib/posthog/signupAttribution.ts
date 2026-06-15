@@ -145,16 +145,19 @@ export function getSignupAttributionSource(): string {
   return getStoredSignupSource();
 }
 
-/** Website-, TikTok- of UTM-verkeer: andere copy op /registreren. */
+/** Website-, bridge- of UTM-verkeer: andere copy op /registreren. */
 export function isAcquisitionSignupContext(): boolean {
   if (typeof window === "undefined") return false;
 
   const source = getStoredSignupSource();
-  if (source && source !== "direct") return true;
+  if (source && source !== "direct" && source !== "tiktok") return true;
 
   try {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("utm_source") || params.get("source")) return true;
+    const utm = params.get("utm_source");
+    const legacy = params.get("source");
+    if (utm && utm !== "tiktok") return true;
+    if (legacy && legacy !== "tiktok") return true;
   } catch {
     /* ignore */
   }
@@ -163,7 +166,31 @@ export function isAcquisitionSignupContext(): boolean {
     const ref = document.referrer;
     if (!ref) return false;
     if (/structuro\.eu/i.test(ref)) return true;
-    if (/\/tiktok(?:\?|$|\/)/i.test(ref)) return true;
+    if (/\/start(?:\?|$|\/)/i.test(ref)) return true;
+  } catch {
+    /* ignore */
+  }
+
+  return false;
+}
+
+/** TikTok-bridge of TikTok-attributie: scherpere copy op /registreren. */
+export function isTikTokSignupContext(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const source = getStoredSignupSource();
+  if (source === "tiktok") return true;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("source") === "tiktok" || params.get("utm_source") === "tiktok") return true;
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const ref = document.referrer;
+    if (ref && /\/tiktok(?:\?|$|\/)/i.test(ref)) return true;
   } catch {
     /* ignore */
   }

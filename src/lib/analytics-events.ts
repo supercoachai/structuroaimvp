@@ -5,6 +5,7 @@ export const ANALYTICS_EVENTS = {
   acquisition_signup_started: "acquisition_signup_started",
   tiktok_landing_viewed: "tiktok_landing_viewed",
   tiktok_landing_cta_clicked: "tiktok_landing_cta_clicked",
+  organic_landing_cta_clicked: "organic_landing_cta_clicked",
   tiktok_signup_started: "tiktok_signup_started",
   signup_completed: "signup_completed",
   checkout_started: "checkout_started",

@@ -28,15 +28,20 @@
   }
 
   function structuroSignupBridgeUrl(contentId) {
-    var params = new URLSearchParams({
-      utm_source: "structuro_eu",
-      utm_medium: "organic",
-      utm_campaign: "website",
+    var params = new URLSearchParams(window.location.search || "");
+    var isPaidTikTok =
+      (params.get("utm_source") || "").toLowerCase() === "tiktok" ||
+      (params.get("utm_medium") || "").toLowerCase() === "paid_social";
+    var bridgePath = isPaidTikTok ? "/tiktok" : "/start";
+    var bridgeParams = new URLSearchParams({
+      utm_source: isPaidTikTok ? "tiktok" : "structuro_eu",
+      utm_medium: isPaidTikTok ? "paid_social" : "organic",
+      utm_campaign: isPaidTikTok ? "tiktok_promote" : "website",
       utm_content: contentId || "cta",
       campaign: "weten",
       hero: "A",
     });
-    return "https://www.structuro.ai/tiktok?" + params.toString();
+    return "https://www.structuro.ai" + bridgePath + "?" + bridgeParams.toString();
   }
 
   function applySignupBridgeLinks() {

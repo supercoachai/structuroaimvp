@@ -48,9 +48,18 @@ import { addTaskToSupabase, fetchTasksFromSupabase, updateTaskInSupabase } from 
 import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, getTasksFromStorage, saveCheckInToStorage, updateTaskInStorage } from "@/lib/localStorageTasks";
 import { toast } from "@/components/Toast";
-import { captureProductEvent } from "@/lib/posthog/track";
+import {
+  COMPACT_FIRST_DAY_SLIDE,
+  COMPACT_NAME_SLIDE,
+  COMPACT_PROGRESS_STEPS,
+  COMPACT_SLIDE_MS,
+  compactPrevSlide,
+  compactProgressIndex,
+  ONBOARDING_COMPACT_MODE,
+} from "@/lib/onboarding/compactFlow";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
 import { captureDagstartEventsFromOnboardingFinish } from "@/lib/posthog/onboardingDagstartEvents";
+import { captureProductEvent } from "@/lib/posthog/track";
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
 
@@ -189,8 +198,8 @@ function ObNavIconBadge({
 }
 
 const STEP_COUNT = 10;
-/** Horizontale slide tussen stappen (bewust rustig). */
-const SLIDE_MS = 1200;
+/** Horizontale slide tussen stappen (bewust rustig; korter in compacte modus). */
+const SLIDE_MS = ONBOARDING_COMPACT_MODE ? COMPACT_SLIDE_MS : 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 const NAME_SLIDE_INDEX = 0;
@@ -1128,7 +1137,7 @@ export default function OnboardingFlowContent({
           /* ignore */
         }
       }
-      setStep((s) => s + 1);
+      setStep(ONBOARDING_COMPACT_MODE ? COMPACT_FIRST_DAY_SLIDE : step + 1);
       return;
     }
     setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
@@ -1138,8 +1147,13 @@ export default function OnboardingFlowContent({
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
     cycleWelcomeCrossfadeTimersRef.current = [];
     setCycleWelcomeCrossfade("idle");
+    const compactPrev = compactPrevSlide(step);
+    if (compactPrev !== null) {
+      setStep(compactPrev);
+      return;
+    }
     setStep((s) => Math.max(s - 1, 0));
-  }, []);
+  }, [step]);
 
   const skipCycleAndContinue = useCallback(() => {
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
@@ -1406,7 +1420,7 @@ export default function OnboardingFlowContent({
   const nameStepComplete = nameOk;
   const slideUsesCrossfade = cycleWelcomeCrossfade !== "idle";
 
-  const backBtn = step > 0 && (
+  const backBtn = (step > 0 && (!ONBOARDING_COMPACT_MODE || step > COMPACT_NAME_SLIDE)) && (
     <button
       type="button"
       onClick={goPrev}
@@ -2447,7 +2461,7 @@ export default function OnboardingFlowContent({
                   <button
                     ref={firstDayBeginCtaRef}
                     type="button"
-                    onClick={() => void goNext()}
+                    onClick={() => void (ONBOARDING_COMPACT_MODE ? finish() : goNext())}
                     className="mx-auto block w-full max-w-md rounded-xl bg-blue-600 py-4 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.99]"
                   >
                     {t("onboarding.firstDayCta")}
@@ -2666,23 +2680,40 @@ export default function OnboardingFlowContent({
           className="flex shrink-0 justify-center gap-2 border-t border-slate-200/60 bg-gradient-to-br from-slate-50/95 to-blue-50/95 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
           aria-label={t("onboarding.navProgress")}
         >
-          {Array.from({ length: STEP_COUNT }, (_, i) => (
+          {Array.from(
+            { length: ONBOARDING_COMPACT_MODE ? COMPACT_PROGRESS_STEPS : STEP_COUNT },
+            (_, i) => {
+              const activeIndex = ONBOARDING_COMPACT_MODE
+                ? compactProgressIndex({
+                    step,
+                    firstDayEnergy,
+                    firstDayTaskPhaseVisible,
+                    firstTaskTitle,
+                    firstDayReady,
+                  })
+                : step;
+              return (
             <button
               key={i}
               type="button"
-              onClick={() => goToStep(i)}
+              onClick={() => {
+                if (ONBOARDING_COMPACT_MODE) return;
+                goToStep(i);
+              }}
               aria-label={t("onboarding.navStep", {
                 n: String(i + 1),
-                total: String(STEP_COUNT),
+                total: String(ONBOARDING_COMPACT_MODE ? COMPACT_PROGRESS_STEPS : STEP_COUNT),
               })}
-              aria-current={i === step ? "step" : undefined}
+              aria-current={i === activeIndex ? "step" : undefined}
               className={`rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                i === step
+                i === activeIndex
                   ? "h-2 w-6 bg-blue-600"
                   : "h-2 w-2 bg-gray-300 hover:bg-gray-400"
               }`}
             />
-          ))}
+              );
+            }
+          )}
         </nav>
       </div>
     </div>

@@ -6,6 +6,7 @@ import {
   type AcquisitionAttribution,
 } from "@/lib/posthog/acquisitionAttribution";
 import { captureMarketingEvent } from "@/lib/posthog/track";
+import { bridgeChannelFromPath } from "@/lib/acquisition/bridgePaths";
 import { resolveLpVariant } from "@/lib/tiktok/lpConfig";
 
 type SearchParamsLike = {
@@ -33,7 +34,7 @@ function attributionProperties(
     funnel: "acquisition",
   };
 
-  if (attribution.landing_path === "/tiktok" || attribution.landing_path.startsWith("/tiktok/")) {
+  if (bridgeChannelFromPath(attribution.landing_path)) {
     const variant = resolveLpVariant({
       campaign: searchParams?.get("campaign"),
       utmContent: searchParams?.get("utm_content"),
@@ -66,7 +67,7 @@ function serverPayload(
     entry_url: entryUrl,
   };
 
-  if (attribution.landing_path === "/tiktok" || attribution.landing_path.startsWith("/tiktok/")) {
+  if (bridgeChannelFromPath(attribution.landing_path)) {
     const variant = resolveLpVariant({
       campaign: searchParams?.get("campaign"),
       utmContent: searchParams?.get("utm_content"),

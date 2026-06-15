@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildOrganicStartUrl,
   buildTikTokLandingUrl,
   resolveLpCampaign,
   resolveLpVariant,
@@ -39,5 +40,16 @@ describe("lpConfig", () => {
     expect(url).toContain("utm_content=week3_v2");
     expect(url).toContain("campaign=cyclus");
     expect(url).toContain("hero=B");
+  });
+
+  it("bouwt organische start URL zonder tiktok pad", () => {
+    const url = buildOrganicStartUrl({
+      contentId: "zelftest_sticky",
+      campaign: "weten",
+      hero: "A",
+    });
+    expect(url).toContain("/start?");
+    expect(url).not.toContain("/tiktok");
+    expect(url).toContain("utm_source=structuro_eu");
   });
 });

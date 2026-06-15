@@ -12,6 +12,7 @@ import {
   getStoredSignupCampaign,
   getStoredSignupSource,
   isAcquisitionSignupContext,
+  isTikTokSignupContext,
   persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
@@ -44,6 +45,7 @@ function RegistrerenAccountInner() {
   const [trialDays, setTrialDays] = useState(DEFAULT_STRIPE_TRIAL_DAYS);
   const [eventSignupFlow, setEventSignupFlow] = useState(false);
   const [acquisitionFlow, setAcquisitionFlow] = useState(false);
+  const [tiktokFlow, setTiktokFlow] = useState(false);
   const mounted = useClientMounted();
 
   useEffect(() => {
@@ -52,6 +54,7 @@ function RegistrerenAccountInner() {
     setTrialDays(resolveStripeTrialDaysForSignupSource(source));
     setEventSignupFlow(isEventSignupSource(source));
     setAcquisitionFlow(isAcquisitionSignupContext());
+    setTiktokFlow(isTikTokSignupContext());
   }, [searchParams]);
 
   useEffect(() => {
@@ -203,15 +206,21 @@ function RegistrerenAccountInner() {
     );
   }
 
-  const headingKey = acquisitionFlow
-    ? "registrerenPage.accountHeadingAcquisition"
-    : "registrerenPage.accountHeading";
-  const subheadingKey = acquisitionFlow
-    ? "registrerenPage.accountSubheadingAcquisition"
-    : "registrerenPage.accountSubheading";
-  const continueLabel = acquisitionFlow
-    ? t("registrerenPage.continueBtnMagicLink")
-    : t("registrerenPage.continueBtn");
+  const headingKey = tiktokFlow
+    ? "registrerenPage.accountHeadingTikTok"
+    : acquisitionFlow
+      ? "registrerenPage.accountHeadingAcquisition"
+      : "registrerenPage.accountHeading";
+  const subheadingKey = tiktokFlow
+    ? "registrerenPage.accountSubheadingTikTok"
+    : acquisitionFlow
+      ? "registrerenPage.accountSubheadingAcquisition"
+      : "registrerenPage.accountSubheading";
+  const continueLabel = tiktokFlow
+    ? t("registrerenPage.continueBtnTikTok", { days: String(trialDays) })
+    : acquisitionFlow
+      ? t("registrerenPage.continueBtnMagicLink")
+      : t("registrerenPage.continueBtn");
 
   return (
     <RegistrerenShell error={error}>
@@ -225,9 +234,14 @@ function RegistrerenAccountInner() {
           {t(headingKey)}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(subheadingKey)}</p>
-        {acquisitionFlow ? (
+        {acquisitionFlow || tiktokFlow ? (
           <p className="mt-2 text-xs font-medium text-slate-500">
-            {t("registrerenPage.acquisitionTrustLine", { days: String(trialDays) })}
+            {t(
+              tiktokFlow
+                ? "registrerenPage.tiktokTrustLine"
+                : "registrerenPage.acquisitionTrustLine",
+              { days: String(trialDays) }
+            )}
           </p>
         ) : null}
       </div>

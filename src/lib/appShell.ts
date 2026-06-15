@@ -5,6 +5,7 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/login',
     '/registreren',
     '/tiktok',
+    '/start',
     '/auth',
     '/onboarding',
     '/consent',

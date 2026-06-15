@@ -45,6 +45,18 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.source).toBe("tiktok");
   });
 
+  it("markeert /start route als organische bron (geen TikTok)", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/start",
+      searchParams: new URLSearchParams(
+        "utm_source=structuro_eu&utm_medium=organic&utm_campaign=website"
+      ),
+      referrer: "https://www.structuro.eu/",
+    });
+    expect(result.is_tiktok).toBe(false);
+    expect(result.source).toBe("structuro_eu");
+  });
+
   it("direct verkeer blijft direct", () => {
     const result = resolveAcquisitionAttribution({
       pathname: "/registreren",

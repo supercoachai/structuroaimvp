@@ -107,8 +107,19 @@ export function captureFirstTouchAttribution(): void {
       window.location.pathname.startsWith("/tiktok/")
         ? "tiktok"
         : "";
+    const fromOrganicPath =
+      window.location.pathname === "/start" ||
+      window.location.pathname.startsWith("/start/")
+        ? "structuro_eu"
+        : "";
     const source =
-      fromUtm || fromSource || fromTtclid || fromTikTokPath || fromReferrer || "direct";
+      fromUtm ||
+      fromSource ||
+      fromTtclid ||
+      fromTikTokPath ||
+      fromOrganicPath ||
+      fromReferrer ||
+      "direct";
     const campaign = sanitize(params.get("utm_campaign")) || null;
 
     const payload: FirstTouchAttribution = {

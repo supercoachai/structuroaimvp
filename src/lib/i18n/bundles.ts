@@ -317,8 +317,13 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       accountHeadingAcquisition: "Je herkende het net. Nu de eerste schone lei.",
       accountSubheadingAcquisition:
         "Geen wachtwoord nodig. We sturen een link naar je inbox.",
+      accountHeadingTikTok: "Je herkende het net. Nu de eerste schone lei.",
+      accountSubheadingTikTok:
+        "3 dagen gratis. Geen streaks, geen badges, geen schuldgevoel.",
       acquisitionTrustLine: "Geen wachtwoord. {days} dagen gratis proberen.",
+      tiktokTrustLine: "Naam + e-mail. Wachtwoord kun je later instellen.",
       continueBtnMagicLink: "Stuur link naar mijn inbox",
+      continueBtnTikTok: "Ontlast mijn brein ({days} dagen gratis)",
       magicLinkSentTitle: "Check je inbox",
       magicLinkSentBody:
         "We stuurden een link naar {email}. Tik erop om verder te gaan met Structuro.",
@@ -803,8 +808,13 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       accountHeadingAcquisition: "You just recognized yourself. Now a clean slate.",
       accountSubheadingAcquisition:
         "No password needed. We will send a link to your inbox.",
+      accountHeadingTikTok: "You just recognized yourself. Now a clean slate.",
+      accountSubheadingTikTok:
+        "3 days free. No streaks, no badges, no guilt.",
       acquisitionTrustLine: "No password. Try free for {days} days.",
+      tiktokTrustLine: "Name and email only. Set a password later.",
       continueBtnMagicLink: "Email me a link",
+      continueBtnTikTok: "Unclutter my brain ({days} days free)",
       magicLinkSentTitle: "Check your inbox",
       magicLinkSentBody:
         "We sent a link to {email}. Tap it to continue with Structuro.",

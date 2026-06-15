@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 import { AcquisitionBridgeClient } from "@/components/acquisition/AcquisitionBridgeClient";
-import { resolveLpVariant } from "@/lib/tiktok/lpConfig";
+import { LP_ORGANIC_DEFAULT_CAMPAIGN_ID, resolveLpVariant } from "@/lib/tiktok/lpConfig";
 
 export const metadata: Metadata = {
-  title: "Structuro | Voor ADHD-breinen die vastlopen op starten",
+  title: "Structuro | Herken je jezelf? Start je proefperiode",
   description:
     "Geen lange to-do's. Eén haalbare stap per dag. Start je gratis proefperiode.",
   robots: { index: false, follow: false },
 };
 
-type TikTokSearchParams = {
+type StartSearchParams = {
   campaign?: string;
   hero?: string;
   utm_content?: string;
@@ -19,14 +19,14 @@ type TikTokSearchParams = {
   utm_campaign?: string;
 };
 
-export default async function TikTokLandingPage({
+export default async function OrganicStartPage({
   searchParams,
 }: {
-  searchParams: Promise<TikTokSearchParams>;
+  searchParams: Promise<StartSearchParams>;
 }) {
   const params = await searchParams;
   const variant = resolveLpVariant({
-    campaign: params.campaign ?? null,
+    campaign: params.campaign ?? LP_ORGANIC_DEFAULT_CAMPAIGN_ID,
     utmContent: params.utm_content ?? null,
     hero: params.hero ?? null,
   });
@@ -38,7 +38,7 @@ export default async function TikTokLandingPage({
 
   return (
     <AcquisitionBridgeClient
-      channel="tiktok"
+      channel="organic"
       variant={variant}
       queryKey={query.toString()}
     />

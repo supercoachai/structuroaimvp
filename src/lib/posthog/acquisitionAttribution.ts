@@ -1,3 +1,4 @@
+import { bridgeChannelFromPath } from "@/lib/acquisition/bridgePaths";
 import { normalizeSignupSource } from "@/lib/posthog/signupAttribution";
 
 export const ACQUISITION_VISITOR_KEY = "structuro_acq_vid";
@@ -63,8 +64,8 @@ export function resolveAcquisitionAttribution(input: {
   const has_ttclid = Boolean(sanitize(params.get("ttclid")));
   const refDomain = referrerDomain(input.referrer);
 
-  const fromTikTokRoute =
-    landing_path === "/tiktok" || landing_path.startsWith("/tiktok/");
+  const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
+  const fromOrganicRoute = bridgeChannelFromPath(landing_path) === "organic";
 
   const is_tiktok =
     has_ttclid ||
@@ -78,6 +79,7 @@ export function resolveAcquisitionAttribution(input: {
     legacySource ||
     (isTikTokReferrer(input.referrer) ? "tiktok" : "") ||
     (fromTikTokRoute ? "tiktok" : "") ||
+    (fromOrganicRoute ? "structuro_eu" : "") ||
     "direct";
 
   if (is_tiktok && source === "direct") {

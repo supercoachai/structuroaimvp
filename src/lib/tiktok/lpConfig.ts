@@ -90,6 +90,9 @@ const ALL_HEROES: readonly LpHeroId[] = ["A", "B", "C", "D", "E"];
 /** Fallback campagne zonder URL-params (legacy LP was cyclus-hook). */
 export const LP_DEFAULT_CAMPAIGN_ID: LpCampaignId = "cyclus";
 
+/** Standaard campagne voor organische bridge (/start, structuro.eu). */
+export const LP_ORGANIC_DEFAULT_CAMPAIGN_ID: LpCampaignId = "weten";
+
 export const LP_RITUAL_STEPS = [
   { title: "Kies je energie", desc: "Eén tik: laag, midden of hoog." },
   { title: "Krijg 1 tot 3 taken", desc: "Passend bij je dag. Nooit meer." },
@@ -282,4 +285,23 @@ export function buildTikTokLandingUrl(opts: {
   if (opts.campaign) params.set("campaign", opts.campaign);
   if (opts.hero) params.set("hero", opts.hero);
   return `https://www.structuro.ai/tiktok?${params.toString()}`;
+}
+
+/** Organische bridge-URL (structuro.eu, geen TikTok-attributie). */
+export function buildOrganicStartUrl(opts: {
+  contentId: string;
+  campaign?: LpCampaignId;
+  hero?: LpHeroId;
+  medium?: "organic" | "referral";
+  campaignUtm?: string;
+}): string {
+  const params = new URLSearchParams({
+    utm_source: "structuro_eu",
+    utm_medium: opts.medium ?? "organic",
+    utm_campaign: opts.campaignUtm ?? "website",
+    utm_content: opts.contentId,
+  });
+  if (opts.campaign) params.set("campaign", opts.campaign);
+  if (opts.hero) params.set("hero", opts.hero);
+  return `https://www.structuro.ai/start?${params.toString()}`;
 }

@@ -319,18 +319,29 @@ Zie `docs/tiktok-posthog-dashboard.md`:
 - [x] Auth recovery hash-fix (`/auth/wachtwoord-instellen`)
 - [x] Docs: workflow, ClickUp, social standaard §13
 
-### Nog te doen (prioriteit)
+### Al gedaan (deploy 2026-06-15)
+
+- [x] Magic link signup (geen wachtwoord) + acquisition-copy op `/registreren`
+- [x] structuro.eu CTAs → bridge (`/start` organisch, `/tiktok` paid)
+- [x] Zelftest sticky CTA + events
+- [x] Gedeelde acquisition-bridge (`/start`, `/tiktok`, `AcquisitionBridgeClient`)
+- [x] PostHog server exception-fix (`posthog-node` external packages)
+- [x] Onboarding compact modus v1 (`compactFlow.ts`, flag `ONBOARDING_COMPACT_MODE`)
+
+### Actiepunten Niels
+
+| # | Actie | Waarom | Gebied |
+|---|-------|--------|--------|
+| **1** | **Onboarding 10 → 5 stappen afronden en live valideren** | Compact modus staat aan in code, maar nog niet end-to-end getest op mobiel. Meet signup→dagstart vóór paid ads. | `src/lib/onboarding/compactFlow.ts`, `OnboardingFlowContent.tsx`, PostHog funnel |
+| **2** | **`/registreren/plan` optimaliseren voor acquisition-verkeer** | Na magic link komt checkout; copy en frictie zijn nog generiek. Pas plan-pagina aan voor website/TikTok-bezoekers (trial-trust, korter pad). | `src/app/registreren/plan/`, `RegistrerenPlanClient` (of equivalent) |
+
+### Nog te doen (overig)
 
 | P | Taak | Bestand / gebied |
 |---|------|------------------|
-| **P0** | Supabase redirect URL: `/auth/wachtwoord-instellen` | Dashboard |
+| **P0** | Supabase redirect URLs: `/auth/callback` + `/auth/wachtwoord-instellen` | Dashboard |
 | **P0** | TikTok bio + ads → `/tiktok`, geo NL-only | Ads Manager |
-| **P1** | Zelftest sticky CTA → `/tiktok` + events | `landing-zelftest.js`, `analytics.js` |
-| **P1** | TikTok-conditional copy op `/registreren` | `RegistrerenAccountClient.tsx` |
-| **P1** | Magic link signup | Supabase + registreren flow |
 | **P2** | Google social login | Supabase provider + UI |
-| **P2** | Onboarding 10 → 5 stappen | `OnboardingFlowContent.tsx` |
-| **P2** | structuro.eu paid CTAs → `/tiktok` | `index.html`, `vercel.json` |
 | **P3** | Per-kaart CTA-teksten op zelftest | `landing-zelftest.js` |
 | **P3** | Herstart paid ads (1 variant) | Ads Manager |
 

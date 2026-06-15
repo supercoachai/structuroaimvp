@@ -18,8 +18,10 @@ export function isAcquisitionMarketingPath(pathname: string | null | undefined):
   if (isWaitlistMarketingPath(pathname)) return true;
   if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
   if (pathname === "/tiktok" || pathname.startsWith("/tiktok/")) return true;
+  if (pathname === "/start" || pathname.startsWith("/start/")) return true;
   return false;
 }
 
 /** Aanbevolen landings-URL voor TikTok Promote (UTM's voor PostHog-filter). */
-export { tiktokPromoteLandingUrl as TIKTOK_PROMOTE_LANDING_URL } from "@/lib/tiktokLanding";
+export { tiktokPromoteLandingUrl as TIKTOK_PROMOTE_LANDING_URL } from "@/lib/acquisition/bridgePaths";
+export { buildOrganicStartUrl as ORGANIC_START_LANDING_URL_BUILDER } from "@/lib/acquisition/bridgePaths";

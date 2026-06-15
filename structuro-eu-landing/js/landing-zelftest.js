@@ -7,38 +7,58 @@
       title: 'Taakinitiatie',
       short: 'Ik weet w\u00e1t ik moet doen, ik begin alleen niet.',
       body: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
+      cta: 'Activeer mijn startknop (3 dagen gratis)',
+      contentId: 'zelftest_taakinitiatie',
     },
     {
       tag: 'COGNITIEF',
       title: 'Werkgeheugen-overload',
       short: 'Mijn hoofd zit vol, en een lange lijst maakt het erger.',
       body: 'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te d\u00f3\u00e9n in plaats van te onthouden.',
+      cta: 'Toon me max 3 taken (3 dagen gratis)',
+      contentId: 'zelftest_werkgeheugen',
     },
     {
       tag: 'DOPAMINE',
       title: 'Energie en motivatie',
       short: 'De ene dag vlieg ik, de andere kom ik niet vooruit.',
       body: 'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',
+      cta: 'Laat me op energie plannen (3 dagen gratis)',
+      contentId: 'zelftest_energie',
     },
     {
       tag: 'TIJD',
       title: 'Tijdblindheid',
       short: 'Ik voel tijd niet, een dag heeft geen begin of eind.',
       body: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
+      cta: 'Geef me een schone lei',
+      contentId: 'zelftest_tijdblindheid',
     },
     {
       tag: 'CYCLUS',
       title: 'Hormonen en focus',
       short: 'Sommige weken werkt mijn brein gewoon anders.',
       body: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
+      cta: 'Plan mee met mijn cyclus (3 dagen gratis)',
+      contentId: 'zelftest_cyclus',
     },
     {
       tag: 'RUST',
       title: 'Burn-out preventie',
       short: 'Te veel keuzes per dag en ik ben op.',
       body: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
+      cta: 'Minder keuzes vandaag (3 dagen gratis)',
+      contentId: 'zelftest_keuzestress',
     },
   ];
+
+  function capturePh(event, props) {
+    try {
+      if (window.posthog && typeof window.posthog.capture === 'function') {
+        window.posthog.capture(event, props || {}, { send_instantly: true });
+      }
+    } catch (e) {}
+  }
 
   var mount = document.getElementById('landingZelftestMount');
   var stickyHost = document.getElementById('landingZelftestSticky');
@@ -57,6 +77,7 @@
   var rowsEl;
   var pinned = false;
   var rafPending = false;
+  var lastPrimaryReason = null;
 
   function navOffset() {
     var nav = document.querySelector('.nav');
@@ -141,7 +162,10 @@
         s: 'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.',
       };
     }
-    return { t: count + ' van 6 herkenbaar', s: 'Structuro is letterlijk voor jouw brein gemaakt.' };
+    return {
+      t: count + ' van 6 herkenbaar',
+      s: 'Meerdere punten? Dat is normaal bij ADHD.',
+    };
   }
 
   function signupBridgeUrl(contentId) {
@@ -149,10 +173,32 @@
       return window.structuroSignupBridgeUrl(contentId);
     }
     return (
-      'https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
+      'https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
       (contentId || 'zelftest_sticky') +
       '&campaign=weten&hero=A'
     );
+  }
+
+  function primaryReasonIndex() {
+    if (lastPrimaryReason !== null && picked[lastPrimaryReason]) {
+      return lastPrimaryReason;
+    }
+    for (var i = 0; i < REASONS.length; i++) {
+      if (picked[i]) return i;
+    }
+    return null;
+  }
+
+  function stickyCtaLabel() {
+    var idx = primaryReasonIndex();
+    if (idx === null) return 'Start 3 dagen gratis';
+    return REASONS[idx].cta;
+  }
+
+  function stickyContentId() {
+    var idx = primaryReasonIndex();
+    if (idx === null) return 'zelftest_sticky';
+    return REASONS[idx].contentId;
   }
 
   function syncSticky() {
@@ -164,6 +210,9 @@
 
     if (stickyCtaEl) {
       stickyCtaEl.hidden = count === 0;
+      stickyCtaEl.textContent = stickyCtaLabel();
+      stickyCtaEl.href = signupBridgeUrl(stickyContentId());
+      stickyCtaEl.setAttribute('data-ph-cta', stickyContentId());
     }
 
     var dots = dotsEl.querySelectorAll('.zt-dot');
@@ -191,6 +240,14 @@
 
   function toggle(k) {
     picked[k] = !picked[k];
+    if (picked[k]) lastPrimaryReason = k;
+    capturePh('zelftest_recognition_toggled', {
+      card_index: k,
+      card_id: REASONS[k].contentId,
+      recognized: picked[k],
+      recognition_count: countPicked(),
+      page_path: window.location.pathname || '/',
+    });
     syncRow(k);
     syncSticky();
   }
@@ -236,8 +293,15 @@
     stickyCtaEl.href = signupBridgeUrl('zelftest_sticky');
     stickyCtaEl.setAttribute('data-ph-cta', 'zelftest_sticky');
     stickyCtaEl.setAttribute('data-event', 'zelftest_sticky_cta_click');
-    stickyCtaEl.textContent = 'Start gratis';
+    stickyCtaEl.textContent = 'Start 3 dagen gratis';
     stickyCtaEl.hidden = true;
+    stickyCtaEl.addEventListener('click', function () {
+      capturePh('zelftest_cta_clicked', {
+        cta_id: stickyContentId(),
+        recognition_count: countPicked(),
+        page_path: window.location.pathname || '/',
+      });
+    });
     stickyEl.appendChild(stickyCtaEl);
 
     stickyHost.appendChild(stickyEl);
