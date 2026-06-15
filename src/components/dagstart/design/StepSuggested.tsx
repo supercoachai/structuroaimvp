@@ -130,16 +130,16 @@ export default function StepSuggested({
 
   if (suggested.length === 0 && onAddTask) {
     return (
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="flex w-full flex-col">
         <NewTaskFlow
           variant="compact"
           mode="panel"
-          fillContainer
+          showClose={false}
           saving={addBusy}
           onSave={async (payload) => {
             await onAddTask(payload);
           }}
-          className="min-h-0 min-w-0 flex-1 shadow-none"
+          className="w-full shadow-none"
         />
       </div>
     );

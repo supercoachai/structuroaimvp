@@ -214,22 +214,23 @@ export default function StepSwipe({
 
   if (queue.length === 0) {
     if (showAddFlow) {
+      const emptyTaskPool = tasks.length === 0;
       return (
-        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+        <div className={`flex w-full flex-col${emptyTaskPool ? "" : " min-h-0 flex-1 overflow-hidden"}`}>
           <NewTaskFlow
             variant="compact"
             mode="panel"
-            fillContainer
+            fillContainer={!emptyTaskPool}
             saving={addBusy}
-            onClose={
-              tasks.length === 0 ? undefined : () => setAddOpen(false)
-            }
-            showClose={tasks.length > 0}
+            onClose={emptyTaskPool ? undefined : () => setAddOpen(false)}
+            showClose={!emptyTaskPool}
             onSave={async (payload) => {
               await onAddTask?.(payload);
               setAddOpen(false);
             }}
-            className="min-h-0 min-w-0 flex-1 shadow-none"
+            className={
+              emptyTaskPool ? "w-full shadow-none" : "min-h-0 min-w-0 flex-1 shadow-none"
+            }
           />
         </div>
       );

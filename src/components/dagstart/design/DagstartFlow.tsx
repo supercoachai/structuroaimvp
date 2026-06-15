@@ -501,9 +501,15 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
     });
   }, []);
 
+  const step2CompactAddTask =
+    step === 2 &&
+    ((choice === "structuro" && suggestedTasks.length === 0) ||
+      (choice === "self" && taskPool.length === 0));
+  const step2NeedsTallCard = step === 2 && !step2CompactAddTask;
+
   return (
-    <div className={`ds-root${step === 2 ? " ds-root--tall-step" : ""}`}>
-      <div className={`ds-card${step === 2 ? " ds-card--tall" : ""}`}>
+    <div className={`ds-root${step2NeedsTallCard ? " ds-root--tall-step" : ""}`}>
+      <div className={`ds-card${step2NeedsTallCard ? " ds-card--tall" : ""}`}>
         <div className="ds-topbar">
           <span className="ds-brand">Structuro</span>
           <span className="ds-topbar-meta">Dagstart</span>
@@ -523,8 +529,12 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         ) : null}
 
         <div
-          className={`ds-body ${step === 0 || step === 1 || step === 3 ? "center" : ""} ${
-            step === 2 ? "ds-body--task-pick" : step === 3 ? "scroll" : ""
+          className={`ds-body ${
+            step === 0 || step === 1 || step === 3 || step2CompactAddTask
+              ? "center"
+              : ""
+          } ${
+            step2NeedsTallCard ? "ds-body--task-pick" : step === 3 ? "scroll" : ""
           }`}
         >
           {step === 0 ? (
