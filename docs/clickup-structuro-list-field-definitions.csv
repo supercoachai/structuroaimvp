@@ -1,0 +1,21 @@
+field_name,clickup_type,required,dropdown_options,description,example
+work_type,Dropdown,yes,"Feature|Bug|Security|Infrastructure|Experiment|Support|Analytics|Ops",Soort werk,Feature
+work_area,Dropdown,yes,"Auth|Supabase|PostHog|Stripe|Landing|Core Loop|Dagstart|Shutdown|Acquisition|Mobile|Admin|Docs",Productgebied,Acquisition
+funnel_stage,Dropdown,no,"Acquisition|Activation|Core Loop|Retention|Revenue|N/A",Funnel-hypothese waar dit op inwerkt,Acquisition
+effort,Dropdown,no,"S|M|L",Geschatte omvang,M
+target_release,Date,no,,Streefdatum live,2026-06-16
+github_pr,URL,no,,Link naar PR of branch,https://github.com/...
+doctrine_relevant,Checkbox,no,,Taak raakt product-doctrine,true
+doctrine_flag,Dropdown,no,"none|anti_neurotypisch|progressive_silence|amnestische_backlog|empirische_firewall|executie_interface|multiple",Primaire doctrine,none
+doctrine_conflict,Checkbox,no,,Werkt tegen doctrine (agent moet waarschuwen),false
+experiment_waiver,Checkbox,no,,Expliciet experiment goedgekeurd,false
+experiment_doctrine_name,Short Text,no,,Welke doctrine wordt tijdelijk gewaagd,
+touches_auth,Checkbox,no,,Wijzigt login/signup/recovery,false
+touches_rls,Checkbox,no,,Wijzigt Supabase RLS/policies,false
+touches_pii,Checkbox,no,,Verwerkt of toont persoonsgegevens,false
+touches_posthog,Checkbox,no,,Wijzigt analytics/consent/events,true
+touches_stripe,Checkbox,no,,Wijzigt betaling/abonnement,false
+security_severity,Dropdown,no,"none|low|medium|high|critical",Alleen invullen bij Security/Bug met risico,none
+superagent_review_status,Dropdown,no,"pending|ok|warning|veto",Laatste Superagent review,pending
+superagent_review_done,Checkbox,no,,Superagent heeft Ready/Live review gedaan,false
+superagent_notes,Long Text,no,,Korte agent-notities bij review,

@@ -48,6 +48,19 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       backToSite: "Terug naar structuro.eu",
       footerPrivacy: "Privacy",
     },
+    tiktokLanding: {
+      eyebrow: "Van TikTok",
+      headline: "En in week 3 van je cyclus? Dan voelt alles 10x zwaarder.",
+      subhead:
+        "Structuro helpt je elke dag één haalbare stap kiezen. Geen lange lijsten, geen schuldgevoel.",
+      point1: "Je kiest één taak die past bij je energie vandaag.",
+      point2: "Micro-stappen doorbreken vastlopen aan het begin.",
+      point3: "Geen nieuw systeem om bij te houden. Eén dagelijkse loop.",
+      trustLine: "Wetenschappelijk onderbouwd. Gebouwd voor executie, niet voor inzicht.",
+      trialBadge: "{days} dagen gratis proberen",
+      cta: "Start gratis proefperiode",
+      ctaFootnote: "Daarna €12,99/maand. Opzegbaar wanneer je wilt.",
+    },
     shutdownPage: {
       doneTitle: "Dagafsluiting voltooid!",
       doneSubtitle: "Rust goed uit. Tot morgen!",
@@ -766,6 +779,19 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       validationEmail: "Enter a valid email address.",
       backToSite: "Back to structuro.eu",
       footerPrivacy: "Privacy policy",
+    },
+    tiktokLanding: {
+      eyebrow: "From TikTok",
+      headline: "Week 3 of your cycle? Everything feels 10x heavier.",
+      subhead:
+        "Structuro helps you pick one doable step each day. No long lists, no guilt.",
+      point1: "Pick one task that matches your energy today.",
+      point2: "Micro-steps break through getting stuck at the start.",
+      point3: "No new system to maintain. One daily loop.",
+      trustLine: "Evidence-based. Built for execution, not insight.",
+      trialBadge: "Try free for {days} days",
+      cta: "Start free trial",
+      ctaFootnote: "Then €12.99/month. Cancel anytime.",
     },
     shutdownPage: {
       doneTitle: "Day closed!",

@@ -14,6 +14,7 @@ import {
   persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
+import { trackAcquisitionSignupStarted } from "@/lib/posthog/acquisitionAnalyticsClient";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 import {
@@ -101,6 +102,7 @@ function RegistrerenAccountInner() {
   async function handleAccountContinue() {
     setError(null);
     setLoading(true);
+    trackAcquisitionSignupStarted({ pathname: "/registreren", searchParams });
 
     try {
       const supabase = createClient();

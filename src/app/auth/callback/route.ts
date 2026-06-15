@@ -64,6 +64,18 @@ export async function GET(request: Request) {
     })
   }
 
+  /**
+   * Oude reset-mails stuurden naar /auth/callback?next=/auth/wachtwoord-instellen#tokens.
+   * De server ziet geen hash; stuur door naar de client-pagina i.p.v. auth-code-error.
+   */
+  const recoveryNext = sanitizeNextPath(searchParams.get('next'))
+  if (
+    recoveryNext === '/auth/wachtwoord-instellen' ||
+    recoveryNext.startsWith('/auth/wachtwoord-instellen/')
+  ) {
+    return NextResponse.redirect(`${origin}${recoveryNext}`)
+  }
+
   return redirectToAuthError(origin, { error_code: 'missing_code' })
 }
 

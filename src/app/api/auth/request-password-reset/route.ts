@@ -41,7 +41,9 @@ async function postRequestPasswordReset(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent("/auth/wachtwoord-instellen")}`;
+  // Direct naar client-pagina: Supabase zet recovery-tokens in de URL-hash (#).
+  // Via /auth/callback verliest de server die hash en krijg je ten onrechte missing_code.
+  const redirectTo = `${origin}/auth/wachtwoord-instellen`;
 
   try {
     const result = await requestPasswordResetEmail({

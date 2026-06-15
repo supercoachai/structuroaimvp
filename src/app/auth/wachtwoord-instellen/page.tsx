@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  clearAuthHashFromUrl,
+  parseAuthHashFragment,
+} from "@/lib/auth/recoveryHash";
 import { useI18n } from "@/lib/i18n";
 
 export default function WachtwoordInstellenPage() {
@@ -18,21 +22,82 @@ export default function WachtwoordInstellenPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (!cancelled) {
-          setHasSession(Boolean(data.user?.id));
-        }
-      } catch {
-        if (!cancelled) setHasSession(false);
-      } finally {
-        if (!cancelled) setChecking(false);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const supabase = createClient();
+
+    // Reset-links zetten de tokens in de URL-hash. Supabase verwerkt die
+    // asynchroon (detectSessionInUrl). Eén losse getUser() racet daartegen en
+    // toont dan ten onrechte het "geen geldige link"-scherm. Daarom wachten we
+    // actief op de recovery-sessie via onAuthStateChange + een paar retries.
+    const hash =
+      typeof window !== "undefined" ? window.location.hash : "";
+    const parsed = parseAuthHashFragment(hash);
+    const expectingRecovery =
+      parsed.hasRecoveryTokens || hash.includes("type=recovery");
+
+    const settleWithSession = () => {
+      if (cancelled) return;
+      setHasSession(true);
+      setChecking(false);
+      // Tokens uit de URL halen zodat een refresh ze niet opnieuw verwerkt.
+      clearAuthHashFromUrl();
+    };
+
+    const checkSession = async (): Promise<boolean> => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return false;
+      if (data.session) {
+        settleWithSession();
+        return true;
       }
+      return false;
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (
+        session &&
+        (event === "PASSWORD_RECOVERY" ||
+          event === "SIGNED_IN" ||
+          event === "INITIAL_SESSION" ||
+          event === "TOKEN_REFRESHED")
+      ) {
+        settleWithSession();
+      }
+    });
+
+    void (async () => {
+      if (await checkSession()) return;
+      // Geen recovery-hash aanwezig: geen sessie te verwachten, toon direct
+      // het herstel-scherm in plaats van te blijven hangen op "checking".
+      if (!expectingRecovery) {
+        if (!cancelled) setChecking(false);
+        return;
+      }
+      // Wel een recovery-hash: geef detectSessionInUrl tijd, retry een paar keer.
+      const delays = [150, 400, 800, 1500, 2500];
+      delays.forEach((delay, index) => {
+        timers.push(
+          setTimeout(() => {
+            if (cancelled) return;
+            void (async () => {
+              const ok = await checkSession();
+              if (!ok && index === delays.length - 1 && !cancelled) {
+                // Opgegeven na de laatste poging: toon het herstel-scherm.
+                setChecking(false);
+              }
+            })();
+          }, delay)
+        );
+      });
     })();
+
     return () => {
       cancelled = true;
+      subscription.unsubscribe();
+      for (const timer of timers) clearTimeout(timer);
     };
   }, []);
 

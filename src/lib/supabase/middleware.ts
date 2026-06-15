@@ -72,6 +72,8 @@ function isPublicApiRoute(pathname: string): boolean {
   return (
     pathname.startsWith("/api/waitlist/join") ||
     pathname.startsWith("/api/analytics/waitlist-conversion") ||
+    pathname.startsWith("/api/analytics/acquisition-landing") ||
+    pathname.startsWith("/api/analytics/acquisition-signup-started") ||
     pathname.startsWith("/api/checkout/session-status") ||
     pathname.startsWith("/api/checkout/bind-session") ||
     pathname.startsWith("/api/checkout/resume-session") ||
@@ -106,7 +108,9 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/welkom" ||
     pathname.startsWith("/welkom/") ||
     pathname === "/adhd-cafe" ||
-    pathname.startsWith("/adhd-cafe/")
+    pathname.startsWith("/adhd-cafe/") ||
+    pathname === "/tiktok" ||
+    pathname.startsWith("/tiktok/")
   );
 }
 

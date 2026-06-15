@@ -101,7 +101,14 @@ export function captureFirstTouchAttribution(): void {
     const fromReferrer = document.referrer
       ? mapReferrerToSource(document.referrer)
       : null;
-    const source = fromUtm || fromSource || fromReferrer || "direct";
+    const fromTtclid = sanitize(params.get("ttclid")) ? "tiktok" : "";
+    const fromTikTokPath =
+      window.location.pathname === "/tiktok" ||
+      window.location.pathname.startsWith("/tiktok/")
+        ? "tiktok"
+        : "";
+    const source =
+      fromUtm || fromSource || fromTtclid || fromTikTokPath || fromReferrer || "direct";
     const campaign = sanitize(params.get("utm_campaign")) || null;
 
     const payload: FirstTouchAttribution = {

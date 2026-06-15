@@ -3,10 +3,16 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import {
+  clearAuthHashFromUrl,
+  parseAuthHashFragment,
+} from "@/lib/auth/recoveryHash";
+
+const RECOVERY_TARGET = "/auth/wachtwoord-instellen";
+
 /**
- * Na een reset-link in de mail: implicit flow zet soms tokens in de hash op /login.
- * Server-middleware ziet de hash niet; deze effect zorgt dat we alsnog naar
- * /auth/wachtwoord-instellen gaan zodra de recovery-sessie staat.
+ * Reset-links zetten tokens in de URL-hash. De server ziet die niet.
+ * Dit effect stuurt door zodra Supabase een recovery-sessie heeft gezet.
  */
 export function PasswordRecoveryRedirect() {
   const router = useRouter();
@@ -20,53 +26,68 @@ export function PasswordRecoveryRedirect() {
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
+    const retryTimers: ReturnType<typeof setTimeout>[] = [];
 
     const goToWachtwoordInstellen = () => {
       const p = pathnameRef.current ?? "";
-      if (p === "/auth/wachtwoord-instellen" || p.startsWith("/auth/wachtwoord-instellen/")) {
+      if (p === RECOVERY_TARGET || p.startsWith(`${RECOVERY_TARGET}/`)) {
         return;
       }
-      router.replace("/auth/wachtwoord-instellen");
+      clearAuthHashFromUrl();
+      router.replace(RECOVERY_TARGET);
+    };
+
+    const trySession = async (
+      getSession: () => Promise<{ data: { session: unknown } }>
+    ) => {
+      const { data } = await getSession();
+      if (cancelled) return false;
+      if (data.session) {
+        goToWachtwoordInstellen();
+        return true;
+      }
+      return false;
     };
 
     void import("@/lib/supabase/client").then(({ createClient }) => {
       if (cancelled) return;
       const supabase = createClient();
+      const hash = typeof window !== "undefined" ? window.location.hash : "";
+      const parsed = parseAuthHashFragment(hash);
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          goToWachtwoordInstellen();
+        if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+          if (parsed.hasRecoveryTokens || hash.includes("type=recovery")) {
+            goToWachtwoordInstellen();
+          }
         }
       });
       unsubscribe = () => subscription.unsubscribe();
 
-      const hash = typeof window !== "undefined" ? window.location.hash : "";
-      if (hash.includes("type=recovery")) {
-        requestAnimationFrame(() => {
-          void supabase.auth.getSession().then(({ data }) => {
-            if (cancelled) return;
-            if (data.session) {
-              goToWachtwoordInstellen();
-              try {
-                window.history.replaceState(
-                  null,
-                  "",
-                  window.location.pathname + window.location.search
-                );
-              } catch {
-                /* ignore */
-              }
-            }
-          });
-        });
+      if (!parsed.hasRecoveryTokens && !hash.includes("type=recovery")) {
+        return;
       }
+
+      const poll = async () => {
+        if (await trySession(() => supabase.auth.getSession())) return;
+        for (const delayMs of [100, 300, 800]) {
+          retryTimers.push(
+            setTimeout(() => {
+              void trySession(() => supabase.auth.getSession());
+            }, delayMs)
+          );
+        }
+      };
+
+      void poll();
     });
 
     return () => {
       cancelled = true;
       unsubscribe?.();
+      for (const timer of retryTimers) clearTimeout(timer);
     };
   }, [router]);
 

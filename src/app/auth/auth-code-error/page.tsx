@@ -1,16 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
+import { parseAuthHashFragment } from "@/lib/auth/recoveryHash";
 
 function AuthCodeErrorContent() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
+  const [hashChecked, setHashChecked] = useState(false);
+  const [recovering, setRecovering] = useState(false);
+
+  useEffect(() => {
+    const parsed = parseAuthHashFragment(window.location.hash);
+    if (parsed.hasRecoveryTokens) {
+      setRecovering(true);
+    }
+    setHashChecked(true);
+  }, []);
+
+  const hashParams = useMemo(
+    () =>
+      typeof window !== "undefined"
+        ? parseAuthHashFragment(window.location.hash)
+        : parseAuthHashFragment(""),
+    [hashChecked]
+  );
+
   const errorCode =
-    searchParams?.get("error_code") ?? searchParams?.get("error") ?? null;
-  const errorDescription = searchParams?.get("error_description") ?? null;
+    hashParams.errorCode ??
+    searchParams?.get("error_code") ??
+    searchParams?.get("error") ??
+    null;
+  const errorDescription =
+    hashParams.errorDescription ??
+    searchParams?.get("error_description") ??
+    null;
 
   const { title, body } = useMemo(() => {
     if (errorCode === "otp_expired") {
@@ -36,6 +62,14 @@ function AuthCodeErrorContent() {
       body: errorDescription || t("authError.genericBody"),
     };
   }, [errorCode, errorDescription, t]);
+
+  if (!hashChecked || recovering) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
+        {t("common.loading")}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[var(--st-bg)] px-4 py-8">

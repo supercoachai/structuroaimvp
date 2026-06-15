@@ -1,0 +1,27 @@
+field_name,field_type,required,dropdown_options,description
+post_date,Date,true,,Publicatiedatum van de post (start 3-dagen analyse-timer)
+channel,Dropdown,true,"TikTok|Instagram|Cross-post",Kanaal waar content live staat
+content_id,Short text,true,,Unieke ID gelijk aan utm_content (bijv. week3_v2)
+utm_content,Short text,true,,Kopie van content_id voor PostHog filter
+landing_url,URL,true,,https://www.structuro.ai/tiktok?utm_source=tiktok&utm_medium=paid_social&utm_campaign=tiktok_promote&utm_content={{content_id}}
+hook_type,Dropdown,true,"herkenning|spanning|tegen_intuitief|cyclus|kosten",Type hook voor pattern-analyse
+hook_variant,Dropdown,false,"A|B|C|D|E",Welke hook-variant getest
+payoff_theme,Short text,false,,Thema payoff (bijv. week3_cyclus taakinitiatie)
+lp_headline_match,Checkbox,true,,Hook matcht LP headline binnen 2 sec
+creative_center_done,Checkbox,true,,VERPLICHT vóór status Gepost: TikTok Creative Center stap 3 gedaan
+creative_gap_topic,Short text,false,,Welk trend/gat uit Creative Center gekozen
+creative_center_notes,Long text,false,,Korte notitie wat je in Creative Center zag
+post_date_note,Short text,false,,Optioneel: tijdstip post
+avg_watch_sec,Number,false,,TikTok gem. kijktijd (streef >8 sec)
+completion_pct,Number,false,,TikTok completion % (>40% = Promote-kandidaat)
+lp_views,Number,false,,PostHog tiktok_landing_viewed
+lp_cta_clicks,Number,false,,PostHog tiktok_landing_cta_clicked
+signups,Number,false,,PostHog signup_completed source=tiktok
+promote_budget_eur,Currency,false,,Promote spend in EUR (0 = organisch)
+promote_ready,Checkbox,false,,Agent zet aan bij completion >40%
+analysis_due_date,Date,false,,post_date + 3 dagen
+analysis_done,Checkbox,false,,Agent-analyse afgerond
+learning_notes,Long text,false,,Learnings agent + mens
+ig_reach,Number,false,,Instagram reach (later)
+ig_saves,Number,false,,Instagram saves (later)
+ig_profile_visits,Number,false,,Instagram profielbezoeken (later)

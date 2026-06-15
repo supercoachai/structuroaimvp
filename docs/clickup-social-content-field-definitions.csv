@@ -1,0 +1,25 @@
+field_name,clickup_type,required,dropdown_options,description,example
+content_id,Short Text,yes,,Unieke ID gelijk aan utm_content,week3_v2
+utm_content,Short Text,yes,,Kopie van content_id voor PostHog filter,week3_v2
+channel,Dropdown,yes,"TikTok|Instagram|Cross-post",Kanaal,TikTok
+post_date,Date,yes,,Publicatiedatum,2026-06-14
+analysis_due_date,Date,no,,Automatisch post_date + 3 dagen,2026-06-17
+landing_url,URL,yes,,Volledige LP URL met UTM,https://www.structuro.ai/tiktok?utm_source=tiktok&utm_medium=paid_social&utm_campaign=tiktok_promote&utm_content=week3_v2
+hook_type,Dropdown,yes,"herkenning|spanning|tegen_intuitief|cyclus|kosten",Hook-categorie,cyclus
+hook_variant,Dropdown,no,"A|B|C|D|E",Hook-test variant,A
+payoff_theme,Short Text,no,,Thema payoff,week 3 cyclus
+lp_headline_match,Checkbox,yes,,Hook matcht LP binnen 2 sec,true
+creative_center_done,Checkbox,yes,,Stap 3 TikTok Creative Center gedaan,true
+creative_gap_topic,Short Text,no,,Gap/trend uit Creative Center,ADHD cyclus week 3 luteale fase
+creative_center_notes,Long Text,no,,Wat je zag in Creative Center,Korte trend notitie
+avg_watch_sec,Number,no,,TikTok gem. kijktijd,3.2
+completion_pct,Number,no,,TikTok completion percentage,9
+lp_views,Number,no,,PostHog tiktok_landing_viewed,2
+lp_cta_clicks,Number,no,,PostHog tiktok_landing_cta_clicked,0
+signups,Number,no,,PostHog signup_completed source=tiktok,0
+promote_budget_eur,Currency,no,,Promote spend 0=organisch,0
+analysis_done,Checkbox,no,,Agent-analyse afgerond,false
+learning_notes,Long Text,no,,Mens + agent learnings,
+caption_nl,Long Text,no,,Post caption,
+lp_campaign,Dropdown,no,"staren|nietlui|cyclus|geenlijsten|weten",Campagne copy-set voor /tiktok,cyclus
+lp_hero,Dropdown,no,"A|B|C|D|E",Hero-layout op /tiktok,B

@@ -4,6 +4,7 @@ export function isBarePagePath(pathname: string | null): boolean {
   const barePrefixes = [
     '/login',
     '/registreren',
+    '/tiktok',
     '/auth',
     '/onboarding',
     '/consent',
