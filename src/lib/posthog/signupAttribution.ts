@@ -145,6 +145,32 @@ export function getSignupAttributionSource(): string {
   return getStoredSignupSource();
 }
 
+/** Website-, TikTok- of UTM-verkeer: andere copy op /registreren. */
+export function isAcquisitionSignupContext(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const source = getStoredSignupSource();
+  if (source && source !== "direct") return true;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("utm_source") || params.get("source")) return true;
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const ref = document.referrer;
+    if (!ref) return false;
+    if (/structuro\.eu/i.test(ref)) return true;
+    if (/\/tiktok(?:\?|$|\/)/i.test(ref)) return true;
+  } catch {
+    /* ignore */
+  }
+
+  return false;
+}
+
 export function queueSignupCompletedForAnalytics() {
   if (typeof window === "undefined") return;
   try {

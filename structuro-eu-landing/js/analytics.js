@@ -27,6 +27,27 @@
     } catch (e) {}
   }
 
+  function structuroSignupBridgeUrl(contentId) {
+    var params = new URLSearchParams({
+      utm_source: "structuro_eu",
+      utm_medium: "organic",
+      utm_campaign: "website",
+      utm_content: contentId || "cta",
+      campaign: "weten",
+      hero: "A",
+    });
+    return "https://www.structuro.ai/tiktok?" + params.toString();
+  }
+
+  function applySignupBridgeLinks() {
+    document.querySelectorAll("[data-signup-bridge]").forEach(function (el) {
+      var content = el.getAttribute("data-signup-bridge") || "cta";
+      el.setAttribute("href", structuroSignupBridgeUrl(content));
+    });
+  }
+
+  window.structuroSignupBridgeUrl = structuroSignupBridgeUrl;
+
   function attachCtaClicks() {
     if (window.__structuroEuCtaBound) return;
     window.__structuroEuCtaBound = true;
@@ -271,6 +292,7 @@
   }
 
   function attachLandingMeasurement() {
+    applySignupBridgeLinks();
     attachScrollDepthMilestones();
     attachSectionVisibility();
     attachFaqToggle();

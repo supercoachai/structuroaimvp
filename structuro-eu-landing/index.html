@@ -522,6 +522,10 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .zt-sticky.is-filled .zt-sticky-title{color:#fff;}
 .zt-sticky-sub{font-family:'Hanken Grotesk',var(--font);font-size:14px;color:#6B7280;margin-top:2px;transition:color .3s;}
 .zt-sticky.is-filled .zt-sticky-sub{color:rgba(255,255,255,.7);}
+.zt-sticky-cta{flex:0 0 auto;display:none;align-items:center;justify-content:center;white-space:nowrap;padding:10px 16px;border-radius:12px;font-family:'Hanken Grotesk',var(--font);font-size:14px;font-weight:800;text-decoration:none;background:var(--blue);color:#fff;transition:background .2s,transform .2s;}
+.zt-sticky-cta:hover{background:#4a5fd4;}
+.zt-sticky.is-filled .zt-sticky-cta{display:inline-flex;}
+@media(max-width:760px){.zt-sticky{flex-wrap:wrap;}.zt-sticky-cta{width:100%;justify-content:center;margin-top:4px;}}
 .zt-rows{display:flex;flex-direction:column;gap:10px;}
 .zt-row{background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:16px;box-shadow:0 1px 2px rgba(14,23,48,.03);transition:border-color .2s,box-shadow .25s,transform .2s;overflow:hidden;}
 .zt-row:hover:not(.is-on){border-color:rgba(59,107,247,.32);box-shadow:0 10px 28px -18px rgba(59,107,247,.22);}
@@ -1672,7 +1676,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="https://www.structuro.ai/registreren" class="nav-cta" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic>Start gratis</span></a>
+      <a href="https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=nav&campaign=weten&hero=A" class="nav-cta" data-signup-bridge="nav" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic>Start gratis</span></a>
       <!-- Language switcher -->
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')" aria-label="Nederlands">
@@ -1710,7 +1714,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       <h1 data-i18n="hero_h1">Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.</h1>
       <p class="hero-positioning" data-i18n="hero_positioning">Gebruik andere apps om alles bij te houden.<span class="hero-positioning-gap" aria-hidden="true"></span>Gebruik <span class="hero-positioning-brand">Structuro</span> om het ook daadwerkelijk te doen.</p>
       <div class="hero-cta">
-        <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span>
+        <a href="https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=hero&campaign=weten&hero=A" class="btn-primary" data-signup-bridge="hero" data-event="hero_cta_click" data-ph-cta="hero"><span data-cta-dynamic data-i18n="cta_try">Start gratis proefperiode</span>
           <span class="arrow-r">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </span>
@@ -2294,7 +2298,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
       </div>
       <p class="pricing-yearly-link">
         <span data-i18n="pricing_yearly_prompt">Liever jaarlijks?</span>
-        <a href="https://www.structuro.ai/registreren" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
+        <a href="https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=pricing_yearly&campaign=weten&hero=A" data-signup-bridge="pricing_yearly" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
       </p>
     </div>
       </div>
@@ -2330,7 +2334,7 @@ footer{background:var(--white);border-top:1px solid var(--border);padding:40px 0
     <h2 data-i18n="footer_h2">Je brein verdient rust.<br/>Niet meer systemen.</h2>
     <p class="footer-cta-body" data-i18n="footer_body">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
     <div class="footer-cta-actions">
-      <a href="https://www.structuro.ai/registreren" class="btn-primary" data-event="footer_cta_click" data-ph-cta="footer">
+      <a href="https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=footer&campaign=weten&hero=A" class="btn-primary" data-signup-bridge="footer" data-event="footer_cta_click" data-ph-cta="footer">
         <span data-cta-dynamic data-i18n="footer_cta_btn">Start je eerste dag</span>
       </a>
     </div>

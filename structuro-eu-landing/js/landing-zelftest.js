@@ -53,6 +53,7 @@
   var dotsEl;
   var stickyTitleEl;
   var stickySubEl;
+  var stickyCtaEl;
   var rowsEl;
   var pinned = false;
   var rafPending = false;
@@ -143,12 +144,27 @@
     return { t: count + ' van 6 herkenbaar', s: 'Structuro is letterlijk voor jouw brein gemaakt.' };
   }
 
+  function signupBridgeUrl(contentId) {
+    if (typeof window.structuroSignupBridgeUrl === 'function') {
+      return window.structuroSignupBridgeUrl(contentId);
+    }
+    return (
+      'https://www.structuro.ai/tiktok?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
+      (contentId || 'zelftest_sticky') +
+      '&campaign=weten&hero=A'
+    );
+  }
+
   function syncSticky() {
     var count = countPicked();
     var msg = message(count);
     stickyEl.classList.toggle('is-filled', count > 0);
     stickyTitleEl.textContent = msg.t;
     stickySubEl.textContent = msg.s;
+
+    if (stickyCtaEl) {
+      stickyCtaEl.hidden = count === 0;
+    }
 
     var dots = dotsEl.querySelectorAll('.zt-dot');
     for (var i = 0; i < dots.length; i++) {
@@ -214,6 +230,15 @@
     stickyCopy.appendChild(stickyTitleEl);
     stickyCopy.appendChild(stickySubEl);
     stickyEl.appendChild(stickyCopy);
+
+    stickyCtaEl = document.createElement('a');
+    stickyCtaEl.className = 'zt-sticky-cta';
+    stickyCtaEl.href = signupBridgeUrl('zelftest_sticky');
+    stickyCtaEl.setAttribute('data-ph-cta', 'zelftest_sticky');
+    stickyCtaEl.setAttribute('data-event', 'zelftest_sticky_cta_click');
+    stickyCtaEl.textContent = 'Start gratis';
+    stickyCtaEl.hidden = true;
+    stickyEl.appendChild(stickyCtaEl);
 
     stickyHost.appendChild(stickyEl);
 

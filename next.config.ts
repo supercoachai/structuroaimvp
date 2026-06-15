@@ -9,6 +9,8 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  /** posthog-node entrypoint side-effects (errorPropertiesBuilder) breken bij webpack-bundling. */
+  serverExternalPackages: ["posthog-node", "@posthog/core"],
   env: {
     NEXT_PUBLIC_STRUCTURO_DEV_RESET: devResetToolbarEnabled ? "1" : "0",
     /**

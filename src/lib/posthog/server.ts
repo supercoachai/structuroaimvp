@@ -64,8 +64,24 @@ export async function captureServerException(
   try {
     client.captureException(err, distinctId, properties);
     await client.flush();
-  } catch {
-    /* ignore */
+  } catch (captureErr) {
+    /* Fallback als captureException faalt (bijv. ontbrekende errorPropertiesBuilder na bundling). */
+    try {
+      await captureServerEvent(distinctId, "$exception", {
+        ...properties,
+        $exception_message: err.message,
+        $exception_type: err.name,
+        $exception_stack_trace_raw: err.stack ?? "",
+        error_tracking: true,
+        legitimate_interest: true,
+        runtime: "nodejs",
+        capture_exception_fallback: true,
+        capture_exception_error:
+          captureErr instanceof Error ? captureErr.message : String(captureErr),
+      });
+    } catch {
+      /* ignore */
+    }
   }
 }
 

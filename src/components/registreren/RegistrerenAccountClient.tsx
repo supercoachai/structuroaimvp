@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signUpWithLocalDevFallback } from "@/lib/auth/devSignupClient";
+import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -11,10 +11,12 @@ import {
   getSignupAttributionSource,
   getStoredSignupCampaign,
   getStoredSignupSource,
+  isAcquisitionSignupContext,
   persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionSignupStarted } from "@/lib/posthog/acquisitionAnalyticsClient";
+import { captureMarketingEvent } from "@/lib/posthog/track";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 import {
@@ -34,12 +36,14 @@ function RegistrerenAccountInner() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
   const [sessionChecked, setSessionChecked] = useState(false);
   const [trialDays, setTrialDays] = useState(DEFAULT_STRIPE_TRIAL_DAYS);
   const [eventSignupFlow, setEventSignupFlow] = useState(false);
+  const [acquisitionFlow, setAcquisitionFlow] = useState(false);
   const mounted = useClientMounted();
 
   useEffect(() => {
@@ -47,6 +51,7 @@ function RegistrerenAccountInner() {
     const source = getStoredSignupSource();
     setTrialDays(resolveStripeTrialDaysForSignupSource(source));
     setEventSignupFlow(isEventSignupSource(source));
+    setAcquisitionFlow(isAcquisitionSignupContext());
   }, [searchParams]);
 
   useEffect(() => {
@@ -117,20 +122,27 @@ function RegistrerenAccountInner() {
         setError(t("registrerenPage.errNameRequired"));
         return;
       }
-      if (password.length < 8) {
-        setError(t("registrerenPage.errPasswordWeak"));
-        return;
-      }
 
-      const { user } = await signUpWithLocalDevFallback(supabase, {
+      const result = await signUpPasswordlessWithLocalDevFallback(supabase, {
         email: emailTrimmed,
-        password,
         fullName: nameTrimmed,
         signupSource: getStoredSignupSource(),
         signupCampaign: getStoredSignupCampaign(),
       });
 
-      await persistSignupAttributionToProfile(user.id);
+      if (result.kind === "magic_link_sent") {
+        setMagicLinkEmail(emailTrimmed);
+        setMagicLinkSent(true);
+        captureMarketingEvent("signup_magic_link_sent", {
+          source: getSignupAttributionSource(),
+          utm_campaign: getStoredSignupCampaign(),
+          channel: "client",
+          funnel: "launch",
+        });
+        return;
+      }
+
+      await persistSignupAttributionToProfile(result.user.id);
       queueSignupCompletedForAnalytics();
       await trackRegistrationFunnelServer("signup_completed", {
         source: getSignupAttributionSource(),
@@ -140,7 +152,7 @@ function RegistrerenAccountInner() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("signup_source, subscription_status, subscription_current_period_end, created_at")
-        .eq("id", user.id)
+        .eq("id", result.user.id)
         .maybeSingle();
 
       window.location.assign(
@@ -175,6 +187,32 @@ function RegistrerenAccountInner() {
     );
   }
 
+  if (magicLinkSent) {
+    return (
+      <RegistrerenShell>
+        <div className="mx-auto mt-8 mb-6 w-[90%] max-w-[25.2rem] text-center">
+          <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+            {t("registrerenPage.magicLinkSentTitle")}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            {t("registrerenPage.magicLinkSentBody", { email: magicLinkEmail })}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">{t("registrerenPage.magicLinkSentHint")}</p>
+        </div>
+      </RegistrerenShell>
+    );
+  }
+
+  const headingKey = acquisitionFlow
+    ? "registrerenPage.accountHeadingAcquisition"
+    : "registrerenPage.accountHeading";
+  const subheadingKey = acquisitionFlow
+    ? "registrerenPage.accountSubheadingAcquisition"
+    : "registrerenPage.accountSubheading";
+  const continueLabel = acquisitionFlow
+    ? t("registrerenPage.continueBtnMagicLink")
+    : t("registrerenPage.continueBtn");
+
   return (
     <RegistrerenShell error={error}>
       <div className="mx-auto mt-8 mb-6 w-[90%] max-w-[25.2rem] text-center">
@@ -184,11 +222,14 @@ function RegistrerenAccountInner() {
           </span>
         </p>
         <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
-          {t("registrerenPage.accountHeading")}
+          {t(headingKey)}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
-          {t("registrerenPage.accountSubheading")}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(subheadingKey)}</p>
+        {acquisitionFlow ? (
+          <p className="mt-2 text-xs font-medium text-slate-500">
+            {t("registrerenPage.acquisitionTrustLine", { days: String(trialDays) })}
+          </p>
+        ) : null}
       </div>
 
       <div className="mx-auto w-[90%] max-w-[25.2rem] space-y-4">
@@ -222,22 +263,6 @@ function RegistrerenAccountInner() {
             autoComplete="email"
           />
         </div>
-        <div className="space-y-1">
-          <label htmlFor="reg-password" className="block text-sm text-gray-500">
-            {t("login.password")}
-          </label>
-          <input
-            id="reg-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder={t("registrerenPage.passwordPh")}
-            required
-            minLength={8}
-            autoComplete="new-password"
-          />
-        </div>
 
         <button
           type="button"
@@ -245,7 +270,7 @@ function RegistrerenAccountInner() {
           onClick={() => void handleAccountContinue()}
           className="flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-[15px] text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
-          {loading ? t("registrerenPage.submitBusy") : t("registrerenPage.continueBtn")}
+          {loading ? t("registrerenPage.submitBusy") : continueLabel}
         </button>
       </div>
 

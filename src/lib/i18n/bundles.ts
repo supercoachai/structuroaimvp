@@ -314,6 +314,15 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       passwordPh: "Minimaal 8 tekens",
       accountHeading: "Start je gratis proefperiode",
       accountSubheading: "Maak eerst je account aan.",
+      accountHeadingAcquisition: "Je herkende het net. Nu de eerste schone lei.",
+      accountSubheadingAcquisition:
+        "Geen wachtwoord nodig. We sturen een link naar je inbox.",
+      acquisitionTrustLine: "Geen wachtwoord. {days} dagen gratis proberen.",
+      continueBtnMagicLink: "Stuur link naar mijn inbox",
+      magicLinkSentTitle: "Check je inbox",
+      magicLinkSentBody:
+        "We stuurden een link naar {email}. Tik erop om verder te gaan met Structuro.",
+      magicLinkSentHint: "Geen mail? Check spam of wacht een minuutje.",
       trialBadge: "{days} dagen gratis",
       planHeading: "Activeer je proefperiode",
       planTrialHeadline: "{days} dagen gratis",
@@ -791,6 +800,15 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       passwordPh: "At least 8 characters",
       accountHeading: "Start your free trial",
       accountSubheading: "Create your account first.",
+      accountHeadingAcquisition: "You just recognized yourself. Now a clean slate.",
+      accountSubheadingAcquisition:
+        "No password needed. We will send a link to your inbox.",
+      acquisitionTrustLine: "No password. Try free for {days} days.",
+      continueBtnMagicLink: "Email me a link",
+      magicLinkSentTitle: "Check your inbox",
+      magicLinkSentBody:
+        "We sent a link to {email}. Tap it to continue with Structuro.",
+      magicLinkSentHint: "No email? Check spam or wait a minute.",
       trialBadge: "{days} days free",
       planHeading: "Activate your trial",
       planTrialHeadline: "{days} days free",
