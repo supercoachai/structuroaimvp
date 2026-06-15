@@ -1,5 +1,5 @@
 import { appEnergyToDagstartId } from "@/components/dagstart/design/types";
-import { captureProductEvent } from "./track";
+import { captureActivationFunnelEvent } from "./track";
 
 type AppEnergy = "low" | "medium" | "high";
 
@@ -18,12 +18,12 @@ export function captureDagstartEventsFromOnboardingFinish(
   energy: AppEnergy,
   taskCount = 1
 ) {
-  captureProductEvent("dagstart_energy_chosen", {
+  captureActivationFunnelEvent("dagstart_energy_chosen", {
     energy_level: energy,
     level: appEnergyToDagstartId(energy),
     source: "onboarding",
   });
-  captureProductEvent("dagstart_completed", {
+  captureActivationFunnelEvent("dagstart_completed", {
     energy_level: energy,
     tasks_selected_count: taskCount,
     has_cycle_phase: false,

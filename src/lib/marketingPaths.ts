@@ -22,6 +22,17 @@ export function isAcquisitionMarketingPath(pathname: string | null | undefined):
   return false;
 }
 
+/** Routes waar we cookieless meten zonder cookiebanner (P0 activatie + acquisitie). */
+export function isCookielessAnalyticsPath(
+  pathname: string | null | undefined
+): boolean {
+  if (!pathname) return false;
+  if (isAcquisitionMarketingPath(pathname)) return true;
+  if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) return true;
+  if (pathname === "/welkom" || pathname.startsWith("/welkom/")) return true;
+  return false;
+}
+
 /** Aanbevolen landings-URL voor TikTok Promote (UTM's voor PostHog-filter). */
 export { tiktokPromoteLandingUrl as TIKTOK_PROMOTE_LANDING_URL } from "@/lib/acquisition/bridgePaths";
 export { buildOrganicStartUrl as ORGANIC_START_LANDING_URL_BUILDER } from "@/lib/acquisition/bridgePaths";

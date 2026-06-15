@@ -3,19 +3,19 @@
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 
-import { isAcquisitionMarketingPath } from "@/lib/marketingPaths";
+import { isCookielessAnalyticsPath } from "@/lib/marketingPaths";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 
 /**
- * Acquisitie-routes (registreren, TikTok-LP): geen cookiebanner nodig.
- * Zet consent op "alleen noodzakelijk" voor cookieless PostHog pageviews.
+ * Acquisitie- en activatieroutes: geen cookiebanner nodig.
+ * Zet consent op "alleen noodzakelijk" voor cookieless pageviews, funnel-events en replay.
  */
 export function MarketingAcquisitionConsent() {
   const pathname = usePathname();
   const { consent, deny } = useConsent();
 
   useLayoutEffect(() => {
-    if (!isAcquisitionMarketingPath(pathname)) return;
+    if (!isCookielessAnalyticsPath(pathname)) return;
     if (consent !== "unknown") return;
     deny();
   }, [pathname, consent, deny]);

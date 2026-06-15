@@ -138,16 +138,16 @@ export function applyPostHogAnalyticsConsent(granted: boolean): void {
         capture_pageleave: true,
         capture_performance: { web_vitals: true },
       });
-      setSessionRecordingEnabled(true);
       registerSiteGroup();
     } else {
-      setSessionRecordingEnabled(false);
       posthog.opt_out_capturing();
       posthog.set_config({
         capture_pageleave: false,
         capture_performance: { web_vitals: false },
       });
     }
+    // Replay ook in cookieless-modus (masking aan): activatie-debug zonder analytics-cookies.
+    setSessionRecordingEnabled(true);
   } catch {
     /* ignore */
   }

@@ -119,6 +119,17 @@ export function captureAnonymousEvent(
   }
 }
 
+/**
+ * P0 activatie-funnel (signup → onboarding → dagstart).
+ * Cookieless, geen identify/e-mail: werkt op acquisitie-routes met auto-deny.
+ */
+export function captureActivationFunnelEvent(
+  event: string,
+  properties?: Record<string, unknown>
+) {
+  captureAnonymousEvent(event, properties);
+}
+
 /** Marketing/conversie-events: granted (cookies) of denied (cookieless on_reject). */
 export function captureMarketingEvent(
   event: string,

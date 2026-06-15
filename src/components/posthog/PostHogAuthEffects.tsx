@@ -12,7 +12,7 @@ import {
   PENDING_SIGNUP_KEY,
   persistSignupAttributionToProfile,
 } from "@/lib/posthog/signupAttribution";
-import { captureProductEvent } from "@/lib/posthog/track";
+import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
 function signupDoneKey(uid: string) {
   return `structuro_ph_signup_done_${uid}`;
@@ -32,7 +32,7 @@ function tryCaptureSignup(user: {
         source?: string;
         utm_campaign?: string | null;
       };
-      captureProductEvent("signup_completed", {
+      captureActivationFunnelEvent("signup_completed", {
         channel: "client",
         source: parsed.source ?? getSignupAttributionSource(),
         utm_campaign: parsed.utm_campaign ?? getStoredSignupCampaign(),
@@ -55,7 +55,7 @@ function tryCaptureSignup(user: {
   if (!Number.isFinite(createdMs)) return;
   const ageMs = Date.now() - createdMs;
   if (ageMs >= 0 && ageMs < 3 * 60 * 1000) {
-    captureProductEvent("signup_completed", {
+    captureActivationFunnelEvent("signup_completed", {
       channel: "client",
       source: getSignupAttributionSource(),
       utm_campaign: getStoredSignupCampaign(),
@@ -80,26 +80,29 @@ export function PostHogAuthEffects() {
       const applySession = (
         session: import("@supabase/supabase-js").Session | null
       ) => {
-        if (consent !== "granted") return;
         const user = session?.user;
         if (!user?.id) return;
-        if (isAnalyticsExcludedEmail(user.email ?? null)) {
+
+        if (consent === "granted") {
+          if (isAnalyticsExcludedEmail(user.email ?? null)) {
+            try {
+              posthog.reset();
+            } catch {
+              /* ignore */
+            }
+            return;
+          }
           try {
-            posthog.reset();
+            if (user.email) {
+              posthog.identify(user.id, { email: user.email });
+            } else {
+              posthog.identify(user.id);
+            }
           } catch {
             /* ignore */
           }
-          return;
         }
-        try {
-          if (user.email) {
-            posthog.identify(user.id, { email: user.email });
-          } else {
-            posthog.identify(user.id);
-          }
-        } catch {
-          /* ignore */
-        }
+
         tryCaptureSignup(user);
       };
 

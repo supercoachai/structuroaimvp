@@ -23,7 +23,7 @@ import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam, setDagstart
 import DagstartDeadlineOverflowModal from "@/components/dagstart/DagstartDeadlineOverflowModal";
 import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
-import { captureProductEvent } from "@/lib/posthog/track";
+import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
 import { ensureFirstDagstartWelcomeTask } from "@/lib/onboardingWelcomeTask";
 import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
@@ -339,7 +339,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         } catch (err) {
           console.warn("markOnboardingCompleted:", err);
         }
-        captureProductEvent("dagstart_completed", {
+        captureActivationFunnelEvent("dagstart_completed", {
           energy_level: appEnergy,
           tasks_selected_count: top3.length,
           has_cycle_phase: Boolean(cyclePhase),
@@ -458,7 +458,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   const handleEnergyPick = useCallback((id: DagstartEnergyId) => {
     setEnergy(id);
     trackEnergyChecked(id);
-    captureProductEvent("dagstart_energy_chosen", {
+    captureActivationFunnelEvent("dagstart_energy_chosen", {
       energy_level: dagstartIdToAppEnergy(id),
       level: id,
       source: "dagstart_flow",

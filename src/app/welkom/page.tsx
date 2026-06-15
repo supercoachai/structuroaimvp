@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { createOnboardingWelcomeTask } from "@/lib/onboardingWelcomeTask";
 import { resolveWelcomeTaskAfterCheckout } from "@/lib/welcomeTaskAfterCheckout";
-import { captureProductEvent } from "@/lib/posthog/track";
+import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import {
   clearCheckoutReturn,
   readCheckoutReturn,
@@ -117,7 +117,7 @@ function WelkomPageInner() {
         clearCheckoutReturn();
 
         const decision = await resolveWelcomeTaskAfterCheckout();
-        captureProductEvent("welcome_task_checkout_decision", {
+        captureActivationFunnelEvent("welcome_task_checkout_decision", {
           source: decision.source,
           should_create: decision.shouldCreate,
           had_checkout_session_id: Boolean(checkoutSessionId),
@@ -128,7 +128,7 @@ function WelkomPageInner() {
           try {
             const created = await createOnboardingWelcomeTask(user.id);
             if (created) {
-              captureProductEvent("welcome_task_created", {
+              captureActivationFunnelEvent("welcome_task_created", {
                 source: decision.source,
               });
             }
@@ -190,7 +190,7 @@ function WelkomPageInner() {
       }
 
       const decision = await resolveWelcomeTaskAfterCheckout();
-      captureProductEvent("welcome_task_checkout_decision", {
+      captureActivationFunnelEvent("welcome_task_checkout_decision", {
         source: decision.source,
         should_create: decision.shouldCreate,
         had_checkout_session_id: Boolean(checkoutSessionId),
@@ -206,7 +206,7 @@ function WelkomPageInner() {
         if (user?.id) {
           const created = await createOnboardingWelcomeTask(user.id);
           if (created) {
-            captureProductEvent("welcome_task_created", {
+            captureActivationFunnelEvent("welcome_task_created", {
               source: decision.source,
             });
           }
