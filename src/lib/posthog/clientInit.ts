@@ -92,7 +92,9 @@ export function ensurePostHogClientInitialized(): boolean {
       capture_console_errors: false,
     },
     before_send: exceptionBeforeSend,
-    disable_session_recording: true,
+    session_recording: {
+      maskAllInputs: true,
+    },
     mask_all_text: true,
     mask_all_element_attributes: true,
     respect_dnt: true,
@@ -104,8 +106,26 @@ export function ensurePostHogClientInitialized(): boolean {
     environment: RELEASE_ENVIRONMENT,
   });
   registerSiteGroup();
+  posthog.set_config({ disable_session_recording: true });
   posthogInitOnce = true;
   return true;
+}
+
+function setSessionRecordingEnabled(enabled: boolean): void {
+  try {
+    posthog.set_config({ disable_session_recording: !enabled });
+    if (enabled) {
+      if (typeof posthog.startSessionRecording === "function") {
+        posthog.startSessionRecording();
+      }
+      return;
+    }
+    if (typeof posthog.stopSessionRecording === "function") {
+      posthog.stopSessionRecording();
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Schakel product-analytics features in/uit zonder error tracking te blokkeren. */
@@ -118,8 +138,10 @@ export function applyPostHogAnalyticsConsent(granted: boolean): void {
         capture_pageleave: true,
         capture_performance: { web_vitals: true },
       });
+      setSessionRecordingEnabled(true);
       registerSiteGroup();
     } else {
+      setSessionRecordingEnabled(false);
       posthog.opt_out_capturing();
       posthog.set_config({
         capture_pageleave: false,

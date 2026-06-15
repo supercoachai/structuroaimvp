@@ -1,7 +1,14 @@
 (function () {
   var GA_MEASUREMENT_ID = "G-26Q9L72S3P";
 
-  /** Sectie-id's voor zichtbaarheid (waar gebruikers naar scrollen). */
+  /**
+   * EU landing analytics (site=eu in PostHog).
+   * Primaire conversie: cta_clicked → structuro.ai/start → signup_completed (niet waitlist).
+   * Organisch EU: /start + utm_source=structuro_eu. TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok.
+   * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/registreren (zie vercel.json).
+   * Verouderde section_id "waarom" in historische data: sectie heet nu brein-termen / waarom-nodig.
+   */
+  /** Sectie-id's voor zichtbaarheid (moet overeenkomen met id="" op index.html). */
   var EU_SECTION_IDS = [
     "hero",
     "brein-termen",
@@ -27,20 +34,37 @@
     } catch (e) {}
   }
 
+  function isTikTokAcquisitionTraffic(params) {
+    var source = (params.get("utm_source") || "").toLowerCase();
+    if (source === "tiktok") return true;
+    if (params.get("ttclid")) return true;
+    return false;
+  }
+
   function structuroSignupBridgeUrl(contentId) {
     var params = new URLSearchParams(window.location.search || "");
-    var isPaidTikTok =
-      (params.get("utm_source") || "").toLowerCase() === "tiktok" ||
-      (params.get("utm_medium") || "").toLowerCase() === "paid_social";
-    var bridgePath = isPaidTikTok ? "/tiktok" : "/start";
+    var isTikTok = isTikTokAcquisitionTraffic(params);
+    var bridgePath = isTikTok ? "/tiktok" : "/start";
     var bridgeParams = new URLSearchParams({
-      utm_source: isPaidTikTok ? "tiktok" : "structuro_eu",
-      utm_medium: isPaidTikTok ? "paid_social" : "organic",
-      utm_campaign: isPaidTikTok ? "tiktok_promote" : "website",
       utm_content: contentId || "cta",
       campaign: "weten",
       hero: "A",
     });
+    if (isTikTok) {
+      bridgeParams.set("utm_source", "tiktok");
+      bridgeParams.set(
+        "utm_medium",
+        (params.get("utm_medium") || "paid_social").toLowerCase()
+      );
+      bridgeParams.set(
+        "utm_campaign",
+        params.get("utm_campaign") || "tiktok_promote"
+      );
+    } else {
+      bridgeParams.set("utm_source", "structuro_eu");
+      bridgeParams.set("utm_medium", "organic");
+      bridgeParams.set("utm_campaign", "website");
+    }
     return "https://www.structuro.ai" + bridgePath + "?" + bridgeParams.toString();
   }
 
@@ -150,7 +174,11 @@
         capture_pageview: true,
         capture_pageleave: true,
         autocapture: true,
-        disable_session_recording: true,
+        session_recording: {
+          maskAllInputs: true,
+        },
+        mask_all_text: true,
+        mask_all_element_attributes: true,
         persistence: "localStorage+cookie",
         cross_subdomain_cookie: false,
         respect_dnt: true,
@@ -164,6 +192,9 @@
         environment: "production"
       });
       window.posthog.opt_in_capturing();
+      if (typeof window.posthog.startSessionRecording === "function") {
+        window.posthog.startSessionRecording();
+      }
       if (typeof initDone === "function") initDone();
     };
     document.head.appendChild(s);

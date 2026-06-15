@@ -32,6 +32,7 @@
     "supabase:reset": "supabase db reset",
     "posthog:wizard:ci": "bash scripts/run-posthog-wizard-ci.sh",
     "posthog:launch-dashboard": "node scripts/setup-posthog-launch-dashboard.mjs",
+    "posthog:eu-dashboard": "node scripts/setup-posthog-eu-dashboard.mjs",
     "smoke:preview": "node scripts/launch-smoke-preview.mjs",
     "verify:unit": "node scripts/verify-unit.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",

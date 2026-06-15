@@ -50,6 +50,21 @@ export function bridgePathForChannel(channel: BridgeChannel): string {
   return channel === "tiktok" ? TIKTOK_BRIDGE_PATH : ORGANIC_BRIDGE_PATH;
 }
 
+/** EU-organisch verkeer hoort nooit op /tiktok; redirect naar /start met dezelfde query. */
+export function shouldRedirectTikTokRouteToOrganic(
+  searchParams?: URLSearchParams | null
+): boolean {
+  const source = (searchParams?.get("utm_source") ?? "").trim().toLowerCase();
+  return source === ORGANIC_SIGNUP_SOURCE || source === "structuro.eu";
+}
+
+export function buildOrganicBridgePathWithQuery(
+  searchParams?: URLSearchParams | null
+): string {
+  const params = new URLSearchParams(searchParams?.toString() ?? "");
+  return `${ORGANIC_BRIDGE_PATH}${params.toString() ? `?${params.toString()}` : ""}`;
+}
+
 /** Registratie-URL met channel-specifieke attributie; behoudt utm_campaign uit de bridge-URL. */
 export function buildBridgeRegistrerenHref(
   channel: BridgeChannel,

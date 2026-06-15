@@ -4,6 +4,7 @@ import {
   buildBridgeRegistrerenHref,
   buildOrganicStartUrl,
   bridgeChannelFromPath,
+  shouldRedirectTikTokRouteToOrganic,
 } from "./bridgePaths";
 
 describe("bridgePaths", () => {
@@ -33,5 +34,14 @@ describe("bridgePaths", () => {
     const url = buildOrganicStartUrl({ contentId: "hero", campaign: "weten", hero: "A" });
     expect(url).toContain("/start?");
     expect(url).toContain("utm_source=structuro_eu");
+  });
+
+  it("detecteert verkeerde EU-traffic op /tiktok", () => {
+    expect(
+      shouldRedirectTikTokRouteToOrganic(new URLSearchParams("utm_source=structuro_eu"))
+    ).toBe(true);
+    expect(
+      shouldRedirectTikTokRouteToOrganic(new URLSearchParams("utm_source=tiktok"))
+    ).toBe(false);
   });
 });
