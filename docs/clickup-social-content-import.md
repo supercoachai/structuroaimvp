@@ -42,3 +42,27 @@ Zie ook: `structuro-social-manager-clickup.md`, `clickup-antwoorden-copy-paste.m
 ---
 
 **Master checklist:** `clickup-setup-checklist.md`
+
+## landing_url conventie (jun 2026)
+
+**Organic** (structuro.eu, zelftest, Instagram organisch):
+
+```
+https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content={content_id}
+```
+
+**TikTok paid / bio:**
+
+```
+https://www.structuro.ai/tiktok?utm_source=tiktok&utm_medium=paid_social&utm_campaign=tiktok_promote&utm_content={content_id}
+```
+
+## PostHog events (maandag invullen)
+
+| ClickUp veld | Event |
+|---|---|
+| lp_views | `acquisition_landing_viewed` (filter utm_content) |
+| lp_cta_clicks | `organic_landing_cta_clicked` of `tiktok_landing_cta_clicked` |
+| signups | `signup_completed` |
+
+TikTok-posts hebben ook `tiktok_landing_viewed`.

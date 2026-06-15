@@ -71,10 +71,12 @@ Nooit stilzwijgend doctrine breken.
 
 ## Knowledge voor Structuro Superagent
 
-- Structuro briefing / doctrines (ClickUp Doc of repo)
+- `docs/STRUCTURO_CONTEXT.md` (canonieke productcontext)
+- Obsidian doctrine-notes in `docs/obsidian/00 Doctrine/` (optioneel export)
 - `docs/structuro-superagent-clickup.md` (dit bestand)
 - Security audit docs indien aanwezig
 - **Niet:** tiktok-canva-prompts (Social Manager)
+- **Niet:** lange PRD's alleen in ClickUp (denkwerk leeft in Obsidian)
 
 ---
 

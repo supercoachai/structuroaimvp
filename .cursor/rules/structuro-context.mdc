@@ -1,0 +1,30 @@
+---
+description: Structuro productcontext, doctrine en funnel-prioriteit
+alwaysApply: true
+---
+
+# Structuro context
+
+Lees `docs/STRUCTURO_CONTEXT.md` voor productfilosofie, doelgroep, UX-regels en funnel-prioriteit.
+
+## Prioriteit juni 2026
+
+1. **Activatie P0:** signup → dagstart (lekt nu; compact onboarding, magic link, frictie weg)
+2. **Acquisitie P1:** `/start` (organic) en `/tiktok` (social), nooit direct naar `/registreren` vanaf marketing
+3. **Geen paid TikTok** tot activatie structureel >25%
+
+## Attributie-routing (kritiek)
+
+- **Organisch EU-verkeer** (structuro.eu, referrals, pers): altijd `/start` met `utm_source=structuro_eu`. Nooit `/tiktok`.
+- **TikTok-verkeer**: alleen via `/tiktok` met `utm_source=tiktok` (of `ttclid`). Nooit hardcoded TikTok-URL's op organische CTAs.
+- `/tiktok` met `utm_source=structuro_eu` redirect naar `/start` (legacy links).
+- Waitlist is uitgefaseerd sinds juni 2026; meet `cta_clicked → /start → signup_completed`, niet `waitlist_signup_*`.
+
+## UX bij wijzigingen
+
+- Prikkelarm, geen shame-gamification, geen em-dashes in user-facing strings (zie `no-em-dashes.mdc`)
+- Eerste waarde snel; geen admin-heavy flows
+
+## Doctrine
+
+Geen neurotypische defaults. Meten vóór schalen. Bij experimenten die doctrine schenden: expliciet documenteren.

@@ -1,9 +1,12 @@
 # ClickUp setup checklist (master)
 
+> **Eerst:** [`STRUCTURO-START-HIER.md`](STRUCTURO-START-HIER.md) (jouw enige todo-lijst).  
+> Dit bestand is **detail** voor ClickUp setup (Blok A2–A3).
+
 Eén overzicht voor **beide lists**, **beide Super Agents**, CSV-import en automations.
 
 **Geschatte tijd totaal:** ~60 min (eenmalig)  
-**Laatste update:** 14 juni 2026
+**Laatste update:** 15 juni 2026
 
 ---
 
@@ -45,7 +48,21 @@ Eén overzicht voor **beide lists**, **beide Super Agents**, CSV-import en autom
 |---|---|
 | `clickup-antwoorden-copy-paste.md` | Antwoorden direct plakken in Builder |
 
+
 ---
+
+## Tool-stack (denken → doen → bouwen)
+
+| Laag | Tool | Doc |
+|---|---|---|
+| Denkgeheugen | Obsidian (`docs/obsidian/`) | `structuro-actieplan-2026-06.md` Fase 2 |
+| Context AI | `STRUCTURO_CONTEXT.md` | Cursor rule + Claude/Gemini |
+| Research-sprint | NotebookLM (optioneel) | Export naar Obsidian |
+| Taken + metrics | ClickUp Unlimited | Deze checklist |
+| Bouwen | Cursor | Repo |
+
+**ClickUp Unlimited trial:** start zonder Brain AI. Besluit Brain AI na 1 week maandag-routine.
+
 
 ## Fase 0: Voorbereiding (5 min)
 
@@ -167,9 +184,14 @@ Backlog → In Progress → Review → Ready → Live → Blocked → Done
 - [ ] Check Task Created comment van Superagent
 - [ ] Zet status **Ready** → check review (ok / warning / veto)
 
-### Deploy-taken (uit template)
+### Deploy-taken (uit template, jun 2026)
 
-- [ ] PRD-001 TikTok LP deploy → Live na deploy
+- [x] PRD-001 TikTok LP + tracking → Live
+- [x] PRD-006 Organic `/start` + structuro.eu CTAs → Live
+- [x] PRD-007 Onboarding compact → Live (meten)
+- [x] PRD-008 Magic link signup → Live
+- [x] PRD-009 TikTok registreren-copy → Live
+- [ ] PRD-010 Paid TikTok **bewust Backlog** tot activatie >25%
 - [ ] PRD-002 Auth recovery → Live na deploy
 - [ ] PRD-003 Supabase redirect allow list afmaken
 
@@ -179,13 +201,17 @@ Backlog → In Progress → Review → Ready → Live → Blocked → Done
 
 Buiten ClickUp, maar nodig voor agents om zinvol te meten:
 
-- [ ] Landingspagina live: https://www.structuro.ai/tiktok
-- [ ] Promote URL: `?utm_content={{content_id}}`
-- [ ] PostHog funnel: `tiktok_landing_viewed` → CTA → signup
+- [ ] Organic bridge live: https://www.structuro.ai/start
+- [ ] TikTok bridge live: https://www.structuro.ai/tiktok
+- [ ] structuro.eu organic CTAs → `/start` (niet `/registreren`)
+- [ ] Promote URL TikTok: `?utm_content={{content_id}}`
+- [ ] PostHog: `acquisition_landing_viewed` + channel events → signup → dagstart
 - [ ] Supabase: `/auth/wachtwoord-instellen` in redirect allow list
-- [ ] TikTok bio-link wijst naar `/tiktok` (niet direct `/registreren`)
+- [ ] TikTok bio-link → `/tiktok`
+- [ ] Obsidian vault open op `docs/obsidian/`
+- [ ] `STRUCTURO_CONTEXT.md` in Claude/Gemini
 
-Zie ook: `tiktok-workflow.md` Fase 0.
+Zie ook: `tiktok-workflow.md`, `structuro-actieplan-2026-06.md`.
 
 ---
 

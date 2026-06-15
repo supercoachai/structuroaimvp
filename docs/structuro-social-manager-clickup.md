@@ -18,7 +18,7 @@ Verplichte velden per post:
 - post_date (Date) — publicatiedatum
 - channel (Dropdown: TikTok, Instagram, Cross-post)
 - content_id (Short text) — unieke ID, gelijk aan utm_content
-- landing_url (URL)
+- landing_url (URL) — organic: /start ; TikTok: /tiktok (nooit /registreren)
 - hook_type (Dropdown)
 - hook_variant (Dropdown A-E)
 

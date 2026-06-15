@@ -4,7 +4,7 @@ utm_content,Short Text,yes,,Kopie van content_id voor PostHog filter,week3_v2
 channel,Dropdown,yes,"TikTok|Instagram|Cross-post",Kanaal,TikTok
 post_date,Date,yes,,Publicatiedatum,2026-06-14
 analysis_due_date,Date,no,,Automatisch post_date + 3 dagen,2026-06-17
-landing_url,URL,yes,,Volledige LP URL met UTM,https://www.structuro.ai/tiktok?utm_source=tiktok&utm_medium=paid_social&utm_campaign=tiktok_promote&utm_content=week3_v2
+landing_url,URL,yes,,Volledige LP URL: /start (organic) of /tiktok (TikTok),https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=example
 hook_type,Dropdown,yes,"herkenning|spanning|tegen_intuitief|cyclus|kosten",Hook-categorie,cyclus
 hook_variant,Dropdown,no,"A|B|C|D|E",Hook-test variant,A
 payoff_theme,Short Text,no,,Thema payoff,week 3 cyclus
