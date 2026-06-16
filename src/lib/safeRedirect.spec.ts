@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isAllowedAppHost, sanitizeNextPath } from "./safeRedirect";
+import {
+  isAllowedAppHost,
+  resolveTrustedAppOrigin,
+  sanitizeNextPath,
+} from "./safeRedirect";
 
 describe("sanitizeNextPath", () => {
   it("laat veilige relatieve paden door", () => {
@@ -47,5 +51,33 @@ describe("isAllowedAppHost", () => {
     vi.stubEnv("VERCEL_URL", "structuro-preview.vercel.app");
     expect(isAllowedAppHost("structuro-preview.vercel.app")).toBe(true);
     expect(isAllowedAppHost("other.vercel.app")).toBe(false);
+  });
+});
+
+describe("resolveTrustedAppOrigin", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("gebruikt www.structuro.ai uit request, niet VERCEL_URL", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_URL", "structuroaimvp-preview.vercel.app");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
+
+    expect(resolveTrustedAppOrigin("https://www.structuro.ai")).toBe(
+      "https://www.structuro.ai"
+    );
+  });
+
+  it("valt terug op canonieke productie-URL zonder request-host", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("VERCEL_URL", "structuroaimvp-preview.vercel.app");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
+
+    expect(resolveTrustedAppOrigin("https://evil.com")).toBe(
+      "https://www.structuro.ai"
+    );
   });
 });

@@ -1,3 +1,6 @@
+/** Canonieke productie-URL (custom domain). Nooit VERCEL_URL in e-mails gebruiken. */
+export const CANONICAL_PRODUCTION_ORIGIN = "https://www.structuro.ai";
+
 /**
  * Basis-URL voor Stripe-redirects (Checkout, Billing Portal).
  * Zet NEXT_PUBLIC_APP_URL in productie (bijv. https://www.structuro.ai).
@@ -5,6 +8,9 @@
 export function getAppOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
+  if (process.env.VERCEL_ENV === "production") {
+    return CANONICAL_PRODUCTION_ORIGIN;
+  }
   const vercel = process.env.VERCEL_URL?.trim();
   if (vercel) {
     const host = vercel.startsWith("http") ? vercel : `https://${vercel}`;

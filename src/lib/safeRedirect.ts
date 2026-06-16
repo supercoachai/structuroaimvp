@@ -1,4 +1,4 @@
-import { getAppOrigin } from "@/lib/appUrl";
+import { CANONICAL_PRODUCTION_ORIGIN, getAppOrigin } from "@/lib/appUrl";
 
 const STATIC_ALLOWED_HOSTS = new Set([
   "structuro.ai",
@@ -8,12 +8,23 @@ const STATIC_ALLOWED_HOSTS = new Set([
   "127.0.0.1:3000",
 ]);
 
-/** Veilige redirect-basis: env-first, geen onbetrouwbare x-forwarded-host. */
+/** Veilige redirect-basis: env-first, daarna request-host, nooit blind VERCEL_URL. */
 export function resolveTrustedAppOrigin(requestOrigin: string): string {
   const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
   if (process.env.NODE_ENV === "development") {
     return requestOrigin.replace(/\/$/, "");
+  }
+  try {
+    const host = new URL(requestOrigin).host.toLowerCase();
+    if (isAllowedAppHost(host)) {
+      return requestOrigin.replace(/\/$/, "");
+    }
+  } catch {
+    /* ignore */
+  }
+  if (process.env.VERCEL_ENV === "production") {
+    return CANONICAL_PRODUCTION_ORIGIN;
   }
   return getAppOrigin().replace(/\/$/, "");
 }
