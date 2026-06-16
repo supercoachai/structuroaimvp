@@ -46,6 +46,49 @@
   --structuro-tint3-bg: #f5f3ff;
   --structuro-tint3-border: #ddd6fe;
   --structuro-tint3-num: #6d28d9;
+
+  /*
+   * Story layer (editorial): marketing, founder, manifesto-koppen.
+   * Work layer blijft --structuro-blue / --st-font voor app, checkout, dagstart.
+   */
+  --story-bg: #FDFBF4;
+  --story-bg-navy: #1A1A1B;
+  --story-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --story-accent: #2D5A56;
+  --story-text: #1A1A1B;
+  --story-text-muted: #5C6478;
+  --story-text-on-navy: #F5F2EA;
+  --story-border: rgba(26, 26, 27, 0.1);
+}
+
+/* Story layer utilities (marketing / manifesto; work UI blijft Tailwind + --structuro-blue) */
+.st-story-bg {
+  background-color: var(--story-bg);
+}
+.st-story-bg-navy {
+  background-color: var(--story-bg-navy);
+  color: var(--story-text-on-navy);
+}
+.st-story-serif {
+  font-family: var(--story-serif);
+}
+.st-story-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--story-accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.st-story-eyebrow::before {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: var(--story-accent);
+  flex-shrink: 0;
 }
 
 @theme inline {

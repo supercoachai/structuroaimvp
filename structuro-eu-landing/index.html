@@ -4,9 +4,6 @@
 <meta charset="UTF-8"/>
 <title>Structuro, Productiviteitsapp voor ADHD-breinen</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
 <meta name="description" content="De ADHD-app voor breinen die vastlopen op executie, niet op inzicht."/>
 <link rel="icon" href="/uploads/logo-structuro.png" type="image/png"/>
 <link rel="apple-touch-icon" href="/uploads/logo-structuro.png"/>
@@ -47,7 +44,9 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/></noscript>
 
 <!-- Vercel Web Analytics (statische HTML; geen Next.js-pakket nodig) -->
 <script>
@@ -58,7 +57,7 @@
 <style>
 :root {
   --bg: #F0F2F8; --white: #FFFFFF; --border: rgba(26,35,64,0.12);
-  --text: #1A2340; --sub: #6B7280; --place: #ABB3C5;
+  --text: #1A2340; --sub: #5C6478; --place: #6B7280;
   --blue: #3B6BF7; --blue-h: #1E47D6; --blue-s: #DBEAFE;
   --green: #22C55E; --green-s: #D1FAE5; --green-b: #A7F3D0;
   --dark: #1A2340; --dark-card: #242E52; --dark-sub: #8C95B0;
@@ -69,7 +68,7 @@
   --red: #EF4444;
   --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
   --font: 'Inter', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Story layer (editorial): founder, empathy, manifesto-koppen */
   --story-bg: #FDFBF4;
@@ -223,7 +222,7 @@ section,.hero,.trust,.zt-section,.phones-showcase,.vt-section,.empathy,.founder-
 .trust,.phones-showcase,.vt-section,.empathy,.founder-section,.how{z-index:2;}
 section{padding:88px 0;}
 @media(max-width:720px){section{padding:64px 0;}}
-.section-eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--blue);margin-bottom:12px;}
+.section-eyebrow{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--blue-h);margin-bottom:12px;}
 h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spacing:-.03em;line-height:1.15;text-wrap:balance;}
 .lede-2{margin:0;font-size:17px;color:var(--sub);line-height:1.6;max-width:560px;}
 
@@ -242,7 +241,7 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .media-seen-label{
   text-align:center;
   font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
-  color:#8893AB;margin-bottom:10px;
+  color:#5C6478;margin-bottom:10px;
 }
 .media-seen-mask{
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
@@ -335,7 +334,7 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 
 /* ── How (Loop) — dark preview, app-aligned ── */
 .how{background:linear-gradient(180deg,var(--white) 0%,var(--white) 24px,var(--bg) 84px,var(--bg) 100%);color:var(--text);border-top:none;border-bottom:none;}
-.how .section-eyebrow{color:var(--blue);}
+.how .section-eyebrow{color:var(--blue-h);}
 .how h2{color:var(--text);}
 .how .lede-2{color:var(--sub);}
 .how-head{text-align:center;margin-bottom:56px;}
@@ -365,7 +364,7 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .cycle-teaser{padding:40px 0;}
 .cycle-teaser-inner .lede-2{font-size:15px;max-width:520px;}
 .pricing-pay-trust{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:center;}
-.pricing-pay-trust p{font-size:11.5px;color:var(--place);margin:0 0 10px;}
+.pricing-pay-trust p{font-size:11.5px;color:var(--sub);margin:0 0 10px;}
 .pricing-pay-trust-icons{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;opacity:.92;}
 .energy-demo{margin-top:48px;padding:28px;background:var(--night-soft);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-xl);max-width:640px;margin-left:auto;margin-right:auto;text-align:center;}
 .energy-demo-label{font-size:14px;font-weight:600;color:var(--night-muted);margin:0 0 16px;}
@@ -600,8 +599,8 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .vt-section{background:var(--bg);}
 .vt-wrap{max-width:1080px;margin:0 auto;padding:96px 40px 110px;}
 .vt-head{text-align:center;max-width:720px;margin:0 auto 40px;}
-.vt-eyebrow{font-family:'Hanken Grotesk',var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);}
-.vt-head h2{margin:14px 0 0;font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
+.vt-eyebrow{font-family:var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue-h);}
+.vt-head h2{margin:14px 0 0;font-family:var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
 .vt-root{max-width:860px;margin:0 auto;}
 .vt-carousel{display:flex;align-items:center;gap:14px;}
 .vt-frame{flex:1;min-width:0;}
@@ -610,11 +609,11 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .vt-nav:disabled{opacity:.35;cursor:default;}
 .vt-card{background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:22px;padding:38px 40px;box-shadow:0 30px 70px -42px rgba(14,23,48,.28);transition:box-shadow .25s;}
 .vt-quote-mark{margin-bottom:14px;display:block;}
-.vt-quote-text{margin:0;font-family:'Schibsted Grotesk',var(--font);font-weight:600;font-size:clamp(22px,2.6vw,30px);line-height:1.36;letter-spacing:-.02em;color:#1A2340;text-wrap:balance;}
+.vt-quote-text{margin:0;font-family:var(--font);font-weight:600;font-size:clamp(22px,2.6vw,30px);line-height:1.36;letter-spacing:-.02em;color:#1A2340;text-wrap:balance;}
 .vt-footer{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid rgba(26,35,64,.05);}
-.vt-avatar{width:46px;height:46px;border-radius:12px;background:linear-gradient(180deg,#5A84F9,var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:19px;flex-shrink:0;}
-.vt-name{font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:17px;color:#1A2340;}
-.vt-role{font-family:'Hanken Grotesk',var(--font);font-size:14px;color:#6B7280;}
+.vt-avatar{width:46px;height:46px;border-radius:12px;background:linear-gradient(180deg,#5A84F9,var(--blue));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:700;font-size:19px;flex-shrink:0;}
+.vt-name{font-family:var(--font);font-weight:700;font-size:17px;color:#1A2340;}
+.vt-role{font-family:var(--font);font-size:14px;color:#6B7280;}
 @media(max-width:760px){.vt-wrap{padding:52px 22px 44px!important;}.vt-card{padding:30px 24px;}.vt-carousel{gap:8px;}.vt-nav{width:36px;height:36px;}}
 @media(max-width:760px){.zt-wrap{padding:44px 22px 48px!important;}.zt-head{margin-bottom:28px;}.zt-row-panel-inner{margin-left:22px;}}
 /* ── Zelftest (welke hiervan ben jij) ── */
@@ -625,19 +624,19 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .zt-sticky{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:16px;padding:16px 22px;margin-bottom:18px;box-shadow:0 16px 36px -22px rgba(14,23,48,.3);transition:background .3s,border-color .3s;}
 .zt-sticky.is-filled{background:#1A2340;border-color:#1A2340;}
 .zt-head{text-align:center;max-width:720px;margin:0 auto 40px;}
-.zt-eyebrow{font-family:'Hanken Grotesk',var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);}
-.zt-head h2{margin:14px 0 0;font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
-.zt-lede{margin:16px 0 0;font-family:'Hanken Grotesk',var(--font);font-size:18px;line-height:1.5;color:#6B7280;text-wrap:balance;}
+.zt-eyebrow{font-family:var(--font);font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--blue-h);}
+.zt-head h2{margin:14px 0 0;font-family:var(--font);font-weight:800;font-size:clamp(30px,4vw,46px);line-height:1.04;letter-spacing:-.03em;color:#1A2340;text-wrap:balance;}
+.zt-lede{margin:16px 0 0;font-family:var(--font);font-size:18px;line-height:1.5;color:#6B7280;text-wrap:balance;}
 .zt-dots{display:flex;gap:5px;flex:0 0 auto;}
 .zt-dot{width:12px;height:12px;border-radius:999px;background:rgba(26,35,64,.08);transition:background .25s;}
 .zt-dot.is-on{background:var(--blue);}
 .zt-dot.is-idle-dark{background:rgba(255,255,255,.18);}
 .zt-sticky-copy{flex:1;}
-.zt-sticky-title{font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:17px;color:#1A2340;letter-spacing:-.01em;transition:color .3s;}
+.zt-sticky-title{font-family:var(--font);font-weight:800;font-size:17px;color:#1A2340;letter-spacing:-.01em;transition:color .3s;}
 .zt-sticky.is-filled .zt-sticky-title{color:#fff;}
-.zt-sticky-sub{font-family:'Hanken Grotesk',var(--font);font-size:14px;color:#6B7280;margin-top:2px;transition:color .3s;}
+.zt-sticky-sub{font-family:var(--font);font-size:14px;color:#6B7280;margin-top:2px;transition:color .3s;}
 .zt-sticky.is-filled .zt-sticky-sub{color:rgba(255,255,255,.7);}
-.zt-sticky-cta{flex:0 0 auto;display:none;align-items:center;justify-content:center;white-space:nowrap;padding:10px 16px;border-radius:12px;font-family:'Hanken Grotesk',var(--font);font-size:14px;font-weight:800;text-decoration:none;background:var(--blue);color:#fff;transition:background .2s,transform .2s;}
+.zt-sticky-cta{flex:0 0 auto;display:none;align-items:center;justify-content:center;white-space:nowrap;padding:10px 16px;border-radius:12px;font-family:var(--font);font-size:14px;font-weight:800;text-decoration:none;background:var(--blue);color:#fff;transition:background .2s,transform .2s;}
 .zt-sticky-cta:hover{background:#4a5fd4;}
 .zt-sticky.is-filled .zt-sticky-cta{display:inline-flex;}
 @media(max-width:760px){
@@ -668,16 +667,16 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .zt-check svg{transform:scale(.4);opacity:0;transition:all .18s;}
 .zt-row.is-on .zt-check{border-color:var(--blue);background:var(--blue);}
 .zt-row.is-on .zt-check svg{transform:scale(1);opacity:1;}
-.zt-row-short{flex:1;font-family:'Schibsted Grotesk',var(--font);font-weight:700;font-size:clamp(17px,1.9vw,21px);letter-spacing:-.015em;color:#1A2340;line-height:1.25;}
-.zt-row-hint{flex:0 0 auto;font-family:'Hanken Grotesk',var(--font);font-weight:700;font-size:13px;color:#9AA3B8;transition:color .2s;white-space:nowrap;}
+.zt-row-short{flex:1;font-family:var(--font);font-weight:700;font-size:clamp(17px,1.9vw,21px);letter-spacing:-.015em;color:#1A2340;line-height:1.25;}
+.zt-row-hint{flex:0 0 auto;font-family:var(--font);font-weight:700;font-size:13px;color:#5C6478;transition:color .2s;white-space:nowrap;}
 .zt-row.is-on .zt-row-hint{color:var(--blue);}
 .zt-row-panel-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.3,.8,.3,1);}
 .zt-row-panel-wrap.is-open{grid-template-rows:1fr;}
 .zt-row-panel{overflow:hidden;}
 .zt-row-panel-inner{margin:0 22px 22px 68px;padding:18px 20px;background:#F5F7FC;border-radius:14px;}
-.zt-panel-tag{font-family:'Hanken Grotesk',var(--font);font-weight:800;font-size:11px;letter-spacing:.16em;color:var(--blue);margin-bottom:8px;}
-.zt-panel-title{font-family:'Schibsted Grotesk',var(--font);font-weight:800;font-size:17px;color:#1A2340;margin-bottom:6px;letter-spacing:-.01em;}
-.zt-panel-body{margin:0;font-family:'Hanken Grotesk',var(--font);font-size:16.5px;line-height:1.6;color:#2C3753;}
+.zt-panel-tag{font-family:var(--font);font-weight:800;font-size:11px;letter-spacing:.16em;color:var(--blue);margin-bottom:8px;}
+.zt-panel-title{font-family:var(--font);font-weight:800;font-size:17px;color:#1A2340;margin-bottom:6px;letter-spacing:-.01em;}
+.zt-panel-body{margin:0;font-family:var(--font);font-size:16.5px;line-height:1.6;color:#2C3753;}
 /* ── Cyclus teaser (homepage) ── */
 .cycle-teaser{background:linear-gradient(180deg,var(--story-bg) 0%,var(--story-bg) 28px,var(--white) 88px,var(--white) 100%);border-top:none;border-bottom:none;padding:56px 0;}
 .cycle-teaser-inner{max-width:640px;margin:0 auto;text-align:center;}
@@ -788,7 +787,7 @@ h2{margin:0 0 14px;font-size:clamp(27px,3.5vw,38px);font-weight:800;letter-spaci
 .pricing-card.highlight{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.08),0 16px 40px rgba(37,99,235,.10);}
 .pricing-card .btn-primary{width:100%;justify-content:center;margin-top:24px;text-decoration:none;}
 
-.price-trial-badge{display:block;margin:0 auto 14px;padding:6px 14px;border-radius:999px;background:rgba(37,99,235,.1);color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;text-align:center;width:fit-content;}
+.price-trial-badge{display:block;margin:0 auto 14px;padding:6px 14px;border-radius:999px;background:rgba(37,99,235,.1);color:var(--blue-h);font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;text-align:center;width:fit-content;}
 .badge-best{position:absolute;top:-12px;right:22px;background:var(--blue);color:#fff;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
 .price-label{font-size:13px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.1em;}
 .price-amount{font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:10px;}
@@ -1858,7 +1857,7 @@ footer{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 40px,var(--white
 <nav class="nav" id="nav">
   <div class="container nav-inner">
     <a href="/" class="logo">
-      <img class="logo-img" src="uploads/logo-structuro.png" alt="Structuro"/>
+      <img class="logo-img" src="uploads/logo-structuro.webp" alt="Structuro" width="160" height="36" decoding="async"/>
     </a>
     <div class="nav-links">
       <a href="#loop" data-ph-cta="nav_loop" data-i18n="nav_how">Hoe het werkt</a>
@@ -1892,6 +1891,8 @@ footer{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 40px,var(--white
     </div>
   </div>
 </nav>
+
+<main id="main-content">
 
 <!-- Hero -->
 <section class="hero" id="hero">
@@ -2195,7 +2196,10 @@ footer{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 40px,var(--white
         <div class="founder-story-viewport" data-founder-viewport>
           <div class="founder-story-track" data-founder-track>
             <article class="founder-story-slide founder-story-slide--maker" data-founder-slide aria-hidden="false">
-              <img class="founder-story-slide-photo" src="/uploads/founder-maker-slide.png?v=20260616" alt="Niels van den Hurk: Ik heb ADHD en bouw Structuro" width="819" height="1024" loading="lazy" decoding="async"/>
+              <picture>
+                <source srcset="/uploads/founder-maker-slide.webp?v=20260617" type="image/webp"/>
+                <img class="founder-story-slide-photo" src="/uploads/founder-maker-slide.png?v=20260617" alt="Niels van den Hurk: Ik heb ADHD en bouw Structuro" width="819" height="1024" loading="lazy" decoding="async"/>
+              </picture>
             </article>
 
             <article class="founder-story-slide founder-story-slide--clash" data-founder-slide aria-hidden="true" tabindex="-1">
@@ -2261,36 +2265,36 @@ footer{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 40px,var(--white
     <div class="media-seen-label" data-i18n="media_eyebrow">Gezien in</div>
     <div class="media-seen-mask">
       <div class="media-seen-track">
-        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ed" aria-label="Artikel in Eindhovens Dagblad"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="Eindhovens Dagblad" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ad" aria-label="Artikel in Algemeen Dagblad"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="Algemeen Dagblad" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_bd" aria-label="Artikel in Brabants Dagblad"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="Brabants Dagblad" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_impuls" aria-label="Artikel op Impuls en Woortblind"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" srcset="/uploads/media/impuls-woortblind.png 1x, /uploads/media/impuls-woortblind-2x.png 2x" alt="Impuls en Woortblind" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_adhd_cafe" aria-label="ADHD Café artikel"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" srcset="/uploads/media/adhd-cafe.png 1x, /uploads/media/adhd-cafe.png 2x" alt="ADHD Café" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
-        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.png" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ed" aria-label="Artikel in Eindhovens Dagblad"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="Eindhovens Dagblad" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_ad" aria-label="Artikel in Algemeen Dagblad"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="Algemeen Dagblad" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="media_bd" aria-label="Artikel in Brabants Dagblad"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="Brabants Dagblad" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_impuls" aria-label="Artikel op Impuls en Woortblind"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="Impuls en Woortblind" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="media_adhd_cafe" aria-label="ADHD Café artikel"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="ADHD Café" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:0s"><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ed" src="/uploads/media/ed-hq.png" alt="" width="512" height="512" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-1s"><a href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--ad" src="/uploads/media/ad-hq.png" alt="" width="300" height="300" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-2s"><a href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--bd" src="/uploads/media/bd-hq.png" alt="" width="225" height="225" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-3s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--impuls" src="/uploads/media/impuls-woortblind-hq.png" alt="" width="768" height="181" loading="lazy" decoding="async"/></a></div></div>
+        <div class="media-seen-cell" aria-hidden="true"><div class="media-seen-bob" style="animation-delay:-4s"><a href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" tabindex="-1"><img class="media-seen-logo media-seen-logo--adhd" src="/uploads/media/adhd-cafe.webp" alt="" width="907" height="441" loading="lazy" decoding="async"/></a></div></div>
       </div>
     </div>
   </section>
@@ -2456,7 +2460,7 @@ footer{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 40px,var(--white
 
 
 
-
+</main>
 
 <!-- Footer -->
 <footer>
