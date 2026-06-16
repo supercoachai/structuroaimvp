@@ -2,6 +2,8 @@ export type ParsedAuthHash = {
   type: string | null;
   errorCode: string | null;
   errorDescription: string | null;
+  /** access_token + refresh_token in hash (implicit flow). */
+  hasAuthTokens: boolean;
   hasRecoveryTokens: boolean;
   hasAuthError: boolean;
 };
@@ -17,6 +19,7 @@ export function parseAuthHashFragment(hash: string): ParsedAuthHash {
       type: null,
       errorCode: null,
       errorDescription: null,
+      hasAuthTokens: false,
       hasRecoveryTokens: false,
       hasAuthError: false,
     };
@@ -27,13 +30,17 @@ export function parseAuthHashFragment(hash: string): ParsedAuthHash {
   const errorCode = params.get("error_code") ?? params.get("error");
   const errorDescription = params.get("error_description");
   const hasAccessToken = Boolean(params.get("access_token"));
-  const hasRecoveryTokens = hasAccessToken && type === "recovery";
+  const hasRefreshToken = Boolean(params.get("refresh_token"));
+  const hasAuthTokens = hasAccessToken && hasRefreshToken;
+  const hasRecoveryTokens =
+    hasAuthTokens && (type === "recovery" || type === "signup" || !type);
   const hasAuthError = Boolean(errorCode || params.get("error"));
 
   return {
     type,
     errorCode,
     errorDescription,
+    hasAuthTokens,
     hasRecoveryTokens,
     hasAuthError,
   };

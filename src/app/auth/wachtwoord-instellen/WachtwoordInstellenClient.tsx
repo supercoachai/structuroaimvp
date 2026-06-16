@@ -9,6 +9,7 @@ import {
   parseAuthHashFragment,
 } from "@/lib/auth/recoveryHash";
 import {
+  establishSessionFromAuthHash,
   exchangeRecoveryCodeClientSide,
   waitForAuthSession,
 } from "@/lib/auth/waitForAuthSession";
@@ -44,6 +45,11 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
     };
 
     void (async () => {
+      if (await establishSessionFromAuthHash(supabase)) {
+        if (!cancelled) settleWithSession();
+        return;
+      }
+
       const exchanged = await exchangeRecoveryCodeClientSide(supabase);
       if (cancelled) return;
       if (exchanged) {
@@ -55,7 +61,9 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
         typeof window !== "undefined" ? window.location.hash : "";
       const parsed = parseAuthHashFragment(hash);
       const expectingRecovery =
-        parsed.hasRecoveryTokens || hash.includes("type=recovery");
+        parsed.hasAuthTokens ||
+        parsed.hasRecoveryTokens ||
+        hash.includes("type=recovery");
 
       const {
         data: { subscription },

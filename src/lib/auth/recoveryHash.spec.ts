@@ -7,8 +7,17 @@ describe("parseAuthHashFragment", () => {
     const parsed = parseAuthHashFragment(
       "#access_token=abc&refresh_token=def&type=recovery"
     );
+    expect(parsed.hasAuthTokens).toBe(true);
     expect(parsed.hasRecoveryTokens).toBe(true);
     expect(parsed.hasAuthError).toBe(false);
+  });
+
+  it("herkent auth tokens zonder expliciet type=recovery", () => {
+    const parsed = parseAuthHashFragment(
+      "#access_token=abc&refresh_token=def"
+    );
+    expect(parsed.hasAuthTokens).toBe(true);
+    expect(parsed.hasRecoveryTokens).toBe(true);
   });
 
   it("herkent otp_expired in hash", () => {

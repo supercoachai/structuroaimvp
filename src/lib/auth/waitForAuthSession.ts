@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  clearAuthHashFromUrl,
+  parseAuthHashFragment,
+} from "@/lib/auth/recoveryHash";
+
 const DEFAULT_RETRY_DELAYS_MS = [0, 100, 250, 500, 900, 1500, 2500];
 
 type WaitForAuthSessionOptions = {
@@ -33,6 +38,35 @@ export async function waitForAuthSession(
   }
 
   return false;
+}
+
+/**
+ * Implicit recovery: Supabase hangt access_token + refresh_token in de hash.
+ * detectSessionInUrl is async; expliciet setSession voorkomt "geen geldige sessie".
+ */
+export async function establishSessionFromAuthHash(
+  supabase: SupabaseClient
+): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  const hash = window.location.hash;
+  if (!hash || hash === "#") return false;
+
+  const parsed = parseAuthHashFragment(hash);
+  if (parsed.hasAuthError || !parsed.hasAuthTokens) return false;
+
+  const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+  const accessToken = params.get("access_token");
+  const refreshToken = params.get("refresh_token");
+  if (!accessToken || !refreshToken) return false;
+
+  const { error } = await supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (error) return false;
+
+  clearAuthHashFromUrl();
+  return true;
 }
 
 /** Ruim ?code= en ?type=recovery uit de URL op na client-side PKCE exchange. */
