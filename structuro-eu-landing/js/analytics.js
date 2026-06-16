@@ -176,9 +176,7 @@
         capture_pageview: true,
         capture_pageleave: true,
         autocapture: true,
-        session_recording: {
-          maskAllInputs: true,
-        },
+        disable_session_recording: true,
         mask_all_text: true,
         mask_all_element_attributes: true,
         persistence: "localStorage+cookie",
@@ -194,9 +192,7 @@
         environment: "production"
       });
       window.posthog.opt_in_capturing();
-      if (typeof window.posthog.startSessionRecording === "function") {
-        window.posthog.startSessionRecording();
-      }
+      scheduleSessionRecording();
       if (typeof initDone === "function") initDone();
     };
     document.head.appendChild(s);
@@ -338,9 +334,62 @@
     attachCtaClicks();
   }
 
+  function scheduleSessionRecording() {
+    if (window.__structuroEuRecordingScheduled) return;
+    window.__structuroEuRecordingScheduled = true;
+
+    function start() {
+      try {
+        if (window.posthog && typeof window.posthog.startSessionRecording === "function") {
+          window.posthog.startSessionRecording();
+        }
+      } catch (e) {}
+    }
+
+    function onFirstEngagement() {
+      start();
+      window.removeEventListener("scroll", onFirstEngagement);
+      window.removeEventListener("pointerdown", onFirstEngagement);
+      window.removeEventListener("keydown", onFirstEngagement);
+    }
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(start, { timeout: 8000 });
+    } else {
+      window.setTimeout(start, 4000);
+    }
+
+    window.addEventListener("scroll", onFirstEngagement, { passive: true, once: true });
+    window.addEventListener("pointerdown", onFirstEngagement, { once: true });
+    window.addEventListener("keydown", onFirstEngagement, { once: true });
+  }
+
+  function scheduleBootstrap() {
+    function runPosthog() {
+      loadPosthog(attachLandingMeasurement);
+    }
+
+    function runGa() {
+      loadGoogleAnalytics();
+    }
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(runPosthog, { timeout: 3500 });
+    } else {
+      window.addEventListener("load", function onLoad() {
+        window.removeEventListener("load", onLoad);
+        window.setTimeout(runPosthog, 200);
+      });
+    }
+
+    window.addEventListener("load", function onGaLoad() {
+      window.removeEventListener("load", onGaLoad);
+      window.setTimeout(runGa, 1500);
+    });
+  }
+
   function bootstrap() {
-    loadGoogleAnalytics();
-    loadPosthog(attachLandingMeasurement);
+    scheduleBootstrap();
   }
 
   if (document.readyState === "loading") {
