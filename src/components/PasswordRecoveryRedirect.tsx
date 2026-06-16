@@ -7,8 +7,9 @@ import {
   clearAuthHashFromUrl,
   parseAuthHashFragment,
 } from "@/lib/auth/recoveryHash";
+import { PASSWORD_RECOVERY_PATH } from "@/lib/auth/passwordResetRedirect";
 
-const RECOVERY_TARGET = "/auth/wachtwoord-instellen";
+const RECOVERY_TARGET = PASSWORD_RECOVERY_PATH;
 
 /**
  * Reset-links zetten tokens in de URL-hash. De server ziet die niet.
@@ -54,6 +55,10 @@ export function PasswordRecoveryRedirect() {
       const supabase = createClient();
       const hash = typeof window !== "undefined" ? window.location.hash : "";
       const parsed = parseAuthHashFragment(hash);
+
+      if (parsed.hasAuthError) {
+        return;
+      }
 
       const {
         data: { subscription },

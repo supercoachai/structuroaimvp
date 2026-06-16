@@ -11,6 +11,7 @@ import { SidebarProvider } from "@/contexts/SidebarContext";
 import { InfoDismissalsProvider } from "@/contexts/InfoDismissalsContext";
 import { trackSessionAbandoned } from "@/utils/events";
 import { AnalyticsInternalBridge } from "@/components/AnalyticsInternalBridge";
+import { AuthHashErrorRedirect } from "@/components/AuthHashErrorRedirect";
 import { PasswordRecoveryRedirect } from "@/components/PasswordRecoveryRedirect";
 import { I18nProvider } from "@/lib/i18n";
 import { ConsentProvider } from "@/lib/posthog/ConsentContext";
@@ -103,6 +104,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <SignupAttributionCapture />
             <RemoveLegacyFocusDurationKey />
             <ClientRuntimeGuards />
+            <AuthHashErrorRedirect />
             <PasswordRecoveryRedirect />
             <AnalyticsInternalBridge />
             <Suspense fallback={null}>

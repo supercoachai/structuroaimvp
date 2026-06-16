@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { buildPasswordResetRedirectUrl } from "@/lib/auth/passwordResetRedirect";
 import { requestPasswordResetEmail } from "@/lib/auth/passwordResetRequest";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { getClientIp, isWaitlistRateLimited } from "@/lib/wachtlijst/rateLimit";
@@ -40,10 +41,7 @@ async function postRequestPasswordReset(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
 
-  const origin = new URL(request.url).origin;
-  // Direct naar client-pagina: Supabase zet recovery-tokens in de URL-hash (#).
-  // Via /auth/callback verliest de server die hash en krijg je ten onrechte missing_code.
-  const redirectTo = `${origin}/auth/wachtwoord-instellen`;
+  const redirectTo = buildPasswordResetRedirectUrl(new URL(request.url).origin);
 
   try {
     const result = await requestPasswordResetEmail({

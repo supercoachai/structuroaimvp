@@ -17,6 +17,7 @@ import {
   requiresPaidSubscriptionBeforeOnboarding,
 } from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
+import { isPasswordRecoverySetupPath } from "../auth/passwordResetRedirect";
 import {
   isPasswordCreatePath,
   PASSWORD_CREATE_PATH,
@@ -181,6 +182,12 @@ export async function updateSession(
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";
+    if (
+      !url.searchParams.has("next") &&
+      (isPasswordRecoverySetupPath(pathname) || isPasswordCreatePath(pathname))
+    ) {
+      url.searchParams.set("next", pathname);
+    }
     return NextResponse.redirect(url, 302);
   }
 
@@ -453,6 +460,7 @@ export async function updateSession(
   ) {
     if (
       !isPasswordCreatePath(pathname) &&
+      !isPasswordRecoverySetupPath(pathname) &&
       !pathname.startsWith("/auth/callback") &&
       !pathname.startsWith("/auth/auth-code-error") &&
       !pathname.startsWith("/api/")
