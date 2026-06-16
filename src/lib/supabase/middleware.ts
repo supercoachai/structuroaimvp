@@ -178,7 +178,8 @@ export async function updateSession(
   if (
     authExchangeCode &&
     pathname !== "/auth/callback" &&
-    !pathname.startsWith("/auth/callback/")
+    !pathname.startsWith("/auth/callback/") &&
+    !isPasswordRecoverySetupPath(pathname)
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";

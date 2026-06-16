@@ -35,15 +35,36 @@ export async function waitForAuthSession(
   return false;
 }
 
-export function redirectAuthCodeToCallback(pathname: string): boolean {
+/** Ruim ?code= en ?type=recovery uit de URL op na client-side PKCE exchange. */
+export function clearAuthQueryFromUrl(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("code");
+    url.searchParams.delete("type");
+    const search = url.searchParams.toString();
+    window.history.replaceState(
+      null,
+      "",
+      url.pathname + (search ? `?${search}` : "")
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * PKCE recovery: wissel ?code= client-side in (zelfde browser-tab als de mail-link).
+ */
+export async function exchangeRecoveryCodeClientSide(
+  supabase: SupabaseClient
+): Promise<boolean> {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
   if (!code) return false;
 
-  const next = encodeURIComponent(pathname);
-  window.location.replace(
-    `/auth/callback?code=${encodeURIComponent(code)}&next=${next}`
-  );
-  return true;
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  clearAuthQueryFromUrl();
+  return !error;
 }

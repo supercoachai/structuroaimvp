@@ -9,11 +9,10 @@ import {
   parseAuthHashFragment,
 } from "@/lib/auth/recoveryHash";
 import {
-  redirectAuthCodeToCallback,
+  exchangeRecoveryCodeClientSide,
   waitForAuthSession,
 } from "@/lib/auth/waitForAuthSession";
 import { markPasswordSetupCompleted } from "@/lib/auth/passwordSetupProfile";
-import { PASSWORD_RECOVERY_PATH } from "@/lib/auth/passwordResetRedirect";
 import { useI18n } from "@/lib/i18n";
 
 type Props = {
@@ -34,17 +33,8 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
     if (serverHasSession) return;
 
     let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
     const supabase = createClient();
-
-    if (redirectAuthCodeToCallback(PASSWORD_RECOVERY_PATH)) {
-      return;
-    }
-
-    const hash =
-      typeof window !== "undefined" ? window.location.hash : "";
-    const parsed = parseAuthHashFragment(hash);
-    const expectingRecovery =
-      parsed.hasRecoveryTokens || hash.includes("type=recovery");
 
     const settleWithSession = () => {
       if (cancelled) return;
@@ -53,35 +43,50 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
       clearAuthHashFromUrl();
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelled || !session) return;
-      if (
-        event === "PASSWORD_RECOVERY" ||
-        event === "SIGNED_IN" ||
-        event === "INITIAL_SESSION" ||
-        event === "TOKEN_REFRESHED"
-      ) {
+    void (async () => {
+      const exchanged = await exchangeRecoveryCodeClientSide(supabase);
+      if (cancelled) return;
+      if (exchanged) {
         settleWithSession();
+        return;
       }
-    });
 
-    void waitForAuthSession(supabase, {
-      isCancelled: () => cancelled,
-      onSession: settleWithSession,
-      retryDelaysMs: expectingRecovery
-        ? [0, 150, 400, 800, 1500, 2500]
-        : [0, 100, 250, 500, 900, 1500, 2500, 3500],
-    }).then((ok) => {
+      const hash =
+        typeof window !== "undefined" ? window.location.hash : "";
+      const parsed = parseAuthHashFragment(hash);
+      const expectingRecovery =
+        parsed.hasRecoveryTokens || hash.includes("type=recovery");
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (cancelled || !session) return;
+        if (
+          event === "PASSWORD_RECOVERY" ||
+          event === "SIGNED_IN" ||
+          event === "INITIAL_SESSION" ||
+          event === "TOKEN_REFRESHED"
+        ) {
+          settleWithSession();
+        }
+      });
+      unsubscribe = () => subscription.unsubscribe();
+
+      const ok = await waitForAuthSession(supabase, {
+        isCancelled: () => cancelled,
+        onSession: settleWithSession,
+        retryDelaysMs: expectingRecovery
+          ? [0, 150, 400, 800, 1500, 2500]
+          : [0, 100, 250, 500, 900, 1500, 2500, 3500],
+      });
       if (!cancelled && !ok) {
         setChecking(false);
       }
-    });
+    })();
 
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
+      unsubscribe?.();
     };
   }, [serverHasSession]);
 

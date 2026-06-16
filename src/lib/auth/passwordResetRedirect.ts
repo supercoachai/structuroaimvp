@@ -10,11 +10,10 @@ export function isPasswordRecoverySetupPath(pathname: string): boolean {
 }
 
 /**
- * PKCE recovery links landen op /auth/callback?code=…&next=… .
- * Implicit (legacy) links landen op callback?next=…#access_token=…&type=recovery .
+ * Direct naar de client-pagina. PKCE levert ?code=; implicit levert #type=recovery.
+ * Client-side exchange werkt betrouwbaarder dan server callback + httpOnly cookies.
  */
 export function buildPasswordResetRedirectUrl(requestOrigin: string): string {
   const origin = resolveTrustedAppOrigin(requestOrigin);
-  const next = encodeURIComponent(PASSWORD_RECOVERY_PATH);
-  return `${origin}/auth/callback?next=${next}`;
+  return `${origin}${PASSWORD_RECOVERY_PATH}`;
 }
