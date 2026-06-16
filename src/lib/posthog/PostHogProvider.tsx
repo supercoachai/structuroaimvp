@@ -15,11 +15,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const prevConsentRef = useRef<typeof consent>(consent);
 
   useEffect(() => {
-    ensurePostHogClientInitialized();
-  }, []);
-
-  useEffect(() => {
-    if (consent === "unknown") return;
+    if (!ensurePostHogClientInitialized()) return;
     applyPostHogAnalyticsConsent(consent === "granted");
     prevConsentRef.current = consent;
   }, [consent]);

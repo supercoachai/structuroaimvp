@@ -140,8 +140,11 @@
       return;
     }
 
-    var PH_API_HOST = "https://eu.i.posthog.com";
-    var PH_ARRAY_SRC = "https://eu-assets.i.posthog.com/static/array.js";
+    var PH_API_HOST =
+      typeof window.__STRUCTURO_PH_API_HOST__ === "string"
+        ? window.__STRUCTURO_PH_API_HOST__.trim()
+        : "https://t.structuro.eu";
+    var PH_ARRAY_SRC = PH_API_HOST.replace(/\/+$/, "") + "/static/array.js";
 
     var existing = document.querySelector('script[src="' + PH_ARRAY_SRC + '"]');
     if (existing && window.posthog && typeof window.posthog.init === "function") {
@@ -167,6 +170,7 @@
           "www.structuro.ai",
           "structuro.eu",
           "www.structuro.eu",
+          "t.structuro.eu",
           window.location.hostname,
         ].filter(Boolean),
         capture_pageview: true,

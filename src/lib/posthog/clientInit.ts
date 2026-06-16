@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import type { CaptureResult } from "posthog-js";
 
 import { posthogTracingHeaderHostnames } from "./tracingHeaders";
+import { POSTHOG_PROXY_API_HOST } from "./proxyHost";
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
 
 let posthogInitOnce = false;
@@ -45,8 +46,7 @@ function exceptionBeforeSend(cr: CaptureResult | null): CaptureResult | null {
 function clientApiHost(): string {
   const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
   if (fromEnv) return fromEnv.replace(/\/+$/, "");
-  if (typeof window !== "undefined") return `${window.location.origin}/ph`;
-  return "";
+  return POSTHOG_PROXY_API_HOST;
 }
 
 function registerSiteGroup(): void {
@@ -106,48 +106,45 @@ export function ensurePostHogClientInitialized(): boolean {
     environment: RELEASE_ENVIRONMENT,
   });
   registerSiteGroup();
-  posthog.set_config({ disable_session_recording: true });
+  ensureSessionReplayStarted();
   posthogInitOnce = true;
   return true;
 }
 
-function setSessionRecordingEnabled(enabled: boolean): void {
+/**
+ * Zelfde patroon als structuro.eu: opt_in + startSessionRecording.
+ * posthog.opt_out_capturing() mag hier niet: bij cookieless_mode on_reject vernietigt
+ * dat sessionRecording en blokkeert replay (consent.isOptedOut() blijft true).
+ */
+function ensureSessionReplayStarted(): void {
   try {
-    posthog.set_config({ disable_session_recording: !enabled });
-    if (enabled) {
-      if (typeof posthog.startSessionRecording === "function") {
-        posthog.startSessionRecording();
-      }
-      return;
-    }
-    if (typeof posthog.stopSessionRecording === "function") {
-      posthog.stopSessionRecording();
+    posthog.opt_in_capturing();
+    posthog.set_config({ disable_session_recording: false });
+    if (typeof posthog.startSessionRecording === "function") {
+      posthog.startSessionRecording();
     }
   } catch {
     /* ignore */
   }
 }
 
-/** Schakel product-analytics features in/uit zonder error tracking te blokkeren. */
+/** Schakel product-analytics features in/uit zonder error tracking of replay te blokkeren. */
 export function applyPostHogAnalyticsConsent(granted: boolean): void {
   if (!posthogInitOnce) return;
   try {
     if (granted) {
-      posthog.opt_in_capturing();
       posthog.set_config({
         capture_pageleave: true,
         capture_performance: { web_vitals: true },
       });
       registerSiteGroup();
     } else {
-      posthog.opt_out_capturing();
       posthog.set_config({
         capture_pageleave: false,
         capture_performance: { web_vitals: false },
       });
     }
-    // Replay ook in cookieless-modus (masking aan): activatie-debug zonder analytics-cookies.
-    setSessionRecordingEnabled(true);
+    ensureSessionReplayStarted();
   } catch {
     /* ignore */
   }

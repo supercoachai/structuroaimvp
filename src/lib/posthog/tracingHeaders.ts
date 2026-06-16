@@ -6,6 +6,7 @@ export const POSTHOG_TRACING_HEADER_HOSTNAMES = [
   "www.structuro.ai",
   "structuro.eu",
   "www.structuro.eu",
+  "t.structuro.eu",
 ] as const;
 
 export function posthogTracingHeaderHostnames(): string[] {
