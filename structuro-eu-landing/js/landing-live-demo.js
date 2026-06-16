@@ -181,7 +181,7 @@
         '"/>';
     }
     return (
-      '<svg width="22" height="13" viewBox="0 0 28 16" fill="none" aria-hidden="true">' +
+      '<svg width="20" height="12" viewBox="0 0 28 16" fill="none" aria-hidden="true">' +
       '<rect x="1" y="2" width="22" height="12" rx="3" stroke="' + frame + '" stroke-width="1.5" fill="none"/>' +
       '<rect x="24" y="6" width="3" height="4" rx="1.2" fill="' + frame + '"/>' +
       bars +
