@@ -6,7 +6,6 @@
       name: 'Lisa',
       age: 31,
       initial: 'L',
-      theme: 'Schuldgevoel',
       role: 'Tester \u00b7 ADHD sinds haar twintigste',
       quote:
         'Eerlijk? Ik sloot voor het eerst in maanden een dag af zonder dat schuldgevoel om half tien. Alleen d\u00e1t was het al waard.',
@@ -15,7 +14,6 @@
       name: 'Sven',
       age: 34,
       initial: 'S',
-      theme: 'Burn-out',
       role: 'Tester \u00b7 werkte 50 uur per week',
       quote:
         'Ik hing al maanden op de rand van een burn-out. E\u00e9n taak per dag klinkt belachelijk, maar het haalde de druk weg. Ik kom eindelijk weer boven water.',
@@ -24,7 +22,6 @@
       name: 'Sanne',
       age: 36,
       initial: 'S',
-      theme: 'Cyclus',
       role: 'Tester \u00b7 moeder van twee',
       quote:
         'In mijn luteale fase was ik altijd knock-out. Nu past Structuro m\u2019n dag aan m\u2019n cyclus aan, en eindelijk voelt dat niet meer als falen.',
@@ -35,11 +32,12 @@
   if (!mount) return;
 
   var active = 0;
-  var tabsEl;
   var quoteEl;
   var nameEl;
   var roleEl;
   var initialEl;
+  var prevBtn;
+  var nextBtn;
 
   function build() {
     mount.innerHTML = '';
@@ -47,25 +45,37 @@
     var root = document.createElement('div');
     root.className = 'vt-root';
 
-    tabsEl = document.createElement('div');
-    tabsEl.className = 'vt-tabs';
-    tabsEl.setAttribute('role', 'tablist');
-    tabsEl.setAttribute('aria-label', 'Thema testimonials');
-    QUOTES.forEach(function (q, k) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'vt-tab';
-      btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-selected', k === active ? 'true' : 'false');
-      btn.textContent = q.theme;
-      btn.addEventListener('click', function () {
-        if (active === k) return;
-        active = k;
+    var carousel = document.createElement('div');
+    carousel.className = 'vt-carousel';
+
+    prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'vt-nav vt-nav--prev';
+    prevBtn.setAttribute('aria-label', 'Vorige testimonial');
+    prevBtn.innerHTML =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>';
+    prevBtn.addEventListener('click', function () {
+      if (active > 0) {
+        active -= 1;
         sync();
-      });
-      tabsEl.appendChild(btn);
+      }
     });
-    root.appendChild(tabsEl);
+
+    nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'vt-nav vt-nav--next';
+    nextBtn.setAttribute('aria-label', 'Volgende testimonial');
+    nextBtn.innerHTML =
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+    nextBtn.addEventListener('click', function () {
+      if (active < QUOTES.length - 1) {
+        active += 1;
+        sync();
+      }
+    });
+
+    var frame = document.createElement('div');
+    frame.className = 'vt-frame';
 
     var card = document.createElement('div');
     card.className = 'vt-card';
@@ -108,7 +118,11 @@
     footer.appendChild(meta);
     card.appendChild(footer);
 
-    root.appendChild(card);
+    frame.appendChild(card);
+    carousel.appendChild(prevBtn);
+    carousel.appendChild(frame);
+    carousel.appendChild(nextBtn);
+    root.appendChild(carousel);
     mount.appendChild(root);
     sync();
   }
@@ -117,17 +131,13 @@
     var q = QUOTES[active];
     if (!q) return;
 
-    var tabs = tabsEl.querySelectorAll('.vt-tab');
-    for (var i = 0; i < tabs.length; i++) {
-      var on = i === active;
-      tabs[i].classList.toggle('is-active', on);
-      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
-    }
-
     quoteEl.textContent = q.quote;
     initialEl.textContent = q.initial;
     nameEl.textContent = q.name + ', ' + q.age;
     roleEl.textContent = q.role;
+
+    if (prevBtn) prevBtn.disabled = active === 0;
+    if (nextBtn) nextBtn.disabled = active === QUOTES.length - 1;
   }
 
   build();

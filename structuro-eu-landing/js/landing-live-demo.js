@@ -26,7 +26,11 @@
 
   var COPY = {
     nl: {
-      greeting: 'Goedemorgen',
+      greetingMorning: 'Goedemorgen',
+      greetingAfternoon: 'Goedemiddag',
+      greetingEvening: 'Goedenavond',
+      userName: 'Sarah',
+      cycleBtnDay: 'Dag 14',
       hints: {
         energy: 'Kies je energie. Tik op Cyclus rechtsboven voor je fase vandaag.',
         choice: 'Stap 2: laat Structuro voorstellen of swipe zelf.',
@@ -47,7 +51,9 @@
       suggestSubLow: 'Past bij lage energie. Max 1 taak.',
       suggestSubNormal: 'Past bij normale energie. Max 2 taken.',
       suggestSubHigh: 'Past bij hoge energie. Max 3 taken.',
-      swipeSub: 'Swipe door je taken. Houd wat vandaag past.',
+      swipeSub: 'Links = niet vandaag. Rechts = wel vandaag.',
+      swipeHintSkip: '← Niet vandaag',
+      swipeHintKeep: 'Vandaag →',
       noneSelected: 'Niks geselecteerd.',
       selectionMeta: function (n, cap, mins) {
         return n + '/' + cap + ' taken, ' + mins + ' min';
@@ -70,7 +76,11 @@
       swipeEmpty: 'Geen taken meer in de rij.',
     },
     en: {
-      greeting: 'Good morning',
+      greetingMorning: 'Good morning',
+      greetingAfternoon: 'Good afternoon',
+      greetingEvening: 'Good evening',
+      userName: 'Sarah',
+      cycleBtnDay: 'Day 14',
       hints: {
         energy: 'Pick your energy. Tap Cycle top-right for today\'s phase.',
         choice: 'Step 2: let Structuro suggest or swipe yourself.',
@@ -91,7 +101,9 @@
       suggestSubLow: 'Fits low energy. Max 1 task.',
       suggestSubNormal: 'Fits normal energy. Max 2 tasks.',
       suggestSubHigh: 'Fits high energy. Max 3 tasks.',
-      swipeSub: 'Swipe through your tasks. Keep what fits today.',
+      swipeSub: 'Left = not today. Right = fits today.',
+      swipeHintSkip: '← Not today',
+      swipeHintKeep: 'Today →',
       noneSelected: 'Nothing selected.',
       selectionMeta: function (n, cap, mins) {
         return n + '/' + cap + ' tasks, ' + mins + ' min';
@@ -130,6 +142,19 @@
 
   function t() {
     return COPY[lang()] || COPY.nl;
+  }
+
+  function greetingLabel() {
+    var hour = new Date().getHours();
+    var c = t();
+    if (hour >= 5 && hour < 12) return c.greetingMorning;
+    if (hour >= 12 && hour < 18) return c.greetingAfternoon;
+    return c.greetingEvening;
+  }
+
+  function setOrbColor(color) {
+    var wrap = document.getElementById('liveDemoBatteryWrap');
+    if (wrap) wrap.style.setProperty('--orb-color', color || '#F59E0B');
   }
 
   function tasks() {
@@ -213,13 +238,15 @@
       back: document.getElementById('liveDemoBack'),
       hint: document.getElementById('liveDemoHint'),
       greeting: document.getElementById('liveDemoGreeting'),
+      userName: document.getElementById('liveDemoUserName'),
+      batteryWrap: document.getElementById('liveDemoBatteryWrap'),
       battery: document.getElementById('liveDemoBatteryCore'),
       cycleBtn: document.getElementById('liveDemoCycleBtn'),
+      cycleBtnDay: document.getElementById('liveDemoCycleBtnDay'),
       cycleCard: document.getElementById('liveDemoCycleCard'),
       cyclePhase: document.getElementById('liveDemoCyclePhase'),
       cycleDay: document.getElementById('liveDemoCycleDay'),
-      cycleBio: document.getElementById('liveDemoCycleBio'),
-      cycleTip: document.getElementById('liveDemoCycleTip'),
+      cycleBody: document.getElementById('liveDemoCycleBody'),
       energyMatch: document.getElementById('liveDemoEnergyMatch'),
       phaseEnergy: document.getElementById('liveDemoPhaseEnergy'),
       phaseChoice: document.getElementById('liveDemoPhaseChoice'),
@@ -234,6 +261,8 @@
       switchSwipe: document.getElementById('liveDemoSwitchSwipe'),
       swipeSub: document.getElementById('liveDemoSwipeSub'),
       swipeCard: document.getElementById('liveDemoSwipeCard'),
+      swipeHintSkip: document.getElementById('liveDemoSwipeHintSkip'),
+      swipeHintKeep: document.getElementById('liveDemoSwipeHintKeep'),
       swipeMeta: document.getElementById('liveDemoSwipeMeta'),
       swipeDone: document.getElementById('liveDemoSwipeDone'),
       doneSummary: document.getElementById('liveDemoDoneSummary'),
@@ -265,9 +294,10 @@
     function renderBatteryIcons() {
       root.querySelectorAll('.live-demo-battery-icon').forEach(function (el) {
         var level = parseInt(el.getAttribute('data-battery-level') || '1', 10);
-        var filled = parseInt(el.getAttribute('data-battery-filled') || String(level), 10);
         var color = el.getAttribute('data-battery-color') || '#3B6BF7';
-        el.innerHTML = batterySvg(level, filled, color);
+        var btn = el.closest('[data-live-energy]');
+        var active = btn && btn.classList.contains('active');
+        el.innerHTML = batterySvg(level, level, active ? color : '#ABB3C5');
       });
     }
 
@@ -373,8 +403,7 @@
       var c = t();
       if (els.cyclePhase) els.cyclePhase.textContent = c.cyclePhase;
       if (els.cycleDay) els.cycleDay.textContent = c.cycleDay;
-      if (els.cycleBio) els.cycleBio.textContent = c.cycleBio;
-      if (els.cycleTip) els.cycleTip.textContent = c.cycleTip;
+      if (els.cycleBody) els.cycleBody.textContent = c.cycleBio + ' ' + c.cycleTip;
       if (els.cycleCard) els.cycleCard.hidden = !state.cycleOpen;
       if (els.cycleBtn) els.cycleBtn.setAttribute('aria-expanded', state.cycleOpen ? 'true' : 'false');
       syncCyclePulse();
@@ -460,8 +489,141 @@
       renderSuggested();
     }
 
-    function renderSwipeCard() {
+    var swipeDrag = {
+      active: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      locked: false,
+    };
+
+    var SWIPE_THRESHOLD = 56;
+    var SWIPE_EXIT_MS = 220;
+
+    function resetSwipeCardVisual() {
+      if (!els.swipeCard) return;
+      els.swipeCard.style.transform = '';
+      els.swipeCard.classList.remove('is-dragging', 'is-exiting-left', 'is-exiting-right');
+      els.swipeCard.removeAttribute('data-swipe-tilt');
+      updateSwipeHintOpacity(0);
+    }
+
+    function updateSwipeHintOpacity(dx) {
+      var skipOn = dx < -18;
+      var keepOn = dx > 18;
+      if (els.swipeHintSkip) els.swipeHintSkip.classList.toggle('is-active', skipOn);
+      if (els.swipeHintKeep) els.swipeHintKeep.classList.toggle('is-active', keepOn);
+      if (!els.swipeCard) return;
+      if (keepOn) els.swipeCard.setAttribute('data-swipe-tilt', 'keep');
+      else if (skipOn) els.swipeCard.setAttribute('data-swipe-tilt', 'skip');
+      else els.swipeCard.removeAttribute('data-swipe-tilt');
+    }
+
+    function renderSwipeHints() {
       var c = t();
+      if (els.swipeHintSkip) els.swipeHintSkip.textContent = c.swipeHintSkip;
+      if (els.swipeHintKeep) els.swipeHintKeep.textContent = c.swipeHintKeep;
+    }
+
+    function commitSwipe(keep, fromDrag) {
+      if (swipeDrag.locked) return;
+      var task = state.swipeQueue[state.swipeIndex];
+      if (!task) return;
+      swipeDrag.locked = true;
+      if (els.swipeCard && fromDrag !== false) {
+        els.swipeCard.classList.add(keep ? 'is-exiting-right' : 'is-exiting-left');
+        setTimeout(function () {
+          swipeDrag.locked = false;
+          resetSwipeCardVisual();
+          swipeAction(keep);
+        }, SWIPE_EXIT_MS);
+        return;
+      }
+      swipeDrag.locked = false;
+      swipeAction(keep);
+    }
+
+    function bindSwipeGestures() {
+      if (!els.swipeCard) return;
+
+      function onStart(clientX, clientY) {
+        if (state.step !== 'tasks' || state.taskMode !== 'swipe') return;
+        if (!state.swipeQueue[state.swipeIndex]) return;
+        swipeDrag.active = true;
+        swipeDrag.startX = clientX;
+        swipeDrag.startY = clientY;
+        swipeDrag.currentX = 0;
+        els.swipeCard.classList.add('is-dragging');
+      }
+
+      function onMove(clientX, clientY, e) {
+        if (!swipeDrag.active) return;
+        var dx = clientX - swipeDrag.startX;
+        var dy = clientY - swipeDrag.startY;
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dx) < 20) return;
+        if (e && e.cancelable) e.preventDefault();
+        swipeDrag.currentX = dx;
+        var rotate = Math.max(-14, Math.min(14, dx * 0.05));
+        els.swipeCard.style.transform = 'translateX(' + dx + 'px) rotate(' + rotate + 'deg)';
+        updateSwipeHintOpacity(dx);
+      }
+
+      function onEnd() {
+        if (!swipeDrag.active) return;
+        swipeDrag.active = false;
+        swipeDrag.pointerId = null;
+        var dx = swipeDrag.currentX;
+        els.swipeCard.classList.remove('is-dragging');
+        if (dx > SWIPE_THRESHOLD) {
+          commitSwipe(true, true);
+          return;
+        }
+        if (dx < -SWIPE_THRESHOLD) {
+          commitSwipe(false, true);
+          return;
+        }
+        resetSwipeCardVisual();
+      }
+
+      els.swipeCard.addEventListener('pointerdown', function (e) {
+        if (swipeDrag.locked) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (state.step !== 'tasks' || state.taskMode !== 'swipe') return;
+        if (!state.swipeQueue[state.swipeIndex]) return;
+        swipeDrag.pointerId = e.pointerId;
+        try {
+          els.swipeCard.setPointerCapture(e.pointerId);
+        } catch (_) {}
+        onStart(e.clientX, e.clientY);
+      });
+
+      els.swipeCard.addEventListener('pointermove', function (e) {
+        if (e.pointerId !== swipeDrag.pointerId) return;
+        onMove(e.clientX, e.clientY, e);
+      });
+
+      els.swipeCard.addEventListener('pointerup', function (e) {
+        if (e.pointerId !== swipeDrag.pointerId) return;
+        try {
+          els.swipeCard.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+        onEnd();
+      });
+
+      els.swipeCard.addEventListener('pointercancel', function (e) {
+        if (e.pointerId !== swipeDrag.pointerId) return;
+        swipeDrag.active = false;
+        swipeDrag.pointerId = null;
+        resetSwipeCardVisual();
+      });
+    }
+
+    function renderSwipeCard() {
+      resetSwipeCardVisual();
+      var c = t();
+      renderSwipeHints();
       if (els.swipeSub) els.swipeSub.textContent = c.swipeSub;
       if (!els.swipeCard) return;
       var task = state.swipeQueue[state.swipeIndex];
@@ -556,10 +718,7 @@
     function pickEnergy(level) {
       state.energy = level;
       var color = ENERGY_COLOR[level] || ENERGY_COLOR.normal;
-      if (els.battery) {
-        els.battery.style.background =
-          'radial-gradient(circle at 35% 30%,' + color + '88,' + color + '22 55%,transparent 75%)';
-      }
+      setOrbColor(color);
       root.querySelectorAll('[data-live-energy]').forEach(function (b) {
         var on = b.getAttribute('data-live-energy') === level;
         b.classList.toggle('active', on);
@@ -567,8 +726,8 @@
         var icon = b.querySelector('.live-demo-battery-icon');
         if (icon) {
           var lvl = parseInt(icon.getAttribute('data-battery-level') || '1', 10);
-          var c = icon.getAttribute('data-battery-color') || '#3B6BF7';
-          icon.innerHTML = batterySvg(lvl, on ? lvl : 0, on ? c : '#ABB3C5');
+          var iconColor = icon.getAttribute('data-battery-color') || '#3B6BF7';
+          icon.innerHTML = batterySvg(lvl, lvl, on ? iconColor : '#ABB3C5');
         }
       });
       renderEnergyMatch();
@@ -615,9 +774,9 @@
         advanceTimer: null,
       };
       if (els.battery) {
-        els.battery.style.background =
-          'radial-gradient(circle at 35% 30%,rgba(245,158,11,.55),rgba(245,158,11,.15) 55%,transparent 75%)';
+        els.battery.removeAttribute('style');
       }
+      setOrbColor('#F59E0B');
       root.querySelectorAll('[data-live-energy]').forEach(function (b) {
         b.classList.remove('active');
         b.setAttribute('aria-pressed', 'false');
@@ -668,9 +827,11 @@
 
     root.querySelectorAll('[data-swipe]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        swipeAction(btn.getAttribute('data-swipe') === 'keep');
+        commitSwipe(btn.getAttribute('data-swipe') === 'keep', true);
       });
     });
+
+    bindSwipeGestures();
 
     if (els.swipeDone) {
       els.swipeDone.addEventListener('click', function () {
@@ -702,14 +863,19 @@
 
     window.refreshLiveDemoCopy = function () {
       var c = t();
-      if (els.greeting) els.greeting.textContent = c.greeting;
+      if (els.greeting) els.greeting.textContent = greetingLabel();
+      if (els.userName) els.userName.textContent = c.userName;
+      if (els.cycleBtnDay) els.cycleBtnDay.textContent = c.cycleBtnDay;
       if (els.reset) els.reset.textContent = c.reset;
       renderCycleCard();
       renderBatteryIcons();
       syncCyclePulse();
       renderEnergyMatch();
       if (state.step === 'tasks' && state.taskMode === 'suggested') renderSuggested();
-      if (state.step === 'tasks' && state.taskMode === 'swipe') renderSwipeCard();
+      if (state.step === 'tasks' && state.taskMode === 'swipe') {
+        renderSwipeHints();
+        renderSwipeCard();
+      }
       if (state.step === 'done') renderDone();
       if (state.step === 'home') renderHome();
       showHintForStep();

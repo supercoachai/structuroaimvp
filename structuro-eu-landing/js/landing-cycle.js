@@ -368,24 +368,6 @@
     ).observe(sectionEl);
   }
 
-  var waaromEl = document.getElementById('waarom-nodig');
-  var waaromTracked = false;
-  if (waaromEl && window.IntersectionObserver) {
-    new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting && !waaromTracked) {
-            waaromTracked = true;
-            try {
-              if (window.posthog) posthog.capture('section_viewed', { section: 'waarom_nodig' });
-            } catch (_) {}
-          }
-        });
-      },
-      { threshold: 0.5 }
-    ).observe(waaromEl);
-  }
-
   function init() {
     var lang = window.currentLang || localStorage.getItem('structuro_lang') || 'nl';
     window.updateCycleText(lang);

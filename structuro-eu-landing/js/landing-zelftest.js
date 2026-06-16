@@ -7,7 +7,6 @@
       title: 'Taakinitiatie',
       short: 'Ik weet w\u00e1t ik moet doen, ik begin alleen niet.',
       body: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
-      cta: 'Activeer mijn startknop (3 dagen gratis)',
       contentId: 'zelftest_taakinitiatie',
     },
     {
@@ -15,7 +14,6 @@
       title: 'Werkgeheugen-overload',
       short: 'Mijn hoofd zit vol, en een lange lijst maakt het erger.',
       body: 'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te d\u00f3\u00e9n in plaats van te onthouden.',
-      cta: 'Toon me max 3 taken (3 dagen gratis)',
       contentId: 'zelftest_werkgeheugen',
     },
     {
@@ -23,7 +21,6 @@
       title: 'Energie en motivatie',
       short: 'De ene dag vlieg ik, de andere kom ik niet vooruit.',
       body: 'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',
-      cta: 'Laat me op energie plannen (3 dagen gratis)',
       contentId: 'zelftest_energie',
     },
     {
@@ -31,7 +28,6 @@
       title: 'Tijdblindheid',
       short: 'Ik voel tijd niet, een dag heeft geen begin of eind.',
       body: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
-      cta: 'Geef me een schone lei',
       contentId: 'zelftest_tijdblindheid',
     },
     {
@@ -39,7 +35,6 @@
       title: 'Hormonen en focus',
       short: 'Sommige weken werkt mijn brein gewoon anders.',
       body: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
-      cta: 'Plan mee met mijn cyclus (3 dagen gratis)',
       contentId: 'zelftest_cyclus',
     },
     {
@@ -47,7 +42,6 @@
       title: 'Burn-out preventie',
       short: 'Te veel keuzes per dag en ik ben op.',
       body: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
-      cta: 'Minder keuzes vandaag (3 dagen gratis)',
       contentId: 'zelftest_keuzestress',
     },
   ];
@@ -62,11 +56,7 @@
 
   var mount = document.getElementById('landingZelftestMount');
   var stickyHost = document.getElementById('landingZelftestSticky');
-  var pinShell = document.getElementById('landingZelftestPinShell');
-  var pinBlock = document.getElementById('landingZelftestPinBlock');
-  var pinSpacer = pinShell ? pinShell.querySelector('.zt-pin-spacer') : null;
-  var sectionEl = document.getElementById('brein-termen');
-  if (!mount || !stickyHost || !pinShell || !pinBlock || !pinSpacer || !sectionEl) return;
+  if (!mount || !stickyHost) return;
 
   var picked = {};
   var stickyEl;
@@ -75,68 +65,7 @@
   var stickySubEl;
   var stickyCtaEl;
   var rowsEl;
-  var pinned = false;
-  var rafPending = false;
   var lastPrimaryReason = null;
-
-  function navOffset() {
-    var nav = document.querySelector('.nav');
-    if (!nav) return window.innerWidth <= 760 ? 72 : 88;
-    return Math.ceil(nav.getBoundingClientRect().height) + 12;
-  }
-
-  function pinBlockHeight() {
-    return pinBlock.offsetHeight;
-  }
-
-  function setPinned(next) {
-    if (pinned === next) {
-      if (next) applyFixedMetrics();
-      return;
-    }
-    pinned = next;
-    pinShell.classList.toggle('is-pinned', next);
-    pinBlock.classList.toggle('is-fixed', next);
-    if (next) {
-      pinSpacer.style.height = pinBlockHeight() + 'px';
-      applyFixedMetrics();
-    } else {
-      pinSpacer.style.height = '0px';
-      pinBlock.style.removeProperty('left');
-      pinBlock.style.removeProperty('width');
-    }
-  }
-
-  function applyFixedMetrics() {
-    if (!pinned) return;
-    var shellRect = pinShell.getBoundingClientRect();
-    var top = navOffset();
-    pinBlock.style.setProperty('--zt-pin-top', top + 'px');
-    pinBlock.style.left = shellRect.left + 'px';
-    pinBlock.style.width = shellRect.width + 'px';
-    pinSpacer.style.height = pinBlockHeight() + 'px';
-  }
-
-  function updateStickyPin() {
-    rafPending = false;
-    if (!stickyEl) return;
-
-    var top = navOffset();
-    var shellRect = pinShell.getBoundingClientRect();
-    var sectionRect = sectionEl.getBoundingClientRect();
-    var blockH = pinBlockHeight();
-    var shouldPin =
-      shellRect.top <= top &&
-      sectionRect.bottom > top + blockH + 8;
-
-    setPinned(shouldPin);
-  }
-
-  function queueStickyPin() {
-    if (rafPending) return;
-    rafPending = true;
-    window.requestAnimationFrame(updateStickyPin);
-  }
 
   function countPicked() {
     var n = 0;
@@ -190,9 +119,9 @@
   }
 
   function stickyCtaLabel() {
-    var idx = primaryReasonIndex();
-    if (idx === null) return 'Start 3 dagen gratis';
-    return REASONS[idx].cta;
+    var lang = window.currentLang || 'nl';
+    if (lang === 'en') return 'Start Structuro free';
+    return 'Start Structuro gratis';
   }
 
   function stickyContentId() {
@@ -220,8 +149,6 @@
       dots[i].classList.toggle('is-on', !!picked[i]);
       dots[i].classList.toggle('is-idle-dark', count > 0 && !picked[i]);
     }
-
-    queueStickyPin();
   }
 
   function syncRow(k) {
@@ -235,7 +162,6 @@
     if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
     if (hint) hint.textContent = on ? 'Ja, dit ben ik' : 'Herken je dit?';
     if (panelWrap) panelWrap.classList.toggle('is-open', on);
-    window.requestAnimationFrame(queueStickyPin);
   }
 
   function toggle(k) {
@@ -250,16 +176,6 @@
     });
     syncRow(k);
     syncSticky();
-  }
-
-  function bindStickyPin() {
-    window.addEventListener('scroll', queueStickyPin, { passive: true });
-    window.addEventListener('resize', queueStickyPin, { passive: true });
-    if (window.ResizeObserver) {
-      var ro = new ResizeObserver(queueStickyPin);
-      ro.observe(pinBlock);
-      if (stickyEl) ro.observe(stickyEl);
-    }
   }
 
   function build() {
@@ -293,7 +209,7 @@
     stickyCtaEl.href = signupBridgeUrl('zelftest_sticky');
     stickyCtaEl.setAttribute('data-ph-cta', 'zelftest_sticky');
     stickyCtaEl.setAttribute('data-event', 'zelftest_sticky_cta_click');
-    stickyCtaEl.textContent = 'Start 3 dagen gratis';
+    stickyCtaEl.textContent = stickyCtaLabel();
     stickyCtaEl.hidden = true;
     stickyCtaEl.addEventListener('click', function () {
       capturePh('zelftest_cta_clicked', {
@@ -305,9 +221,6 @@
     stickyEl.appendChild(stickyCtaEl);
 
     stickyHost.appendChild(stickyEl);
-
-    var root = document.createElement('div');
-    root.className = 'zt-root';
 
     rowsEl = document.createElement('div');
     rowsEl.className = 'zt-rows';
@@ -366,12 +279,13 @@
       rowsEl.appendChild(row);
     });
 
-    root.appendChild(rowsEl);
-    mount.appendChild(root);
+    mount.appendChild(rowsEl);
     syncSticky();
-    bindStickyPin();
-    queueStickyPin();
   }
 
   build();
+
+  window.refreshZelftestCopy = function () {
+    if (stickyCtaEl) stickyCtaEl.textContent = stickyCtaLabel();
+  };
 })();
