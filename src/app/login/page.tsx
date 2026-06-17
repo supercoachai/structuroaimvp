@@ -31,6 +31,7 @@ import {
 } from '@/lib/checkoutReturnStorage';
 import { resolvePostLoginPathFromProfile } from '@/lib/postAuthRouting';
 import { markPasswordSetupCompleted } from '@/lib/auth/passwordSetupProfile';
+import { PasskeySignInButton } from '@/components/auth/PasskeySignInButton';
 
 /** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
 const SHOW_LOCAL_TEST_LOGIN =
@@ -506,6 +507,28 @@ function LoginPageInner() {
                   : t("login.signIn")}
           </button>
         </form>
+
+        {showSignInExtras ? (
+          <div className="mt-5 space-y-4">
+            <LoginOrDivider label={t("login.orDivider")} />
+            <PasskeySignInButton
+              disabled={loading || showSplash}
+              onError={(message) => setError(message)}
+              onSuccess={async (userId, userEmail) => {
+                clearStructuroLocalModeCookie();
+                clearCheckoutReturn();
+                const next = searchParams?.get("next") ?? null;
+                splashTargetRef.current = await resolvePostLoginPath(
+                  userId,
+                  userEmail,
+                  next,
+                  afterCheckoutLogin
+                );
+                setShowSplash(true);
+              }}
+            />
+          </div>
+        ) : null}
 
         {!isSignUp ? (
           <div className="mt-4 text-center">

@@ -1,6 +1,7 @@
 /**
  * Zelfde project key als NEXT_PUBLIC_POSTHOG_KEY (publiek).
- * Vercel: build.sh vervangt __STRUCTURO_PH_PROJECT_KEY__ tijdens deploy.
+ * Vercel: build.sh vervangt __STRUCTURO_PH_PROJECT_KEY__ tijdens deploy
+ * (NEXT_PUBLIC_POSTHOG_KEY of NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN).
  */
 window.__STRUCTURO_PH_KEY__ =
   window.__STRUCTURO_PH_KEY__ || "__STRUCTURO_PH_PROJECT_KEY__";

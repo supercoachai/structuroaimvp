@@ -430,10 +430,20 @@ function main() {
     metricDefinitions: extractMetricDefinitions(metricsBody),
   });
 
-  const pasteFile = `# Structuro State (live) — plak in ClickUp
+  const pasteFile = `---
+tags:
+  - clickup-export
+hub: "[[05 Operaties/ClickUp/ClickUp Hub|ClickUp Hub]]"
+type: clickup-export
+---
+
+# Structuro State (live) — plak in ClickUp
+
+Terug naar: [[ClickUp Hub]] · [[Structuro State ClickUp Doc]]
 
 > Gegenereerd: ${syncDateTime}. Kopieer alles vanaf \`### Meta\` naar ClickUp Doc **Structuro State (live)**.
 > Script: \`npm run export:clickup-state\`
+> Niet in de strategische graph (tag \`#clickup-export\`).
 
 ---
 

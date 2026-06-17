@@ -1,12 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from '@/lib/supabase/authStorage'
-
-const supabaseAuthClientOptions = {
-  autoRefreshToken: true,
-  persistSession: true,
-  detectSessionInUrl: true,
-  storageKey: STRUCTURO_SUPABASE_AUTH_STORAGE_KEY,
-} as const
+import { supabaseAuthClientOptions } from '@/lib/supabase/authClientOptions'
 
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
