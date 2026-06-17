@@ -44,12 +44,7 @@ async function postDeleteAccount(): Promise<Response> {
 
   const uid = user.id;
 
-  // service is een ongetypte (Database=any) client; rpc-args expliciet casten.
-  const rpc = service.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>
-  ) => Promise<{ error: { message: string } | null }>;
-  const { error: rpcError } = await rpc("delete_account_data", {
+  const { error: rpcError } = await service.rpc("delete_account_data", {
     p_user_id: uid,
   });
   if (rpcError) {
