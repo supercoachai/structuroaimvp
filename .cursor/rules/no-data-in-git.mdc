@@ -1,0 +1,41 @@
+---
+description: Strategie, data en notities altijd in Obsidian, nooit in git committen
+alwaysApply: true
+---
+
+# Geen data/notities in git
+
+Nieuwe **analyses, rapporten, metrics-exports, playbooks en werknotities** horen in **Obsidian**, niet in deze repo.
+
+**Vault:** `/Users/nielsvandenhurk/Documents/Obsidian Vault/` (start: `Structuro State.md`)
+
+## Wel in Obsidian (nooit committen)
+
+- Dagrapporten, audits, diagnose, groeiplannen
+- Spreadsheets (`.xlsx`), decks (`.pptx`), Word (`.docx`)
+- TikTok/content-playbooks, masterplannen, diepteanalyses
+- Ad-hoc notities over strategie, metrics, interviews, content
+
+## Waar in de vault
+
+| Type | Obsidian-pad |
+|------|----------------|
+| Metrics / dagcijfers | `06 Cijfers/` |
+| Groei / TikTok / content | `03 Groei/` |
+| Product / activatie | `02 Product/` |
+| Tech / audits | `04 Tech/` |
+| Operaties / ClickUp | `05 Operaties/` |
+| Doctrine | `00 Doctrine/` |
+
+## Wel wél in git (repo)
+
+- Applicatiecode, migrations, tests, scripts die het product draaien
+- Bestaande productdocs: `docs/STRUCTURO_CONTEXT.md`, legal, deploy, runbooks
+- README en setup die bij de codebase horen
+
+## Gedrag voor AI
+
+- Maak **geen** nieuwe `.md`/`.xlsx`/`.docx` in de repo-root of als losse analyse in `docs/`
+- Stel voor om output in Obsidian te zetten (pad + bestandsnaam)
+- Commit nooit bestanden uit de ignore-lijst in `.gitignore`, tenzij de gebruiker expliciet uitzondering vraagt
+- `docs/obsidian/` in de repo is legacy-spiegel; **vault wint**. Nieuwe doctrine/productnotities niet daar bijwerken

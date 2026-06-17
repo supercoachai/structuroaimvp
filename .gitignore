@@ -42,3 +42,20 @@ supabase/.temp/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Strategie, data en notities → Obsidian vault (zie .cursor/rules/no-data-in-git.mdc)
+/dagrapport-*.md
+/DIAGNOSE-*.md
+/GROEIPLAN_*.md
+/STRUCTURO_AUDIT_*.md
+/STRUCTURO_LANDING_*.md
+/STRUCTURO_TECH_*.md
+/Structuro_*.docx
+/*.xlsx
+/*.pptx
+.~lock.*
+~$*
+
+# Lokale AI/tool config (niet productcode)
+.cursor/mcp.json
+.claude/
