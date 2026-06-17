@@ -459,6 +459,33 @@ function energyLabel(maxSlots: number): string {
   return "hoge";
 }
 
+const SWIPE_DRAG_ACTIVATION_MOUSE_PX = 10;
+const SWIPE_DRAG_ACTIVATION_TOUCH_PX = 6;
+const SWIPE_COMMIT_THRESHOLD = 90;
+const SWIPE_INTENT_PX = 30;
+
+type SwipeDragState = {
+  x: number;
+  active: boolean;
+  pointerId: number;
+  pointerType: React.PointerEvent["pointerType"];
+  startX: number;
+};
+
+const emptyDragState = (): SwipeDragState => ({
+  x: 0,
+  active: false,
+  pointerId: -1,
+  pointerType: "mouse",
+  startX: 0,
+});
+
+function swipeActivationPx(pointerType: SwipeDragState["pointerType"]): number {
+  return pointerType === "mouse"
+    ? SWIPE_DRAG_ACTIVATION_MOUSE_PX
+    : SWIPE_DRAG_ACTIVATION_TOUCH_PX;
+}
+
 function SwipeCard({
   task,
   depth,
@@ -467,16 +494,25 @@ function SwipeCard({
   onDecide,
 }: SwipeCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [drag, setDrag] = useState<{ x: number; active: boolean }>({
-    x: 0,
-    active: false,
-  });
-  const startX = useRef(0);
+  const dragRef = useRef<SwipeDragState>(emptyDragState());
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const resetDrag = () => {
+    dragRef.current = emptyDragState();
+    setDragX(0);
+    setIsDragging(false);
+  };
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isTop) return;
-    startX.current = e.clientX;
-    setDrag({ x: 0, active: true });
+    dragRef.current = {
+      x: 0,
+      active: false,
+      pointerId: e.pointerId,
+      pointerType: e.pointerType,
+      startX: e.clientX,
+    };
     try {
       ref.current?.setPointerCapture(e.pointerId);
     } catch {
@@ -484,23 +520,54 @@ function SwipeCard({
     }
   };
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (drag.active) setDrag({ x: e.clientX - startX.current, active: true });
+    const drag = dragRef.current;
+    if (drag.pointerId !== e.pointerId) return;
+    if (drag.pointerType === "mouse" && e.buttons === 0) {
+      resetDrag();
+      return;
+    }
+    const x = e.clientX - drag.startX;
+    if (!drag.active) {
+      if (Math.abs(x) < swipeActivationPx(drag.pointerType)) return;
+      drag.active = true;
+      setIsDragging(true);
+    }
+    drag.x = x;
+    setDragX(x);
   };
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag.active) return;
-    const threshold = 90;
-    if (drag.x > threshold) {
+    const drag = dragRef.current;
+    if (drag.pointerId !== e.pointerId) return;
+    if (!drag.active) {
+      resetDrag();
+      try {
+        ref.current?.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    if (drag.x > SWIPE_COMMIT_THRESHOLD) {
       if (keepDisabled) {
-        setDrag({ x: 0, active: false });
+        resetDrag();
+        try {
+          ref.current?.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
         return;
       }
-      setDrag({ x: 500, active: false });
+      setDragX(500);
+      setIsDragging(false);
+      dragRef.current.active = false;
       setTimeout(() => onDecide("keep"), 220);
-    } else if (drag.x < -threshold) {
-      setDrag({ x: -500, active: false });
+    } else if (drag.x < -SWIPE_COMMIT_THRESHOLD) {
+      setDragX(-500);
+      setIsDragging(false);
+      dragRef.current.active = false;
       setTimeout(() => onDecide("skip"), 220);
     } else {
-      setDrag({ x: 0, active: false });
+      resetDrag();
     }
     try {
       ref.current?.releasePointerCapture(e.pointerId);
@@ -512,8 +579,8 @@ function SwipeCard({
   const e =
     DAGSTART_ENERGIES.find((x) => x.id === task.energy) ?? DAGSTART_ENERGIES[1];
   const intent: "keep" | "skip" | null =
-    drag.x > 30 ? "keep" : drag.x < -30 ? "skip" : null;
-  const rot = drag.x / 20;
+    dragX > SWIPE_INTENT_PX ? "keep" : dragX < -SWIPE_INTENT_PX ? "skip" : null;
+  const rot = dragX / 20;
   const baseY = depth * 6;
   const baseScale = 1 - depth * 0.04;
 
@@ -522,11 +589,11 @@ function SwipeCard({
       ref={ref}
       className={`ds-swipe-card${isTop ? " is-top" : ""}`}
       style={{
-        transform: `translate(${isTop ? drag.x : 0}px, ${baseY}px) scale(${baseScale}) rotate(${
+        transform: `translate(${isTop ? dragX : 0}px, ${baseY}px) scale(${baseScale}) rotate(${
           isTop ? rot : 0
         }deg)`,
         opacity: isTop ? 1 : 1 - depth * 0.12,
-        transition: drag.active
+        transition: isDragging
           ? "none"
           : "transform 280ms cubic-bezier(0.2,0.9,0.25,1), opacity 200ms",
         zIndex: 10 - depth,
@@ -540,7 +607,7 @@ function SwipeCard({
       ) : null}
 
       <div
-        className="ds-swipe-card-drag"
+        className={`ds-swipe-card-drag${isDragging ? " is-dragging" : ""}`}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -570,7 +637,8 @@ function SwipeCard({
             className="ds-swipe-action skip"
             aria-label="Niet nu"
             onClick={() => {
-              setDrag({ x: -500, active: false });
+              setDragX(-500);
+              setIsDragging(false);
               setTimeout(() => onDecide("skip"), 220);
             }}
           >
@@ -584,7 +652,8 @@ function SwipeCard({
             style={keepDisabled ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
             onClick={() => {
               if (keepDisabled) return;
-              setDrag({ x: 500, active: false });
+              setDragX(500);
+              setIsDragging(false);
               setTimeout(() => onDecide("keep"), 220);
             }}
           >

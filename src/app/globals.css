@@ -2529,10 +2529,10 @@ body {
   position: relative;
 }
 .ds-swipe-card-drag {
-  cursor: grab;
-  touch-action: pan-y;
+  cursor: default;
+  touch-action: none;
 }
-.ds-swipe-card-drag:active {
+.ds-swipe-card-drag.is-dragging {
   cursor: grabbing;
 }
 .ds-swipe-intent {
