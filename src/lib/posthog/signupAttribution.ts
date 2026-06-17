@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { ORGANIC_SIGNUP_SOURCE } from "@/lib/acquisition/bridgePaths";
 import {
   EVENT_TRIAL_BY_SIGNUP_SOURCE,
   normalizeSignupSourceKey,
@@ -145,7 +146,6 @@ export function getSignupAttributionSource(): string {
   return getStoredSignupSource();
 }
 
-/** Website-, bridge- of UTM-verkeer: andere copy op /registreren. */
 export function isAcquisitionSignupContext(): boolean {
   if (typeof window === "undefined") return false;
 
@@ -172,6 +172,21 @@ export function isAcquisitionSignupContext(): boolean {
   }
 
   return false;
+}
+
+/** structuro.eu → /start → /registreren: Story Layer styling, geen proefdagen-copy. */
+export function isOrganicEuSignupContext(): boolean {
+  if (typeof window === "undefined") return false;
+  if (getStoredSignupSource() === ORGANIC_SIGNUP_SOURCE) return true;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const utm = params.get("utm_source");
+    const legacy = params.get("source");
+    return utm === ORGANIC_SIGNUP_SOURCE || legacy === ORGANIC_SIGNUP_SOURCE;
+  } catch {
+    return false;
+  }
 }
 
 /** TikTok-bridge of TikTok-attributie: scherpere copy op /registreren. */

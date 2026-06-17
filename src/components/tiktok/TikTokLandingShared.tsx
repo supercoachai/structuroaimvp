@@ -3,15 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
 import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
 import { getLpThemeTokens } from "@/lib/tiktok/lpTheme";
 
 export type TikTokHeroShellProps = {
   campaign: LpCampaign;
   heroId: LpHeroId;
+  channel: BridgeChannel;
   signupHref: string;
   onCtaClick: () => void;
   footerNote?: string;
+  /** Geen regel onder CTA (organische bridge). */
+  hideFooterNote?: boolean;
+  /** Overschrijft campagne-CTA-label. */
+  ctaLabel?: string;
   mainClassName?: string;
   /** Overschrijft verticale positie + bottom-reserve van <main>. */
   mainPositionClass?: string;
@@ -24,14 +30,17 @@ export type TikTokHeroLayoutProps = TikTokHeroShellProps & {
 export function TikTokLandingShell({
   campaign,
   heroId,
+  channel,
   signupHref,
   onCtaClick,
   children,
   footerNote,
+  hideFooterNote = false,
+  ctaLabel,
   mainClassName = "",
   mainPositionClass = "justify-start pb-32 md:justify-center md:pb-36",
 }: TikTokHeroLayoutProps) {
-  const theme = getLpThemeTokens(campaign, heroId);
+  const theme = getLpThemeTokens(campaign, heroId, channel);
   const [logoError, setLogoError] = useState(false);
 
   return (
@@ -43,7 +52,7 @@ export function TikTokLandingShell({
         {logoError ? (
           <div
             className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-md"
-            style={{ backgroundColor: campaign.accent }}
+            style={{ backgroundColor: theme.isStory ? "#2D5A56" : campaign.accent }}
           >
             <span className="text-lg font-bold text-white">S</span>
           </div>
@@ -69,27 +78,32 @@ export function TikTokLandingShell({
         className="fixed inset-x-0 bottom-0 z-20 border-t px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm"
         style={{
           borderColor: theme.surfaceBorder,
-          backgroundColor: theme.isDark ? "rgba(12,17,36,0.92)" : "rgba(255,255,255,0.95)",
+          backgroundColor: theme.footerBg,
         }}
       >
         <div className="mx-auto w-full max-w-md">
           <Link
             href={signupHref}
             onClick={onCtaClick}
-            className="flex w-full items-center justify-center rounded-xl px-6 py-4 text-base font-bold text-white transition hover:opacity-95"
+            className="flex w-full items-center justify-center rounded-xl px-6 py-4 text-base font-semibold transition hover:opacity-95"
             style={{
-              backgroundColor: campaign.accent,
-              boxShadow: `0 8px 20px ${campaign.accent}44`,
+              backgroundColor: theme.ctaBg,
+              color: theme.ctaText,
+              boxShadow: theme.isStory
+                ? "0 8px 20px rgba(26, 26, 27, 0.22)"
+                : `0 8px 20px ${campaign.accent}44`,
             }}
           >
-            {campaign.cta}
+            {ctaLabel ?? campaign.cta}
           </Link>
-          <p
-            className="mt-2 text-center text-[11px] leading-snug"
-            style={{ color: theme.muted }}
-          >
-            {footerNote ?? campaign.trust}
-          </p>
+          {!hideFooterNote ? (
+            <p
+              className="mt-2 text-center text-[11px] leading-snug"
+              style={{ color: theme.muted }}
+            >
+              {footerNote ?? campaign.trust}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -99,18 +113,37 @@ export function TikTokLandingShell({
 export function TikTokEyebrow({
   campaign,
   heroId,
+  channel,
   children,
 }: {
   campaign: LpCampaign;
   heroId?: LpHeroId;
+  channel?: BridgeChannel;
   children: React.ReactNode;
 }) {
-  const theme = getLpThemeTokens(campaign, heroId);
+  const theme = getLpThemeTokens(campaign, heroId, channel);
   return (
     <p
       className={`text-xs font-semibold uppercase tracking-wide ${theme.eyebrowClass}`}
-      style={{ color: theme.muted }}
+      style={theme.isStory ? undefined : { color: theme.muted }}
     >
+      {children}
+    </p>
+  );
+}
+
+export function StoryEyebrow({
+  onNavy = false,
+  children,
+}: {
+  onNavy?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <p
+      className={`st-story-eyebrow inline-flex items-center gap-2.5 ${onNavy ? "st-story-eyebrow--on-navy" : ""}`}
+    >
+      <span className="st-story-eyebrow-pulse" aria-hidden />
       {children}
     </p>
   );
@@ -119,19 +152,21 @@ export function TikTokEyebrow({
 export function TikTokHeadline({
   campaign,
   heroId,
+  channel,
   children,
   centered = false,
 }: {
   campaign: LpCampaign;
   heroId?: LpHeroId;
+  channel?: BridgeChannel;
   children: React.ReactNode;
   centered?: boolean;
 }) {
-  const theme = getLpThemeTokens(campaign, heroId);
+  const theme = getLpThemeTokens(campaign, heroId, channel);
   return (
     <h1
-      className={`mt-3 text-[1.65rem] leading-tight sm:text-3xl ${theme.headlineClass} ${
-        centered ? "text-center" : "text-left"
+      className={`mt-3 ${theme.headlineClass} ${centered ? "text-center" : "text-left"} ${
+        theme.isStory ? "" : "text-[1.65rem] leading-tight sm:text-3xl"
       }`}
       style={{ color: theme.ink }}
     >
@@ -143,18 +178,22 @@ export function TikTokHeadline({
 export function TikTokSubline({
   campaign,
   heroId,
+  channel,
   children,
   centered = false,
 }: {
   campaign: LpCampaign;
   heroId?: LpHeroId;
+  channel?: BridgeChannel;
   children: React.ReactNode;
   centered?: boolean;
 }) {
-  const theme = getLpThemeTokens(campaign, heroId);
+  const theme = getLpThemeTokens(campaign, heroId, channel);
   return (
     <p
-      className={`mt-4 text-base leading-relaxed ${centered ? "text-center" : "text-left"}`}
+      className={`mt-4 text-base leading-relaxed ${centered ? "text-center" : "text-left"} ${
+        theme.isStory ? "font-normal" : ""
+      }`}
       style={{ color: theme.inkSoft }}
     >
       {children}

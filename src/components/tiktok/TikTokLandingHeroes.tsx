@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
 import {
   LP_RITUAL_STEPS,
   type LpHeroId,
@@ -9,6 +10,7 @@ import {
 import { getLpThemeTokens } from "@/lib/tiktok/lpTheme";
 
 import {
+  StoryEyebrow,
   TikTokEyebrow,
   TikTokHeadline,
   TikTokLandingShell,
@@ -28,7 +30,8 @@ const DEMO_TASKS: Record<DemoEnergy, string[]> = {
 };
 
 export function HeroLayoutA(props: HeroProps) {
-  const { campaign, heroId } = props;
+  const { campaign, heroId, channel } = props;
+  const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
     <TikTokLandingShell
@@ -36,13 +39,19 @@ export function HeroLayoutA(props: HeroProps) {
       mainPositionClass="justify-center pb-28 md:pb-32"
       mainClassName="items-center text-center"
     >
-      <TikTokEyebrow campaign={campaign} heroId={heroId}>
-        Voor ADHD-breinen
-      </TikTokEyebrow>
-      <TikTokHeadline campaign={campaign} heroId={heroId} centered>
+      {theme.isStory ? (
+        <StoryEyebrow onNavy={theme.isDark}>
+          Voor ADHD-breinen die niet beginnen
+        </StoryEyebrow>
+      ) : (
+        <TikTokEyebrow campaign={campaign} heroId={heroId} channel={channel}>
+          Voor ADHD-breinen
+        </TikTokEyebrow>
+      )}
+      <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel} centered>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId} centered>
+      <TikTokSubline campaign={campaign} heroId={heroId} channel={channel} centered>
         {campaign.subline}
       </TikTokSubline>
     </TikTokLandingShell>
@@ -50,17 +59,17 @@ export function HeroLayoutA(props: HeroProps) {
 }
 
 export function HeroLayoutB(props: HeroProps) {
-  const { campaign, heroId } = props;
-  const theme = getLpThemeTokens(campaign, heroId);
+  const { campaign, heroId, channel } = props;
+  const theme = getLpThemeTokens(campaign, heroId, channel);
   const [energy, setEnergy] = useState<DemoEnergy>("Midden");
   const tasks = DEMO_TASKS[energy];
 
   return (
     <TikTokLandingShell {...props}>
-      <TikTokHeadline campaign={campaign} heroId={heroId}>
+      <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId}>
+      <TikTokSubline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.subline}
       </TikTokSubline>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: theme.inkSoft }}>
@@ -77,6 +86,7 @@ export function HeroLayoutB(props: HeroProps) {
         <div className="mt-3 grid grid-cols-3 gap-2">
           {DEMO_ENERGY.map((level) => {
             const active = energy === level;
+            const accent = theme.isStory ? theme.ctaBg : campaign.accent;
             return (
               <button
                 key={level}
@@ -84,9 +94,9 @@ export function HeroLayoutB(props: HeroProps) {
                 onClick={() => setEnergy(level)}
                 className="rounded-xl border px-1 py-3 text-sm font-bold transition"
                 style={{
-                  borderColor: active ? campaign.accent : theme.surfaceBorder,
-                  backgroundColor: active ? campaign.accent : theme.surface,
-                  color: active ? "#fff" : theme.ink,
+                  borderColor: active ? accent : theme.surfaceBorder,
+                  backgroundColor: active ? accent : theme.surface,
+                  color: active ? theme.ctaText : theme.ink,
                 }}
               >
                 {level}
@@ -102,11 +112,13 @@ export function HeroLayoutB(props: HeroProps) {
             <li
               key={task}
               className="flex items-center gap-3 rounded-xl px-3 py-3"
-              style={{ backgroundColor: theme.isDark ? "rgba(255,255,255,0.06)" : "#F5F6FB" }}
+              style={{
+                backgroundColor: theme.isDark ? "rgba(255,255,255,0.06)" : "#F5F6FB",
+              }}
             >
               <span
                 className="h-5 w-5 shrink-0 rounded-md border-2"
-                style={{ borderColor: campaign.accent }}
+                style={{ borderColor: theme.isStory ? "#2D5A56" : campaign.accent }}
                 aria-hidden
               />
               <span className="text-sm font-semibold" style={{ color: theme.ink }}>
@@ -121,22 +133,28 @@ export function HeroLayoutB(props: HeroProps) {
 }
 
 export function HeroLayoutC(props: HeroProps) {
-  const { campaign, heroId } = props;
-  const theme = getLpThemeTokens(campaign, heroId);
+  const { campaign, heroId, channel } = props;
+  const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
     <TikTokLandingShell {...props}>
-      <div
-        className="inline-flex items-center gap-2 self-start rounded-full border px-3 py-1.5 text-sm font-semibold"
-        style={{ borderColor: theme.surfaceBorder, color: theme.eyebrowClass }}
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-        Voor breinen die vastlopen op starten
-      </div>
-      <TikTokHeadline campaign={campaign} heroId={heroId}>
+      {theme.isStory ? (
+        <StoryEyebrow onNavy={theme.isDark}>
+          Voor ADHD-breinen die niet beginnen
+        </StoryEyebrow>
+      ) : (
+        <div
+          className="inline-flex items-center gap-2 self-start rounded-full border px-3 py-1.5 text-sm font-semibold"
+          style={{ borderColor: theme.surfaceBorder, color: theme.eyebrowClass }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+          Voor breinen die vastlopen op starten
+        </div>
+      )}
+      <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId}>
+      <TikTokSubline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.subline}
       </TikTokSubline>
       <p className="mt-6 text-sm" style={{ color: theme.muted }}>
@@ -147,17 +165,24 @@ export function HeroLayoutC(props: HeroProps) {
 }
 
 export function HeroLayoutD(props: HeroProps) {
-  const { campaign, heroId } = props;
+  const { campaign, heroId, channel } = props;
+  const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
     <TikTokLandingShell {...props} mainClassName="items-center text-center">
-      <TikTokEyebrow campaign={campaign} heroId={heroId}>
-        Voor het ADHD-brein
-      </TikTokEyebrow>
-      <TikTokHeadline campaign={campaign} heroId={heroId} centered>
+      {theme.isStory ? (
+        <StoryEyebrow onNavy={theme.isDark}>
+          Voor ADHD-breinen die niet beginnen
+        </StoryEyebrow>
+      ) : (
+        <TikTokEyebrow campaign={campaign} heroId={heroId} channel={channel}>
+          Voor het ADHD-brein
+        </TikTokEyebrow>
+      )}
+      <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel} centered>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId} centered>
+      <TikTokSubline campaign={campaign} heroId={heroId} channel={channel} centered>
         {campaign.subline}
       </TikTokSubline>
     </TikTokLandingShell>
@@ -165,33 +190,40 @@ export function HeroLayoutD(props: HeroProps) {
 }
 
 export function HeroLayoutE(props: HeroProps) {
-  const { campaign, heroId } = props;
-  const theme = getLpThemeTokens(campaign, heroId);
+  const { campaign, heroId, channel } = props;
+  const theme = getLpThemeTokens(campaign, heroId, channel);
+  const accent = theme.isStory ? "#2D5A56" : campaign.accent;
 
   return (
     <TikTokLandingShell {...props}>
-      <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-700">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-        Voor ADHD-breinen die vastlopen
-      </div>
-      <TikTokHeadline campaign={campaign} heroId={heroId}>
+      {theme.isStory ? (
+        <StoryEyebrow onNavy={theme.isDark}>
+          Voor ADHD-breinen die niet beginnen
+        </StoryEyebrow>
+      ) : (
+        <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+          Voor ADHD-breinen die vastlopen
+        </div>
+      )}
+      <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId}>
+      <TikTokSubline campaign={campaign} heroId={heroId} channel={channel}>
         {campaign.subline}
       </TikTokSubline>
 
       <ol className="relative mt-8 space-y-4 pl-2">
         <div
           className="absolute bottom-6 left-[19px] top-6 w-0.5"
-          style={{ background: `linear-gradient(${campaign.accent}, transparent)` }}
+          style={{ background: `linear-gradient(${accent}, transparent)` }}
           aria-hidden
         />
         {LP_RITUAL_STEPS.map((step, index) => (
           <li key={step.title} className="relative flex items-start gap-4">
             <span
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-extrabold text-white"
-              style={{ backgroundColor: campaign.accent }}
+              style={{ backgroundColor: accent }}
             >
               {index + 1}
             </span>

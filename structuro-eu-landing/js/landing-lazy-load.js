@@ -10,20 +10,20 @@
     document.body.appendChild(s);
   }
 
-  function loadFrauncesFont() {
-    if (window.__structuroFrauncesLoaded) return;
-    window.__structuroFrauncesLoaded = true;
+  function loadStorySerifFont() {
+    if (window.__structuroStorySerifLoaded) return;
+    window.__structuroStorySerifLoaded = true;
     var link = document.createElement("link");
     link.rel = "stylesheet";
     link.href =
-      "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap";
+      "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap";
     document.head.appendChild(link);
   }
 
   function observeSection(selector, src, margin, withFonts) {
     var el = document.querySelector(selector);
     if (!el || !("IntersectionObserver" in window)) {
-      if (withFonts) loadFrauncesFont();
+      if (withFonts) loadStorySerifFont();
       loadScript(src);
       return;
     }
@@ -32,7 +32,7 @@
       function (entries) {
         if (!entries[0].isIntersecting) return;
         observer.disconnect();
-        if (withFonts) loadFrauncesFont();
+        if (withFonts) loadStorySerifFont();
         loadScript(src);
       },
       { rootMargin: margin || "200px 0px", threshold: 0 }

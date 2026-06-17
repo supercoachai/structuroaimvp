@@ -53,7 +53,9 @@
    */
   --story-bg: #FDFBF4;
   --story-bg-navy: #1A1A1B;
-  --story-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --story-serif: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --story-cta: #1A1A1B;
+  --story-cta-hover: #2E2E30;
   --story-accent: #2D5A56;
   --story-text: #1A1A1B;
   --story-text-muted: #5C6478;
@@ -73,22 +75,53 @@
   font-family: var(--story-serif);
 }
 .st-story-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--story-accent);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-.st-story-eyebrow::before {
-  content: "";
-  display: block;
-  width: 18px;
-  height: 1px;
+.st-story-eyebrow--on-navy {
+  color: rgba(245, 242, 234, 0.55);
+}
+.st-story-eyebrow-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
   background: var(--story-accent);
   flex-shrink: 0;
+  animation: st-story-eyebrow-pulse 2.4s ease-in-out infinite;
+}
+.st-story-eyebrow--on-navy .st-story-eyebrow-pulse {
+  background: rgba(245, 242, 234, 0.72);
+  animation-name: st-story-eyebrow-pulse-navy;
+}
+@keyframes st-story-eyebrow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(45, 90, 86, 0.32);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(45, 90, 86, 0);
+    opacity: 0.82;
+  }
+}
+@keyframes st-story-eyebrow-pulse-navy {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 242, 234, 0.28);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(245, 242, 234, 0);
+    opacity: 0.82;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-story-eyebrow-pulse {
+    animation: none;
+  }
 }
 
 @theme inline {

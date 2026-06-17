@@ -13,6 +13,7 @@ import {
   getStoredSignupCampaign,
   getStoredSignupSource,
   isAcquisitionSignupContext,
+  isOrganicEuSignupContext,
   isTikTokSignupContext,
   persistSignupAttributionToProfile,
   queueSignupCompletedForAnalytics,
@@ -47,6 +48,7 @@ function RegistrerenAccountInner() {
   const [eventSignupFlow, setEventSignupFlow] = useState(false);
   const [acquisitionFlow, setAcquisitionFlow] = useState(false);
   const [tiktokFlow, setTiktokFlow] = useState(false);
+  const [organicEuFlow, setOrganicEuFlow] = useState(false);
   const mounted = useClientMounted();
 
   useEffect(() => {
@@ -56,6 +58,7 @@ function RegistrerenAccountInner() {
     setEventSignupFlow(isEventSignupSource(source));
     setAcquisitionFlow(isAcquisitionSignupContext());
     setTiktokFlow(isTikTokSignupContext());
+    setOrganicEuFlow(isOrganicEuSignupContext());
   }, [searchParams]);
 
   useEffect(() => {
@@ -187,25 +190,39 @@ function RegistrerenAccountInner() {
     }
   }
 
+  const storyFlow = organicEuFlow && !tiktokFlow;
+
   if (!mounted || !sessionChecked) {
     return (
-      <RegistrerenShell>
-        <p className="text-center text-sm text-slate-500">{t("registrerenPage.loading")}</p>
+      <RegistrerenShell visual={storyFlow ? "story" : "work"}>
+        <p
+          className={`text-center text-sm ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
+        >
+          {t("registrerenPage.loading")}
+        </p>
       </RegistrerenShell>
     );
   }
 
   if (magicLinkSent) {
     return (
-      <RegistrerenShell>
-        <div className="mx-auto mt-8 mb-6 w-[90%] max-w-[25.2rem] text-center">
-          <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+      <RegistrerenShell visual={storyFlow ? "story" : "work"}>
+        <div className="mx-auto w-full text-center">
+          <h2
+            className={`text-lg tracking-tight sm:text-xl ${storyFlow ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
+          >
             {t("registrerenPage.magicLinkSentTitle")}
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          <p
+            className={`mt-3 text-sm leading-relaxed ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
+          >
             {t("registrerenPage.magicLinkSentBody", { email: magicLinkEmail })}
           </p>
-          <p className="mt-2 text-xs text-slate-500">{t("registrerenPage.magicLinkSentHint")}</p>
+          <p
+            className={`mt-2 text-xs ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
+          >
+            {t("registrerenPage.magicLinkSentHint")}
+          </p>
         </div>
       </RegistrerenShell>
     );
@@ -227,33 +244,58 @@ function RegistrerenAccountInner() {
       ? t("registrerenPage.continueBtnMagicLink")
       : t("registrerenPage.continueBtn");
 
+  const inputClass = storyFlow
+    ? "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 text-base text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
+    : "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+
+  const labelClass = storyFlow
+    ? "block text-sm text-[var(--story-text-muted)]"
+    : "block text-sm text-gray-500";
+
+  const primaryBtnClass = storyFlow
+    ? "flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-[15px] text-base font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-200 hover:bg-[var(--story-cta-hover)] hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+    : "flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-[15px] text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
+
   return (
-    <RegistrerenShell error={error}>
-      <div className="mx-auto mt-8 mb-6 w-[90%] max-w-[25.2rem] text-center">
-        <p className="mb-3">
-          <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
-            {t("registrerenPage.trialBadge", { days: String(trialDays) })}
-          </span>
-        </p>
-        <h2 className="text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+    <RegistrerenShell error={error} visual={storyFlow ? "story" : "work"}>
+      <div className="mx-auto w-full text-center">
+        {storyFlow || tiktokFlow || acquisitionFlow ? null : (
+          <p className="mb-3">
+            <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
+              {t("registrerenPage.trialBadge", { days: String(trialDays) })}
+            </span>
+          </p>
+        )}
+        {storyFlow ? (
+          <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
+            <span className="st-story-eyebrow-pulse" aria-hidden />
+            {t("registrerenPage.organicEyebrow")}
+          </p>
+        ) : null}
+        <h2
+          className={`text-lg tracking-tight sm:text-xl ${storyFlow ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
+        >
           {t(headingKey)}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(subheadingKey)}</p>
-        {acquisitionFlow || tiktokFlow ? (
+        <p
+          className={`mt-2 text-sm leading-relaxed ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
+        >
+          {t(subheadingKey)}
+        </p>
+        {tiktokFlow ? (
           <p className="mt-2 text-xs font-medium text-slate-500">
-            {t(
-              tiktokFlow
-                ? "registrerenPage.tiktokTrustLine"
-                : "registrerenPage.acquisitionTrustLine",
-              { days: String(trialDays) }
-            )}
+            {t("registrerenPage.tiktokTrustLine", { days: String(trialDays) })}
+          </p>
+        ) : acquisitionFlow && !storyFlow ? (
+          <p className="mt-2 text-xs font-medium text-slate-500">
+            {t("registrerenPage.acquisitionTrustLine", { days: String(trialDays) })}
           </p>
         ) : null}
       </div>
 
-      <div className="mx-auto w-[90%] max-w-[25.2rem] space-y-4">
+      <div className="mx-auto w-full space-y-4 text-left">
         <div className="space-y-1">
-          <label htmlFor="reg-name" className="block text-sm text-gray-500">
+          <label htmlFor="reg-name" className={labelClass}>
             {t("registrerenPage.nameLabel")}
           </label>
           <input
@@ -261,14 +303,14 @@ function RegistrerenAccountInner() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className={inputClass}
             placeholder={t("registrerenPage.namePh")}
             required
             autoComplete="name"
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor="reg-email" className="block text-sm text-gray-500">
+          <label htmlFor="reg-email" className={labelClass}>
             {t("registrerenPage.emailLabel")}
           </label>
           <input
@@ -276,7 +318,7 @@ function RegistrerenAccountInner() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className={inputClass}
             placeholder={t("registrerenPage.emailPh")}
             required
             autoComplete="email"
@@ -287,16 +329,25 @@ function RegistrerenAccountInner() {
           type="button"
           disabled={loading}
           onClick={() => void handleAccountContinue()}
-          className="flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-[15px] text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className={primaryBtnClass}
         >
           {loading ? t("registrerenPage.submitBusy") : continueLabel}
         </button>
       </div>
 
       {!eventSignupFlow ? (
-        <p className="text-center text-sm text-slate-500">
+        <p
+          className={`text-center text-sm ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
+        >
           {t("registrerenPage.hasAccount")}{" "}
-          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-800">
+          <Link
+            href="/login"
+            className={
+              storyFlow
+                ? "font-semibold text-[var(--story-accent)] hover:text-[#234845]"
+                : "font-semibold text-blue-600 hover:text-blue-800"
+            }
+          >
             {t("registrerenPage.loginLink")}
           </Link>
         </p>
@@ -307,9 +358,9 @@ function RegistrerenAccountInner() {
 
 export default function RegistrerenAccountClient() {
   return (
-    <Suspense
+      <Suspense
       fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
+        <div className="st-story-bg flex min-h-[100dvh] items-center justify-center text-sm text-[var(--story-text-muted)]">
           …
         </div>
       }

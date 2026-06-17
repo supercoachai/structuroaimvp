@@ -4,5 +4,9 @@ import type { ReactNode } from "react";
 export const dynamic = "force-dynamic";
 
 export default function RegistrerenLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <div className="fixed inset-0 z-[120] min-h-[100dvh] overflow-y-auto overscroll-y-contain">
+      {children}
+    </div>
+  );
 }

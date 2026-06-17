@@ -342,6 +342,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       accountHeadingAcquisition: "Je herkende het net. Nu de eerste schone lei.",
       accountSubheadingAcquisition:
         "Geen wachtwoord nodig. We sturen een link naar je inbox.",
+      organicEyebrow: "Voor ADHD-breinen die niet beginnen",
       accountHeadingTikTok: "Je herkende het net. Nu de eerste schone lei.",
       accountSubheadingTikTok:
         "3 dagen gratis. Geen streaks, geen badges, geen schuldgevoel.",
@@ -859,6 +860,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       accountHeadingAcquisition: "You just recognized yourself. Now a clean slate.",
       accountSubheadingAcquisition:
         "No password needed. We will send a link to your inbox.",
+      organicEyebrow: "For ADHD brains that don't start",
       accountHeadingTikTok: "You just recognized yourself. Now a clean slate.",
       accountSubheadingTikTok:
         "3 days free. No streaks, no badges, no guilt.",

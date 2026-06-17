@@ -8,6 +8,7 @@ import {
   buildBridgeRegistrerenHref,
   type BridgeChannel,
 } from "@/lib/acquisition/bridgePaths";
+import { getBridgePresentation } from "@/lib/acquisition/bridgeCopy";
 import { useI18n } from "@/lib/i18n";
 import { applySignupAttributionFromSearchParams } from "@/lib/posthog/signupAttribution";
 import { captureMarketingEvent } from "@/lib/posthog/track";
@@ -29,6 +30,7 @@ function AcquisitionBridgeInner({
   const searchParams = useSearchParams();
   const landingPath = bridgePathForChannel(channel);
   const signupHref = buildBridgeRegistrerenHref(channel, searchParams);
+  const presentation = getBridgePresentation(channel);
 
   useEffect(() => {
     applySignupAttributionFromSearchParams(searchParams);
@@ -61,10 +63,13 @@ function AcquisitionBridgeInner({
   return (
     <TikTokHeroLayout
       key={queryKey}
+      channel={channel}
       heroId={variant.hero.id}
       campaign={variant.campaign}
       signupHref={signupHref}
       onCtaClick={handleCtaClick}
+      ctaLabel={presentation.ctaLabel}
+      hideFooterNote={presentation.hideFooterNote}
     />
   );
 }
@@ -72,7 +77,7 @@ function AcquisitionBridgeInner({
 function AcquisitionBridgeFallback() {
   const { t } = useI18n();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#EEF1FB] text-slate-600">
+    <div className="st-story-bg flex min-h-[100dvh] items-center justify-center text-[var(--story-text-muted)]">
       {t("common.loading")}
     </div>
   );
