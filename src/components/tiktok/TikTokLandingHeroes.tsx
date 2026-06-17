@@ -33,16 +33,16 @@ export function HeroLayoutA(props: HeroProps) {
   return (
     <TikTokLandingShell
       {...props}
-      mainPositionClass="justify-end pb-28 md:pb-32"
-      mainClassName="md:items-center md:text-center"
+      mainPositionClass="justify-center pb-28 md:pb-32"
+      mainClassName="items-center text-center"
     >
       <TikTokEyebrow campaign={campaign} heroId={heroId}>
         Voor ADHD-breinen
       </TikTokEyebrow>
-      <TikTokHeadline campaign={campaign} heroId={heroId}>
+      <TikTokHeadline campaign={campaign} heroId={heroId} centered>
         {campaign.headline}
       </TikTokHeadline>
-      <TikTokSubline campaign={campaign} heroId={heroId}>
+      <TikTokSubline campaign={campaign} heroId={heroId} centered>
         {campaign.subline}
       </TikTokSubline>
     </TikTokLandingShell>
