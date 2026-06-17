@@ -79,13 +79,20 @@ export default async function ActiviteitAdminPage({
   return (
     <div className="min-h-[100dvh] bg-[var(--st-bg)] px-4 pb-16 pt-[max(1rem,env(safe-area-inset-top))]">
       <main className="mx-auto max-w-5xl">
-        <p className="mb-4 text-xs text-slate-400">
-          Privé-view. Geen index voor zoekmachines. Kalenderdag: Europe/Amsterdam.
-        </p>
-
-        <h1 className="mb-2 text-lg font-semibold text-slate-800">
-          Wie gebruikte Structuro?
-        </h1>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-slate-400">Privé-view. Geen index voor zoekmachines. Kalenderdag: Europe/Amsterdam.</p>
+            <h1 className="text-lg font-semibold text-slate-800">
+              Wie gebruikte Structuro?
+            </h1>
+          </div>
+          <Link
+            href="/activiteit/funnel"
+            className="text-sm text-slate-600 underline"
+          >
+            Activatie-funnel
+          </Link>
+        </div>
         <p className="mb-6 text-sm text-slate-600">
           Datum{" "}
           <span className="font-semibold text-slate-800">{report.date}</span>

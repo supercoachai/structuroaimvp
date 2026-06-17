@@ -1,0 +1,44 @@
+---
+description: Lees Obsidian Structuro State voor product, strategie en doctrine-vragen
+alwaysApply: true
+---
+
+# Obsidian Structuro State
+
+De canonieke kennisbank staat in Obsidian, niet alleen in de repo.
+
+**Vault:** `/Users/nielsvandenhurk/Documents/Obsidian Vault/`
+**Startnote:** `Structuro State.md`
+
+## Wanneer eerst lezen
+
+Bij vragen over product, strategie, prioriteiten, doctrine, metrics, content, cyclus, interviews of "wat is de status van Structuro":
+
+1. Lees `Structuro State.md`
+2. Volg de relevante hub-link (Product, Growth, Metrics, Doctrine, etc.)
+3. Gebruik repo-code alleen voor implementatie; Obsidian voor beslissingen en rationale
+
+## Hub-paden (snel)
+
+| Onderwerp | Pad |
+|-----------|-----|
+| Doctrine | `00 Doctrine/Doctrine Hub.md` |
+| Product / activatie | `02 Product/Product Hub.md` |
+| Groei / TikTok | `03 Groei/Growth Hub.md` |
+| Tech | `04 Tech/Tech Hub.md` |
+| Metrics | `06 Cijfers/Metrics Hub.md` |
+| ClickUp / ops | `05 Operaties/ClickUp/ClickUp Hub.md` |
+| AI copy-paste | `09 AI Context/Master context AI.md` |
+| Cyclus | `02 Product/Cyclus Hub.md` |
+
+## Conflicten oplossen
+
+- **Obsidian vs repo `docs/`:** Obsidian wint voor strategie en product; repo wint voor code en env.
+- **Obsidian vs ClickUp Doc:** Obsidian is master; ClickUp Doc is wekelijkse spiegel voor Superagent.
+- **`_Archief/`:** negeer tenzij de gebruiker expliciet naar archief vraagt.
+
+## Niet doen
+
+- Hele vault in één antwoord dumpen
+- Aannemen dat ClickUp-taken de waarheid zijn (denkwerk leeft in Obsidian)
+- ClickUp Brain trainen op doctrine

@@ -7,6 +7,8 @@ alwaysApply: true
 
 Lees `docs/STRUCTURO_CONTEXT.md` voor productfilosofie, doelgroep, UX-regels en funnel-prioriteit.
 
+Voor strategie, metrics en doctrine: lees Obsidian (zie `obsidian-structuro-state.mdc`).
+
 ## Prioriteit juni 2026
 
 1. **Activatie P0:** signup → dagstart (lekt nu; compact onboarding, magic link, frictie weg)
