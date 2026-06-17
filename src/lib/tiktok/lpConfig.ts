@@ -93,6 +93,9 @@ export const LP_DEFAULT_CAMPAIGN_ID: LpCampaignId = "cyclus";
 /** Standaard campagne voor organische bridge (/start, structuro.eu). */
 export const LP_ORGANIC_DEFAULT_CAMPAIGN_ID: LpCampaignId = "weten";
 
+/** Standaard hero op /start: warme lichte entree (layout A). Donker via ?hero=C. */
+export const LP_ORGANIC_DEFAULT_HERO: LpHeroId = "A";
+
 export const LP_RITUAL_STEPS = [
   { title: "Kies je energie", desc: "Eén tik: laag, midden of hoog." },
   { title: "Krijg 1 tot 3 taken", desc: "Passend bij je dag. Nooit meer." },
@@ -162,12 +165,12 @@ export const LP_CAMPAIGNS: readonly LpCampaign[] = [
     note: "Executie-gap, confronterend zonder shame.",
     utmContent: "hook_weten_vs_beginnen",
     theme: "dark",
-    accent: LP_BRAND.skyDark,
+    accent: LP_BRAND.blue,
     headline: "Je weet precies wat je moet doen. En toch begin je niet.",
     subline: "Dat is je brein. Niet jij. Structuro overbrugt dat gat.",
     cta: "Start 3 dagen gratis",
     trust: "Geen verplichtingen. 3 dagen, daarna beslis jij.",
-    defaultHero: "C",
+    defaultHero: "A",
     heroesAllowed: ALL_HEROES,
   },
 ] as const;
@@ -181,7 +184,7 @@ export const LP_HERO_CAMPAIGN_DEFAULTS: Record<LpCampaignId, LpHeroId> = {
   nietlui: "A",
   cyclus: "B",
   geenlijsten: "E",
-  weten: "C",
+  weten: "A",
 };
 
 /** Alternatieven die vaak werken na A/B-test */

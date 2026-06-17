@@ -29,11 +29,11 @@ const DEMO_TASKS: Record<DemoEnergy, string[]> = {
 
 export function HeroLayoutA(props: HeroProps) {
   const { campaign, heroId } = props;
-  const theme = getLpThemeTokens(campaign, heroId);
 
   return (
     <TikTokLandingShell
       {...props}
+      mainPositionClass="justify-end pb-28 md:pb-32"
       mainClassName="md:items-center md:text-center"
     >
       <TikTokEyebrow campaign={campaign} heroId={heroId}>
@@ -45,12 +45,6 @@ export function HeroLayoutA(props: HeroProps) {
       <TikTokSubline campaign={campaign} heroId={heroId}>
         {campaign.subline}
       </TikTokSubline>
-      <p
-        className="mt-8 text-center text-xs leading-relaxed"
-        style={{ color: theme.muted }}
-      >
-        Wetenschappelijk onderbouwd. Gebouwd voor executie, niet voor inzicht.
-      </p>
     </TikTokLandingShell>
   );
 }

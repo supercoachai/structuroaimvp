@@ -13,6 +13,8 @@ export type TikTokHeroShellProps = {
   onCtaClick: () => void;
   footerNote?: string;
   mainClassName?: string;
+  /** Overschrijft verticale positie + bottom-reserve van <main>. */
+  mainPositionClass?: string;
 };
 
 export type TikTokHeroLayoutProps = TikTokHeroShellProps & {
@@ -27,6 +29,7 @@ export function TikTokLandingShell({
   children,
   footerNote,
   mainClassName = "",
+  mainPositionClass = "justify-start pb-32 md:justify-center md:pb-36",
 }: TikTokHeroLayoutProps) {
   const theme = getLpThemeTokens(campaign, heroId);
   const [logoError, setLogoError] = useState(false);
@@ -57,7 +60,7 @@ export function TikTokLandingShell({
       </header>
 
       <main
-        className={`mx-auto flex w-full max-w-md flex-1 flex-col justify-start px-5 pb-32 pt-2 md:justify-center md:pb-36 md:pt-0 ${mainClassName}`}
+        className={`mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-2 md:pt-0 ${mainPositionClass} ${mainClassName}`}
       >
         {children}
       </main>
