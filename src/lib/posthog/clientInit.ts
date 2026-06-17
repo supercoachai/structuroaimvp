@@ -5,6 +5,7 @@ import type { CaptureResult } from "posthog-js";
 
 import { posthogTracingHeaderHostnames } from "./tracingHeaders";
 import { POSTHOG_PROXY_API_HOST } from "./proxyHost";
+import { sanitizeCurrentUrl } from "./sanitizeCurrentUrl";
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
 
 let posthogInitOnce = false;
@@ -23,23 +24,38 @@ const RELEASE_ENVIRONMENT =
  * (niet-$) properties door de PII-filter; alle $-prefixed velden ($session_id, $exception_list,
  * $exception_*) blijven intact, anders verlies je correlatie en de stacktrace zelf.
  */
-function exceptionBeforeSend(cr: CaptureResult | null): CaptureResult | null {
+function sanitizeEventProperties(
+  properties: Record<string, unknown>
+): Record<string, unknown> {
+  const out = { ...properties };
+  const currentUrl = out.$current_url;
+  if (typeof currentUrl === "string") {
+    out.$current_url = sanitizeCurrentUrl(currentUrl);
+  }
+  return out;
+}
+
+function posthogBeforeSend(cr: CaptureResult | null): CaptureResult | null {
   if (!cr) return cr;
-  if (cr.event !== "$exception") return cr;
   if (!cr.properties || typeof cr.properties !== "object") return cr;
 
-  const preserved: Record<string, unknown> = {};
-  const custom: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(cr.properties)) {
-    if (key.startsWith("$")) preserved[key] = value;
-    else custom[key] = value;
+  if (cr.event === "$exception") {
+    const preserved: Record<string, unknown> = {};
+    const custom: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(cr.properties)) {
+      if (key.startsWith("$")) preserved[key] = value;
+      else custom[key] = value;
+    }
+
+    cr.properties = sanitizeEventProperties({
+      ...preserved,
+      ...sanitizeExceptionContext(custom),
+      error_tracking: true,
+    });
+    return cr;
   }
 
-  cr.properties = {
-    ...preserved,
-    ...sanitizeExceptionContext(custom),
-    error_tracking: true,
-  };
+  cr.properties = sanitizeEventProperties(cr.properties);
   return cr;
 }
 
@@ -91,7 +107,7 @@ export function ensurePostHogClientInitialized(): boolean {
       capture_unhandled_rejections: true,
       capture_console_errors: false,
     },
-    before_send: exceptionBeforeSend,
+    before_send: posthogBeforeSend,
     session_recording: {
       maskAllInputs: true,
     },

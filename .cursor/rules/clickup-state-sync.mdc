@@ -1,0 +1,17 @@
+---
+description: ClickUp State sync uit Obsidian naar Superagent Doc
+alwaysApply: true
+---
+
+# ClickUp State sync
+
+Bij werk aan ClickUp, Superagent, metrics, prioriteiten of weekly reviews:
+
+1. **Obsidian eerst:** update `Structuro State.md`, `06 Cijfers/Huidige cijfers.md` en/of `05 Operaties/ClickUp/ClickUp operationele sync.md` als feiten wijzigen.
+2. **Export draaien:** `npm run export:clickup-state` in repo (werkt ook `## ClickUp sync` footer in State bij).
+3. **ClickUp Doc pushen:** update ClickUp Doc **Structuro State (live)** via MCP (`clickup_update_document_page`) met inhoud uit `Structuro State LIVE paste.md` (vanaf `### Meta`).
+4. **Taken syncen:** ClickUp-status moet repo/deploy reflecteren; git wint bij conflict tot taak expliciet is bijgewerkt.
+
+Superagent leest het ClickUp Doc, niet git. Zonder verse export zijn weekly comments onbetrouwbaar.
+
+**Niet committen:** Obsidian vault-bestanden (staan buiten repo). Wel committen: repo-scripts en productcode.

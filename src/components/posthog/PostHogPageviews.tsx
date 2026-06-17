@@ -7,6 +7,7 @@ import posthog from "posthog-js";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 import { ANALYTICS_CONSENT_KEY } from "@/lib/posthog/consentStorage";
 import { useConsent } from "@/lib/posthog/ConsentContext";
+import { sanitizeCurrentUrl } from "@/lib/posthog/sanitizeCurrentUrl";
 
 export function PostHogPageviews() {
   const pathname = usePathname();
@@ -25,7 +26,7 @@ export function PostHogPageviews() {
     let url = window.location.origin + pathname;
     const q = searchParams?.toString();
     if (q) url += `?${q}`;
-    posthog.capture("$pageview", { $current_url: url });
+    posthog.capture("$pageview", { $current_url: sanitizeCurrentUrl(url) });
   }, [pathname, searchParams, consent]);
 
   return null;
