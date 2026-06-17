@@ -23,6 +23,7 @@ import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam, setDagstart
 import DagstartDeadlineOverflowModal from "@/components/dagstart/DagstartDeadlineOverflowModal";
 import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
 import { ensureFirstDagstartWelcomeTask } from "@/lib/onboardingWelcomeTask";
@@ -391,6 +392,10 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
       ) {
         pendingFinishIdsRef.current = pickedIds;
         setShowEmptySelectionHint(true);
+        captureActivationFunnelEvent(
+          ANALYTICS_EVENTS.dagstart_empty_selection_hint_shown,
+          { source: "dagstart_flow" }
+        );
         return;
       }
 
@@ -412,6 +417,10 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
   const handleEmptyHintDismiss = useCallback(() => {
     emptySelectionDismissedRef.current = true;
     setShowEmptySelectionHint(false);
+    captureActivationFunnelEvent(
+      ANALYTICS_EVENTS.dagstart_empty_selection_hint_dismissed,
+      { source: "dagstart_flow", added_task: false }
+    );
     const ids = pendingFinishIdsRef.current ?? [];
     pendingFinishIdsRef.current = null;
     void completeDagstart(ids);
@@ -439,6 +448,10 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
       });
       emptySelectionDismissedRef.current = true;
       setShowEmptySelectionHint(false);
+      captureActivationFunnelEvent(
+        ANALYTICS_EVENTS.dagstart_empty_selection_hint_dismissed,
+        { source: "dagstart_flow", added_task: true }
+      );
       pendingFinishIdsRef.current = null;
       if (task?.id) {
         await completeDagstart([String(task.id)]);
@@ -468,6 +481,10 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
   const handleChoicePick = useCallback((c: "structuro" | "self") => {
     setChoice(c);
+    captureActivationFunnelEvent(ANALYTICS_EVENTS.dagstart_path_chosen, {
+      path: c,
+      source: "dagstart_flow",
+    });
     setStep2Key((k) => k + 1);
     setStep(2);
   }, []);
@@ -587,6 +604,10 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
               preselectedIds={overflowConfirmedIds}
               onDone={(ids) => void finishWithPicks(ids)}
               onAddTask={handleSwipeAddFromFlow}
+              onSwitchToSuggested={() => {
+                setStep2Key((k) => k + 1);
+                setChoice("structuro");
+              }}
               onRequestDeadlineOverflow={requestDeadlineOverflow}
               addBusy={swipeAddBusy}
             />

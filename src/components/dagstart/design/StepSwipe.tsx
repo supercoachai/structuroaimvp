@@ -10,6 +10,9 @@ import {
 } from "@/lib/dagstart/dagstartPickLimits";
 import { toast } from "@/components/Toast";
 import { fireDagstartCompleteConfetti } from "@/lib/dagstartConfetti";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { useI18n } from "@/lib/i18n/I18nContext";
+import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import Battery from "./Battery";
 import {
   DAGSTART_ENERGIES,
@@ -23,6 +26,7 @@ type StepSwipeProps = {
   preselectedIds?: string[];
   onDone: (keptIds: string[]) => void;
   onAddTask?: (payload: NewTaskFlowPayload) => void | Promise<void>;
+  onSwitchToSuggested?: () => void;
   onRequestDeadlineOverflow?: (
     task: DagstartTaskCard,
     onConfirm?: () => void
@@ -37,10 +41,13 @@ export default function StepSwipe({
   preselectedIds = [],
   onDone,
   onAddTask,
+  onSwitchToSuggested,
   onRequestDeadlineOverflow,
   addBusy = false,
 }: StepSwipeProps) {
+  const { t } = useI18n();
   const hadInitialTasks = useRef(tasks.length > 0);
+  const swipeExhaustedTrackedRef = useRef(false);
   const [queue, setQueue] = useState<DagstartTaskCard[]>(() =>
     tasks.filter((t) => !preselectedIds.includes(t.id))
   );
@@ -237,13 +244,26 @@ export default function StepSwipe({
     }
 
     if (swipeExhausted) {
+      if (!swipeExhaustedTrackedRef.current) {
+        swipeExhaustedTrackedRef.current = true;
+        captureActivationFunnelEvent(ANALYTICS_EVENTS.dagstart_swipe_exhausted, {
+          tasks_available: tasks.length,
+          source: "dagstart_flow",
+        });
+      }
       return (
         <div style={{ width: "100%", textAlign: "center", paddingTop: 24 }}>
           <h2 className="ds-title" style={{ marginBottom: 14 }}>
-            Je hebt alle taken geswiped.
+            {t("dayStart.stackExhaustedTitle")}
           </h2>
-          <p className="ds-sub" style={{ marginBottom: 24 }}>
-            Kies er toch één, ook een kleine taak telt.
+          <p className="ds-sub" style={{ marginBottom: 10 }}>
+            {t("dayStart.stackExhaustedSub")}
+          </p>
+          <p
+            className="ds-sub"
+            style={{ marginBottom: 24, fontSize: 13, color: "var(--st-muted)" }}
+          >
+            {t("dayStart.stackExhaustedSwipeHint")}
           </p>
           <div
             style={{
@@ -260,8 +280,18 @@ export default function StepSwipe({
               style={{ height: 44, fontSize: 14 }}
               onClick={handleReviewAgain}
             >
-              Opnieuw bekijken
+              {t("dayStart.stackReviewAgain")}
             </button>
+            {onSwitchToSuggested ? (
+              <button
+                type="button"
+                className="st-btn-ghost w-full"
+                style={{ height: 44, fontSize: 14 }}
+                onClick={onSwitchToSuggested}
+              >
+                {t("dayStart.stackSwitchSuggested")}
+              </button>
+            ) : null}
             {onAddTask ? (
               <button
                 type="button"
@@ -269,7 +299,7 @@ export default function StepSwipe({
                 style={{ height: 44, fontSize: 14 }}
                 onClick={() => setAddOpen(true)}
               >
-                + Toch iets toevoegen
+                {t("dayStart.stackAddAnyway")}
               </button>
             ) : null}
             <button
@@ -277,7 +307,7 @@ export default function StepSwipe({
               className="ds-link"
               onClick={finishSwipe}
             >
-              Klaar zonder keuze
+              {t("dayStart.stackDoneWithout")}
             </button>
           </div>
         </div>

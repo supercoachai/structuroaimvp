@@ -32,6 +32,8 @@ import {
 } from "@/lib/taskRecurrence";
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { captureProductEvent } from "@/lib/posthog/track";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -126,6 +128,7 @@ export default function NewTaskFlow({
 
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const microUsedAiRef = useRef(false);
 
   const resetFlow = useCallback(() => {
     setStep(skipTitle && hasPresetTitle ? 1 : 0);
@@ -142,6 +145,7 @@ export default function NewTaskFlow({
     setRepeatIntervalDays(DEFAULT_INTERVAL_DAYS);
     setMicrosteps([]);
     setMicroEditing(false);
+    microUsedAiRef.current = false;
   }, [skipTitle, hasPresetTitle, initialTitle]);
 
   useEffect(() => {
@@ -302,6 +306,17 @@ export default function NewTaskFlow({
     setSaveBusy(true);
     try {
       await onSave(payload);
+      const trimmedMicro = payload.microsteps;
+      captureProductEvent(ANALYTICS_EVENTS.new_task_flow_completed, {
+        micro_source:
+          trimmedMicro.length === 0
+            ? "skip"
+            : microUsedAiRef.current
+              ? "ai"
+              : "manual",
+        had_microsteps: trimmedMicro.length > 0,
+        source: variant === "compact" ? "compact" : "default",
+      });
       setStep(doneStepIndex);
       if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
       doneTimerRef.current = setTimeout(() => {
@@ -328,6 +343,7 @@ export default function NewTaskFlow({
     microsteps,
     onSave,
     mode,
+    variant,
     onClose,
     resetFlow,
     skipDeadline,
@@ -512,6 +528,9 @@ export default function NewTaskFlow({
             busy={busy}
             compact={compact}
             embedded={embedded}
+            onAiUsed={() => {
+              microUsedAiRef.current = true;
+            }}
           />
         ) : null}
 
@@ -1231,6 +1250,7 @@ function StepMicro({
   busy,
   compact,
   embedded,
+  onAiUsed,
 }: {
   title: string;
   energy: NewTaskEnergyLevel | null;
@@ -1243,10 +1263,24 @@ function StepMicro({
   busy: boolean;
   compact?: boolean;
   embedded?: boolean;
+  onAiUsed?: () => void;
 }) {
   const { t, locale } = useI18n();
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
+
+  const focusFirstMicroInput = () => {
+    window.setTimeout(() => {
+      document.querySelectorAll<HTMLInputElement>(".new-task-micro-input")[0]?.focus();
+    }, 50);
+  };
+
+  const startManualMicro = () => {
+    setSuggestError(null);
+    setMicrosteps([""]);
+    setEditing(true);
+    focusFirstMicroInput();
+  };
 
   const requestSuggestions = useCallback(async () => {
     const trimmedTitle = String(title ?? "").trim();
@@ -1261,6 +1295,7 @@ function StepMicro({
         durationMin: durationMin,
         locale: locale === "en" ? "en" : "nl",
       });
+      onAiUsed?.();
       setMicrosteps(result.steps);
       setEditing(true);
     } catch (error) {
@@ -1272,7 +1307,17 @@ function StepMicro({
     } finally {
       setSuggestLoading(false);
     }
-  }, [title, energy, durationMin, locale, microsteps.length, setMicrosteps, setEditing, t]);
+  }, [
+    title,
+    energy,
+    durationMin,
+    locale,
+    microsteps.length,
+    setMicrosteps,
+    setEditing,
+    onAiUsed,
+    t,
+  ]);
 
   const addStep = () => {
     setMicrosteps([...microsteps, ""]);
@@ -1341,6 +1386,21 @@ function StepMicro({
             </span>
           </button>
         </div>
+        <button
+          type="button"
+          onClick={startManualMicro}
+          disabled={busy}
+          className={`mt-2.5 flex w-full flex-col items-center gap-0.5 rounded-[18px] border border-[var(--st-line)] bg-white transition-all hover:border-[var(--st-line-strong)] disabled:opacity-50 ${
+            embedded ? "px-2 py-3" : "gap-1 px-3 py-4"
+          }`}
+        >
+          <span className={`font-medium text-[var(--st-ink)] ${embedded ? "text-sm" : "text-base"}`}>
+            {t("newTask.microSuggestManual")}
+          </span>
+          <span className={`text-[var(--st-muted-2)] ${embedded ? "text-[10px]" : "text-[11px]"}`}>
+            {t("newTask.microManualSub")}
+          </span>
+        </button>
       </div>
     );
   }
@@ -1363,11 +1423,7 @@ function StepMicro({
         </button>
         <button
           type="button"
-          onClick={() => {
-            setSuggestError(null);
-            if (microsteps.length === 0) addStep();
-            else setEditing(true);
-          }}
+          onClick={startManualMicro}
           className="rounded-xl border border-[var(--st-line)] bg-white px-3.5 py-2 text-[13px] font-medium text-[var(--st-muted)] transition-colors hover:border-[var(--st-line-strong)]"
         >
           {t("newTask.microSuggestManual")}
