@@ -102,7 +102,7 @@ img{max-width:100%;height:auto;}
 .container{max-width:1100px;margin:0 auto;padding:0 24px;}
 
 /* Scroll offset for sticky nav */
-#loop, #voor-vrouwen, #founder, #prijs, #faq, #verhalen, #brein-termen, #wachtlijst, #eu-sluitstuk, #gezien-in {
+#loop, #voor-vrouwen, #founder, #prijs, #faq, #verhalen, #brein-termen, #wachtlijst, #eu-sluitstuk, #gezien-in, #wat-anderen-zeggen {
   scroll-margin-top: 88px;
 }
 
@@ -248,6 +248,19 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .vt-head h2,
 .phones-showcase-head h2{font-size:clamp(30px,4vw,46px);line-height:1.08;}
 .lede-2{margin:0;font-size:17px;color:var(--story-text-muted);line-height:1.6;max-width:560px;}
+
+/* ── Wat anderen zeggen (peer-quotes) ── */
+.peer-quotes{background:var(--story-bg);border-top:1px solid var(--story-border);padding:64px 0;}
+.peer-quotes-head{margin-bottom:32px;}
+.peer-quotes-head .section-eyebrow{margin-bottom:0;}
+.peer-quotes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.peer-quote{margin:0;display:flex;flex-direction:column;gap:18px;background:var(--white);border:1px solid var(--story-border);border-radius:var(--r-lg);padding:26px 24px;box-shadow:0 2px 12px rgba(26,26,27,.05);}
+.peer-quote-text{margin:0;font-family:var(--story-serif);font-size:18px;line-height:1.5;letter-spacing:-.01em;color:var(--dark);font-weight:500;}
+.peer-quote-by{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
+.peer-quote-name{font-size:14px;font-weight:600;color:var(--story-text);}
+.peer-quote-role{font-size:13px;color:var(--story-text-muted);}
+@media(max-width:900px){.peer-quotes-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.peer-quotes{padding:48px 0;}.peer-quotes-grid{grid-template-columns:1fr;gap:14px;}}
 
 /* ── Gezien in marquee (full-width, zelfde achtergrond als pagina) ── */
 .media-seen-wrap{width:100%;padding:0;background:var(--story-bg);border-top:1px solid var(--story-border);}
@@ -1863,6 +1876,37 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       </div>
       <div id="landingZelftestSticky" class="zt-sticky-host"></div>
       <div id="landingZelftestMount"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Wat anderen zeggen (peer-herkenning) -->
+<section class="peer-quotes reveal" id="wat-anderen-zeggen">
+  <div class="container">
+    <div class="peer-quotes-head">
+      <div class="section-eyebrow" data-i18n="peer_eyebrow">Wat anderen zeggen</div>
+    </div>
+    <div class="peer-quotes-grid">
+      <figure class="peer-quote">
+        <blockquote class="peer-quote-text">ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-name">Sarah</span><span class="peer-quote-role">app developer</span></figcaption>
+      </figure>
+      <figure class="peer-quote">
+        <blockquote class="peer-quote-text">Ik kan niet prioriteren. Alles voelt even urgent. En dan schat ik de tijd helemaal verkeerd in. Het is niet luiheid hoor, het is dat mijn brein anders werkt.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-name">Mirthe</span><span class="peer-quote-role">zelfstandig professional</span></figcaption>
+      </figure>
+      <figure class="peer-quote">
+        <blockquote class="peer-quote-text">Ik zit in mijn eigen hoofd en ik kan er niet uit. Het voelt als analysis paralysis waar je gewoon niet uit kan breken.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-name">Judith</span><span class="peer-quote-role">ondernemer</span></figcaption>
+      </figure>
+      <figure class="peer-quote">
+        <blockquote class="peer-quote-text">Ik ben mijn hele leven een underperformer geweest en niemand zei: je hebt ADHD. Nu begrijp ik eindelijk waarom ik niet kon doen wat iedereen zei dat ik moest doen.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-name">Eline</span><span class="peer-quote-role">coach</span></figcaption>
+      </figure>
+      <figure class="peer-quote">
+        <blockquote class="peer-quote-text">Het is een kermis met zestig attracties die tegelijkertijd afspeelt. Alles loopt door elkaar heen.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-name">Giel</span><span class="peer-quote-role">accountmanager</span></figcaption>
+      </figure>
     </div>
   </div>
 </section>
