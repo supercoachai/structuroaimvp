@@ -710,10 +710,8 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 /* ── Cyclus teaser (homepage) ── */
 .cycle-teaser{background:var(--story-bg);border-top:1px solid var(--story-border);border-bottom:none;padding:56px 0;}
 .cycle-teaser-inner{max-width:640px;margin:0 auto;text-align:center;}
-.cycle-frame{margin:0 auto 22px;max-width:560px;display:flex;flex-direction:column;gap:4px;}
-.cycle-frame-main{font-family:var(--story-serif);font-size:clamp(18px,2.6vw,21px);line-height:1.4;font-weight:600;color:var(--story-text);}
-.cycle-frame-sub{font-size:14px;color:var(--story-text-muted);}
-.cycle-teaser-link{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-weight:600;color:var(--story-accent);font-size:15px;}
+.cycle-link-row{background:var(--story-bg);border-top:1px solid var(--story-border);padding:28px 0;text-align:center;}
+.cycle-teaser-link{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--story-accent);font-size:15px;}
 .cycle-teaser-link:hover{text-decoration:underline;color:#234845;}
 
 /* ── App screenshots ── */
@@ -2165,16 +2163,9 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
   </div>
 </section>
 
-<!-- Cyclus teaser -->
-<section class="cycle-teaser reveal" id="voor-vrouwen">
-  <div class="container cycle-teaser-inner">
-    <p class="cycle-frame">
-      <span class="cycle-frame-main" data-i18n="cyclus_frame_main">Structuro past zich aan op wat jij vandaag in huis hebt.</span>
-      <span class="cycle-frame-sub" data-i18n="cyclus_frame_sub">Voor vrouwen: ook op je cyclus.</span>
-    </p>
-    <div class="section-eyebrow" data-i18n="vrouwen_eyebrow">Voor vrouwen</div>
-    <h2 data-i18n="vrouwen_teaser_h2">Werkt mee met je cyclus</h2>
-    <p class="lede-2" style="margin:0 auto;" data-i18n="vrouwen_teaser_lede">Structuro past je dag aan op je fase. Geen algoritme dat voor je beslist.</p>
+<!-- Cyclus: alleen subtiele tekstlink in de hoofdfunnel (inhoud op subpagina) -->
+<section class="cycle-link-row reveal" id="voor-vrouwen">
+  <div class="container">
     <a href="/cyclus/" class="cycle-teaser-link" data-ph-cta="cyclus_teaser">
       <span data-i18n="vrouwen_teaser_link">Lees hoe cyclus en ADHD samenkomen</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
