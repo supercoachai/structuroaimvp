@@ -12,11 +12,11 @@
   var EU_SECTION_IDS = [
     "hero",
     "brein-termen",
+    "wat-anderen-zeggen",
     "loop",
     "founder",
     "voor-vrouwen",
     "gezien-in",
-    "verhalen",
     "prijs",
     "faq",
     "eu-sluitstuk",
@@ -62,6 +62,13 @@
       bridgeParams.set("utm_source", "structuro_eu");
       bridgeParams.set("utm_medium", "organic");
       bridgeParams.set("utm_campaign", "website");
+    }
+    var lang =
+      window.currentLang ||
+      (typeof localStorage !== "undefined" && localStorage.getItem("structuro_lang")) ||
+      "nl";
+    if (lang === "nl" || lang === "en") {
+      bridgeParams.set("lang", lang);
     }
     return "https://www.structuro.ai" + bridgePath + "?" + bridgeParams.toString();
   }

@@ -67,12 +67,6 @@
     "250px 0px",
     true
   );
-  observeSection(
-    "#verhalen",
-    "/js/landing-testimonials.js?v=20260616c",
-    "250px 0px"
-  );
-
   window.addEventListener("load", function () {
     var insights = document.createElement("script");
     insights.src = "/_vercel/insights/script.js";
