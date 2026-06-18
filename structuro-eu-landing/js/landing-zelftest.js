@@ -78,8 +78,8 @@
   function message(count) {
     if (count === 0) {
       return {
-        t: 'Tik aan wat je herkent',
-        s: 'Je krijgt per punt te zien waarom Structuro er iets aan doet.',
+        t: 'Kies wat op jou van toepassing is',
+        s: 'Je ziet per punt wat Structuro ermee doet.',
       };
     }
     if (count <= 2) {
@@ -160,7 +160,10 @@
     var hint = row.querySelector('.zt-row-hint');
     var panelWrap = row.querySelector('.zt-row-panel-wrap');
     if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
-    if (hint) hint.textContent = on ? 'Ja, dit ben ik' : 'Herken je dit?';
+    if (hint) {
+      hint.hidden = !on;
+      hint.textContent = on ? 'Ja, dit ben ik' : '';
+    }
     if (panelWrap) panelWrap.classList.toggle('is-open', on);
   }
 
@@ -248,7 +251,7 @@
 
       var hint = document.createElement('span');
       hint.className = 'zt-row-hint';
-      hint.textContent = 'Herken je dit?';
+      hint.hidden = true;
       btn.appendChild(hint);
 
       btn.addEventListener('click', function () {

@@ -148,7 +148,7 @@ img{max-width:100%;height:auto;}
 }
 
 /* ── Hero ── */
-.hero{padding:72px 0 0;position:relative;overflow-x:clip;overflow-y:visible;background:linear-gradient(180deg,var(--story-bg) 0%,#F5F3EC 55%,var(--story-bg) 100%);}
+.hero{padding:72px 0 0;position:relative;overflow-x:clip;overflow-y:visible;background:var(--story-bg);}
 
 .hero-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:64px;align-items:center;}
 @media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:48px;}.hero{padding:52px 0 64px;}.hero-cta{flex-wrap:wrap;width:100%;max-width:100%;}.hero-cta .btn-primary,.hero-cta .btn-secondary{white-space:normal;flex:1 1 auto;min-width:0;justify-content:center;}}
@@ -256,7 +256,9 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .peer-quotes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
 .peer-quote{margin:0;display:flex;flex-direction:column;gap:18px;background:var(--white);border:1px solid var(--story-border);border-radius:var(--r-lg);padding:26px 24px;box-shadow:0 2px 12px rgba(26,26,27,.05);}
 .peer-quote-text{margin:0;font-family:var(--story-serif);font-size:18px;line-height:1.5;letter-spacing:-.01em;color:var(--dark);font-weight:500;}
-.peer-quote-by{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
+.peer-quote-by{display:flex;align-items:center;gap:12px;margin-top:auto;}
+.peer-quote-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(165deg,#3A6B67,var(--story-accent));color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font);font-weight:700;font-size:17px;flex-shrink:0;letter-spacing:-.02em;user-select:none;}
+.peer-quote-meta{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .peer-quote-name{font-size:14px;font-weight:600;color:var(--story-text);}
 .peer-quote-role{font-size:13px;color:var(--story-text-muted);}
 @media(max-width:900px){.peer-quotes-grid{grid-template-columns:repeat(2,1fr);}}
@@ -651,7 +653,7 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 @media(max-width:760px){.vt-wrap{padding:48px 22px 28px!important;}.vt-card{padding:30px 24px;}.vt-carousel{gap:8px;}.vt-nav{width:36px;height:36px;}}
 @media(max-width:760px){.zt-wrap{padding:44px 22px 48px!important;}.zt-head{margin-bottom:28px;}.zt-row-panel-inner{margin-left:22px;}}
 /* ── Zelftest (welke hiervan ben jij) ── */
-.zt-section{background:var(--white);overflow:visible;padding:0;margin-top:-1px;position:relative;z-index:1;border-top:1px solid var(--story-border);}
+.zt-section{background:var(--story-bg);overflow:visible;padding:0;margin-top:-1px;position:relative;z-index:1;border-top:1px solid var(--story-border);}
 .zt-wrap{max-width:1080px;margin:0 auto;padding:56px 40px 72px;overflow:visible;}
 .zt-root{max-width:780px;margin:0 auto;overflow:visible;}
 .zt-sticky-host{overflow:visible;position:relative;z-index:42;}
@@ -830,6 +832,8 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .pricing-compare-lines{display:flex;flex-direction:column;gap:8px;}
 .pricing-compare-line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;color:var(--story-text-muted);line-height:1.4;}
 .pricing-compare-line span:last-child{white-space:nowrap;flex-shrink:0;}
+.pricing-compare-line--total{margin-top:6px;padding-top:10px;border-top:1px solid var(--story-border);font-weight:600;color:var(--story-text);}
+.pricing-compare-line--total span:last-child{font-family:var(--story-serif);font-size:15px;color:#1A2A4A;}
 .pricing-merged-card .price-includes{margin:0;padding:22px 0;border-bottom:1px solid var(--story-border);list-style:none;display:flex;flex-direction:column;gap:10px;}
 .pricing-merged-card .price-includes li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--story-text);line-height:1.45;}
 .pricing-merged-card .price-includes svg{color:var(--story-accent);flex-shrink:0;margin-top:2px;}
@@ -838,7 +842,9 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .pricing-cancel-help-icon svg{display:block;}
 .pricing-cancel-help-title{display:block;font-size:14px;font-weight:600;color:var(--story-text);margin-bottom:4px;line-height:1.35;}
 .pricing-cancel-help-body{margin:0;font-size:13px;line-height:1.5;color:var(--story-text-muted);}
-.pricing-merged-card .btn-primary{width:100%;justify-content:center;text-decoration:none;}
+.pricing-merged-card .btn-primary{width:100%;justify-content:center;text-decoration:none;background:#1A2A4A;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 2px 0 rgba(0,0,0,.1),0 8px 20px -4px rgba(26,42,74,.28);}
+.pricing-merged-card .btn-primary:hover{background:#142038;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 4px 14px -2px rgba(26,42,74,.32);}
+.pricing-merged-card .btn-primary:active{background:#1A2A4A;}
 .pricing-pay-trust{margin-top:16px;padding-top:14px;border-top:1px solid var(--story-border);text-align:center;}
 .pricing-pay-trust p{font-size:11.5px;color:var(--story-text-muted);margin:0;}
 .pricing-yearly-link{margin-top:14px;text-align:center;font-size:12.5px;color:var(--story-text-muted);line-height:1.5;}
@@ -1174,7 +1180,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
   .phone-bg-blob { display: none; }
   section, .hero, .trust { overflow-x: clip; max-width: 100%; }
   .zt-section { overflow: visible; }
-  .hero { padding-bottom: 0; overflow-x: clip; overflow-y: visible; background: linear-gradient(180deg,var(--story-bg) 0%,#F5F3EC 45%,var(--story-bg) 100%); }
+  .hero { padding-bottom: 0; overflow-x: clip; overflow-y: visible; background: var(--story-bg); }
   .hero-positioning { display: none; }
   .hero-recognition { margin-top: 16px; margin-bottom: 10px; }
   .hero .media-seen-wrap {
@@ -1836,7 +1842,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <h1 data-i18n="hero_h1">Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.</h1>
       <p class="hero-positioning" data-i18n="hero_positioning">Al je taken blijven in Structuro staan.<span class="hero-positioning-gap" aria-hidden="true"></span>Dagstart kiest er maximaal drie voor vandaag.</p>
       <p class="hero-recognition hero-recognition--primary">
-        <a href="#brein-termen" data-ph-cta="hero_herkenning" data-i18n="hero_recognition">Herken je dit? Tik aan wat klopt →</a>
+        <a href="#brein-termen" data-ph-cta="hero_herkenning" data-i18n="hero_recognition">Tik aan wat klopt →</a>
       </p>
     </div>
 
@@ -1886,7 +1892,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <div class="zt-head">
         <div class="zt-eyebrow" data-i18n="psych_eyebrow">Waarom dit werkt</div>
         <h2 data-i18n="psych_h2">Welke hiervan ben jij?</h2>
-        <p class="zt-lede" data-i18n="psych_lede">Tik aan wat je herkent. Je krijgt precies het antwoord dat erbij hoort, en niets meer.</p>
+        <p class="zt-lede" data-i18n="psych_lede">Je krijgt per punt precies het antwoord dat erbij hoort, en niets meer.</p>
       </div>
       <div id="landingZelftestSticky" class="zt-sticky-host"></div>
       <div id="landingZelftestMount"></div>
@@ -1902,24 +1908,16 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
     </div>
     <div class="peer-quotes-grid">
       <figure class="peer-quote">
-        <blockquote class="peer-quote-text">ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten.</blockquote>
-        <figcaption class="peer-quote-by"><span class="peer-quote-name">Sarah</span><span class="peer-quote-role">app developer</span></figcaption>
+        <blockquote class="peer-quote-text">ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten. Eén taak voor me neerleggen, geen lijst van twintig, en ik begin.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-avatar" aria-hidden="true">S</span><span class="peer-quote-meta"><span class="peer-quote-name">Sarah</span><span class="peer-quote-role">app developer</span></span></figcaption>
       </figure>
       <figure class="peer-quote">
-        <blockquote class="peer-quote-text">Ik kan niet prioriteren. Alles voelt even urgent. En dan schat ik de tijd helemaal verkeerd in. Het is niet luiheid hoor, het is dat mijn brein anders werkt.</blockquote>
-        <figcaption class="peer-quote-by"><span class="peer-quote-name">Mirthe</span><span class="peer-quote-role">zelfstandig professional</span></figcaption>
+        <blockquote class="peer-quote-text">Alles voelt even urgent en ik schat de tijd verkeerd in. Drie taken per dag. Meer krijg ik toch niet gedaan, maar nu voelt het haalbaar.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-avatar" aria-hidden="true">M</span><span class="peer-quote-meta"><span class="peer-quote-name">Mirthe</span><span class="peer-quote-role">zelfstandig professional</span></span></figcaption>
       </figure>
       <figure class="peer-quote">
-        <blockquote class="peer-quote-text">Ik zit in mijn eigen hoofd en ik kan er niet uit. Het voelt als analysis paralysis waar je gewoon niet uit kan breken.</blockquote>
-        <figcaption class="peer-quote-by"><span class="peer-quote-name">Judith</span><span class="peer-quote-role">ondernemer</span></figcaption>
-      </figure>
-      <figure class="peer-quote">
-        <blockquote class="peer-quote-text">Ik ben mijn hele leven een underperformer geweest en niemand zei: je hebt ADHD. Nu begrijp ik eindelijk waarom ik niet kon doen wat iedereen zei dat ik moest doen.</blockquote>
-        <figcaption class="peer-quote-by"><span class="peer-quote-name">Eline</span><span class="peer-quote-role">coach</span></figcaption>
-      </figure>
-      <figure class="peer-quote">
-        <blockquote class="peer-quote-text">Het is een kermis met zestig attracties die tegelijkertijd afspeelt. Alles loopt door elkaar heen.</blockquote>
-        <figcaption class="peer-quote-by"><span class="peer-quote-name">Giel</span><span class="peer-quote-role">accountmanager</span></figcaption>
+        <blockquote class="peer-quote-text">Ik zit vast in mijn hoofd en kan er niet uit. De dagstart vraagt niet wat ik allemaal moet. Alleen wat de eerste stap is vandaag.</blockquote>
+        <figcaption class="peer-quote-by"><span class="peer-quote-avatar" aria-hidden="true">J</span><span class="peer-quote-meta"><span class="peer-quote-name">Judith</span><span class="peer-quote-role">ondernemer</span></span></figcaption>
       </figure>
     </div>
   </div>
@@ -2266,13 +2264,17 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
               <span data-i18n="pricing_compare_line3">Apps die je nooit opent</span>
               <span data-i18n="pricing_compare_amount3">€15</span>
             </div>
+            <div class="pricing-compare-line pricing-compare-line--total">
+              <span data-i18n="pricing_compare_total">Totaal vergeten</span>
+              <span data-i18n="pricing_compare_total_amount">€58/maand</span>
+            </div>
           </div>
         </div>
 
         <ul class="price-includes">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat1">Eén dagelijkse loop, geen systeem om bij te houden</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat2">Micro-stappen die het blokkeren doorbreken</span></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat3">Taken gefilterd op jouw energie van vandaag</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat1">Geen lijst die groeit terwijl jij stilstaat</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat2">Een eerste stap klein genoeg om echt te beginnen</span></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span data-i18n="price_feat3">Je dag past zich aan hoe vol je batterij vandaag is</span></li>
         </ul>
 
         <div class="pricing-cancel-help">
@@ -2292,7 +2294,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
           </span>
         </a>
         <div class="pricing-pay-trust">
-          <p data-i18n="price_trust_line">3 dagen gratis · 14 dagen niet goed, geld terug · Opzegbaar via Instellingen</p>
+          <p data-i18n="price_trust_line">3 dagen gratis · 14 dagen niet goed, geld terug</p>
         </div>
         <p class="pricing-yearly-link">
           <span data-i18n="pricing_yearly_prompt">Liever jaarlijks?</span>
