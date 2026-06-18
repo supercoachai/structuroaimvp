@@ -627,6 +627,9 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .live-demo-reset-outside{margin-top:10px;appearance:none;border:none;background:transparent;color:var(--night-muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 .live-demo-restart{margin-top:12px;appearance:none;border:1px solid #E2E8F0;background:#fff;color:#475569;padding:10px 14px;border-radius:12px;font:inherit;font-weight:600;font-size:12.5px;cursor:pointer;width:100%;transition:border-color 150ms,color 150ms,background 150ms;}
 .live-demo-restart:hover{border-color:var(--blue);color:var(--blue);background:#F8FAFF;}
+.live-demo-signup{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--story-accent);color:#fff;padding:13px 16px;border-radius:12px;font:inherit;font-weight:700;font-size:14px;text-decoration:none;width:100%;text-align:center;transition:background 150ms;}
+.live-demo-signup:hover{background:#234845;color:#fff;}
+.live-demo--in-phone .live-demo-signup{padding:11px 12px;font-size:12px;border-radius:10px;margin-top:10px;}
 /* ── Van testers (interactieve testimonials) ── */
 .vt-section{background:var(--white);padding:0;border-top:1px solid var(--story-border);}
 .vt-wrap{max-width:1080px;margin:0 auto;padding:72px 40px 40px;}
@@ -2105,6 +2108,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
                 <p class="live-demo-micro" id="liveDemoMicro">Eerste stap: open je inbox</p>
                 <button type="button" class="live-demo-cta" id="liveDemoCta">Start focus</button>
               </div>
+              <a href="#" class="live-demo-signup" data-signup-bridge="live_demo" data-event="live_demo_cta_click" data-ph-cta="live_demo" data-i18n="live_demo_signup">Begin jouw eerste dag →</a>
               <button type="button" class="live-demo-restart" id="liveDemoRestart" data-i18n="live_demo_restart">↻ Demo opnieuw doorlopen</button>
             </div>
           </div>
