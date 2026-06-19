@@ -99,7 +99,7 @@ const LP_BASE = {
   proofPlaceholder: 'Korte, echte quote van een tester komt hier.',
   ctaDefault: 'Start 3 dagen gratis',
   trustDefault: 'Geen verplichtingen. 3 dagen, daarna beslis jij.',
-  footer: 'Data in de EU · Opzeggen in een tik · Geen creditcard nodig',
+  footer: 'Data in de EU · Opzeggen in een tik',
 };
 window.LP_BASE = LP_BASE;
 
