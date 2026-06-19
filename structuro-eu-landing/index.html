@@ -168,7 +168,7 @@ h1 .stuck::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:
 .hero-recognition--primary{margin:28px 0 0;}
 .hero-recognition--primary a{display:inline-flex;align-items:center;gap:8px;font-size:17px;color:#fff;background:var(--story-accent);border:none;border-bottom:none;padding:15px 24px;border-radius:var(--r-md);box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 2px 0 rgba(0,0,0,.12),0 8px 20px -4px rgba(45,90,86,.28);transition:transform 140ms,background 140ms,box-shadow 140ms;}
 .hero-recognition--primary a:hover{transform:translateY(-1px);color:#fff;background:#234845;border-bottom:none;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 4px 14px -2px rgba(45,90,86,.32);}
-.hero-cta{margin-top:20px;}
+.hero-cta{margin-top:0;}
 .hero-cta .btn-primary,.hero-cta .btn-secondary{min-height:52px;align-items:center;flex-shrink:0;white-space:nowrap;}
 .hero-cta-note{margin:10px 0 0;font-size:13px;color:var(--story-text-muted);line-height:1.45;max-width:420px;}
 .btn-primary{appearance:none;border:none;cursor:pointer;background:var(--story-cta);color:#fff;padding:15px 24px;border-radius:var(--r-md);font-weight:600;font-size:16px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 2px 0 rgba(0,0,0,.12),0 8px 20px -4px rgba(26,26,27,.28);transition:transform 140ms,background 140ms,box-shadow 140ms;text-decoration:none;}
@@ -1831,17 +1831,9 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <div class="section-eyebrow hero-eyebrow" data-i18n="hero_eyebrow">Voor ADHD-breinen die niet beginnen</div>
       <h1 data-i18n="hero_h1">Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.</h1>
       <p class="hero-positioning" data-i18n="hero_positioning">Al je taken blijven in Structuro staan.<span class="hero-positioning-gap" aria-hidden="true"></span>Dagstart kiest er maximaal drie voor vandaag.</p>
-      <div class="hero-cta">
-        <a href="#" class="btn-primary" data-signup-bridge="hero" data-event="hero_cta_click" data-ph-cta="hero"><span data-i18n="hero_cta_start">Start gratis</span>
-          <span class="arrow-r">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </span>
-        </a>
-      </div>
-      <p class="hero-recognition">
+      <p class="hero-recognition hero-recognition--primary">
         <a href="#brein-termen" data-ph-cta="hero_herkenning" data-i18n="hero_recognition">Tik aan wat klopt →</a>
       </p>
-      <p class="hero-cta-note" data-i18n="hero_cta_note">Geen download. Zet op je homescreen als app.</p>
     </div>
 
     <div class="phone-tilt-wrap phone-tilt-wrap--desktop">
