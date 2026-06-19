@@ -150,7 +150,7 @@
     var PH_API_HOST =
       typeof window.__STRUCTURO_PH_API_HOST__ === "string"
         ? window.__STRUCTURO_PH_API_HOST__.trim()
-        : "https://t.structuro.eu";
+        : "/ph";
     var PH_ARRAY_SRC = PH_API_HOST.replace(/\/+$/, "") + "/static/array.js";
 
     var existing = document.querySelector('script[src="' + PH_ARRAY_SRC + '"]');
