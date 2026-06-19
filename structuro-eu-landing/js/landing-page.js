@@ -25,9 +25,11 @@ if (heroSlidesMobile.length > 0) {
 }
 
 const navEl = document.getElementById('nav');
-const onScroll = () => navEl.classList.toggle('scrolled', window.scrollY > 8);
-window.addEventListener('scroll', onScroll, { passive: true });
-onScroll();
+if (navEl) {
+  const onScroll = () => navEl.classList.toggle('scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
 
 // Scroll reveal — fade only
 const makeObserver = (threshold = 0.12) => new IntersectionObserver((entries) => {
@@ -105,8 +107,9 @@ const TRANSLATIONS = {
     hero_eyebrow: 'Voor ADHD-breinen die niet beginnen',
     hero_h1: 'Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.',
     hero_positioning: 'Al je taken blijven in Structuro staan.<span class="hero-positioning-gap" aria-hidden="true"></span>Dagstart kiest er maximaal drie voor vandaag.',
-    hero_cta_note: 'Geen download. Zet op je homescreen als app.',
+    hero_cta_start: 'Start gratis',
     hero_recognition: 'Tik aan wat klopt →',
+    hero_cta_note: 'Geen download. Zet op je homescreen als app.',
     media_eyebrow: 'Gezien in',
     peer_eyebrow: 'Wat anderen zeggen',
     badge1_title: 'Energie bepaalt workload', badge1_sub: 'Geen one-size-fits-all',
@@ -197,6 +200,10 @@ const TRANSLATIONS = {
     waarom_sub: "Van de 50 ADHD'ers die we voor Structuro persoonlijk interviewden, vertelde 95% over burn-out: doorgemaakt, lopend, of net op de rand.",
     empathy_p4: 'Structuro lost geen burn-out op, maar het geeft je één werkbare dag tegelijk zonder het gevoel dat je de rest ook al had moeten doen.',
     vrouwen_eyebrow: 'Voor vrouwen',
+    vrouwen_h1: 'ADHD werkt anders bij vrouwen',
+    vrouwen_lede: 'Hormonen sturen dopamine, focus en emotieregulatie, en dus ook hoe ADHD zich elke dag uit. Structuro houdt daar rekening mee.',
+    vrouwen_disclaimer: 'Cycli verschillen per persoon. In Structuro stuur jij zelf: geen algoritme.',
+    cyclus_back: '← Terug naar landingspagina',
     vrouwen_teaser_h2: 'Werkt mee met je cyclus',
     vrouwen_teaser_lede: 'Structuro past je dag aan op je fase. Geen algoritme dat voor je beslist.',
     vrouwen_teaser_link: 'Lees hoe cyclus en ADHD samenkomen',
@@ -294,8 +301,9 @@ const TRANSLATIONS = {
     hero_eyebrow: 'For ADHD brains that don\u2019t start',
     hero_h1: 'You know what you<br/>need to do.<br/>You just don\'t <span class="stuck">start</span>.',
     hero_positioning: 'All your tasks stay in Structuro.<span class="hero-positioning-gap" aria-hidden="true"></span>Day start picks up to three for today.',
-    hero_cta_note: 'No download. Add to your home screen like an app.',
+    hero_cta_start: 'Start free',
     hero_recognition: 'Tap what fits →',
+    hero_cta_note: 'No download. Add to your home screen as an app.',
     media_eyebrow: 'As seen in',
     peer_eyebrow: 'What others say',
     badge1_title: 'Energy drives your workload', badge1_sub: 'No one-size-fits-all',
@@ -386,6 +394,10 @@ const TRANSLATIONS = {
     waarom_sub: 'Of the 50 people with ADHD we personally interviewed for Structuro, 95% talked about burnout: past, ongoing, or right on the edge.',
     empathy_p4: 'Structuro doesn\'t fix burnout, but it gives you one workable day at a time, without the feeling that you should have done the rest already.',
     vrouwen_eyebrow: 'For women',
+    vrouwen_h1: 'ADHD works differently for women',
+    vrouwen_lede: 'Hormones steer dopamine, focus and emotion regulation, and thus how ADHD shows up each day. Structuro accounts for that.',
+    vrouwen_disclaimer: 'Cycles differ per person. In Structuro you stay in control: no algorithm.',
+    cyclus_back: '← Back to homepage',
     vrouwen_teaser_h2: 'Works with your cycle',
     vrouwen_teaser_lede: 'Structuro adapts your day to your phase. No algorithm deciding for you.',
     vrouwen_teaser_link: 'Read how cycle and ADHD connect',
@@ -490,8 +502,11 @@ function setLang(lang) {
   if (typeof window.refreshLiveDemoCopy === 'function') window.refreshLiveDemoCopy();
   if (typeof window.refreshFounderStoryLabels === 'function') window.refreshFounderStoryLabels();
   if (typeof window.refreshZelftestCopy === 'function') window.refreshZelftestCopy();
-  document.getElementById('btnNL').classList.toggle('active', lang === 'nl');
-  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  if (typeof window.updateCycleText === 'function') window.updateCycleText(lang);
+  var btnNL = document.getElementById('btnNL');
+  var btnEN = document.getElementById('btnEN');
+  if (btnNL) btnNL.classList.toggle('active', lang === 'nl');
+  if (btnEN) btnEN.classList.toggle('active', lang === 'en');
   document.documentElement.lang = lang;
 }
 
