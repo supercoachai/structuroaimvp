@@ -65,12 +65,16 @@
       "destination": "/cyclus/index.html"
     },
     {
-      "source": "/ph/static/:path*",
-      "destination": "https://eu-assets.i.posthog.com/static/:path*"
+      "source": "/ph/static/:path(.*)",
+      "destination": "https://eu-assets.i.posthog.com/static/:path"
     },
     {
-      "source": "/ph/:path*",
-      "destination": "https://eu.i.posthog.com/:path*"
+      "source": "/ph/array/:path(.*)",
+      "destination": "https://eu-assets.i.posthog.com/array/:path"
+    },
+    {
+      "source": "/ph/:path(.*)",
+      "destination": "https://eu.i.posthog.com/:path"
     }
   ]
 }

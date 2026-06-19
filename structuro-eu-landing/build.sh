@@ -9,3 +9,5 @@ if [ -z "$POSTHOG_KEY" ]; then
 fi
 
 sed -i "s|__STRUCTURO_PH_PROJECT_KEY__|${POSTHOG_KEY}|g" js/ph-config.js
+# Herstel placeholder in comment (sed vervangt anders ook in docstring)
+sed -i 's|build.sh vervangt phc_[^ ]* tijdens deploy|build.sh vervangt __STRUCTURO_PH_PROJECT_KEY__ tijdens deploy|g' js/ph-config.js
