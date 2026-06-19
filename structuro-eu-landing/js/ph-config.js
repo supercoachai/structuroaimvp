@@ -1,10 +1,12 @@
 /**
- * Zelfde project key als NEXT_PUBLIC_POSTHOG_KEY (publiek).
- * Vercel: build.sh vervangt __STRUCTURO_PH_PROJECT_KEY__ tijdens deploy
- * (NEXT_PUBLIC_POSTHOG_KEY of NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN).
+ * Publieke PostHog project key van het Structuro-hoofdproject (zelfde project
+ * als de app op structuro.ai). Bewust hard ingebakken: de Vercel-env-var van
+ * dit landing-project wees naar een ander PostHog-project, waardoor landing-
+ * verkeer in het verkeerde project belandde. Door de key hier vast te zetten
+ * (geen placeholder meer) kan build.sh hem niet meer overschrijven.
  */
 window.__STRUCTURO_PH_KEY__ =
-  window.__STRUCTURO_PH_KEY__ || "__STRUCTURO_PH_PROJECT_KEY__";
+  window.__STRUCTURO_PH_KEY__ || "phc_oXc855N4x9xnfeXUDv2GVnXUsUHiEifFhofn3C7LAaz5";
 /**
  * Same-origin reverse proxy via Vercel rewrites (/ph -> eu.i.posthog.com,
  * /ph/static -> eu-assets.i.posthog.com). Adblocker-vriendelijk en bewezen.

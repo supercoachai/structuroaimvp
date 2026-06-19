@@ -2,12 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# De PostHog project key staat nu hard in js/ph-config.js (juiste project).
+# Alleen voor backward-compat: als er ooit weer een placeholder in staat én een
+# env-var is gezet, injecteren we die. We falen NOOIT meer op een ontbrekende
+# env-var, zodat een fout/ontbrekend env-veld de ingebakken key niet kan slopen.
 POSTHOG_KEY="${NEXT_PUBLIC_POSTHOG_KEY:-${NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:-}}"
-if [ -z "$POSTHOG_KEY" ]; then
-  echo "build.sh: zet NEXT_PUBLIC_POSTHOG_KEY of NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN" >&2
-  exit 1
+if [ -n "$POSTHOG_KEY" ] && grep -q "__STRUCTURO_PH_PROJECT_KEY__" js/ph-config.js; then
+  sed -i "s|__STRUCTURO_PH_PROJECT_KEY__|${POSTHOG_KEY}|g" js/ph-config.js
 fi
-
-sed -i "s|__STRUCTURO_PH_PROJECT_KEY__|${POSTHOG_KEY}|g" js/ph-config.js
-# Herstel placeholder in comment (sed vervangt anders ook in docstring)
-sed -i 's|build.sh vervangt phc_[^ ]* tijdens deploy|build.sh vervangt __STRUCTURO_PH_PROJECT_KEY__ tijdens deploy|g' js/ph-config.js
