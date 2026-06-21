@@ -34,7 +34,9 @@ function baseProperties(payload: AcquisitionEventPayload): Record<string, unknow
     entry_url: payload.entry_url ?? null,
     channel: "server",
     funnel: "acquisition",
-    $process_person_profile: false,
+    // Person-processing aan: distinctId is nu het PostHog anon-id, dus dit event
+    // hoort bij dezelfde persoon (anders blijft het een personless event).
+    $process_person_profile: true,
   };
 }
 

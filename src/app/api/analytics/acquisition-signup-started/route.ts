@@ -7,8 +7,9 @@ import {
 import { captureServerException } from "@/lib/posthog/server";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
+// UUID v1-v8: PostHog's anonieme distinct_id is v7, losse acquisitie-id's zijn v4.
 const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sanitize(raw: unknown, max = 128): string {
   if (typeof raw !== "string") return "";

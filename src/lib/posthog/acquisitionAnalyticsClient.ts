@@ -1,3 +1,5 @@
+import posthog from "posthog-js";
+
 import {
   getOrCreateAcquisitionVisitorId,
   hasAcquisitionLandingBeenTracked,
@@ -8,6 +10,25 @@ import {
 import { captureMarketingEvent } from "@/lib/posthog/track";
 import { bridgeChannelFromPath } from "@/lib/acquisition/bridgePaths";
 import { resolveLpVariant } from "@/lib/tiktok/lpConfig";
+
+/** Accepteert UUID v1-v8 (PostHog anon-id is v7). Spiegelt de server-route-validatie. */
+const VISITOR_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Stuur het PostHog anonieme distinct_id als visitor_id zodat server-side acquisitie-
+ * events bij dezelfde persoon horen als de client-events. Valt terug op een losse
+ * acquisitie-UUID als PostHog (nog) geen geldig id heeft.
+ */
+function resolveServerVisitorId(): string {
+  try {
+    const phId = posthog.get_distinct_id?.();
+    if (typeof phId === "string" && VISITOR_UUID_RE.test(phId)) return phId;
+  } catch {
+    /* ignore */
+  }
+  return getOrCreateAcquisitionVisitorId();
+}
 
 type SearchParamsLike = {
   toString(): string;
@@ -55,7 +76,7 @@ function serverPayload(
   searchParams: SearchParamsLike | null | undefined
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {
-    visitor_id: getOrCreateAcquisitionVisitorId(),
+    visitor_id: resolveServerVisitorId(),
     landing_path: attribution.landing_path,
     source: attribution.source,
     utm_source: attribution.utm_source,
