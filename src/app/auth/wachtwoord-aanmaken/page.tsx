@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { markPasswordSetupCompleted } from "@/lib/auth/passwordSetupProfile";
+import { isSamePasswordError } from "@/lib/auth/passwordSetupProfile";
 import { useI18n } from "@/lib/i18n";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -58,17 +58,20 @@ export default function WachtwoordAanmakenPage() {
       }
 
       const { error: upErr } = await supabase.auth.updateUser({ password });
-      if (upErr) {
+      // same_password = het wachtwoord staat al precies zo. Behandel als succes
+      // en ga door, anders blijft de gebruiker hangen op dit scherm.
+      if (upErr && !isSamePasswordError(upErr)) {
         setError(upErr.message || t("passwordCreatePostOnboarding.errSave"));
         return;
       }
 
-      const { error: profileErr } = await markPasswordSetupCompleted(
-        supabase,
-        user.id
-      );
-      if (profileErr) {
-        setError(profileErr.message || t("passwordCreatePostOnboarding.errSave"));
+      // Vlag server-side zetten: betrouwbaar ondanks de token-rotatie die
+      // updateUser({ password }) veroorzaakt.
+      const res = await fetch("/api/auth/complete-password-setup", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        setError(t("passwordCreatePostOnboarding.errSave"));
         return;
       }
 

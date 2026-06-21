@@ -66,6 +66,12 @@ export const APP_ROUTES = [
     method: "POST",
     status: [200, 400, 429, 502, 503, 405],
   },
+  {
+    path: "/api/auth/complete-password-setup",
+    kind: "api",
+    method: "POST",
+    status: [200, 401, 500, 405],
+  },
 ];
 
 /** Teksten die wijzen op een kapotte pagina in HTML. */

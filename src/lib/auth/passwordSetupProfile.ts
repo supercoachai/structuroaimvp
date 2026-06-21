@@ -20,3 +20,22 @@ export async function markPasswordSetupCompleted(
 
   return { error: error ? new Error(error.message) : null };
 }
+
+/**
+ * Supabase weigert updateUser({ password }) met 422 "same_password" als het
+ * nieuwe wachtwoord gelijk is aan het bestaande. Bij het instellen van een
+ * wachtwoord betekent dat: het wachtwoord staat al goed. Behandel dit als succes
+ * i.p.v. een harde fout, anders zit de gebruiker vast in een lus.
+ */
+export function isSamePasswordError(err: unknown): boolean {
+  if (!err) return false;
+  const code =
+    typeof err === "object" && err !== null && "code" in err
+      ? String((err as { code?: unknown }).code ?? "")
+      : "";
+  if (code === "same_password") return true;
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return message
+    .toLowerCase()
+    .includes("should be different from the old password");
+}
