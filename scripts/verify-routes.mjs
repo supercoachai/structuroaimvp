@@ -21,15 +21,14 @@ const chunkCache = new Map();
 
 function extractAssetUrls(html) {
   const urls = new Set();
-  const patterns = [
-    /\/_next\/static\/chunks\/[^"'\s)]+/g,
-    /\/_next\/static\/css\/[^"'\s)]+/g,
-    /\/_next\/static\/media\/[^"'\s)]+/g,
-  ];
-  for (const re of patterns) {
-    for (const m of html.matchAll(re)) {
-      urls.add(m[0].split("?")[0]);
-    }
+  // Belangrijk: RSC flight-data (self.__next_f.push) splitst strings soms midden
+  // in een URL over chunk-grenzen, bijv. "/_next/static/media/e4af" + "272….woff2".
+  // We eisen daarom een complete bestandsextensie, zodat zulke fragmenten geen
+  // valse 404 opleveren. Backslash sluit ook geëscapete quotes (\") in flight-data af.
+  const re =
+    /\/_next\/static\/(?:chunks|css|media)\/[^"'\s)\\]+?\.(?:js|css|woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|svg)\b/g;
+  for (const m of html.matchAll(re)) {
+    urls.add(m[0].split("?")[0]);
   }
   return [...urls];
 }

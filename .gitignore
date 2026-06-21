@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# QA audit artifacts (Playwright + seeded session secrets)
+/tests/.auth/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # next.js
 /.next/
 /out/

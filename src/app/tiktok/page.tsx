@@ -42,7 +42,9 @@ export default async function TikTokLandingPage({
   const variant = resolveLpVariant({
     campaign: params.campaign ?? null,
     utmContent: params.utm_content ?? null,
+    utmCampaign: params.utm_campaign ?? null,
     hero: params.hero ?? null,
+    channel: "tiktok",
   });
 
   return (

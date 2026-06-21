@@ -51,13 +51,16 @@ const STORY_DARK_LAYER: LpThemeTokens = {
   footerBg: "rgba(26, 26, 27, 0.92)",
 };
 
-/** Hero C is dark-focus; andere heroes op lichte achtergrond, ook bij theme: dark campagnes. */
+/**
+ * Acquisitie-bridges (/start én /tiktok) delen de Story Layer, zodat de funnel
+ * naar /registreren visueel consistent is. Hero C = donkere variant.
+ */
 export function getLpThemeTokens(
   campaign: LpCampaign,
   heroId?: LpHeroId,
   channel?: BridgeChannel
 ): LpThemeTokens {
-  if (channel === "organic") {
+  if (channel === "organic" || channel === "tiktok") {
     return heroId === "C" ? STORY_DARK_LAYER : STORY_LAYER;
   }
 

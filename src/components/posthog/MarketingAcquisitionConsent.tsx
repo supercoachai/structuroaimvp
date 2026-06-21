@@ -4,6 +4,7 @@ import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 
 import { isCookielessAnalyticsPath } from "@/lib/marketingPaths";
+import { bootstrapCookielessSessionReplay } from "@/lib/posthog/clientInit";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 
 /**
@@ -19,6 +20,12 @@ export function MarketingAcquisitionConsent() {
     if (consent !== "unknown") return;
     deny();
   }, [pathname, consent, deny]);
+
+  useLayoutEffect(() => {
+    if (!isCookielessAnalyticsPath(pathname)) return;
+    if (consent === "unknown") return;
+    bootstrapCookielessSessionReplay(pathname);
+  }, [pathname, consent]);
 
   return null;
 }

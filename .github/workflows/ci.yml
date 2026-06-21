@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Annuleer oudere runs op dezelfde branch/PR zodra er een nieuwe push komt.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit + legacy tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Vitest + legacy
+        run: npm run test:all
+
+  e2e:
+    name: Anonieme funnel (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Geen secrets nodig: zonder Supabase-config draait de app in legacy-modus,
+      # waarin de anonieme /onboarding-entry net zo goed werkt (middleware-backstop).
+      QA_BASE_URL: http://127.0.0.1:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Installeer Playwright chromium
+        run: npm run test:e2e:install
+      - name: Build
+        run: npm run build
+      - name: Start productie-server
+        run: |
+          npx next start -p 3000 &
+          echo $! > .next-server.pid
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null "http://127.0.0.1:3000/login"; then
+              echo "Server bereikbaar na ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server niet bereikbaar binnen 60s" >&2
+          exit 1
+      - name: E2E (anonieme activatie-funnel)
+        run: npm run test:e2e
+      - name: Stop server
+        if: always()
+        run: kill "$(cat .next-server.pid)" 2>/dev/null || true
+      - name: Upload Playwright-rapport bij falen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

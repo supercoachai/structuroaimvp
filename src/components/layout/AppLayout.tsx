@@ -17,6 +17,7 @@ import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dags
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useI18n } from '@/lib/i18n';
 import { TrialBanner } from '@/components/TrialBanner';
+import AnonymousAccountBanner from '@/components/account/AnonymousAccountBanner';
 import AppShellSuspenseFallback from '@/components/shell/AppShellSuspenseFallback';
 
 const DagstartOverlay = dynamic(
@@ -236,6 +237,7 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
         </header>
 
         {showMainContent ? <TrialBanner /> : null}
+        {showMainContent ? <AnonymousAccountBanner /> : null}
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <main

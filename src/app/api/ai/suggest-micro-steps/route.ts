@@ -10,8 +10,32 @@ import {
   consumeMicroStepsAiQuota,
   peekMicroStepsAiQuota,
 } from "@/lib/ai/microStepsRateLimit";
+import { consumeAnonymousMicroStepsQuota } from "@/lib/ai/anonymousMicroStepsRateLimit";
+import { getClientIp } from "@/lib/wachtlijst/rateLimit";
 import { matchMicroStepTemplate } from "@/lib/ai/microStepTemplates";
 import { suggestMicroSteps } from "@/lib/ai/suggestMicroSteps";
+
+/** AI-generatiefouten op een uniforme JSON-respons mappen. */
+function suggestionErrorResponse(error: unknown): NextResponse {
+  const message = error instanceof Error ? error.message : "unknown";
+  if (message === "ai_not_configured") {
+    return NextResponse.json(
+      { ok: false, error: "ai_not_configured" },
+      { status: 503 }
+    );
+  }
+  if (message === "invalid_micro_steps") {
+    return NextResponse.json(
+      { ok: false, error: "generation_failed" },
+      { status: 500 }
+    );
+  }
+  console.error("suggest-micro-steps:", error);
+  return NextResponse.json(
+    { ok: false, error: "generation_failed" },
+    { status: 500 }
+  );
+}
 
 type RequestBody = {
   title?: string;
@@ -71,8 +95,39 @@ async function postSuggestMicroSteps(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Anonieme onboarding-gebruiker: AI-microstappen mogen geprobeerd worden vóór
+  // account-aanmaak. Strikte best-effort IP-limiet i.p.v. de per-user DB-quota.
   if (!user) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    const anonQuota = consumeAnonymousMicroStepsQuota(getClientIp(request));
+    if (!anonQuota.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "rate_limited",
+          limit: anonQuota.limit,
+          remaining: anonQuota.remaining,
+        },
+        { status: 429 }
+      );
+    }
+
+    try {
+      const result = await suggestMicroSteps({
+        title,
+        energyLevel,
+        durationMin,
+        locale,
+      });
+      return NextResponse.json({
+        ok: true,
+        steps: result.steps,
+        source: result.source,
+        remaining: anonQuota.remaining,
+        limit: anonQuota.limit,
+      });
+    } catch (error) {
+      return suggestionErrorResponse(error);
+    }
   }
 
   let peekQuota;
@@ -120,24 +175,7 @@ async function postSuggestMicroSteps(request: Request) {
       limit: quota.limit,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown";
-    if (message === "ai_not_configured") {
-      return NextResponse.json(
-        { ok: false, error: "ai_not_configured" },
-        { status: 503 }
-      );
-    }
-    if (message === "invalid_micro_steps") {
-      return NextResponse.json(
-        { ok: false, error: "generation_failed" },
-        { status: 500 }
-      );
-    }
-    console.error("suggest-micro-steps:", error);
-    return NextResponse.json(
-      { ok: false, error: "generation_failed" },
-      { status: 500 }
-    );
+    return suggestionErrorResponse(error);
   }
 }
 

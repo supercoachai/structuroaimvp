@@ -14,6 +14,7 @@ import { getCalendarDateAmsterdam, getTomorrowCalendarDateAmsterdam } from "@/li
 import { trackShutdownCompleted } from "@/utils/events";
 import { useI18n } from "@/lib/i18n";
 import { captureProductEvent } from "@/lib/posthog/track";
+import { trackShutdownCompletedServerBackup } from "@/lib/posthog/activationAnalyticsClient";
 import { formatCompletedTimeAmsterdam } from "@/lib/dagafsluiting/formatCompletedTime";
 import DagafsluitingFlowShell from "@/components/dagafsluiting/DagafsluitingFlowShell";
 import DagafsluitingStepDone, {
@@ -200,6 +201,11 @@ export default function DayShutdown({ onComplete }: DayShutdownProps) {
       captureProductEvent("shutdown_completed", {
         tasks_completed_count: completedRows.length,
         tasks_moved_count: selectedIds.length,
+      });
+      trackShutdownCompletedServerBackup({
+        tasks_completed_count: completedRows.length,
+        tasks_moved_count: selectedIds.length,
+        satisfaction_level: satisfactionLevel,
       });
 
       window.setTimeout(() => {

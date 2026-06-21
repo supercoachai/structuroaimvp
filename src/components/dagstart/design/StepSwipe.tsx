@@ -8,6 +8,10 @@ import {
   clampDagstartSelection,
   dagstartSlotCapacity,
 } from "@/lib/dagstart/dagstartPickLimits";
+import {
+  resolveSwipeDecision,
+  type DagstartSwipeDecision,
+} from "@/lib/dagstart/resolveSwipeDecision";
 import { toast } from "@/components/Toast";
 import { fireDagstartCompleteConfetti } from "@/lib/dagstartConfetti";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
@@ -18,6 +22,8 @@ import {
   DAGSTART_ENERGIES,
   type DagstartTaskCard,
 } from "./types";
+
+export type DagstartSwipeDecideResult = DagstartSwipeDecision;
 
 type StepSwipeProps = {
   tasks: DagstartTaskCard[];
@@ -104,48 +110,54 @@ export default function StepSwipe({
     });
   }, [tasks, kept, skippedIds]);
 
-  const decide = (id: string, action: "keep" | "skip") => {
+  const decide = (id: string, action: "keep" | "skip"): DagstartSwipeDecideResult => {
     if (action === "skip") {
       setSkippedIds((prev) => new Set(prev).add(id));
       setQueue((q) => q.filter((t) => t.id !== id));
-      return;
+      return "applied";
     }
     const task = tasks.find((t) => t.id === id);
-    if (!task) return;
+    if (!task) return "blocked";
 
+    let result: DagstartSwipeDecideResult = "blocked";
     setKept((currentKept) => {
-      if (currentKept.includes(id)) return currentKept;
-
-      const analysis = analyzeDagstartKeep(
+      const decision = resolveSwipeDecision({
+        action: "keep",
         task,
-        currentKept,
+        keptIds: currentKept,
         maxSlots,
-        extraDeadlineSlots
-      );
-      if (analysis.kind === "allow") {
+        extraDeadlineSlots,
+      });
+      result = decision;
+
+      if (decision === "applied") {
+        if (currentKept.includes(id)) return currentKept;
         setQueue((q) => q.filter((t) => t.id !== id));
         return [...currentKept, id];
       }
-      if (analysis.kind === "reject") {
+      if (decision === "blocked") {
         toast("Alle focusplekken zijn al gevuld.");
         return currentKept;
       }
+      // "pending": deadline boven de limiet, vraag expliciete bevestiging.
       onRequestDeadlineOverflow?.(task, () => {
         setKept((latest) => {
           if (latest.includes(id)) return latest;
-          const retry = analyzeDagstartKeep(
+          const retry = resolveSwipeDecision({
+            action: "keep",
             task,
-            latest,
+            keptIds: latest,
             maxSlots,
-            extraDeadlineSlots
-          );
-          if (retry.kind !== "allow") return latest;
+            extraDeadlineSlots,
+          });
+          if (retry !== "applied") return latest;
           setQueue((q) => q.filter((t) => t.id !== id));
           return [...latest, id];
         });
       });
       return currentKept;
     });
+    return result;
   };
 
   const handleReviewAgain = () => {
@@ -393,7 +405,9 @@ export default function StepSwipe({
           </div>
           <p className="ds-swipe-complete-title">Focus compleet voor vandaag.</p>
         </div>
-      ) : (
+      ) : null}
+
+      {queue.length > 0 ? (
         <div className="ds-swipe-deck">
           {queue.slice(0, 3).map((t, idx) => {
             const isTop = idx === 0;
@@ -404,6 +418,7 @@ export default function StepSwipe({
               extraDeadlineSlots
             );
             const keepBlocked =
+              selectionComplete ||
               analysis.kind === "reject" ||
               (analysis.kind === "overflow" && !onRequestDeadlineOverflow);
             return (
@@ -418,7 +433,7 @@ export default function StepSwipe({
             );
           })}
         </div>
-      )}
+      ) : null}
 
       </div>
 
@@ -450,7 +465,7 @@ type SwipeCardProps = {
   depth: number;
   isTop: boolean;
   keepDisabled?: boolean;
-  onDecide: (action: "keep" | "skip") => void;
+  onDecide: (action: "keep" | "skip") => DagstartSwipeDecideResult;
 };
 
 function energyLabel(maxSlots: number): string {
@@ -502,6 +517,17 @@ function SwipeCard({
     dragRef.current = emptyDragState();
     setDragX(0);
     setIsDragging(false);
+  };
+
+  const commitDecide = (action: "keep" | "skip") => {
+    const result = onDecide(action);
+    if (result === "applied") {
+      setDragX(action === "keep" ? 500 : -500);
+      setIsDragging(false);
+      dragRef.current.active = false;
+      return;
+    }
+    resetDrag();
   };
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -557,15 +583,9 @@ function SwipeCard({
         }
         return;
       }
-      setDragX(500);
-      setIsDragging(false);
-      dragRef.current.active = false;
-      setTimeout(() => onDecide("keep"), 220);
+      commitDecide("keep");
     } else if (drag.x < -SWIPE_COMMIT_THRESHOLD) {
-      setDragX(-500);
-      setIsDragging(false);
-      dragRef.current.active = false;
-      setTimeout(() => onDecide("skip"), 220);
+      commitDecide("skip");
     } else {
       resetDrag();
     }
@@ -636,11 +656,7 @@ function SwipeCard({
             type="button"
             className="ds-swipe-action skip"
             aria-label="Niet nu"
-            onClick={() => {
-              setDragX(-500);
-              setIsDragging(false);
-              setTimeout(() => onDecide("skip"), 220);
-            }}
+            onClick={() => commitDecide("skip")}
           >
             ← niet nu
           </button>
@@ -652,9 +668,7 @@ function SwipeCard({
             style={keepDisabled ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
             onClick={() => {
               if (keepDisabled) return;
-              setDragX(500);
-              setIsDragging(false);
-              setTimeout(() => onDecide("keep"), 220);
+              commitDecide("keep");
             }}
           >
             vandaag →

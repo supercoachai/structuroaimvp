@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Newsreader } from 'next/font/google'
 import './globals.css'
 import { AppProviders } from '@/components/AppProviders'
-import { STRUCTURO_LOCALE_STORAGE_KEY } from '@/lib/i18n/types'
+import { getLocaleBootstrapScript } from '@/lib/i18n/clientLocale'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -61,7 +61,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k=${JSON.stringify(STRUCTURO_LOCALE_STORAGE_KEY)};var l=localStorage.getItem(k);if(l==="en"||l==="nl")document.documentElement.lang=l;}catch(e){}})();`,
+            __html: getLocaleBootstrapScript(),
           }}
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />

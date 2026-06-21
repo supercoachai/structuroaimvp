@@ -25,6 +25,7 @@ import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import { trackDagstartCompletedServerBackup } from "@/lib/posthog/activationAnalyticsClient";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
 import { ensureFirstDagstartWelcomeTask } from "@/lib/onboardingWelcomeTask";
 import { updateProfileAfterDagstartComplete } from "@/lib/supabase/profileDagstartDb";
@@ -348,6 +349,22 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
           energy: appEnergy,
           task_count: top3.length,
         });
+        if (authUser?.id) {
+          trackDagstartCompletedServerBackup({
+            energy_level: appEnergy,
+            tasks_selected_count: top3.length,
+            top3_task_ids: top3.length > 0 ? top3 : null,
+            has_cycle_phase: Boolean(cyclePhase),
+            source: "app",
+          });
+        }
+        if (top3.length > 0) {
+          captureActivationFunnelEvent(ANALYTICS_EVENTS.dagstart_tasks_selected, {
+            task_count: top3.length,
+            energy_level: appEnergy,
+            source: "dagstart_flow",
+          });
+        }
         setStep(3);
       } catch (err: any) {
         console.error("Dagstart save error:", err);

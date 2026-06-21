@@ -389,6 +389,19 @@ export async function updateSession(
     ) {
       return supabaseResponse;
     }
+    // Anonieme acquisitie-entry: /onboarding zonder sessie start direct de lokale
+    // modus. Zonder dit bouncet een CTA-klik vóór React-hydratie (de anchor doet
+    // zijn default-navigatie, de client-handler is er nog niet) naar /login en
+    // raakt de bezoeker de anonieme funnel kwijt. De cookie is de bron van waarheid
+    // voor isLocalMode, dus dit maakt de entry robuust ongeacht hydratie-timing.
+    if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
+      supabaseResponse.cookies.set("structuro_local_mode", "1", {
+        path: "/",
+        maxAge: 604800,
+        sameSite: "lax",
+      });
+      return supabaseResponse;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     if (
@@ -693,6 +706,18 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (!hasAuth && !localModeCookie) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.next({ request });
+    }
+    // Zelfde anonieme entry-backstop als het Supabase-pad: /onboarding zonder
+    // sessie start direct lokale modus, zodat een CTA-klik vóór hydratie niet
+    // naar /login bouncet.
+    if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
+      const response = NextResponse.next({ request });
+      response.cookies.set("structuro_local_mode", "1", {
+        path: "/",
+        maxAge: 604800,
+        sameSite: "lax",
+      });
+      return applyLocalAnonymousOnboardingGuard(request, response, pathname);
     }
     const url = request.nextUrl.clone();
     url.pathname = "/login";

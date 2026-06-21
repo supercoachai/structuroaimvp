@@ -1,0 +1,11 @@
+{
+  "$schema": "https://cursor.com/schemas/environment.json",
+  "snapshot": "auto",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "Next dev",
+      "command": "npm run dev"
+    }
+  ]
+}

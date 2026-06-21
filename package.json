@@ -25,6 +25,8 @@
     "test:coverage": "vitest run --coverage",
     "test:legacy": "node scripts/run-legacy-tests.mjs",
     "test:all": "vitest run && node scripts/run-legacy-tests.mjs",
+    "test:e2e": "playwright test tests/anonymous-activation.spec.ts --project=chromium-desktop-1280",
+    "test:e2e:install": "playwright install --with-deps chromium",
     "test:task-put": "npx --yes tsx src/lib/buildTaskPutDbUpdates.test.ts",
     "test:focus-events": "npx --yes tsx src/lib/posthog/focusSessionEvents.test.ts",
     "supabase:start": "supabase start",
@@ -67,8 +69,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^16.2.4",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
@@ -80,6 +84,7 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "ws": "^8.21.0"
   }
 }

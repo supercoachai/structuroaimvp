@@ -16,6 +16,7 @@ export const ANALYTICS_EVENTS = {
   dagstart_swipe_exhausted: "dagstart_swipe_exhausted",
   dagstart_empty_selection_hint_shown: "dagstart_empty_selection_hint_shown",
   dagstart_empty_selection_hint_dismissed: "dagstart_empty_selection_hint_dismissed",
+  dagstart_tasks_selected: "dagstart_tasks_selected",
   dagstart_completed: "dagstart_completed",
   new_task_flow_completed: "new_task_flow_completed",
   cta_clicked: "cta_clicked",

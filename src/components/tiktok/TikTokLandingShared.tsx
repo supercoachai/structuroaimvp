@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 
 import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
 import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
@@ -12,7 +12,7 @@ export type TikTokHeroShellProps = {
   heroId: LpHeroId;
   channel: BridgeChannel;
   signupHref: string;
-  onCtaClick: () => void;
+  onCtaClick: (event: MouseEvent<HTMLAnchorElement>) => void;
   footerNote?: string;
   /** Geen regel onder CTA (organische bridge). */
   hideFooterNote?: boolean;

@@ -46,3 +46,9 @@ public/
 *.md
 DIAGNOSE-*.md
 Structuro_*.docx
+
+# Uitzonderingen: AI-configuratie die juist wel gelezen moet worden
+!AGENTS.md
+!.cursor/agents/*.md
+!BUGBOT.md
+!docs/qa/*.md

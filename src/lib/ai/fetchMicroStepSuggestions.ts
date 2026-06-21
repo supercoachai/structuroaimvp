@@ -43,10 +43,9 @@ export async function fetchMicroStepSuggestions(
     };
   }
 
-  const hasSession = await ensureSupabaseSession();
-  if (!hasSession) {
-    throw new Error("unauthorized");
-  }
+  // Best-effort sessie verversen voor ingelogde users. Anonieme onboarding-users
+  // mogen de AI-microstappen ook proberen; de API limiteert die per IP.
+  await ensureSupabaseSession();
 
   const res = await fetch("/api/ai/suggest-micro-steps", {
     method: "POST",

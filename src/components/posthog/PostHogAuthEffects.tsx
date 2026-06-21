@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import posthog from "posthog-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { markReturningUser } from "@/lib/auth/returningUser";
 import { isAnalyticsExcludedEmail } from "@/lib/analyticsInternal";
 import { useConsent } from "@/lib/posthog/ConsentContext";
 import {
@@ -12,6 +13,8 @@ import {
   PENDING_SIGNUP_KEY,
   persistSignupAttributionToProfile,
 } from "@/lib/posthog/signupAttribution";
+import { getFirstTouchSetOnceForPostHog } from "@/lib/posthog/firstTouchAttribution";
+import { linkAnonymousDistinctToUser } from "@/lib/posthog/identityStitch";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
 function signupDoneKey(uid: string) {
@@ -54,7 +57,7 @@ function tryCaptureSignup(user: {
   const createdMs = new Date(user.created_at ?? 0).getTime();
   if (!Number.isFinite(createdMs)) return;
   const ageMs = Date.now() - createdMs;
-  if (ageMs >= 0 && ageMs < 3 * 60 * 1000) {
+  if (ageMs >= 0 && ageMs < 30 * 60 * 1000) {
     captureActivationFunnelEvent("signup_completed", {
       channel: "client",
       source: getSignupAttributionSource(),
@@ -83,24 +86,31 @@ export function PostHogAuthEffects() {
         const user = session?.user;
         if (!user?.id) return;
 
-        if (consent === "granted") {
-          if (isAnalyticsExcludedEmail(user.email ?? null)) {
-            try {
-              posthog.reset();
-            } catch {
-              /* ignore */
-            }
-            return;
-          }
+        markReturningUser();
+
+        if (isAnalyticsExcludedEmail(user.email ?? null)) {
           try {
-            if (user.email) {
-              posthog.identify(user.id, { email: user.email });
-            } else {
-              posthog.identify(user.id);
-            }
+            posthog.reset();
           } catch {
             /* ignore */
           }
+          return;
+        }
+
+        // Identity-stitch: altijd user.id koppelen (ook vóór analytics-consent),
+        // e-mail alleen bij expliciete toestemming.
+        try {
+          const personProps: Record<string, unknown> = {};
+          if (consent === "granted" && user.email) {
+            personProps.email = user.email;
+          }
+          linkAnonymousDistinctToUser(
+            user.id,
+            Object.keys(personProps).length > 0 ? personProps : undefined,
+            getFirstTouchSetOnceForPostHog() ?? undefined
+          );
+        } catch {
+          /* ignore */
         }
 
         tryCaptureSignup(user);

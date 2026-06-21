@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withPostHogConfig } from "@posthog/nextjs-config";
+import { SECURITY_HEADERS } from "./src/lib/securityHeaders";
 
 /** Alleen tijdens `next dev` (true). Bij `next build` is NODE_ENV production → altijd uit in clientbundle. */
 const devResetToolbarEnabled = process.env.NODE_ENV === "development";
@@ -34,6 +35,14 @@ const nextConfig: NextConfig = {
         },
       ],
     };
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [...SECURITY_HEADERS],
+      },
+    ];
   },
   async redirects() {
     return [

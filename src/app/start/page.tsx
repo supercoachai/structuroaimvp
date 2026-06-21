@@ -28,6 +28,7 @@ export default async function OrganicStartPage({
   const variant = resolveLpVariant({
     campaign: params.campaign ?? LP_ORGANIC_DEFAULT_CAMPAIGN_ID,
     utmContent: params.utm_content ?? null,
+    utmCampaign: params.utm_campaign ?? null,
     hero: params.hero ?? null,
   });
 
