@@ -3,12 +3,16 @@
 import posthog from "posthog-js";
 import type { CaptureResult } from "posthog-js";
 
+import { isCookielessAnalyticsPath } from "@/lib/marketingPaths";
+
 import { posthogTracingHeaderHostnames } from "./tracingHeaders";
 import { POSTHOG_PROXY_API_HOST } from "./proxyHost";
 import { sanitizeCurrentUrl } from "./sanitizeCurrentUrl";
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
 
 let posthogInitOnce = false;
+let marketingReplayBootstrapped = false;
+let replayOptInDone = false;
 
 /** Release/omgeving op elke event (incl. $exception): "nieuw sinds commit X". */
 const RELEASE_VERSION =
@@ -60,8 +64,9 @@ function posthogBeforeSend(cr: CaptureResult | null): CaptureResult | null {
 }
 
 function clientApiHost(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim();
-  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  const fromEnv = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim().replace(/\/+$/, "");
+  // Direct posthog.com in env bypassed ad-blockers niet; same-origin /ph is de default.
+  if (fromEnv && !/posthog\.com/i.test(fromEnv)) return fromEnv;
   return POSTHOG_PROXY_API_HOST;
 }
 
@@ -74,6 +79,41 @@ function registerSiteGroup(): void {
   posthog.register({ site });
 }
 
+const CROSS_DOMAIN_DID_PARAM = "_ph_did";
+
+/** Anoniem distinct_id doorgegeven vanaf structuro.eu (cross-domain identity). */
+function readCrossDomainDistinctId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = new URLSearchParams(window.location.search).get(
+      CROSS_DOMAIN_DID_PARAM
+    );
+    const trimmed = raw?.trim();
+    if (!trimmed || trimmed.length < 8 || trimmed.length > 64) return null;
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
+/** Verwijder _ph_did uit de URL zodat hij niet meereist bij verdere navigatie. */
+function stripCrossDomainDistinctIdFromUrl(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has(CROSS_DOMAIN_DID_PARAM)) return;
+    params.delete(CROSS_DOMAIN_DID_PARAM);
+    const query = params.toString();
+    const cleanUrl =
+      window.location.pathname +
+      (query ? `?${query}` : "") +
+      window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Idempotent PostHog init voor error tracking (ook zonder analytics-consent). */
 export function ensurePostHogClientInitialized(): boolean {
   if (typeof window === "undefined") return false;
@@ -84,11 +124,19 @@ export function ensurePostHogClientInitialized(): boolean {
   const apiHost = clientApiHost();
   if (!apiHost) return false;
 
+  // Cross-domain: start met het distinct_id dat structuro.eu meegaf, zodat de
+  // bezoeker 1 persoon blijft. Bootstrap wordt genegeerd als er al een id is.
+  const crossDomainDistinctId = readCrossDomainDistinctId();
+
   posthog.init(key, {
     api_host: apiHost,
     ui_host: "https://eu.posthog.com",
     __add_tracing_headers: posthogTracingHeaderHostnames(),
-    person_profiles: "identified_only",
+    ...(crossDomainDistinctId
+      ? { bootstrap: { distinctID: crossDomainDistinctId } }
+      : {}),
+    /** Anonieme acquisitie-personen moeten bestaan om bij login te mergen. */
+    person_profiles: "always",
     /** Na opt_out: privacyvriendelijke telling zonder cookies (Paths, pageviews). */
     cookieless_mode: "on_reject",
     capture_performance: {
@@ -111,6 +159,8 @@ export function ensurePostHogClientInitialized(): boolean {
     session_recording: {
       maskAllInputs: true,
     },
+    /** Start pas expliciet op acquisitie-routes (zelfde patroon als structuro.eu). */
+    disable_session_recording: true,
     mask_all_text: true,
     mask_all_element_attributes: true,
     respect_dnt: true,
@@ -122,19 +172,25 @@ export function ensurePostHogClientInitialized(): boolean {
     environment: RELEASE_ENVIRONMENT,
   });
   registerSiteGroup();
-  ensureSessionReplayStarted();
+  if (crossDomainDistinctId) {
+    stripCrossDomainDistinctIdFromUrl();
+  }
   posthogInitOnce = true;
   return true;
 }
 
-/**
- * Zelfde patroon als structuro.eu: opt_in + startSessionRecording.
- * posthog.opt_out_capturing() mag hier niet: bij cookieless_mode on_reject vernietigt
- * dat sessionRecording en blokkeert replay (consent.isOptedOut() blijft true).
- */
-function ensureSessionReplayStarted(): void {
+function optInCapturingOnce(): void {
+  if (replayOptInDone) return;
+  replayOptInDone = true;
   try {
     posthog.opt_in_capturing();
+  } catch {
+    /* ignore */
+  }
+}
+
+function invokeStartSessionRecording(): void {
+  try {
     posthog.set_config({ disable_session_recording: false });
     if (typeof posthog.startSessionRecording === "function") {
       posthog.startSessionRecording();
@@ -144,23 +200,57 @@ function ensureSessionReplayStarted(): void {
   }
 }
 
+/**
+ * Cookieless acquisitie/activatie: opt-in + recording na consent-deny.
+ * posthog.opt_out_capturing() mag hier niet: bij cookieless_mode on_reject vernietigt
+ * dat sessionRecording en blokkeert replay (consent.isOptedOut() blijft true).
+ */
+export function bootstrapCookielessSessionReplay(
+  pathname?: string | null
+): void {
+  if (typeof window === "undefined" || !posthogInitOnce) return;
+  const path = pathname ?? window.location.pathname;
+  if (!isCookielessAnalyticsPath(path)) return;
+
+  optInCapturingOnce();
+
+  const start = () => invokeStartSessionRecording();
+
+  if (!marketingReplayBootstrapped) {
+    marketingReplayBootstrapped = true;
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(start, { timeout: 2500 });
+    } else {
+      setTimeout(start, 400);
+    }
+    return;
+  }
+
+  start();
+}
+
 /** Schakel product-analytics features in/uit zonder error tracking of replay te blokkeren. */
-export function applyPostHogAnalyticsConsent(granted: boolean): void {
+export function applyPostHogAnalyticsConsent(
+  granted: boolean,
+  pathname?: string | null
+): void {
   if (!posthogInitOnce) return;
   try {
     if (granted) {
+      optInCapturingOnce();
       posthog.set_config({
         capture_pageleave: true,
         capture_performance: { web_vitals: true },
       });
       registerSiteGroup();
+      invokeStartSessionRecording();
     } else {
       posthog.set_config({
         capture_pageleave: false,
         capture_performance: { web_vitals: false },
       });
+      bootstrapCookielessSessionReplay(pathname);
     }
-    ensureSessionReplayStarted();
   } catch {
     /* ignore */
   }

@@ -70,6 +70,14 @@
     if (lang === "nl" || lang === "en") {
       bridgeParams.set("lang", lang);
     }
+    // Cross-domain identity: geef het anonieme PostHog distinct_id mee zodat
+    // structuro.ai met hetzelfde ID kan bootstrappen (1 persoon over .eu → .ai).
+    try {
+      if (window.posthog && typeof window.posthog.get_distinct_id === "function") {
+        var did = window.posthog.get_distinct_id();
+        if (did) bridgeParams.set("_ph_did", did);
+      }
+    } catch (e) {}
     return "https://www.structuro.ai" + bridgePath + "?" + bridgeParams.toString();
   }
 
@@ -81,6 +89,29 @@
   }
 
   window.structuroSignupBridgeUrl = structuroSignupBridgeUrl;
+
+  /**
+   * Herbereken de bridge-href vlak vóór navigatie. De href wordt al gezet na
+   * PostHog-init (applySignupBridgeLinks), maar bij een snelle klik kan PostHog
+   * nog laden. Op pointerdown pakken we het meest verse distinct_id mee.
+   */
+  function attachSignupBridgeRefresh() {
+    if (window.__structuroEuBridgeRefreshBound) return;
+    window.__structuroEuBridgeRefreshBound = true;
+
+    document.addEventListener(
+      "pointerdown",
+      function (e) {
+        var target = e.target;
+        if (!target || !target.closest) return;
+        var el = target.closest("[data-signup-bridge]");
+        if (!el) return;
+        var content = el.getAttribute("data-signup-bridge") || "cta";
+        el.setAttribute("href", structuroSignupBridgeUrl(content));
+      },
+      true
+    );
+  }
 
   function attachCtaClicks() {
     if (window.__structuroEuCtaBound) return;
@@ -334,6 +365,7 @@
 
   function attachLandingMeasurement() {
     applySignupBridgeLinks();
+    attachSignupBridgeRefresh();
     attachScrollDepthMilestones();
     attachSectionVisibility();
     attachFaqToggle();
