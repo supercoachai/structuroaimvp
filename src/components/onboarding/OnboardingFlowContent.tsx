@@ -20,6 +20,10 @@ import type { User } from "@supabase/supabase-js";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { completeOnboardingProfile } from "@/lib/onboardingMutations";
 import { PASSWORD_CREATE_PATH } from "@/lib/auth/passwordSetupProfile";
+import {
+  getStoredSignupCampaign,
+  getStoredSignupSource,
+} from "@/lib/posthog/signupAttribution";
 import CycleSetupForm from "@/components/cycle/CycleSetupForm";
 import InfoButton from "@/components/info/InfoButton";
 import CycleEnergyContext from "@/components/cycle/CycleEnergyContext";
@@ -50,8 +54,7 @@ import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import { addTaskToStorage, getTasksFromStorage, saveCheckInToStorage, updateTaskInStorage } from "@/lib/localStorageTasks";
 import { toast } from "@/components/Toast";
 import {
-  COMPACT_FIRST_DAY_SLIDE,
-  COMPACT_NAME_SLIDE,
+  COMPACT_CYCLE_SLIDE,
   COMPACT_PROGRESS_STEPS,
   COMPACT_SLIDE_MS,
   compactPrevSlide,
@@ -203,8 +206,22 @@ const STEP_COUNT = 10;
 const SLIDE_MS = ONBOARDING_COMPACT_MODE ? COMPACT_SLIDE_MS : 1200;
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
-const NAME_SLIDE_INDEX = 0;
-const WELCOME_SLIDE_INDEX = 1;
+/** Account-scherm na de eerste dagstart, met behoud van de acquisitie-attributie. */
+function buildPostDagstartRegistrerenHref(): string {
+  const params = new URLSearchParams();
+  const source = getStoredSignupSource();
+  if (source && source !== "direct") {
+    params.set("source", source);
+    params.set("utm_source", source);
+  }
+  const campaign = getStoredSignupCampaign();
+  if (campaign) params.set("utm_campaign", campaign);
+  const query = params.toString();
+  return `/registreren${query ? `?${query}` : ""}`;
+}
+
+const WELCOME_SLIDE_INDEX = 0;
+const NAME_SLIDE_INDEX = 1;
 const ENERGY_SLIDE_INDEX = 2;
 const PICK_CHOICE_SLIDE_INDEX = 3;
 const FOCUS_MODE_SLIDE_INDEX = 4;
@@ -1105,6 +1122,12 @@ export default function OnboardingFlowContent({
   const goNext = useCallback(async () => {
     if (step >= STEP_COUNT - 1) return;
     if (step === MICRO_MERGED_SLIDE_INDEX && parkerenStage < 4) return;
+    // Compacte flow: welkom-intro gaat naar het cyclus-scherm, daarna de eerste
+    // dagstart. De naamvraag volgt pas daarna, op het account-scherm.
+    if (ONBOARDING_COMPACT_MODE && step === WELCOME_SLIDE_INDEX) {
+      setStep(COMPACT_CYCLE_SLIDE);
+      return;
+    }
     if (step === FIRST_DAY_SLIDE_INDEX) {
       if (!firstDayReady) return;
       setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
@@ -1138,7 +1161,13 @@ export default function OnboardingFlowContent({
           /* ignore */
         }
       }
-      setStep(ONBOARDING_COMPACT_MODE ? COMPACT_FIRST_DAY_SLIDE : step + 1);
+      // Tijdelijk ingekort: na de naamvraag ronden we de onboarding direct af
+      // (eerste dagstart en demo-slides staan uit).
+      if (ONBOARDING_COMPACT_MODE) {
+        await finish();
+        return;
+      }
+      setStep(step + 1);
       return;
     }
     setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
@@ -1160,14 +1189,15 @@ export default function OnboardingFlowContent({
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
     cycleWelcomeCrossfadeTimersRef.current = [];
     setCycleWelcomeCrossfade("idle");
-    setStep(FIRST_DAY_SLIDE_INDEX);
+    // Naam vragen net vóór de eerste dagstart, zodat de begroeting persoonlijk is.
+    setStep(ONBOARDING_COMPACT_MODE ? NAME_SLIDE_INDEX : FIRST_DAY_SLIDE_INDEX);
   }, []);
 
   const advanceFromCycleToFirstDay = useCallback(() => {
     cycleWelcomeCrossfadeTimersRef.current.forEach((id) => window.clearTimeout(id));
     cycleWelcomeCrossfadeTimersRef.current = [];
     setCycleWelcomeCrossfade("idle");
-    setStep(FIRST_DAY_SLIDE_INDEX);
+    setStep(ONBOARDING_COMPACT_MODE ? NAME_SLIDE_INDEX : FIRST_DAY_SLIDE_INDEX);
   }, []);
 
   const skipTourToCycle = useCallback(() => {
@@ -1359,10 +1389,17 @@ export default function OnboardingFlowContent({
         setLocalOnboardingCompleted();
         setLocalOnboardingDoneCookieOnClient();
         clearLocalSessionFresh();
-        try {
-          window.localStorage.setItem("structuro_user_name", displayName);
-        } catch {
-          /* ignore */
+        // Alleen een echte naam bewaren. De aanspreeknaam vragen we nu pas op
+        // /registreren; de placeholder mag dat veld niet voorvullen.
+        if (firstName.trim().length >= 2) {
+          try {
+            window.localStorage.setItem(
+              "structuro_user_name",
+              firstName.trim().slice(0, 200)
+            );
+          } catch {
+            /* ignore */
+          }
         }
       }
       setDagstartCookieOnClient();
@@ -1391,9 +1428,21 @@ export default function OnboardingFlowContent({
         Date.now() - onboardingStartedAtRef.current
       ),
     });
-    window.location.assign(user?.id ? PASSWORD_CREATE_PATH : "/");
+    if (user?.id) {
+      window.location.assign(PASSWORD_CREATE_PATH);
+      return;
+    }
+    // Anonieme acquisitie-flow: na de eerste dagstart vragen we de aanspreeknaam
+    // en maken we samen een account (Google, Outlook of eigen login) op /registreren.
+    window.location.assign(buildPostDagstartRegistrerenHref());
   };
 
+  const onStorySlide =
+    step === WELCOME_SLIDE_INDEX ||
+    step === NAME_SLIDE_INDEX ||
+    step === CYCLE_OPT_IN_SLIDE_INDEX ||
+    step === FIRST_DAY_SLIDE_INDEX;
+  const langActiveClass = onStorySlide ? "bg-[var(--story-cta)] text-white" : "bg-blue-600 text-white";
   const obLanguageToggle = (
     <div
       className="absolute right-4 top-6 z-30 flex gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-0.5 text-xs font-semibold shadow-sm backdrop-blur-sm"
@@ -1403,14 +1452,14 @@ export default function OnboardingFlowContent({
       <button
         type="button"
         onClick={() => setLocale("nl")}
-        className={`rounded-md px-2 py-1 ${locale === "nl" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+        className={`rounded-md px-2 py-1 ${locale === "nl" ? langActiveClass : "text-slate-600 hover:bg-slate-100"}`}
       >
         NL
       </button>
       <button
         type="button"
         onClick={() => setLocale("en")}
-        className={`rounded-md px-2 py-1 ${locale === "en" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+        className={`rounded-md px-2 py-1 ${locale === "en" ? langActiveClass : "text-slate-600 hover:bg-slate-100"}`}
       >
         EN
       </button>
@@ -1421,7 +1470,7 @@ export default function OnboardingFlowContent({
   const nameStepComplete = nameOk;
   const slideUsesCrossfade = cycleWelcomeCrossfade !== "idle";
 
-  const backBtn = (step > 0 && (!ONBOARDING_COMPACT_MODE || step > COMPACT_NAME_SLIDE)) && (
+  const backBtn = step > 0 && (
     <button
       type="button"
       onClick={goPrev}
@@ -1443,43 +1492,17 @@ export default function OnboardingFlowContent({
             style={{
               width: `${STEP_COUNT * 100}vw`,
               transform: `translateX(-${step * 100}vw)`,
-              transition: slideUsesCrossfade
-                ? "none"
-                : `transform ${SLIDE_MS}ms ${EASE}`,
+              // Compacte modus springt tussen niet-aaneengesloten slides
+              // (welkom→cyclus→naam). Zonder transitie voorkomen we dat de
+              // oude tussenliggende onboarding-slides zichtbaar voorbijvliegen.
+              transition:
+                slideUsesCrossfade || ONBOARDING_COMPACT_MODE
+                  ? "none"
+                  : `transform ${SLIDE_MS}ms ${EASE}`,
             }}
           >
-            {/* ── 1 — Naam ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
-              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
-                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
-                <div className="flex flex-col items-center text-center">
-                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{t("onboarding.nameTitle")}</h2>
-                <p className="mt-3 text-sm text-gray-600">{t("onboarding.nameSubtitle")}</p>
-                <input
-                  type="text"
-                  autoComplete="given-name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && nameOk && !saving) void goNext(); }}
-                  placeholder={t("onboarding.namePh")}
-                  className="mt-8 w-full max-w-sm px-4 py-3.5 rounded-xl border border-gray-200 text-center text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                />
-                <button
-                  type="button"
-                  disabled={!nameOk || saving}
-                  onClick={() => void goNext()}
-                  className="mt-8 w-full max-w-sm py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-[700ms]"
-                >
-                  {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
-                </button>
-                </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ── 2 — Welkom (geanimeerde intro) ── */}
-            <section data-ob-slide className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar">
+            {/* ── 1 — Welkom (geanimeerde intro, Story Layer) ── */}
+            <section data-ob-slide className="st-story-bg box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar text-[var(--story-text)]">
               <style>{`
                 @keyframes ob-welcome-blue-in {
                   from { opacity: 0; transform: translateY(12px); }
@@ -1505,18 +1528,18 @@ export default function OnboardingFlowContent({
                     }`}
                   />
                   <h1
-                    className={`text-2xl font-bold text-gray-900 transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:text-3xl ${
+                    className={`st-story-serif text-[2rem] font-semibold leading-[1.08] tracking-[-0.01em] text-[var(--story-text)] transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:text-[2.5rem] ${
                       welcomeShowTitle ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                     }`}
                   >
                     {t("onboarding.welcomeH1")}
                   </h1>
-                  <div className="mt-6 flex min-h-[5.5rem] max-w-full flex-col items-center gap-3 text-center text-base leading-[1.55] tracking-[0.01em] text-gray-700 sm:text-lg">
+                  <div className="mt-6 flex min-h-[5.5rem] max-w-full flex-col items-center gap-3 text-center text-base leading-[1.55] tracking-[0.01em] text-[var(--story-text)] sm:text-lg">
                     {welcomeTaglineCharCount > 0 ? (
-                      <p className="text-balance text-gray-700">
+                      <p className="text-balance text-[var(--story-text)]">
                         {welcomeTaglineTyped.slice(0, welcomeTaglineCharCount)}
                         <span
-                          className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
+                          className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-[var(--story-accent)] align-middle ${
                             welcomeTaglineCharCount < welcomeTaglineTyped.length ? "animate-pulse" : "opacity-0"
                           }`}
                           aria-hidden
@@ -1525,28 +1548,28 @@ export default function OnboardingFlowContent({
                     ) : null}
                     <p className="flex max-w-md flex-wrap items-baseline justify-center gap-x-2 gap-y-1">
                       {welcomeBlueStep >= 1 ? (
-                        <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                        <span className="ob-welcome-blue-in inline-block font-semibold text-[var(--story-accent)]">
                           {t("onboarding.welcomeWordRust")}
                         </span>
                       ) : null}
                       {welcomeBlueStep >= 2 ? (
-                        <span className="ob-welcome-blue-in inline-block font-semibold text-blue-600">
+                        <span className="ob-welcome-blue-in inline-block font-semibold text-[var(--story-accent)]">
                           {t("onboarding.welcomeWordFocus")}
                         </span>
                       ) : null}
                       {welcomeBlueStep >= 3 ? (
                         <span className="ob-welcome-blue-in inline-flex flex-wrap items-baseline justify-center gap-x-1">
-                          <span className="text-gray-600">{t("onboarding.welcomeWordAnd")}</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="text-[var(--story-text-muted)]">{t("onboarding.welcomeWordAnd")}</span>
+                          <span className="font-semibold text-[var(--story-accent)]">
                             {t("onboarding.welcomeWordStructure")}
                           </span>
                         </span>
                       ) : null}
                       {welcomeTypingChars > 0 ? (
-                        <span className="inline-block min-w-[1ch] text-gray-700">
+                        <span className="inline-block min-w-[1ch] text-[var(--story-text)]">
                           {welcomeSuffix.slice(0, welcomeTypingChars)}
                           <span
-                            className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-blue-500 align-middle ${
+                            className={`ml-px inline-block h-[1.05em] w-0.5 translate-y-px bg-[var(--story-accent)] align-middle ${
                               welcomeTypingChars < welcomeSuffix.length ? "animate-pulse" : "opacity-0"
                             }`}
                             aria-hidden
@@ -1556,7 +1579,7 @@ export default function OnboardingFlowContent({
                     </p>
                   </div>
                   <p
-                    className={`mt-5 max-w-md text-sm leading-relaxed text-gray-500 transition-all duration-[780ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    className={`mt-5 max-w-md text-sm leading-relaxed text-[var(--story-text-muted)] transition-all duration-[780ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       welcomeShowSubtitle ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
                     }`}
                   >
@@ -1565,22 +1588,54 @@ export default function OnboardingFlowContent({
                   <button
                     type="button"
                     onClick={() => void goNext()}
-                    className={`mt-10 w-full max-w-sm rounded-xl bg-blue-600 py-3.5 font-semibold text-white shadow-md transition-all duration-[780ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-blue-700 active:scale-[0.98] ${
+                    className={`mt-10 w-full max-w-sm rounded-xl bg-[var(--story-cta)] py-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-[780ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[var(--story-cta-hover)] active:scale-[0.98] ${
                       welcomeShowCta ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
                     }`}
                   >
                     {t("onboarding.welcomeCta")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={skipTourToCycle}
-                    className={`mt-4 text-sm font-medium text-gray-500 transition hover:text-gray-700 ${
-                      welcomeShowCta ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-                    }`}
-                  >
-                    {t("onboarding.welcomeSkipTour")}
-                  </button>
+                  {!ONBOARDING_COMPACT_MODE ? (
+                    <button
+                      type="button"
+                      onClick={skipTourToCycle}
+                      className={`mt-4 text-sm font-medium text-[var(--story-text-muted)] transition hover:text-[var(--story-text)] ${
+                        welcomeShowCta ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+                      }`}
+                    >
+                      {t("onboarding.welcomeSkipTour")}
+                    </button>
+                  ) : null}
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 1b — Naam (na cyclus, net voor eerste dagstart) ── */}
+            <section data-ob-slide className="st-story-bg box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar text-[var(--story-text)]">
+              <div className="flex min-h-full w-full flex-col justify-center px-4 py-8 md:px-0">
+                <div className="mx-auto flex w-full max-w-[600px] min-h-0 flex-1 flex-col justify-center">
+                <div className="flex flex-col items-center text-center">
+                <img src="/logo-structuro.png" alt="" width={112} height={112} className="w-24 h-24 object-contain mb-6" />
+                <h2 className="st-story-serif text-2xl font-semibold text-[var(--story-text)] sm:text-3xl">{t("onboarding.nameTitle")}</h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--story-text-muted)]">{t("onboarding.nameSubtitle")}</p>
+                <input
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && nameOk && !saving) void goNext(); }}
+                  placeholder={t("onboarding.namePh")}
+                  className="mt-8 w-full max-w-sm rounded-xl border border-[var(--story-border)] bg-white px-4 py-3.5 text-center text-base text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] transition-colors focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
+                />
+                <button
+                  type="button"
+                  disabled={!nameOk || saving}
+                  onClick={() => void goNext()}
+                  className="mt-8 w-full max-w-sm rounded-xl bg-[var(--story-cta)] py-[15px] font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-200 hover:bg-[var(--story-cta-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {saving ? t("onboarding.nameSaving") : t("onboarding.nameContinue")}
+                </button>
+                </div>
                 </div>
               </div>
             </section>
@@ -1941,7 +1996,7 @@ export default function OnboardingFlowContent({
             {/* ── 7 — Cyclus-tracking (optioneel, alle gebruikers) ── */}
             <section
               data-ob-slide
-              className="box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar"
+              className="st-story-bg box-border h-full min-h-0 w-screen shrink-0 overflow-x-hidden overflow-y-auto no-scrollbar text-[var(--story-text)]"
             >
               <div className="flex min-h-full w-full flex-col justify-center px-5 py-8 md:px-4">
                 <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
@@ -1962,7 +2017,7 @@ export default function OnboardingFlowContent({
                           <ArrowPathIcon className="h-6 w-6" strokeWidth={1.75} />
                         </span>
                         <div className="flex items-center justify-center gap-2">
-                          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                          <h2 className="st-story-serif text-2xl font-semibold tracking-[-0.01em] text-[var(--story-text)] sm:text-[1.75rem]">
                             {t("cycle.optInTitle")}
                           </h2>
                           <InfoButton infoId="cyclus" autoIntro={false} pulse={cycleInfoPulse} />
@@ -1983,7 +2038,7 @@ export default function OnboardingFlowContent({
                           <button
                             type="button"
                             onClick={() => skipCycleAndContinue()}
-                            className="w-full rounded-xl border border-slate-200 bg-white py-3.5 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 active:scale-[0.99]"
+                            className="w-full rounded-xl border border-[var(--story-border)] bg-white py-3.5 text-base font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] active:scale-[0.99]"
                           >
                             {t("cycle.optInNo")}
                           </button>
@@ -1991,7 +2046,7 @@ export default function OnboardingFlowContent({
                       </>
                     ) : (
                       <>
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                        <h2 className="st-story-serif text-2xl font-semibold tracking-[-0.01em] text-[var(--story-text)] sm:text-[1.75rem]">
                           {t("cycle.setupTitle")}
                         </h2>
                         <div className={OB_INTRO_OUTER}>
@@ -2034,7 +2089,7 @@ export default function OnboardingFlowContent({
             {/* ── 8 — Echte eerste dagstart (progressive disclosure, geen formulier-gevoel) ── */}
             <section
               data-ob-slide
-              className="box-border flex h-full min-h-0 w-screen shrink-0 flex-col overflow-hidden"
+              className="st-story-bg box-border flex h-full min-h-0 w-screen shrink-0 flex-col overflow-hidden text-[var(--story-text)]"
             >
               <style>{`
                 @keyframes ob-first-day-reveal-in {
@@ -2110,14 +2165,14 @@ export default function OnboardingFlowContent({
                   <div className="mx-auto flex w-full max-w-[520px] min-h-0 flex-1 flex-col justify-center">
                     <div className="flex flex-col items-center text-center">
                       {firstDayRevealPhase >= FIRST_DAY_REVEAL_INTRO ? (
-                        <p className="ob-first-day-intro-in text-xs font-semibold uppercase tracking-[0.16em] text-[var(--st-blue)]">
+                        <p className="ob-first-day-intro-in text-xs font-semibold uppercase tracking-[0.16em] text-[var(--story-accent)]">
                           {t("onboarding.firstDayIntro")}
                         </p>
                       ) : null}
 
                       {firstDayRevealPhase >= FIRST_DAY_REVEAL_GREETING ? (
                         <h2
-                          className={`ob-first-day-reveal-in w-full text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl ${
+                          className={`ob-first-day-reveal-in st-story-serif w-full text-[2rem] font-semibold leading-[1.08] tracking-[-0.01em] text-[var(--story-text)] sm:text-[2.5rem] md:text-[2.75rem] ${
                             firstDayRevealPhase >= FIRST_DAY_REVEAL_INTRO ? "mt-3" : ""
                           }`}
                         >
@@ -2133,7 +2188,7 @@ export default function OnboardingFlowContent({
 
                       {!cyclePreviewProfile &&
                       firstDayRevealPhase >= FIRST_DAY_REVEAL_SUB ? (
-                        <p className="ob-first-day-reveal-in mt-3 max-w-md text-base leading-relaxed text-gray-500">
+                        <p className="ob-first-day-reveal-in mt-3 max-w-md text-base leading-relaxed text-[var(--story-text-muted)]">
                           {welcomeTaskPreview
                             ? t("onboarding.firstDayIntroSubWelcome")
                             : t("onboarding.firstDayIntroSub")}
@@ -2142,7 +2197,7 @@ export default function OnboardingFlowContent({
 
                       {cyclePreviewProfile &&
                       firstDayRevealPhase >= FIRST_DAY_REVEAL_CYCLE_HINT ? (
-                        <p className="ob-first-day-reveal-in mt-8 max-w-md px-2 text-center text-sm leading-relaxed text-balance text-[var(--st-muted-2)]">
+                        <p className="ob-first-day-reveal-in mt-8 max-w-md px-2 text-center text-sm leading-relaxed text-balance text-[var(--story-text-muted)]">
                           {firstDayCycleHintText}
                         </p>
                       ) : null}
@@ -2178,7 +2233,7 @@ export default function OnboardingFlowContent({
                           }`}
                         >
                           {cyclePreviewProfile ? (
-                            <p className="ob-first-day-reveal-in mb-5 text-center text-base font-medium text-gray-800">
+                            <p className="ob-first-day-reveal-in mb-5 text-center text-base font-medium text-[var(--story-text)]">
                               {t("onboarding.firstDayEnergyQuestion")}
                             </p>
                           ) : null}
@@ -2193,12 +2248,12 @@ export default function OnboardingFlowContent({
 
                   {firstDayBridgeVisible ? (
                     <div className="ob-first-day-bridge-in mt-10 w-full max-w-md space-y-1 text-center">
-                      <p className="text-base font-medium text-gray-900">
+                      <p className="text-base font-medium text-[var(--story-text)]">
                         {welcomeTaskPreview
                           ? t("onboarding.firstDayWelcomeBridge1")
                           : t("onboarding.firstDayBridge1")}
                       </p>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-[var(--story-text-muted)]">
                         {welcomeTaskPreview
                           ? t("onboarding.firstDayWelcomeBridge2")
                           : t("onboarding.firstDayBridge2")}
@@ -2211,15 +2266,15 @@ export default function OnboardingFlowContent({
                       ref={firstDayTaskBlockRef}
                       className="ob-first-day-task-in mt-8 w-full max-w-md text-left"
                     >
-                      <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-[var(--st-muted)]">
+                      <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-[var(--story-text-muted)]">
                         {t("onboarding.firstDayWelcomeTaskLabel")}
                       </p>
-                      <div className="rounded-xl border border-[var(--st-line)] bg-white p-4 shadow-sm">
-                        <p className="text-base font-semibold text-[var(--st-ink)]">
+                      <div className="rounded-xl border border-[var(--story-border)] bg-white p-4 shadow-sm">
+                        <p className="text-base font-semibold text-[var(--story-text)]">
                           {welcomeTaskPreview.title}
                         </p>
                         {welcomeTaskPreview.microStepCount > 0 ? (
-                          <p className="mt-1 text-sm text-[var(--st-muted-2)]">
+                          <p className="mt-1 text-sm text-[var(--story-text-muted)]">
                             {t("onboarding.firstDayWelcomeTaskHint").replace(
                               "{n}",
                               String(welcomeTaskPreview.microStepCount)
@@ -2253,7 +2308,7 @@ export default function OnboardingFlowContent({
                           }}
                           placeholder={t("onboarding.firstDayTaskPh")}
                           autoComplete="off"
-                          className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-gray-900 shadow-md outline-none ring-1 ring-slate-200/90 transition-all placeholder:text-gray-400 focus:shadow-lg focus:ring-2 focus:ring-blue-400/40"
+                          className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-[var(--story-text)] shadow-md outline-none ring-1 ring-[var(--story-border)] transition-all placeholder:text-[var(--story-text-muted)] focus:shadow-lg focus:ring-2 focus:ring-[rgba(45,90,86,0.35)]"
                         />
                         {firstTaskTitle.trim().length > 0 ? (
                           <span
@@ -2270,7 +2325,7 @@ export default function OnboardingFlowContent({
                           ref={firstDayDurationBlockRef}
                           className="ob-first-day-duration-in space-y-3 pt-2 text-center"
                         >
-                          <p className="text-base font-medium text-gray-700">{t("onboarding.firstDayMinutesQ")}</p>
+                          <p className="text-base font-medium text-[var(--story-text)]">{t("onboarding.firstDayMinutesQ")}</p>
                           <div className="relative">
                             <input
                               ref={firstTaskDurationInputRef}
@@ -2301,7 +2356,7 @@ export default function OnboardingFlowContent({
                               placeholder={t("onboarding.firstDayMinutesPh")}
                               aria-label={t("onboarding.firstDayMinutesAria")}
                               autoComplete="off"
-                              className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-gray-900 shadow-md outline-none ring-1 ring-slate-200/90 transition-all placeholder:text-gray-400 focus:shadow-lg focus:ring-2 focus:ring-blue-400/40 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              className="w-full rounded-2xl border-0 bg-white px-6 py-4 text-center text-lg text-[var(--story-text)] shadow-md outline-none ring-1 ring-[var(--story-border)] transition-all placeholder:text-[var(--story-text-muted)] focus:shadow-lg focus:ring-2 focus:ring-[rgba(45,90,86,0.35)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                             {firstDayMinutesOk ? (
                               <span
@@ -2320,8 +2375,8 @@ export default function OnboardingFlowContent({
                           ref={firstDayMicroBlockRef}
                           className="animate-fade-in mt-8 w-full space-y-4 text-center"
                         >
-                          <p className="text-base font-medium text-gray-800">{t("onboarding.firstDayMicroQ")}</p>
-                          <p className="text-sm text-gray-500">{t("onboarding.firstDayMicroHint")}</p>
+                          <p className="text-base font-medium text-[var(--story-text)]">{t("onboarding.firstDayMicroQ")}</p>
+                          <p className="text-sm text-[var(--story-text-muted)]">{t("onboarding.firstDayMicroHint")}</p>
                           <div className="flex justify-center gap-2">
                             <button
                               type="button"
@@ -2330,8 +2385,8 @@ export default function OnboardingFlowContent({
                               }}
                               className={`min-w-[5.5rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
                                 firstDayUseMicroSteps === true
-                                  ? "border-blue-600 bg-blue-600 text-white"
-                                  : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                  ? "border-[var(--story-cta)] bg-[var(--story-cta)] text-white"
+                                  : "border-[var(--story-border)] bg-white text-[var(--story-text)] hover:border-[var(--story-accent)]"
                               }`}
                             >
                               {t("common.yes")}
@@ -2345,8 +2400,8 @@ export default function OnboardingFlowContent({
                               }}
                               className={`min-w-[5.5rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
                                 firstDayUseMicroSteps === false
-                                  ? "border-blue-600 bg-blue-600 text-white"
-                                  : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                                  ? "border-[var(--story-cta)] bg-[var(--story-cta)] text-white"
+                                  : "border-[var(--story-border)] bg-white text-[var(--story-text)] hover:border-[var(--story-accent)]"
                               }`}
                             >
                               {t("common.no")}
@@ -2354,8 +2409,8 @@ export default function OnboardingFlowContent({
                           </div>
 
                           {firstDayUseMicroSteps === true ? (
-                            <div className="animate-fade-in mt-2 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 text-left">
-                              <p className="mb-3 text-center text-xs font-medium text-violet-900">
+                            <div className="animate-fade-in mt-2 rounded-2xl border border-[var(--story-border)] bg-white p-4 text-left shadow-sm">
+                              <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-[var(--story-accent)]">
                                 {t("onboarding.firstDayMicroSection")}
                               </p>
                               {firstDayMicroTitles.length > 0 ? (
@@ -2363,9 +2418,9 @@ export default function OnboardingFlowContent({
                                   {firstDayMicroTitles.map((line, idx) => (
                                     <li
                                       key={`${idx}-${line.slice(0, 24)}`}
-                                      className="flex items-start gap-2 rounded-xl bg-white/90 px-3 py-2 text-sm text-gray-800 shadow-sm"
+                                      className="flex items-start gap-2 rounded-xl border border-[var(--story-border)] bg-[var(--story-bg)] px-3 py-2 text-sm text-[var(--story-text)]"
                                     >
-                                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
+                                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(45,90,86,0.12)] text-[11px] font-bold text-[var(--story-accent)]">
                                         {idx + 1}
                                       </span>
                                       <span className="min-w-0 flex-1 leading-snug">{line}</span>
@@ -2376,7 +2431,7 @@ export default function OnboardingFlowContent({
                                             prev.filter((_, i) => i !== idx)
                                           )
                                         }
-                                        className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
+                                        className="shrink-0 rounded-lg px-1.5 py-0.5 text-xs text-[var(--story-text-muted)] hover:bg-red-50 hover:text-red-600"
                                         aria-label={t("onboarding.firstDayMicroRemoveAria")}
                                       >
                                         ×
@@ -2386,20 +2441,20 @@ export default function OnboardingFlowContent({
                                 </ul>
                               ) : (
                                 <>
-                                  <p className="mb-3 text-center text-xs text-gray-600">
+                                  <p className="mb-3 text-center text-xs text-[var(--story-text-muted)]">
                                     {t("onboarding.firstDayMicroNeedOne")}
                                   </p>
-                                  <div className="mb-4 rounded-xl border border-violet-200 bg-white/90 p-3">
-                                    <p className="text-sm leading-relaxed text-gray-600">
+                                  <div className="mb-4 rounded-xl border border-[var(--story-border)] bg-[var(--story-bg)] p-3">
+                                    <p className="text-sm leading-relaxed text-[var(--story-text-muted)]">
                                       {t("focus.microAiPrompt")}
                                     </p>
                                     <button
                                       type="button"
                                       onClick={() => void requestFirstDayMicroAi()}
                                       disabled={firstDayMicroAiLoading}
-                                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-300 bg-violet-100/80 px-3 py-2.5 text-sm font-semibold text-violet-900 transition hover:bg-violet-100 disabled:opacity-50"
+                                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--story-border)] bg-white px-3 py-2.5 text-sm font-semibold text-[var(--story-text)] transition hover:border-[var(--story-accent)] hover:text-[var(--story-accent)] disabled:opacity-50"
                                     >
-                                      <SparklesIcon className="h-4 w-4 shrink-0" aria-hidden />
+                                      <SparklesIcon className="h-4 w-4 shrink-0 text-[var(--story-accent)]" aria-hidden />
                                       {firstDayMicroAiLoading
                                         ? t("newTask.microSuggestLoading")
                                         : t("newTask.microSuggestBtn")}
@@ -2410,7 +2465,7 @@ export default function OnboardingFlowContent({
                                       </p>
                                     ) : null}
                                   </div>
-                                  <p className="mb-2 text-center text-xs font-medium text-gray-500">
+                                  <p className="mb-2 text-center text-xs font-medium text-[var(--story-text-muted)]">
                                     {t("newTask.microSuggestManual")}
                                   </p>
                                 </>
@@ -2430,7 +2485,7 @@ export default function OnboardingFlowContent({
                                     setFirstDayMicroAiError(null);
                                   }}
                                   placeholder={t("onboarding.firstDayMicroInputPh")}
-                                  className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+                                  className="min-w-0 flex-1 rounded-xl border border-[var(--story-border)] bg-white px-3 py-2.5 text-sm text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
                                 />
                                 <button
                                   type="button"
@@ -2441,7 +2496,7 @@ export default function OnboardingFlowContent({
                                     setFirstDayMicroInput("");
                                     setFirstDayMicroAiError(null);
                                   }}
-                                  className="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+                                  className="shrink-0 rounded-xl bg-[var(--story-cta)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--story-cta-hover)]"
                                 >
                                   {t("onboarding.firstDayMicroAdd")}
                                 </button>
@@ -2458,12 +2513,12 @@ export default function OnboardingFlowContent({
               </div>
 
               {firstDayReady ? (
-                <div className="sticky bottom-0 z-10 shrink-0 border-t border-slate-200/80 bg-[#F1F3F8]/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
+                <div className="sticky bottom-0 z-10 shrink-0 border-t border-[var(--story-border)] bg-[var(--story-bg)]/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm">
                   <button
                     ref={firstDayBeginCtaRef}
                     type="button"
                     onClick={() => void (ONBOARDING_COMPACT_MODE ? finish() : goNext())}
-                    className="mx-auto block w-full max-w-md rounded-xl bg-blue-600 py-4 text-base font-semibold text-white shadow-md transition-all hover:bg-blue-700 active:scale-[0.99]"
+                    className="mx-auto block w-full max-w-md rounded-xl bg-[var(--story-cta)] py-4 text-base font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all hover:bg-[var(--story-cta-hover)] active:scale-[0.99]"
                   >
                     {t("onboarding.firstDayCta")}
                   </button>
@@ -2678,7 +2733,11 @@ export default function OnboardingFlowContent({
         </div>
 
         <nav
-          className="flex shrink-0 justify-center gap-2 border-t border-slate-200/60 bg-gradient-to-br from-slate-50/95 to-blue-50/95 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
+          className={`flex shrink-0 justify-center gap-2 border-t px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 ${
+            onStorySlide
+              ? "st-story-bg border-[var(--story-border)]"
+              : "border-slate-200/60 bg-gradient-to-br from-slate-50/95 to-blue-50/95"
+          }`}
           aria-label={t("onboarding.navProgress")}
         >
           {Array.from(
@@ -2708,7 +2767,7 @@ export default function OnboardingFlowContent({
               aria-current={i === activeIndex ? "step" : undefined}
               className={`rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
                 i === activeIndex
-                  ? "h-2 w-6 bg-blue-600"
+                  ? `h-2 w-6 ${onStorySlide ? "bg-[var(--story-cta)]" : "bg-blue-600"}`
                   : "h-2 w-2 bg-gray-300 hover:bg-gray-400"
               }`}
             />
