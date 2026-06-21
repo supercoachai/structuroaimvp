@@ -65,6 +65,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toggleSidebar: "Menu openen of sluiten",
       menuTitle: "Menu",
     },
+    anonAccount: {
+      title: "Bewaar je voortgang",
+      body: "Maak een gratis account aan zodat je dagstart en taken bewaard blijven.",
+      cta: "Account aanmaken",
+      later: "Later",
+    },
     settings: {
       title: "Instellingen",
       subtitle: "Persoonlijke voorkeuren en beheer",
@@ -197,6 +203,21 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     login: {
       taglineBrand: "Structuro",
+      storyEyebrow: "Voor ADHD-breinen die niet beginnen",
+      storyHeading: "Welkom terug.",
+      storyHeadingNeutral: "Welkom bij Structuro.",
+      storySubheading: "Je dagstart wacht.",
+      storySubheadingNeutral: "Log in om verder te gaan.",
+      storySubheadingAcquisition:
+        "Geen wachtwoord nodig. We sturen een link naar je inbox.",
+      forgotStoryHeading: "Wachtwoord vergeten?",
+      moreMethods: "Andere manieren om in te loggen",
+      moreMethodsHide: "Verberg andere manieren",
+      magicLinkPrimaryCta: "Stuur me een inloglink",
+      magicLinkPrimaryHint: "Geen wachtwoord nodig. Je krijgt een link in je inbox.",
+      passwordToggle: "Liever met wachtwoord inloggen",
+      showPassword: "Wachtwoord tonen",
+      hidePassword: "Wachtwoord verbergen",
       email: "E-mail",
       emailPh: "je@email.com",
       password: "Wachtwoord",
@@ -241,6 +262,31 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimit: "Te veel verzoeken. Probeer het later opnieuw.",
       checkoutReturnHint:
         "Je betaling is gelukt. Log in om verder te gaan met je account.",
+      magicLinkToggle: "Inloggen met e-maillink",
+      magicLinkHelp:
+        "Alleen als je al een account hebt. We sturen een link naar je inbox, geen wachtwoord nodig.",
+      magicLinkCta: "Stuur inloglink",
+      magicLinkSentTitle: "Check je inbox",
+      magicLinkSentBody:
+        "We stuurden een inloglink naar {email}. Tik erop om verder te gaan.",
+      magicLinkNoAccount:
+        "Geen account met dit e-mailadres. Start gratis via structuro.eu.",
+    },
+    oauth: {
+      googleCta: "Doorgaan met Google",
+      microsoftCta: "Doorgaan met Microsoft",
+      appleCta: "Doorgaan met Apple",
+      comingSoon: "Binnenkort",
+      noneEnabled:
+        "Inloggen met Google of Microsoft is nog niet geconfigureerd. Neem contact op met support.",
+    },
+    signup: {
+      emailFallbackToggle: "Geen Google of Microsoft? Account met e-mail",
+      emailFallbackHelp: "Direct verder met e-mail en wachtwoord. Geen link in je inbox.",
+      emailFallbackCta: "Account aanmaken",
+      emailConfirmTitle: "Bevestig je e-mail",
+      emailConfirmBody:
+        "We stuurden een bevestigingslink naar {email}. Tik erop om verder te gaan.",
     },
     passkey: {
       signInCta: "Inloggen met passkey",
@@ -334,6 +380,14 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Structuro",
       nameLabel: "Naam",
       namePh: "Je voornaam",
+      askNameHeading: "Hoe mogen we je aanspreken?",
+      askNameHelp: "Alleen je voornaam, voor een persoonlijke begroeting.",
+      dagstartRecapEyebrow: "Je eerste dagstart",
+      dagstartRecapEnergy: "Energieniveau: {level}",
+      dagstartRecapBody:
+        "Mooi begin. Maak een gratis account zodat je dagstart en taken bewaard blijven.",
+      dagstartSaveHeading: "Bewaar je dagstart.",
+      dagstartSaveSubheading: "Gratis. Geen wachtwoord.",
       emailLabel: "E-mailadres",
       emailPh: "je@email.com",
       passwordPh: "Minimaal 8 tekens",
@@ -345,8 +399,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       organicEyebrow: "Voor ADHD-breinen die niet beginnen",
       accountHeadingTikTok: "Je herkende het net. Nu de eerste schone lei.",
       accountSubheadingTikTok:
-        "3 dagen gratis. Geen streaks, geen badges, geen schuldgevoel.",
-      acquisitionTrustLine: "Geen wachtwoord. {days} dagen gratis proberen.",
+        "Één tik met Google of Microsoft. Geen wachtwoord, geen inbox.",
+      acquisitionTrustLineOAuth: "Direct verder. {days} dagen gratis proberen.",
       tiktokTrustLine: "Naam + e-mail. Wachtwoord kun je later instellen.",
       continueBtnMagicLink: "Stuur link naar mijn inbox",
       continueBtnTikTok: "Ontlast mijn brein ({days} dagen gratis)",
@@ -583,6 +637,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       toggleSidebar: "Open or close menu",
       menuTitle: "Menu",
     },
+    anonAccount: {
+      title: "Save your progress",
+      body: "Create a free account so your day start and tasks are kept.",
+      cta: "Create account",
+      later: "Later",
+    },
     settings: {
       title: "Settings",
       subtitle: "Personal preferences and data",
@@ -715,6 +775,21 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     login: {
       taglineBrand: "Structuro",
+      storyEyebrow: "For ADHD brains that don't start",
+      storyHeading: "Welcome back.",
+      storyHeadingNeutral: "Welcome to Structuro.",
+      storySubheading: "Your day start is waiting.",
+      storySubheadingNeutral: "Sign in to continue.",
+      storySubheadingAcquisition:
+        "No password needed. We will send a link to your inbox.",
+      forgotStoryHeading: "Forgot your password?",
+      moreMethods: "Other ways to sign in",
+      moreMethodsHide: "Hide other ways",
+      magicLinkPrimaryCta: "Send me a sign-in link",
+      magicLinkPrimaryHint: "No password needed. You'll get a link in your inbox.",
+      passwordToggle: "Prefer to sign in with a password",
+      showPassword: "Show password",
+      hidePassword: "Hide password",
       email: "Email",
       emailPh: "you@email.com",
       password: "Password",
@@ -758,6 +833,31 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimit: "Too many requests. Try again later.",
       checkoutReturnHint:
         "Your payment went through. Sign in to continue with your account.",
+      magicLinkToggle: "Sign in with email link",
+      magicLinkHelp:
+        "Only if you already have an account. We email you a link, no password needed.",
+      magicLinkCta: "Send sign-in link",
+      magicLinkSentTitle: "Check your inbox",
+      magicLinkSentBody:
+        "We sent a sign-in link to {email}. Tap it to continue.",
+      magicLinkNoAccount:
+        "No account with this email. Start free at structuro.eu.",
+    },
+    oauth: {
+      googleCta: "Continue with Google",
+      microsoftCta: "Continue with Microsoft",
+      appleCta: "Continue with Apple",
+      comingSoon: "Coming soon",
+      noneEnabled:
+        "Google or Microsoft sign-in is not configured yet. Contact support.",
+    },
+    signup: {
+      emailFallbackToggle: "No Google or Microsoft? Use email instead",
+      emailFallbackHelp: "Continue instantly with email and password. No inbox link.",
+      emailFallbackCta: "Create account",
+      emailConfirmTitle: "Confirm your email",
+      emailConfirmBody:
+        "We sent a confirmation link to {email}. Tap it to continue.",
     },
     passkey: {
       signInCta: "Sign in with passkey",
@@ -852,6 +952,14 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       title: "Structuro",
       nameLabel: "Name",
       namePh: "Your first name",
+      askNameHeading: "How should we address you?",
+      askNameHelp: "Just your first name, for a personal greeting.",
+      dagstartRecapEyebrow: "Your first day start",
+      dagstartRecapEnergy: "Energy level: {level}",
+      dagstartRecapBody:
+        "Nice start. Create a free account so your day start and tasks stay saved.",
+      dagstartSaveHeading: "Save your day start.",
+      dagstartSaveSubheading: "Free. No password.",
       emailLabel: "Email address",
       emailPh: "you@email.com",
       passwordPh: "At least 8 characters",
@@ -863,8 +971,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       organicEyebrow: "For ADHD brains that don't start",
       accountHeadingTikTok: "You just recognized yourself. Now a clean slate.",
       accountSubheadingTikTok:
-        "3 days free. No streaks, no badges, no guilt.",
-      acquisitionTrustLine: "No password. Try free for {days} days.",
+        "One tap with Google or Microsoft. No password, no inbox.",
+      acquisitionTrustLineOAuth: "Continue instantly. Try free for {days} days.",
       tiktokTrustLine: "Name and email only. Set a password later.",
       continueBtnMagicLink: "Email me a link",
       continueBtnTikTok: "Unclutter my brain ({days} days free)",
