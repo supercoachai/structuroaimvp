@@ -3,8 +3,6 @@
 import posthog from "posthog-js";
 import type { CaptureResult } from "posthog-js";
 
-import { isCookielessAnalyticsPath } from "@/lib/marketingPaths";
-
 import { posthogTracingHeaderHostnames } from "./tracingHeaders";
 import { POSTHOG_PROXY_API_HOST } from "./proxyHost";
 import { sanitizeCurrentUrl } from "./sanitizeCurrentUrl";
@@ -201,16 +199,16 @@ function invokeStartSessionRecording(): void {
 }
 
 /**
- * Cookieless acquisitie/activatie: opt-in + recording na consent-deny.
- * posthog.opt_out_capturing() mag hier niet: bij cookieless_mode on_reject vernietigt
- * dat sessionRecording en blokkeert replay (consent.isOptedOut() blijft true).
+ * Session replay op ALLE routes (acquisitie, onboarding én app): opt-in + recording.
+ * Werkt ook zonder analytics-consent, want PostHog draait cookieless (on_reject) en
+ * alle inputs/teksten zijn gemaskeerd. posthog.opt_out_capturing() mag hier niet: bij
+ * cookieless_mode on_reject vernietigt dat sessionRecording en blokkeert replay
+ * (consent.isOptedOut() blijft true).
  */
 export function bootstrapCookielessSessionReplay(
-  pathname?: string | null
+  _pathname?: string | null
 ): void {
   if (typeof window === "undefined" || !posthogInitOnce) return;
-  const path = pathname ?? window.location.pathname;
-  if (!isCookielessAnalyticsPath(path)) return;
 
   optInCapturingOnce();
 
