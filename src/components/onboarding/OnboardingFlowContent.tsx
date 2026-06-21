@@ -1122,14 +1122,18 @@ export default function OnboardingFlowContent({
   const goNext = useCallback(async () => {
     if (step >= STEP_COUNT - 1) return;
     if (step === MICRO_MERGED_SLIDE_INDEX && parkerenStage < 4) return;
-    // Compacte flow: welkom-intro gaat naar het cyclus-scherm, daarna de eerste
-    // dagstart. De naamvraag volgt pas daarna, op het account-scherm.
+    // Compacte flow: welkom-intro gaat naar het cyclus-scherm, dan de naamvraag,
+    // dan de eerste (anonieme) dagstart. Pas daarna finish() → /registreren.
     if (ONBOARDING_COMPACT_MODE && step === WELCOME_SLIDE_INDEX) {
       setStep(COMPACT_CYCLE_SLIDE);
       return;
     }
     if (step === FIRST_DAY_SLIDE_INDEX) {
       if (!firstDayReady) return;
+      if (ONBOARDING_COMPACT_MODE) {
+        await finish();
+        return;
+      }
       setStep((s) => Math.min(s + 1, STEP_COUNT - 1));
       return;
     }
@@ -1161,10 +1165,11 @@ export default function OnboardingFlowContent({
           /* ignore */
         }
       }
-      // Tijdelijk ingekort: na de naamvraag ronden we de onboarding direct af
-      // (eerste dagstart en demo-slides staan uit).
+      // Compacte flow: na de naamvraag doet de bezoeker eerst de eerste
+      // (anonieme, lokale) dagstart. Pas daarna rondt finish() af richting
+      // "Bewaar je dagstart" op /registreren.
       if (ONBOARDING_COMPACT_MODE) {
-        await finish();
+        setStep(FIRST_DAY_SLIDE_INDEX);
         return;
       }
       setStep(step + 1);

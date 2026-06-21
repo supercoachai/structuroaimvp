@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COMPACT_CYCLE_SLIDE,
+  COMPACT_FIRST_DAY_SLIDE,
   COMPACT_NAME_SLIDE,
   COMPACT_PROGRESS_STEPS,
   COMPACT_WELCOME_SLIDE,
@@ -16,17 +17,19 @@ describe("compactFlow", () => {
     expect(ONBOARDING_COMPACT_MODE).toBe(true);
   });
 
-  it("toont precies 3 voortgangsstappen", () => {
-    expect(COMPACT_PROGRESS_STEPS).toBe(3);
+  it("toont precies 4 voortgangsstappen", () => {
+    expect(COMPACT_PROGRESS_STEPS).toBe(4);
   });
 
-  it("loopt in volgorde welkom -> cyclus -> naam -> finish", () => {
+  it("loopt in volgorde welkom -> cyclus -> naam -> dagstart -> finish", () => {
     expect(compactNextSlide(COMPACT_WELCOME_SLIDE)).toBe(COMPACT_CYCLE_SLIDE);
     expect(compactNextSlide(COMPACT_CYCLE_SLIDE)).toBe(COMPACT_NAME_SLIDE);
-    expect(compactNextSlide(COMPACT_NAME_SLIDE)).toBe("finish");
+    expect(compactNextSlide(COMPACT_NAME_SLIDE)).toBe(COMPACT_FIRST_DAY_SLIDE);
+    expect(compactNextSlide(COMPACT_FIRST_DAY_SLIDE)).toBe("finish");
   });
 
   it("loopt terug in omgekeerde volgorde", () => {
+    expect(compactPrevSlide(COMPACT_FIRST_DAY_SLIDE)).toBe(COMPACT_NAME_SLIDE);
     expect(compactPrevSlide(COMPACT_NAME_SLIDE)).toBe(COMPACT_CYCLE_SLIDE);
     expect(compactPrevSlide(COMPACT_CYCLE_SLIDE)).toBe(COMPACT_WELCOME_SLIDE);
     expect(compactPrevSlide(COMPACT_WELCOME_SLIDE)).toBeNull();
@@ -60,5 +63,14 @@ describe("compactFlow", () => {
         firstDayReady: false,
       })
     ).toBe(2);
+    expect(
+      compactProgressIndex({
+        step: COMPACT_FIRST_DAY_SLIDE,
+        firstDayEnergy: null,
+        firstDayTaskPhaseVisible: false,
+        firstTaskTitle: "",
+        firstDayReady: false,
+      })
+    ).toBe(3);
   });
 });
