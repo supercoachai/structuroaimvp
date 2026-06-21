@@ -1700,6 +1700,12 @@ body {
   max-height: min(780px, calc(100dvh - 2rem));
 }
 
+/* Inline (embedded in scrollende pagina, bv. Taken): geen vaste hoogte/interne
+   scroll, zodat de hele stap inclusief de Verder-knop met de pagina meescrollt. */
+.new-task-flow--inline {
+  max-height: none;
+}
+
 .new-task-flow--compact {
   max-height: min(640px, 70dvh);
 }

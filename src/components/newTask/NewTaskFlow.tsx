@@ -353,6 +353,7 @@ export default function NewTaskFlow({
   const busy = saving || saveBusy;
   const compact = variant === "compact";
   const embedded = fillContainer && compact;
+  const inline = mode === "inline";
   const skippedStepCount = (skipTitle ? 1 : 0) + (skipDeadline ? 1 : 0);
   const progressSteps = TOTAL_STEPS - skippedStepCount;
   const progressIndex =
@@ -372,8 +373,12 @@ export default function NewTaskFlow({
 
   return (
     <div
-      className={`new-task-flow flex min-h-0 flex-col overflow-hidden bg-[var(--st-surface,#fff)] ${
-        compact ? "new-task-flow--compact rounded-[20px]" : "new-task-flow--default rounded-[32px]"
+      className={`new-task-flow flex min-h-0 flex-col bg-[var(--st-surface,#fff)] ${
+        inline ? "overflow-visible" : "overflow-hidden"
+      } ${
+        compact
+          ? "new-task-flow--compact rounded-[20px]"
+          : `new-task-flow--default rounded-[32px]${inline ? " new-task-flow--inline" : ""}`
       } ${fillContainer ? "new-task-flow--embedded h-full max-h-full" : ""} ${className}`}
     >
       {step < doneStepIndex ? (
@@ -454,9 +459,11 @@ export default function NewTaskFlow({
 
       <div
         className={`new-task-flow-stage flex flex-col px-5 sm:px-6 ${
-          embedded || (compact && !fillContainer)
-            ? "min-h-0 shrink-0 justify-start overflow-visible py-1"
-            : "min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden py-4 sm:py-5"
+          inline
+            ? "min-h-0 shrink-0 justify-start overflow-visible py-4 sm:py-5"
+            : embedded || (compact && !fillContainer)
+              ? "min-h-0 shrink-0 justify-start overflow-visible py-1"
+              : "min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden py-4 sm:py-5"
         } ${compact && !embedded && fillContainer ? "py-3" : ""}`}
       >
         {!skipTitle && step === 0 ? (
