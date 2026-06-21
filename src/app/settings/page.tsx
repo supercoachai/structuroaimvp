@@ -38,6 +38,7 @@ import {
 } from '@/components/settings/SettingsUi';
 import { refundMailtoHref } from '@/lib/refundContact';
 import { PasskeySettingsSection } from '@/components/settings/PasskeySettingsSection';
+import { PasswordSettingsSection } from '@/components/settings/PasswordSettingsSection';
 
 const NAME_KEY = 'structuro_user_name';
 
@@ -639,6 +640,8 @@ export default function SettingsPage() {
             ) : null}
 
             <PasskeySettingsSection hasSession={hasSupabaseSession && !isLocalOnly} />
+
+            <PasswordSettingsSection hasSession={hasSupabaseSession && !isLocalOnly} />
 
             <SettingsLinkActions>
               <SettingsTextLink onClick={handleDownloadData}>
