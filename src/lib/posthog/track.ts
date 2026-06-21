@@ -4,6 +4,7 @@ import {
   ANALYTICS_CONSENT_KEY,
   readAnalyticsConsentFromStorage,
 } from "./consentStorage";
+import { persistAnonymousDistinctIdForStitch } from "./identityStitch";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
 function readStoredConsent(): "granted" | "denied" | null {
@@ -113,6 +114,7 @@ export function captureAnonymousEvent(
           ? "sendBeacon"
           : "XHR",
     });
+    persistAnonymousDistinctIdForStitch();
     debugLog("anonymous", event, "sent", properties);
   } catch {
     debugLog("anonymous", event, "capture-error", properties);
@@ -155,6 +157,7 @@ export function captureMarketingEvent(
           ? "sendBeacon"
           : "XHR",
     });
+    persistAnonymousDistinctIdForStitch();
     debugLog("marketing", event, "sent", properties);
   } catch {
     debugLog("marketing", event, "capture-error", properties);

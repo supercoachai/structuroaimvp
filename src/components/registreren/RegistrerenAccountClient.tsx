@@ -1,26 +1,22 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
-import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
+
+import { AccountSignUpOptions } from "@/components/auth/AccountSignUpOptions";
+import { buildLoginHref } from "@/lib/auth/authPagePaths";
+import { PREFERRED_NAME_COOKIE } from "@/lib/auth/preferredNameCookie";
+import { hasStructuroLocalModeCookieOnClient } from "@/lib/localOnboardingCookie";
+import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
   applySignupAttributionFromSearchParams,
-  getSignupAttributionSource,
-  getStoredSignupCampaign,
   getStoredSignupSource,
-  isAcquisitionSignupContext,
-  isOrganicEuSignupContext,
-  isTikTokSignupContext,
-  persistSignupAttributionToProfile,
-  queueSignupCompletedForAnalytics,
+  resolveRegistrerenPresentation,
 } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionSignupStarted } from "@/lib/posthog/acquisitionAnalyticsClient";
-import { captureMarketingEvent } from "@/lib/posthog/track";
-import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 import {
   DEFAULT_STRIPE_TRIAL_DAYS,
@@ -29,37 +25,82 @@ import {
 } from "@/lib/stripe/trialConfig";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import { RegistrerenShell } from "./RegistrerenShell";
-import { mapSignupError } from "./mapSignupError";
-import { useClientMounted } from "@/hooks/useClientMounted";
 
-function RegistrerenAccountInner() {
+/** Aanspreeknaam in cookie zetten zodat de OAuth-callback hem op het profiel kan zetten. */
+function writePreferredNameCookie(name: string) {
+  try {
+    if (name) {
+      document.cookie = `${PREFERRED_NAME_COOKIE}=${encodeURIComponent(name)}; path=/; max-age=1800; samesite=lax`;
+    } else {
+      document.cookie = `${PREFERRED_NAME_COOKIE}=; path=/; max-age=0; samesite=lax`;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function RegistrerenAccountInner({
+  initialPostDagstart,
+}: {
+  initialPostDagstart: boolean;
+}) {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const signInMode = searchParams.get("signin") === "1";
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Inloggen gebeurt alleen op /login (enige plek met magic link).
+  useEffect(() => {
+    if (signInMode) {
+      router.replace(buildLoginHref(searchParams));
+    }
+  }, [signInMode, router, searchParams]);
+
+  const presentation = useMemo(
+    () => resolveRegistrerenPresentation(searchParams),
+    [searchParams]
+  );
+
   const [error, setError] = useState<string | null>(null);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const [magicLinkEmail, setMagicLinkEmail] = useState("");
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [trialDays, setTrialDays] = useState(DEFAULT_STRIPE_TRIAL_DAYS);
-  const [eventSignupFlow, setEventSignupFlow] = useState(false);
-  const [acquisitionFlow, setAcquisitionFlow] = useState(false);
-  const [tiktokFlow, setTiktokFlow] = useState(false);
-  const [organicEuFlow, setOrganicEuFlow] = useState(false);
-  const mounted = useClientMounted();
+  const [eventSignupFlow, setEventSignupFlow] = useState(presentation.isEventFlow);
+  const [preferredName, setPreferredName] = useState("");
+  // Server bepaalt de variant al uit de cookies (zie page.tsx), zodat SSR meteen
+  // de juiste koptekst toont en er geen flits optreedt. Client verfijnt alleen.
+  const [postDagstart, setPostDagstart] = useState(initialPostDagstart);
+
+  // Anonieme gebruiker die net de eerste dagstart deed: toon de schone
+  // "bewaar je dagstart"-variant zonder samenvatting of badge.
+  useEffect(() => {
+    try {
+      const next =
+        hasStructuroLocalModeCookieOnClient() && !hasSupabaseAuthHintOnClient();
+      setPostDagstart((prev) => (prev === next ? prev : next));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Naam die eventueel al in de anonieme dagstart-flow is opgeslagen, voorvullen.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("structuro_user_name");
+      if (stored && stored.trim()) {
+        const trimmed = stored.trim();
+        setPreferredName(trimmed);
+        writePreferredNameCookie(trimmed);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     applySignupAttributionFromSearchParams(searchParams);
     const source = getStoredSignupSource();
     setTrialDays(resolveStripeTrialDaysForSignupSource(source));
-    setEventSignupFlow(isEventSignupSource(source));
-    setAcquisitionFlow(isAcquisitionSignupContext());
-    setTiktokFlow(isTikTokSignupContext());
-    setOrganicEuFlow(isOrganicEuSignupContext());
-  }, [searchParams]);
+    setEventSignupFlow(isEventSignupSource(source) || presentation.isEventFlow);
+  }, [searchParams, presentation.isEventFlow]);
 
   useEffect(() => {
     if (!isRegistrationCheckoutEnabledClient()) {
@@ -102,8 +143,6 @@ function RegistrerenAccountInner() {
         );
       } catch {
         /* ignore */
-      } finally {
-        if (!cancelled) setSessionChecked(true);
       }
     })();
     return () => {
@@ -111,243 +150,76 @@ function RegistrerenAccountInner() {
     };
   }, [router]);
 
-  async function handleAccountContinue() {
-    setError(null);
-    setLoading(true);
-    trackAcquisitionSignupStarted({ pathname: "/registreren", searchParams });
+  const { storyVisual, isAcquisitionCopy } = presentation;
+  const visual = storyVisual ? "story" : "work";
 
-    try {
-      const supabase = createClient();
-      if (!supabase) {
-        setError(t("login.noServer"));
-        return;
-      }
-
-      const nameTrimmed = name.trim();
-      const emailTrimmed = normalizeSignupEmail(email);
-      if (!nameTrimmed) {
-        setError(t("registrerenPage.errNameRequired"));
-        return;
-      }
-      if (!emailTrimmed || !isSignupEmailFormatValid(email)) {
-        setError(t("registrerenPage.errEmailInvalid"));
-        return;
-      }
-
-      const result = await signUpPasswordlessWithLocalDevFallback(supabase, {
-        email: emailTrimmed,
-        fullName: nameTrimmed,
-        signupSource: getStoredSignupSource(),
-        signupCampaign: getStoredSignupCampaign(),
-      });
-
-      if (result.kind === "magic_link_sent") {
-        setMagicLinkEmail(emailTrimmed);
-        setMagicLinkSent(true);
-        captureMarketingEvent("signup_magic_link_sent", {
-          source: getSignupAttributionSource(),
-          utm_campaign: getStoredSignupCampaign(),
-          channel: "client",
-          funnel: "launch",
-        });
-        return;
-      }
-
-      await persistSignupAttributionToProfile(result.user.id);
-      queueSignupCompletedForAnalytics();
-      await trackRegistrationFunnelServer("signup_completed", {
-        source: getSignupAttributionSource(),
-        utm_campaign: getStoredSignupCampaign(),
-      });
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("signup_source, subscription_status, subscription_current_period_end, created_at")
-        .eq("id", result.user.id)
-        .maybeSingle();
-
-      window.location.assign(
-        resolveClientPostSignupPath(
-          profile
-            ? {
-                email: emailTrimmed,
-                profileRowReadOk: true,
-                subscription_status: profile.subscription_status as string | null,
-                subscription_current_period_end:
-                  profile.subscription_current_period_end as string | null,
-                created_at: profile.created_at as string | null,
-                signup_source: profile.signup_source as string | null,
-              }
-            : null,
-          emailTrimmed,
-          { clientSide: true }
-        )
-      );
-    } catch (err: unknown) {
-      setError(mapSignupError(err, t));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const storyFlow = organicEuFlow && !tiktokFlow;
-
-  if (!mounted || !sessionChecked) {
-    return (
-      <RegistrerenShell visual={storyFlow ? "story" : "work"}>
-        <p
-          className={`text-center text-sm ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
-        >
-          {t("registrerenPage.loading")}
-        </p>
-      </RegistrerenShell>
-    );
-  }
-
-  if (magicLinkSent) {
-    return (
-      <RegistrerenShell visual={storyFlow ? "story" : "work"}>
-        <div className="mx-auto w-full text-center">
-          <h2
-            className={`text-lg tracking-tight sm:text-xl ${storyFlow ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
-          >
-            {t("registrerenPage.magicLinkSentTitle")}
-          </h2>
-          <p
-            className={`mt-3 text-sm leading-relaxed ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
-          >
-            {t("registrerenPage.magicLinkSentBody", { email: magicLinkEmail })}
-          </p>
-          <p
-            className={`mt-2 text-xs ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
-          >
-            {t("registrerenPage.magicLinkSentHint")}
-          </p>
-        </div>
-      </RegistrerenShell>
-    );
-  }
-
-  const headingKey = tiktokFlow
-    ? "registrerenPage.accountHeadingTikTok"
-    : acquisitionFlow
+  const headingKey = postDagstart
+    ? "registrerenPage.dagstartSaveHeading"
+    : isAcquisitionCopy
       ? "registrerenPage.accountHeadingAcquisition"
       : "registrerenPage.accountHeading";
-  const subheadingKey = tiktokFlow
-    ? "registrerenPage.accountSubheadingTikTok"
-    : acquisitionFlow
+  const subheadingKey = postDagstart
+    ? "registrerenPage.dagstartSaveSubheading"
+    : isAcquisitionCopy
       ? "registrerenPage.accountSubheadingAcquisition"
       : "registrerenPage.accountSubheading";
-  const continueLabel = tiktokFlow
-    ? t("registrerenPage.continueBtnTikTok", { days: String(trialDays) })
-    : acquisitionFlow
-      ? t("registrerenPage.continueBtnMagicLink")
-      : t("registrerenPage.continueBtn");
 
-  const inputClass = storyFlow
-    ? "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 text-base text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
-    : "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  const linkClass = storyVisual
+    ? "font-semibold text-[var(--story-accent)] hover:text-[#234845]"
+    : "font-semibold text-blue-600 hover:text-blue-800";
 
-  const labelClass = storyFlow
-    ? "block text-sm text-[var(--story-text-muted)]"
-    : "block text-sm text-gray-500";
-
-  const primaryBtnClass = storyFlow
-    ? "flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-[15px] text-base font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-200 hover:bg-[var(--story-cta-hover)] hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-    : "flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-[15px] text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(37,99,235,0.28)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0";
+  const mutedTextClass = storyVisual
+    ? "text-[var(--story-text-muted)]"
+    : "text-slate-500";
 
   return (
-    <RegistrerenShell error={error} visual={storyFlow ? "story" : "work"}>
+    <RegistrerenShell error={error} visual={visual}>
       <div className="mx-auto w-full text-center">
-        {storyFlow || tiktokFlow || acquisitionFlow ? null : (
+        {postDagstart ? null : storyVisual ? (
+          <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
+            <span className="st-story-eyebrow-pulse" aria-hidden />
+            {t("registrerenPage.organicEyebrow")}
+          </p>
+        ) : (
           <p className="mb-3">
             <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
               {t("registrerenPage.trialBadge", { days: String(trialDays) })}
             </span>
           </p>
         )}
-        {storyFlow ? (
-          <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
-            <span className="st-story-eyebrow-pulse" aria-hidden />
-            {t("registrerenPage.organicEyebrow")}
-          </p>
-        ) : null}
         <h2
-          className={`text-lg tracking-tight sm:text-xl ${storyFlow ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
+          className={`text-lg tracking-tight sm:text-xl ${storyVisual ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
         >
           {t(headingKey)}
         </h2>
         <p
-          className={`mt-2 text-sm leading-relaxed ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
+          className={`mt-2 text-sm leading-relaxed ${storyVisual ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
         >
           {t(subheadingKey)}
         </p>
-        {tiktokFlow ? (
-          <p className="mt-2 text-xs font-medium text-slate-500">
-            {t("registrerenPage.tiktokTrustLine", { days: String(trialDays) })}
-          </p>
-        ) : acquisitionFlow && !storyFlow ? (
-          <p className="mt-2 text-xs font-medium text-slate-500">
-            {t("registrerenPage.acquisitionTrustLine", { days: String(trialDays) })}
-          </p>
-        ) : null}
       </div>
 
-      <div className="mx-auto w-full space-y-4 text-left">
-        <div className="space-y-1">
-          <label htmlFor="reg-name" className={labelClass}>
-            {t("registrerenPage.nameLabel")}
-          </label>
-          <input
-            id="reg-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputClass}
-            placeholder={t("registrerenPage.namePh")}
-            required
-            autoComplete="name"
-          />
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="reg-email" className={labelClass}>
-            {t("registrerenPage.emailLabel")}
-          </label>
-          <input
-            id="reg-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-            placeholder={t("registrerenPage.emailPh")}
-            required
-            autoComplete="email"
-          />
-        </div>
-
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => void handleAccountContinue()}
-          className={primaryBtnClass}
-        >
-          {loading ? t("registrerenPage.submitBusy") : continueLabel}
-        </button>
+      <div className="mx-auto w-full">
+        <AccountSignUpOptions
+          visual={visual}
+          showPasskey={false}
+          nameValue={preferredName}
+          hideNameField
+          onSignUpStarted={() => {
+            setError(null);
+            trackAcquisitionSignupStarted({ pathname: "/registreren", searchParams });
+          }}
+          onError={(message) => setError(message)}
+          onSessionReady={(path) => {
+            window.location.assign(path);
+          }}
+        />
       </div>
 
       {!eventSignupFlow ? (
-        <p
-          className={`text-center text-sm ${storyFlow ? "text-[var(--story-text-muted)]" : "text-slate-500"}`}
-        >
+        <p className={`text-center text-sm ${mutedTextClass}`}>
           {t("registrerenPage.hasAccount")}{" "}
-          <Link
-            href="/login"
-            className={
-              storyFlow
-                ? "font-semibold text-[var(--story-accent)] hover:text-[#234845]"
-                : "font-semibold text-blue-600 hover:text-blue-800"
-            }
-          >
+          <Link href={buildLoginHref(searchParams)} className={linkClass}>
             {t("registrerenPage.loginLink")}
           </Link>
         </p>
@@ -356,16 +228,20 @@ function RegistrerenAccountInner() {
   );
 }
 
-export default function RegistrerenAccountClient() {
+export default function RegistrerenAccountClient({
+  initialPostDagstart = false,
+}: {
+  initialPostDagstart?: boolean;
+} = {}) {
   return (
-      <Suspense
+    <Suspense
       fallback={
-        <div className="st-story-bg flex min-h-[100dvh] items-center justify-center text-sm text-[var(--story-text-muted)]">
-          …
-        </div>
+        <RegistrerenShell visual="story">
+          <p className="text-center text-sm text-[var(--story-text-muted)]">…</p>
+        </RegistrerenShell>
       }
     >
-      <RegistrerenAccountInner />
+      <RegistrerenAccountInner initialPostDagstart={initialPostDagstart} />
     </Suspense>
   );
 }

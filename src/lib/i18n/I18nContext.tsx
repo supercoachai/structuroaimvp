@@ -12,14 +12,10 @@ import {
 import { BUNDLES } from "./bundles";
 import { resolveMessage } from "./resolve";
 import {
-  STRUCTURO_LOCALE_STORAGE_KEY,
-  type Locale,
-  SUPPORTED_LOCALES,
-} from "./types";
-
-function isLocale(v: string | null): v is Locale {
-  return v === "nl" || v === "en";
-}
+  resolveInitialLocale,
+  syncLocaleStorage,
+} from "./clientLocale";
+import { type Locale, SUPPORTED_LOCALES } from "./types";
 
 function interpolate(
   template: string,
@@ -43,24 +39,11 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("nl");
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STRUCTURO_LOCALE_STORAGE_KEY);
-      if (isLocale(raw)) setLocaleState(raw);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [locale, setLocaleState] = useState<Locale>(() => resolveInitialLocale());
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
-    try {
-      localStorage.setItem(STRUCTURO_LOCALE_STORAGE_KEY, next);
-    } catch {
-      /* ignore */
-    }
+    syncLocaleStorage(next);
     if (typeof document !== "undefined") {
       document.documentElement.lang = next === "en" ? "en" : "nl";
     }

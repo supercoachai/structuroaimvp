@@ -1,0 +1,78 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
+import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
+import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
+import { markPasswordSetupCompleted } from "@/lib/auth/passwordSetupProfile";
+
+export type EmailPasswordSignUpParams = {
+  email: string;
+  password: string;
+  fullName: string;
+  signupSource?: string | null;
+  signupCampaign?: string | null;
+};
+
+export type EmailPasswordSignUpResult = {
+  userId: string;
+  email: string | null | undefined;
+  needsEmailConfirmation: boolean;
+};
+
+export async function signUpWithEmailPassword(
+  supabase: SupabaseClient,
+  params: EmailPasswordSignUpParams
+): Promise<EmailPasswordSignUpResult> {
+  const email = normalizeSignupEmail(params.email);
+  if (!email) {
+    throw new Error("invalid_email");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    const devResult = await signUpPasswordlessWithLocalDevFallback(supabase, {
+      email,
+      fullName: params.fullName.trim(),
+      signupSource: params.signupSource,
+      signupCampaign: params.signupCampaign,
+    });
+    if (devResult.kind !== "session") {
+      throw new Error("signup_session_failed");
+    }
+    return {
+      userId: devResult.user.id,
+      email,
+      needsEmailConfirmation: false,
+    };
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: params.password,
+    options: {
+      data: {
+        full_name: params.fullName.trim(),
+        ...(params.signupSource ? { signup_source: params.signupSource } : {}),
+        ...(params.signupCampaign ? { signup_utm_campaign: params.signupCampaign } : {}),
+      },
+      emailRedirectTo: buildAuthCallbackUrl("/onboarding"),
+    },
+  });
+
+  if (error) throw error;
+  if (!data.user?.id) throw new Error("signup_failed");
+
+  if (data.session) {
+    await markPasswordSetupCompleted(supabase, data.user.id);
+    return {
+      userId: data.user.id,
+      email: data.user.email,
+      needsEmailConfirmation: false,
+    };
+  }
+
+  return {
+    userId: data.user.id,
+    email: data.user.email,
+    needsEmailConfirmation: true,
+  };
+}

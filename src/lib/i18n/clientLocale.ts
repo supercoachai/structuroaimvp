@@ -1,25 +1,84 @@
-import { STRUCTURO_LOCALE_STORAGE_KEY, type Locale } from "./types";
+import {
+  STRUCTURO_LANG_LEGACY_STORAGE_KEY,
+  STRUCTURO_LOCALE_STORAGE_KEY,
+  type Locale,
+} from "./types";
 
-export function readStoredLocale(): Locale | null {
+export function isLocale(v: string | null | undefined): v is Locale {
+  return v === "nl" || v === "en";
+}
+
+function readStorageLocale(key: string): Locale | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STRUCTURO_LOCALE_STORAGE_KEY);
-    if (raw === "nl" || raw === "en") return raw;
+    const raw = localStorage.getItem(key);
+    if (isLocale(raw)) return raw;
   } catch {
     /* ignore */
   }
   return null;
 }
 
+function urlLocaleFromParams(params: URLSearchParams): Locale | null {
+  const fromUrl = params.get("lang") || params.get("locale");
+  return isLocale(fromUrl) ? fromUrl : null;
+}
+
+/** Organic EU-bridge: /start, /registreren of /tiktok met structuro_eu-attributie. */
+export function isOrganicEuAcquisitionUrl(
+  pathname: string,
+  params: URLSearchParams
+): boolean {
+  if (!/^\/(start|registreren|tiktok)(\/|$)/.test(pathname)) return false;
+  const utm = params.get("utm_source") || "";
+  const legacy = params.get("source") || "";
+  if (utm === "tiktok" || legacy === "tiktok") return false;
+  if (utm === "structuro_eu" || legacy === "structuro_eu") return true;
+  // Kale /registreren = organische acquisitie (zelfde NL-default als structuro.eu-funnel).
+  return pathname === "/registreren" || pathname.startsWith("/registreren/");
+}
+
+/** Eerste paint + I18nProvider: structuro.eu-funnel default NL, niet stale app-locale. */
+export function resolveInitialLocale(
+  pathname?: string,
+  search?: string
+): Locale {
+  if (typeof window === "undefined") return "nl";
+
+  const path = pathname ?? window.location.pathname;
+  const params = new URLSearchParams(search ?? window.location.search);
+
+  const fromUrl = urlLocaleFromParams(params);
+  if (fromUrl) return fromUrl;
+
+  if (isOrganicEuAcquisitionUrl(path, params)) {
+    return readStorageLocale(STRUCTURO_LANG_LEGACY_STORAGE_KEY) ?? "nl";
+  }
+
+  return (
+    readStorageLocale(STRUCTURO_LOCALE_STORAGE_KEY) ??
+    readStorageLocale(STRUCTURO_LANG_LEGACY_STORAGE_KEY) ??
+    "nl"
+  );
+}
+
+export function readStoredLocale(): Locale | null {
+  return readStorageLocale(STRUCTURO_LOCALE_STORAGE_KEY);
+}
+
+export function syncLocaleStorage(locale: Locale): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STRUCTURO_LOCALE_STORAGE_KEY, locale);
+    localStorage.setItem(STRUCTURO_LANG_LEGACY_STORAGE_KEY, locale);
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Taal voor foutschermen buiten I18nProvider (ErrorBoundary, global-error). */
 export function resolveClientLocale(): Locale {
-  const stored = readStoredLocale();
-  if (stored) return stored;
-  if (typeof document !== "undefined") {
-    const htmlLang = document.documentElement.lang.toLowerCase();
-    if (htmlLang.startsWith("en")) return "en";
-  }
-  return "nl";
+  return resolveInitialLocale();
 }
 
 export function isEnglishClientLocale(): boolean {
@@ -79,4 +138,11 @@ export function getRouteErrorUiCopy(): Pick<
     refreshLabel: ERROR_UI.nl.refreshLabel,
     retryLabel: ERROR_UI.nl.retryLabel,
   };
+}
+
+/** Inline vóór React: zelfde regels als resolveInitialLocale + sync op organic EU. */
+export function getLocaleBootstrapScript(): string {
+  const localeKey = JSON.stringify(STRUCTURO_LOCALE_STORAGE_KEY);
+  const legacyKey = JSON.stringify(STRUCTURO_LANG_LEGACY_STORAGE_KEY);
+  return `(function(){try{var p=window.location.pathname;var q=new URLSearchParams(window.location.search||"");var lang=q.get("lang")||q.get("locale");var utm=q.get("utm_source")||"";var src=q.get("source")||"";var isAcq=/^\\/(start|registreren|tiktok)(\\/|$)/.test(p);var isReg=/^\\/registreren(\\/|$)/.test(p);var isEu=(isAcq&&(utm==="structuro_eu"||src==="structuro_eu")&&utm!=="tiktok"&&src!=="tiktok")||isReg;var locale="nl";if(lang==="en"||lang==="nl"){locale=lang;}else if(isEu){var landing=localStorage.getItem(${legacyKey});locale=landing==="en"||landing==="nl"?landing:"nl";}else{var stored=localStorage.getItem(${localeKey});if(stored==="en"||stored==="nl")locale=stored;else{var leg=localStorage.getItem(${legacyKey});if(leg==="en"||leg==="nl")locale=leg;}}document.documentElement.lang=locale;if(isEu||lang==="en"||lang==="nl"){localStorage.setItem(${localeKey},locale);localStorage.setItem(${legacyKey},locale);}}catch(e){}})();`;
 }

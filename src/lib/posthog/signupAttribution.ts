@@ -108,8 +108,81 @@ export function applySignupAttributionFromSearchParams(
     return;
   }
 
+  // /registreren met expliciete UTM/source: URL wint (geen stale tiktok in sessionStorage).
+  if (
+    key &&
+    typeof window !== "undefined" &&
+    (window.location.pathname === "/registreren" ||
+      window.location.pathname.startsWith("/registreren/"))
+  ) {
+    try {
+      sessionStorage.setItem(SOURCE_KEY, key);
+      if (campaign) sessionStorage.setItem(CAMPAIGN_KEY, campaign);
+      else sessionStorage.removeItem(CAMPAIGN_KEY);
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
+
   captureUtmOnFirstVisit();
   persistSignupSourceFromUrl(source || null);
+}
+
+/** Story Layer op /registreren: organic EU in URL, geen tiktok in URL. */
+export function isOrganicEuSignupFromParams(
+  params: SearchParamsLike | null | undefined
+): boolean {
+  if (!params) return false;
+  const utm = sanitizeAttributionValue(params.get("utm_source"));
+  const legacy = sanitizeAttributionValue(params.get("source"));
+  if (utm === "tiktok" || legacy === "tiktok") return false;
+  return utm === ORGANIC_SIGNUP_SOURCE || legacy === ORGANIC_SIGNUP_SOURCE;
+}
+
+/** TikTok-attributie in URL op /registreren. */
+export function isTikTokSignupFromParams(
+  params: SearchParamsLike | null | undefined
+): boolean {
+  if (!params) return false;
+  const utm = sanitizeAttributionValue(params.get("utm_source"));
+  const legacy = sanitizeAttributionValue(params.get("source"));
+  if (utm === ORGANIC_SIGNUP_SOURCE || legacy === ORGANIC_SIGNUP_SOURCE) return false;
+  return utm === "tiktok" || legacy === "tiktok";
+}
+
+export type RegistrerenPresentation = {
+  /** Story Layer (cream, Newsreader). Altijd op acquisitie; alleen event-QR = work. */
+  storyVisual: boolean;
+  /** Acquisition copy i.p.v. generieke proefperiode-headline. */
+  isAcquisitionCopy: boolean;
+  isEventFlow: boolean;
+};
+
+/**
+ * Visuele presentatie op /registreren: alleen uit URL (incognito = zelfde als normale browser).
+ * Geen sessionStorage/referrer: voorkomt flip na mount en stale storage in normale browser.
+ */
+export function resolveRegistrerenPresentation(
+  params: SearchParamsLike | null | undefined
+): RegistrerenPresentation {
+  const utm = sanitizeAttributionValue(params?.get("utm_source"));
+  const legacy = sanitizeAttributionValue(params?.get("source"));
+  const sourceKey = normalizeSignupSourceKey(utm || legacy);
+
+  if (sourceKey && sourceKey in EVENT_TRIAL_BY_SIGNUP_SOURCE) {
+    return {
+      storyVisual: false,
+      isAcquisitionCopy: false,
+      isEventFlow: true,
+    };
+  }
+
+  return {
+    storyVisual: true,
+    isAcquisitionCopy: true,
+    isEventFlow: false,
+  };
 }
 
 /** Event-landingspagina's (QR): overschrijf bron zodat trial-promo altijd geldt. */
@@ -177,31 +250,33 @@ export function isAcquisitionSignupContext(): boolean {
 /** structuro.eu → /start → /registreren: Story Layer styling, geen proefdagen-copy. */
 export function isOrganicEuSignupContext(): boolean {
   if (typeof window === "undefined") return false;
-  if (getStoredSignupSource() === ORGANIC_SIGNUP_SOURCE) return true;
 
   try {
     const params = new URLSearchParams(window.location.search);
-    const utm = params.get("utm_source");
-    const legacy = params.get("source");
-    return utm === ORGANIC_SIGNUP_SOURCE || legacy === ORGANIC_SIGNUP_SOURCE;
+    if (isOrganicEuSignupFromParams(params)) return true;
   } catch {
-    return false;
+    /* ignore */
   }
+
+  return getStoredSignupSource() === ORGANIC_SIGNUP_SOURCE;
 }
 
 /** TikTok-bridge of TikTok-attributie: scherpere copy op /registreren. */
 export function isTikTokSignupContext(): boolean {
   if (typeof window === "undefined") return false;
 
-  const source = getStoredSignupSource();
-  if (source === "tiktok") return true;
-
   try {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("source") === "tiktok" || params.get("utm_source") === "tiktok") return true;
+    const utm = params.get("utm_source");
+    const legacy = params.get("source");
+    if (utm === ORGANIC_SIGNUP_SOURCE || legacy === ORGANIC_SIGNUP_SOURCE) return false;
+    if (utm === "tiktok" || legacy === "tiktok") return true;
   } catch {
     /* ignore */
   }
+
+  const source = getStoredSignupSource();
+  if (source === "tiktok") return true;
 
   try {
     const ref = document.referrer;

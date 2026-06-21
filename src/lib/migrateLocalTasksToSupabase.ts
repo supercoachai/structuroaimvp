@@ -9,6 +9,39 @@ import { addTaskToSupabase } from "@/lib/supabase/tasksDb";
 import type { Task } from "@/context/TaskContext";
 
 const migratedKey = (userId: string) => `structuro_tasks_migrated_${userId}`;
+/** Per-taak markering van reeds geüploade taken, zodat een retry niet dubbel uploadt. */
+const migratedIdsKey = (userId: string) =>
+  `structuro_tasks_migrated_ids_${userId}`;
+
+function readMigratedIds(userId: string): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(migratedIdsKey(userId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set(parsed.map(String)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function writeMigratedIds(userId: string, ids: Set<string>): void {
+  try {
+    window.localStorage.setItem(
+      migratedIdsKey(userId),
+      JSON.stringify([...ids])
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearMigratedIds(userId: string): void {
+  try {
+    window.localStorage.removeItem(migratedIdsKey(userId));
+  } catch {
+    /* ignore */
+  }
+}
 
 function localTaskToInsert(local: LocalTask): Omit<Task, "id"> {
   let priority: number | null = null;
@@ -55,7 +88,16 @@ function localTaskToInsert(local: LocalTask): Omit<Task, "id"> {
 
 /**
  * Eenmalige upload van localStorage-taken na eerste login.
- * @returns Aantal geüploade taken (0 als niets te migreren was).
+ *
+ * Veiligheid en idempotentie:
+ * - Lokale taken worden ALLEEN gewist en de "migrated"-vlag wordt ALLEEN gezet
+ *   wanneer ALLE taken succesvol zijn geüpload. Bij een gedeeltelijke upload
+ *   blijven de lokale taken staan zodat een latere aanroep de rest meeneemt.
+ * - Reeds geüploade taken worden per id gemarkeerd en bij een retry overgeslagen,
+ *   zodat er geen duplicaten ontstaan.
+ * - Volledig best-effort: een fout breekt nooit de signup-redirect.
+ *
+ * @returns Aantal taken dat in deze aanroep nieuw is geüpload (0 als niets te doen was).
  */
 export async function migrateLocalTasksToSupabase(
   userId: string
@@ -75,27 +117,40 @@ export async function migrateLocalTasksToSupabase(
     } catch {
       /* ignore */
     }
+    clearMigratedIds(userId);
     return 0;
   }
 
+  const migratedIds = readMigratedIds(userId);
   let uploaded = 0;
+
   for (const local of localTasks) {
+    if (migratedIds.has(local.id)) continue;
     try {
       await addTaskToSupabase(userId, localTaskToInsert(local));
+      migratedIds.add(local.id);
       uploaded += 1;
+      // Markeer direct, zodat een crash midden in de loop geen duplicaten oplevert.
+      writeMigratedIds(userId, migratedIds);
     } catch (err) {
       console.warn("[migrateLocalTasks] skip task", local.id, err);
     }
   }
 
-  if (uploaded > 0) {
-    clearAllTasks();
-  }
+  const allUploaded = localTasks.every((task) => migratedIds.has(task.id));
 
-  try {
-    window.localStorage.setItem(migratedKey(userId), "1");
-  } catch {
-    /* ignore */
+  if (allUploaded) {
+    clearAllTasks();
+    try {
+      window.localStorage.setItem(migratedKey(userId), "1");
+    } catch {
+      /* ignore */
+    }
+    clearMigratedIds(userId);
+  } else {
+    // Gedeeltelijke migratie: behoud lokale data en de "migrated"-vlag NIET,
+    // zodat een latere aanroep de resterende taken alsnog meeneemt.
+    writeMigratedIds(userId, migratedIds);
   }
 
   return uploaded;

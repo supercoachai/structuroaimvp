@@ -11,7 +11,10 @@ const ST_ATTR_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 
 export type FirstTouchAttribution = {
   source: string;
+  utm_source: string | null;
   utm_campaign: string | null;
+  utm_medium: string | null;
+  utm_content: string | null;
 };
 
 function sanitize(raw: string | null | undefined, max = 64): string {
@@ -52,16 +55,65 @@ export function parseStAttrCookie(raw: string | null | undefined): FirstTouchAtt
   try {
     const parsed = JSON.parse(raw) as {
       source?: string;
+      utm_source?: string | null;
       utm_campaign?: string | null;
+      utm_medium?: string | null;
+      utm_content?: string | null;
     };
     const source = normalizeSignupSource(parsed.source);
+    const utm_source = parsed.utm_source
+      ? sanitize(parsed.utm_source) || null
+      : null;
     const campaign = parsed.utm_campaign
       ? sanitize(parsed.utm_campaign) || null
       : null;
-    return { source, utm_campaign: campaign };
+    const utm_medium = parsed.utm_medium
+      ? sanitize(parsed.utm_medium) || null
+      : null;
+    const utm_content = parsed.utm_content
+      ? sanitize(parsed.utm_content) || null
+      : null;
+    return {
+      source,
+      utm_source,
+      utm_campaign: campaign,
+      utm_medium,
+      utm_content,
+    };
   } catch {
     return null;
   }
+}
+
+/** PostHog $set_once bij identify — first-touch attributie op de persoon. */
+export function getFirstTouchSetOnceForPostHog(): Record<string, string> | null {
+  if (typeof document === "undefined") return null;
+  const parsed = parseStAttrCookie(readCookie(ST_ATTR_COOKIE));
+  if (!parsed) return null;
+
+  const out: Record<string, string> = {};
+  const initialSource = parsed.utm_source || parsed.source;
+  if (initialSource && initialSource !== "direct") {
+    out.initial_utm_source = initialSource;
+    out.$initial_utm_source = initialSource;
+  }
+  if (parsed.utm_campaign) {
+    out.initial_utm_campaign = parsed.utm_campaign;
+    out.$initial_utm_campaign = parsed.utm_campaign;
+  }
+  if (parsed.utm_medium) {
+    out.initial_utm_medium = parsed.utm_medium;
+    out.$initial_utm_medium = parsed.utm_medium;
+  }
+  if (parsed.utm_content) {
+    out.initial_utm_content = parsed.utm_content;
+    out.$initial_utm_content = parsed.utm_content;
+  }
+  if (parsed.source && parsed.source !== "direct") {
+    out.signup_source = parsed.source;
+  }
+
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 /** Server: lees st_attr uit Request cookies. */
@@ -112,6 +164,9 @@ export function captureFirstTouchAttribution(): void {
       window.location.pathname.startsWith("/start/")
         ? "structuro_eu"
         : "";
+    const utm_source = fromUtm || null;
+    const utm_medium = sanitize(params.get("utm_medium")) || null;
+    const utm_content = sanitize(params.get("utm_content")) || null;
     const source =
       fromUtm ||
       fromSource ||
@@ -124,7 +179,10 @@ export function captureFirstTouchAttribution(): void {
 
     const payload: FirstTouchAttribution = {
       source: normalizeSignupSource(source),
+      utm_source,
       utm_campaign: campaign,
+      utm_medium,
+      utm_content,
     };
 
     writeCookie(ST_ATTR_COOKIE, JSON.stringify(payload), ST_ATTR_MAX_AGE_SEC);

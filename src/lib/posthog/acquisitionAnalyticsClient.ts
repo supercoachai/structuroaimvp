@@ -38,6 +38,7 @@ function attributionProperties(
     const variant = resolveLpVariant({
       campaign: searchParams?.get("campaign"),
       utmContent: searchParams?.get("utm_content"),
+      utmCampaign: searchParams?.get("utm_campaign"),
       hero: searchParams?.get("hero"),
     });
     props.lp_campaign = variant.campaign.id;
@@ -71,6 +72,7 @@ function serverPayload(
     const variant = resolveLpVariant({
       campaign: searchParams?.get("campaign"),
       utmContent: searchParams?.get("utm_content"),
+      utmCampaign: searchParams?.get("utm_campaign"),
       hero: searchParams?.get("hero"),
     });
     payload.lp_campaign = variant.campaign.id;
@@ -86,7 +88,8 @@ async function postAcquisitionAnalytics(
   payload: Record<string, unknown>
 ): Promise<void> {
   try {
-    await fetch(`/api/analytics/${event}`, {
+    const routeSegment = event.replace(/_/g, "-");
+    await fetch(`/api/analytics/${routeSegment}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

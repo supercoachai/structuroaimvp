@@ -4,7 +4,13 @@
  */
 
 export type LpHeroId = "A" | "B" | "C" | "D" | "E";
-export type LpCampaignId = "staren" | "nietlui" | "cyclus" | "geenlijsten" | "weten";
+export type LpCampaignId =
+  | "welkom"
+  | "staren"
+  | "nietlui"
+  | "cyclus"
+  | "geenlijsten"
+  | "weten";
 export type LpThemeId = "light" | "warm" | "dark";
 
 export type LpHero = {
@@ -87,8 +93,22 @@ export const LP_HEROES: Record<LpHeroId, LpHero> = {
 
 const ALL_HEROES: readonly LpHeroId[] = ["A", "B", "C", "D", "E"];
 
+/** Meta-UTM labels (attributie), geen LP-campagne. */
+export const LP_META_UTM_CAMPAIGNS = new Set([
+  "tiktok_promote",
+  "website",
+  "organic",
+  "referral",
+]);
+
 /** Fallback campagne zonder URL-params (legacy LP was cyclus-hook). */
 export const LP_DEFAULT_CAMPAIGN_ID: LpCampaignId = "cyclus";
+
+/**
+ * Generieke TikTok Promote zonder herkenbare hook in URL: warme herkenning-welkom.
+ * Specifieke hooks (campaign= of utm_content=hook_x) blijven hun eigen copy tonen.
+ */
+export const LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID: LpCampaignId = "welkom";
 
 /** Standaard campagne voor organische bridge (/start, structuro.eu). */
 export const LP_ORGANIC_DEFAULT_CAMPAIGN_ID: LpCampaignId = "weten";
@@ -103,6 +123,21 @@ export const LP_RITUAL_STEPS = [
 ] as const;
 
 export const LP_CAMPAIGNS: readonly LpCampaign[] = [
+  {
+    id: "welkom",
+    name: "Welkom (TikTok default)",
+    note: "Neutrale herkenning-welkom voor generiek TikTok-verkeer zonder specifieke hook. Werkt voor video én beeld.",
+    utmContent: "welkom_tiktok",
+    theme: "light",
+    accent: LP_BRAND.green,
+    headline: "Je zag iets dat klopte. Daarom ben je hier.",
+    subline:
+      "Geen toeval, en geen luiheid. Je brein start gewoon anders op. Structuro helpt je rustig beginnen, stap voor stap.",
+    cta: "Start met Structuro",
+    trust: "Geen verplichtingen. Jij bepaalt het tempo.",
+    defaultHero: "B",
+    heroesAllowed: ALL_HEROES,
+  },
   {
     id: "staren",
     name: "40 min staren",
@@ -180,6 +215,7 @@ export const LP_CAMPAIGNS: readonly LpCampaign[] = [
  * Alle andere heroes blijven expliciet toegestaan via ?hero=
  */
 export const LP_HERO_CAMPAIGN_DEFAULTS: Record<LpCampaignId, LpHeroId> = {
+  welkom: "B",
   staren: "A",
   nietlui: "A",
   cyclus: "B",
@@ -189,6 +225,7 @@ export const LP_HERO_CAMPAIGN_DEFAULTS: Record<LpCampaignId, LpHeroId> = {
 
 /** Alternatieven die vaak werken na A/B-test */
 export const LP_HERO_CAMPAIGN_ALTERNATIVES: Record<LpCampaignId, readonly LpHeroId[]> = {
+  welkom: ["A", "E"],
   staren: ["B"],
   nietlui: ["B"],
   cyclus: ["A", "B"],
@@ -216,17 +253,32 @@ function sanitizeCampaignId(raw: string | null | undefined): LpCampaignId | null
   return LP_CAMPAIGNS.some((c) => c.id === id) ? (id as LpCampaignId) : null;
 }
 
-/** Match campagne op ?campaign= of utm_content (exact of prefix content_id). */
+/**
+ * TikTok/macro-placeholders die niet door het ad-platform zijn ingevuld
+ * (bijv. `<video_id>` of `__VIDEO_ID__`). Deze mogen nooit als echte hook/attributie tellen.
+ */
+export function isUnsubstitutedUtmContent(raw: string | null | undefined): boolean {
+  const value = (raw ?? "").trim();
+  if (!value) return false;
+  if (value.includes("<") || value.includes(">")) return true;
+  return /^__.*__$/.test(value);
+}
+
+/** Match campagne op ?campaign=, utm_content of utm_campaign (geen meta-labels). */
 export function resolveLpCampaign(params: {
   campaign?: string | null;
   utmContent?: string | null;
+  utmCampaign?: string | null;
+  channel?: "tiktok" | "organic";
 }): LpCampaign {
   const byQuery = sanitizeCampaignId(params.campaign);
   if (byQuery) {
     return LP_CAMPAIGNS.find((c) => c.id === byQuery)!;
   }
 
-  const content = (params.utmContent ?? "").trim().toLowerCase();
+  const content = isUnsubstitutedUtmContent(params.utmContent)
+    ? ""
+    : (params.utmContent ?? "").trim().toLowerCase();
   if (content) {
     const exact = LP_CAMPAIGNS.find((c) => c.utmContent.toLowerCase() === content);
     if (exact) return exact;
@@ -237,7 +289,26 @@ export function resolveLpCampaign(params: {
     if (partial) return partial;
   }
 
-  return LP_CAMPAIGNS.find((c) => c.id === LP_DEFAULT_CAMPAIGN_ID) ?? LP_CAMPAIGNS[0];
+  const utmCampaign = (params.utmCampaign ?? "").trim().toLowerCase();
+  if (utmCampaign && !LP_META_UTM_CAMPAIGNS.has(utmCampaign)) {
+    const byUtm = sanitizeCampaignId(utmCampaign);
+    if (byUtm) {
+      return LP_CAMPAIGNS.find((c) => c.id === byUtm)!;
+    }
+  }
+
+  if (utmCampaign === "tiktok_promote") {
+    return (
+      LP_CAMPAIGNS.find((c) => c.id === LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID) ??
+      LP_CAMPAIGNS[0]
+    );
+  }
+
+  const fallbackId =
+    params.channel === "tiktok"
+      ? LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID
+      : LP_DEFAULT_CAMPAIGN_ID;
+  return LP_CAMPAIGNS.find((c) => c.id === fallbackId) ?? LP_CAMPAIGNS[0];
 }
 
 /** Hero uit ?hero=; anders defaultHero van campagne. */
@@ -252,7 +323,9 @@ export function resolveLpHero(campaign: LpCampaign, heroQuery?: string | null): 
 export function resolveLpVariant(params: {
   campaign?: string | null;
   utmContent?: string | null;
+  utmCampaign?: string | null;
   hero?: string | null;
+  channel?: "tiktok" | "organic";
 }): LpResolvedVariant {
   const campaign = resolveLpCampaign(params);
   const fromQuery = sanitizeHero(params.hero);

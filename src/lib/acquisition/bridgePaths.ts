@@ -3,7 +3,11 @@
  * Zelfde LP-componenten en campagne-copy; aparte URL + attributie.
  */
 
-import { buildOrganicStartUrl, buildTikTokLandingUrl } from "@/lib/tiktok/lpConfig";
+import {
+  buildOrganicStartUrl,
+  buildTikTokLandingUrl,
+  isUnsubstitutedUtmContent,
+} from "@/lib/tiktok/lpConfig";
 
 export type BridgeChannel = "tiktok" | "organic";
 
@@ -30,6 +34,7 @@ function sanitizeCampaign(raw: string | null | undefined): string {
 }
 
 function sanitizeContent(raw: string | null | undefined): string | null {
+  if (isUnsubstitutedUtmContent(raw)) return null;
   const t = (raw ?? "").trim().slice(0, 64);
   if (!t) return null;
   return t.replace(/[^a-zA-Z0-9_-]/g, "") || null;
@@ -80,6 +85,10 @@ export function buildBridgeRegistrerenHref(
     });
     const video = sanitizeContent(searchParams?.get("utm_content"));
     if (video) params.set("utm_content", video);
+    const lpCampaign = sanitizeCampaign(searchParams?.get("campaign"));
+    if (lpCampaign) params.set("campaign", lpCampaign);
+    const hero = sanitizeCampaign(searchParams?.get("hero"));
+    if (hero) params.set("hero", hero);
     return `/registreren?${params.toString()}`;
   }
 

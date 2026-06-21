@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
+
 type SignUpParams = {
   email: string;
   fullName: string;
@@ -17,13 +19,6 @@ function buildSignupMetadata(params: SignUpParams): Record<string, string> {
     ...(params.signupSource ? { signup_source: params.signupSource } : {}),
     ...(params.signupCampaign ? { signup_utm_campaign: params.signupCampaign } : {}),
   };
-}
-
-function buildAuthCallbackUrl(): string {
-  if (typeof window === "undefined") {
-    return "https://www.structuro.ai/auth/callback?next=%2Fonboarding";
-  }
-  return `${window.location.origin}/auth/callback?next=${encodeURIComponent("/onboarding")}`;
 }
 
 /** Productie: magic link signup. Lokaal: admin-createUser + directe sessie. */
