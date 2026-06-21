@@ -97,6 +97,12 @@ export function PostHogAuthEffects() {
           return;
         }
 
+        // Funnel-event vóór identify: signup_completed vuurt zo nog met de
+        // anonieme distinct_id (019e...) en sluit aan op de acquisitie-events.
+        // De identity-stitch hieronder aliast/merget die anonieme persoon
+        // daarna in user.id, dus het event blijft gekoppeld aan de account.
+        tryCaptureSignup(user);
+
         // Identity-stitch: altijd user.id koppelen (ook vóór analytics-consent),
         // e-mail alleen bij expliciete toestemming.
         try {
@@ -112,8 +118,6 @@ export function PostHogAuthEffects() {
         } catch {
           /* ignore */
         }
-
-        tryCaptureSignup(user);
       };
 
       const { data } = supabase.auth.onAuthStateChange((event, session) => {

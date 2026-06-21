@@ -165,7 +165,7 @@ export async function GET(request: Request) {
         if (Number.isFinite(ageMs) && ageMs >= 0 && ageMs < 30 * 60 * 1000) {
           const attr = parseStAttrFromRequest(request);
           void captureRegistrationFunnelServer(user.id, "signup_completed", {
-            signup_source: attr?.source ?? "direct",
+            source: attr?.source ?? "direct",
             utm_campaign: attr?.utm_campaign ?? null,
           });
         }
