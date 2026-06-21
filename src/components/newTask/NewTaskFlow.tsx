@@ -701,6 +701,13 @@ function StepTitle({
       <StepQuestion compact={compact}>{t("newTask.qTitle")}</StepQuestion>
       <input
         ref={ref}
+        type="text"
+        name="task-title"
+        inputMode="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="sentences"
+        spellCheck={false}
         className="new-task-flow-input w-full border-0 border-b-[1.5px] border-[var(--st-line-strong)] bg-transparent px-1 py-3.5 text-xl font-medium tracking-tight text-[var(--st-ink)] outline-none transition-colors placeholder:font-normal placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue)]"
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
@@ -844,7 +851,9 @@ function StepDuration({
         <input
           ref={ref}
           type="number"
+          name="task-duration-minutes"
           inputMode="numeric"
+          autoComplete="off"
           min={1}
           max={480}
           value={customValue}
@@ -1453,6 +1462,13 @@ function StepMicro({
               {i + 1}
             </span>
             <input
+              type="text"
+              name={`task-microstep-${i + 1}`}
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
               className="new-task-micro-input min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--st-ink)] outline-none placeholder:text-[var(--st-muted-2)]"
               value={s}
               onChange={(e) => updateStep(i, e.target.value)}
