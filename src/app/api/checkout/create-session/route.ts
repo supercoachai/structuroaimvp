@@ -5,7 +5,6 @@ import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
-import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
@@ -98,11 +97,11 @@ async function postCreateSession(request: Request) {
     profile?.signup_source as string | null,
     user.user_metadata as Record<string, unknown> | undefined
   );
-  const subStatus = (profile?.subscription_status as string | null) ?? "none";
-  const trialDays =
-    subStatus === "none" || !subStatus
-      ? resolveStripeTrialDaysForSignupSource(signupSource)
-      : 0;
+  // De gratis proeftijd (3 dagen, of langer voor event-bronnen) zit volledig
+  // IN DE APP, berekend op profiles.created_at. Wie hier bij de Stripe-checkout
+  // komt, is dus altijd door die proeftijd heen en betaalt direct. Geen
+  // Stripe-trial meer, anders krijgt iemand een dubbele gratis periode.
+  const trialDays = 0;
 
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();
