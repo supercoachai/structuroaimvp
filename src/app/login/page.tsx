@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useLayoutEffect, Suspense, useEffect, useCallback, useRef } from 'react';
+import { useState, Suspense, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import LoginSuccessSplash from '@/components/LoginSuccessSplash';
 import {
   clearStructuroLocalModeCookie,
@@ -18,12 +18,14 @@ import {
 } from '@/lib/localOnboardingCookie';
 import { useI18n } from '@/lib/i18n';
 import {
-  persistSignupSourceFromUrl,
-  persistSignupAttributionToProfile,
-  queueSignupCompletedForAnalytics,
-} from '@/lib/posthog/signupAttribution';
+  markReturningUser,
+  isReturningUser,
+  setLastAuthMethod,
+  getLastAuthMethod,
+} from '@/lib/auth/returningUser';
+import type { OAuthProviderId } from '@/lib/auth/authProviders';
+import { useClientMounted } from '@/hooks/useClientMounted';
 import Link from 'next/link';
-import { isProtectedTestAccount } from '@/lib/protectedTestAccount';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
 import {
   clearCheckoutReturn,
@@ -31,12 +33,18 @@ import {
 } from '@/lib/checkoutReturnStorage';
 import { resolvePostLoginPathFromProfile } from '@/lib/postAuthRouting';
 import { markPasswordSetupCompleted } from '@/lib/auth/passwordSetupProfile';
+import {
+  persistSignupAttributionToProfile,
+  persistSignupSourceFromUrl,
+  queueSignupCompletedForAnalytics,
+  resolveRegistrerenPresentation,
+} from '@/lib/posthog/signupAttribution';
 import { PasskeySignInButton } from '@/components/auth/PasskeySignInButton';
-
-/** Zichtbaar in `next dev`, of als NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN=true (bijv. na `next start` lokaal). */
-const SHOW_LOCAL_TEST_LOGIN =
-  process.env.NODE_ENV === "development" ||
-  process.env.NEXT_PUBLIC_ALLOW_LOCAL_TEST_LOGIN === "true";
+import { OAuthSignInButtons } from '@/components/auth/OAuthSignInButtons';
+import { sendLoginMagicLink } from '@/lib/auth/socialSignIn';
+import { isSignupEmailFormatValid, normalizeSignupEmail } from '@/lib/auth/signupEmail';
+import { buildRegistrerenHref } from '@/lib/auth/authPagePaths';
+import { RegistrerenShell } from '@/components/registreren/RegistrerenShell';
 
 /**
  * Productie (Vercel build): geen open registratie, alleen inloggen + wachtwoord vergeten.
@@ -46,21 +54,7 @@ const SIGNUP_ALLOWED =
   process.env.NODE_ENV !== "production" ||
   process.env.NEXT_PUBLIC_ALLOW_SIGNUP === "true";
 
-function isLikelyLocalDevHost(hostname: string): boolean {
-  if (hostname === "localhost" || hostname === "127.0.0.1") return true;
-  // RFC1918 — typisch next dev op LAN (telefoon / ander device)
-  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
-  return false;
-}
-
-function emailAllowsLocalTestLogin(emailValue: string): boolean {
-  if (isProtectedTestAccount(emailValue)) return true;
-  const owner = process.env.NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL?.trim().toLowerCase();
-  if (!owner) return false;
-  return emailValue.trim().toLowerCase() === owner;
-}
+const SHOW_LOCAL_DEV_TEST = process.env.NODE_ENV === "development";
 
 function safeAppPath(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -109,63 +103,78 @@ function mapPasswordResetError(message: string, t: (k: string) => string): strin
 }
 
 const loginInputClass =
-  "w-full rounded-[var(--st-r-md)] border border-[var(--st-line)] bg-[var(--st-surface-2)] px-4 py-3 text-base text-[var(--st-ink)] transition-colors placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue-soft)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--st-blue)]/20";
+  "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 text-base text-[var(--story-text)] transition-colors placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]";
+
+const loginPrimaryBtnClass =
+  "flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-[15px] text-base font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-200 hover:bg-[var(--story-cta-hover)] disabled:cursor-not-allowed disabled:opacity-60";
+
+const loginSecondaryBtnClass =
+  "flex w-full items-center justify-center rounded-xl border border-[var(--story-border)] bg-white px-6 py-[15px] text-base font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] disabled:cursor-not-allowed disabled:opacity-60";
+
+const loginLabelClass = "block text-sm text-[var(--story-text-muted)]";
+
+const loginPasswordInputClass =
+  "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 pr-12 text-base text-[var(--story-text)] transition-colors placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]";
+
+const loginLinkClass =
+  "font-semibold text-[var(--story-accent)] transition-colors hover:text-[#234845]";
+
+const loginMutedLinkClass =
+  "text-sm text-[var(--story-text-muted)] transition-colors hover:text-[var(--story-text)]";
+
+function PasswordVisibilityToggle({
+  shown,
+  onToggle,
+  showLabel,
+  hideLabel,
+}: {
+  shown: boolean;
+  onToggle: () => void;
+  showLabel: string;
+  hideLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={shown ? hideLabel : showLabel}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--story-text-muted)] transition-colors hover:text-[var(--story-text)]"
+    >
+      {shown ? (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+          <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+          <line x1="2" y1="2" x2="22" y2="22" />
+        </svg>
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 function LoginOrDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3" aria-hidden={false}>
-      <div className="h-px flex-1 bg-[var(--st-line)]" aria-hidden />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--st-muted-2)]">
+      <div className="h-px flex-1 bg-[var(--story-border)]" aria-hidden />
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--story-text-muted)]">
         {label}
       </span>
-      <div className="h-px flex-1 bg-[var(--st-line)]" aria-hidden />
-    </div>
-  );
-}
-
-function LoginLanguageToggle({
-  locale,
-  setLocale,
-  label,
-}: {
-  locale: string;
-  setLocale: (l: "nl" | "en") => void;
-  label: string;
-}) {
-  return (
-    <div
-      className="flex gap-1 rounded-[10px] border border-[var(--st-line)] bg-[var(--st-surface)] p-0.5 text-xs font-semibold shadow-sm"
-      role="group"
-      aria-label={label}
-    >
-      <button
-        type="button"
-        onClick={() => setLocale("nl")}
-        className={`rounded-[8px] px-2.5 py-1 transition-colors ${
-          locale === "nl"
-            ? "bg-[var(--st-blue)] text-white"
-            : "text-[var(--st-muted)] hover:bg-[var(--st-surface-2)]"
-        }`}
-      >
-        NL
-      </button>
-      <button
-        type="button"
-        onClick={() => setLocale("en")}
-        className={`rounded-[8px] px-2.5 py-1 transition-colors ${
-          locale === "en"
-            ? "bg-[var(--st-blue)] text-white"
-            : "text-[var(--st-muted)] hover:bg-[var(--st-surface-2)]"
-        }`}
-      >
-        EN
-      </button>
+      <div className="h-px flex-1 bg-[var(--story-border)]" aria-hidden />
     </div>
   );
 }
 
 function LoginPageInner() {
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const mounted = useClientMounted();
+  const registrationEnabled = isRegistrationCheckoutEnabledClient();
   const [isSignUp, setIsSignUp] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -174,25 +183,33 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [signupRedirecting, setSignupRedirecting] = useState(false);
+  const [passwordMode, setPasswordMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [magicSentEmail, setMagicSentEmail] = useState<string | null>(null);
+  const [showMoreMethods, setShowMoreMethods] = useState(false);
+  const [lastMethod, setLastMethod] = useState<
+    "google" | "azure" | "apple" | "magic" | "password" | "passkey" | null
+  >(null);
   const splashTargetRef = useRef<string | null>(null);
-  const searchParams = useSearchParams();
-  const [localDevHost, setLocalDevHost] = useState(false);
+  const returning = mounted && isReturningUser();
+  const showPasskey = mounted && isReturningUser();
+  const primaryOAuthProvider: OAuthProviderId | undefined =
+    lastMethod === "google" || lastMethod === "azure" || lastMethod === "apple"
+      ? lastMethod
+      : undefined;
+  const presentation = useMemo(
+    () => resolveRegistrerenPresentation(searchParams),
+    [searchParams]
+  );
+  const { storyVisual, isAcquisitionCopy } = presentation;
 
   const handleSplashDone = useCallback(() => {
     const target = splashTargetRef.current ?? '/';
     splashTargetRef.current = null;
     // Volledige navigatie zodat middleware de auth-cookies direct ziet (router.push alleen is onbetrouwbaar).
     window.location.assign(target);
-  }, []);
-
-  useLayoutEffect(() => {
-    try {
-      setLocalDevHost(isLikelyLocalDevHost(window.location.hostname));
-    } catch {
-      setLocalDevHost(false);
-    }
   }, []);
 
   useEffect(() => {
@@ -202,11 +219,23 @@ function LoginPageInner() {
   }, []);
 
   useEffect(() => {
-    persistSignupSourceFromUrl(searchParams?.get("source") ?? undefined);
-    if (SIGNUP_ALLOWED && searchParams?.get("signup") === "1") {
-      setIsSignUp(true);
+    const method = getLastAuthMethod();
+    setLastMethod(method);
+    if (method === "password") {
+      setPasswordMode(true);
+      setShowMoreMethods(true);
+    } else if (method === "magic" || method === "passkey") {
+      setShowMoreMethods(true);
     }
-  }, [searchParams]);
+  }, []);
+
+  useEffect(() => {
+    persistSignupSourceFromUrl(searchParams?.get("source") ?? undefined);
+    if (searchParams?.get("signup") !== "1") return;
+
+    setSignupRedirecting(true);
+    router.replace(buildRegistrerenHref(searchParams));
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (searchParams?.get('herstel') === '1') {
@@ -225,12 +254,55 @@ function LoginPageInner() {
   }, [searchParams, t, email]);
 
   const afterCheckoutLogin = searchParams?.get('checkout') === '1';
+  const showSignInExtras = !isSignUp && !forgotPassword;
 
-  /** Productie: alleen zichtbaar na intypen van allowlisted email (protected testaccount of NEXT_PUBLIC_LOCAL_TEST_OWNER_EMAIL). */
-  const showLocalTest =
-    SHOW_LOCAL_TEST_LOGIN ||
-    localDevHost ||
-    emailAllowsLocalTestLogin(email);
+  const finishLogin = async (userId: string, userEmail: string | null | undefined) => {
+    markReturningUser();
+    clearStructuroLocalModeCookie();
+    clearCheckoutReturn();
+    const next = searchParams?.get("next") ?? null;
+    splashTargetRef.current = await resolvePostLoginPath(
+      userId,
+      userEmail,
+      next,
+      afterCheckoutLogin
+    );
+    setShowSplash(true);
+  };
+
+  const handleSendMagicLink = async () => {
+    const normalized = normalizeSignupEmail(email);
+    if (!normalized || !isSignupEmailFormatValid(email)) {
+      setError(t("login.emailRequired"));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        setError(t("login.noServer"));
+        return;
+      }
+      const nextPath = safeAppPath(searchParams?.get("next") ?? null) ?? undefined;
+      await sendLoginMagicLink(supabase, normalized, nextPath);
+      setLastAuthMethod("magic");
+      setMagicSentEmail(normalized);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : t("login.sendFailed");
+      const lower = raw.toLowerCase();
+      if (lower.includes("signups not allowed") || lower.includes("user not found")) {
+        setError(t("login.magicLinkNoAccount"));
+      } else if (lower.includes("rate limit")) {
+        setError(t("login.errRateLimitEmail"));
+      } else {
+        setError(raw);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initialize Supabase client only when needed
   const getSupabase = () => {
@@ -331,7 +403,8 @@ function LoginPageInner() {
           await persistSignupAttributionToProfile(data.user.id);
           await markPasswordSetupCompleted(supabase, data.user.id);
           queueSignupCompletedForAnalytics();
-          setMessage(t('login.signupDone'));
+          setLastAuthMethod("password");
+          markReturningUser();
           clearStructuroLocalModeCookie();
           clearCheckoutReturn();
           await supabase.auth.getSession();
@@ -347,18 +420,9 @@ function LoginPageInner() {
         if (error) throw error;
 
         if (data.user) {
-          clearStructuroLocalModeCookie();
-          clearCheckoutReturn();
-          // Wacht tot sessie-cookies weggeschreven zijn vóór redirect (anders ziet middleware geen sessie).
           await supabase.auth.getSession();
-          const next = searchParams?.get("next") ?? null;
-          splashTargetRef.current = await resolvePostLoginPath(
-            data.user.id,
-            data.user.email,
-            next,
-            afterCheckoutLogin
-          );
-          setShowSplash(true);
+          setLastAuthMethod("password");
+          await finishLogin(data.user.id, data.user.email);
         }
       }
     } catch (err: any) {
@@ -376,57 +440,114 @@ function LoginPageInner() {
     }
   };
 
-  const showSignInExtras = !isSignUp && !forgotPassword;
-  /** Launch: registratie via de geprijsde /registreren-flow i.p.v. inline signup. */
-  const registrationEnabled = isRegistrationCheckoutEnabledClient();
+  const headingKey = forgotPassword
+    ? "login.forgotStoryHeading"
+    : isSignUp
+      ? "login.signUp"
+      : returning
+        ? "login.storyHeading"
+        : "login.storyHeadingNeutral";
+  const subheadingKey = forgotPassword
+    ? null
+    : isSignUp
+      ? "registrerenPage.accountSubheadingAcquisition"
+      : isAcquisitionCopy
+        ? "login.storySubheadingAcquisition"
+        : returning
+          ? "login.storySubheading"
+          : "login.storySubheadingNeutral";
+
+  if (signupRedirecting) {
+    return (
+      <RegistrerenShell visual="story">
+        <p className="text-center text-sm text-[var(--story-text-muted)]">{t("login.loading")}</p>
+      </RegistrerenShell>
+    );
+  }
+
+  const headingClass = storyVisual
+    ? "st-story-serif text-lg font-semibold tracking-tight text-[var(--story-text)] sm:text-xl"
+    : "text-lg font-semibold tracking-tight text-slate-900 sm:text-xl";
+  const subheadingClass = storyVisual
+    ? "mt-2 text-sm leading-relaxed text-[var(--story-text-muted)]"
+    : "mt-2 text-sm leading-relaxed text-slate-600";
 
   return (
     <>
       {showSplash ? <LoginSuccessSplash onDone={handleSplashDone} /> : null}
-    <div className="st-art relative flex min-h-[100dvh] w-full max-w-[100vw] items-center justify-center overflow-x-hidden overflow-y-auto scroll-pb-[var(--keyboard-inset-bottom)] px-4 py-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+var(--keyboard-inset-bottom,0px)))]">
-      <div className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 sm:right-6">
-        <LoginLanguageToggle
-          locale={locale}
-          setLocale={setLocale}
-          label={t("settings.languageTitle")}
-        />
-      </div>
-
-      <div className="st-card w-full min-w-0 max-w-[440px] px-8 py-9 sm:px-9">
-        <div className="flex flex-col items-center text-center">
-          {logoError ? (
-            <div className="flex h-[4.55rem] w-[4.55rem] items-center justify-center rounded-[var(--st-r-lg)] bg-[var(--st-blue)] shadow-md">
-              <span className="text-2xl font-bold text-white">S</span>
-            </div>
-          ) : (
-            <img
-              src="/logo-structuro.png"
-              alt=""
-              width={73}
-              height={73}
-              className="h-[4.55rem] w-[4.55rem] object-contain"
-              onError={() => setLogoError(true)}
-            />
-          )}
-          <p className="mt-4 text-sm font-semibold tracking-tight text-[var(--st-ink)]">
-            {t("login.taglineBrand")}
-          </p>
-          <p className="mt-1 text-[13px] leading-snug text-[var(--st-muted)]">
-            {t("brand.tagline")}
-          </p>
+      <RegistrerenShell error={error} visual={storyVisual ? "story" : "work"}>
+        <div className="mx-auto w-full text-center">
+          {storyVisual && !forgotPassword ? (
+            <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
+              <span className="st-story-eyebrow-pulse" aria-hidden />
+              {t("login.storyEyebrow")}
+            </p>
+          ) : null}
+          <h2 className={headingClass}>{t(headingKey)}</h2>
+          {subheadingKey ? <p className={subheadingClass}>{t(subheadingKey)}</p> : null}
         </div>
 
         {afterCheckoutLogin ? (
-          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm leading-relaxed text-emerald-950">
+          <p className="w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm leading-relaxed text-amber-950">
             {t("login.checkoutReturnHint")}
           </p>
         ) : null}
 
-        <form onSubmit={handleAuth} className="mt-8 space-y-5">
+        {forgotPassword && !isSignUp ? (
+        <form onSubmit={handleAuth} className="w-full space-y-5 text-left">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="email" className={loginLabelClass}>
+                {t("login.email")}
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={loginInputClass}
+                placeholder={t("login.emailPh")}
+                required
+                autoComplete="email"
+              />
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--story-text-muted)]">
+              {t("login.forgotHelp")}
+            </p>
+          </div>
+
+          {message ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+              {message}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading || showSplash}
+            className={loginPrimaryBtnClass}
+          >
+            {loading ? t("login.busy") : t("login.sendReset")}
+          </button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setForgotPassword(false);
+                setError(null);
+              }}
+              className={loginLinkClass}
+            >
+              {t("login.backSignIn")}
+            </button>
+          </div>
+        </form>
+        ) : isSignUp && !registrationEnabled ? (
+        <form onSubmit={handleAuth} className="w-full space-y-5 text-left">
           <div className="space-y-4">
             {isSignUp ? (
               <div className="space-y-1.5">
-                <label htmlFor="fullName" className="block text-sm text-[var(--st-muted)]">
+                <label htmlFor="fullName" className={loginLabelClass}>
                   {t("login.fullName")}
                 </label>
                 <input
@@ -442,7 +563,7 @@ function LoginPageInner() {
             ) : null}
 
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm text-[var(--st-muted)]">
+              <label htmlFor="email" className={loginLabelClass}>
                 {t("login.email")}
               </label>
               <input
@@ -459,7 +580,7 @@ function LoginPageInner() {
 
             {!forgotPassword || isSignUp ? (
               <div className="space-y-1.5">
-                <label htmlFor="password" className="block text-sm text-[var(--st-muted)]">
+                <label htmlFor="password" className={loginLabelClass}>
                   {t("login.password")}
                 </label>
                 <input
@@ -475,20 +596,14 @@ function LoginPageInner() {
                 />
               </div>
             ) : (
-              <p className="text-sm leading-relaxed text-[var(--st-muted)]">
+              <p className="text-sm leading-relaxed text-[var(--story-text-muted)]">
                 {t("login.forgotHelp")}
               </p>
             )}
           </div>
 
-          {error ? (
-            <div className="rounded-xl border border-[var(--st-red-haze)] bg-[var(--st-red-haze)] px-4 py-3 text-sm text-[var(--st-red-deep)]">
-              {error}
-            </div>
-          ) : null}
-
           {message ? (
-            <div className="rounded-xl border border-[var(--st-green-haze)] bg-[var(--st-green-haze)] px-4 py-3 text-sm text-[var(--st-green-deep)]">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
               {message}
             </div>
           ) : null}
@@ -496,7 +611,7 @@ function LoginPageInner() {
           <button
             type="submit"
             disabled={loading || showSplash}
-            className="st-btn-primary h-12 w-full text-base disabled:cursor-not-allowed"
+            className={loginPrimaryBtnClass}
           >
             {loading
               ? t("login.busy")
@@ -507,97 +622,207 @@ function LoginPageInner() {
                   : t("login.signIn")}
           </button>
         </form>
-
-        {showSignInExtras ? (
-          <div className="mt-5 space-y-4">
-            <LoginOrDivider label={t("login.orDivider")} />
-            <PasskeySignInButton
-              disabled={loading || showSplash}
-              onError={(message) => setError(message)}
-              onSuccess={async (userId, userEmail) => {
-                clearStructuroLocalModeCookie();
-                clearCheckoutReturn();
-                const next = searchParams?.get("next") ?? null;
-                splashTargetRef.current = await resolvePostLoginPath(
-                  userId,
-                  userEmail,
-                  next,
-                  afterCheckoutLogin
-                );
-                setShowSplash(true);
+        ) : !isSignUp && magicSentEmail ? (
+          <div className="w-full space-y-4 text-center">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-relaxed text-emerald-950">
+              <p className="font-semibold">{t("login.magicLinkSentTitle")}</p>
+              <p className="mt-1">
+                {t("login.magicLinkSentBody", { email: magicSentEmail })}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMagicSentEmail(null);
+                setError(null);
               }}
-            />
+              className={loginMutedLinkClass}
+            >
+              {t("login.backSignIn")}
+            </button>
+          </div>
+        ) : !isSignUp ? (
+        <>
+        <OAuthSignInButtons
+          visual={storyVisual ? "story" : "work"}
+          disabled={loading || showSplash}
+          nextPath={safeAppPath(searchParams?.get("next") ?? null) ?? "/"}
+          primaryProvider={primaryOAuthProvider}
+          onError={(message) => setError(message)}
+        />
+
+        {message ? (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+            {message}
           </div>
         ) : null}
 
-        {!isSignUp ? (
-          <div className="mt-4 text-center">
-            {forgotPassword ? (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setShowMoreMethods((v) => !v);
+              setError(null);
+            }}
+            className={loginMutedLinkClass}
+            aria-expanded={showMoreMethods}
+          >
+            {showMoreMethods ? t("login.moreMethodsHide") : t("login.moreMethods")}
+          </button>
+        </div>
+
+        {showMoreMethods ? (
+          <div className="w-full space-y-4">
+            <LoginOrDivider label={t("login.orDivider")} />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (passwordMode) {
+                  void handleAuth(e);
+                } else {
+                  void handleSendMagicLink();
+                }
+              }}
+              className="w-full space-y-4 text-left"
+            >
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className={loginLabelClass}>
+                    {t("login.email")}
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={loginInputClass}
+                    placeholder={t("login.emailPh")}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+
+                {passwordMode ? (
+                  <div className="space-y-1.5">
+                    <label htmlFor="password" className={loginLabelClass}>
+                      {t("login.password")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={loginPasswordInputClass}
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                        autoComplete="current-password"
+                      />
+                      <PasswordVisibilityToggle
+                        shown={showPassword}
+                        onToggle={() => setShowPassword((v) => !v)}
+                        showLabel={t("login.showPassword")}
+                        hideLabel={t("login.hidePassword")}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
               <button
-                type="button"
-                onClick={() => {
-                  setForgotPassword(false);
-                  setError(null);
-                }}
-                className="text-sm text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
+                type="submit"
+                disabled={loading || showSplash}
+                className={loginSecondaryBtnClass}
               >
-                {t("login.backSignIn")}
+                {loading
+                  ? t("login.busy")
+                  : passwordMode
+                    ? t("login.signIn")
+                    : isAcquisitionCopy
+                      ? t("registrerenPage.continueBtnMagicLink")
+                      : t("login.magicLinkPrimaryCta")}
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotPassword(true);
-                  setError(null);
-                  setMessage(null);
-                }}
-                className="text-sm text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink-soft)]"
-              >
-                {t("login.forgot")}
-              </button>
-            )}
+
+              {!passwordMode ? (
+                <p className="text-center text-xs leading-relaxed text-[var(--story-text-muted)]">
+                  {t("login.magicLinkPrimaryHint")}
+                </p>
+              ) : (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotPassword(true);
+                      setError(null);
+                      setMessage(null);
+                    }}
+                    className={loginMutedLinkClass}
+                  >
+                    {t("login.forgot")}
+                  </button>
+                </div>
+              )}
+            </form>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordMode((v) => !v);
+                setError(null);
+                setMessage(null);
+              }}
+              className={loginMutedLinkClass + " block w-full text-center"}
+            >
+              {passwordMode ? t("login.magicLinkToggle") : t("login.passwordToggle")}
+            </button>
+
+            {showPasskey ? (
+              <>
+                <LoginOrDivider label={t("login.orDivider")} />
+                <PasskeySignInButton
+                  visual={storyVisual ? "story" : "work"}
+                  disabled={loading || showSplash}
+                  onError={(message) => setError(message)}
+                  onSuccess={async (userId, userEmail) => {
+                    setLastAuthMethod("passkey");
+                    await finishLogin(userId, userEmail);
+                  }}
+                />
+              </>
+            ) : null}
           </div>
+        ) : null}
+        </>
         ) : null}
 
         {registrationEnabled && showSignInExtras ? (
-          <div className="mt-6 space-y-4">
-            <LoginOrDivider label={t("login.orDivider")} />
-            <p className="text-center text-sm text-[var(--st-muted)]">
-              {t("login.noAccount")}{" "}
-              <Link
-                href="/registreren"
-                className="font-semibold text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
-              >
-                {t("login.createAccount")}
-              </Link>
-            </p>
-            <p className="text-center text-xs text-[var(--st-muted-2)]">
-              {t("login.registrerenTrialHint")}
-            </p>
-          </div>
+          <p className="text-center text-sm text-[var(--story-text-muted)]">
+            {t("login.noAccount")}{" "}
+            <Link href={buildRegistrerenHref(searchParams)} className={loginLinkClass}>
+              {t("login.createAccount")}
+            </Link>
+          </p>
         ) : SIGNUP_ALLOWED && showSignInExtras ? (
-          <div className="mt-6 space-y-4">
-            <LoginOrDivider label={t("login.orDivider")} />
-            <p className="text-center text-sm text-[var(--st-muted)]">
-              {t("login.noAccount")}{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(true);
-                  setForgotPassword(false);
-                  setError(null);
-                  setMessage(null);
-                }}
-                className="font-semibold text-[var(--st-blue)] transition-colors hover:text-[var(--st-blue-deep)]"
-              >
-                {t("login.createAccount")}
-              </button>
-            </p>
-          </div>
+          <p className="text-center text-sm text-[var(--story-text-muted)]">
+            {t("login.noAccount")}{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(true);
+                setForgotPassword(false);
+                setError(null);
+                setMessage(null);
+              }}
+              className={loginLinkClass}
+            >
+              {t("login.createAccount")}
+            </button>
+          </p>
         ) : null}
 
-        {SIGNUP_ALLOWED && isSignUp ? (
-          <div className="mt-6 text-center">
+        {SIGNUP_ALLOWED && isSignUp && !registrationEnabled ? (
+          <div className="w-full text-center">
             <button
               type="button"
               onClick={() => {
@@ -606,16 +831,16 @@ function LoginPageInner() {
                 setError(null);
                 setMessage(null);
               }}
-              className="text-sm text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink-soft)]"
+              className={loginMutedLinkClass}
             >
               {t("login.toggleSignIn")}
             </button>
           </div>
         ) : null}
 
-        {showLocalTest ? (
-          <div className="mt-6 space-y-3 border-t border-[var(--st-line)] pt-5">
-            <p className="text-center text-xs text-[var(--st-muted-2)]">
+        {SHOW_LOCAL_DEV_TEST ? (
+          <div className="w-full space-y-3 border-t border-[var(--story-border)] pt-5">
+            <p className="text-center text-xs text-[var(--story-text-muted)]">
               {t("login.localTestHint")}
             </p>
             <button
@@ -634,18 +859,17 @@ function LoginPageInner() {
                 clearLocalOnboardingDoneCookieOnClient();
                 window.location.assign("/onboarding");
               }}
-              className="w-full rounded-[var(--st-r-md)] border border-dashed border-[var(--st-line-strong)] py-3 text-sm font-medium text-[var(--st-ink-soft)] transition-colors hover:bg-[var(--st-surface-2)]"
+              className="w-full rounded-xl border border-dashed border-[var(--story-border)] py-3 text-sm font-medium text-[var(--story-text-muted)] transition-colors hover:border-[var(--story-accent)] hover:text-[var(--story-text)]"
             >
               {t("login.localTestCta")}
             </button>
           </div>
         ) : null}
 
-        <p className="mt-8 text-center text-xs leading-relaxed text-[var(--st-muted-2)]">
+        <p className="text-center text-xs leading-relaxed text-[var(--story-text-muted)]">
           {t("login.privacyFooter")}
         </p>
-      </div>
-    </div>
+      </RegistrerenShell>
     </>
   );
 }
@@ -654,9 +878,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="st-art flex min-h-[100dvh] items-center justify-center px-4 py-8 text-[var(--st-muted)]">
-          Laden…
-        </div>
+        <RegistrerenShell visual="story">
+          <p className="text-center text-sm text-[var(--story-text-muted)]">Laden…</p>
+        </RegistrerenShell>
       }
     >
       <LoginPageInner />

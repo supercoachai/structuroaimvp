@@ -54,8 +54,9 @@
   --story-bg: #FDFBF4;
   --story-bg-navy: #1A1A1B;
   --story-serif: var(--font-newsreader), Georgia, 'Times New Roman', serif;
-  --story-cta: #1A1A1B;
-  --story-cta-hover: #2E2E30;
+  /* Ink Navy als canonieke actiekleur (geen zwarte knop). Sage Teal blijft accent. */
+  --story-cta: #1A2340;
+  --story-cta-hover: #2C3753;
   --story-accent: #2D5A56;
   --story-text: #1A1A1B;
   --story-text-muted: #5C6478;
