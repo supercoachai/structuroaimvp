@@ -452,7 +452,7 @@ function LoginPageInner() {
     : isSignUp
       ? "registrerenPage.accountSubheadingAcquisition"
       : isAcquisitionCopy
-        ? "login.storySubheadingAcquisition"
+        ? null
         : returning
           ? "login.storySubheading"
           : "login.storySubheadingNeutral";
