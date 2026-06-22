@@ -248,6 +248,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       labelConfirm: "Bevestigen",
       submit: "Doorgaan",
       saving: "Bezig…",
+      dagstartHeading: "Bewaar je dagstart.",
+      dagstartSubheading: "Kies hoe je later weer inlogt: met Google of met e-mail en wachtwoord.",
+      orLabel: "of",
+      emailToggle: "Doorgaan met e-mail",
     },
     passwordSettings: {
       title: "Wachtwoord",
@@ -1012,6 +1016,10 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       labelConfirm: "Confirm",
       submit: "Continue",
       saving: "Saving…",
+      dagstartHeading: "Save your day start.",
+      dagstartSubheading: "Choose how you sign back in later: with Google or with email and password.",
+      orLabel: "or",
+      emailToggle: "Continue with email",
     },
     passwordSettings: {
       title: "Password",

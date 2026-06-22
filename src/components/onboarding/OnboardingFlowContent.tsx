@@ -6,6 +6,7 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   CheckIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   RocketLaunchIcon,
@@ -344,7 +345,12 @@ export default function OnboardingFlowContent({
     id: string;
     title: string;
     microStepCount: number;
+    microStepTitles: string[];
   } | null>(null);
+  /** Welkomstaak: microstappen uitgeklapt tonen na tik op de hint. */
+  const [welcomeMicroExpanded, setWelcomeMicroExpanded] = useState(false);
+  /** Eerste dagstart: liever eigen taak i.p.v. de klaargezette welkomstaak. */
+  const [firstDayOwnTaskMode, setFirstDayOwnTaskMode] = useState(false);
   /** Stap B (taak) pas na pauze na energiekeuze, zodat het rustig binnenkomt. */
   const [firstDayBridgeVisible, setFirstDayBridgeVisible] = useState(false);
   const [firstDayTaskPhaseVisible, setFirstDayTaskPhaseVisible] = useState(false);
@@ -418,7 +424,8 @@ export default function OnboardingFlowContent({
   const firstDayMicroStepsResolved =
     firstDayUseMicroSteps === false ||
     (firstDayUseMicroSteps === true && firstDayMicroTitles.length > 0);
-  const firstDayReady = welcomeTaskPreview
+  const usingWelcomeTask = Boolean(welcomeTaskPreview) && !firstDayOwnTaskMode;
+  const firstDayReady = usingWelcomeTask
     ? Boolean(firstDayEnergy)
     : Boolean(firstDayEnergy) &&
       firstTaskTitle.trim().length >= 2 &&
@@ -472,10 +479,14 @@ export default function OnboardingFlowContent({
           return;
         }
         const microSteps = Array.isArray(welcome.microSteps) ? welcome.microSteps : [];
+        const microStepTitles = microSteps
+          .map((micro) => String(micro?.title ?? "").trim())
+          .filter((title) => title.length > 0);
         setWelcomeTaskPreview({
           id: String(welcome.id),
           title: String(welcome.title ?? WELCOME_TASK_TITLE).trim() || WELCOME_TASK_TITLE,
           microStepCount: microSteps.length,
+          microStepTitles,
         });
       } catch (err) {
         console.warn("[onboarding] welcome task lookup failed", err);
@@ -1267,7 +1278,7 @@ export default function OnboardingFlowContent({
       }
     }
 
-    if (welcomeTaskPreview) {
+    if (welcomeTaskPreview && !firstDayOwnTaskMode) {
       if (user?.id) {
         await updateTaskInSupabase(user.id, welcomeTaskPreview.id, { energyLevel: energy });
         await upsertCheckInToSupabase(user.id, dateStr, {
@@ -2254,19 +2265,19 @@ export default function OnboardingFlowContent({
                   {firstDayBridgeVisible ? (
                     <div className="ob-first-day-bridge-in mt-10 w-full max-w-md space-y-1 text-center">
                       <p className="text-base font-medium text-[var(--story-text)]">
-                        {welcomeTaskPreview
+                        {usingWelcomeTask
                           ? t("onboarding.firstDayWelcomeBridge1")
                           : t("onboarding.firstDayBridge1")}
                       </p>
                       <p className="text-sm text-[var(--story-text-muted)]">
-                        {welcomeTaskPreview
+                        {usingWelcomeTask
                           ? t("onboarding.firstDayWelcomeBridge2")
                           : t("onboarding.firstDayBridge2")}
                       </p>
                     </div>
                   ) : null}
 
-                  {firstDayTaskPhaseVisible && welcomeTaskPreview ? (
+                  {firstDayTaskPhaseVisible && usingWelcomeTask ? (
                     <div
                       ref={firstDayTaskBlockRef}
                       className="ob-first-day-task-in mt-8 w-full max-w-md text-left"
@@ -2276,25 +2287,74 @@ export default function OnboardingFlowContent({
                       </p>
                       <div className="rounded-xl border border-[var(--story-border)] bg-white p-4 shadow-sm">
                         <p className="text-base font-semibold text-[var(--story-text)]">
-                          {welcomeTaskPreview.title}
+                          {welcomeTaskPreview!.title}
                         </p>
-                        {welcomeTaskPreview.microStepCount > 0 ? (
-                          <p className="mt-1 text-sm text-[var(--story-text-muted)]">
-                            {t("onboarding.firstDayWelcomeTaskHint").replace(
-                              "{n}",
-                              String(welcomeTaskPreview.microStepCount)
-                            )}
-                          </p>
+                        {welcomeTaskPreview!.microStepCount > 0 ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setWelcomeMicroExpanded((v) => !v)}
+                              aria-expanded={welcomeMicroExpanded}
+                              className="mt-1 flex items-center gap-1.5 text-sm text-[var(--story-accent)] underline-offset-2 transition-colors hover:underline"
+                            >
+                              <span>
+                                {t("onboarding.firstDayWelcomeTaskHint").replace(
+                                  "{n}",
+                                  String(welcomeTaskPreview!.microStepCount)
+                                )}
+                              </span>
+                              <ChevronDownIcon
+                                className={`h-4 w-4 shrink-0 transition-transform ${
+                                  welcomeMicroExpanded ? "rotate-180" : ""
+                                }`}
+                                aria-hidden
+                              />
+                            </button>
+                            {welcomeMicroExpanded ? (
+                              <ul className="animate-fade-in mt-3 space-y-2 border-t border-[var(--story-border)] pt-3">
+                                {welcomeTaskPreview!.microStepTitles.map((line, idx) => (
+                                  <li
+                                    key={`${idx}-${line.slice(0, 24)}`}
+                                    className="flex items-start gap-2 text-sm text-[var(--story-text)]"
+                                  >
+                                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(45,90,86,0.12)] text-[11px] font-bold text-[var(--story-accent)]">
+                                      {idx + 1}
+                                    </span>
+                                    <span className="min-w-0 flex-1 leading-snug">{line}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </>
                         ) : null}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFirstDayOwnTaskMode(true);
+                          setWelcomeMicroExpanded(false);
+                        }}
+                        className="mx-auto mt-4 block text-sm font-medium text-[var(--story-text-muted)] underline-offset-2 transition-colors hover:text-[var(--story-accent)] hover:underline"
+                      >
+                        {t("onboarding.firstDayOwnTaskCta")}
+                      </button>
                     </div>
                   ) : null}
 
-                  {firstDayTaskPhaseVisible && !welcomeTaskPreview ? (
+                  {firstDayTaskPhaseVisible && !usingWelcomeTask ? (
                     <div
                       ref={firstDayTaskBlockRef}
                       className="ob-first-day-task-in mt-8 w-full max-w-md space-y-4"
                     >
+                      {welcomeTaskPreview && firstDayOwnTaskMode ? (
+                        <button
+                          type="button"
+                          onClick={() => setFirstDayOwnTaskMode(false)}
+                          className="mx-auto block text-sm font-medium text-[var(--story-text-muted)] underline-offset-2 transition-colors hover:text-[var(--story-accent)] hover:underline"
+                        >
+                          {t("onboarding.firstDayUseWelcomeTaskCta")}
+                        </button>
+                      ) : null}
                       <div className="relative">
                         <input
                           ref={firstTaskInputRef}
