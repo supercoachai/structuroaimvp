@@ -1,20 +1,16 @@
 import posthog from "posthog-js";
 
-import {
-  ANALYTICS_CONSENT_KEY,
-  readAnalyticsConsentFromStorage,
-} from "./consentStorage";
+import { readAnalyticsConsentFromStorage } from "./consentStorage";
 import { persistAnonymousDistinctIdForStitch } from "./identityStitch";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
+/**
+ * Leest de consent-beslissing met in-memory fallback. Belangrijk voor in-app
+ * browsers (TikTok/Instagram/iOS WebView) waar localStorage geblokkeerd is: zonder
+ * fallback worden client-events daar gedropt terwijl de server-backup wél vuurt.
+ */
 function readStoredConsent(): "granted" | "denied" | null {
-  try {
-    const v = localStorage.getItem(ANALYTICS_CONSENT_KEY);
-    if (v === "granted" || v === "denied") return v;
-  } catch {
-    /* ignore */
-  }
-  return null;
+  return readAnalyticsConsentFromStorage();
 }
 
 type DebugReason =

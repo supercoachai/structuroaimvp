@@ -32,6 +32,10 @@ function baseProperties(payload: AcquisitionEventPayload): Record<string, unknow
     is_tiktok: payload.is_tiktok === true,
     has_ttclid: payload.has_ttclid === true,
     entry_url: payload.entry_url ?? null,
+    // Vul de "Url / Screen"-kolom in PostHog ook voor server-side events, anders
+    // blijft die leeg bij in-app verkeer dat alleen de server-backup haalt.
+    $current_url: payload.entry_url ?? null,
+    $pathname: payload.landing_path,
     channel: "server",
     funnel: "acquisition",
     // Person-processing aan: distinctId is nu het PostHog anon-id, dus dit event

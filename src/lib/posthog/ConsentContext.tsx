@@ -11,6 +11,7 @@ import {
 import {
   ANALYTICS_CONSENT_KEY,
   readAnalyticsConsentFromStorage,
+  setAnalyticsConsentInMemory,
 } from "./consentStorage";
 
 export type ConsentState = "unknown" | "granted" | "denied";
@@ -43,6 +44,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const grant = useCallback(() => {
+    setAnalyticsConsentInMemory("granted");
     try {
       localStorage.setItem(ANALYTICS_CONSENT_KEY, "granted");
     } catch {
@@ -52,6 +54,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deny = useCallback(() => {
+    setAnalyticsConsentInMemory("denied");
     try {
       localStorage.setItem(ANALYTICS_CONSENT_KEY, "denied");
     } catch {
@@ -61,6 +64,7 @@ export function ConsentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const reset = useCallback(() => {
+    setAnalyticsConsentInMemory(null);
     try {
       localStorage.removeItem(ANALYTICS_CONSENT_KEY);
     } catch {
