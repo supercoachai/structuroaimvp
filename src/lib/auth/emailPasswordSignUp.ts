@@ -38,6 +38,11 @@ export async function signUpWithEmailPassword(
     if (devResult.kind !== "session") {
       throw new Error("signup_session_failed");
     }
+    // Dev-fallback is passwordless onder water, maar de gebruiker registreert
+    // bewust met e-mail + wachtwoord. Markeer wachtwoord-setup als klaar, anders
+    // bounce de middleware naar /auth/wachtwoord-aanmaken (zoals in productie wél
+    // gebeurt zodra er een sessie is).
+    await markPasswordSetupCompleted(supabase, devResult.user.id);
     return {
       userId: devResult.user.id,
       email,
