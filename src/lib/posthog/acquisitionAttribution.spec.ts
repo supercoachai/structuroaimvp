@@ -45,6 +45,43 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.source).toBe("tiktok");
   });
 
+  it("vult bio-defaults aan op kale /tiktok (geen utm_source/ttclid)", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/tiktok",
+      searchParams: new URLSearchParams(),
+      referrer: null,
+    });
+    expect(result.source).toBe("tiktok");
+    expect(result.utm_source).toBe("tiktok");
+    expect(result.utm_medium).toBe("organic");
+    expect(result.utm_campaign).toBe("tiktok_bio");
+  });
+
+  it("overschrijft expliciete utm_content/utm_source op /tiktok niet", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/tiktok",
+      searchParams: new URLSearchParams(
+        "utm_source=tiktok&utm_medium=paid_social&utm_campaign=tiktok_promote&utm_content=hook_42"
+      ),
+      referrer: null,
+    });
+    expect(result.utm_source).toBe("tiktok");
+    expect(result.utm_medium).toBe("paid_social");
+    expect(result.utm_campaign).toBe("tiktok_promote");
+    expect(result.utm_content).toBe("hook_42");
+  });
+
+  it("past bio-defaults niet toe als alleen ttclid aanwezig is", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/tiktok",
+      searchParams: new URLSearchParams("ttclid=abc123"),
+      referrer: null,
+    });
+    expect(result.has_ttclid).toBe(true);
+    expect(result.utm_campaign).toBeNull();
+    expect(result.utm_medium).toBeNull();
+  });
+
   it("markeert /start route als organische bron (geen TikTok)", () => {
     const result = resolveAcquisitionAttribution({
       pathname: "/start",

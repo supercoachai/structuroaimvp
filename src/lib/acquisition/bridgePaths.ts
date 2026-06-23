@@ -22,6 +22,18 @@ export const TIKTOK_DEFAULT_MEDIUM = "paid_social";
 export const ORGANIC_DEFAULT_MEDIUM = "organic";
 export const ORGANIC_DEFAULT_CAMPAIGN = "website";
 
+/**
+ * Kale /tiktok bio-link (geen utm_source en geen ttclid in de URL): behandel
+ * de bezoeker als organisch TikTok-bio-verkeer. Zo blijft de adresbalk kort
+ * (www.structuro.ai/tiktok) terwijl de attributie toch klopt. Wordt alleen
+ * toegepast als de URL nog geen eigen utm_source/ttclid heeft.
+ */
+export const TIKTOK_BIO_DEFAULT_UTM = {
+  utm_source: TIKTOK_SIGNUP_SOURCE,
+  utm_medium: ORGANIC_DEFAULT_MEDIUM,
+  utm_campaign: "tiktok_bio",
+} as const;
+
 type SearchParamsLike = {
   get(name: string): string | null;
   toString(): string;

@@ -1,4 +1,7 @@
-import { bridgeChannelFromPath } from "@/lib/acquisition/bridgePaths";
+import {
+  bridgeChannelFromPath,
+  TIKTOK_BIO_DEFAULT_UTM,
+} from "@/lib/acquisition/bridgePaths";
 import { normalizeSignupSource } from "@/lib/posthog/signupAttribution";
 
 export const ACQUISITION_VISITOR_KEY = "structuro_acq_vid";
@@ -56,9 +59,9 @@ export function resolveAcquisitionAttribution(input: {
 }): AcquisitionAttribution {
   const landing_path = sanitizePath(input.pathname);
   const params = input.searchParams ?? new URLSearchParams();
-  const utm_source = sanitize(params.get("utm_source")) || null;
-  const utm_campaign = sanitize(params.get("utm_campaign")) || null;
-  const utm_medium = sanitize(params.get("utm_medium")) || null;
+  const rawUtmSource = sanitize(params.get("utm_source")) || null;
+  const rawUtmCampaign = sanitize(params.get("utm_campaign")) || null;
+  const rawUtmMedium = sanitize(params.get("utm_medium")) || null;
   const utm_content = sanitize(params.get("utm_content")) || null;
   const legacySource = sanitize(params.get("source"));
   const has_ttclid = Boolean(sanitize(params.get("ttclid")));
@@ -66,6 +69,18 @@ export function resolveAcquisitionAttribution(input: {
 
   const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
   const fromOrganicRoute = bridgeChannelFromPath(landing_path) === "organic";
+
+  // Kale /tiktok bio-link: geen eigen utm_source/source en geen ttclid in de URL.
+  // Behandel als TikTok-bio-verkeer met defaults, zonder bestaande params te overschrijven.
+  const isBareTikTokBio =
+    fromTikTokRoute && !rawUtmSource && !legacySource && !has_ttclid;
+
+  const utm_source =
+    rawUtmSource || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null);
+  const utm_campaign =
+    rawUtmCampaign || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null);
+  const utm_medium =
+    rawUtmMedium || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null);
 
   const is_tiktok =
     has_ttclid ||

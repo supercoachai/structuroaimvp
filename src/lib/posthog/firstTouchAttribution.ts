@@ -1,5 +1,6 @@
 /** First-touch attributie via cookie (30 dagen), gespiegeld naar sessionStorage. */
 
+import { TIKTOK_BIO_DEFAULT_UTM } from "@/lib/acquisition/bridgePaths";
 import {
   CAMPAIGN_KEY,
   SOURCE_KEY,
@@ -153,19 +154,28 @@ export function captureFirstTouchAttribution(): void {
     const fromReferrer = document.referrer
       ? mapReferrerToSource(document.referrer)
       : null;
-    const fromTtclid = sanitize(params.get("ttclid")) ? "tiktok" : "";
-    const fromTikTokPath =
+    const hasTtclid = !!sanitize(params.get("ttclid"));
+    const fromTtclid = hasTtclid ? "tiktok" : "";
+    const isTikTokPath =
       window.location.pathname === "/tiktok" ||
-      window.location.pathname.startsWith("/tiktok/")
-        ? "tiktok"
-        : "";
+      window.location.pathname.startsWith("/tiktok/");
+    const fromTikTokPath = isTikTokPath ? "tiktok" : "";
     const fromOrganicPath =
       window.location.pathname === "/start" ||
       window.location.pathname.startsWith("/start/")
         ? "structuro_eu"
         : "";
-    const utm_source = fromUtm || null;
-    const utm_medium = sanitize(params.get("utm_medium")) || null;
+
+    // Kale /tiktok bio-link: geen eigen utm_source en geen ttclid in de URL.
+    // Behandel als TikTok-bio-verkeer met defaults, zonder bestaande params
+    // (bv. een specifieke video-link) te overschrijven.
+    const isBareTikTokBio = isTikTokPath && !fromUtm && !hasTtclid;
+
+    const utm_source =
+      fromUtm || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null);
+    const utm_medium =
+      sanitize(params.get("utm_medium")) ||
+      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null);
     const utm_content = sanitize(params.get("utm_content")) || null;
     const source =
       fromUtm ||
@@ -175,7 +185,9 @@ export function captureFirstTouchAttribution(): void {
       fromOrganicPath ||
       fromReferrer ||
       "direct";
-    const campaign = sanitize(params.get("utm_campaign")) || null;
+    const campaign =
+      sanitize(params.get("utm_campaign")) ||
+      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null);
 
     const payload: FirstTouchAttribution = {
       source: normalizeSignupSource(source),

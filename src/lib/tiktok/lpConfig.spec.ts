@@ -14,24 +14,24 @@ describe("lpConfig", () => {
     expect(campaign.defaultHero).toBe("B");
   });
 
-  it("gebruikt welkom voor generieke tiktok_promote zonder hook", () => {
+  it("gebruikt herkende voor generieke tiktok_promote zonder hook", () => {
     const campaign = resolveLpCampaign({ utmCampaign: "tiktok_promote" });
-    expect(campaign.id).toBe("welkom");
-    expect(campaign.defaultHero).toBe("B");
+    expect(campaign.id).toBe("herkende");
+    expect(campaign.defaultHero).toBe("A");
   });
 
-  it("valt op tiktok-channel terug op welkom zonder herkenbare hook", () => {
+  it("valt op tiktok-channel terug op herkende zonder herkenbare hook", () => {
     const campaign = resolveLpCampaign({ channel: "tiktok" });
-    expect(campaign.id).toBe("welkom");
+    expect(campaign.id).toBe("herkende");
   });
 
   it("negeert ongesubstitueerde utm_content placeholder", () => {
     expect(
       resolveLpCampaign({ utmContent: "<video_id>", channel: "tiktok" }).id
-    ).toBe("welkom");
+    ).toBe("herkende");
     expect(
       resolveLpCampaign({ utmContent: "__VIDEO_ID__", channel: "tiktok" }).id
-    ).toBe("welkom");
+    ).toBe("herkende");
   });
 
   it("matcht campagne op utm_campaign cyclus", () => {

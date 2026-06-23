@@ -6,6 +6,7 @@
 export type LpHeroId = "A" | "B" | "C" | "D" | "E";
 export type LpCampaignId =
   | "welkom"
+  | "herkende"
   | "staren"
   | "nietlui"
   | "cyclus"
@@ -108,7 +109,7 @@ export const LP_DEFAULT_CAMPAIGN_ID: LpCampaignId = "cyclus";
  * Generieke TikTok Promote zonder herkenbare hook in URL: warme herkenning-welkom.
  * Specifieke hooks (campaign= of utm_content=hook_x) blijven hun eigen copy tonen.
  */
-export const LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID: LpCampaignId = "welkom";
+export const LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID: LpCampaignId = "herkende";
 
 /** Standaard campagne voor organische bridge (/start, structuro.eu). */
 export const LP_ORGANIC_DEFAULT_CAMPAIGN_ID: LpCampaignId = "weten";
@@ -136,6 +137,21 @@ export const LP_CAMPAIGNS: readonly LpCampaign[] = [
     cta: "Start met Structuro",
     trust: "Geen verplichtingen. Jij bepaalt het tempo.",
     defaultHero: "B",
+    heroesAllowed: ALL_HEROES,
+  },
+  {
+    id: "herkende",
+    name: "Je herkende het (TikTok default)",
+    note: "Warme herkenning na TikTok-video. Default voor generiek TikTok-verkeer zonder specifieke hook.",
+    utmContent: "hook_herkende",
+    theme: "warm",
+    accent: LP_BRAND.green,
+    headline: "Je herkende jezelf in die video, he?",
+    subline:
+      "Daarom ben je hier. Geen toeval, en geen luiheid. Je brein start gewoon anders op, en Structuro helpt je rustig beginnen.",
+    cta: "Start met Structuro",
+    trust: "Geen verplichtingen. Jij bepaalt het tempo.",
+    defaultHero: "A",
     heroesAllowed: ALL_HEROES,
   },
   {
@@ -216,6 +232,7 @@ export const LP_CAMPAIGNS: readonly LpCampaign[] = [
  */
 export const LP_HERO_CAMPAIGN_DEFAULTS: Record<LpCampaignId, LpHeroId> = {
   welkom: "B",
+  herkende: "A",
   staren: "A",
   nietlui: "A",
   cyclus: "B",
@@ -226,6 +243,7 @@ export const LP_HERO_CAMPAIGN_DEFAULTS: Record<LpCampaignId, LpHeroId> = {
 /** Alternatieven die vaak werken na A/B-test */
 export const LP_HERO_CAMPAIGN_ALTERNATIVES: Record<LpCampaignId, readonly LpHeroId[]> = {
   welkom: ["A", "E"],
+  herkende: ["B", "E"],
   staren: ["B"],
   nietlui: ["B"],
   cyclus: ["A", "B"],

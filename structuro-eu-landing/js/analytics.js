@@ -43,12 +43,13 @@
     var params = new URLSearchParams(window.location.search || "");
     var isTikTok = isTikTokAcquisitionTraffic(params);
     var bridgePath = isTikTok ? "/tiktok" : "/start";
+    // Schone link: alleen functionele params. campaign, hero, utm_medium,
+    // utm_campaign en lang zijn al de defaults op /start en dus redundant.
     var bridgeParams = new URLSearchParams({
       utm_content: contentId || "cta",
-      campaign: "weten",
-      hero: "A",
     });
     if (isTikTok) {
+      // TikTok-attributie blijft functioneel intact (utm_source/medium/campaign).
       bridgeParams.set("utm_source", "tiktok");
       bridgeParams.set(
         "utm_medium",
@@ -60,18 +61,9 @@
       );
     } else {
       bridgeParams.set("utm_source", "structuro_eu");
-      bridgeParams.set("utm_medium", "organic");
-      bridgeParams.set("utm_campaign", "website");
-    }
-    var lang =
-      window.currentLang ||
-      (typeof localStorage !== "undefined" && localStorage.getItem("structuro_lang")) ||
-      "nl";
-    if (lang === "nl" || lang === "en") {
-      bridgeParams.set("lang", lang);
     }
     // Cross-domain identity: geef het anonieme PostHog distinct_id mee zodat
-    // structuro.ai met hetzelfde ID kan bootstrappen (1 persoon over .eu → .ai).
+    // structuro.ai met hetzelfde ID kan bootstrappen (1 persoon over .eu naar .ai).
     try {
       if (window.posthog && typeof window.posthog.get_distinct_id === "function") {
         var did = window.posthog.get_distinct_id();
