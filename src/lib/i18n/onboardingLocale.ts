@@ -100,6 +100,10 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
       "Je eerste taak staat al klaar vanuit je aanmelding. Kies je energie en je kunt meteen starten.",
     firstDayWelcomeTaskLabel: "Je eerste taak",
     firstDayWelcomeTaskHint: "{n} microstappen staan al klaar",
+    firstDayWelcomeTaskCheck: "Kies deze taak om mee te starten",
+    firstDayWelcomeTaskInfoAria: "Waarom staat deze taak hier?",
+    firstDayWelcomeTaskInfo:
+      "Dit is een voorbeeldtaak. Iets opzeggen waar je al lang voor betaalt blijft vaak liggen, dus we zetten het klaar met kleine stappen zodat je meteen kunt starten. Liever iets anders? Kies hieronder 'Liever zelf een taak toevoegen'.",
     firstDayWelcomeBridge1: "Perfect. Die taak wacht op je in je dagstart.",
     firstDayWelcomeBridge2: "Morgen kies je zelf je focuspunten.",
     firstDayOwnTaskCta: "Liever zelf een taak toevoegen",
@@ -256,6 +260,10 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
       "Your first task is already ready from sign-up. Pick your energy and you can start right away.",
     firstDayWelcomeTaskLabel: "Your first task",
     firstDayWelcomeTaskHint: "{n} micro steps are already filled in",
+    firstDayWelcomeTaskCheck: "Choose this task to start with",
+    firstDayWelcomeTaskInfoAria: "Why is this task here?",
+    firstDayWelcomeTaskInfo:
+      "This is an example task. Cancelling something you've paid for too long tends to get put off, so we set it up with small steps so you can start right away. Prefer something else? Pick 'Rather add your own task' below.",
     firstDayWelcomeBridge1: "Perfect. That task is waiting in your day start.",
     firstDayWelcomeBridge2: "From tomorrow you pick your own focus points.",
     firstDayOwnTaskCta: "Rather add your own task",

@@ -224,6 +224,24 @@ function RegistrerenAccountInner({
           </Link>
         </p>
       ) : null}
+
+      {process.env.NODE_ENV === "development" ? (
+        <div className="mx-auto w-full pt-2 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (process.env.NODE_ENV === "development") {
+                document.cookie =
+                  "structuro_dev_local_bypass=1; path=/; max-age=604800; samesite=lax";
+              }
+              window.location.assign("/");
+            }}
+            className={`text-xs font-medium underline underline-offset-2 ${mutedTextClass}`}
+          >
+            Doorgaan lokaal (alleen test)
+          </button>
+        </div>
+      ) : null}
     </RegistrerenShell>
   );
 }

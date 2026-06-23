@@ -600,7 +600,20 @@ function applyDagstartDbGate(
   return response;
 }
 
-/** Lokale test zonder account: verplichte /onboarding tot cookie gezet is. */
+/**
+ * Dev-only bypass: laat een lokale tester zonder account de app in zonder de
+ * harde /registreren-muur. Wordt in productie genegeerd (zie check op NODE_ENV).
+ */
+const DEV_LOCAL_BYPASS_COOKIE = "structuro_dev_local_bypass";
+
+/**
+ * Lokale test zonder account:
+ * - tot de onboarding klaar is (cookie != "2"): verplichte /onboarding.
+ * - zodra de onboarding klaar is: harde muur naar /registreren. Een anonieme
+ *   gebruiker MOET een account aanmaken en kan dat niet overslaan. De app-shell
+ *   is dus niet bereikbaar zonder Supabase-user.
+ * - in development kan een dev-bypass-cookie de muur overslaan om lokaal te testen.
+ */
 function applyLocalAnonymousOnboardingGuard(
   request: NextRequest,
   response: NextResponse,
@@ -609,6 +622,8 @@ function applyLocalAnonymousOnboardingGuard(
   const isLoginPath = pathname.startsWith("/login");
   const isAuthPath = pathname.startsWith("/auth");
 
+  // Login, auth en anonieme publieke paginas (incl. /registreren, /privacy,
+  // /terms, /welkom en de acquisitie-landings) blijven altijd toegankelijk.
   if (isLoginPath || isAuthPath || isAnonymousPublicPage(pathname)) {
     return response;
   }
@@ -616,8 +631,6 @@ function applyLocalAnonymousOnboardingGuard(
   const localObRaw =
     request.cookies.get(LOCAL_ONBOARDING_DONE_COOKIE)?.value;
   const localOnboardingDone = localObRaw === "2";
-  const privacySetupDone =
-    request.cookies.get(PRIVACY_SETUP_DONE_COOKIE)?.value === "1";
 
   if (
     !localOnboardingDone &&
@@ -629,28 +642,21 @@ function applyLocalAnonymousOnboardingGuard(
     return NextResponse.redirect(url, 302);
   }
 
-  if (localOnboardingDone && !privacySetupDone) {
-    const onConsentPath =
-      pathname === "/consent" || pathname.startsWith("/consent/");
-    if (
-      !onConsentPath &&
-      !pathname.startsWith("/api") &&
-      !pathname.startsWith("/privacy") &&
-      !pathname.startsWith("/terms")
-    ) {
+  const devLocalBypass =
+    process.env.NODE_ENV === "development" &&
+    request.cookies.get(DEV_LOCAL_BYPASS_COOKIE)?.value === "1";
+
+  // Harde muur: onboarding klaar maar geen account → altijd naar /registreren.
+  // /registreren, /privacy en /terms zijn anonieme publieke paginas en zijn
+  // hierboven al teruggegeven, dus hier ontstaat geen redirect-loop. API-routes
+  // hebben hun eigen auth en worden niet geredirect.
+  if (localOnboardingDone && !devLocalBypass) {
+    if (!pathname.startsWith("/api")) {
       const url = request.nextUrl.clone();
-      url.pathname = "/consent";
+      url.pathname = "/registreren";
       return NextResponse.redirect(url, 302);
     }
-  }
-
-  if (
-    localOnboardingDone &&
-    pathname.startsWith("/onboarding")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = privacySetupDone ? "/" : "/consent";
-    return NextResponse.redirect(url, 302);
+    return response;
   }
 
   return applyDagstartCookieGuard(request, response, pathname);

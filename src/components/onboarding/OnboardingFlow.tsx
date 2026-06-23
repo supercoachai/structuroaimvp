@@ -85,7 +85,7 @@ export default function OnboardingFlow() {
 
   if (!clientReady || waitingForSession) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 pt-[max(0px,env(safe-area-inset-top))] text-slate-500">
+      <div className="st-story-bg relative flex min-h-screen items-center justify-center pt-[max(0px,env(safe-area-inset-top))] text-[var(--story-text-muted)]">
         <ObLanguageToggle
           locale={locale}
           setLocale={setLocale}
@@ -98,7 +98,7 @@ export default function OnboardingFlow() {
 
   if (showLoginRedirect) {
     return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-50 to-blue-50 px-6 pt-[max(3.5rem,env(safe-area-inset-top))] text-center text-slate-500">
+      <div className="st-story-bg relative flex min-h-screen flex-col items-center justify-center gap-3 px-6 pt-[max(3.5rem,env(safe-area-inset-top))] text-center text-[var(--story-text-muted)]">
         <ObLanguageToggle
           locale={locale}
           setLocale={setLocale}

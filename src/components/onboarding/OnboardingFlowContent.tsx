@@ -9,6 +9,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  InformationCircleIcon,
   RocketLaunchIcon,
   SparklesIcon,
   Squares2X2Icon,
@@ -33,6 +34,10 @@ import { calculateCyclePhase } from "@/lib/cycle/calculatePhase";
 import type { CyclePhase, CycleProfile } from "@/lib/cycle/types";
 import {
   WELCOME_TASK_TITLE,
+  WELCOME_MICRO_STEP_TITLES,
+  SUGGESTED_WELCOME_TASK_ID,
+  createLocalOnboardingWelcomeTask,
+  createOnboardingWelcomeTaskReturningId,
 } from "@/lib/onboardingWelcomeTask";
 import {
   isLocalOnboardingCompleted,
@@ -351,6 +356,10 @@ export default function OnboardingFlowContent({
   const [welcomeMicroExpanded, setWelcomeMicroExpanded] = useState(false);
   /** Eerste dagstart: liever eigen taak i.p.v. de klaargezette welkomstaak. */
   const [firstDayOwnTaskMode, setFirstDayOwnTaskMode] = useState(false);
+  /** Eerste dagstart: gebruiker heeft de klaargezette welkomstaak bevestigd. */
+  const [welcomeTaskConfirmed, setWelcomeTaskConfirmed] = useState(false);
+  /** Eerste dagstart: info-popover over de voorbeeldtaak is open. */
+  const [welcomeInfoOpen, setWelcomeInfoOpen] = useState(false);
   /** Stap B (taak) pas na pauze na energiekeuze, zodat het rustig binnenkomt. */
   const [firstDayBridgeVisible, setFirstDayBridgeVisible] = useState(false);
   const [firstDayTaskPhaseVisible, setFirstDayTaskPhaseVisible] = useState(false);
@@ -426,7 +435,7 @@ export default function OnboardingFlowContent({
     (firstDayUseMicroSteps === true && firstDayMicroTitles.length > 0);
   const usingWelcomeTask = Boolean(welcomeTaskPreview) && !firstDayOwnTaskMode;
   const firstDayReady = usingWelcomeTask
-    ? Boolean(firstDayEnergy)
+    ? Boolean(firstDayEnergy) && welcomeTaskConfirmed
     : Boolean(firstDayEnergy) &&
       firstTaskTitle.trim().length >= 2 &&
       firstDayMinutesOk &&
@@ -474,8 +483,17 @@ export default function OnboardingFlowContent({
             task.source === "onboarding_welcome" ||
             task.title?.trim() === WELCOME_TASK_TITLE
         );
-        if (cancelled || !welcome?.id) {
-          if (!cancelled) setWelcomeTaskPreview(null);
+        if (cancelled) return;
+        if (!welcome?.id) {
+          // Nog geen welkomstaak: toon de standaard suggestie ("Abonnement
+          // opzeggen") zodat elke nieuwe gebruiker de keuze krijgt. De echte
+          // taak maken we pas aan zodra de gebruiker hem kiest.
+          setWelcomeTaskPreview({
+            id: SUGGESTED_WELCOME_TASK_ID,
+            title: WELCOME_TASK_TITLE,
+            microStepCount: WELCOME_MICRO_STEP_TITLES.length,
+            microStepTitles: [...WELCOME_MICRO_STEP_TITLES],
+          });
           return;
         }
         const microSteps = Array.isArray(welcome.microSteps) ? welcome.microSteps : [];
@@ -1279,21 +1297,41 @@ export default function OnboardingFlowContent({
     }
 
     if (welcomeTaskPreview && !firstDayOwnTaskMode) {
+      const isSuggested = welcomeTaskPreview.id === SUGGESTED_WELCOME_TASK_ID;
+      let welcomeTaskId: string | null = welcomeTaskPreview.id;
       if (user?.id) {
-        await updateTaskInSupabase(user.id, welcomeTaskPreview.id, { energyLevel: energy });
-        await upsertCheckInToSupabase(user.id, dateStr, {
-          energy_level: energy,
-          top3_task_ids: [welcomeTaskPreview.id],
-          cycle_phase: cyclePhaseToday,
-        });
+        if (isSuggested) {
+          welcomeTaskId = await createOnboardingWelcomeTaskReturningId(user.id, energy);
+        } else {
+          await updateTaskInSupabase(user.id, welcomeTaskPreview.id, { energyLevel: energy });
+        }
+        if (welcomeTaskId) {
+          await upsertCheckInToSupabase(user.id, dateStr, {
+            energy_level: energy,
+            top3_task_ids: [welcomeTaskId],
+            cycle_phase: cyclePhaseToday,
+          });
+        }
       } else {
-        updateTaskInStorage(welcomeTaskPreview.id, { energyLevel: energy });
-        saveCheckInToStorage({
-          date: dateStr,
-          energy_level: energy,
-          top3_task_ids: [welcomeTaskPreview.id],
-          user_id: "local",
-        });
+        if (isSuggested) {
+          welcomeTaskId = createLocalOnboardingWelcomeTask(energy);
+        } else {
+          updateTaskInStorage(welcomeTaskPreview.id, { energyLevel: energy });
+        }
+        if (welcomeTaskId) {
+          saveCheckInToStorage({
+            date: dateStr,
+            energy_level: energy,
+            top3_task_ids: [welcomeTaskId],
+            user_id: "local",
+          });
+        }
+      }
+      // Onthoud de echte id zodat vervolgrenders/afronden niet opnieuw aanmaken.
+      if (welcomeTaskId && welcomeTaskId !== welcomeTaskPreview.id) {
+        setWelcomeTaskPreview((prev) =>
+          prev ? { ...prev, id: welcomeTaskId as string } : prev
+        );
       }
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("structuro_tasks_updated"));
@@ -2285,12 +2323,65 @@ export default function OnboardingFlowContent({
                       <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-[var(--story-text-muted)]">
                         {t("onboarding.firstDayWelcomeTaskLabel")}
                       </p>
-                      <div className="rounded-xl border border-[var(--story-border)] bg-white p-4 shadow-sm">
-                        <p className="text-base font-semibold text-[var(--story-text)]">
-                          {welcomeTaskPreview!.title}
-                        </p>
+                      <div
+                        className={`rounded-xl border bg-white p-4 shadow-sm transition-colors ${
+                          welcomeTaskConfirmed
+                            ? "border-[var(--story-accent)] ring-1 ring-[var(--story-accent)]"
+                            : "border-[var(--story-border)]"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setWelcomeTaskConfirmed((v) => !v)}
+                            aria-pressed={welcomeTaskConfirmed}
+                            className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          >
+                            <span
+                              aria-hidden
+                              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                                welcomeTaskConfirmed
+                                  ? "border-[var(--story-accent)] bg-[var(--story-accent)]"
+                                  : "border-[var(--story-border)] bg-white"
+                              }`}
+                            >
+                              {welcomeTaskConfirmed ? (
+                                <CheckIcon className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                              ) : null}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-base font-semibold text-[var(--story-text)]">
+                                {welcomeTaskPreview!.title}
+                              </span>
+                              {!welcomeTaskConfirmed ? (
+                                <span className="mt-0.5 block text-sm text-[var(--story-text-muted)]">
+                                  {t("onboarding.firstDayWelcomeTaskCheck")}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                          <div className="relative shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setWelcomeInfoOpen((v) => !v)}
+                              aria-label={t("onboarding.firstDayWelcomeTaskInfoAria")}
+                              aria-expanded={welcomeInfoOpen}
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-[var(--story-text-muted)] transition-colors hover:bg-[rgba(45,90,86,0.08)] hover:text-[var(--story-accent)]"
+                            >
+                              <InformationCircleIcon className="h-5 w-5" aria-hidden />
+                            </button>
+                            {welcomeInfoOpen ? (
+                              <div
+                                role="note"
+                                className="animate-fade-in absolute right-0 top-9 z-20 w-64 rounded-lg border border-[var(--story-border)] bg-white p-3 text-sm leading-snug text-[var(--story-text)] shadow-lg"
+                              >
+                                {t("onboarding.firstDayWelcomeTaskInfo")}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
                         {welcomeTaskPreview!.microStepCount > 0 ? (
-                          <>
+                          <div className="pl-8">
                             <button
                               type="button"
                               onClick={() => setWelcomeMicroExpanded((v) => !v)}
@@ -2325,7 +2416,7 @@ export default function OnboardingFlowContent({
                                 ))}
                               </ul>
                             ) : null}
-                          </>
+                          </div>
                         ) : null}
                       </div>
                       <button

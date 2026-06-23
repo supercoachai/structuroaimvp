@@ -11,8 +11,6 @@ import {
 } from "@/lib/posthog/signupAttribution";
 import { useI18n } from "@/lib/i18n";
 
-const DISMISS_KEY = "structuro_anon_account_banner_dismissed";
-
 function buildRegistrerenHref(): string {
   const params = new URLSearchParams();
   const source = getStoredSignupSource();
@@ -39,26 +37,12 @@ export default function AnonymousAccountBanner() {
     const isAnonymous =
       hasStructuroLocalModeCookieOnClient() && !hasSupabaseAuthHintOnClient();
     if (!isAnonymous) return;
-    try {
-      if (window.sessionStorage.getItem(DISMISS_KEY) === "1") return;
-    } catch {
-      /* ignore */
-    }
     setVisible(true);
   }, []);
 
   const href = useMemo(() => (visible ? buildRegistrerenHref() : "/registreren"), [visible]);
 
   if (!visible) return null;
-
-  const dismiss = () => {
-    try {
-      window.sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    setVisible(false);
-  };
 
   return (
     <div className="border-b border-[var(--st-line)] bg-[var(--st-surface-2)] px-6 py-3 md:px-12">
@@ -76,13 +60,6 @@ export default function AnonymousAccountBanner() {
           >
             {t("anonAccount.cta")}
           </Link>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="text-sm font-medium text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink)]"
-          >
-            {t("anonAccount.later")}
-          </button>
         </div>
       </div>
     </div>
