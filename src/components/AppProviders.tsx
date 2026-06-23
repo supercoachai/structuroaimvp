@@ -23,6 +23,7 @@ import { SignupAttributionCapture } from "@/components/SignupAttributionCapture"
 import { CookieBanner } from "@/components/posthog/CookieBanner";
 import { MarketingAcquisitionConsent } from "@/components/posthog/MarketingAcquisitionConsent";
 import { AcquisitionLandingTracker } from "@/components/posthog/AcquisitionLandingTracker";
+import { OnboardingActivationTracker } from "@/components/posthog/OnboardingActivationTracker";
 import AppLayout from "@/components/layout/AppLayout";
 import { ClientRuntimeGuards } from "@/components/ClientRuntimeGuards";
 import AppShellSuspenseFallback from "@/components/shell/AppShellSuspenseFallback";
@@ -98,6 +99,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <Suspense fallback={null}>
               <PostHogPageviews />
               <AcquisitionLandingTracker />
+              <OnboardingActivationTracker />
             </Suspense>
             <PostHogAuthEffects />
             <AppOpenedTracker />

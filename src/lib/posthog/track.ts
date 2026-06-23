@@ -92,7 +92,8 @@ export function captureProductEvent(
  */
 export function captureAnonymousEvent(
   event: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
+  options?: { transport?: "sendBeacon" | "XHR" }
 ) {
   if (typeof window === "undefined") {
     debugLog("anonymous", event, "no-window", properties);
@@ -103,12 +104,15 @@ export function captureAnonymousEvent(
     return;
   }
   try {
+    const transport =
+      options?.transport ??
+      (typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+        ? "sendBeacon"
+        : "XHR");
     posthog.capture(event, properties, {
-      transport:
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-          ? "sendBeacon"
-          : "XHR",
+      transport,
+      ...(transport === "sendBeacon" ? { send_instantly: true } : {}),
     });
     persistAnonymousDistinctIdForStitch();
     debugLog("anonymous", event, "sent", properties);
@@ -123,15 +127,17 @@ export function captureAnonymousEvent(
  */
 export function captureActivationFunnelEvent(
   event: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
+  options?: { transport?: "sendBeacon" | "XHR" }
 ) {
-  captureAnonymousEvent(event, properties);
+  captureAnonymousEvent(event, properties, options);
 }
 
 /** Marketing/conversie-events: granted (cookies) of denied (cookieless on_reject). */
 export function captureMarketingEvent(
   event: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
+  options?: { transport?: "sendBeacon" | "XHR" }
 ) {
   if (typeof window === "undefined") {
     debugLog("marketing", event, "no-window", properties);
@@ -146,12 +152,15 @@ export function captureMarketingEvent(
     return;
   }
   try {
+    const transport =
+      options?.transport ??
+      (typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+        ? "sendBeacon"
+        : "XHR");
     posthog.capture(event, properties, {
-      transport:
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-          ? "sendBeacon"
-          : "XHR",
+      transport,
+      ...(transport === "sendBeacon" ? { send_instantly: true } : {}),
     });
     persistAnonymousDistinctIdForStitch();
     debugLog("marketing", event, "sent", properties);

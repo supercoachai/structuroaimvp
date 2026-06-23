@@ -4,6 +4,8 @@ export type AcquisitionAnalyticsEvent =
   | "acquisition_landing_viewed"
   | "acquisition_signup_started"
   | "tiktok_landing_viewed"
+  | "tiktok_landing_cta_clicked"
+  | "organic_landing_cta_clicked"
   | "tiktok_signup_started";
 
 export type AcquisitionEventPayload = {
@@ -18,6 +20,9 @@ export type AcquisitionEventPayload = {
   is_tiktok?: boolean;
   has_ttclid?: boolean;
   entry_url?: string | null;
+  lp_campaign?: string | null;
+  lp_hero?: string | null;
+  lp_hero_source?: string | null;
 };
 
 function baseProperties(payload: AcquisitionEventPayload): Record<string, unknown> {
@@ -32,6 +37,9 @@ function baseProperties(payload: AcquisitionEventPayload): Record<string, unknow
     is_tiktok: payload.is_tiktok === true,
     has_ttclid: payload.has_ttclid === true,
     entry_url: payload.entry_url ?? null,
+    lp_campaign: payload.lp_campaign ?? null,
+    lp_hero: payload.lp_hero ?? null,
+    lp_hero_source: payload.lp_hero_source ?? null,
     // Vul de "Url / Screen"-kolom in PostHog ook voor server-side events, anders
     // blijft die leeg bij in-app verkeer dat alleen de server-backup haalt.
     $current_url: payload.entry_url ?? null,
@@ -72,4 +80,15 @@ export async function captureAcquisitionSignupStartedServer(
   if (payload.is_tiktok) {
     await captureAcquisitionEventServer("tiktok_signup_started", payload);
   }
+}
+
+export async function captureAcquisitionCtaClickedServer(
+  payload: AcquisitionEventPayload,
+  channel: "tiktok" | "organic"
+): Promise<void> {
+  const event =
+    channel === "tiktok"
+      ? "tiktok_landing_cta_clicked"
+      : "organic_landing_cta_clicked";
+  await captureAcquisitionEventServer(event, payload);
 }

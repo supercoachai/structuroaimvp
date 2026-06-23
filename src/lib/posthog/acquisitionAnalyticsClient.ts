@@ -1,33 +1,23 @@
-import posthog from "posthog-js";
-
 import {
-  getOrCreateAcquisitionVisitorId,
   hasAcquisitionLandingBeenTracked,
   markAcquisitionLandingTracked,
   resolveAcquisitionAttribution,
   type AcquisitionAttribution,
 } from "@/lib/posthog/acquisitionAttribution";
+import { resolveAnalyticsVisitorId } from "@/lib/posthog/analyticsVisitorId";
 import { captureMarketingEvent } from "@/lib/posthog/track";
 import { bridgeChannelFromPath } from "@/lib/acquisition/bridgePaths";
-import { resolveLpVariant } from "@/lib/tiktok/lpConfig";
-
-/** Accepteert UUID v1-v8 (PostHog anon-id is v7). Spiegelt de server-route-validatie. */
-const VISITOR_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import {
+  isUnsubstitutedUtmContent,
+  resolveLpVariant,
+} from "@/lib/tiktok/lpConfig";
 
 /**
  * Stuur het PostHog anonieme distinct_id als visitor_id zodat server-side acquisitie-
- * events bij dezelfde persoon horen als de client-events. Valt terug op een losse
- * acquisitie-UUID als PostHog (nog) geen geldig id heeft.
+ * events bij dezelfde persoon horen als de client-events.
  */
 function resolveServerVisitorId(): string {
-  try {
-    const phId = posthog.get_distinct_id?.();
-    if (typeof phId === "string" && VISITOR_UUID_RE.test(phId)) return phId;
-  } catch {
-    /* ignore */
-  }
-  return getOrCreateAcquisitionVisitorId();
+  return resolveAnalyticsVisitorId();
 }
 
 type SearchParamsLike = {
@@ -105,7 +95,10 @@ function serverPayload(
 }
 
 async function postAcquisitionAnalytics(
-  event: "acquisition_landing" | "acquisition_signup_started",
+  event:
+    | "acquisition_landing"
+    | "acquisition_signup_started"
+    | "acquisition_cta_clicked",
   payload: Record<string, unknown>
 ): Promise<void> {
   try {
@@ -177,4 +170,49 @@ export function trackAcquisitionSignupStarted(input: {
     "acquisition_signup_started",
     serverPayload(attribution, entryUrl, input.searchParams)
   );
+}
+
+/** CTA-klik: sendBeacon + server backup (XHR gaat verloren bij directe navigatie). */
+export function trackAcquisitionCtaClicked(input: {
+  channel: "tiktok" | "organic";
+  pathname: string;
+  searchParams: SearchParamsLike | null | undefined;
+  variant: {
+    campaign: { id: string };
+    hero: { id: string };
+    heroSource: string;
+  };
+}): void {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams(input.searchParams?.toString() ?? "");
+  const attribution = resolveAcquisitionAttribution({
+    pathname: input.pathname,
+    searchParams: params,
+    referrer: document.referrer || null,
+  });
+  const entryUrl = `${window.location.origin}${attribution.landing_path}${
+    params.toString() ? `?${params.toString()}` : ""
+  }`;
+  const props = {
+    ...attributionProperties(attribution, entryUrl, input.searchParams),
+    lp_campaign: input.variant.campaign.id,
+    lp_hero: input.variant.hero.id,
+    lp_hero_source: input.variant.heroSource,
+    utm_content: isUnsubstitutedUtmContent(params.get("utm_content"))
+      ? null
+      : params.get("utm_content"),
+  };
+
+  const eventName =
+    input.channel === "tiktok"
+      ? "tiktok_landing_cta_clicked"
+      : "organic_landing_cta_clicked";
+
+  captureMarketingEvent(eventName, props, { transport: "sendBeacon" });
+
+  void postAcquisitionAnalytics("acquisition_cta_clicked", {
+    ...serverPayload(attribution, entryUrl, input.searchParams),
+    channel: input.channel,
+  });
 }

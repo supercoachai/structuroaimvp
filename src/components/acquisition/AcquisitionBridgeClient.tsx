@@ -15,11 +15,8 @@ import {
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 import { useI18n } from "@/lib/i18n";
 import { applySignupAttributionFromSearchParams } from "@/lib/posthog/signupAttribution";
-import { captureMarketingEvent } from "@/lib/posthog/track";
-import {
-  isUnsubstitutedUtmContent,
-  type LpResolvedVariant,
-} from "@/lib/tiktok/lpConfig";
+import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
+import { type LpResolvedVariant } from "@/lib/tiktok/lpConfig";
 
 import { TikTokHeroLayout } from "@/components/tiktok/TikTokLandingHeroes";
 
@@ -45,27 +42,12 @@ function AcquisitionBridgeInner({
   }, [searchParams]);
 
   function handleCtaClick(event: MouseEvent<HTMLAnchorElement>) {
-    const rawUtmContent = searchParams.get("utm_content");
-    const base = {
-      landing_path: landingPath,
-      funnel: "acquisition",
-      lp_campaign: variant.campaign.id,
-      lp_hero: variant.hero.id,
-      lp_hero_source: variant.heroSource,
-      utm_content: isUnsubstitutedUtmContent(rawUtmContent) ? null : rawUtmContent,
-    };
-
-    if (channel === "tiktok") {
-      captureMarketingEvent("tiktok_landing_cta_clicked", {
-        ...base,
-        source: "tiktok",
-      });
-    } else {
-      captureMarketingEvent("organic_landing_cta_clicked", {
-        ...base,
-        source: "structuro_eu",
-      });
-    }
+    trackAcquisitionCtaClicked({
+      channel,
+      pathname: landingPath,
+      searchParams,
+      variant,
+    });
 
     // Zorg dat attributie zeker bewaard is voordat we navigeren.
     applySignupAttributionFromSearchParams(searchParams);

@@ -25,6 +25,9 @@ import { getDagstartCardDeadline } from "@/lib/taskDeadlineDisplay";
 import { trackDagstartOpened, trackEnergyChecked } from "@/utils/events";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import {
+  trackDagstartCompleted,
+} from "@/lib/posthog/activationFunnelAnalyticsClient";
 import { trackDagstartCompletedServerBackup } from "@/lib/posthog/activationAnalyticsClient";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
 import { ensureFirstDagstartWelcomeTask } from "@/lib/onboardingWelcomeTask";
@@ -341,7 +344,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
         } catch (err) {
           console.warn("markOnboardingCompleted:", err);
         }
-        captureActivationFunnelEvent("dagstart_completed", {
+        trackDagstartCompleted({
           energy_level: appEnergy,
           tasks_selected_count: top3.length,
           has_cycle_phase: Boolean(cyclePhase),

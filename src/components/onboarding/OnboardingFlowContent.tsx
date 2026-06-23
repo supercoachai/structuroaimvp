@@ -69,7 +69,7 @@ import {
 } from "@/lib/onboarding/compactFlow";
 import { onboardingDurationBucket } from "@/lib/posthog/durationBuckets";
 import { captureDagstartEventsFromOnboardingFinish } from "@/lib/posthog/onboardingDagstartEvents";
-import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import { trackOnboardingCompleted } from "@/lib/posthog/activationFunnelAnalyticsClient";
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
 
@@ -1477,7 +1477,7 @@ export default function OnboardingFlowContent({
       setFinishing(false);
       return;
     }
-    captureActivationFunnelEvent("onboarding_completed", {
+    trackOnboardingCompleted({
       duration_bucket: onboardingDurationBucket(
         Date.now() - onboardingStartedAtRef.current
       ),

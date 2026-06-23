@@ -11,6 +11,7 @@ export const ANALYTICS_EVENTS = {
   checkout_started: "checkout_started",
   subscription_started: "subscription_started",
   onboarding_completed: "onboarding_completed",
+  onboarding_started: "onboarding_started",
   dagstart_energy_chosen: "dagstart_energy_chosen",
   dagstart_path_chosen: "dagstart_path_chosen",
   dagstart_swipe_exhausted: "dagstart_swipe_exhausted",
