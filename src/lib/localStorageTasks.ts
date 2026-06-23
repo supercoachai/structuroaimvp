@@ -474,6 +474,19 @@ export function getTodayCheckIn(): any | null {
   return checkIns.find((ci: any) => ci.date === today) || null;
 }
 
+// Verwijder de check-in van vandaag (na migratie naar Supabase)
+export function clearTodayCheckInFromStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const checkIns = getCheckInsFromStorage();
+    const today = new Date().toISOString().split('T')[0];
+    const filtered = checkIns.filter((ci: any) => ci.date !== today);
+    localStorage.setItem(STORAGE_KEY_CHECKINS, JSON.stringify(filtered));
+  } catch (error) {
+    console.error('Error clearing today check-in from localStorage:', error);
+  }
+}
+
 // Check of er vandaag al een check-in is gedaan
 export function hasCheckedInToday(): boolean {
   return getTodayCheckIn() !== null;
