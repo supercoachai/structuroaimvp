@@ -38,6 +38,28 @@ export type LpCampaign = {
   defaultHero: LpHeroId;
   /** Alle heroes zijn toegestaan; default is slechts een startpunt */
   heroesAllowed: readonly LpHeroId[];
+  /**
+   * Overschrijft het CTA-label voor deze campagne (boven het channel-default
+   * label uit bridgeCopy). Optioneel; de CTA start dezelfde onboarding-flow.
+   */
+  ctaLabel?: string;
+  /**
+   * Korte, prikkelarme uitleg over wat Structuro is. Optioneel; alleen getoond
+   * als de campagne dit invult (bijv. voor TikTok-bezoekers die het product
+   * nog niet kennen).
+   */
+  explainer?: {
+    title?: string;
+    points: readonly string[];
+  };
+  /**
+   * Subtiele secundaire link (bijv. "lees meer") naar de marketingsite.
+   * Optioneel; gebruik altijd de organische EU-site, geen TikTok-URL.
+   */
+  learnMore?: {
+    label: string;
+    href: string;
+  };
 };
 
 export const LP_BRAND = {
@@ -146,13 +168,26 @@ export const LP_CAMPAIGNS: readonly LpCampaign[] = [
     utmContent: "hook_herkende",
     theme: "warm",
     accent: LP_BRAND.green,
-    headline: "Je herkende jezelf in die video, he?",
+    headline: "Je herkende jezelf op TikTok, he?",
     subline:
       "Daarom ben je hier. Geen toeval, en geen luiheid. Je brein start gewoon anders op, en Structuro helpt je rustig beginnen.",
     cta: "Start met Structuro",
+    ctaLabel: "Ontdek Structuro",
     trust: "Geen verplichtingen. Jij bepaalt het tempo.",
     defaultHero: "A",
     heroesAllowed: ALL_HEROES,
+    explainer: {
+      title: "Wat is Structuro?",
+      points: [
+        "Een rustige dagstart voor ADHD-breinen.",
+        "Je kiest hoeveel energie je hebt, Structuro zet 1 tot 3 taken klaar.",
+        "Geen overweldigende lijsten. Gewoon rustig beginnen, op jouw tempo.",
+      ],
+    },
+    learnMore: {
+      label: "Lees meer over Structuro",
+      href: "https://www.structuro.eu",
+    },
   },
   {
     id: "staren",

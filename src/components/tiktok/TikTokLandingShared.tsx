@@ -5,7 +5,7 @@ import { useState, type MouseEvent } from "react";
 
 import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
 import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
-import { getLpThemeTokens } from "@/lib/tiktok/lpTheme";
+import { getLpThemeTokens, type LpThemeTokens } from "@/lib/tiktok/lpTheme";
 
 export type TikTokHeroShellProps = {
   campaign: LpCampaign;
@@ -72,6 +72,12 @@ export function TikTokLandingShell({
         className={`mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-2 md:pt-0 ${mainPositionClass} ${mainClassName}`}
       >
         {children}
+        {campaign.explainer ? (
+          <TikTokExplainer theme={theme} explainer={campaign.explainer} />
+        ) : null}
+        {campaign.learnMore ? (
+          <TikTokLearnMoreLink theme={theme} learnMore={campaign.learnMore} />
+        ) : null}
       </main>
 
       <div
@@ -107,6 +113,67 @@ export function TikTokLandingShell({
         </div>
       </div>
     </div>
+  );
+}
+
+export function TikTokExplainer({
+  theme,
+  explainer,
+}: {
+  theme: LpThemeTokens;
+  explainer: NonNullable<LpCampaign["explainer"]>;
+}) {
+  return (
+    <section
+      className="mt-8 w-full self-stretch rounded-[20px] border p-5 text-left"
+      style={{ backgroundColor: theme.surface, borderColor: theme.surfaceBorder }}
+    >
+      {explainer.title ? (
+        <p
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: theme.muted }}
+        >
+          {explainer.title}
+        </p>
+      ) : null}
+      <ul className="mt-3 space-y-2.5">
+        {explainer.points.map((point) => (
+          <li key={point} className="flex items-start gap-3">
+            <span
+              className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: theme.isStory ? "#2D5A56" : theme.ctaBg }}
+              aria-hidden
+            />
+            <span
+              className="text-sm leading-relaxed"
+              style={{ color: theme.inkSoft }}
+            >
+              {point}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function TikTokLearnMoreLink({
+  theme,
+  learnMore,
+}: {
+  theme: LpThemeTokens;
+  learnMore: NonNullable<LpCampaign["learnMore"]>;
+}) {
+  return (
+    <a
+      href={learnMore.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-5 inline-flex items-center justify-center self-center text-sm font-medium underline underline-offset-4 transition hover:opacity-80"
+      style={{ color: theme.muted }}
+    >
+      {learnMore.label}
+    </a>
   );
 }
 

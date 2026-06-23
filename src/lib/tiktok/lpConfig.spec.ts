@@ -68,6 +68,37 @@ describe("lpConfig", () => {
     expect(url).toContain("hero=B");
   });
 
+  it("herkende toont eigen CTA-label en uitleg voor TikTok", () => {
+    const campaign = resolveLpCampaign({ channel: "tiktok" });
+    expect(campaign.id).toBe("herkende");
+    expect(campaign.headline).toBe("Je herkende jezelf op TikTok, he?");
+    expect(campaign.ctaLabel).toBe("Ontdek Structuro");
+    expect(campaign.explainer?.points.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it("herkende linkt naar de organische EU-site, niet naar tiktok", () => {
+    const campaign = resolveLpCampaign({ channel: "tiktok" });
+    expect(campaign.learnMore?.href).toBe("https://www.structuro.eu");
+    expect(campaign.learnMore?.href).not.toContain("tiktok");
+  });
+
+  it("bevat geen em-dashes in herkende user-facing copy", () => {
+    const campaign = resolveLpCampaign({ channel: "tiktok" });
+    const strings = [
+      campaign.headline,
+      campaign.subline,
+      campaign.cta,
+      campaign.ctaLabel ?? "",
+      campaign.trust,
+      campaign.explainer?.title ?? "",
+      ...(campaign.explainer?.points ?? []),
+      campaign.learnMore?.label ?? "",
+    ];
+    for (const s of strings) {
+      expect(s).not.toContain("\u2014");
+    }
+  });
+
   it("bouwt organische start URL zonder tiktok pad", () => {
     const url = buildOrganicStartUrl({
       contentId: "zelftest_sticky",

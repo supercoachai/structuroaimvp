@@ -94,7 +94,7 @@ function AcquisitionBridgeInner({
       campaign={variant.campaign}
       signupHref={signupHref}
       onCtaClick={handleCtaClick}
-      ctaLabel={presentation.ctaLabel}
+      ctaLabel={variant.campaign.ctaLabel ?? presentation.ctaLabel}
       footerNote={presentation.footerNote}
       hideFooterNote={presentation.hideFooterNote}
     />
