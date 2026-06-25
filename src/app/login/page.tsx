@@ -32,7 +32,7 @@ import {
   readCheckoutReturn,
 } from '@/lib/checkoutReturnStorage';
 import { resolvePostLoginPathFromProfile } from '@/lib/postAuthRouting';
-import { markPasswordSetupCompleted } from '@/lib/auth/passwordSetupProfile';
+import { markPasswordSetupCompletedReliably } from '@/lib/auth/passwordSetupProfile';
 import {
   persistSignupAttributionToProfile,
   persistSignupSourceFromUrl,
@@ -401,7 +401,7 @@ function LoginPageInner() {
 
         if (data.user) {
           await persistSignupAttributionToProfile(data.user.id);
-          await markPasswordSetupCompleted(supabase, data.user.id);
+          await markPasswordSetupCompletedReliably(supabase, data.user.id);
           queueSignupCompletedForAnalytics();
           setLastAuthMethod("password");
           markReturningUser();

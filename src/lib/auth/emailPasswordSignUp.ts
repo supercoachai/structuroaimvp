@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
 import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
-import { markPasswordSetupCompleted } from "@/lib/auth/passwordSetupProfile";
+import { markPasswordSetupCompletedReliably } from "@/lib/auth/passwordSetupProfile";
 
 export type EmailPasswordSignUpParams = {
   email: string;
@@ -18,26 +18,6 @@ export type EmailPasswordSignUpResult = {
   email: string | null | undefined;
   needsEmailConfirmation: boolean;
 };
-
-/**
- * Markeer password_setup_completed via de server (service-role).
- *
- * Een directe client-side update faalt: `authenticated` heeft geen column-grant
- * op password_setup_completed (zie 20260611120000_profiles_protect_subscription_columns.sql,
- * die UPDATE tabel-breed introk en de kolom-grant voor de later toegevoegde kolom
- * mist). De update raakt dan 0 rijen / faalt stil, de vlag blijft false en de
- * middleware bounce't de e-mail+wachtwoord-gebruiker daarna naar
- * /auth/wachtwoord-aanmaken ("Bewaar je dagstart"). De endpoint zet de vlag met
- * service-role, net als de OAuth-callback. Best-effort: een transient fout mag de
- * signup-redirect niet blokkeren (de gebruiker kan altijd later een wachtwoord zetten).
- */
-async function markPasswordSetupCompletedViaServer(): Promise<void> {
-  try {
-    await fetch("/api/auth/complete-password-setup", { method: "POST" });
-  } catch {
-    /* best-effort */
-  }
-}
 
 export async function signUpWithEmailPassword(
   supabase: SupabaseClient,
@@ -60,10 +40,8 @@ export async function signUpWithEmailPassword(
     }
     // Dev-fallback is passwordless onder water, maar de gebruiker registreert
     // bewust met e-mail + wachtwoord. Markeer wachtwoord-setup als klaar, anders
-    // bounce de middleware naar /auth/wachtwoord-aanmaken (zoals in productie wél
-    // gebeurt zodra er een sessie is). Dev gebruikt de lokale DB (geen column-lock),
-    // dus de directe update werkt hier; productie loopt via de service-role-endpoint.
-    await markPasswordSetupCompleted(supabase, devResult.user.id);
+    // bounce de middleware naar /auth/wachtwoord-aanmaken.
+    await markPasswordSetupCompletedReliably(supabase, devResult.user.id);
     return {
       userId: devResult.user.id,
       email,
@@ -88,7 +66,8 @@ export async function signUpWithEmailPassword(
   if (!data.user?.id) throw new Error("signup_failed");
 
   if (data.session) {
-    await markPasswordSetupCompletedViaServer();
+    // Best-effort: transient fout mag signup niet blokkeren.
+    await markPasswordSetupCompletedReliably(supabase, data.user.id);
     return {
       userId: data.user.id,
       email: data.user.email,

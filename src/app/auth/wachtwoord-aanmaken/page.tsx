@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { isSamePasswordError } from "@/lib/auth/passwordSetupProfile";
+import { isSamePasswordError, markPasswordSetupCompletedReliably } from "@/lib/auth/passwordSetupProfile";
 import {
   getEnabledOAuthProviders,
   oauthProviderLabelKey,
@@ -100,12 +100,11 @@ export default function WachtwoordAanmakenPage() {
         return;
       }
 
-      // Vlag server-side zetten: betrouwbaar ondanks de token-rotatie die
-      // updateUser({ password }) veroorzaakt.
-      const res = await fetch("/api/auth/complete-password-setup", {
-        method: "POST",
-      });
-      if (!res.ok) {
+      const { error: flagErr } = await markPasswordSetupCompletedReliably(
+        supabase,
+        user.id
+      );
+      if (flagErr) {
         setError(t("passwordCreatePostOnboarding.errSave"));
         return;
       }

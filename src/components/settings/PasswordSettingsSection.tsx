@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { isSamePasswordError } from '@/lib/auth/passwordSetupProfile'
+import { isSamePasswordError, markPasswordSetupCompletedReliably } from '@/lib/auth/passwordSetupProfile'
 import { useI18n } from '@/lib/i18n'
 import { toast } from '@/components/Toast'
 import { SettingsTextLink } from '@/components/settings/SettingsUi'
@@ -41,9 +41,12 @@ export function PasswordSettingsSection({ hasSession }: { hasSession: boolean })
         setError(upErr.message || t('passwordSettings.errSave'))
         return
       }
-      await fetch('/api/auth/complete-password-setup', { method: 'POST' }).catch(
-        () => {}
-      )
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user?.id) {
+        await markPasswordSetupCompletedReliably(supabase, user.id)
+      }
       toast(t('passwordSettings.success'))
       setPassword('')
       setConfirm('')

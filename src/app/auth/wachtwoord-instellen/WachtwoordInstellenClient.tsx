@@ -13,7 +13,10 @@ import {
   exchangeRecoveryCodeClientSide,
   waitForAuthSession,
 } from "@/lib/auth/waitForAuthSession";
-import { isSamePasswordError } from "@/lib/auth/passwordSetupProfile";
+import {
+  isSamePasswordError,
+  markPasswordSetupCompletedReliably,
+} from "@/lib/auth/passwordSetupProfile";
 import { useI18n } from "@/lib/i18n";
 
 type Props = {
@@ -112,6 +115,9 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
     setBusy(true);
     try {
       const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const { error: upErr } = await supabase.auth.updateUser({
         password,
       });
@@ -120,11 +126,9 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
         setError(upErr.message || t("passwordSetup.errSave"));
         return;
       }
-      // Vlag server-side zetten vóór signOut, zodat de middleware na inloggen
-      // niet terugstuurt naar het wachtwoord-scherm.
-      await fetch("/api/auth/complete-password-setup", {
-        method: "POST",
-      }).catch(() => {});
+      if (user?.id) {
+        await markPasswordSetupCompletedReliably(supabase, user.id);
+      }
       await supabase.auth.signOut();
       router.push("/login?wachtwoord=bijgewerkt");
       router.refresh();
