@@ -6,6 +6,7 @@ import {
   type RegistrationFunnelEvent,
 } from "@/lib/posthog/registrationFunnelAnalytics";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import type { RegisterPlanId } from "@/lib/stripe/registerPlans";
@@ -73,7 +74,12 @@ async function postRegistrationFunnel(request: Request) {
   }
 
   try {
-    await captureRegistrationFunnelServer(user.id, event, properties);
+    await captureRegistrationFunnelServer(
+      user.id,
+      event,
+      properties,
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/registration-funnel",

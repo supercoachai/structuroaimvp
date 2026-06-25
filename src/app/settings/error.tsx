@@ -2,10 +2,7 @@
 
 import { useEffect } from "react";
 import { getErrorUiCopy } from "@/lib/i18n/clientLocale";
-import { isRecoverableChunkError } from "@/lib/normalizeError";
-
-const CHUNK_RELOAD_KEY = "structuro_chunk_reload_at";
-const CHUNK_RELOAD_COOLDOWN_MS = 12_000;
+import { tryRecoverableChunkReload } from "@/lib/recoverableChunkReload";
 
 export default function SettingsError({
   error,
@@ -15,13 +12,7 @@ export default function SettingsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isRecoverableChunkError(error)) return;
-    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
-    const now = Date.now();
-    if (now - last <= CHUNK_RELOAD_COOLDOWN_MS) return;
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(now));
-    window.location.reload();
+    tryRecoverableChunkReload(error);
   }, [error]);
 
   const copy = getErrorUiCopy();

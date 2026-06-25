@@ -5,6 +5,7 @@ import type { CaptureResult } from "posthog-js";
 
 import { posthogTracingHeaderHostnames } from "./tracingHeaders";
 import { POSTHOG_PROXY_API_HOST } from "./proxyHost";
+import { shouldDropNoiseException } from "./filterNoiseExceptions";
 import { sanitizeCurrentUrl } from "./sanitizeCurrentUrl";
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
 
@@ -42,6 +43,8 @@ function posthogBeforeSend(cr: CaptureResult | null): CaptureResult | null {
   if (!cr.properties || typeof cr.properties !== "object") return cr;
 
   if (cr.event === "$exception") {
+    if (shouldDropNoiseException(cr.properties)) return null;
+
     const preserved: Record<string, unknown> = {};
     const custom: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(cr.properties)) {

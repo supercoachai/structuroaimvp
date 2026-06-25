@@ -1,5 +1,6 @@
 import { captureServerEvent } from "./server";
 import { shouldSkipServerAnalyticsForUser } from "./serverAnalyticsGuard";
+import type { ServerEventRequestContext } from "./serverEventContext";
 
 export type RegistrationFunnelEvent =
   | "signup_completed"
@@ -13,12 +14,18 @@ export type RegistrationFunnelEvent =
 export async function captureRegistrationFunnelServer(
   distinctId: string,
   event: RegistrationFunnelEvent,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
   if (await shouldSkipServerAnalyticsForUser(distinctId)) return;
-  await captureServerEvent(distinctId, event, {
-    ...properties,
-    channel: "server",
-    funnel: "launch",
-  });
+  await captureServerEvent(
+    distinctId,
+    event,
+    {
+      ...properties,
+      channel: "server",
+      funnel: "launch",
+    },
+    requestContext
+  );
 }

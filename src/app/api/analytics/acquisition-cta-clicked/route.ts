@@ -6,6 +6,7 @@ import {
 } from "@/lib/posthog/acquisitionAnalytics";
 import { parseAcquisitionEventPayload } from "@/lib/posthog/parseAcquisitionPayload";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 function parseCtaPayload(
@@ -34,7 +35,11 @@ async function postAcquisitionCtaClicked(request: Request) {
   }
 
   try {
-    await captureAcquisitionCtaClickedServer(parsed.payload, parsed.channel);
+    await captureAcquisitionCtaClickedServer(
+      parsed.payload,
+      parsed.channel,
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/acquisition-cta-clicked",

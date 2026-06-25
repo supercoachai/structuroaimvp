@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 
-import {
-  captureAcquisitionLandingServer,
-  type AcquisitionEventPayload,
-} from "@/lib/posthog/acquisitionAnalytics";
+import { captureAcquisitionLandingServer } from "@/lib/posthog/acquisitionAnalytics";
 import { parseAcquisitionEventPayload } from "@/lib/posthog/parseAcquisitionPayload";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 async function postAcquisitionLanding(request: Request) {
@@ -22,7 +20,10 @@ async function postAcquisitionLanding(request: Request) {
   }
 
   try {
-    await captureAcquisitionLandingServer(payload);
+    await captureAcquisitionLandingServer(
+      payload,
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/acquisition-landing",

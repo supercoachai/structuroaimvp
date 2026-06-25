@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { captureAcquisitionSignupStartedServer } from "@/lib/posthog/acquisitionAnalytics";
 import { parseAcquisitionEventPayload } from "@/lib/posthog/parseAcquisitionPayload";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 async function postAcquisitionSignupStarted(request: Request) {
@@ -19,7 +20,10 @@ async function postAcquisitionSignupStarted(request: Request) {
   }
 
   try {
-    await captureAcquisitionSignupStartedServer(payload);
+    await captureAcquisitionSignupStartedServer(
+      payload,
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/acquisition-signup-started",

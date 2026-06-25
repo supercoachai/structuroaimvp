@@ -1,4 +1,5 @@
 import { captureServerEvent } from "./server";
+import type { ServerEventRequestContext } from "./serverEventContext";
 
 export type ActivationFunnelEventName =
   | "onboarding_started"
@@ -39,8 +40,14 @@ function baseProperties(
 
 export async function captureActivationFunnelServer(
   event: ActivationFunnelEventName,
-  payload: ActivationFunnelServerPayload
+  payload: ActivationFunnelServerPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
   const distinctId = payload.visitor_id.trim() || crypto.randomUUID();
-  await captureServerEvent(distinctId, event, baseProperties(payload));
+  await captureServerEvent(
+    distinctId,
+    event,
+    baseProperties(payload),
+    requestContext
+  );
 }

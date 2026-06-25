@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { captureShutdownCompletedServer } from "@/lib/posthog/activationAnalyticsServer";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { createClient } from "@/lib/supabase/server";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
@@ -38,11 +39,15 @@ async function postShutdownCompleted(request: Request) {
       : null;
 
   try {
-    await captureShutdownCompletedServer(user.id, {
-      tasks_completed_count,
-      tasks_moved_count,
-      satisfaction_level,
-    });
+    await captureShutdownCompletedServer(
+      user.id,
+      {
+        tasks_completed_count,
+        tasks_moved_count,
+        satisfaction_level,
+      },
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/shutdown-completed",

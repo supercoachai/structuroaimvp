@@ -193,6 +193,10 @@
       window.posthog.init(key, {
         api_host: PH_API_HOST,
         ui_host: "https://eu.posthog.com",
+        before_send:
+          typeof window.structuroPhBeforeSend === "function"
+            ? window.structuroPhBeforeSend
+            : undefined,
         __add_tracing_headers: [
           "localhost",
           "127.0.0.1",

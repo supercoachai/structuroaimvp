@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { captureActivationFunnelServer } from "@/lib/posthog/activationFunnelAnalytics";
 import { parseActivationFunnelPayload } from "@/lib/posthog/parseActivationFunnelPayload";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
 async function postActivationFunnel(request: Request) {
@@ -19,7 +20,11 @@ async function postActivationFunnel(request: Request) {
   }
 
   try {
-    await captureActivationFunnelServer(parsed.event, parsed.payload);
+    await captureActivationFunnelServer(
+      parsed.event,
+      parsed.payload,
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/activation-funnel",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { captureWaitlistSignupServer } from "@/lib/posthog/waitlistAnalytics";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { waitlistCorsHeaders } from "@/lib/wachtlijst/cors";
 import { sanitizeWaitlistSourceParam } from "@/lib/wachtlijst/source";
 
@@ -38,7 +39,10 @@ export async function POST(request: Request) {
   const source = sanitizeWaitlistSourceParam(raw) || "direct";
 
   try {
-    await captureWaitlistSignupServer({ source, site });
+    await captureWaitlistSignupServer(
+      { source, site },
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     // CORS-headers behouden: deze route wordt cross-origin aangeroepen vanaf de EU-landing,
     // anders kan de browser de respons niet lezen. onRequestError vangt de throw ook,

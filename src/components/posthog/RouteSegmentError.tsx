@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { captureClientException } from "@/lib/posthog/captureExceptionClient";
 import { getRouteErrorUiCopy } from "@/lib/i18n/clientLocale";
+import { tryRecoverableChunkReload } from "@/lib/recoverableChunkReload";
 
 type RouteSegmentErrorProps = {
   error: Error & { digest?: string };
@@ -19,12 +20,13 @@ export function RouteSegmentError({
   extra,
 }: RouteSegmentErrorProps) {
   useEffect(() => {
+    if (tryRecoverableChunkReload(error)) return;
     captureClientException(error, {
       route,
       digest: error.digest,
       ...extra,
     });
-  }, [error, route]);
+  }, [error, route, extra]);
 
   const copy = getRouteErrorUiCopy();
 

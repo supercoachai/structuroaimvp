@@ -1,4 +1,5 @@
 import { captureServerEvent } from "./server";
+import type { ServerEventRequestContext } from "./serverEventContext";
 
 export type AcquisitionAnalyticsEvent =
   | "acquisition_landing_viewed"
@@ -58,37 +59,62 @@ function baseProperties(payload: AcquisitionEventPayload): Record<string, unknow
  */
 export async function captureAcquisitionEventServer(
   event: AcquisitionAnalyticsEvent,
-  payload: AcquisitionEventPayload
+  payload: AcquisitionEventPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
   const distinctId = payload.visitor_id.trim() || crypto.randomUUID();
-  await captureServerEvent(distinctId, event, baseProperties(payload));
+  await captureServerEvent(
+    distinctId,
+    event,
+    baseProperties(payload),
+    requestContext
+  );
 }
 
 export async function captureAcquisitionLandingServer(
-  payload: AcquisitionEventPayload
+  payload: AcquisitionEventPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
-  await captureAcquisitionEventServer("acquisition_landing_viewed", payload);
+  await captureAcquisitionEventServer(
+    "acquisition_landing_viewed",
+    payload,
+    requestContext
+  );
   if (payload.is_tiktok) {
-    await captureAcquisitionEventServer("tiktok_landing_viewed", payload);
+    await captureAcquisitionEventServer(
+      "tiktok_landing_viewed",
+      payload,
+      requestContext
+    );
   }
 }
 
 export async function captureAcquisitionSignupStartedServer(
-  payload: AcquisitionEventPayload
+  payload: AcquisitionEventPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
-  await captureAcquisitionEventServer("acquisition_signup_started", payload);
+  await captureAcquisitionEventServer(
+    "acquisition_signup_started",
+    payload,
+    requestContext
+  );
   if (payload.is_tiktok) {
-    await captureAcquisitionEventServer("tiktok_signup_started", payload);
+    await captureAcquisitionEventServer(
+      "tiktok_signup_started",
+      payload,
+      requestContext
+    );
   }
 }
 
 export async function captureAcquisitionCtaClickedServer(
   payload: AcquisitionEventPayload,
-  channel: "tiktok" | "organic"
+  channel: "tiktok" | "organic",
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
   const event =
     channel === "tiktok"
       ? "tiktok_landing_cta_clicked"
       : "organic_landing_cta_clicked";
-  await captureAcquisitionEventServer(event, payload);
+  await captureAcquisitionEventServer(event, payload, requestContext);
 }

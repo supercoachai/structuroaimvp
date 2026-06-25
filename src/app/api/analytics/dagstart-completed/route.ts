@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { captureDagstartCompletedServer } from "@/lib/posthog/activationAnalyticsServer";
 import { captureServerException } from "@/lib/posthog/server";
+import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { createClient } from "@/lib/supabase/server";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 
@@ -47,13 +48,17 @@ async function postDagstartCompleted(request: Request) {
     : null;
 
   try {
-    await captureDagstartCompletedServer(user.id, {
-      energy_level,
-      tasks_selected_count,
-      top3_task_ids,
-      has_cycle_phase: b.has_cycle_phase === true,
-      source: typeof b.source === "string" ? b.source.slice(0, 64) : "app",
-    });
+    await captureDagstartCompletedServer(
+      user.id,
+      {
+        energy_level,
+        tasks_selected_count,
+        top3_task_ids,
+        has_cycle_phase: b.has_cycle_phase === true,
+        source: typeof b.source === "string" ? b.source.slice(0, 64) : "app",
+      },
+      extractRequestClientContext(request)
+    );
   } catch (error) {
     await captureServerException(error, {
       route: "POST /api/analytics/dagstart-completed",

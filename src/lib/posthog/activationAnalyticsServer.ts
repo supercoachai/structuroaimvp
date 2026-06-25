@@ -1,4 +1,5 @@
 import { captureServerEvent } from "./server";
+import type { ServerEventRequestContext } from "./serverEventContext";
 
 export type DagstartCompletedServerPayload = {
   energy_level: string;
@@ -17,24 +18,36 @@ export type ShutdownCompletedServerPayload = {
 /** Autoritatief: distinct_id = user.id, gelijk aan Supabase daily_checkins. */
 export async function captureDagstartCompletedServer(
   userId: string,
-  payload: DagstartCompletedServerPayload
+  payload: DagstartCompletedServerPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
-  await captureServerEvent(userId, "dagstart_completed", {
-    ...payload,
-    channel: "server",
-    funnel: "activation",
-    authoritative: true,
-  });
+  await captureServerEvent(
+    userId,
+    "dagstart_completed",
+    {
+      ...payload,
+      channel: "server",
+      funnel: "activation",
+      authoritative: true,
+    },
+    requestContext
+  );
 }
 
 export async function captureShutdownCompletedServer(
   userId: string,
-  payload: ShutdownCompletedServerPayload
+  payload: ShutdownCompletedServerPayload,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
-  await captureServerEvent(userId, "shutdown_completed", {
-    ...payload,
-    channel: "server",
-    funnel: "activation",
-    authoritative: true,
-  });
+  await captureServerEvent(
+    userId,
+    "shutdown_completed",
+    {
+      ...payload,
+      channel: "server",
+      funnel: "activation",
+      authoritative: true,
+    },
+    requestContext
+  );
 }

@@ -1,7 +1,11 @@
 import { PostHog } from "posthog-node";
 
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
-import { withServerEventContext } from "./serverEventContext";
+import {
+  type ServerEventRequestContext,
+  withRequestClientContext,
+  withServerEventContext,
+} from "./serverEventContext";
 
 let _client: PostHog | null = null;
 
@@ -100,7 +104,8 @@ export function daysSinceSignupFromIso(
 export async function captureServerEvent(
   distinctId: string,
   event: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
+  requestContext?: ServerEventRequestContext | null
 ): Promise<void> {
   const client = getClient();
   if (!client) return;
@@ -108,7 +113,10 @@ export async function captureServerEvent(
     client.capture({
       distinctId,
       event,
-      properties: withServerEventContext(properties),
+      properties: withRequestClientContext(
+        withServerEventContext(properties),
+        requestContext
+      ),
     });
     await client.flush();
   } catch {
