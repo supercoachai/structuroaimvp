@@ -16,6 +16,7 @@ import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import {
+  getResolvedSignupSourceForProfile,
   getSignupAttributionSource,
   getStoredSignupCampaign,
   getStoredSignupSource,
@@ -216,7 +217,7 @@ export function AccountSignUpOptions({
         email: emailTrimmed,
         password,
         fullName: nameTrimmed,
-        signupSource: getStoredSignupSource(),
+        signupSource: getResolvedSignupSourceForProfile(),
         signupCampaign: getStoredSignupCampaign(),
       });
 

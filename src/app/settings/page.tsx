@@ -37,9 +37,6 @@ import {
   SettingsToggle,
 } from '@/components/settings/SettingsUi';
 import { refundMailtoHref } from '@/lib/refundContact';
-import { PasskeySettingsSection } from '@/components/settings/PasskeySettingsSection';
-import { PasswordSettingsSection } from '@/components/settings/PasswordSettingsSection';
-
 const NAME_KEY = 'structuro_user_name';
 
 /** Tijdelijk: abonnement-acties uit voor testers tot Stripe-flow live is. */
@@ -638,10 +635,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             ) : null}
-
-            <PasskeySettingsSection hasSession={hasSupabaseSession && !isLocalOnly} />
-
-            <PasswordSettingsSection hasSession={hasSupabaseSession && !isLocalOnly} />
 
             <SettingsLinkActions>
               <SettingsTextLink onClick={handleDownloadData}>

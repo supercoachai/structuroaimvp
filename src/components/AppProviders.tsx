@@ -101,9 +101,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
               <AcquisitionLandingTracker />
               <OnboardingActivationTracker />
             </Suspense>
+            <SignupAttributionCapture />
             <PostHogAuthEffects />
             <AppOpenedTracker />
-            <SignupAttributionCapture />
             <RemoveLegacyFocusDurationKey />
             <ClientRuntimeGuards />
             <AuthHashErrorRedirect />

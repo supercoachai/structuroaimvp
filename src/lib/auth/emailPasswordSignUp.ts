@@ -4,6 +4,7 @@ import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
 import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { markPasswordSetupCompletedReliably } from "@/lib/auth/passwordSetupProfile";
+import { getResolvedSignupSourceForProfile } from "@/lib/posthog/signupAttribution";
 
 export type EmailPasswordSignUpParams = {
   email: string;
@@ -29,10 +30,11 @@ export async function signUpWithEmailPassword(
   }
 
   if (process.env.NODE_ENV === "development") {
+    const resolvedSource = getResolvedSignupSourceForProfile();
     const devResult = await signUpPasswordlessWithLocalDevFallback(supabase, {
       email,
       fullName: params.fullName.trim(),
-      signupSource: params.signupSource,
+      signupSource: resolvedSource,
       signupCampaign: params.signupCampaign,
     });
     if (devResult.kind !== "session") {
@@ -49,13 +51,16 @@ export async function signUpWithEmailPassword(
     };
   }
 
+  const resolvedSource =
+    getResolvedSignupSourceForProfile() ?? params.signupSource ?? null;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password: params.password,
     options: {
       data: {
         full_name: params.fullName.trim(),
-        ...(params.signupSource ? { signup_source: params.signupSource } : {}),
+        ...(resolvedSource ? { signup_source: resolvedSource } : {}),
         ...(params.signupCampaign ? { signup_utm_campaign: params.signupCampaign } : {}),
       },
       emailRedirectTo: buildAuthCallbackUrl("/onboarding"),

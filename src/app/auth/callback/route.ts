@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
 import { parseStAttrFromRequest } from "@/lib/posthog/firstTouchAttribution";
+import { normalizeSignupSourceKey } from "@/lib/stripe/trialConfig";
 import { buildTrustedRedirectUrl, sanitizeNextPath } from "@/lib/safeRedirect";
 import { PASSWORD_RECOVERY_PATH } from "@/lib/auth/passwordResetRedirect";
 import { createRouteHandlerSupabaseClient } from "@/lib/supabase/routeHandlerClient";
@@ -174,14 +175,30 @@ export async function GET(request: Request) {
       if (user?.id) {
         await claimAnonymousOnboardingOnServer(request, response, user.id);
 
-        // OAuth/magic-link gebruikers hoeven geen los wachtwoord te kiezen:
-        // Google (of de magic link) is al een volwaardige inlogmethode. Markeer
-        // de wachtwoord-setup als afgerond zodat de middleware ze niet naar
-        // /auth/wachtwoord-aanmaken stuurt. Een wachtwoord instellen kan later
-        // optioneel via Instellingen.
         const admin = createServiceRoleClient();
         if (admin) {
           await markPasswordSetupCompleted(admin, user.id);
+
+          // Magic link / OAuth opent vaak een nieuwe tab: sessionStorage is leeg.
+          // Schrijf signup_source uit st_attr cookie als het profiel nog geen bron heeft.
+          const attr = parseStAttrFromRequest(request);
+          const attrSource = normalizeSignupSourceKey(attr?.source);
+          if (attrSource && attrSource !== "direct") {
+            try {
+              await admin
+                .from("profiles")
+                .update({
+                  signup_source: attrSource,
+                  ...(attr?.utm_campaign
+                    ? { signup_utm_campaign: attr.utm_campaign }
+                    : {}),
+                })
+                .eq("id", user.id)
+                .is("signup_source", null);
+            } catch {
+              /* niet kritiek voor redirect */
+            }
+          }
         }
 
         const finalPath = await resolveOAuthRedirectPath(

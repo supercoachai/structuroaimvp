@@ -97,7 +97,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     firstDayIntroSub:
       "We stellen samen je eerste taak in. Eerst even: hoe zit je in je energie?",
     firstDayIntroSubWelcome:
-      "Je eerste taak staat al klaar vanuit je aanmelding. Kies je energie en je kunt meteen starten.",
+      "We hebben een taak klaargezet die veel ADHD'ers helpt en vaak direct geld per maand bespaart. Kies je energie en je kunt meteen starten.",
     firstDayWelcomeTaskLabel: "Je eerste taak",
     firstDayWelcomeTaskHint: "{n} microstappen staan al klaar",
     firstDayWelcomeTaskCheck: "Kies deze taak om mee te starten",
@@ -257,7 +257,7 @@ export const onboardingLocale: Record<Locale, Record<string, string>> = {
     firstDayIntroSub:
       "We'll set up your first task together. First: how is your energy?",
     firstDayIntroSubWelcome:
-      "Your first task is already ready from sign-up. Pick your energy and you can start right away.",
+      "We've set up a task that helps many people with ADHD and often saves money each month right away. Pick your energy and you can start.",
     firstDayWelcomeTaskLabel: "Your first task",
     firstDayWelcomeTaskHint: "{n} micro steps are already filled in",
     firstDayWelcomeTaskCheck: "Choose this task to start with",

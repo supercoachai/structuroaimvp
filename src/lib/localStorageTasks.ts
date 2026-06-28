@@ -1,4 +1,5 @@
 // LocalStorage helpers voor taken opslag (tijdelijk zonder Supabase)
+import { getCalendarDateAmsterdam } from '@/lib/dagstartCookie';
 import { mockTasks, MockTask } from './mockData';
 import { notifyTaskUpdate } from './taskSync';
 
@@ -451,9 +452,9 @@ export function saveCheckInToStorage(checkIn: any): void {
   
   try {
     const checkIns = getCheckInsFromStorage();
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Vervang bestaande check-in voor vandaag
+    const today = getCalendarDateAmsterdam();
+
+    // Vervang bestaande check-in voor vandaag (Amsterdam, zelfde als middleware)
     const filtered = checkIns.filter((ci: any) => ci.date !== today);
     filtered.push({
       ...checkIn,
@@ -470,7 +471,7 @@ export function saveCheckInToStorage(checkIn: any): void {
 // Haal check-in voor vandaag op
 export function getTodayCheckIn(): any | null {
   const checkIns = getCheckInsFromStorage();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCalendarDateAmsterdam();
   return checkIns.find((ci: any) => ci.date === today) || null;
 }
 
@@ -479,7 +480,7 @@ export function clearTodayCheckInFromStorage(): void {
   if (typeof window === 'undefined') return;
   try {
     const checkIns = getCheckInsFromStorage();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getCalendarDateAmsterdam();
     const filtered = checkIns.filter((ci: any) => ci.date !== today);
     localStorage.setItem(STORAGE_KEY_CHECKINS, JSON.stringify(filtered));
   } catch (error) {

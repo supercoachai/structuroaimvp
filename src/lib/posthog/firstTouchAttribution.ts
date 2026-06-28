@@ -2,6 +2,7 @@
 
 import { TIKTOK_BIO_DEFAULT_UTM } from "@/lib/acquisition/bridgePaths";
 import {
+  JASPER_ATTRIBUTION_LS_KEY,
   JASPER_SIGNUP_CAMPAIGN,
   JASPER_SIGNUP_SOURCE,
   isJasperLandingPath,
@@ -136,6 +137,13 @@ export function parseStAttrFromRequest(request: Request): FirstTouchAttribution 
   return null;
 }
 
+/** Lees signup_source uit st_attr cookie (zonder sessionStorage te wijzigen). */
+export function readFirstTouchSignupSourceFromCookie(): string | null {
+  const parsed = parseStAttrCookie(readCookie(ST_ATTR_COOKIE));
+  if (!parsed?.source || parsed.source === "direct") return null;
+  return parsed.source;
+}
+
 /** Client first-touch: cookie + sessionStorage (alleen zetten als nog niet bestaat). */
 export function captureFirstTouchAttribution(): void {
   if (typeof window === "undefined") return;
@@ -215,6 +223,14 @@ export function captureFirstTouchAttribution(): void {
     };
 
     writeCookie(ST_ATTR_COOKIE, JSON.stringify(payload), ST_ATTR_MAX_AGE_SEC);
+
+    if (isJasperPath || payload.source === JASPER_SIGNUP_SOURCE) {
+      try {
+        localStorage.setItem(JASPER_ATTRIBUTION_LS_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }
 
     if (!sessionStorage.getItem(SOURCE_KEY)) {
       sessionStorage.setItem(SOURCE_KEY, payload.source);

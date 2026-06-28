@@ -151,7 +151,9 @@ function RegistrerenAccountInner({
   }, [router]);
 
   const { storyVisual, isAcquisitionCopy } = presentation;
-  const visual = storyVisual ? "story" : "work";
+  // Post-dagstart komt uit onboarding (story layer); altijd cream, niet work-blauw.
+  const useStoryLayer = postDagstart || storyVisual;
+  const visual = useStoryLayer ? "story" : "work";
 
   const headingKey = postDagstart
     ? "registrerenPage.dagstartSaveHeading"
@@ -164,18 +166,18 @@ function RegistrerenAccountInner({
       ? "registrerenPage.accountSubheadingAcquisition"
       : "registrerenPage.accountSubheading";
 
-  const linkClass = storyVisual
+  const linkClass = useStoryLayer
     ? "font-semibold text-[var(--story-accent)] hover:text-[#234845]"
     : "font-semibold text-blue-600 hover:text-blue-800";
 
-  const mutedTextClass = storyVisual
+  const mutedTextClass = useStoryLayer
     ? "text-[var(--story-text-muted)]"
     : "text-slate-500";
 
   return (
     <RegistrerenShell error={error} visual={visual}>
       <div className="mx-auto w-full text-center">
-        {postDagstart ? null : storyVisual ? (
+        {postDagstart ? null : useStoryLayer ? (
           <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
             <span className="st-story-eyebrow-pulse" aria-hidden />
             {t("registrerenPage.organicEyebrow")}
@@ -188,12 +190,12 @@ function RegistrerenAccountInner({
           </p>
         )}
         <h2
-          className={`text-lg tracking-tight sm:text-xl ${storyVisual ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
+          className={`text-lg tracking-tight sm:text-xl ${useStoryLayer ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
         >
           {t(headingKey)}
         </h2>
         <p
-          className={`mt-2 text-sm leading-relaxed ${storyVisual ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
+          className={`mt-2 text-sm leading-relaxed ${useStoryLayer ? "text-[var(--story-text-muted)]" : "text-slate-600"}`}
         >
           {t(subheadingKey)}
         </p>

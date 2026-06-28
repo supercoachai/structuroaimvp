@@ -76,6 +76,25 @@ export function shouldResetAnonymousOnboarding(input: {
 }
 
 /**
+ * Bestemming wanneer een lokale (anonieme) bezoeker /onboarding opent terwijl de
+ * onboarding al is afgerond. Een acquisitie-bezoeker (jasper/start/tiktok) zonder
+ * account hoort naar het "Bewaar je dagstart" account-scherm op /registreren, niet
+ * de app in te vallen. Een gewone lokale gebruiker zonder attributie gaat naar de app.
+ */
+export function resolveCompletedLocalOnboardingDestination(input: {
+  hasAuthHint: boolean;
+  signupSource: string | null;
+  hasJasperAttribution: boolean;
+  registrerenHref: string;
+}): string {
+  const isAnonymousAcquisition =
+    !input.hasAuthHint &&
+    ((input.signupSource != null && input.signupSource !== "direct") ||
+      input.hasJasperAttribution);
+  return isAnonymousAcquisition ? input.registrerenHref : "/";
+}
+
+/**
  * Leest de huidige clientstaat (afgeronde onboarding + lokale taken) en bepaalt
  * of een verse start gerechtvaardigd is. Gebruikt door de acquisitie-CTA.
  */

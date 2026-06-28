@@ -43,7 +43,8 @@
     "verify:unit": "node scripts/verify-unit.mjs",
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify": "node scripts/verify-app.mjs",
-    "verify:quick": "VERIFY_SKIP_BUILD=1 VERIFY_SKIP_START=1 BASE_URL=http://localhost:3000 node scripts/verify-app.mjs"
+    "verify:quick": "VERIFY_SKIP_BUILD=1 VERIFY_SKIP_START=1 BASE_URL=http://localhost:3000 node scripts/verify-app.mjs",
+    "jarvis": "node --env-file=.env.local jarvis/server.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

@@ -29,7 +29,7 @@ export function RegistrerenShell({
     window.location.href = "https://www.structuro.eu";
   }
 
-  const shellBg = isStory ? "bg-[var(--story-bg)]" : "bg-[var(--st-bg)]";
+  const shellBg = isStory ? "st-story-bg" : "bg-[var(--st-bg)]";
   const backClass = isStory
     ? "text-[var(--story-text-muted)] hover:text-[var(--story-text)]"
     : "text-slate-500 hover:text-slate-800";

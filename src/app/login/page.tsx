@@ -23,6 +23,7 @@ import {
   setLastAuthMethod,
   getLastAuthMethod,
 } from '@/lib/auth/returningUser';
+import { claimAnonymousOnboardingForAccount } from '@/lib/auth/claimAnonymousOnboarding';
 import type { OAuthProviderId } from '@/lib/auth/authProviders';
 import { useClientMounted } from '@/hooks/useClientMounted';
 import Link from 'next/link';
@@ -258,6 +259,7 @@ function LoginPageInner() {
 
   const finishLogin = async (userId: string, userEmail: string | null | undefined) => {
     markReturningUser();
+    await claimAnonymousOnboardingForAccount(userId);
     clearStructuroLocalModeCookie();
     clearCheckoutReturn();
     const next = searchParams?.get("next") ?? null;

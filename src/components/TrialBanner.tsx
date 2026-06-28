@@ -9,6 +9,8 @@ import {
   eventSignupTrialDaysLeft,
   eventSignupTrialExpired,
 } from "@/lib/eventSignupTrialAccess";
+import { isJasperSignupSource } from "@/lib/jasper/jasperOffer";
+import { hasJasperAttributionOnClient } from "@/lib/posthog/signupAttribution";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 import { useI18n } from "@/lib/i18n";
 
@@ -54,6 +56,10 @@ export function TrialBanner() {
           const periodEnd = data.subscription_current_period_end as string | null;
           const createdAt = data.created_at as string | null;
           const signupSource = data.signup_source as string | null;
+
+          if (isJasperSignupSource(signupSource) || hasJasperAttributionOnClient()) {
+            return;
+          }
 
           if (status === "active" || status === "cancelled") return;
 

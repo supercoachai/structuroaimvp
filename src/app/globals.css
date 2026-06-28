@@ -2572,6 +2572,7 @@ body {
   cursor: default;
   touch-action: none;
 }
+.ds-swipe-card.is-dragging,
 .ds-swipe-card-drag.is-dragging {
   cursor: grabbing;
 }

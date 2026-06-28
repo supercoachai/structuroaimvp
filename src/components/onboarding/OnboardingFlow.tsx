@@ -12,6 +12,12 @@ import {
 import { clearLocalSessionFresh } from "@/lib/localModeSession";
 import { isLocalOnboardingCompleted } from "@/lib/onboardingProfile";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
+import {
+  buildRegistrerenHrefFromStoredAttribution,
+  getStoredSignupSource,
+  hasJasperAttributionOnClient,
+} from "@/lib/posthog/signupAttribution";
+import { resolveCompletedLocalOnboardingDestination } from "@/lib/auth/anonymousOnboardingEntry";
 import OnboardingFlowContent from "./OnboardingFlowContent";
 
 function ObLanguageToggle({
@@ -65,7 +71,17 @@ export default function OnboardingFlow() {
     if (!clientReady || !isLocalMode || !isLocalOnboardingCompleted()) return;
     setLocalOnboardingDoneCookieOnClient();
     clearLocalSessionFresh();
-    window.location.replace("/");
+    // Anonieme acquisitie-bezoeker (jasper/start/tiktok) zonder account die de
+    // onboarding al afrondde: stuur naar "Bewaar je dagstart" op /registreren in
+    // plaats van de app in te vallen met de in-app spaarbanner. Een gewone lokale
+    // gebruiker zonder attributie gaat zoals voorheen naar de app.
+    const destination = resolveCompletedLocalOnboardingDestination({
+      hasAuthHint: hasSupabaseAuthHintOnClient(),
+      signupSource: getStoredSignupSource(),
+      hasJasperAttribution: hasJasperAttributionOnClient(),
+      registrerenHref: buildRegistrerenHrefFromStoredAttribution(),
+    });
+    window.location.replace(destination);
   }, [clientReady, isLocalMode]);
 
   /**

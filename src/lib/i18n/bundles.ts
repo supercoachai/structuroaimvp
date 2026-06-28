@@ -387,7 +387,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       dagstartRecapBody:
         "Mooi begin. Maak een gratis account zodat je dagstart en taken bewaard blijven.",
       dagstartSaveHeading: "Bewaar je dagstart.",
-      dagstartSaveSubheading: "Gratis. Geen wachtwoord.",
+      dagstartSaveSubheading:
+        "Registreer een gratis account om je dagstart te bewaren.",
       emailLabel: "E-mailadres",
       emailPh: "je@email.com",
       passwordPh: "Minimaal 8 tekens",
@@ -960,7 +961,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       dagstartRecapBody:
         "Nice start. Create a free account so your day start and tasks stay saved.",
       dagstartSaveHeading: "Save your day start.",
-      dagstartSaveSubheading: "Free. No password.",
+      dagstartSaveSubheading:
+        "Sign up for a free account to save your day start.",
       emailLabel: "Email address",
       emailPh: "you@email.com",
       passwordPh: "At least 8 characters",

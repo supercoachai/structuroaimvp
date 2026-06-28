@@ -17,6 +17,9 @@ export const JASPER_SIGNUP_SOURCE = "jasper_podcast";
 export const JASPER_SIGNUP_CAMPAIGN = "jasper_podcast";
 export const JASPER_LANDING_PATH = "/jasper";
 
+/** localStorage: bezoek aan /jasper (blijft na tab-wissel / magic link in nieuwe tab). */
+export const JASPER_ATTRIBUTION_LS_KEY = "structuro_jasper_attribution";
+
 /** Gratis proefdagen in de app voor luisteraars die hier signupen. */
 export const JASPER_TRIAL_DAYS = 7;
 

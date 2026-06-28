@@ -20,6 +20,7 @@ import {
   CAMPAIGN_KEY,
   SOURCE_KEY,
   applySignupAttributionFromSearchParams,
+  markJasperAttributionPersistent,
 } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
 
@@ -78,6 +79,7 @@ function persistJasperAttributionFallback() {
     if (!sessionStorage.getItem(CAMPAIGN_KEY)) {
       sessionStorage.setItem(CAMPAIGN_KEY, JASPER_SIGNUP_CAMPAIGN);
     }
+    markJasperAttributionPersistent();
   } catch {
     /* private mode of quota: best-effort */
   }
@@ -120,9 +122,11 @@ function JasperNav({ className }: { className: string }) {
 function JasperHeroCopy({
   fontSize,
   className,
+  offerLine,
 }: {
   fontSize: number;
   className: string;
+  offerLine?: string;
 }) {
   return (
     <section className={className}>
@@ -142,6 +146,14 @@ function JasperHeroCopy({
           {line.text}
         </p>
       ))}
+      {offerLine ? (
+        <p
+          className="mt-[18px] text-[14px] font-semibold"
+          style={{ color: COLOR_TEAL, letterSpacing: "-0.01em" }}
+        >
+          {offerLine}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -153,7 +165,7 @@ function JasperCtaBlock({
   className,
   trustAlign = "center",
 }: {
-  offerLine: string;
+  offerLine?: string;
   ctaLabel: string;
   onCtaClick: (event: MouseEvent<HTMLAnchorElement>) => void;
   className: string;
@@ -161,16 +173,18 @@ function JasperCtaBlock({
 }) {
   return (
     <div className={className}>
-      <p
-        className="text-[14px] font-semibold"
-        style={{ color: COLOR_TEAL, letterSpacing: "-0.01em" }}
-      >
-        {offerLine}
-      </p>
+      {offerLine ? (
+        <p
+          className="text-[14px] font-semibold"
+          style={{ color: COLOR_TEAL, letterSpacing: "-0.01em" }}
+        >
+          {offerLine}
+        </p>
+      ) : null}
       <Link
         href="/onboarding"
         onClick={onCtaClick}
-        className="mt-5 flex w-full items-center justify-center transition-opacity hover:opacity-90"
+        className={`flex w-full items-center justify-center transition-opacity hover:opacity-90 ${offerLine ? "mt-5" : ""}`}
         style={{
           backgroundColor: COLOR_TEAL,
           color: COLOR_ON_DARK,
@@ -188,7 +202,7 @@ function JasperCtaBlock({
         className={`mt-[10px] text-[12px] font-medium ${trustAlign === "center" ? "text-center" : "text-left"}`}
         style={{ color: COLOR_TEXT_FAINT, letterSpacing: "0.01em" }}
       >
-        Geen creditcard · altijd opzegbaar
+        Altijd opzegbaar
       </p>
     </div>
   );
@@ -197,20 +211,32 @@ function JasperCtaBlock({
 function JasperFounderPhoto({
   containerClassName,
   imageSizes,
+  imageHeight,
 }: {
   containerClassName: string;
   imageSizes: string;
+  imageHeight?: number;
 }) {
+  const image = (
+    <Image
+      src="/jasper/niels.jpg"
+      alt="Niels, founder van Structuro"
+      fill
+      priority
+      sizes={imageSizes}
+      style={{ objectFit: "cover", objectPosition: "center 22%" }}
+    />
+  );
+
   return (
     <div className={containerClassName}>
-      <Image
-        src="/jasper/niels.jpg"
-        alt="Niels, founder van Structuro"
-        fill
-        priority
-        sizes={imageSizes}
-        style={{ objectFit: "cover", objectPosition: "center 22%" }}
-      />
+      {imageHeight != null ? (
+        <div className="relative w-full" style={{ height: imageHeight }}>
+          {image}
+        </div>
+      ) : (
+        image
+      )}
       <div
         className="absolute inset-x-0 bottom-0 px-6 pt-12"
         style={{
@@ -299,10 +325,10 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
           <JasperHeroCopy
             fontSize={27}
             className="flex flex-col gap-1 px-6 pt-7"
+            offerLine={offerLine}
           />
 
           <JasperCtaBlock
-            offerLine={offerLine}
             ctaLabel={ctaLabel}
             onCtaClick={handleCtaClick}
             className="px-6 pt-5"
@@ -311,9 +337,8 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
           <JasperFounderPhoto
             containerClassName="relative mt-[30px] w-full overflow-hidden"
             imageSizes="(max-width: 767px) 100vw, 390px"
-          >
-            <div className="relative w-full" style={{ height: 370 }} />
-          </JasperFounderPhoto>
+            imageHeight={370}
+          />
         </article>
       </div>
 
@@ -323,9 +348,14 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
           className="grid w-full max-w-5xl overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:grid-cols-[minmax(0,1fr)_420px]"
           style={CARD_STYLE}
         >
-          <JasperNav className="col-span-full flex items-center justify-between px-10 pt-8 lg:px-12 lg:pt-10" />
+          <JasperFounderPhoto
+            containerClassName="relative row-span-2 row-start-1 min-h-[520px] overflow-hidden md:col-start-2 lg:min-h-[560px]"
+            imageSizes="(max-width: 1024px) 400px, 420px"
+          />
 
-          <div className="flex flex-col justify-center px-10 pb-10 pt-6 lg:px-12 lg:pb-12 lg:pt-8">
+          <JasperNav className="relative z-10 col-start-1 row-start-1 flex items-center justify-between px-10 pt-8 lg:px-12 lg:pt-10" />
+
+          <div className="relative z-10 col-start-1 row-start-2 flex flex-col justify-center px-10 pb-10 pt-6 lg:px-12 lg:pb-12 lg:pt-8">
             <JasperHeroCopy
               fontSize={30}
               className="flex flex-col gap-1.5"
@@ -338,11 +368,6 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
               trustAlign="left"
             />
           </div>
-
-          <JasperFounderPhoto
-            containerClassName="relative min-h-[520px] overflow-hidden lg:min-h-[560px]"
-            imageSizes="(max-width: 1024px) 400px, 420px"
-          />
         </article>
       </div>
     </div>

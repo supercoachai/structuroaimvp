@@ -5,7 +5,14 @@ import {
   normalizeSignupSourceKey,
   resolveStripeTrialDaysForSignupSource,
 } from "@/lib/stripe/trialConfig";
-import { captureFirstTouchAttribution } from "@/lib/posthog/firstTouchAttribution";
+import {
+  JASPER_ATTRIBUTION_LS_KEY,
+  isJasperSignupSource,
+} from "@/lib/jasper/jasperOffer";
+import {
+  captureFirstTouchAttribution,
+  readFirstTouchSignupSourceFromCookie,
+} from "@/lib/posthog/firstTouchAttribution";
 
 export const SOURCE_KEY = "signup_source";
 export const CAMPAIGN_KEY = "signup_utm_campaign";
@@ -50,13 +57,103 @@ export function captureUtmOnFirstVisit(): void {
   }
 }
 
+function readSessionSignupSource(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(SOURCE_KEY);
+    return raw && raw.trim() ? raw.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function isMeaningfulSignupSource(source: string | null | undefined): boolean {
+  const key = normalizeSignupSourceKey(source);
+  return Boolean(key && key !== "direct");
+}
+
+/**
+ * Herstel sessionStorage uit st_attr cookie vóór signup/profile-write.
+ * Magic link / OAuth opent vaak een nieuwe tab: sessionStorage is leeg, cookie niet.
+ */
+export function syncSignupAttributionFromPersistentStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const sessionSource = readSessionSignupSource();
+    const cookieSource = readFirstTouchSignupSourceFromCookie();
+
+    if (!sessionSource && cookieSource) {
+      sessionStorage.setItem(SOURCE_KEY, cookieSource);
+      return;
+    }
+
+    if (
+      sessionSource === "direct" &&
+      cookieSource &&
+      cookieSource !== "direct"
+    ) {
+      sessionStorage.setItem(SOURCE_KEY, cookieSource);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Bron voor analytics-fallback; "direct" als er geen attributie is. */
 export function getStoredSignupSource(): string {
   if (typeof window === "undefined") return "direct";
+  syncSignupAttributionFromPersistentStorage();
   try {
     return sessionStorage.getItem(SOURCE_KEY) || "direct";
   } catch {
     return "direct";
   }
+}
+
+/** Bron voor profiel/metadata: nooit "direct" als echte waarde schrijven. */
+export function getResolvedSignupSourceForProfile(): string | null {
+  const source = getStoredSignupSource();
+  return isMeaningfulSignupSource(source) ? source : null;
+}
+
+/** Markeer Jasper-bezoek persistent (localStorage), naast cookie/sessionStorage. */
+export function markJasperAttributionPersistent(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(JASPER_ATTRIBUTION_LS_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Client-side Jasper-detectie als profiles.signup_source ontbreekt of fout is. */
+export function hasJasperAttributionOnClient(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (localStorage.getItem(JASPER_ATTRIBUTION_LS_KEY) === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  if (isJasperSignupSource(getStoredSignupSource())) return true;
+  return isJasperSignupSource(readFirstTouchSignupSourceFromCookie());
+}
+
+/**
+ * /registreren met de bewaarde acquisitie-attributie (source + campaign) als
+ * query. Gebruikt voor het "Bewaar je dagstart" account-scherm na de eerste
+ * anonieme dagstart.
+ */
+export function buildRegistrerenHrefFromStoredAttribution(): string {
+  const params = new URLSearchParams();
+  const source = getStoredSignupSource();
+  if (source && source !== "direct") {
+    params.set("source", source);
+    params.set("utm_source", source);
+  }
+  const campaign = getStoredSignupCampaign();
+  if (campaign) params.set("utm_campaign", campaign);
+  const query = params.toString();
+  return `/registreren${query ? `?${query}` : ""}`;
 }
 
 export function getStoredSignupCampaign(): string | null {
@@ -335,7 +432,10 @@ export function resolveProfileSignupSource(
 export async function persistSignupAttributionToProfile(
   userId: string
 ): Promise<boolean> {
-  const signupSource = getStoredSignupSource();
+  syncSignupAttributionFromPersistentStorage();
+  const signupSource = getResolvedSignupSourceForProfile();
+  if (!signupSource) return false;
+
   const signupCampaign = getStoredSignupCampaign();
   const maxAttempts = 8;
 

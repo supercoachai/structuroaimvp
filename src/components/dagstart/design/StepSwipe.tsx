@@ -17,6 +17,12 @@ import { fireDagstartCompleteConfetti } from "@/lib/dagstartConfetti";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import {
+  SWIPE_INTENT_PX,
+  applySwipePointerMove,
+  resolveSwipeCommit,
+  shouldIgnoreSwipePointerDown,
+} from "@/lib/dagstart/swipeCardGesture";
 import Battery from "./Battery";
 import {
   DAGSTART_ENERGIES,
@@ -474,11 +480,6 @@ function energyLabel(maxSlots: number): string {
   return "hoge";
 }
 
-const SWIPE_DRAG_ACTIVATION_MOUSE_PX = 10;
-const SWIPE_DRAG_ACTIVATION_TOUCH_PX = 6;
-const SWIPE_COMMIT_THRESHOLD = 90;
-const SWIPE_INTENT_PX = 30;
-
 type SwipeDragState = {
   x: number;
   active: boolean;
@@ -494,12 +495,6 @@ const emptyDragState = (): SwipeDragState => ({
   pointerType: "mouse",
   startX: 0,
 });
-
-function swipeActivationPx(pointerType: SwipeDragState["pointerType"]): number {
-  return pointerType === "mouse"
-    ? SWIPE_DRAG_ACTIVATION_MOUSE_PX
-    : SWIPE_DRAG_ACTIVATION_TOUCH_PX;
-}
 
 function SwipeCard({
   task,
@@ -530,8 +525,17 @@ function SwipeCard({
     resetDrag();
   };
 
+  const releaseCapture = (pointerId: number) => {
+    try {
+      ref.current?.releasePointerCapture(pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isTop) return;
+    if (shouldIgnoreSwipePointerDown(e.target)) return;
     dragRef.current = {
       x: 0,
       active: false,
@@ -548,52 +552,42 @@ function SwipeCard({
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (drag.pointerId !== e.pointerId) return;
-    if (drag.pointerType === "mouse" && e.buttons === 0) {
+    const result = applySwipePointerMove(
+      {
+        x: drag.x,
+        active: drag.active,
+        startX: drag.startX,
+        pointerType: drag.pointerType === "mouse" ? "mouse" : "touch",
+      },
+      e.clientX,
+      e.buttons
+    );
+    if (result === "reset") {
       resetDrag();
       return;
     }
-    const x = e.clientX - drag.startX;
-    if (!drag.active) {
-      if (Math.abs(x) < swipeActivationPx(drag.pointerType)) return;
-      drag.active = true;
-      setIsDragging(true);
-    }
-    drag.x = x;
-    setDragX(x);
+    dragRef.current = {
+      ...drag,
+      x: result.next.x,
+      active: result.next.active,
+    };
+    setDragX(result.dragX);
+    setIsDragging(result.isDragging);
   };
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (drag.pointerId !== e.pointerId) return;
     if (!drag.active) {
       resetDrag();
-      try {
-        ref.current?.releasePointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
-      }
+      releaseCapture(e.pointerId);
       return;
     }
-    if (drag.x > SWIPE_COMMIT_THRESHOLD) {
-      if (keepDisabled) {
-        resetDrag();
-        try {
-          ref.current?.releasePointerCapture(e.pointerId);
-        } catch {
-          /* ignore */
-        }
-        return;
-      }
-      commitDecide("keep");
-    } else if (drag.x < -SWIPE_COMMIT_THRESHOLD) {
-      commitDecide("skip");
-    } else {
-      resetDrag();
-    }
-    try {
-      ref.current?.releasePointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
-    }
+    const outcome = resolveSwipeCommit(drag.x, keepDisabled);
+    if (outcome === "keep") commitDecide("keep");
+    else if (outcome === "skip") commitDecide("skip");
+    else if (outcome === "blocked") resetDrag();
+    else resetDrag();
+    releaseCapture(e.pointerId);
   };
 
   const e =
@@ -607,7 +601,13 @@ function SwipeCard({
   return (
     <div
       ref={ref}
-      className={`ds-swipe-card${isTop ? " is-top" : ""}`}
+      className={`ds-swipe-card${isTop ? " is-top" : ""}${
+        isDragging ? " is-dragging" : ""
+      }`}
+      onPointerDown={isTop ? onDown : undefined}
+      onPointerMove={isTop ? onMove : undefined}
+      onPointerUp={isTop ? onUp : undefined}
+      onPointerCancel={isTop ? onUp : undefined}
       style={{
         transform: `translate(${isTop ? dragX : 0}px, ${baseY}px) scale(${baseScale}) rotate(${
           isTop ? rot : 0
@@ -626,13 +626,7 @@ function SwipeCard({
         </div>
       ) : null}
 
-      <div
-        className={`ds-swipe-card-drag${isDragging ? " is-dragging" : ""}`}
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-      >
+      <div className="ds-swipe-card-drag">
         <div className="ds-swipe-card-top">
           <Battery level={e.level} color={e.color} size={20} />
           <span className="ds-swipe-duration">{task.minutes} min</span>
