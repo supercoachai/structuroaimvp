@@ -34,10 +34,25 @@ function isTikTokReferrer(referrer: string | null | undefined): boolean {
   return host.includes("tiktok.com") || host === "vm.tiktok.com";
 }
 
+// Strikte whitelist voor TikTok-bron tokens. Bewust geen `includes("tiktok")`:
+// test-utm's en typo-variaties zoals `tiktokclone` of `internal_tiktok_test` zouden
+// dan ten onrechte als TikTok-acquisitie tellen en het kanaal opblazen.
+const TIKTOK_SOURCE_WHITELIST = new Set([
+  "tiktok",
+  "tiktok_ads",
+  "tiktok_bio",
+  "tiktok_organic",
+  "tiktok_paid",
+  "tiktok_creator",
+  "tiktok_creators",
+  "tiktok_dm",
+  "tiktok_video",
+]);
+
 function isTikTokSourceToken(raw: string | null | undefined): boolean {
   const v = (raw ?? "").trim().toLowerCase();
   if (!v) return false;
-  return v === "tiktok" || v.startsWith("tiktok_") || v.includes("tiktok");
+  return TIKTOK_SOURCE_WHITELIST.has(v);
 }
 
 export type AcquisitionAttribution = {

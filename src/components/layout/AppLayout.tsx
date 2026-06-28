@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useLayoutEffect, useRef, useState, startTransition } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
@@ -13,7 +13,7 @@ import DesktopSidebarNav from '../navigation/DesktopSidebarNav';
 import QuickTaskInput from '@/components/QuickTaskInput';
 import dynamic from 'next/dynamic';
 import { performClientLogout } from '@/lib/logoutClient';
-import { isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
+import { clearDagstartCookieOnClient, isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useI18n } from '@/lib/i18n';
 import { TrialBanner } from '@/components/TrialBanner';
@@ -43,6 +43,8 @@ interface AppLayoutProps {
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const dagstartQueryParam = searchParams?.get("dagstart") ?? null;
   const { t } = useI18n();
   const { sidebarOpen, toggleSidebar, setSidebarOpen } = useSidebar();
 
@@ -60,6 +62,19 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       return { status: "ready", dagstartDone: next };
     });
   }, [pathname]);
+
+  /**
+   * ?dagstart=open forceert de DagstartOverlay: vanuit de legacy /dagstart-redirect
+   * (middleware regel 199-209) of vanuit de paywall-done-state. We wissen meteen
+   * de cookie zodat `dagstartDone=false` wordt, en vegen daarna de query-param weg.
+   */
+  useEffect(() => {
+    if (dagstartQueryParam !== "open") return;
+    clearDagstartCookieOnClient();
+    setShell({ status: "ready", dagstartDone: false });
+    const next = pathname ?? "/";
+    router.replace(next);
+  }, [dagstartQueryParam, pathname, router]);
 
   useEffect(() => {
     /**

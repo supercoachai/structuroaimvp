@@ -197,6 +197,10 @@ export async function updateSession(
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
+    // Signaleer aan AppLayout dat de DagstartOverlay direct opengeklapt moet worden,
+    // zelfs als de cookie zegt "vandaag al klaar". AppLayout maakt de query-param
+    // weer schoon na mount.
+    url.searchParams.set("dagstart", "open");
     return NextResponse.redirect(url, 302);
   }
 
@@ -599,6 +603,18 @@ function applyDagstartDbGate(
     return response;
   }
 
+  // DB zegt: vandaag geen dagstart. Wis een eventuele stale cookie zodat AppLayout
+  // op de eerstvolgende client-render `isDagstartDoneTodayClient() === false` ziet en
+  // de DagstartOverlay opent. Geen redirect: dat zou met de legacy /dagstart-redirect
+  // (regel 199-203) een lus maken. De cookie is hiermee strikt afgeleid van de DB.
+  const stale = request.cookies.get(STRUCTURO_DAGSTART_COOKIE)?.value;
+  if (stale) {
+    response.cookies.set(STRUCTURO_DAGSTART_COOKIE, "", {
+      path: "/",
+      maxAge: 0,
+      sameSite: "lax",
+    });
+  }
   return response;
 }
 
@@ -678,6 +694,7 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
+    url.searchParams.set("dagstart", "open");
     return NextResponse.redirect(url, 302);
   }
 

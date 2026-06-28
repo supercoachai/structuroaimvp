@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/Toast";
+import type { RetentionPaywallReason } from "@/lib/retentionPaywallAccess";
 import type { RetentionStats } from "@/lib/retentionStats";
 import type { WalletKind } from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
@@ -11,11 +12,13 @@ import { StripeWalletButtons } from "./StripeWalletButtons";
 type DoneMode = "stay" | "stop" | null;
 
 type PaywallInteractiveProps = {
+  reason: RetentionPaywallReason;
   visibleWallets: WalletKind[];
   stats: RetentionStats | null;
 };
 
 export function PaywallInteractive({
+  reason,
   visibleWallets,
   stats,
 }: PaywallInteractiveProps) {
@@ -64,9 +67,13 @@ export function PaywallInteractive({
 
   const doneTitle =
     doneMode === "stop" ? "Helemaal goed." : "Alles blijft staan.";
+  const stopText =
+    reason === "subscription_ended"
+      ? "Je toegang is gestopt. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
+      : "Je toegang loopt nog tot vanavond. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug.";
   const doneText =
     doneMode === "stop"
-      ? "Je toegang loopt nog tot vanavond. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
+      ? stopText
       : stats
         ? `Je ${stats.daysActive} dagen, je ${stats.tasksCompleted} taken, je ${stats.openTasks} openstaande taken: allemaal nog van jou. Ga zo door.`
         : "Je voortgang blijft van jou. Ga zo door.";
@@ -137,7 +144,9 @@ export function PaywallInteractive({
           className="btn-primary"
           onClick={() => {
             if (doneMode === "stay") {
-              router.replace("/dagstart");
+              // /?dagstart=open laat middleware de bounce overslaan: AppLayout
+              // pikt de query-param op en opent de DagstartOverlay direct.
+              router.replace("/?dagstart=open");
               return;
             }
             setDoneMode(null);

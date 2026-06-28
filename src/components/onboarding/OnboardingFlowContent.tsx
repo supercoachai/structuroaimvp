@@ -1456,16 +1456,29 @@ export default function OnboardingFlowContent({
           }
         }
       }
-      setDagstartCookieOnClient();
-      if (firstDayEnergy) {
-        captureDagstartEventsFromOnboardingFinish(firstDayEnergy, 1);
-      }
+      // Cookie pas zetten na succesvolle DB-write. Anders krijg je het Carlijn-gat:
+      // cookie zegt "dagstart vandaag klaar", maar profiles.last_dagstart_date is leeg,
+      // dus middleware + paywall kunnen de status niet meer reconstrueren.
+      let dagstartPersisted = false;
       if (user?.id && firstDayReady && firstDayEnergy) {
         try {
           await updateProfileAfterDagstartComplete(user.id, firstDayEnergy);
+          dagstartPersisted = true;
         } catch (e) {
           console.warn("Profiel dagstart na onboarding niet gezet:", e);
         }
+      }
+      // Anonieme acquisitie-flow: claimAnonymousOnboardingOnServer in /auth/callback
+      // zet last_dagstart_date via service-role. De eerstvolgende middleware-hit
+      // (applyDagstartDbGate) zet vervolgens de cookie zelf op basis van DB. We
+      // schrijven hier dus alleen client-side cookie als de DB-write zojuist slaagde.
+      if (dagstartPersisted) {
+        setDagstartCookieOnClient();
+      }
+      if (firstDayEnergy) {
+        captureDagstartEventsFromOnboardingFinish(firstDayEnergy, 1, {
+          dbPersisted: dagstartPersisted,
+        });
       }
     } catch (e) {
       console.error("Onboarding finish error:", e);

@@ -132,7 +132,8 @@ export async function fetchActivationFunnelReport(
 }
 
 export const DROP_BUCKET_LABELS: Record<string, string> = {
-  onboarding_klaar: "Onboarding afgerond",
+  onboarding_klaar: "Onboarding + dagstart",
+  onboarding_klaar_zonder_dagstart: "Onboarding klaar, geen dagstart",
   onboarding_gestart_niet_af: "Taak gezet, onboarding niet af",
   app_geopend_geen_taak: "App geopend, geen taak",
   signup_geen_app: "Ingelogd, app niet geopend",

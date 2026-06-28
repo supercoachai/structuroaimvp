@@ -14,12 +14,16 @@ type PaywallShellProps = {
 };
 
 function PaywallInteractiveWithStats({
+  reason,
   visibleWallets,
 }: {
+  reason: RetentionPaywallReason;
   visibleWallets: WalletKind[];
 }) {
   const { stats } = usePaywallStats();
-  return <PaywallInteractive visibleWallets={visibleWallets} stats={stats} />;
+  return (
+    <PaywallInteractive reason={reason} visibleWallets={visibleWallets} stats={stats} />
+  );
 }
 
 export function PaywallShell({
@@ -56,7 +60,7 @@ export function PaywallShell({
           </p>
         </section>
 
-        <PaywallInteractiveWithStats visibleWallets={visibleWallets} />
+        <PaywallInteractiveWithStats reason={reason} visibleWallets={visibleWallets} />
 
         <section className="proof">
           <p className="proof-head">Dit zeggen mensen die bleven</p>

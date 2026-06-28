@@ -103,6 +103,12 @@ export function trackDagstartCompleted(properties: {
   source: string;
   energy?: string;
   task_count?: number;
+  /**
+   * True wanneer `profiles.last_dagstart_date` op de server is geschreven; false
+   * wanneer alleen de cookie/PostHog-event is gevuurd. Verschil > 0 = regressie van
+   * de cookie-vs-DB-bug (Carlijn-gat).
+   */
+  db_persisted?: boolean;
 }): void {
   trackActivationFunnelStep("dagstart_completed", properties, {
     transport: "sendBeacon",
