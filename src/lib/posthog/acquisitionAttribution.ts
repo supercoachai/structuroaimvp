@@ -2,6 +2,11 @@ import {
   bridgeChannelFromPath,
   TIKTOK_BIO_DEFAULT_UTM,
 } from "@/lib/acquisition/bridgePaths";
+import {
+  JASPER_SIGNUP_CAMPAIGN,
+  JASPER_SIGNUP_SOURCE,
+  isJasperLandingPath,
+} from "@/lib/jasper/jasperOffer";
 import { normalizeSignupSource } from "@/lib/posthog/signupAttribution";
 
 export const ACQUISITION_VISITOR_KEY = "structuro_acq_vid";
@@ -84,18 +89,29 @@ export function resolveAcquisitionAttribution(input: {
 
   const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
   const fromOrganicRoute = bridgeChannelFromPath(landing_path) === "organic";
+  const fromJasperRoute = isJasperLandingPath(landing_path);
 
   // Kale /tiktok bio-link: geen eigen utm_source/source en geen ttclid in de URL.
   // Behandel als TikTok-bio-verkeer met defaults, zonder bestaande params te overschrijven.
   const isBareTikTokBio =
     fromTikTokRoute && !rawUtmSource && !legacySource && !has_ttclid;
 
+  // Kale /jasper podcast-link: geen utm_source en geen legacy ?source=.
+  // Behandel als podcast-verkeer met Jasper-defaults.
+  const isBareJasper = fromJasperRoute && !rawUtmSource && !legacySource;
+
   const utm_source =
-    rawUtmSource || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null);
+    rawUtmSource ||
+    (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null) ||
+    (isBareJasper ? JASPER_SIGNUP_SOURCE : null);
   const utm_campaign =
-    rawUtmCampaign || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null);
+    rawUtmCampaign ||
+    (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null) ||
+    (isBareJasper ? JASPER_SIGNUP_CAMPAIGN : null);
   const utm_medium =
-    rawUtmMedium || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null);
+    rawUtmMedium ||
+    (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null) ||
+    (isBareJasper ? "podcast" : null);
 
   const is_tiktok =
     has_ttclid ||
@@ -110,6 +126,7 @@ export function resolveAcquisitionAttribution(input: {
     (isTikTokReferrer(input.referrer) ? "tiktok" : "") ||
     (fromTikTokRoute ? "tiktok" : "") ||
     (fromOrganicRoute ? "structuro_eu" : "") ||
+    (fromJasperRoute ? JASPER_SIGNUP_SOURCE : "") ||
     "direct";
 
   if (is_tiktok && source === "direct") {

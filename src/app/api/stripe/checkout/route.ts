@@ -6,6 +6,11 @@ import {
   STRIPE_PRICE_ID_YEARLY,
 } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
+import {
+  getJasperSubscriptionDiscount,
+  isJasperSignupSource,
+} from "@/lib/jasper/jasperOffer";
+import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
@@ -74,6 +79,19 @@ async function postCheckout(request: Request) {
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("signup_source")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const signupSource = resolveProfileSignupSource(
+    profile?.signup_source as string | null,
+    user.user_metadata as Record<string, unknown> | undefined
+  );
+  const jasperDiscount = getJasperSubscriptionDiscount(signupSource);
+  const jasperFlagged = isJasperSignupSource(signupSource);
+
   /** Herinschrijving na verlopen proefperiode: geen nieuwe trial. */
   const session = await createSubscriptionCheckoutSession({
     stripe,
@@ -83,6 +101,9 @@ async function postCheckout(request: Request) {
     trialDays: 0,
     successUrl: `${base}/abonnement?from=stripe`,
     cancelUrl: `${base}/abonnement`,
+    metadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    discounts: jasperDiscount ?? undefined,
   });
 
   if (!session.url) {

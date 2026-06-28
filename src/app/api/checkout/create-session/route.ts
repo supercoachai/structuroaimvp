@@ -4,6 +4,10 @@ import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteService
 import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
+import {
+  getJasperSubscriptionDiscount,
+  isJasperSignupSource,
+} from "@/lib/jasper/jasperOffer";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
@@ -106,6 +110,9 @@ async function postCreateSession(request: Request) {
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();
 
+  const jasperDiscount = getJasperSubscriptionDiscount(signupSource);
+  const jasperFlagged = isJasperSignupSource(signupSource);
+
   const session = await createSubscriptionCheckoutSession({
     stripe,
     priceId,
@@ -116,7 +123,10 @@ async function postCreateSession(request: Request) {
     cancelUrl: `${base}/registreren/plan?cancelled=1`,
     metadata: {
       [CHECKOUT_METADATA_WELCOME_TASK]: addWelcomeTask ? "1" : "0",
+      ...(jasperFlagged ? { jasper_offer: "1" } : {}),
     },
+    subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    discounts: jasperDiscount ?? undefined,
   });
 
   if (!session.url) {

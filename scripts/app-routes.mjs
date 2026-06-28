@@ -23,6 +23,7 @@ export const APP_ROUTES = [
   { path: "/registreren/plan", kind: "public", status: [200] },
   { path: "/tiktok", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/start", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
   { path: "/abonnement", kind: "public", status: [200, 307, 308] },
   { path: "/adhd-cafe", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/welkom", kind: "public", status: [200] },

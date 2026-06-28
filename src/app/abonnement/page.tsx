@@ -6,6 +6,7 @@ import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import { resolveRetentionPaywallReason } from "@/lib/retentionPaywallAccess";
 import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
+import { isJasperSignupSource } from "@/lib/jasper/jasperOffer";
 import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
 import { PaywallShell } from "@/components/subscription/PaywallShell";
 import { RetentionPaywallStats } from "@/components/subscription/RetentionPaywallStats";
@@ -61,6 +62,7 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
 
   const signupSource = row?.signup_source ?? null;
   const trialDays = resolveStripeTrialDaysForSignupSource(signupSource);
+  const jasperOffer = isJasperSignupSource(signupSource);
 
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent") ?? "";
@@ -73,6 +75,7 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
         reason={reason}
         trialDays={trialDays}
         visibleWallets={visibleWallets}
+        jasperOffer={jasperOffer}
         statsSlot={
           <Suspense
             fallback={<RetentionPaywallStatsFallback trialDays={trialDays} />}

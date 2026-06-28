@@ -3,6 +3,10 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/Toast";
+import {
+  JASPER_OFFER_DISCOUNTED_MONTHS,
+  getJasperOffer,
+} from "@/lib/jasper/jasperOffer";
 import type { RetentionPaywallReason } from "@/lib/retentionPaywallAccess";
 import type { RetentionStats } from "@/lib/retentionStats";
 import type { WalletKind } from "@/lib/stripe/walletBootstrap";
@@ -15,12 +19,15 @@ type PaywallInteractiveProps = {
   reason: RetentionPaywallReason;
   visibleWallets: WalletKind[];
   stats: RetentionStats | null;
+  /** Jasper-podcast-aanbieding: toon 3-maands kortingsprijs onder de CTA. */
+  jasperOffer?: boolean;
 };
 
 export function PaywallInteractive({
   reason,
   visibleWallets,
   stats,
+  jasperOffer = false,
 }: PaywallInteractiveProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -112,7 +119,16 @@ export function PaywallInteractive({
           </div>
         ) : null}
 
-        <p className="price-sub">€12,99 per maand · maandelijks opzegbaar</p>
+        {jasperOffer ? (
+          <p className="price-sub">
+            {(() => {
+              const offer = getJasperOffer();
+              return `${offer.discountedPrice} per maand de eerste ${JASPER_OFFER_DISCOUNTED_MONTHS} maanden, daarna ${offer.regularPrice} per maand. Maandelijks opzegbaar.`;
+            })()}
+          </p>
+        ) : (
+          <p className="price-sub">€12,99 per maand · maandelijks opzegbaar</p>
+        )}
         <div className="secondary">
           <button type="button" onClick={handleStop}>
             Nu stoppen

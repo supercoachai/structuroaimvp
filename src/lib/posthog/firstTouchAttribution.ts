@@ -2,6 +2,11 @@
 
 import { TIKTOK_BIO_DEFAULT_UTM } from "@/lib/acquisition/bridgePaths";
 import {
+  JASPER_SIGNUP_CAMPAIGN,
+  JASPER_SIGNUP_SOURCE,
+  isJasperLandingPath,
+} from "@/lib/jasper/jasperOffer";
+import {
   CAMPAIGN_KEY,
   SOURCE_KEY,
   normalizeSignupSource,
@@ -165,17 +170,27 @@ export function captureFirstTouchAttribution(): void {
       window.location.pathname.startsWith("/start/")
         ? "structuro_eu"
         : "";
+    const isJasperPath = isJasperLandingPath(window.location.pathname);
+    const fromJasperPath = isJasperPath ? JASPER_SIGNUP_SOURCE : "";
 
     // Kale /tiktok bio-link: geen eigen utm_source en geen ttclid in de URL.
     // Behandel als TikTok-bio-verkeer met defaults, zonder bestaande params
     // (bv. een specifieke video-link) te overschrijven.
     const isBareTikTokBio = isTikTokPath && !fromUtm && !hasTtclid;
 
+    // Kale /jasper podcast-link: geen eigen utm_source. Behandel als
+    // podcast-verkeer met Jasper-defaults, zonder bestaande params te
+    // overschrijven (bv. utm_content uit een aflevering-specifieke link).
+    const isBareJasper = isJasperPath && !fromUtm;
+
     const utm_source =
-      fromUtm || (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null);
+      fromUtm ||
+      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_source : null) ||
+      (isBareJasper ? JASPER_SIGNUP_SOURCE : null);
     const utm_medium =
       sanitize(params.get("utm_medium")) ||
-      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null);
+      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_medium : null) ||
+      (isBareJasper ? "podcast" : null);
     const utm_content = sanitize(params.get("utm_content")) || null;
     const source =
       fromUtm ||
@@ -183,11 +198,13 @@ export function captureFirstTouchAttribution(): void {
       fromTtclid ||
       fromTikTokPath ||
       fromOrganicPath ||
+      fromJasperPath ||
       fromReferrer ||
       "direct";
     const campaign =
       sanitize(params.get("utm_campaign")) ||
-      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null);
+      (isBareTikTokBio ? TIKTOK_BIO_DEFAULT_UTM.utm_campaign : null) ||
+      (isBareJasper ? JASPER_SIGNUP_CAMPAIGN : null);
 
     const payload: FirstTouchAttribution = {
       source: normalizeSignupSource(source),

@@ -12,6 +12,12 @@ export type CreateSubscriptionCheckoutInput = {
   cancelUrl: string;
   metadata?: Record<string, string>;
   subscriptionMetadata?: Record<string, string>;
+  /**
+   * Optionele Stripe-coupons (bv. Jasper-podcast 3-maands korting). Bij
+   * doorgegeven discounts zet Stripe `allow_promotion_codes` op false, anders
+   * werpt de API een fout: beide tegelijk is niet toegestaan.
+   */
+  discounts?: Array<{ coupon: string }>;
 };
 
 /**
@@ -42,6 +48,8 @@ export async function createSubscriptionCheckoutSession(
         ? `${trialDays} dagen gratis`
         : null;
 
+  const hasDiscount = (input.discounts?.length ?? 0) > 0;
+
   return input.stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: [...CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES],
@@ -52,7 +60,10 @@ export async function createSubscriptionCheckoutSession(
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
     locale: "nl",
-    allow_promotion_codes: true,
+    // Stripe staat geen combinatie toe van automatische coupon en promo-code-veld.
+    ...(hasDiscount
+      ? { discounts: input.discounts }
+      : { allow_promotion_codes: true }),
     metadata: {
       supabase_user_id: input.userId,
       trial_days: String(trialDays),

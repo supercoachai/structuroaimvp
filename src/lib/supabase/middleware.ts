@@ -119,7 +119,9 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/tiktok" ||
     pathname.startsWith("/tiktok/") ||
     pathname === "/start" ||
-    pathname.startsWith("/start/")
+    pathname.startsWith("/start/") ||
+    pathname === "/jasper" ||
+    pathname.startsWith("/jasper/")
   );
 }
 

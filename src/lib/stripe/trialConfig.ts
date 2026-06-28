@@ -12,6 +12,10 @@ export const EVENT_TRIAL_BY_SIGNUP_SOURCE: Record<
   { days: number; validUntilYmd?: string }
 > = {
   adhd_cafe: { days: 14, validUntilYmd: "2026-12-31" },
+  // Podcast met Jasper: evergreen, geen einddatum. Aanbieding loopt door tot
+  // expliciet uitgezet. Stripe-korting (3 maanden) wordt apart afgehandeld via
+  // src/lib/jasper/jasperOffer.ts (coupon op subscription).
+  jasper_podcast: { days: 7 },
 };
 
 export function normalizeSignupSourceKey(

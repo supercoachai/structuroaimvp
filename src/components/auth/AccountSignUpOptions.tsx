@@ -119,6 +119,12 @@ export function AccountSignUpOptions({
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailConfirmPending, setEmailConfirmPending] = useState<string | null>(null);
 
+  // Naam mag alleen verborgen worden als er daadwerkelijk een vooraf gevraagde
+  // naam beschikbaar is. Anders (bijv. directe entry op /registreren zonder
+  // opgeslagen naam) bouncet de e-mail-signup op "Vul je naam in." zonder veld om
+  // dat te herstellen. In dat geval tonen we het naamveld alsnog.
+  const nameFieldHidden = hideNameField && (nameValue ?? "").trim().length > 0;
+
   const markStarted = (method: string, extra?: Record<string, unknown>) => {
     onSignUpStarted?.();
     captureMarketingEvent("signup_method_started", {
@@ -151,7 +157,7 @@ export function AccountSignUpOptions({
       }
       // Aanspreeknaam (al gevraagd vóór account-aanmaak) bewaren zodat hij
       // mee migreert en als voorkeursnaam op het profiel gezet kan worden.
-      const preferredName = (hideNameField ? nameValue ?? "" : name).trim();
+      const preferredName = (nameFieldHidden ? nameValue ?? "" : name).trim();
       if (preferredName.length >= 2) {
         try {
           window.localStorage.setItem("structuro_user_name", preferredName);
@@ -183,7 +189,7 @@ export function AccountSignUpOptions({
 
   const handleEmailSignUp = async () => {
     if (disabled || emailBusy || busyOAuth) return;
-    const nameTrimmed = (hideNameField ? nameValue ?? "" : name).trim();
+    const nameTrimmed = (nameFieldHidden ? nameValue ?? "" : name).trim();
     const emailTrimmed = normalizeSignupEmail(email);
     if (!nameTrimmed) {
       onError?.(t("registrerenPage.errNameRequired"));
@@ -288,7 +294,7 @@ export function AccountSignUpOptions({
       ) : (
         <div className="space-y-3 text-left">
           <p className={labelClass(visual)}>{t("signup.emailFallbackHelp")}</p>
-          {!hideNameField ? (
+          {!nameFieldHidden ? (
             <div className="space-y-1">
               <label htmlFor="signup-name" className={labelClass(visual)}>
                 {t("registrerenPage.nameLabel")}

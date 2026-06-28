@@ -19,6 +19,7 @@ export function isAcquisitionMarketingPath(pathname: string | null | undefined):
   if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
   if (pathname === "/tiktok" || pathname.startsWith("/tiktok/")) return true;
   if (pathname === "/start" || pathname.startsWith("/start/")) return true;
+  if (pathname === "/jasper" || pathname.startsWith("/jasper/")) return true;
   return false;
 }
 

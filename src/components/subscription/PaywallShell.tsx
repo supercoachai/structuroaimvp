@@ -11,18 +11,27 @@ type PaywallShellProps = {
   trialDays: number;
   visibleWallets: WalletKind[];
   statsSlot: ReactNode;
+  /** Toon Jasper-podcast-aanbieding (3 maanden korting) in CTA-blok. */
+  jasperOffer?: boolean;
 };
 
 function PaywallInteractiveWithStats({
   reason,
   visibleWallets,
+  jasperOffer,
 }: {
   reason: RetentionPaywallReason;
   visibleWallets: WalletKind[];
+  jasperOffer?: boolean;
 }) {
   const { stats } = usePaywallStats();
   return (
-    <PaywallInteractive reason={reason} visibleWallets={visibleWallets} stats={stats} />
+    <PaywallInteractive
+      reason={reason}
+      visibleWallets={visibleWallets}
+      stats={stats}
+      jasperOffer={jasperOffer}
+    />
   );
 }
 
@@ -31,6 +40,7 @@ export function PaywallShell({
   trialDays,
   visibleWallets,
   statsSlot,
+  jasperOffer,
 }: PaywallShellProps) {
   const kicker =
     reason === "subscription_ended"
@@ -60,7 +70,11 @@ export function PaywallShell({
           </p>
         </section>
 
-        <PaywallInteractiveWithStats reason={reason} visibleWallets={visibleWallets} />
+        <PaywallInteractiveWithStats
+          reason={reason}
+          visibleWallets={visibleWallets}
+          jasperOffer={jasperOffer}
+        />
 
         <section className="proof">
           <p className="proof-head">Dit zeggen mensen die bleven</p>

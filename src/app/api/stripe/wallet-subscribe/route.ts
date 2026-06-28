@@ -7,6 +7,11 @@ import {
 } from "@/lib/stripe/syncProfileSubscription";
 import { STRIPE_PRICE_ID_MONTHLY } from "@/lib/stripe/registerPlans";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
+import {
+  getJasperStripeCouponId,
+  isJasperSignupSource,
+} from "@/lib/jasper/jasperOffer";
+import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { NextResponse } from "next/server";
 
@@ -61,7 +66,7 @@ async function postWalletSubscribe(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, stripe_subscription_id")
+    .select("stripe_customer_id, stripe_subscription_id, signup_source")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -76,11 +81,24 @@ async function postWalletSubscribe(request: Request) {
     invoice_settings: { default_payment_method: paymentMethodId },
   });
 
+  const signupSource = resolveProfileSignupSource(
+    profile?.signup_source as string | null,
+    user.user_metadata as Record<string, unknown> | undefined
+  );
+  const jasperFlagged = isJasperSignupSource(signupSource);
+  const jasperCoupon = jasperFlagged ? getJasperStripeCouponId() : null;
+
+  const subscriptionMetadata: Record<string, string> = {
+    supabase_user_id: user.id,
+  };
+  if (jasperFlagged) subscriptionMetadata.jasper_offer = "1";
+
   const subscription = await stripe.subscriptions.create({
     customer: customerId,
     items: [{ price: STRIPE_PRICE_ID_MONTHLY }],
     default_payment_method: paymentMethodId,
-    metadata: { supabase_user_id: user.id },
+    metadata: subscriptionMetadata,
+    ...(jasperCoupon ? { discounts: [{ coupon: jasperCoupon }] } : {}),
     expand: ["latest_invoice.payment_intent"],
   });
 

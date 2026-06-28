@@ -5,7 +5,38 @@ import assert from "node:assert/strict";
 
 import { resolveAcquisitionAttribution } from "./acquisitionAttribution";
 
-// /start blijft structuro_eu (regressie-check op organic-bron).
+// Kale /jasper bezoek zonder utm: default attributie is jasper_podcast.
+{
+  const attr = resolveAcquisitionAttribution({
+    pathname: "/jasper",
+    searchParams: new URLSearchParams(),
+    referrer: null,
+  });
+  assert.equal(attr.source, "jasper_podcast");
+  assert.equal(attr.utm_source, "jasper_podcast");
+  assert.equal(attr.utm_campaign, "jasper_podcast");
+  assert.equal(attr.utm_medium, "podcast");
+  assert.equal(attr.is_tiktok, false);
+}
+
+// /jasper met expliciete utm_source: URL wint (geen Jasper-default).
+{
+  const params = new URLSearchParams({
+    utm_source: "spotify",
+    utm_campaign: "afl_42",
+  });
+  const attr = resolveAcquisitionAttribution({
+    pathname: "/jasper",
+    searchParams: params,
+    referrer: null,
+  });
+  assert.equal(attr.source, "spotify");
+  assert.equal(attr.utm_source, "spotify");
+  assert.equal(attr.utm_campaign, "afl_42");
+  assert.equal(attr.is_tiktok, false);
+}
+
+// /start blijft structuro_eu (Jasper-pad mag andere defaults niet kapot maken).
 {
   const attr = resolveAcquisitionAttribution({
     pathname: "/start",
