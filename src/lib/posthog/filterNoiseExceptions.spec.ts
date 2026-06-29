@@ -47,6 +47,34 @@ describe("shouldDropNoiseException", () => {
     ).toBe(true);
   });
 
+  it("drops Object Not Found extension-bridge rejection without in-app frames", () => {
+    expect(
+      shouldDropNoiseException({
+        $exception_values: [
+          "Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4",
+        ],
+        $exception_list: [],
+      })
+    ).toBe(true);
+  });
+
+  it("keeps Object Not Found message when an in-app frame is present", () => {
+    expect(
+      shouldDropNoiseException({
+        $exception_values: [
+          "Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4",
+        ],
+        $exception_list: [
+          {
+            stacktrace: {
+              frames: [{ in_app: true, source: "src/components/HomeCalm.tsx" }],
+            },
+          },
+        ],
+      })
+    ).toBe(false);
+  });
+
   it("keeps genuine app exceptions", () => {
     expect(
       shouldDropNoiseException({
