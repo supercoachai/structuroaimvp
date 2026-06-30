@@ -20,6 +20,34 @@ describe("shouldDropNoiseException", () => {
     ).toBe(true);
   });
 
+  it("drops browser-extension Object Not Found bridge rejections without in-app frames", () => {
+    expect(
+      shouldDropNoiseException({
+        $exception_values: [
+          "UnhandledRejection: Non-Error promise rejection captured with value: Object Not Found Matching Id:2, MethodName:update, ParamCount:4",
+        ],
+        $exception_list: [],
+      })
+    ).toBe(true);
+  });
+
+  it("keeps Object Not Found when in-app frames are present", () => {
+    expect(
+      shouldDropNoiseException({
+        $exception_values: [
+          "Object Not Found Matching Id:1, MethodName:update, ParamCount:4",
+        ],
+        $exception_list: [
+          {
+            stacktrace: {
+              frames: [{ in_app: true, source: "src/components/HomeCalm.tsx" }],
+            },
+          },
+        ],
+      })
+    ).toBe(false);
+  });
+
   it("drops rrweb SecurityError with only recorder frames", () => {
     expect(
       shouldDropNoiseException({

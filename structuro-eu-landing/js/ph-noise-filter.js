@@ -65,6 +65,15 @@
       if (messages[j].trim() === "Script error." && !hasInAppFrame(properties)) return true;
     }
 
+    for (var k = 0; k < messages.length; k++) {
+      if (
+        /Object Not Found Matching Id:\d+.*MethodName:update.*ParamCount:/i.test(messages[k]) &&
+        !hasInAppFrame(properties)
+      ) {
+        return true;
+      }
+    }
+
     var types = properties.$exception_types;
     var isSecurityError =
       (Array.isArray(types) && types.indexOf("DOMException") !== -1) ||

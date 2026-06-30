@@ -75,6 +75,17 @@ export function shouldDropNoiseException(
     return true;
   }
 
+  if (
+    messages.some((message) =>
+      /Object Not Found Matching Id:\d+.*MethodName:update.*ParamCount:/i.test(
+        message
+      )
+    ) &&
+    !hasInAppFrame(properties)
+  ) {
+    return true;
+  }
+
   const types = properties.$exception_types;
   const isSecurityError =
     (Array.isArray(types) && types.includes("DOMException")) ||
