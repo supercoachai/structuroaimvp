@@ -9,6 +9,8 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/jasper',
     '/auth',
     '/onboarding',
+    '/onboardingpro',
+    '/v2',
     '/consent',
     '/welkom',
     '/abonnement',

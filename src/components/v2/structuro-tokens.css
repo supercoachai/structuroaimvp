@@ -1,0 +1,337 @@
+/*
+ * Structuro Design-standaard "Variant F" - V2-GESCOPED.
+ *
+ * Alle tokens en primitieven staan onder .v2-root zodat de productie-werklaag
+ * (globals.css, --structuro-*, --st-*, structuro-eu-landing) volledig onaangeraakt
+ * blijft. De live (niet-v2) app verandert hierdoor niet.
+ *
+ * Kleurbudget: drie kleuren dragen alles.
+ *   Surface (warm papier) #FDFBF4, Ink (ink-navy) #1A2340, Accent (sage teal) #2D5A56.
+ * Mode-flip is het hart van F: licht = kiezen/reflecteren, donker = uitvoeren/focussen.
+ */
+
+.v2-root {
+  --surface: #fdfbf4;
+  --ink: #1a2340;
+  --ink-hover: #2c3753;
+  --accent: #2d5a56;
+  --accent-soft: rgba(45, 90, 86, 0.12);
+  --accent-ring: rgba(45, 90, 86, 0.28);
+  --text: #1a1a1b;
+  --text-muted: #5c6478;
+  --text-on-ink: #f5f2ea;
+  --border: rgba(26, 26, 27, 0.1);
+  --surface-raised: #ffffff;
+
+  /* Focus-flip waarden (toegepast op [data-mode="focus"]) */
+  --focus-bg: #1a2340;
+  --focus-fg: #f5f2ea;
+  --focus-muted: #9aa2b8;
+  --focus-accent: #5fb8af;
+  --focus-border: rgba(245, 242, 234, 0.12);
+
+  /* Typografie */
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-ui: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Schaal */
+  --fs-display: 2.5rem;
+  --fs-title: 1.5rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-micro: 0.75rem;
+  --lh-tight: 1.15;
+  --lh-body: 1.55;
+
+  /* Ruimte + radii */
+  --sp-1: 8px;
+  --sp-2: 12px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 32px;
+  --sp-6: 48px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* Eén zachte lift, geen schaduw-stack */
+  --lift: 0 1px 2px rgba(26, 35, 64, 0.06), 0 8px 24px rgba(26, 35, 64, 0.06);
+
+  --container-max: 1100px;
+
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+/*
+ * De mode-flip. Strikt binnen v2 gescoped zodat een toevallige data-mode buiten
+ * v2 nooit geraakt wordt. Surface wordt navy, tekst off-white, de gevulde knop
+ * wordt de off-white (ink) met navy tekst erop. Accent wordt de fellere teal,
+ * uitsluitend bedoeld voor de timer-ring en de actieve micro-stap.
+ */
+.v2-root[data-mode="focus"],
+.v2-root [data-mode="focus"] {
+  --surface: var(--focus-bg);
+  --surface-raised: #222c4d;
+  --text: var(--focus-fg);
+  --text-muted: var(--focus-muted);
+  --border: var(--focus-border);
+  --ink: #f5f2ea;
+  --ink-hover: #ece7da;
+  --text-on-ink: #1a2340;
+  --accent: var(--focus-accent);
+  --accent-ring: rgba(95, 184, 175, 0.35);
+}
+
+/* Primitieven (v2-gescoped) */
+.v2-root .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ink);
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--fs-body);
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 140ms ease;
+}
+.v2-root .btn-primary:hover {
+  background: var(--ink-hover);
+}
+.v2-root .btn-primary:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+.v2-root .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: var(--fs-body);
+  padding: 12px 20px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.v2-root .btn-ghost:hover {
+  border-color: var(--accent);
+}
+.v2-root .btn-ghost:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+/* Tekst-link: de derde, niet-gevulde actie-stijl. */
+.v2-root .v2-link {
+  background: none;
+  border: none;
+  padding: 10px 8px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+.v2-root .v2-link:hover {
+  color: var(--text);
+}
+.v2-root .v2-link:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Keuze/selectie-kaart (geen vierde kleur; accent enkel als selectie-rand). */
+.v2-root .v2-choice {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--lift);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.v2-root .v2-choice:hover {
+  border-color: var(--accent);
+}
+.v2-root .v2-choice:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+.v2-root .v2-choice[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Compacte keuze-chip (herhaling/prioriteit/energie). Teal is nooit een gevulde knop. */
+.v2-root .v2-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+.v2-root .v2-chip:hover {
+  border-color: var(--accent);
+}
+.v2-root .v2-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.v2-root .v2-chip:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+/* Niet-interactieve meta-badge in de lijst (deadline / herhaling / label). */
+.v2-root .v2-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.v2-root .v2-meta[data-overdue="true"] {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Tekstinvoer */
+.v2-root .v2-field {
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+}
+.v2-root .v2-field::placeholder {
+  color: var(--text-muted);
+}
+.v2-root .v2-field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* Koppen + eyebrow */
+.v2-root .v2-serif {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+  line-height: var(--lh-tight);
+  color: var(--text);
+  margin: 0;
+}
+.v2-root .v2-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+.v2-root .v2-eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: v2-eyebrow-pulse 2.4s ease-in-out infinite;
+}
+
+/* Kaart op papier (spaarzaam) */
+.v2-root .v2-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift);
+}
+
+.v2-root .v2-fade {
+  animation: v2-fade-in 180ms ease-out;
+}
+
+@keyframes v2-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes v2-eyebrow-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-root .btn-primary,
+  .v2-root .btn-ghost,
+  .v2-root .v2-link,
+  .v2-root .v2-choice {
+    transition: none !important;
+  }
+  .v2-root .v2-fade {
+    animation: none !important;
+  }
+  .v2-root .v2-eyebrow-dot {
+    animation: none !important;
+  }
+}

@@ -121,7 +121,9 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/start" ||
     pathname.startsWith("/start/") ||
     pathname === "/jasper" ||
-    pathname.startsWith("/jasper/")
+    pathname.startsWith("/jasper/") ||
+    pathname === "/onboardingpro" ||
+    pathname.startsWith("/onboardingpro/")
   );
 }
 
@@ -168,6 +170,20 @@ export async function updateSession(
   event?: NextFetchEvent
 ) {
   const pathname = request.nextUrl.pathname;
+
+  // /onboardingpro is een zelfstandige testpagina: altijd direct serveren,
+  // ongeacht sessie. Zonder deze early return matcht pathname.startsWith("/onboarding")
+  // deze route en wordt een ingelogde gebruiker naar de app/dagstart gebounced.
+  if (pathname === "/onboardingpro" || pathname.startsWith("/onboardingpro/")) {
+    return NextResponse.next({ request });
+  }
+
+  // /v2 is een zelfstandige front-end testomgeving: altijd direct serveren,
+  // ongeacht sessie. Strikt additief, vóór alle gates, zodat geen enkele
+  // /v2-route naar /login bouncet of de app-shell krijgt.
+  if (pathname === "/v2" || pathname.startsWith("/v2/")) {
+    return NextResponse.next({ request });
+  }
 
   const adhdCafeRedirect = redirectAdhdCafeToRegistreren(request);
   if (adhdCafeRedirect) return adhdCafeRedirect;

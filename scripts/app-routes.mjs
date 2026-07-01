@@ -29,6 +29,18 @@ export const APP_ROUTES = [
   { path: "/welkom", kind: "public", status: [200] },
   { path: "/welkom/install", kind: "public", status: [200] },
   { path: "/onboarding", kind: "public", status: [200, 307, 308] },
+  { path: "/onboardingpro", kind: "public", status: [200], needles: ["structuro"] },
+
+  // —— v2 testomgeving (zelfstandig, geen app-shell, geen auth) ——
+  { path: "/v2", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
+  { path: "/v2/login", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/register", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/onboarding", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/home", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/dagstart", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/todo", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/v2/focus", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/consent", kind: "public", status: [200, 307, 308] },
   { path: "/checkout-success", kind: "public", status: [200] },
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },

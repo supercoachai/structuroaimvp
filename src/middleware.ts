@@ -7,6 +7,8 @@ function isFailOpenPath(pathname: string): boolean {
   if (pathname.startsWith('/auth')) return true
   if (pathname.startsWith('/login')) return true
   if (pathname === '/registreren' || pathname.startsWith('/registreren/')) return true
+  if (pathname === '/onboardingpro' || pathname.startsWith('/onboardingpro/')) return true
+  if (pathname === '/v2' || pathname.startsWith('/v2/')) return true
   if (pathname === '/welkom' || pathname.startsWith('/welkom/')) return true
   if (pathname === '/wachtlijst' || pathname.startsWith('/wachtlijst/')) return true
   if (pathname === '/inschrijven' || pathname.startsWith('/inschrijven/')) return true
