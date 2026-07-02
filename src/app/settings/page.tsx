@@ -27,6 +27,7 @@ import {
 import { detectPushSupport } from '@/lib/pushNotificationSupport';
 import { NotificationsHint } from '@/components/settings/NotificationsHint';
 import { useConsent } from '@/lib/posthog/ConsentContext';
+import { captureClientException } from '@/lib/posthog/captureExceptionClient';
 import CycleSettingsSection from '@/components/cycle/CycleSettingsSection';
 import { isRegistrationCheckoutEnabledClient } from '@/lib/stripe/registrationLaunch';
 import {
@@ -222,12 +223,34 @@ export default function SettingsPage() {
           return;
         }
         if (!res.ok && res.status !== 204) {
+          // De AVG-verwijdering faalde stil (server retourneert JSON, geen throw).
+          // Expliciet vastleggen zodat de mislukking zichtbaar wordt in telemetrie
+          // en te koppelen aan de session replay.
+          let failureCase: string | null = null;
+          try {
+            const body = (await res.json()) as { error?: string };
+            failureCase = typeof body?.error === 'string' ? body.error : null;
+          } catch {
+            /* geen JSON-body: val terug op de HTTP-status */
+          }
+          captureClientException(
+            new Error(`account_delete_failed:${failureCase ?? `http_${res.status}`}`),
+            {
+              route: '/settings',
+              account_delete_failure: failureCase,
+              account_delete_status: res.status,
+            }
+          );
           toast(t('settings.toastDeleteFail'));
           return;
         }
         // Server-data is weg: ruim ook lokale resten op en log uit naar /.
         wipeAllUserData();
-      } catch {
+      } catch (err) {
+        captureClientException(err, {
+          route: '/settings',
+          account_delete_failure: 'network_error',
+        });
         toast(t('settings.toastDeleteFail'));
       } finally {
         setWipeBusy(false);
