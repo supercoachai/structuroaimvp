@@ -4,6 +4,7 @@ import { gateCheckoutServiceRole } from "@/lib/supabase/subscriptionRouteService
 import { CHECKOUT_METADATA_WELCOME_TASK } from "@/lib/onboardingWelcomeTask";
 import { isAllowedStripePriceId } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
+import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
 import {
   getJasperSubscriptionDiscount,
   isJasperSignupSource,
@@ -93,7 +94,7 @@ async function postCreateSession(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("signup_source, subscription_status")
+    .select("signup_source, subscription_status, checkout_bonus_trial_days")
     .eq("id", userId)
     .maybeSingle();
 
@@ -105,7 +106,10 @@ async function postCreateSession(request: Request) {
   // IN DE APP, berekend op profiles.created_at. Wie hier bij de Stripe-checkout
   // komt, is dus altijd door die proeftijd heen en betaalt direct. Geen
   // Stripe-trial meer, anders krijgt iemand een dubbele gratis periode.
-  const trialDays = 0;
+  // Bewuste uitzondering per account: checkout_bonus_trial_days (service_role
+  // only, bv. compensatie na een storing) schuift de eerste betaalde maand op.
+  // De webhook zet de kolom terug naar 0 zodra de checkout is afgerond.
+  const trialDays = readCheckoutBonusTrialDays(profile);
 
   const stripe = createStripeServerClient(key);
   const base = getAppOrigin();

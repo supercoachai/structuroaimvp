@@ -118,6 +118,9 @@ async function postStripeWebhook(request: Request) {
           {
             ...profileFieldsFromStripeSubscription(subscription, customerId),
             subscription_plan: plan,
+            // Bonus-trialdagen zijn eenmalig: verbruikt zodra de checkout een
+            // abonnement heeft opgeleverd (zie checkoutBonusTrialDays.ts).
+            checkout_bonus_trial_days: 0,
           }
         );
 

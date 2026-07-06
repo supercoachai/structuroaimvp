@@ -6,6 +6,7 @@ import {
   STRIPE_PRICE_ID_YEARLY,
 } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
+import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
 import {
   getJasperSubscriptionDiscount,
   isJasperSignupSource,
@@ -81,7 +82,7 @@ async function postCheckout(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("signup_source")
+    .select("signup_source, checkout_bonus_trial_days")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -92,13 +93,16 @@ async function postCheckout(request: Request) {
   const jasperDiscount = getJasperSubscriptionDiscount(signupSource);
   const jasperFlagged = isJasperSignupSource(signupSource);
 
-  /** Herinschrijving na verlopen proefperiode: geen nieuwe trial. */
+  // Herinschrijving na verlopen proefperiode: geen nieuwe trial. Bewuste
+  // uitzondering per account: checkout_bonus_trial_days (service_role only,
+  // bv. compensatie na een storing) schuift de eerste betaalde maand op.
+  // De webhook zet de kolom terug naar 0 na een afgeronde checkout.
   const session = await createSubscriptionCheckoutSession({
     stripe,
     priceId,
     userId: user.id,
     email: user.email,
-    trialDays: 0,
+    trialDays: readCheckoutBonusTrialDays(profile),
     successUrl: `${base}/abonnement?from=stripe`,
     cancelUrl: `${base}/abonnement`,
     metadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
