@@ -315,13 +315,14 @@ export async function updateSession(
   let subscriptionPeriodEnd: string | null | undefined;
   let profileCreatedAt: string | null | undefined;
   let profileSignupSource: string | null | undefined;
+  let profileAppTrialOverrideUntil: string | null | undefined;
   let profileLastSeenAt: string | null | undefined;
 
   if (user) {
     const { data: prof, error: profError } = await supabase
       .from("profiles")
       .select(
-        "onboarding_completed, onboarding_version, password_setup_completed, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source, last_seen_at"
+        "onboarding_completed, onboarding_version, password_setup_completed, last_dagstart_date, subscription_status, subscription_current_period_end, created_at, signup_source, app_trial_override_until, last_seen_at"
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -348,6 +349,10 @@ export async function updateSession(
         prof.created_at != null ? String(prof.created_at) : null;
       profileSignupSource =
         typeof prof.signup_source === "string" ? prof.signup_source : null;
+      profileAppTrialOverrideUntil =
+        prof.app_trial_override_until != null
+          ? String(prof.app_trial_override_until)
+          : null;
       profileLastSeenAt =
         prof.last_seen_at != null ? String(prof.last_seen_at) : null;
     } else {
@@ -554,6 +559,7 @@ export async function updateSession(
         created_at: profileCreatedAt,
         last_dagstart_date: profileLastDagstartDate,
         signup_source: profileSignupSource,
+        app_trial_override_until: profileAppTrialOverrideUntil,
       });
       if (!ok) {
         const url = request.nextUrl.clone();

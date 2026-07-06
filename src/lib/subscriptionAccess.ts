@@ -1,3 +1,4 @@
+import { hasActiveAppTrialOverride } from "./appTrialOverride";
 import { hasLaunchGraceAccess } from "./launchGrace";
 import { hasFreeTrial } from "./freeTrialAccess";
 import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
@@ -44,7 +45,10 @@ export function profileHasAppAccessOrGrace(row: {
   created_at: string | null | undefined;
   last_dagstart_date: string | null | undefined;
   signup_source?: string | null | undefined;
+  app_trial_override_until?: string | null | undefined;
 }): boolean {
+  if (hasActiveAppTrialOverride(row.app_trial_override_until)) return true;
+
   const status = row.subscription_status;
   if (status === "trial_expired") return false;
 

@@ -54,4 +54,16 @@ assert.equal(
   true
 );
 
+assert.equal(
+  profileHasAppAccessOrGrace({
+    subscription_status: "trial_expired",
+    subscription_current_period_end: null,
+    created_at: "2020-01-01T00:00:00.000Z",
+    last_dagstart_date: null,
+    app_trial_override_until: new Date(Date.now() + 86_400_000).toISOString(),
+  }),
+  true,
+  "override actief: toegang ondanks trial_expired"
+);
+
 console.log("subscriptionAccess.test.ts OK");

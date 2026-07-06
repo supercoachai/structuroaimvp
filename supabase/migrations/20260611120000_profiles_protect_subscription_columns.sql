@@ -35,4 +35,4 @@ GRANT UPDATE (
 ) ON public.profiles TO authenticated;
 
 COMMENT ON TABLE public.profiles IS
-  'User profile. Subscription/stripe-kolommen alleen via service_role (webhook/sync).';
+  'User profile. Subscription/stripe-kolommen alleen via service_role (webhook/sync). Kolommen alleen SELECT voor authenticated: app_trial_override_until (zie 20260706160000).';

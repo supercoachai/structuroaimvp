@@ -1,3 +1,4 @@
+import { hasActiveAppTrialOverride } from "@/lib/appTrialOverride";
 import { eventSignupTrialExpired } from "@/lib/eventSignupTrialAccess";
 import { freeTrialExpired } from "@/lib/freeTrialAccess";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
@@ -10,7 +11,10 @@ export function resolveRetentionPaywallReason(row: {
   subscription_current_period_end: string | null | undefined;
   created_at: string | null | undefined;
   signup_source: string | null | undefined;
+  app_trial_override_until?: string | null | undefined;
 }): RetentionPaywallReason | null {
+  if (hasActiveAppTrialOverride(row.app_trial_override_until)) return null;
+
   const status = row.subscription_status;
   if (status === "trial_expired") {
     return "trial_expired";
