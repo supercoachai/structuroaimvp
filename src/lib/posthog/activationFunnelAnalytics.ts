@@ -4,6 +4,7 @@ import type { ServerEventRequestContext } from "./serverEventContext";
 export type ActivationFunnelEventName =
   | "onboarding_started"
   | "onboarding_completed"
+  | "dagstart_started"
   | "dagstart_energy_chosen"
   | "dagstart_completed";
 

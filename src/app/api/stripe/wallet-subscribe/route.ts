@@ -13,6 +13,8 @@ import {
 } from "@/lib/jasper/jasperOffer";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
+import { isStripeInvalidCouponError } from "@/lib/stripe/invalidCouponError";
+import { captureServerException } from "@/lib/posthog/server";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -93,14 +95,34 @@ async function postWalletSubscribe(request: Request) {
   };
   if (jasperFlagged) subscriptionMetadata.jasper_offer = "1";
 
-  const subscription = await stripe.subscriptions.create({
-    customer: customerId,
-    items: [{ price: STRIPE_PRICE_ID_MONTHLY }],
-    default_payment_method: paymentMethodId,
-    metadata: subscriptionMetadata,
-    ...(jasperCoupon ? { discounts: [{ coupon: jasperCoupon }] } : {}),
-    expand: ["latest_invoice.payment_intent"],
-  });
+  const createSubscription = (withCoupon: boolean) =>
+    stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: STRIPE_PRICE_ID_MONTHLY }],
+      default_payment_method: paymentMethodId,
+      metadata: subscriptionMetadata,
+      ...(withCoupon && jasperCoupon
+        ? { discounts: [{ coupon: jasperCoupon }] }
+        : {}),
+      expand: ["latest_invoice.payment_intent"],
+    });
+
+  let subscription;
+  try {
+    subscription = await createSubscription(true);
+  } catch (error) {
+    // Een misconfigureerde coupon mag een betaalde signup nooit blokkeren:
+    // opnieuw zonder korting, en het incident loggen zodat de coupon gefixt wordt.
+    if (jasperCoupon && isStripeInvalidCouponError(error)) {
+      await captureServerException(error, {
+        route: "POST /api/stripe/wallet-subscribe",
+        extra: { coupon_fallback: true, coupon: jasperCoupon },
+      });
+      subscription = await createSubscription(false);
+    } else {
+      throw error;
+    }
+  }
 
   const latestInvoice = subscription.latest_invoice;
   if (

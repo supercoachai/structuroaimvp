@@ -7,6 +7,7 @@ import { ACQUISITION_VISITOR_UUID_RE } from "@/lib/posthog/parseAcquisitionPaylo
 const ALLOWED_EVENTS = new Set<ActivationFunnelEventName>([
   "onboarding_started",
   "onboarding_completed",
+  "dagstart_started",
   "dagstart_energy_chosen",
   "dagstart_completed",
 ]);

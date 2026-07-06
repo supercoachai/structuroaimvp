@@ -2,6 +2,7 @@ import { appEnergyToDagstartId } from "@/components/dagstart/design/types";
 import {
   trackDagstartCompleted,
   trackDagstartEnergyChosen,
+  trackDagstartStarted,
 } from "@/lib/posthog/activationFunnelAnalyticsClient";
 
 type AppEnergy = "low" | "medium" | "high";
@@ -21,6 +22,7 @@ export function captureDagstartEventsFromOnboardingFinish(
   options: { dbPersisted?: boolean } = {}
 ) {
   const dbPersisted = options.dbPersisted === true;
+  trackDagstartStarted("onboarding");
   trackDagstartEnergyChosen({
     energy_level: energy,
     level: appEnergyToDagstartId(energy),

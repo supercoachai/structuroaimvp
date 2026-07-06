@@ -1,6 +1,8 @@
 import type Stripe from "stripe";
 
 import { CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES } from "@/lib/stripe/checkoutPaymentMethods";
+import { isStripeInvalidCouponError } from "@/lib/stripe/invalidCouponError";
+import { captureServerException } from "@/lib/posthog/server";
 
 export type CreateSubscriptionCheckoutInput = {
   stripe: Stripe;
@@ -48,9 +50,9 @@ export async function createSubscriptionCheckoutSession(
         ? `${trialDays} dagen gratis`
         : null;
 
-  const hasDiscount = (input.discounts?.length ?? 0) > 0;
-
-  return input.stripe.checkout.sessions.create({
+  const buildParams = (
+    discounts: Array<{ coupon: string }> | undefined
+  ): Stripe.Checkout.SessionCreateParams => ({
     mode: "subscription",
     payment_method_types: [...CHECKOUT_SUBSCRIPTION_PAYMENT_METHOD_TYPES],
     payment_method_collection: "always",
@@ -61,8 +63,8 @@ export async function createSubscriptionCheckoutSession(
     cancel_url: input.cancelUrl,
     locale: "nl",
     // Stripe staat geen combinatie toe van automatische coupon en promo-code-veld.
-    ...(hasDiscount
-      ? { discounts: input.discounts }
+    ...((discounts?.length ?? 0) > 0
+      ? { discounts }
       : { allow_promotion_codes: true }),
     metadata: {
       supabase_user_id: input.userId,
@@ -80,4 +82,25 @@ export async function createSubscriptionCheckoutSession(
         }
       : {}),
   });
+
+  try {
+    return await input.stripe.checkout.sessions.create(
+      buildParams(input.discounts)
+    );
+  } catch (error) {
+    // Een misconfigureerde coupon (bv. alleen in test mode aangemaakt) mag de
+    // checkout niet blokkeren: opnieuw proberen zonder korting en het incident
+    // wel loggen zodat de coupon gefixt wordt.
+    if ((input.discounts?.length ?? 0) > 0 && isStripeInvalidCouponError(error)) {
+      await captureServerException(error, {
+        route: "createSubscriptionCheckoutSession",
+        extra: {
+          coupon_fallback: true,
+          coupon: input.discounts?.[0]?.coupon,
+        },
+      });
+      return await input.stripe.checkout.sessions.create(buildParams(undefined));
+    }
+    throw error;
+  }
 }

@@ -7,6 +7,7 @@ import {
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
 const ONBOARDING_STARTED_SESSION_KEY = "structuro_onboarding_started_tracked";
+const DAGSTART_STARTED_SESSION_KEY = "structuro_dagstart_started_tracked";
 
 function attributionContext(): Record<string, unknown> {
   const signup_source = getStoredSignupSource();
@@ -86,6 +87,24 @@ export function trackOnboardingCompleted(properties: {
     ...properties,
     source: "onboarding",
   }, { transport: "sendBeacon" });
+}
+
+/**
+ * Start van de dagstart-flow. Sessie-guard voorkomt het oude probleem dat het
+ * event bij elke remount (reload, back-navigatie, parent re-render) opnieuw
+ * vuurde en de ratio dagstart_started/dagstart_completed structureel scheef
+ * stond. Het event verdween per 10 juni (fdb4925) volledig; sindsdien was de
+ * start van de P0-activatiefunnel niet meer meetbaar in PostHog.
+ */
+export function trackDagstartStarted(source: "onboarding" | "app"): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (sessionStorage.getItem(DAGSTART_STARTED_SESSION_KEY) === "1") return;
+    sessionStorage.setItem(DAGSTART_STARTED_SESSION_KEY, "1");
+  } catch {
+    /* sessionStorage geblokkeerd (in-app browsers): liever 1 event te veel dan 0 */
+  }
+  trackActivationFunnelStep("dagstart_started", { source });
 }
 
 export function trackDagstartEnergyChosen(properties: {

@@ -27,6 +27,7 @@ import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import {
   trackDagstartCompleted,
+  trackDagstartStarted,
 } from "@/lib/posthog/activationFunnelAnalyticsClient";
 import { trackDagstartCompletedServerBackup } from "@/lib/posthog/activationAnalyticsClient";
 import { markOnboardingCompleted } from "@/lib/onboardingProfile";
@@ -122,6 +123,7 @@ export default function DagstartFlow({ onComplete }: DagstartFlowProps) {
 
   useEffect(() => {
     trackDagstartOpened();
+    trackDagstartStarted("app");
   }, []);
 
   useEffect(() => {
