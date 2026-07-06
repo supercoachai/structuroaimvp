@@ -6,7 +6,15 @@
 
 export const DEFAULT_STRIPE_TRIAL_DAYS = 3;
 
-/** Whitelist: signup_source → trial-dagen (server-side, geen client-trust). */
+/**
+ * Whitelist: signup_source → trial-dagen (server-side, geen client-trust).
+ *
+ * BELANGRIJK: de cron expire_trials() gebruikt de SQL-spiegel
+ * `profile_has_active_app_trial` in Supabase. Nieuwe bron hier toevoegen =
+ * ook een migratie schrijven die die functie bijwerkt (zie
+ * supabase/migrations/20260706130000_trial_days_jasper_podcast.sql), anders
+ * kapt de cron de trial na de default 3 dagen af.
+ */
 export const EVENT_TRIAL_BY_SIGNUP_SOURCE: Record<
   string,
   { days: number; validUntilYmd?: string }
