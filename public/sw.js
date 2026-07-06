@@ -8,10 +8,13 @@ self.addEventListener("push", function (event) {
   }
   event.waitUntil(
     self.registration.showNotification(data.title || "Structuro", {
-      body: data.body || "Je hebt een melding",
-      icon: "/logo-structuro.png",
-      badge: "/logo-structuro.png",
-      data: { url: data.url || "/shutdown" },
+      body: data.body || "Je hebt een herinnering van Structuro.",
+      icon: "/icons/icon-192x192.png",
+      badge: "/icons/badge-96x96.png",
+      lang: "nl",
+      tag: data.tag || "structuro-reminder",
+      renotify: false,
+      data: { url: data.url || "/" },
       requireInteraction: false,
     })
   );
@@ -20,7 +23,7 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   const raw = event.notification.data && event.notification.data.url;
-  let urlToOpen = "/shutdown";
+  let urlToOpen = "/";
   if (typeof raw === "string" && raw.startsWith("/")) {
     if (raw.startsWith("/shutdown")) {
       urlToOpen = raw.split("#")[0];

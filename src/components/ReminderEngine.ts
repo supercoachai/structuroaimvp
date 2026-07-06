@@ -35,10 +35,12 @@ function notify(payload: any) {
   if ("Notification" in window && Notification.permission === "granted") {
     try {
       const n = new Notification(payload.title || "Structuro", {
-        body: payload.body || "Herinnering",
+        body: payload.body || "Je hebt een herinnering van Structuro.",
         tag: payload.id || undefined,
         silent: false,
-        icon: "/logo-structuro.png",
+        icon: "/icons/icon-192x192.png",
+        badge: "/icons/badge-96x96.png",
+        lang: "nl",
       });
       n.onclick = () => payload.onClick?.();
       
@@ -73,8 +75,8 @@ export function startTask(task: Task) {
   if (activeTaskId && activeTaskId !== task.id) {
     notify({
       id: 'transition:' + activeTaskId,
-      title: '🔄 Taakwissel',
-      body: `Je wisselt naar: ${task.title}. Neem even een moment om te focussen.`,
+      title: 'Taakwissel',
+      body: `Je gaat verder met: ${task.title}.`,
       onClick: () => task.onNavigate?.(task),
     });
   }
@@ -107,8 +109,8 @@ function scheduleComebackReminder(task: Task) {
     if (activeTaskId === task.id) {
       notify({
         id: 'comeback:' + task.id,
-        title: '👋 Kom terug naar je taak',
-        body: `${task.title} wacht op je. Je kunt dit!`,
+        title: 'Je taak staat nog open',
+        body: `${task.title} staat nog open. Ga verder wanneer het jou uitkomt.`,
         onClick: () => task.onNavigate?.(task),
       });
     }
@@ -206,8 +208,8 @@ export function formatWhen(d: Date): string {
 export function scheduleTransitionReminder(fromTask: Task, toTask: Task) {
   notify({
     id: 'transition:' + fromTask.id + '->' + toTask.id,
-    title: '🔄 Tijd voor een nieuwe taak',
-    body: `Je start nu met: ${toTask.title}. Focus!`,
+    title: 'Volgende taak',
+    body: `Je start nu met: ${toTask.title}.`,
     onClick: () => toTask.onNavigate?.(toTask),
   });
 }
@@ -218,8 +220,8 @@ export function testReminder() {
   // Test notificatie
   notify({
     id: 'test',
-    title: 'Test Herinnering',
-    body: 'Dit is een test om te controleren of herinneringen werken!',
+    title: 'Testmelding van Structuro',
+    body: 'Meldingen werken op dit apparaat. Je kunt dit scherm sluiten.',
     onClick: () => console.log('Test reminder clicked!')
   });
   

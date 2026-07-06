@@ -130,15 +130,20 @@ Deno.serve(async (req) => {
     sentTableMissing ? [] : (alreadySentRows ?? []).map((s) => s.user_id)
   );
 
-  // Stuur naar iedereen met push subscriptions die nog geen dagafsluiting heeft
-  // en vandaag nog geen shutdown-reminder heeft ontvangen.
+  // Stuur alleen naar gebruikers die vandaag actief waren (dagstart gedaan),
+  // nog geen dagafsluiting hebben en vandaag nog geen shutdown-reminder kregen.
+  // Bewust smal: dagelijkse pushes naar inactieve gebruikers triggeren
+  // Chrome's notification-spam-detectie en permission-revocation.
   let userIds = [
     ...new Set(
       (allSubs ?? [])
         .map((s) => s.user_id)
         .filter(
           (id): id is string =>
-            Boolean(id) && !shutdownUserIds.has(id) && !alreadySentUserIds.has(id)
+            Boolean(id) &&
+            checkinUserIds.has(id) &&
+            !shutdownUserIds.has(id) &&
+            !alreadySentUserIds.has(id)
         )
     ),
   ];
@@ -208,15 +213,20 @@ Deno.serve(async (req) => {
       );
 
       const payload = JSON.stringify({
-        title: "Dagafsluiting",
-        body: "Neem even 1 minuut. Sluit je dag af en maak je hoofd leeg.",
+        title: "Structuro: dagafsluiting",
+        body: "Je startte vandaag met een dagstart. Sluit je dag rustig af wanneer het jou uitkomt.",
         url: "/shutdown",
+        tag: "structuro-dagafsluiting",
       });
 
       try {
+        // TTL beperkt hoe lang de push server de melding bewaart als het
+        // toestel offline is. Zo komt een avondherinnering niet pas de
+        // volgende ochtend binnen (voelt als spam en is out-of-context).
         const response = await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
+          payload,
+          { TTL: 3600, urgency: "normal" }
         );
         const status = (response as { statusCode?: number } | undefined)?.statusCode ?? 201;
         console.log(
