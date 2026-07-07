@@ -1,23 +1,14 @@
 import posthog from "posthog-js";
 
-/** Bewaart anonieme distinct_id voor cross-sessie merge bij login. */
-export const ANON_DISTINCT_STORAGE_KEY = "structuro_ph_anon_did";
-
-export function persistAnonymousDistinctIdForStitch(): void {
-  if (typeof window === "undefined") return;
-  try {
-    const id = posthog.get_distinct_id?.();
-    if (!id || typeof id !== "string") return;
-    if (id.length < 8) return;
-    localStorage.setItem(ANON_DISTINCT_STORAGE_KEY, id);
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
- * Koppel anonieme acquisitie-events aan de ingelogde user.
- * Volgorde: alias (cross-sessie) → identify (zelfde sessie + person props).
+ * Koppelt de ingelogde user aan PostHog via identify().
+ *
+ * identify() merget de huidige anonieme distinct_id automatisch in user.id
+ * (anoniem → geïdentificeerd) op het moment van login. Een expliciete alias()
+ * is daarmee overbodig én schadelijk: die vuurde op elke auth-state-change,
+ * token-refresh en consent-wijziging opnieuw en produceerde tientallen dubbele
+ * $create_alias-events per sessie. Dat vervuilde de identity-graph en elke
+ * distinct-user-metric. Daarom gebruiken we hier bewust alléén identify().
  */
 export function linkAnonymousDistinctToUser(
   userId: string,
@@ -27,19 +18,6 @@ export function linkAnonymousDistinctToUser(
   if (!userId) return;
 
   try {
-    const stored = localStorage.getItem(ANON_DISTINCT_STORAGE_KEY);
-    const current = posthog.get_distinct_id?.();
-    const anonCandidate =
-      stored && stored !== userId
-        ? stored
-        : current && current !== userId
-          ? current
-          : null;
-
-    if (anonCandidate) {
-      posthog.alias(userId, anonCandidate);
-    }
-
     const personProps = personProperties ?? {};
     if (setOnceProperties && Object.keys(setOnceProperties).length > 0) {
       posthog.identify(userId, personProps, setOnceProperties);
@@ -47,10 +25,6 @@ export function linkAnonymousDistinctToUser(
       posthog.identify(userId, personProps);
     } else {
       posthog.identify(userId);
-    }
-
-    if (anonCandidate) {
-      localStorage.removeItem(ANON_DISTINCT_STORAGE_KEY);
     }
   } catch {
     /* ignore */

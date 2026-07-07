@@ -1,7 +1,6 @@
 import posthog from "posthog-js";
 
 import { readAnalyticsConsentFromStorage } from "./consentStorage";
-import { persistAnonymousDistinctIdForStitch } from "./identityStitch";
 import { shouldSendProductAnalytics } from "@/lib/analyticsInternal";
 
 /**
@@ -114,7 +113,6 @@ export function captureAnonymousEvent(
       transport,
       ...(transport === "sendBeacon" ? { send_instantly: true } : {}),
     });
-    persistAnonymousDistinctIdForStitch();
     debugLog("anonymous", event, "sent", properties);
   } catch {
     debugLog("anonymous", event, "capture-error", properties);
@@ -162,7 +160,6 @@ export function captureMarketingEvent(
       transport,
       ...(transport === "sendBeacon" ? { send_instantly: true } : {}),
     });
-    persistAnonymousDistinctIdForStitch();
     debugLog("marketing", event, "sent", properties);
   } catch {
     debugLog("marketing", event, "capture-error", properties);
