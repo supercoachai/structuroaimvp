@@ -11,7 +11,7 @@ function assertCronAuthorized(request: Request): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-/** Vercel Cron fallback: roept expire_trials() aan (pg_cron kan ontbreken). */
+/** Vercel Cron fallback (pg_cron job `structuro_expire_trials` is primair). */
 export async function GET(request: Request) {
   if (!assertCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

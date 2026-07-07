@@ -1,4 +1,5 @@
 import { PostHog } from "posthog-node";
+import { after } from "next/server";
 
 import { sanitizeExceptionContext } from "./sanitizeExceptionContext";
 import {
@@ -15,11 +16,27 @@ export function getPostHogServerClient(): PostHog | null {
   if (!_client) {
     _client = new PostHog(key, {
       host: "https://eu.i.posthog.com",
-      flushAt: 1,
-      flushInterval: 0,
+      // Batch i.p.v. flush per event: voorkomt AbortError wanneer serverless bevriest.
+      flushAt: 15,
+      flushInterval: 5000,
     });
   }
   return _client;
+}
+
+/** Flush na response (zelfde patroon als schedulePosthogOtelLogFlush). */
+function schedulePostHogServerFlush(client: PostHog): void {
+  try {
+    after(async () => {
+      try {
+        await client.flush();
+      } catch {
+        /* ignore */
+      }
+    });
+  } catch {
+    void client.flush().catch(() => {});
+  }
 }
 
 function getClient(): PostHog | null {
@@ -67,7 +84,7 @@ export async function captureServerException(
 
   try {
     client.captureException(err, distinctId, properties);
-    await client.flush();
+    schedulePostHogServerFlush(client);
   } catch (captureErr) {
     /* Fallback als captureException faalt (bijv. ontbrekende errorPropertiesBuilder na bundling). */
     try {
@@ -118,7 +135,7 @@ export async function captureServerEvent(
         requestContext
       ),
     });
-    await client.flush();
+    schedulePostHogServerFlush(client);
   } catch {
     /* ignore */
   }

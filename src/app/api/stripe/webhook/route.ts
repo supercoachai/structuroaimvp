@@ -56,6 +56,7 @@ async function postStripeWebhook(request: Request) {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid payload";
+    console.warn("[stripe-webhook] signature verification failed", message);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
