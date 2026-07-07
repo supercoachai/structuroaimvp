@@ -69,6 +69,15 @@ export function isJasperSignupSource(
   return normalizeSignupSourceKey(signupSource) === JASPER_SIGNUP_SOURCE;
 }
 
+/** Generieke bronnen die bij OAuth/magic link naar jasper_podcast mogen upgraden. */
+export function isWeakProfileSourceForJasperUpgrade(
+  signupSource: string | null | undefined
+): boolean {
+  const key = normalizeSignupSourceKey(signupSource);
+  if (!key || key === "direct") return true;
+  return key === "structuro_eu" || key === "google";
+}
+
 /**
  * Stripe coupon ID voor de Jasper-korting.
  *

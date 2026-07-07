@@ -11,16 +11,12 @@ import {
 } from "@/lib/auth/anonymousOnboardingEntry";
 import {
   JASPER_LANDING_PATH,
-  JASPER_SIGNUP_CAMPAIGN,
-  JASPER_SIGNUP_SOURCE,
   getJasperOffer,
 } from "@/lib/jasper/jasperOffer";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 import {
-  CAMPAIGN_KEY,
-  SOURCE_KEY,
   applySignupAttributionFromSearchParams,
-  markJasperAttributionPersistent,
+  captureJasperSignupSource,
 } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
 
@@ -63,26 +59,6 @@ function heroLineColor(variant: HeroLineVariant): string {
   if (variant === "soft") return COLOR_TEXT_SOFT;
   if (variant === "accent") return COLOR_TEAL;
   return COLOR_TEXT;
-}
-
-/**
- * Borg dat een bezoek aan /jasper zonder utm in elk geval signup_source=
- * jasper_podcast in sessionStorage zet. URL-params winnen nog steeds: als er
- * al iets staat raken we het niet aan.
- */
-function persistJasperAttributionFallback() {
-  if (typeof window === "undefined") return;
-  try {
-    if (!sessionStorage.getItem(SOURCE_KEY)) {
-      sessionStorage.setItem(SOURCE_KEY, JASPER_SIGNUP_SOURCE);
-    }
-    if (!sessionStorage.getItem(CAMPAIGN_KEY)) {
-      sessionStorage.setItem(CAMPAIGN_KEY, JASPER_SIGNUP_CAMPAIGN);
-    }
-    markJasperAttributionPersistent();
-  } catch {
-    /* private mode of quota: best-effort */
-  }
 }
 
 function formatTrialDuration(trialDays: number): string {
@@ -272,7 +248,7 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
 
   useEffect(() => {
     applySignupAttributionFromSearchParams(searchParams);
-    persistJasperAttributionFallback();
+    captureJasperSignupSource();
   }, [searchParams]);
 
   useEffect(() => {
@@ -292,7 +268,7 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
     });
 
     applySignupAttributionFromSearchParams(searchParams);
-    persistJasperAttributionFallback();
+    captureJasperSignupSource();
 
     if (hasSupabaseAuthHintOnClient()) {
       // Ingelogde bezoeker: laat de middleware (op /onboarding) de juiste

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
 import { parseStAttrFromRequest } from "@/lib/posthog/firstTouchAttribution";
+import {
+  JASPER_SIGNUP_SOURCE,
+  isWeakProfileSourceForJasperUpgrade,
+} from "@/lib/jasper/jasperOffer";
 import { normalizeSignupSourceKey } from "@/lib/stripe/trialConfig";
 import { buildTrustedRedirectUrl, sanitizeNextPath } from "@/lib/safeRedirect";
 import { PASSWORD_RECOVERY_PATH } from "@/lib/auth/passwordResetRedirect";
@@ -180,21 +184,37 @@ export async function GET(request: Request) {
           await markPasswordSetupCompleted(admin, user.id);
 
           // Magic link / OAuth opent vaak een nieuwe tab: sessionStorage is leeg.
-          // Schrijf signup_source uit st_attr cookie als het profiel nog geen bron heeft.
+          // Schrijf signup_source uit st_attr cookie; jasper_podcast mag zwakke
+          // bronnen (structuro_eu, direct) overschrijven.
           const attr = parseStAttrFromRequest(request);
           const attrSource = normalizeSignupSourceKey(attr?.source);
           if (attrSource && attrSource !== "direct") {
             try {
-              await admin
+              const { data: existingProfile } = await admin
                 .from("profiles")
-                .update({
-                  signup_source: attrSource,
-                  ...(attr?.utm_campaign
-                    ? { signup_utm_campaign: attr.utm_campaign }
-                    : {}),
-                })
+                .select("signup_source")
                 .eq("id", user.id)
-                .is("signup_source", null);
+                .maybeSingle();
+              const currentSource = normalizeSignupSourceKey(
+                existingProfile?.signup_source as string | null | undefined
+              );
+              const isJasperAttr = attrSource === JASPER_SIGNUP_SOURCE;
+              const shouldWrite =
+                !currentSource ||
+                (isJasperAttr &&
+                  isWeakProfileSourceForJasperUpgrade(currentSource));
+
+              if (shouldWrite) {
+                await admin
+                  .from("profiles")
+                  .update({
+                    signup_source: attrSource,
+                    ...(attr?.utm_campaign
+                      ? { signup_utm_campaign: attr.utm_campaign }
+                      : {}),
+                  })
+                  .eq("id", user.id);
+              }
             } catch {
               /* niet kritiek voor redirect */
             }

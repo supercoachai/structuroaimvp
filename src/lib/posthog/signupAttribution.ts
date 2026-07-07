@@ -7,11 +7,14 @@ import {
 } from "@/lib/stripe/trialConfig";
 import {
   JASPER_ATTRIBUTION_LS_KEY,
+  JASPER_SIGNUP_CAMPAIGN,
+  JASPER_SIGNUP_SOURCE,
   isJasperSignupSource,
 } from "@/lib/jasper/jasperOffer";
 import {
   captureFirstTouchAttribution,
   readFirstTouchSignupSourceFromCookie,
+  upgradeFirstTouchToJasperIfNeeded,
 } from "@/lib/posthog/firstTouchAttribution";
 
 export const SOURCE_KEY = "signup_source";
@@ -114,6 +117,22 @@ export function getStoredSignupSource(): string {
 export function getResolvedSignupSourceForProfile(): string | null {
   const source = getStoredSignupSource();
   return isMeaningfulSignupSource(source) ? source : null;
+}
+
+/**
+ * Podcast-/jasper-landing: overschrijf zwakke attributie in cookie, session en
+ * localStorage (niet alleen als sessionStorage leeg is).
+ */
+export function captureJasperSignupSource(): void {
+  if (typeof window === "undefined") return;
+  upgradeFirstTouchToJasperIfNeeded();
+  try {
+    sessionStorage.setItem(SOURCE_KEY, JASPER_SIGNUP_SOURCE);
+    sessionStorage.setItem(CAMPAIGN_KEY, JASPER_SIGNUP_CAMPAIGN);
+    markJasperAttributionPersistent();
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Markeer Jasper-bezoek persistent (localStorage), naast cookie/sessionStorage. */

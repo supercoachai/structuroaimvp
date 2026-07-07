@@ -15,6 +15,7 @@ import {
   getJasperSubscriptionDiscount,
   isJasperLandingPath,
   isJasperSignupSource,
+  isWeakProfileSourceForJasperUpgrade,
 } from "./jasperOffer";
 
 assert.equal(JASPER_SIGNUP_SOURCE, "jasper_podcast");
@@ -25,6 +26,8 @@ assert.equal(JASPER_OFFER_REGULAR_AMOUNT_CENTS, 1299);
 assert.equal(JASPER_OFFER_AMOUNT_OFF_CENTS, 500);
 
 assert.equal(isJasperSignupSource("jasper_podcast"), true);
+assert.equal(isWeakProfileSourceForJasperUpgrade("structuro_eu"), true);
+assert.equal(isWeakProfileSourceForJasperUpgrade("adhd_cafe"), false);
 assert.equal(isJasperSignupSource("JASPER_PODCAST"), true);
 assert.equal(isJasperSignupSource("Jasper_Podcast"), true);
 assert.equal(isJasperSignupSource("jasper"), false);

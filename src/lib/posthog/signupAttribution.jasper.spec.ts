@@ -4,12 +4,14 @@ import { JASPER_ATTRIBUTION_LS_KEY, JASPER_SIGNUP_SOURCE } from "@/lib/jasper/ja
 import { ST_ATTR_COOKIE } from "@/lib/posthog/firstTouchAttribution";
 import {
   SOURCE_KEY,
+  captureJasperSignupSource,
   getResolvedSignupSourceForProfile,
   getStoredSignupSource,
   hasJasperAttributionOnClient,
   markJasperAttributionPersistent,
   syncSignupAttributionFromPersistentStorage,
 } from "@/lib/posthog/signupAttribution";
+import { readFirstTouchSignupSourceFromCookie } from "@/lib/posthog/firstTouchAttribution";
 
 function installBrowserStorage() {
   const session = new Map<string, string>();
@@ -91,6 +93,19 @@ describe("signupAttribution jasper", () => {
       JSON.stringify({ source: JASPER_SIGNUP_SOURCE })
     )}`;
 
+    expect(hasJasperAttributionOnClient()).toBe(true);
+  });
+
+  it("captureJasperSignupSource overschrijft structuro_eu in cookie en session", () => {
+    sessionStorage.setItem(SOURCE_KEY, "structuro_eu");
+    document.cookie = `${ST_ATTR_COOKIE}=${encodeURIComponent(
+      JSON.stringify({ source: "structuro_eu", utm_source: "structuro_eu" })
+    )}`;
+
+    captureJasperSignupSource();
+
+    expect(getStoredSignupSource()).toBe(JASPER_SIGNUP_SOURCE);
+    expect(readFirstTouchSignupSourceFromCookie()).toBe(JASPER_SIGNUP_SOURCE);
     expect(hasJasperAttributionOnClient()).toBe(true);
   });
 

@@ -144,11 +144,62 @@ export function readFirstTouchSignupSourceFromCookie(): string | null {
   return parsed.source;
 }
 
+function isWeakFirstTouchSource(source: string | null | undefined): boolean {
+  const key = (source ?? "").trim().toLowerCase();
+  if (!key || key === "direct") return true;
+  return key === "structuro_eu" || key === "google";
+}
+
+/**
+ * Bezoek aan /jasper: upgrade zwakke first-touch (structuro_eu, direct) naar
+ * jasper_podcast. Voorkomt dat een eerdere /start- of homepage-cookie de
+ * podcast-aanbieding blokkeert.
+ */
+export function upgradeFirstTouchToJasperIfNeeded(): boolean {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const existing = parseStAttrCookie(readCookie(ST_ATTR_COOKIE));
+    if (existing?.source === JASPER_SIGNUP_SOURCE) {
+      try {
+        localStorage.setItem(JASPER_ATTRIBUTION_LS_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      return false;
+    }
+    if (existing && !isWeakFirstTouchSource(existing.source)) {
+      return false;
+    }
+
+    const payload: FirstTouchAttribution = {
+      source: JASPER_SIGNUP_SOURCE,
+      utm_source: JASPER_SIGNUP_SOURCE,
+      utm_campaign: JASPER_SIGNUP_CAMPAIGN,
+      utm_medium: "podcast",
+      utm_content: null,
+    };
+    writeCookie(ST_ATTR_COOKIE, JSON.stringify(payload), ST_ATTR_MAX_AGE_SEC);
+    try {
+      localStorage.setItem(JASPER_ATTRIBUTION_LS_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Client first-touch: cookie + sessionStorage (alleen zetten als nog niet bestaat). */
 export function captureFirstTouchAttribution(): void {
   if (typeof window === "undefined") return;
 
   try {
+    if (isJasperLandingPath(window.location.pathname)) {
+      upgradeFirstTouchToJasperIfNeeded();
+    }
+
     const existingCookie = readCookie(ST_ATTR_COOKIE);
     if (existingCookie) {
       const parsed = parseStAttrCookie(existingCookie);
