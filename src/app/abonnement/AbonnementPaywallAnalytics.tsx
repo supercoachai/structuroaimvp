@@ -5,7 +5,7 @@ import { captureProductEvent } from "@/lib/posthog/track";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type AbonnementPaywallAnalyticsProps = {
-  reason: "trial_expired" | "subscription_ended";
+  reason: "trial_active" | "trial_expired" | "subscription_ended";
 };
 
 export function AbonnementPaywallAnalytics({

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
-import { resolveRetentionPaywallReason } from "@/lib/retentionPaywallAccess";
+import { resolveRetentionPaywallReason, resolveActiveTrialDaysLeft } from "@/lib/retentionPaywallAccess";
 import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
 import { isJasperSignupSource } from "@/lib/jasper/jasperOffer";
 import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
@@ -37,7 +37,7 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "signup_source, created_at, subscription_status, subscription_current_period_end, last_dagstart_date"
+      "signup_source, created_at, subscription_status, subscription_current_period_end, last_dagstart_date, app_trial_override_until"
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -50,15 +50,28 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
         subscription_current_period_end:
           profile.subscription_current_period_end as string | null,
         last_dagstart_date: profile.last_dagstart_date as string | null,
+        app_trial_override_until: profile.app_trial_override_until as
+          | string
+          | null,
       }
     : null;
 
   const previewMode =
     forcePreview || isProtectedTestAccount(user.email ?? null);
   const hasAccess = row ? profileHasAppAccess(row) : false;
-  const reason = row
-    ? (resolveRetentionPaywallReason(row) ?? "trial_expired")
+  const resolvedReason = row
+    ? resolveRetentionPaywallReason(row)
     : "trial_expired";
+
+  if (!previewMode && resolvedReason === null) {
+    redirect("/settings");
+  }
+
+  const reason = resolvedReason ?? "trial_expired";
+  const trialDaysLeft =
+    reason === "trial_active" && row
+      ? resolveActiveTrialDaysLeft(row)
+      : undefined;
 
   const signupSource = row?.signup_source ?? null;
   const trialDays = resolveStripeTrialDaysForSignupSource(signupSource);
@@ -74,6 +87,7 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
       <PaywallShell
         reason={reason}
         trialDays={trialDays}
+        trialDaysLeft={trialDaysLeft}
         visibleWallets={visibleWallets}
         jasperOffer={jasperOffer}
         statsSlot={

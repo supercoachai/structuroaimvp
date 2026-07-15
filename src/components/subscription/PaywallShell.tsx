@@ -9,6 +9,8 @@ import { PaywallStatsProvider, usePaywallStats } from "./PaywallStatsContext";
 type PaywallShellProps = {
   reason: RetentionPaywallReason;
   trialDays: number;
+  /** Resterende gratis dagen; relevant bij reason === "trial_active". */
+  trialDaysLeft?: number;
   visibleWallets: WalletKind[];
   statsSlot: ReactNode;
   /** Toon Jasper-podcast-aanbieding (3 maanden korting) in CTA-blok. */
@@ -38,36 +40,58 @@ function PaywallInteractiveWithStats({
 export function PaywallShell({
   reason,
   trialDays,
+  trialDaysLeft,
   visibleWallets,
   statsSlot,
   jasperOffer,
 }: PaywallShellProps) {
-  const kicker =
-    reason === "subscription_ended"
+  const isTrialActive = reason === "trial_active";
+  const daysLeft = trialDaysLeft ?? trialDays;
+
+  const kicker = isTrialActive
+    ? "Je proef loopt nog"
+    : reason === "subscription_ended"
       ? "Je toegang is beëindigd"
       : "Je proefperiode is voorbij";
+
+  const headline = isTrialActive ? (
+    <>
+      Nog {daysLeft} {daysLeft === 1 ? "dag" : "dagen"} gratis
+    </>
+  ) : (
+    <>
+      Dit bouwde je in
+      <br />
+      {trialDays} dagen op.
+    </>
+  );
+
+  const lead = isTrialActive ? (
+    <>
+      Je kunt Structuro nu alvast vastleggen. Dan ga je na je proef gewoon door,
+      zonder onderbreking. Je voortgang blijft staan.
+    </>
+  ) : (
+    <>
+      {trialDays} dagen lang hield Structuro je op koers. Je ritme, je lijsten,
+      je rust: die blijven precies zoals ze nu zijn.{" "}
+      <strong>Stop je vandaag, dan stopt dit ook.</strong>
+    </>
+  );
 
   return (
     <PaywallStatsProvider>
       <main className="screen">
         <section>
           <p className="kicker">{kicker}</p>
-          <h1>
-            Dit bouwde je in
-            <br />
-            {trialDays} dagen op.
-          </h1>
+          <h1>{headline}</h1>
 
           <div className="built">
             <p className="built-label">JOUW STRUCTURO TOT NU TOE</p>
             {statsSlot}
           </div>
 
-          <p className="lead">
-            {trialDays} dagen lang hield Structuro je op koers. Je ritme, je
-            lijsten, je rust: die blijven precies zoals ze nu zijn.{" "}
-            <strong>Stop je vandaag, dan stopt dit ook.</strong>
-          </p>
+          <p className="lead">{lead}</p>
         </section>
 
         <PaywallInteractiveWithStats

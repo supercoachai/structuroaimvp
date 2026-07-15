@@ -72,6 +72,15 @@ export function PaywallInteractive({
     setDoneMode("stop");
   }, []);
 
+  const handleBackToApp = useCallback(() => {
+    router.replace("/");
+  }, [router]);
+
+  const isTrialActive = reason === "trial_active";
+  const primaryLabel = isTrialActive
+    ? "Abonneer nu"
+    : "Ik blijf, behoud mijn systeem";
+
   const doneTitle =
     doneMode === "stop" ? "Helemaal goed." : "Alles blijft staan.";
   const stopText =
@@ -94,7 +103,7 @@ export function PaywallInteractive({
           disabled={busy}
           onClick={() => void startCheckout()}
         >
-          Ik blijf, behoud mijn systeem
+          {primaryLabel}
         </button>
 
         <StripeWalletButtons
@@ -114,7 +123,7 @@ export function PaywallInteractive({
               disabled={busy}
               onClick={() => void startCheckout()}
             >
-              Ik blijf, behoud mijn systeem
+              {primaryLabel}
             </button>
           </div>
         ) : null}
@@ -130,9 +139,15 @@ export function PaywallInteractive({
           <p className="price-sub">€12,99 per maand · maandelijks opzegbaar</p>
         )}
         <div className="secondary">
-          <button type="button" onClick={handleStop}>
-            Nu stoppen
-          </button>
+          {isTrialActive ? (
+            <button type="button" onClick={handleBackToApp}>
+              Terug naar Structuro
+            </button>
+          ) : (
+            <button type="button" onClick={handleStop}>
+              Nu stoppen
+            </button>
+          )}
         </div>
       </section>
 
