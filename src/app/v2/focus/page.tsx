@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import FocusV2Client from "@/components/v2/FocusV2Client";
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function V2FocusPage() {
-  return <FocusV2Client />;
+  return (
+    <Suspense>
+      <FocusV2Client />
+    </Suspense>
+  );
 }

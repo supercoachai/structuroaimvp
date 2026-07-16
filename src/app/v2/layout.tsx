@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { FrisseStartOverlay, V2VisitTracker } from "@/components/v2/FrisseStartOverlay";
+import { V2ReturnReminderScheduler } from "@/components/v2/V2ReturnScheduler";
+import { V2ReturnPermissionPrompt } from "@/components/v2/V2ReturnPermissionPrompt";
 import { V2Provider } from "@/components/v2/V2Context";
 import "@/components/v2/structuro-tokens.css";
 
@@ -17,8 +20,14 @@ export const metadata: Metadata = {
  */
 export default function V2Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="v2-root fixed inset-0 z-[120] min-h-[100dvh] overflow-y-auto overscroll-y-contain">
-      <V2Provider>{children}</V2Provider>
+    <div className="v2-root fixed inset-0 z-[120] flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden overscroll-none">
+      <V2Provider>
+        <V2VisitTracker />
+        <V2ReturnReminderScheduler />
+        <FrisseStartOverlay />
+        <V2ReturnPermissionPrompt />
+        <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
+      </V2Provider>
     </div>
   );
 }

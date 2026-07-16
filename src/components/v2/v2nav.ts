@@ -8,12 +8,16 @@ import { useV2, type V2State } from "./V2Context";
 /** Reset de v2-scrollcontainer naar boven (instant, reduced-motion-veilig). */
 export function scrollV2ToTop() {
   if (typeof window === "undefined") return;
-  const root = document.querySelector<HTMLElement>(".v2-root");
-  if (root) {
-    root.scrollTop = 0;
-    root.scrollLeft = 0;
+  const scrollTargets = [
+    document.querySelector<HTMLElement>(".v2-root main[style*='overflow']"),
+    document.querySelector<HTMLElement>(".v2-root main"),
+    document.querySelector<HTMLElement>(".v2-root"),
+  ];
+  for (const el of scrollTargets) {
+    if (!el) continue;
+    el.scrollTop = 0;
+    el.scrollLeft = 0;
   }
-  // Fallback voor het geval de scroll op window/document ligt.
   window.scrollTo(0, 0);
 }
 

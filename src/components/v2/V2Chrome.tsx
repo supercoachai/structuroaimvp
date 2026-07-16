@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import {
   IconShutdown,
@@ -10,15 +10,66 @@ import {
   IconTarget,
   IconTasks,
 } from "@/components/navigation/mainAppNav";
+
 import { v2ScopedCss, v2Styles } from "./theme";
-import { useV2Go } from "./v2nav";
+
+function IconDump({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 3v12" />
+      <path d="M8 7h8" />
+      <path d="M5 21h14" />
+      <path d="M9 17h6" />
+    </svg>
+  );
+}
+
+function IconSettings({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="M4.93 4.93l1.41 1.41" />
+      <path d="M17.66 17.66l1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="M4.93 19.07l1.41-1.41" />
+      <path d="M17.66 6.34l1.41-1.41" />
+    </svg>
+  );
+}
 
 /** Pagina-omhulsel: prikkelarme achtergrond, een kolom, gedeelde CSS. */
 export function V2Page({ children }: { children: ReactNode }) {
   return (
-    <main style={v2Styles.page}>
+    <main className="v2-page" style={v2Styles.pageScroll}>
       <style>{v2ScopedCss}</style>
-      <div style={v2Styles.shell}>{children}</div>
+      <div className="v2-shell" style={v2Styles.shell}>
+        {children}
+      </div>
     </main>
   );
 }
@@ -75,12 +126,11 @@ function isActiveTab(pathname: string | null, href: string): boolean {
 
 /**
  * v2 bottom-nav in Variant F: cream papier, rustige iconen. Active-tab krijgt
- * de sage-accentkleur (nooit een gevulde knop). "Dagafsluiting" voert
- * shutdown-light uit (tik klaar voor vandaag), geen aparte route.
+ * de sage-accentkleur (nooit een gevulde knop). "Dagafsluiting" opent het
+ * shutdown-ritueel op /v2/shutdown.
  */
 function V2BottomNav() {
   const pathname = usePathname();
-  const go = useV2Go();
 
   const tabs: {
     id: string;
@@ -90,46 +140,40 @@ function V2BottomNav() {
     onClick?: () => void;
   }[] = [
     { id: "home", href: "/v2/home", label: "Start", Icon: IconSun },
+    { id: "dump", href: "/v2/dump", label: "Dump", Icon: IconDump },
     { id: "taken", href: "/v2/todo", label: "Taken", Icon: IconTasks },
     { id: "focus", href: "/v2/focus", label: "Focus", Icon: IconTarget },
     {
       id: "shutdown",
+      href: "/v2/shutdown",
       label: "Dagafsluiting",
       Icon: IconShutdown,
-      onClick: () => go("/v2/home", { todayDone: true }),
     },
   ];
 
   return (
-    <nav
-      className="grid shrink-0 grid-cols-4 px-1.5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2"
-      style={{
-        borderTop: "1px solid var(--border)",
-        background: "var(--surface)",
-      }}
-      aria-label="v2 navigatie"
-    >
+    <nav style={v2Styles.appNav} aria-label="v2 navigatie">
       {tabs.map((tab) => {
         const active = tab.href ? isActiveTab(pathname, tab.href) : false;
-        const color = active ? "var(--accent)" : "var(--text-muted)";
+        const itemStyle: CSSProperties = {
+          ...v2Styles.appNavItem,
+          color: active ? "var(--accent)" : "var(--text-muted)",
+        };
         const Icon = tab.Icon;
         const inner = (
           <>
-            <Icon className="shrink-0" />
-            <span className="w-full text-center text-[10px] font-semibold leading-[1.15] tracking-wide">
-              {tab.label}
+            <span style={v2Styles.appNavIcon}>
+              <Icon />
             </span>
+            <span style={v2Styles.appNavLabel}>{tab.label}</span>
           </>
         );
-        const className =
-          "flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1";
         if (tab.href) {
           return (
             <Link
               key={tab.id}
               href={tab.href}
-              className={className}
-              style={{ color }}
+              style={itemStyle}
               aria-current={active ? "page" : undefined}
             >
               {inner}
@@ -137,13 +181,7 @@ function V2BottomNav() {
           );
         }
         return (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={tab.onClick}
-            className={`${className} border-0 bg-transparent`}
-            style={{ color }}
-          >
+          <button key={tab.id} type="button" onClick={tab.onClick} style={itemStyle}>
             {inner}
           </button>
         );
@@ -161,63 +199,72 @@ function V2BottomNav() {
 export function V2AppShell({
   children,
   scroll = true,
+  bottomSlot,
 }: {
   children: ReactNode;
   scroll?: boolean;
+  /** Soft-prompt boven de bottom-nav (bijv. avondwolkje), buiten de scroll. */
+  bottomSlot?: ReactNode;
 }) {
+  const pathname = usePathname();
+  const onSettings = isActiveTab(pathname, "/v2/settings");
+
   return (
-    <div
-      className="flex h-[100dvh] w-full flex-col"
-      style={{ background: "var(--surface)", color: "var(--text)" }}
-    >
-      <header
-        className="flex w-full shrink-0 items-center justify-between gap-3 px-6 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <Link href="/v2" className="flex min-w-0 items-center gap-2" style={{ textDecoration: "none" }}>
-          <img
-            src="/logo-structuro.png"
-            alt=""
-            className="h-7 w-7 shrink-0 object-contain"
-            width={28}
-            height={28}
-          />
-          <span
-            className="truncate"
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              color: "var(--text)",
-            }}
-          >
-            Structuro
-          </span>
-          <span
-            className="ml-1 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-            style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
-          >
-            v2
-          </span>
-        </Link>
-        <Link href="/v2" className="v2-link">
-          Sluiten
-        </Link>
-      </header>
+    <>
+      <style>{v2ScopedCss}</style>
+      <div style={v2Styles.appPage}>
+        <header
+          style={{
+            ...v2Styles.appHeader,
+            paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))",
+            paddingLeft: 24,
+            paddingRight: 24,
+          }}
+        >
+          <Link href="/v2" style={v2Styles.appShellBrand}>
+            <img
+              src="/logo-structuro.png"
+              alt=""
+              style={v2Styles.appShellLogo}
+              width={28}
+              height={28}
+            />
+            <span style={v2Styles.appShellWordmark}>Structuro</span>
+            <span style={v2Styles.appShellBadge}>v2 test</span>
+          </Link>
+          <div style={v2Styles.appHeaderActions}>
+            <Link
+              href="/v2/settings"
+              className="v2-headerlink"
+              style={{
+                ...v2Styles.appHeaderLink,
+                ...(onSettings ? v2Styles.appHeaderLinkActive : {}),
+              }}
+              aria-label="Instellingen"
+              aria-current={onSettings ? "page" : undefined}
+            >
+              <IconSettings />
+              <span>Instellingen</span>
+            </Link>
+            <Link href="/v2" className="v2-headerlink" style={v2Styles.appHeaderLink}>
+              Sluiten
+            </Link>
+          </div>
+        </header>
 
-      <main
-        className={
-          scroll
-            ? "min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
-            : "flex min-h-0 flex-1 flex-col overflow-hidden"
-        }
-      >
-        {children}
-      </main>
+        <main style={scroll ? v2Styles.appMainScroll : v2Styles.appMainFixed}>
+          {children}
+        </main>
 
-      <V2BottomNav />
-    </div>
+        {bottomSlot ? (
+          <div className="v2-shell-bottom-slot" style={v2Styles.appBottomSlot}>
+            {bottomSlot}
+          </div>
+        ) : null}
+
+        <V2BottomNav />
+      </div>
+    </>
   );
 }
 
@@ -228,9 +275,12 @@ export function V2AppShell({
 export function V2Progress({
   step,
   total,
+  showReassurance = true,
 }: {
   step: number;
   total: number;
+  /** Standaard bij de balk; dagstart zet dit uit en toont V2Reassurance onder het vak. */
+  showReassurance?: boolean;
 }) {
   const pct = Math.round((step / total) * 100);
   return (
@@ -245,11 +295,22 @@ export function V2Progress({
       </div>
       <p style={v2Styles.progressLabel}>
         Stap {step} van {total}
-        <span style={v2Styles.progressHint}>
-          {" "}
-          Stoppen kan altijd, er gaat niets verloren.
-        </span>
+        {showReassurance ? (
+          <span style={v2Styles.progressHint}>
+            {" "}
+            Stoppen kan altijd, er gaat niets verloren.
+          </span>
+        ) : null}
       </p>
     </>
   );
+}
+
+/** Geruststellende regel onder het witte vak (niet in de voortgangsbalk). */
+export function V2Reassurance({
+  children = "Stoppen kan altijd, er gaat niets verloren.",
+}: {
+  children?: ReactNode;
+}) {
+  return <p style={v2Styles.reassuranceBelow}>{children}</p>;
 }

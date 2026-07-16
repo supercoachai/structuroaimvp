@@ -16,11 +16,16 @@ const SURFACES: V2Surface[] = [
   { href: "/v2/onboarding", title: "Onboarding", desc: "De nieuwe, rustige eerste reis." },
   { href: "/v2/home", title: "Home", desc: "Je ene ding van vandaag, met afronden." },
   { href: "/v2/dagstart", title: "Dagstart", desc: "Energie kiezen en een ding pakken." },
-  { href: "/v2/jasper", title: "Jasper-landing", desc: "Variant voor podcastluisteraars." },
-  { href: "/v2/login", title: "Inloggen", desc: "Magic-link-eerst, zonder wachtwoord." },
-  { href: "/v2/register", title: "Account", desc: "Licht en optioneel aanmaken." },
+  { href: "/v2/dump", title: "Dump", desc: "Extern geheugen. Loslaten zonder te vergeten." },
   { href: "/v2/todo", title: "Takenlijst", desc: "Eén lijst, prikkelarm." },
   { href: "/v2/focus", title: "Focus", desc: "Een ding, rustige timer." },
+  { href: "/v2/shutdown", title: "Dagafsluiting", desc: "De lus dichtdoen. Leeg mag ook." },
+  { href: "/v2/settings", title: "Instellingen", desc: "Reminders, tour, data. Alles opt-in." },
+  { href: "/v2/install", title: "Installeren", desc: "Beginscherm-hint voor mobiel." },
+  { href: "/v2/abonnement", title: "Abonnement", desc: "Paywall in v2-stijl." },
+  { href: "/v2/jasper", title: "Jasper-landing", desc: "Variant voor podcastluisteraars." },
+  { href: "/v2/login", title: "Inloggen", desc: "Preview: magic-link-flow, geen echte auth." },
+  { href: "/v2/register", title: "Account", desc: "Preview: licht aanmaken, lokaal." },
 ];
 
 export default function V2EntryPage() {
@@ -37,10 +42,10 @@ export default function V2EntryPage() {
           nodig, niets gaat kapot. Begin gewoon en stop wanneer je wilt.
         </p>
         <div style={v2Styles.actions}>
-          <Link href="/v2/onboarding" className="v2-cta" style={v2Styles.cta}>
+          <Link href="/v2/onboarding" className="btn-primary">
             Start de reis
           </Link>
-          <Link href="/v2/home" className="v2-secondary" style={v2Styles.ctaSecondary}>
+          <Link href="/v2/home" className="btn-ghost">
             Toon volledige app
           </Link>
           <p style={{ ...v2Styles.body, fontSize: 13, textAlign: "center" }}>

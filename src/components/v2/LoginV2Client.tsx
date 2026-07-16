@@ -22,6 +22,7 @@ export default function LoginV2Client() {
       <V2Header exitHref="/v2" />
 
       <section className="v2-fade" style={v2Styles.card} aria-live="polite">
+        <p className="v2-preview-badge">Preview · geen echte login</p>
         <p style={v2Styles.kicker}>Welkom terug</p>
         <h1 style={v2Styles.title}>Inloggen bij Structuro</h1>
 
@@ -29,7 +30,8 @@ export default function LoginV2Client() {
           <>
             <p style={v2Styles.body}>
               Geen wachtwoord nodig. Vul je e-mail in, dan sturen we je een link om
-              direct binnen te komen.
+              direct binnen te komen. In deze testomgeving is dat alleen een
+              voorbeeldflow.
             </p>
             <label htmlFor="v2-login-email" style={v2Styles.srOnly}>
               Je e-mailadres
@@ -38,20 +40,14 @@ export default function LoginV2Client() {
               id="v2-login-email"
               type="email"
               inputMode="email"
-              className="v2-input"
-              style={v2Styles.input}
+              className="v2-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="jij@voorbeeld.nl"
               autoComplete="email"
             />
             <div style={v2Styles.actions}>
-              <button
-                type="button"
-                className="v2-cta"
-                style={v2Styles.cta}
-                onClick={sendLink}
-              >
+              <button type="button" className="btn-primary w-full" onClick={sendLink}>
                 Stuur me een inloglink
               </button>
             </div>
@@ -66,18 +62,12 @@ export default function LoginV2Client() {
             <div style={v2Styles.actions}>
               <button
                 type="button"
-                className="v2-cta"
-                style={v2Styles.cta}
+                className="btn-ghost w-full"
                 onClick={() => router.push("/v2/home")}
               >
                 Doorgaan als testgebruiker
               </button>
-              <button
-                type="button"
-                className="v2-textlink"
-                style={v2Styles.skipLink}
-                onClick={() => setLinkSent(false)}
-              >
+              <button type="button" className="v2-link" onClick={() => setLinkSent(false)}>
                 Ander e-mailadres
               </button>
             </div>
@@ -85,7 +75,7 @@ export default function LoginV2Client() {
         )}
 
         <div style={{ ...v2Styles.softActions, marginTop: 8 }}>
-          <Link href="/v2/register" className="v2-textlink" style={v2Styles.textlink}>
+          <Link href="/v2/register" className="v2-link">
             Nog geen account? Maak er rustig een aan.
           </Link>
         </div>

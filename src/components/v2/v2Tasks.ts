@@ -10,6 +10,11 @@
 export type V2Repeat = "none" | "daily" | "weekdays" | "weekly" | "interval";
 export type V2Priority = 1 | 2 | 3 | null;
 export type V2TaskEnergy = "low" | "medium" | "high" | null;
+export type V2DurationBucket = "short" | "medium" | "long" | null;
+
+/** Speciale waarde: taak verborgen tot handmatig wakker. */
+export const V2_SNOOZE_REST = "rest" as const;
+export type V2SnoozeUntil = string | typeof V2_SNOOZE_REST | null;
 
 export type V2MicroStep = { id: string; title: string; done: boolean };
 
@@ -25,6 +30,14 @@ export type V2Task = {
   priority: V2Priority;
   energy: V2TaskEnergy;
   microSteps: V2MicroStep[];
+  /** Optioneel: waarom deze taak ertoe doet. */
+  why: string | null;
+  /** Optioneel: wat afronden oplevert. */
+  outcome: string | null;
+  /** Verborgen tot dit tijdstip, of 'rest' voor laat rusten. */
+  snoozeUntil: V2SnoozeUntil;
+  /** Optionele duur-bak voor focus-suggesties (geen minuten). */
+  durationBucket: V2DurationBucket;
   createdAt: string;
 };
 
@@ -83,8 +96,22 @@ function normalizeTask(raw: unknown): V2Task {
             done: s.done === true,
           }))
       : [],
+    why: typeof t.why === "string" && t.why.trim().length > 0 ? t.why.trim() : null,
+    outcome:
+      typeof t.outcome === "string" && t.outcome.trim().length > 0 ? t.outcome.trim() : null,
+    snoozeUntil: normalizeSnoozeUntil(t.snoozeUntil),
+    durationBucket:
+      t.durationBucket === "short" || t.durationBucket === "medium" || t.durationBucket === "long"
+        ? t.durationBucket
+        : null,
     createdAt: typeof t.createdAt === "string" ? t.createdAt : new Date().toISOString(),
   };
+}
+
+function normalizeSnoozeUntil(v: unknown): V2SnoozeUntil {
+  if (v === V2_SNOOZE_REST) return V2_SNOOZE_REST;
+  if (typeof v === "string" && v.length > 0) return v;
+  return null;
 }
 
 function isRepeat(v: unknown): v is V2Repeat {
@@ -108,6 +135,10 @@ export function emptyDraft(): V2Task {
     priority: null,
     energy: null,
     microSteps: [],
+    why: null,
+    outcome: null,
+    snoozeUntil: null,
+    durationBucket: null,
     createdAt: new Date().toISOString(),
   };
 }
@@ -200,6 +231,40 @@ export const V2_ENERGY_TASK_OPTIONS: { value: V2TaskEnergy; label: string }[] = 
   { value: "medium", label: "Normaal" },
   { value: "high", label: "Hoog" },
 ];
+
+export const V2_DURATION_BUCKET_OPTIONS: { value: V2DurationBucket; label: string }[] = [
+  { value: null, label: "Geen" },
+  { value: "short", label: "Kort" },
+  { value: "medium", label: "Middel" },
+  { value: "long", label: "Lang" },
+];
+
+/** Of een taak nu zichtbaar is (niet gesnoozed). */
+export function isV2TaskVisible(task: V2Task, now = Date.now()): boolean {
+  if (task.done) return true;
+  if (!task.snoozeUntil) return true;
+  if (task.snoozeUntil === V2_SNOOZE_REST) return false;
+  const until = new Date(task.snoozeUntil).getTime();
+  if (Number.isNaN(until)) return true;
+  return now >= until;
+}
+
+/** ISO-timestamp voor snooze-opties. */
+export function v2SnoozeUntilEvening(now = new Date()): string {
+  const d = new Date(now);
+  d.setHours(18, 0, 0, 0);
+  if (d.getTime() <= now.getTime()) {
+    d.setDate(d.getDate() + 1);
+  }
+  return d.toISOString();
+}
+
+export function v2SnoozeUntilTomorrowMorning(now = new Date()): string {
+  const d = new Date(now);
+  d.setDate(d.getDate() + 1);
+  d.setHours(8, 0, 0, 0);
+  return d.toISOString();
+}
 
 export function priorityLabel(p: V2Priority): string | null {
   if (p === 1) return "Prioriteit: laag";
