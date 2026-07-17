@@ -1080,3 +1080,96 @@
   color: var(--accent);
   font-weight: 500;
 }
+
+/* Zelf-swipen: v1-deck feel in Variant F (swipe + klik). */
+.v2-root .v2-swipe-deck {
+  position: relative;
+  width: 100%;
+  margin: 8px 0 4px;
+}
+.v2-root .v2-swipe-deck__shadow {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  bottom: 28px;
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--lift);
+  opacity: 0.55;
+  z-index: 0;
+}
+.v2-root .v2-swipe-deck__hints {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 4px 0;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.v2-root .v2-swipe-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-height: 200px;
+  padding: 20px 18px 16px;
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--lift);
+}
+.v2-root .v2-swipe-card__eyebrow {
+  margin: 0;
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v2-root .v2-swipe-card__title {
+  margin: 0;
+  font-size: var(--fs-title);
+  line-height: var(--lh-tight);
+  color: var(--text);
+}
+.v2-root .v2-swipe-card__badge {
+  position: absolute;
+  top: 14px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-on-ink);
+  background: var(--ink);
+  box-shadow: 0 4px 10px -2px rgba(26, 35, 64, 0.2);
+  pointer-events: none;
+}
+.v2-root .v2-swipe-card__badge--keep {
+  left: 14px;
+  background: var(--accent);
+  transform: rotate(-6deg);
+}
+.v2-root .v2-swipe-card__badge--skip {
+  right: 14px;
+  background: var(--text-muted);
+  transform: rotate(6deg);
+}
+.v2-root .v2-swipe-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.v2-root .v2-swipe-card__actions .btn-ghost,
+.v2-root .v2-swipe-card__actions .btn-primary {
+  flex: 1;
+  min-height: 44px;
+}

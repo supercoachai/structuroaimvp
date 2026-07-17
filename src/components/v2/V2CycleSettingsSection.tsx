@@ -166,10 +166,6 @@ export default function V2CycleSettingsSection({
 
       {consentOn ? (
         <div style={v2Styles.settingsExpanded}>
-          <p style={{ ...v2Styles.settingsHint, margin: 0 }}>
-            Lokaal opgeslagen in deze testomgeving. Sync naar Supabase komt in productie.
-          </p>
-
           <div style={v2Styles.settingsInnerCard}>
             <p style={settingsFieldLabel}>{t("cycle.settingsPeriodLabel")}</p>
             {periodDisplay ? (

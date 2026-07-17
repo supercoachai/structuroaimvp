@@ -31,6 +31,7 @@ import { getV2CycleEnergyHint } from "./v2CycleHint";
 import V2CycleChip, { ensureV2CyclePeriodStart, useV2CycleChip } from "./V2CycleChip";
 import V2PickWho from "./V2PickWho";
 import V2EnergyStep, { v2GreetingWord } from "./V2EnergyStep";
+import V2SwipeDeck from "./V2SwipeDeck";
 import {
   trackV2CycleHintShown,
   trackV2DagstartComplete,
@@ -317,16 +318,26 @@ export default function DagstartV2Client() {
           />
         ) : null}
 
-        {phase === "thing" ? (
+        {phase === "thing" && !suggestedByStructuro ? (
+          <V2SwipeDeck
+            suggestions={suggestions}
+            maxSlots={maxSlots}
+            initialKept={selectedThings}
+            onDone={finishThings}
+            onCustom={() => {
+              setCustomThing("");
+              goTo("thing_custom");
+            }}
+            onSkipAll={skipThings}
+          />
+        ) : null}
+
+        {phase === "thing" && suggestedByStructuro ? (
           <>
             <V2Eyebrow>Vandaag</V2Eyebrow>
             <h1 style={v2Styles.title}>{v2ThingTitle(maxSlots)}</h1>
             <p style={v2Styles.body}>
-              {suggestedByStructuro
-                ? "Structuro koos dit bij jouw energie. Pas aan of bevestig."
-                : maxSlots === 1
-                  ? "Voorgekauwd op je energie. Tik op wat past."
-                  : "Tik om te kiezen. Tik nogmaals om af te vinken."}
+              Structuro koos dit bij jouw energie. Pas aan of bevestig.
             </p>
             {counter ? (
               <p style={{ ...v2Styles.body, marginTop: -4, color: "var(--text-muted)" }}>

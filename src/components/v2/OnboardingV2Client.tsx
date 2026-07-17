@@ -28,6 +28,7 @@ import {
 import V2CycleChip, { useV2CycleChip } from "./V2CycleChip";
 import V2PickWho from "./V2PickWho";
 import V2EnergyStep, { v2GreetingWord } from "./V2EnergyStep";
+import V2SwipeDeck from "./V2SwipeDeck";
 
 type Phase =
   | "welcome"
@@ -274,15 +275,25 @@ export default function OnboardingV2Client() {
           />
         )}
 
-        {phase === "thing" && (
+        {phase === "thing" && !suggestedByStructuro ? (
+          <V2SwipeDeck
+            suggestions={suggestions}
+            maxSlots={maxSlots}
+            initialKept={selectedThings}
+            onDone={finishThings}
+            onCustom={() => {
+              setCustomThing("");
+              goTo("thing_custom");
+            }}
+            onSkipAll={skipThings}
+          />
+        ) : null}
+
+        {phase === "thing" && suggestedByStructuro ? (
           <>
             <h1 style={v2Styles.title}>{v2ThingTitle(maxSlots)}</h1>
             <p style={v2Styles.body}>
-              {suggestedByStructuro
-                ? "Structuro koos dit bij jouw energie. Pas aan of bevestig."
-                : maxSlots === 1
-                  ? "Tik op wat past. Meer hoeft niet."
-                  : "Tik om te kiezen. Tik nogmaals om af te vinken."}
+              Structuro koos dit bij jouw energie. Pas aan of bevestig.
             </p>
             {counter ? (
               <p style={{ ...v2Styles.body, marginTop: -4, color: "var(--text-muted)" }}>
@@ -338,7 +349,7 @@ export default function OnboardingV2Client() {
               </button>
             </div>
           </>
-        )}
+        ) : null}
 
         {phase === "thing_custom" && (
           <>
@@ -370,8 +381,10 @@ export default function OnboardingV2Client() {
 
         {phase === "why_intro" && (
           <>
-            <p style={v2Styles.kicker}>Mag ik je iets vragen? Je mag overslaan.</p>
-            <h1 style={v2Styles.title}>Waarvoor doe je dit eigenlijk?</h1>
+            <p style={v2Styles.kicker}>
+              Optioneel. Zo weet Structuro waarvoor jij dit doet.
+            </p>
+            <h1 style={v2Styles.title}>Waarvoor doe je dit?</h1>
             <p style={v2Styles.body}>Kort, in je eigen woorden. Dit blijft van jou.</p>
             <label htmlFor="v2-why" style={v2Styles.srOnly}>
               Waarvoor doe je dit
