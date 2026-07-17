@@ -19,6 +19,10 @@ export async function performClientLogout(router: RouterLike): Promise<void> {
   }
   try {
     const { default: posthog } = await import("posthog-js");
+    const { clearIdentityStitchOnLogout } = await import(
+      "@/lib/posthog/identityStitch"
+    );
+    clearIdentityStitchOnLogout();
     posthog.reset();
   } catch {
     /* ignore */

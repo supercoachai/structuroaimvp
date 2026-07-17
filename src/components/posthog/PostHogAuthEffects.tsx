@@ -14,7 +14,10 @@ import {
   persistSignupAttributionToProfile,
 } from "@/lib/posthog/signupAttribution";
 import { getFirstTouchSetOnceForPostHog } from "@/lib/posthog/firstTouchAttribution";
-import { linkAnonymousDistinctToUser } from "@/lib/posthog/identityStitch";
+import {
+  clearIdentityStitchOnLogout,
+  linkAnonymousDistinctToUser,
+} from "@/lib/posthog/identityStitch";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
 function signupDoneKey(uid: string) {
@@ -90,6 +93,7 @@ export function PostHogAuthEffects() {
 
         if (isAnalyticsExcludedEmail(user.email ?? null)) {
           try {
+            clearIdentityStitchOnLogout();
             posthog.reset();
           } catch {
             /* ignore */
@@ -98,13 +102,10 @@ export function PostHogAuthEffects() {
         }
 
         // Funnel-event vóór identify: signup_completed vuurt zo nog met de
-        // anonieme distinct_id (019e...) en sluit aan op de acquisitie-events.
-        // De identity-stitch hieronder aliast/merget die anonieme persoon
-        // daarna in user.id, dus het event blijft gekoppeld aan de account.
+        // anonieme distinct_id en sluit aan op acquisitie-events. identify()
+        // merget die daarna in user.id (zonder herhaald alias()).
         tryCaptureSignup(user);
 
-        // Identity-stitch: altijd user.id koppelen (ook vóór analytics-consent),
-        // e-mail alleen bij expliciete toestemming.
         try {
           const personProps: Record<string, unknown> = {};
           if (consent === "granted" && user.email) {
@@ -123,12 +124,15 @@ export function PostHogAuthEffects() {
       const { data } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_OUT") {
           try {
+            clearIdentityStitchOnLogout();
             posthog.reset();
           } catch {
             /* ignore */
           }
           return;
         }
+        // TOKEN_REFRESHED vuurt vaak; identity hoeft daar niet opnieuw.
+        if (event === "TOKEN_REFRESHED") return;
         applySession(session);
       });
       subscription = data.subscription;
