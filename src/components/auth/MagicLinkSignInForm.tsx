@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { sendLoginMagicLink } from "@/lib/auth/socialSignIn";
+import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 
 type MagicLinkSignInFormProps = {
   disabled?: boolean;
@@ -50,6 +53,14 @@ export function MagicLinkSignInForm({
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
+  const {
+    enabled: captchaEnabled,
+    captchaRef,
+    setCaptchaToken,
+    resetCaptcha,
+    resolveCaptchaToken,
+    captchaReady,
+  } = useAuthCaptcha();
 
   if (sentEmail) {
     return (
@@ -79,6 +90,11 @@ export function MagicLinkSignInForm({
       onError?.(t("login.emailRequired"));
       return;
     }
+    const captchaToken = resolveCaptchaToken();
+    if (captchaEnabled && !captchaToken) {
+      onError?.(t("login.errCaptcha"));
+      return;
+    }
     setBusy(true);
     try {
       const supabase = createClient();
@@ -86,11 +102,13 @@ export function MagicLinkSignInForm({
         onError?.(t("login.noServer"));
         return;
       }
-      await sendLoginMagicLink(supabase, trimmed, nextPath);
+      await sendLoginMagicLink(supabase, trimmed, nextPath, captchaToken);
       setSentEmail(trimmed);
+      resetCaptcha();
     } catch (err) {
       const raw = err instanceof Error ? err.message : t("login.sendFailed");
-      onError?.(mapMagicLinkLoginError(raw, t));
+      onError?.(mapMagicLinkLoginError(mapAuthCaptchaError(raw, t), t));
+      resetCaptcha();
     } finally {
       setBusy(false);
     }
@@ -107,9 +125,16 @@ export function MagicLinkSignInForm({
         placeholder={t("login.emailPh")}
         autoComplete="email"
       />
+      <AuthCaptcha
+        ref={captchaRef}
+        onVerify={setCaptchaToken}
+        onExpire={() => setCaptchaToken(null)}
+        onError={() => setCaptchaToken(null)}
+        className="flex justify-center"
+      />
       <button
         type="button"
-        disabled={disabled || busy}
+        disabled={disabled || busy || !captchaReady}
         onClick={() => void handleSend()}
         className={ghostBtnClass}
       >

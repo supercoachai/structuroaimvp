@@ -13,8 +13,11 @@ import { signUpWithEmailPassword } from "@/lib/auth/emailPasswordSignUp";
 import { isProviderNotEnabledError, startOAuthSignIn } from "@/lib/auth/socialSignIn";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { mapAuthCaptchaError } from "@/lib/auth/captcha";
+import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 import {
   getResolvedSignupSourceForProfile,
   getSignupAttributionSource,
@@ -119,6 +122,14 @@ export function AccountSignUpOptions({
   const [password, setPassword] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailConfirmPending, setEmailConfirmPending] = useState<string | null>(null);
+  const {
+    enabled: captchaEnabled,
+    captchaRef,
+    setCaptchaToken,
+    resetCaptcha,
+    resolveCaptchaToken,
+    captchaReady,
+  } = useAuthCaptcha();
 
   // Naam mag alleen verborgen worden als er daadwerkelijk een vooraf gevraagde
   // naam beschikbaar is. Anders (bijv. directe entry op /registreren zonder
@@ -204,6 +215,11 @@ export function AccountSignUpOptions({
       onError?.(t("registrerenPage.errPasswordWeak"));
       return;
     }
+    const captchaToken = resolveCaptchaToken();
+    if (captchaEnabled && !captchaToken) {
+      onError?.(t("login.errCaptcha"));
+      return;
+    }
 
     setEmailBusy(true);
     try {
@@ -219,22 +235,26 @@ export function AccountSignUpOptions({
         fullName: nameTrimmed,
         signupSource: getResolvedSignupSourceForProfile(),
         signupCampaign: getStoredSignupCampaign(),
+        captchaToken,
       });
 
       if (result.needsEmailConfirmation) {
         setEmailConfirmPending(emailTrimmed);
+        resetCaptcha();
         return;
       }
 
       await supabase.auth.getSession();
       await finishSession(result.userId, result.email ?? emailTrimmed);
+      resetCaptcha();
     } catch (err) {
       const raw = err instanceof Error ? err.message : t("registrerenPage.errGeneric");
       if (raw.toLowerCase().includes("already registered")) {
         onError?.(t("registrerenPage.errEmailInUse"));
       } else {
-        onError?.(raw);
+        onError?.(mapAuthCaptchaError(raw, t));
       }
+      resetCaptcha();
     } finally {
       setEmailBusy(false);
     }
@@ -340,9 +360,16 @@ export function AccountSignUpOptions({
               placeholder={t("registrerenPage.passwordPh")}
             />
           </div>
+          <AuthCaptcha
+            ref={captchaRef}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+            className="flex justify-center"
+          />
           <button
             type="button"
-            disabled={disabled || emailBusy || busyOAuth !== null}
+            disabled={disabled || emailBusy || busyOAuth !== null || !captchaReady}
             onClick={() => void handleEmailSignUp()}
             className={primaryBtnClass(visual)}
           >

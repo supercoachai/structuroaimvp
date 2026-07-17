@@ -260,6 +260,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimitEmail:
         "Er zijn te veel herstel-mails verstuurd. Wacht ongeveer een uur en probeer het daarna nog een keer.",
       errRateLimit: "Te veel verzoeken. Probeer het later opnieuw.",
+      errCaptcha: "Bevestig dat je geen robot bent en probeer het opnieuw.",
       checkoutReturnHint:
         "Je betaling is gelukt. Log in om verder te gaan met je account.",
       magicLinkToggle: "Inloggen met e-maillink",
@@ -833,6 +834,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       errRateLimitEmail:
         "Too many reset emails were sent. Wait about an hour, then try once more.",
       errRateLimit: "Too many requests. Try again later.",
+      errCaptcha: "Confirm you are not a robot and try again.",
       checkoutReturnHint:
         "Your payment went through. Sign in to continue with your account.",
       magicLinkToggle: "Sign in with email link",

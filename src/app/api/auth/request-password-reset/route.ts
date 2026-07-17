@@ -37,6 +37,14 @@ async function postRequestPasswordReset(request: Request) {
       ? (body as { email: string }).email
       : null;
 
+  const captchaToken =
+    body &&
+    typeof body === "object" &&
+    "captchaToken" in body &&
+    typeof (body as { captchaToken?: unknown }).captchaToken === "string"
+      ? (body as { captchaToken: string }).captchaToken.trim()
+      : undefined;
+
   if (!email?.trim()) {
     return NextResponse.json({ ok: false, error: "invalid_email" }, { status: 400 });
   }
@@ -48,6 +56,7 @@ async function postRequestPasswordReset(request: Request) {
       email,
       redirectTo,
       clientIp,
+      captchaToken,
     });
 
     if (!result.ok) {

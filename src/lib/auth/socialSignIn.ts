@@ -43,7 +43,8 @@ export async function startOAuthSignIn(
 export async function sendLoginMagicLink(
   supabase: SupabaseClient,
   email: string,
-  nextPath = "/onboarding"
+  nextPath = "/onboarding",
+  captchaToken?: string
 ): Promise<void> {
   const normalized = normalizeSignupEmail(email);
   if (!normalized) {
@@ -52,6 +53,7 @@ export async function sendLoginMagicLink(
   const { error } = await supabase.auth.signInWithOtp({
     email: normalized,
     options: {
+      ...(captchaToken ? { captchaToken } : {}),
       shouldCreateUser: false,
       emailRedirectTo: buildAuthCallbackUrl(nextPath),
     },

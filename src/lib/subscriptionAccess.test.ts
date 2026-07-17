@@ -66,4 +66,16 @@ assert.equal(
   "override actief: toegang ondanks trial_expired"
 );
 
+assert.equal(
+  profileHasAppAccessOrGrace({
+    email: "info@structuro.eu",
+    subscription_status: "trial_expired",
+    subscription_current_period_end: null,
+    created_at: "2020-01-01T00:00:00.000Z",
+    last_dagstart_date: null,
+  }),
+  true,
+  "intern teamaccount: toegang ondanks trial_expired"
+);
+
 console.log("subscriptionAccess.test.ts OK");

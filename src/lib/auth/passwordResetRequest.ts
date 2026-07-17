@@ -69,6 +69,7 @@ export async function requestPasswordResetEmail(input: {
   email: string;
   redirectTo: string;
   clientIp?: string | null;
+  captchaToken?: string;
 }): Promise<
   | { ok: false; error: "invalid_email" | "not_configured" }
   | PasswordResetRequestResult
@@ -92,6 +93,7 @@ export async function requestPasswordResetEmail(input: {
 
   const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
     redirectTo: input.redirectTo,
+    ...(input.captchaToken ? { captchaToken: input.captchaToken } : {}),
   });
 
   if (error) {

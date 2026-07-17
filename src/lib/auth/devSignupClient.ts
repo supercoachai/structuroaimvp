@@ -7,6 +7,7 @@ type SignUpParams = {
   fullName: string;
   signupSource?: string | null;
   signupCampaign?: string | null;
+  captchaToken?: string;
 };
 
 export type SignUpResult =
@@ -69,6 +70,7 @@ export async function signUpPasswordlessWithLocalDevFallback(
   const { error } = await supabase.auth.signInWithOtp({
     email: params.email,
     options: {
+      ...(params.captchaToken ? { captchaToken: params.captchaToken } : {}),
       shouldCreateUser: true,
       emailRedirectTo: buildAuthCallbackUrl(),
       data: metadata,

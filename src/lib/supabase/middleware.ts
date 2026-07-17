@@ -17,6 +17,7 @@ import {
   requiresPaidSubscriptionBeforeOnboarding,
 } from "../registrationGate";
 import { isProtectedTestAccount } from "../protectedTestAccount";
+import { isInternalTeamAccount } from "../internalTeamAccount";
 import { isPasswordRecoverySetupPath } from "../auth/passwordResetRedirect";
 import {
   isPasswordCreatePath,
@@ -551,9 +552,11 @@ export async function updateSession(
       !isMiddlewareSubscriptionPaywallEnabled() ||
       process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1" ||
       isProtectedTestAccount(user.email ?? null) ||
+      isInternalTeamAccount(user.email ?? null) ||
       canAccessWithoutActiveSubscription(pathname);
     if (!skipPaidGate) {
       const ok = profileHasAppAccessOrGrace({
+        email: user.email ?? null,
         subscription_status: subscriptionStatus,
         subscription_current_period_end: subscriptionPeriodEnd,
         created_at: profileCreatedAt,

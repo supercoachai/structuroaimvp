@@ -47,6 +47,7 @@
     "jarvis": "node --env-file=.env.local jarvis/server.mjs"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@heroicons/react": "^2.2.0",
     "@opentelemetry/api-logs": "^0.217.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.217.0",

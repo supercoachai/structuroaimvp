@@ -18,12 +18,23 @@ Structuro MVP: Next.js 15 (App Router) + React 19 + TypeScript, met Supabase (au
 | Doel | Commando |
 |---|---|
 | Dev-server (poort 3000) | `npm run dev` |
+| Dev na cache-problemen | `npm run dev:clean` |
 | Unit tests | `npm test` |
 | Unit + legacy tests | `npm run test:all` |
 | Build | `npm run build` |
 | Lint | `npm run lint` |
 | Volledige app-verify (build + routes + chunks) | `npm run verify` |
 | Snelle verify (dev-server draait al) | `npm run verify:quick` |
+
+## Local dev: cache-hygiëne
+
+`npm run build` en `npm run verify` draaien **prebuild → `rm -rf .next`**. Doe dat **niet** terwijl `next dev` draait: de dev-server deelt dezelfde `.next`-map en krijgt dan 500's (`ENOENT` manifests, `Cannot find module './1331.js'`, webpack `__webpack_modules__ is not a function`, CSS 404's).
+
+**Regels voor agents:**
+
+1. Stop dev vóór `npm run build` of `npm run verify`, of gebruik alleen `npm run verify:quick` als dev al draait.
+2. Na build+dev overlap: `npm run dev:clean` (kill poort 3000, schone `.next`, herstart dev).
+3. Geen codebug in v2-componenten aannemen bij deze symptomen; eerst cache/processen checken.
 
 ## Verplichte werkwijze
 

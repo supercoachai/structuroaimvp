@@ -2,6 +2,7 @@ import { hasActiveAppTrialOverride } from "./appTrialOverride";
 import { hasLaunchGraceAccess } from "./launchGrace";
 import { hasFreeTrial } from "./freeTrialAccess";
 import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
+import { isInternalTeamAccount } from "./internalTeamAccount";
 
 /** Toegang tot de app na betaalde launch: actief, of opgezegd maar nog binnen betaalperiode. */
 
@@ -40,6 +41,7 @@ export function profileHasAppAccess(row: {
  * bestaan voor flows die puur "heeft betaald?" willen weten (bijv. post-checkout redirect).
  */
 export function profileHasAppAccessOrGrace(row: {
+  email?: string | null | undefined;
   subscription_status: string | null | undefined;
   subscription_current_period_end: string | null | undefined;
   created_at: string | null | undefined;
@@ -47,6 +49,7 @@ export function profileHasAppAccessOrGrace(row: {
   signup_source?: string | null | undefined;
   app_trial_override_until?: string | null | undefined;
 }): boolean {
+  if (isInternalTeamAccount(row.email)) return true;
   if (hasActiveAppTrialOverride(row.app_trial_override_until)) return true;
 
   const status = row.subscription_status;

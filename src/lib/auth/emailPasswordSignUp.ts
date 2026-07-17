@@ -12,6 +12,7 @@ export type EmailPasswordSignUpParams = {
   fullName: string;
   signupSource?: string | null;
   signupCampaign?: string | null;
+  captchaToken?: string;
 };
 
 export type EmailPasswordSignUpResult = {
@@ -58,6 +59,7 @@ export async function signUpWithEmailPassword(
     email,
     password: params.password,
     options: {
+      ...(params.captchaToken ? { captchaToken: params.captchaToken } : {}),
       data: {
         full_name: params.fullName.trim(),
         ...(resolvedSource ? { signup_source: resolvedSource } : {}),

@@ -42,7 +42,10 @@ import {
 } from '@/lib/posthog/signupAttribution';
 import { PasskeySignInButton } from '@/components/auth/PasskeySignInButton';
 import { OAuthSignInButtons } from '@/components/auth/OAuthSignInButtons';
+import { AuthCaptcha } from '@/components/auth/AuthCaptcha';
 import { sendLoginMagicLink } from '@/lib/auth/socialSignIn';
+import { mapAuthCaptchaError } from '@/lib/auth/captcha';
+import { useAuthCaptcha } from '@/hooks/useAuthCaptcha';
 import { isSignupEmailFormatValid, normalizeSignupEmail } from '@/lib/auth/signupEmail';
 import { buildRegistrerenHref } from '@/lib/auth/authPagePaths';
 import { RegistrerenShell } from '@/components/registreren/RegistrerenShell';
@@ -205,6 +208,18 @@ function LoginPageInner() {
     [searchParams]
   );
   const { storyVisual, isAcquisitionCopy } = presentation;
+  const {
+    enabled: captchaEnabled,
+    captchaRef,
+    setCaptchaToken,
+    resetCaptcha,
+    resolveCaptchaToken,
+    captchaReady,
+  } = useAuthCaptcha();
+
+  useEffect(() => {
+    resetCaptcha();
+  }, [forgotPassword, passwordMode, showMoreMethods, isSignUp, resetCaptcha]);
 
   const handleSplashDone = useCallback(() => {
     const target = splashTargetRef.current ?? '/';
@@ -278,6 +293,11 @@ function LoginPageInner() {
       setError(t("login.emailRequired"));
       return;
     }
+    const captchaToken = resolveCaptchaToken();
+    if (captchaEnabled && !captchaToken) {
+      setError(t("login.errCaptcha"));
+      return;
+    }
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -288,9 +308,10 @@ function LoginPageInner() {
         return;
       }
       const nextPath = safeAppPath(searchParams?.get("next") ?? null) ?? undefined;
-      await sendLoginMagicLink(supabase, normalized, nextPath);
+      await sendLoginMagicLink(supabase, normalized, nextPath, captchaToken);
       setLastAuthMethod("magic");
       setMagicSentEmail(normalized);
+      resetCaptcha();
     } catch (err) {
       const raw = err instanceof Error ? err.message : t("login.sendFailed");
       const lower = raw.toLowerCase();
@@ -299,8 +320,9 @@ function LoginPageInner() {
       } else if (lower.includes("rate limit")) {
         setError(t("login.errRateLimitEmail"));
       } else {
-        setError(raw);
+        setError(mapAuthCaptchaError(raw, t));
       }
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -325,6 +347,11 @@ function LoginPageInner() {
       setError(t('login.emailRequired'));
       return;
     }
+    const captchaToken = resolveCaptchaToken();
+    if (captchaEnabled && !captchaToken) {
+      setError(t("login.errCaptcha"));
+      return;
+    }
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -332,7 +359,10 @@ function LoginPageInner() {
       const res = await fetch("/api/auth/request-password-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed }),
+        body: JSON.stringify({
+          email: trimmed,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const payload = (await res.json().catch(() => null)) as {
         ok?: boolean;
@@ -350,14 +380,17 @@ function LoginPageInner() {
         } else {
           setError(t("login.sendFailed"));
         }
+        resetCaptcha();
         return;
       }
 
       setMessage(t("login.resetSent"));
       setForgotPassword(false);
+      resetCaptcha();
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : t("login.sendFailed");
-      setError(mapPasswordResetError(raw, t));
+      setError(mapPasswordResetError(mapAuthCaptchaError(raw, t), t));
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -370,6 +403,12 @@ function LoginPageInner() {
 
     if (forgotPassword && !isSignUp) {
       await handleResetEmail();
+      return;
+    }
+
+    const captchaToken = resolveCaptchaToken();
+    if (captchaEnabled && !captchaToken) {
+      setError(t("login.errCaptcha"));
       return;
     }
 
@@ -393,6 +432,7 @@ function LoginPageInner() {
           email,
           password,
           options: {
+            ...(captchaToken ? { captchaToken } : {}),
             data: {
               full_name: fullName,
             },
@@ -412,11 +452,13 @@ function LoginPageInner() {
           await supabase.auth.getSession();
           splashTargetRef.current = '/';
           setShowSplash(true);
+          resetCaptcha();
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
+          options: captchaToken ? { captchaToken } : undefined,
         });
 
         if (error) throw error;
@@ -425,6 +467,7 @@ function LoginPageInner() {
           await supabase.auth.getSession();
           setLastAuthMethod("password");
           await finishLogin(data.user.id, data.user.email);
+          resetCaptcha();
         }
       }
     } catch (err: any) {
@@ -435,8 +478,11 @@ function LoginPageInner() {
         errorMessage = t('login.errEmailConfirm');
       } else if (errorMessage.includes('User already registered')) {
         errorMessage = t('login.errAlreadyRegistered');
+      } else {
+        errorMessage = mapAuthCaptchaError(errorMessage, t);
       }
       setError(errorMessage);
+      resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -524,9 +570,17 @@ function LoginPageInner() {
             </div>
           ) : null}
 
+          <AuthCaptcha
+            ref={captchaRef}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+            className="flex justify-center"
+          />
+
           <button
             type="submit"
-            disabled={loading || showSplash}
+            disabled={loading || showSplash || !captchaReady}
             className={loginPrimaryBtnClass}
           >
             {loading ? t("login.busy") : t("login.sendReset")}
@@ -610,9 +664,17 @@ function LoginPageInner() {
             </div>
           ) : null}
 
+          <AuthCaptcha
+            ref={captchaRef}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+            className="flex justify-center"
+          />
+
           <button
             type="submit"
-            disabled={loading || showSplash}
+            disabled={loading || showSplash || !captchaReady}
             className={loginPrimaryBtnClass}
           >
             {loading
@@ -732,9 +794,17 @@ function LoginPageInner() {
                 ) : null}
               </div>
 
+              <AuthCaptcha
+                ref={captchaRef}
+                onVerify={setCaptchaToken}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+                className="flex justify-center"
+              />
+
               <button
                 type="submit"
-                disabled={loading || showSplash}
+                disabled={loading || showSplash || !captchaReady}
                 className={loginSecondaryBtnClass}
               >
                 {loading
