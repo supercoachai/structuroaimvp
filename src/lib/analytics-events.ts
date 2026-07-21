@@ -28,6 +28,8 @@ export const ANALYTICS_EVENTS = {
   paywall_checkout_clicked: "paywall_checkout_clicked",
   trial_expired_view: "trial_expired_view",
   password_reset_requested: "password_reset_requested",
+  lifecycle_email_sent: "lifecycle_email_sent",
+  lifecycle_email_unsubscribed: "lifecycle_email_unsubscribed",
 } as const;
 
 export type AnalyticsEventName =

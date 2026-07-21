@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
-
-import { V2AppShell, V2Eyebrow } from "./V2Chrome";
+import { V2AppShell } from "./V2Chrome";
 import { V2LearnHintOnce } from "./V2LearnHintOnce";
 import { recordV2Snooze, v2AdaptiveDumpKey } from "./v2Adaptive";
 import { isV2MutedToday } from "./v2Settings";
@@ -86,7 +84,8 @@ export default function DumpV2Client() {
   const [voiceFallbackText, setVoiceFallbackText] = useState("");
   const speechRef = useRef<ReturnType<typeof createV2SpeechSession> | null>(null);
   const mutedToday = isV2MutedToday();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [listOpen, setListOpen] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -448,14 +447,15 @@ export default function DumpV2Client() {
       },
       (msg) => {
         setVoiceProcessing(false);
+        setVoiceFallback(true);
         if (msg.length > 0) {
-          setVoiceFallback(true);
           showToast({ kind: "added", text: msg });
         }
       },
     );
 
     if (!session) {
+      setVoiceProcessing(false);
       setVoiceFallback(true);
       return;
     }
@@ -482,6 +482,9 @@ export default function DumpV2Client() {
     if (!softPrompt || softPrompt.kind !== "split" || splitBusy) return;
     setSplitBusy(true);
     try {
+      const { fetchMicroStepSuggestions } = await import(
+        "@/lib/ai/fetchMicroStepSuggestions"
+      );
       const result = await fetchMicroStepSuggestions({
         title: softPrompt.title,
         energyLevel: v2EnergyToMicro(state.energy),
@@ -521,250 +524,288 @@ export default function DumpV2Client() {
   const softWarn = v2DumpSoftWarn(items);
   const atMax = v2DumpAtMax(items);
 
-  return (
-    <V2AppShell>
-      <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-8 pt-6">
-        <header>
-          <V2Eyebrow>Extern geheugen</V2Eyebrow>
-          <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
-            Dumplijst
-          </h1>
-          <p className="mt-1 text-[15px]" style={{ color: "var(--text-muted)" }}>
-            Leg vast wat in je hoofd zit. Geen structuur nodig. Kies later zacht wat ermee gebeurt.
-          </p>
-          <V2LearnHintOnce feature="dump" className="mt-2" />
-        </header>
+  const canSave = draft.trim().length > 0 && !atMax;
+  const speechOk = isV2SpeechAvailable();
 
-        <section
-          className="rounded-[16px] p-4"
-          style={{ background: "#FFFFFF", border: "1px solid var(--border)" }}
-        >
-          <label htmlFor="v2-dump-capture" className="sr-only">
-            Nieuwe gedachte
-          </label>
-          <input
-            id="v2-dump-capture"
-            ref={inputRef}
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => flushDraft("blur")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+  return (
+    <V2AppShell chrome="flow">
+      <div className="v2-dump">
+        <div className="v2-dump__hero">
+          <header>
+            <p className="v2-dump__eyebrow">
+              <span className="v2-eyebrow-dot--static" aria-hidden="true" />
+              Extern geheugen
+            </p>
+            <h1 className="v2-dump__title">Dump</h1>
+            <p className="v2-dump__lead">
+              Leg vast wat in je hoofd zit. Structuur hoeft niet.
+            </p>
+          </header>
+
+          <section className="v2-dump__card">
+            <label htmlFor="v2-dump-capture" className="sr-only">
+              Nieuwe gedachte
+            </label>
+            <textarea
+              id="v2-dump-capture"
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => flushDraft("blur")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+                  flushDraft("enter");
+                }
+              }}
+              placeholder="Wat zit er in je hoofd?"
+              className="v2-dump__field"
+              disabled={atMax}
+              autoComplete="off"
+              rows={4}
+            />
+            <div className="v2-dump__meta">
+              {savedHint ? (
+                <p className="v2-dump__hint v2-dump__hint--saved" aria-live="polite">
+                  Bewaard
+                </p>
+              ) : (
+                <p className="v2-dump__hint">
+                  Typ en pauzeer. Het wordt vanzelf vastgelegd.
+                </p>
+              )}
+              {speechOk ? (
+                <button
+                  type="button"
+                  onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
+                  disabled={atMax || voiceProcessing}
+                  className="v2-dump__mic"
+                  aria-label={voiceRecording ? "Stop opname" : "Spreek in"}
+                  aria-pressed={voiceRecording}
+                >
+                  <MicIcon />
+                </button>
+              ) : null}
+            </div>
+
+            {voiceRecording ? (
+              <div className="mt-4 flex flex-col items-center gap-3 py-2">
+                <div
+                  className="v2-voice-blob flex h-20 w-20 items-center justify-center rounded-full"
+                  style={{
+                    background: "rgba(45, 90, 86, 0.12)",
+                    border: "1px solid var(--border)",
+                  }}
+                  aria-hidden
+                />
+                <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
+                  Luisteren...
+                </p>
+              </div>
+            ) : null}
+
+            {voiceProcessing ? (
+              <p className="mt-2 text-[14px]" style={{ color: "var(--accent)" }} aria-live="polite">
+                Verwerken...
+              </p>
+            ) : null}
+
+            {voiceFallback ? (
+              <div className="mt-3 flex flex-col gap-2">
+                <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
+                  {speechOk
+                    ? "Spreek af, tik stop, typ kort wat je zei."
+                    : "Spraak niet beschikbaar in deze browser. Typ kort wat je zei."}
+                </p>
+                <input
+                  type="text"
+                  value={voiceFallbackText}
+                  onChange={(e) => setVoiceFallbackText(e.target.value)}
+                  placeholder="Wat wilde je vastleggen?"
+                  className="v2-field min-h-[44px] w-full"
+                  style={{ border: "1px solid var(--border)" }}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    addVoiceDump(voiceFallbackText);
+                    setVoiceFallback(false);
+                    setVoiceFallbackText("");
+                  }}
+                  className="btn-ghost w-full"
+                >
+                  Opslaan
+                </button>
+              </div>
+            ) : null}
+          </section>
+
+          <div className="v2-dump__cta-wrap">
+            <button
+              type="button"
+              className="btn-primary w-full"
+              disabled={!canSave}
+              onClick={() => {
                 if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
                 flushDraft("enter");
-              }
-            }}
-            placeholder="Wat zit er in je hoofd?"
-            className="v2-field min-h-[48px] w-full"
-            style={{ border: "1px solid var(--border)" }}
-            disabled={atMax}
-            autoComplete="off"
-          />
-          <div className="mt-2 flex items-center justify-between gap-2">
-            {savedHint ? (
-              <p className="text-[13px]" style={{ color: "var(--accent)" }} aria-live="polite">
-                Opgeslagen
-              </p>
-            ) : (
-              <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                Typ en pauzeer. Het wordt vanzelf vastgelegd.
-              </p>
-            )}
-            {!voiceRecording && !voiceProcessing ? (
-              <button
-                type="button"
-                onClick={startVoiceRecording}
-                disabled={atMax}
-                className="shrink-0 rounded-full p-2"
-                style={{ border: "1px solid var(--border)", background: "var(--accent-soft)" }}
-                aria-label="Spreek in"
-              >
-                <MicIcon />
-              </button>
-            ) : null}
+              }}
+            >
+              Bewaren
+            </button>
+            <p className="v2-dump__footnote">Kies later zacht wat ermee gebeurt.</p>
           </div>
+        </div>
 
-          {voiceRecording ? (
-            <div className="mt-4 flex flex-col items-center gap-3 py-2">
-              <div
-                className="v2-voice-blob flex h-20 w-20 items-center justify-center rounded-full"
-                style={{ background: "rgba(45, 90, 86, 0.12)", border: "1px solid var(--border)" }}
-                aria-hidden
-              />
-              <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-                Luisteren...
-              </p>
-              <button type="button" onClick={stopVoiceRecording} className="btn-primary w-full">
-                Stop
-              </button>
-            </div>
-          ) : null}
+        <div className="v2-dump__more">
+          <V2LearnHintOnce feature="dump" />
 
-          {voiceProcessing ? (
-            <p className="mt-2 text-[14px]" style={{ color: "var(--accent)" }} aria-live="polite">
-              Verwerken...
-            </p>
-          ) : null}
-
-          {voiceFallback ? (
-            <div className="mt-3 flex flex-col gap-2">
-              <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                {isV2SpeechAvailable()
-                  ? "Spreek af, tik stop, typ kort wat je zei."
-                  : "Spraak niet beschikbaar in deze browser. Typ kort wat je zei."}
-              </p>
-              <input
-                type="text"
-                value={voiceFallbackText}
-                onChange={(e) => setVoiceFallbackText(e.target.value)}
-                placeholder="Wat wilde je vastleggen?"
-                className="v2-field min-h-[44px] w-full"
-                style={{ border: "1px solid var(--border)" }}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  addVoiceDump(voiceFallbackText);
-                  setVoiceFallback(false);
-                  setVoiceFallbackText("");
-                }}
-                className="btn-ghost w-full"
-              >
-                Opslaan
-              </button>
-            </div>
-          ) : null}
           {softWarn ? (
-            <p className="mt-1 text-[13px]" style={{ color: "var(--text-muted)" }}>
+            <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
               {atMax
                 ? "Ongeveer vol. Dat is oké. Kies iets om ruimte te maken als je wilt."
                 : "De lijst wordt lang. Geen haast, maar een zachte herinnering."}
             </p>
           ) : null}
-        </section>
 
-        <GoogleImportSection
-          busy={importBusy}
-          note={importNote}
-          onRefresh={handleGoogleRefresh}
-        />
+          <GoogleImportSection
+            busy={importBusy}
+            note={importNote}
+            onRefresh={handleGoogleRefresh}
+          />
 
-        {visibleItems.length > 0 ? (
-          <section className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleRustigBekijken}
-              disabled={triageBusy || triageSession !== null}
-              className="btn-ghost w-full"
-            >
-              {triageBusy ? "Even kijken..." : "Rustig bekijken"}
-            </button>
-            <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
-              Opt-in hulp, maximaal drie items. Jij kiest wat er gebeurt.
-            </p>
-          </section>
-        ) : null}
-
-        {triageSession && triageSession.items.length > 0 ? (
-          <section
-            className="rounded-[16px] p-4"
-            style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p
-                  className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                  style={{ color: "var(--accent)" }}
+          {visibleItems.length > 0 ? (
+            <section className="flex flex-col gap-2">
+              {!listOpen ? (
+                <button
+                  type="button"
+                  className="v2-link self-start text-[13px]"
+                  onClick={() => setListOpen(true)}
                 >
-                  Rustig bekijken
-                </p>
-                <p className="mt-1 text-[14px]" style={{ color: "var(--text-muted)" }}>
-                  Geen haast. Kies per item wat past.
-                </p>
+                  Meer
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleRustigBekijken}
+                    disabled={triageBusy || triageSession !== null}
+                    className="btn-ghost w-full"
+                  >
+                    {triageBusy ? "Even kijken..." : "Rustig bekijken"}
+                  </button>
+                  <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
+                    Opt-in hulp, maximaal drie items. Jij kiest wat er gebeurt.
+                  </p>
+                </>
+              )}
+            </section>
+          ) : null}
+
+          {listOpen && triageSession && triageSession.items.length > 0 ? (
+            <section
+              className="rounded-[16px] p-4"
+              style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p
+                    className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    Rustig bekijken
+                  </p>
+                  <p className="mt-1 text-[14px]" style={{ color: "var(--text-muted)" }}>
+                    Geen haast. Kies per item wat past.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTriageSession(null)}
+                  className="v2-link shrink-0 text-[13px]"
+                >
+                  Sluiten
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setTriageSession(null)}
-                className="v2-link shrink-0 text-[13px]"
-              >
-                Sluiten
-              </button>
-            </div>
-            <div className="mt-3 flex flex-col gap-3">
-              {triageSession.items.map((item) => (
-                <TriageRow
-                  key={item.id}
-                  item={item}
-                  question={
-                    triageSession.questions[item.id] ??
-                    "Wil je dit plannen, afmaken of laten gaan?"
-                  }
-                  onToday={() => handleTriageToday(item)}
-                  onTask={() => handleTriageTask(item)}
-                  onRest={() => handleTriageRest(item)}
-                  onDelete={() => handleTriageDelete(item)}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+              <div className="mt-3 flex flex-col gap-3">
+                {triageSession.items.map((item) => (
+                  <TriageRow
+                    key={item.id}
+                    item={item}
+                    question={
+                      triageSession.questions[item.id] ??
+                      "Wil je dit plannen, afmaken of laten gaan?"
+                    }
+                    onToday={() => handleTriageToday(item)}
+                    onTask={() => handleTriageTask(item)}
+                    onRest={() => handleTriageRest(item)}
+                    onDelete={() => handleTriageDelete(item)}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-        {state.energy !== null && suggestions.length > 0 && !mutedToday ? (
-          <section
-            className="rounded-[16px] p-4"
-            style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
-          >
-            <p
-              className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: "var(--accent)" }}
+          {listOpen && state.energy !== null && suggestions.length > 0 && !mutedToday ? (
+            <section
+              className="rounded-[16px] p-4"
+              style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
             >
-              Past bij je energie nu
-            </p>
-            <ul className="mt-2 flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: "none" }}>
-              {suggestions.map((item) => (
-                <li
-                  key={item.id}
-                  className="rounded-[12px] px-3 py-2 text-[15px]"
-                  style={{ background: "#FFFFFF", border: "1px solid var(--border)" }}
-                >
-                  {item.content}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-[13px]" style={{ color: "var(--text-muted)" }}>
-              Alleen een zachte suggestie. Niets hoeft nu.
-            </p>
-          </section>
-        ) : null}
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: "var(--accent)" }}
+              >
+                Past bij je energie nu
+              </p>
+              <ul
+                className="mt-2 flex flex-col gap-2"
+                style={{ margin: 0, padding: 0, listStyle: "none" }}
+              >
+                {suggestions.map((item) => (
+                  <li
+                    key={item.id}
+                    className="rounded-[12px] px-3 py-2 text-[15px]"
+                    style={{ background: "#FFFFFF", border: "1px solid var(--border)" }}
+                  >
+                    {item.content}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[13px]" style={{ color: "var(--text-muted)" }}>
+                Alleen een zachte suggestie. Niets hoeft nu.
+              </p>
+            </section>
+          ) : null}
 
-        {visibleItems.length === 0 ? (
-          <section className="v2-card v2-fade p-6 text-center">
-            <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              Leeg hoofd, of alles al vastgelegd.
-            </h2>
-            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              Typ hierboven als er iets binnenkomt. Er is geen minimum.
-            </p>
-          </section>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            {visibleItems.map((item) => (
-              <DumpRow
-                key={item.id}
-                item={item}
-                highlighted={suggestionIds.has(item.id)}
-                onToday={() => handleToday(item)}
-                onTask={() => handleTask(item)}
-                onRest={() => handleRest(item)}
-                onWake={() => handleWake(item)}
-                onDelete={() => handleDelete(item)}
-              />
-            ))}
-          </div>
-        )}
+          {listOpen ? (
+            visibleItems.length === 0 ? (
+              <section className="v2-card v2-fade p-6 text-center">
+                <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
+                  Leeg hoofd, of alles al vastgelegd.
+                </h2>
+                <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                  Typ hierboven als er iets binnenkomt. Er is geen minimum.
+                </p>
+              </section>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {visibleItems.map((item) => (
+                  <DumpRow
+                    key={item.id}
+                    item={item}
+                    highlighted={suggestionIds.has(item.id)}
+                    onToday={() => handleToday(item)}
+                    onTask={() => handleTask(item)}
+                    onRest={() => handleRest(item)}
+                    onWake={() => handleWake(item)}
+                    onDelete={() => handleDelete(item)}
+                  />
+                ))}
+              </div>
+            )
+          ) : null}
+        </div>
 
         {softPrompt && !mutedToday ? (
           <SoftPromptCard
@@ -850,31 +891,17 @@ function SoftPromptCard({
           &ldquo;{prompt.title}&rdquo; staat op je takenlijst.
         </p>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-col gap-2">
         <button
           type="button"
           onClick={isFocus ? onFocusYes : onSplitYes}
           disabled={!isFocus && splitBusy}
-          className="rounded-full px-3 py-1.5 text-[13px] font-medium"
-          style={{
-            border: "1px solid var(--border)",
-            background: "var(--accent)",
-            color: "var(--text-on-ink)",
-          }}
+          className="btn-primary w-full"
         >
-          {isFocus ? "Ja, naar focus" : splitBusy ? "Even denken..." : "Ja"}
+          {isFocus ? "Ja, naar focus" : splitBusy ? "Even denken..." : "Ja, opsplitsen"}
         </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="rounded-full px-3 py-1.5 text-[13px] font-medium"
-          style={{
-            border: "1px solid var(--border)",
-            background: "transparent",
-            color: "var(--text-muted)",
-          }}
-        >
-          {isFocus ? "Nee, blijf hier" : "Nee"}
+        <button type="button" onClick={onDismiss} className="v2-link">
+          {isFocus ? "Nee, blijf hier" : "Niet nu"}
         </button>
       </div>
     </section>
@@ -913,8 +940,7 @@ function GoogleImportSection({
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Optioneel. Koppel Google Tasks om open taken hier te zien. Alleen lezen, geen
-            achtergrondsync. Ververs wanneer jij wilt.
+            Optioneel en nog in preview. Alleen lezen, geen achtergrondsync. Mag je overslaan.
           </p>
           <p className="mt-2 text-[13px]" style={{ color: "var(--text-muted)" }}>
             Microsoft To Do: binnenkort.
@@ -925,7 +951,7 @@ function GoogleImportSection({
             disabled={busy}
             className="btn-ghost mt-3 w-full"
           >
-            {busy ? "Bezig..." : "Ververs (demo)"}
+            {busy ? "Bezig..." : "Eenmalig verversen"}
           </button>
           {note ? (
             <p className="mt-2 text-[12px]" style={{ color: "var(--text-muted)" }}>
@@ -982,6 +1008,8 @@ function TriageRow({
   onRest: () => void;
   onDelete: () => void;
 }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+
   return (
     <article
       className="rounded-[14px] p-3"
@@ -991,11 +1019,19 @@ function TriageRow({
       <p className="mt-2 text-[14px]" style={{ color: "var(--accent)" }}>
         {question}
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <SoftAction label="Naar vandaag" onClick={onToday} />
-        <SoftAction label="Wordt taak" onClick={onTask} />
-        <SoftAction label="Laat rusten" onClick={onRest} muted />
-        <SoftAction label="Weg" onClick={onDelete} muted />
+        {moreOpen ? (
+          <>
+            <SoftAction label="Wordt taak" onClick={onTask} />
+            <SoftAction label="Laat rusten" onClick={onRest} muted />
+            <SoftAction label="Weg" onClick={onDelete} muted />
+          </>
+        ) : (
+          <button type="button" className="v2-link text-[13px]" onClick={() => setMoreOpen(true)}>
+            Meer
+          </button>
+        )}
       </div>
     </article>
   );
@@ -1020,6 +1056,7 @@ function DumpRow({
 }) {
   const aged = isV2DumpAged(item);
   const resting = item.disposition === "rest";
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <article
@@ -1052,17 +1089,34 @@ function DumpRow({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {!resting ? (
           <>
             <SoftAction label="Naar vandaag" onClick={onToday} />
-            <SoftAction label="Wordt taak" onClick={onTask} />
-            <SoftAction label="Laat rusten" onClick={onRest} muted />
+            {moreOpen ? (
+              <>
+                <SoftAction label="Wordt taak" onClick={onTask} />
+                <SoftAction label="Laat rusten" onClick={onRest} muted />
+                <SoftAction label="Weg" onClick={onDelete} muted />
+              </>
+            ) : (
+              <button type="button" className="v2-link text-[13px]" onClick={() => setMoreOpen(true)}>
+                Meer
+              </button>
+            )}
           </>
         ) : (
-          <SoftAction label="Weer zichtbaar" onClick={onWake} />
+          <>
+            <SoftAction label="Weer zichtbaar" onClick={onWake} />
+            {moreOpen ? (
+              <SoftAction label="Weg" onClick={onDelete} muted />
+            ) : (
+              <button type="button" className="v2-link text-[13px]" onClick={() => setMoreOpen(true)}>
+                Meer
+              </button>
+            )}
+          </>
         )}
-        <SoftAction label="Weg" onClick={onDelete} muted />
       </div>
     </article>
   );

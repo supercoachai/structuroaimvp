@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "meta": {
+    "name": "Structuro EU Landing Page Design System",
+    "source": "https://www.structuro.eu",
+    "sourceFile": "structuro-eu-landing/index.html",
+    "extractedAt": "2026-06-25",
+    "locale": "nl-NL",
+    "description": "Huisstijl, thema en kleuren van de Structuro marketinglandingspage (Story layer). App-demo's op de pagina gebruiken de Work layer (blauw/ink navy)."
+  },
+  "brand": {
+    "name": "Structuro",
+    "tagline": "Productiviteitsapp voor ADHD-breinen",
+    "positioning": "De ADHD-app voor breinen die vastlopen op executie, niet op inzicht.",
+    "tone": {
+      "editorial": true,
+      "calm": true,
+      "empathetic": true,
+      "noShameGamification": true,
+      "principles": [
+        "Story layer voor marketing: warm papier, serif koppen, sage teal accent",
+        "Work layer in app-previews: ink navy + blauw voor product-UI",
+        "Geen pure zwarte knoppen op marketing: near-black (#1A1A1B) of ink navy (#1A2340)"
+      ]
+    }
+  },
+  "theme": {
+    "mode": "light-first",
+    "primaryLayer": "story",
+    "layers": {
+      "story": {
+        "description": "Editorial marketinglaag: hero, empathy, founder, FAQ, footer",
+        "pageBackground": "#FDFBF4",
+        "textPrimary": "#1A1A1B",
+        "accent": "#2D5A56",
+        "cta": "#1A1A1B"
+      },
+      "work": {
+        "description": "App-aligned kleuren in live-demo, phone mockups en product-previews",
+        "pageBackground": "#F0F2F8",
+        "ink": "#1A2340",
+        "blue": "#3B6BF7"
+      }
+    }
+  },
+  "colors": {
+    "story": {
+      "background": { "hex": "#FDFBF4", "name": "Warm Paper", "cssVar": "--story-bg" },
+      "backgroundNavy": { "hex": "#1A1A1B", "name": "Ink Black", "cssVar": "--story-bg-navy" },
+      "text": { "hex": "#1A1A1B", "cssVar": "--story-text" },
+      "textMuted": { "hex": "#5C6478", "cssVar": "--story-text-muted" },
+      "textOnNavy": { "hex": "#F5F2EA", "cssVar": "--story-text-on-navy" },
+      "accent": { "hex": "#2D5A56", "name": "Sage Teal", "cssVar": "--story-accent" },
+      "accentHover": { "hex": "#234845", "usage": "links, accent buttons hover" },
+      "accentSoft": { "rgba": "rgba(45, 90, 86, 0.12)", "cssVar": "--story-accent-soft" },
+      "accentRing": { "rgba": "rgba(45, 90, 86, 0.28)", "cssVar": "--story-accent-ring" },
+      "cta": { "hex": "#1A1A1B", "cssVar": "--story-cta" },
+      "ctaHover": { "hex": "#2E2E30", "cssVar": "--story-cta-hover" },
+      "border": { "rgba": "rgba(26, 26, 27, 0.1)", "cssVar": "--story-border" },
+      "selection": { "rgba": "rgba(45, 90, 86, 0.18)" },
+      "avatarGradient": {
+        "from": "#3A6B67",
+        "to": "#2D5A56",
+        "css": "linear-gradient(165deg, #3A6B67, var(--story-accent))"
+      }
+    },
+    "neutral": {
+      "backgroundAlt": { "hex": "#F7F5EF", "cssVar": "--bg", "usage": "screenshots sectie" },
+      "white": { "hex": "#FFFFFF", "cssVar": "--white" },
+      "text": { "hex": "#1A1A1B", "cssVar": "--text" },
+      "sub": { "hex": "#5C6478", "cssVar": "--sub" },
+      "placeholder": { "hex": "#6B7280", "cssVar": "--place" },
+      "border": { "rgba": "rgba(26, 26, 27, 0.1)", "cssVar": "--border" }
+    },
+    "work": {
+      "ink": { "hex": "#1A2340", "name": "Ink Navy", "cssVar": "--dark" },
+      "inkCard": { "hex": "#242E52", "cssVar": "--dark-card" },
+      "inkSub": { "hex": "#8C95B0", "cssVar": "--dark-sub" },
+      "blue": { "hex": "#3B6BF7", "cssVar": "--blue" },
+      "blueHover": { "hex": "#1E47D6", "cssVar": "--blue-h" },
+      "blueSoft": { "hex": "#DBEAFE", "cssVar": "--blue-s" },
+      "appBackground": { "hex": "#F0F2F8", "usage": "phone screens, live demo" },
+      "pricingCta": { "hex": "#1A2A4A", "hover": "#142038", "usage": "pricing card primary button" }
+    },
+    "night": {
+      "background": { "hex": "#1A2340", "cssVar": "--night" },
+      "backgroundSoft": { "hex": "#242E52", "cssVar": "--night-soft" },
+      "text": { "hex": "#E7ECF7", "cssVar": "--night-ink" },
+      "textMuted": { "hex": "#8C95B0", "cssVar": "--night-muted" },
+      "border": { "rgba": "rgba(255, 255, 255, 0.08)" }
+    },
+    "semantic": {
+      "green": { "hex": "#22C55E", "soft": "#D1FAE5", "border": "#A7F3D0" },
+      "amber": { "background": "#FEF3C7", "border": "#FDE68A", "text": "#92400E" },
+      "violet": { "background": "#EDE9FE", "border": "#DDD6FE" },
+      "teal": { "background": "#CCFBF1", "border": "#99F6E4" },
+      "red": { "hex": "#EF4444" },
+      "cancelHelp": {
+        "background": "rgba(111, 164, 155, 0.08)",
+        "border": "rgba(79, 130, 121, 0.18)",
+        "iconBackground": "rgba(79, 130, 121, 0.12)"
+      }
+    }
+  },
+  "typography": {
+    "fonts": {
+      "sans": {
+        "family": "Inter",
+        "fallback": "system-ui, sans-serif",
+        "cssVar": "--font",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+        "weights": [400, 500, 600, 700, 800]
+      },
+      "serif": {
+        "family": "Newsreader",
+        "fallback": "Georgia, 'Times New Roman', serif",
+        "cssVar": "--story-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500;1,6..72,600&display=swap",
+        "usage": "Hero h1, sectiekoppen h2, quotes, pricing amount"
+      },
+      "mono": {
+        "family": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "cssVar": "--mono",
+        "usage": "Step badges, step numbers"
+      }
+    },
+    "scale": {
+      "heroH1": {
+        "fontFamily": "serif",
+        "fontSize": "clamp(38px, 5.4vw, 56px)",
+        "fontWeight": 600,
+        "letterSpacing": "-0.02em",
+        "lineHeight": 1.1
+      },
+      "sectionH2": {
+        "fontFamily": "serif",
+        "fontSize": "clamp(28px, 5vw, 40px)",
+        "fontWeight": 600,
+        "letterSpacing": "-0.018em",
+        "lineHeight": 1.14
+      },
+      "heroLede": {
+        "fontFamily": "sans",
+        "fontSize": "18px",
+        "fontWeight": 300,
+        "lineHeight": 1.6,
+        "color": "story.textMuted"
+      },
+      "sectionLede": {
+        "fontFamily": "sans",
+        "fontSize": "17px",
+        "lineHeight": 1.6,
+        "color": "story.textMuted"
+      },
+      "eyebrow": {
+        "fontFamily": "sans",
+        "fontSize": "12px",
+        "fontWeight": 600,
+        "textTransform": "uppercase",
+        "letterSpacing": "0.16em",
+        "color": "story.accent"
+      },
+      "body": {
+        "fontFamily": "sans",
+        "fontSize": "14px",
+        "lineHeight": 1.5
+      },
+      "empathyQuote": {
+        "fontFamily": "serif",
+        "fontSize": "22px",
+        "lineHeight": 1.55,
+        "letterSpacing": "-0.015em"
+      },
+      "trustStat": {
+        "fontFamily": "serif",
+        "fontSize": "30px",
+        "fontWeight": 600,
+        "letterSpacing": "-0.02em"
+      }
+    },
+    "emphasis": {
+      "heroHighlight": {
+        "fontStyle": "italic",
+        "fontWeight": 500,
+        "color": "story.accent",
+        "underline": "rgba(45, 90, 86, 0.14) highlight bar"
+      }
+    },
+    "rendering": {
+      "webkitFontSmoothing": "antialiased",
+      "bodyLineHeight": 1.5
+    }
+  },
+  "layout": {
+    "container": {
+      "maxWidth": "1100px",
+      "paddingX": "24px"
+    },
+    "sectionPadding": {
+      "desktop": "88px 0",
+      "mobile": "64px 0"
+    },
+    "heroPadding": {
+      "desktopTop": "72px",
+      "mobile": "52px 0 64px"
+    },
+    "navHeight": {
+      "desktop": "76px",
+      "mobileMin": "60px"
+    },
+    "scrollMarginTop": "88px",
+    "breakpoints": {
+      "sm": "500px",
+      "md": "600px",
+      "tablet": "720px",
+      "lg": "760px",
+      "xl": "900px",
+      "wide": "960px",
+      "navCompact": "920px",
+      "navWide": "1100px"
+    }
+  },
+  "spacing": {
+    "radius": {
+      "sm": "9px",
+      "navCta": "10px",
+      "md": "14px",
+      "lg": "20px",
+      "xl": "28px",
+      "card": "16px",
+      "pill": "999px",
+      "phone": "38px",
+      "phoneScreen": "32px"
+    },
+    "gaps": {
+      "heroGrid": "64px",
+      "navLinks": "22px",
+      "buttonIcon": "8px",
+      "carouselSlides": "20px"
+    }
+  },
+  "effects": {
+    "shadows": {
+      "navCta": "0 2px 8px rgba(26, 26, 27, 0.16)",
+      "navCtaHover": "0 4px 12px rgba(26, 26, 27, 0.2)",
+      "btnPrimary": "0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 0 rgba(0,0,0,0.12), 0 8px 20px -4px rgba(26,26,27,0.28)",
+      "btnPrimaryHover": "0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 14px -2px rgba(26,26,27,0.32)",
+      "cardSoft": "0 2px 12px rgba(26, 26, 27, 0.05)",
+      "cardMedium": "0 8px 24px rgba(26, 26, 27, 0.04)",
+      "cardLarge": "0 12px 40px rgba(26, 26, 27, 0.06)",
+      "phone": "0 32px 80px rgba(15, 23, 42, 0.22), 0 8px 24px rgba(15, 23, 42, 0.10)",
+      "accentButton": "0 8px 20px -4px rgba(45, 90, 86, 0.28)"
+    },
+    "glass": {
+      "nav": {
+        "background": "rgba(253, 251, 244, 0.94)",
+        "backdropFilter": "saturate(160%) blur(14px)"
+      },
+      "stickyZelftest": {
+        "background": "linear-gradient(180deg, rgba(253,251,244,0.97) 0%, rgba(253,251,244,0.88) 100%)",
+        "backdropFilter": "saturate(160%) blur(10px)"
+      }
+    },
+    "gradients": {
+      "heroPhoneBlob": "radial-gradient(circle, rgba(45,90,86,0.1), transparent 70%)",
+      "iphoneFrame": "linear-gradient(155deg, #3d4148 0%, #17181c 18%, #0a0a0c 50%, #17181c 84%, #2c2f35 100%)",
+      "energyButtonActive": "linear-gradient(180deg, #5A84F9, var(--blue) 55%, var(--blue-h))"
+    }
+  },
+  "components": {
+    "navigation": {
+      "position": "sticky",
+      "zIndex": 50,
+      "linkColor": "neutral.sub",
+      "linkHoverColor": "story.accent",
+      "cta": {
+        "background": "story.cta",
+        "color": "#FFFFFF",
+        "borderRadius": "10px",
+        "fontSize": "14px",
+        "fontWeight": 600,
+        "padding": "9px 16px"
+      }
+    },
+    "buttons": {
+      "primary": {
+        "background": "story.cta",
+        "backgroundHover": "story.ctaHover",
+        "color": "#FFFFFF",
+        "borderRadius": "14px",
+        "fontSize": "16px",
+        "fontWeight": 600,
+        "padding": "15px 24px",
+        "minHeight": "52px",
+        "hoverTransform": "translateY(-1px)"
+      },
+      "secondary": {
+        "background": "transparent",
+        "color": "neutral.sub",
+        "border": "1px solid neutral.border",
+        "borderRadius": "14px",
+        "fontSize": "16px",
+        "fontWeight": 600,
+        "padding": "14px 18px"
+      },
+      "accent": {
+        "background": "story.accent",
+        "backgroundHover": "#234845",
+        "color": "#FFFFFF",
+        "usage": "Hero recognition CTA, zelftest sticky CTA"
+      }
+    },
+    "cards": {
+      "default": {
+        "background": "#FFFFFF",
+        "border": "1px solid story.border",
+        "borderRadius": "20px",
+        "hoverBorderColor": "story.accentRing"
+      },
+      "quote": {
+        "borderRadius": "20px",
+        "padding": "26px 24px",
+        "quoteFont": "serif",
+        "quoteSize": "18px"
+      },
+      "pricing": {
+        "borderRadius": "28px",
+        "padding": "32px 28px 26px",
+        "priceFont": "serif",
+        "priceSize": "clamp(40px, 9vw, 52px)"
+      }
+    },
+    "carouselDots": {
+      "inactive": { "width": "7px", "height": "7px", "background": "neutral.border" },
+      "active": { "width": "22px", "background": "story.accent", "borderRadius": "4px" }
+    },
+    "phoneMockup": {
+      "frameBackground": "#0a0a0c",
+      "screenBackground": "#F0F2F8",
+      "borderRadius": "38px",
+      "screenBorderRadius": "32px"
+    }
+  },
+  "motion": {
+    "durations": {
+      "fast": "140ms",
+      "default": "160ms",
+      "medium": "200ms",
+      "slow": "420ms",
+      "carousel": "700ms"
+    },
+    "easing": {
+      "default": "ease",
+      "carousel": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "accordion": "cubic-bezier(0.3, 0.8, 0.3, 1)"
+    },
+    "animations": {
+      "eyebrowPulse": "2.4s ease-in-out infinite",
+      "marqueeScroll": "80s linear infinite"
+    },
+    "accessibility": {
+      "prefersReducedMotion": "Schakel eyebrow pulse, marquee en carousel tilt uit"
+    }
+  },
+  "assets": {
+    "favicon": "/uploads/logo-structuro-favicon.png",
+    "appleTouchIcon": "/uploads/logo-structuro-apple.png",
+    "logo": "/uploads/logo-structuro.png",
+    "logoNav": "/uploads/logo-structuro-nav.webp",
+    "ogImage": "https://www.structuro.eu/uploads/logo-structuro.png"
+  },
+  "cssVariables": {
+    "root": {
+      "--bg": "#F7F5EF",
+      "--white": "#FFFFFF",
+      "--border": "rgba(26,26,27,0.1)",
+      "--text": "#1A1A1B",
+      "--sub": "#5C6478",
+      "--place": "#6B7280",
+      "--blue": "#3B6BF7",
+      "--blue-h": "#1E47D6",
+      "--blue-s": "#DBEAFE",
+      "--green": "#22C55E",
+      "--green-s": "#D1FAE5",
+      "--green-b": "#A7F3D0",
+      "--dark": "#1A2340",
+      "--dark-card": "#242E52",
+      "--dark-sub": "#8C95B0",
+      "--night": "#1A2340",
+      "--night-soft": "#242E52",
+      "--night-ink": "#E7ECF7",
+      "--night-muted": "#8C95B0",
+      "--amber-bg": "#FEF3C7",
+      "--amber-bd": "#FDE68A",
+      "--amber-tx": "#92400E",
+      "--violet-bg": "#EDE9FE",
+      "--violet-bd": "#DDD6FE",
+      "--teal-bg": "#CCFBF1",
+      "--teal-bd": "#99F6E4",
+      "--red": "#EF4444",
+      "--r-md": "14px",
+      "--r-lg": "20px",
+      "--r-xl": "28px",
+      "--font": "'Inter', system-ui, sans-serif",
+      "--mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      "--story-bg": "#FDFBF4",
+      "--story-bg-navy": "#1A1A1B",
+      "--story-serif": "'Newsreader', Georgia, 'Times New Roman', serif",
+      "--story-accent": "#2D5A56",
+      "--story-text": "#1A1A1B",
+      "--story-text-muted": "#5C6478",
+      "--story-text-on-navy": "#F5F2EA",
+      "--story-border": "rgba(26, 26, 27, 0.1)",
+      "--story-cta": "#1A1A1B",
+      "--story-cta-hover": "#2E2E30",
+      "--story-accent-soft": "rgba(45,90,86,0.12)",
+      "--story-accent-ring": "rgba(45,90,86,0.28)"
+    }
+  }
+}

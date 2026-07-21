@@ -13,7 +13,9 @@ import {
   shouldResetAnonymousOnboardingFromClient,
 } from "@/lib/auth/anonymousOnboardingEntry";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
+import { syncLocaleStorage } from "@/lib/i18n/clientLocale";
 import { useI18n } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n/types";
 import { applySignupAttributionFromSearchParams } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
 import { type LpResolvedVariant } from "@/lib/tiktok/lpConfig";
@@ -24,18 +26,31 @@ type AcquisitionBridgeClientProps = {
   channel: BridgeChannel;
   variant: LpResolvedVariant;
   queryKey: string;
+  locale: Locale;
 };
+
+/**
+ * Organic EU: V2 onboarding (productiepad tot cutover v2→v1-plaats).
+ * TikTok blijft v1-onboarding.
+ */
+function bridgeSignupHrefForChannel(channel: BridgeChannel): string {
+  return channel === "organic" ? "/v2/onboarding" : "/onboarding";
+}
 
 function AcquisitionBridgeInner({
   channel,
   variant,
   queryKey,
+  locale,
 }: AcquisitionBridgeClientProps) {
   const searchParams = useSearchParams();
   const landingPath = bridgePathForChannel(channel);
-  // CTA start de onboarding meteen (anoniem). Gegevens vragen we pas na de eerste dagstart.
-  const signupHref = "/onboarding";
-  const presentation = getBridgePresentation(channel);
+  const signupHref = bridgeSignupHrefForChannel(channel);
+  const presentation = getBridgePresentation(channel, locale);
+
+  useEffect(() => {
+    syncLocaleStorage(locale);
+  }, [locale]);
 
   useEffect(() => {
     applySignupAttributionFromSearchParams(searchParams);
@@ -59,13 +74,12 @@ function AcquisitionBridgeInner({
 
     event.preventDefault();
 
-    // Een marketing-CTA start de anonieme onboarding. Bestaande voortgang of
-    // lokale taken blijven staan: alleen een verse sessie (geen voortgang, geen
-    // lokale taken) mag resetten. De middleware-guard bepaalt vervolgens de
-    // juiste vervolgstap op basis van /onboarding.
-    const reset = shouldResetAnonymousOnboardingFromClient();
-    enterAnonymousOnboarding(reset ? { reset: true } : undefined);
-    window.location.assign("/onboarding");
+    // V2 heeft eigen localStorage-state (V2Provider); geen v1 anonymous reset.
+    if (channel !== "organic") {
+      const reset = shouldResetAnonymousOnboardingFromClient();
+      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
+    }
+    window.location.assign(signupHref);
   }
 
   return (
@@ -74,6 +88,7 @@ function AcquisitionBridgeInner({
       channel={channel}
       heroId={variant.hero.id}
       campaign={variant.campaign}
+      locale={locale}
       signupHref={signupHref}
       onCtaClick={handleCtaClick}
       ctaLabel={variant.campaign.ctaLabel ?? presentation.ctaLabel}

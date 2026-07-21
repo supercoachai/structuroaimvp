@@ -39,7 +39,10 @@ export async function startOAuthSignIn(
   if (error) throw error;
 }
 
-/** Alleen bestaande accounts; geen signup via magic link. */
+/**
+ * Stuurt e-mail OTP (6-cijferige code + optionele link) voor bestaande accounts.
+ * Primair pad: code typen in dezelfde browser (geen PKCE). Link blijft backup.
+ */
 export async function sendLoginMagicLink(
   supabase: SupabaseClient,
   email: string,
@@ -59,4 +62,48 @@ export async function sendLoginMagicLink(
     },
   });
   if (error) throw error;
+}
+
+/** Verifieer 6-cijferige login-code in dezelfde browser (omzeilt PKCE-redirect). */
+export async function verifyLoginEmailOtp(
+  supabase: SupabaseClient,
+  email: string,
+  token: string
+): Promise<{ id: string; email: string | null | undefined }> {
+  const normalized = normalizeSignupEmail(email);
+  const code = token.replace(/\s+/g, "").trim();
+  if (!normalized) throw new Error("invalid_email");
+  if (!/^\d{6,8}$/.test(code)) throw new Error("invalid_otp");
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalized,
+    token: code,
+    type: "email",
+  });
+  if (error) throw error;
+  const user = data.user ?? data.session?.user;
+  if (!user?.id) throw new Error("otp_no_session");
+  return { id: user.id, email: user.email };
+}
+
+/** Verifieer signup-bevestigingscode (email confirm) in dezelfde browser. */
+export async function verifySignupEmailOtp(
+  supabase: SupabaseClient,
+  email: string,
+  token: string
+): Promise<{ id: string; email: string | null | undefined }> {
+  const normalized = normalizeSignupEmail(email);
+  const code = token.replace(/\s+/g, "").trim();
+  if (!normalized) throw new Error("invalid_email");
+  if (!/^\d{6,8}$/.test(code)) throw new Error("invalid_otp");
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalized,
+    token: code,
+    type: "signup",
+  });
+  if (error) throw error;
+  const user = data.user ?? data.session?.user;
+  if (!user?.id) throw new Error("otp_no_session");
+  return { id: user.id, email: user.email };
 }

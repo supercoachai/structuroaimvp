@@ -58,13 +58,20 @@ function readHintSeen(): boolean {
 
 type V2CycleChipProps = {
   info: V2CycleChipInfo;
+  /**
+   * absolute = rustig rechtsboven in de energiestap (aanbevolen).
+   * inline = in de flow, uitgelijnd rechts (boven pills / propose-header).
+   */
+  variant?: "inline" | "absolute";
 };
 
 /**
- * Compact cyclus-rondje rechtsboven op de energiekaart.
- * Parent-card moet `position: relative` hebben.
+ * Compact cyclus-rondje. Op de energiestap: variant="absolute" (niet boven de begroeting).
  */
-export default function V2CycleChip({ info }: V2CycleChipProps) {
+export default function V2CycleChip({
+  info,
+  variant = "absolute",
+}: V2CycleChipProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [hintSeen, setHintSeen] = useState<boolean>(() => readHintSeen());
@@ -76,14 +83,20 @@ export default function V2CycleChip({ info }: V2CycleChipProps) {
   );
   const color = getCyclePhaseColor(phaseKey);
 
+  /** Energy-context tip (zelfde copy als vroeger boven de orb), alleen in expand. */
+  const energyTipKey =
+    phaseKey === "luteal"
+      ? "cycle.energyContextTip_luteal_late"
+      : (`cycle.energyContextTip_${phaseKey}` as const);
+
   const phaseInfo = useMemo(
     () => ({
       color,
       label: t(`cycle.contextPhase_${phaseKey}`),
       bio: t(`cycle.contextBio_${phaseKey}`),
-      tip: t(`cycle.contextTip_${phaseKey}`),
+      tip: t(energyTipKey),
     }),
-    [color, phaseKey, t],
+    [color, energyTipKey, phaseKey, t],
   );
 
   const handleToggle = () => {
@@ -113,80 +126,94 @@ export default function V2CycleChip({ info }: V2CycleChipProps) {
     boxShadow: "0 1px 2px rgba(26, 26, 27, 0.06)",
   };
 
-  return (
-    <>
-      <div
-        style={{
+  const rootStyle: CSSProperties =
+    variant === "absolute"
+      ? {
           position: "absolute",
-          top: 14,
-          right: 14,
+          top: 4,
+          right: 0,
           zIndex: 5,
-        }}
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 8,
+          maxWidth: "min(280px, calc(100% - 8px))",
+        }
+      : {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          width: "100%",
+          margin: "0 0 4px",
+          gap: 8,
+        };
+
+  return (
+    <div style={rootStyle}>
+      <button
+        type="button"
+        onClick={handleToggle}
+        style={chipBtn}
+        aria-expanded={open}
+        aria-label={t("cycle.dagstartCyclusButtonAria", {
+          day: String(info.day),
+        })}
+        title={!hintSeen ? t("cycle.dagstartCyclusHint") : undefined}
       >
-        <button
-          type="button"
-          onClick={handleToggle}
-          style={chipBtn}
-          aria-expanded={open}
-          aria-label={t("cycle.dagstartCyclusButtonAria", {
-            day: String(info.day),
-          })}
-          title={!hintSeen ? t("cycle.dagstartCyclusHint") : undefined}
+        <CycleRing
+          day={info.day}
+          cycleLength={info.cycleLength}
+          menstruationDuration={info.menstruationDuration}
+          size={26}
+          stroke={4}
+        />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color: open ? color : "var(--text-muted)",
+            whiteSpace: "nowrap",
+          }}
         >
-          <CycleRing
-            day={info.day}
-            cycleLength={info.cycleLength}
-            menstruationDuration={info.menstruationDuration}
-            size={26}
-            stroke={4}
-          />
+          Dag {info.day}
+        </span>
+        {!hintSeen ? (
           <span
             style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: open ? color : "var(--text-muted)",
-              whiteSpace: "nowrap",
+              position: "absolute",
+              top: -3,
+              right: -3,
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "var(--accent)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 9.5,
+              fontWeight: 700,
+              color: "#fff",
+              fontStyle: "italic",
+              boxShadow: "0 0 0 2px #fff",
             }}
+            aria-hidden
           >
-            Dag {info.day}
+            i
           </span>
-          {!hintSeen ? (
-            <span
-              style={{
-                position: "absolute",
-                top: -3,
-                right: -3,
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                background: "var(--accent)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 9.5,
-                fontWeight: 700,
-                color: "#fff",
-                fontStyle: "italic",
-                boxShadow: "0 0 0 2px #fff",
-              }}
-              aria-hidden
-            >
-              i
-            </span>
-          ) : null}
-        </button>
-      </div>
+        ) : null}
+      </button>
 
       {open ? (
         <div
           style={{
-            marginTop: 4,
-            marginBottom: 4,
-            width: "100%",
+            width: variant === "absolute" ? "min(280px, 72vw)" : "100%",
+            maxWidth: 320,
+            textAlign: "left",
             padding: 14,
             borderRadius: 14,
             background: `${phaseInfo.color}14`,
             border: `1px solid ${phaseInfo.color}30`,
+            boxSizing: "border-box",
           }}
         >
           <div
@@ -232,7 +259,7 @@ export default function V2CycleChip({ info }: V2CycleChipProps) {
           </p>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 

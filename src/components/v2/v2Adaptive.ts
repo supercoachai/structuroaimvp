@@ -133,35 +133,16 @@ const ENERGY_LABELS: Record<V2Energy, string> = {
   high: "Hoog",
 };
 
-/** Zelfde energie 3+ dagen op rij, of 3 van laatste 4 dagen. */
+/**
+ * Shortcut "Zelfde als gisteren": toon zodra gisteren een energie bekend is.
+ * (Eerder: pas bij 3+ dagen patroon. Label beloofde wel "gisteren".)
+ */
 export function getV2EnergyShortcut(now = new Date()): V2EnergyShortcut | null {
   const { energyByYmd } = readV2Adaptive();
   const yesterday = ymdDaysAgo(1, now);
   const yesterdayEnergy = energyByYmd[yesterday];
   if (!yesterdayEnergy) return null;
-
-  let consecutive = 0;
-  for (let i = 1; i <= 6; i += 1) {
-    const ymd = ymdDaysAgo(i, now);
-    if (energyByYmd[ymd] === yesterdayEnergy) {
-      consecutive += 1;
-    } else {
-      break;
-    }
-  }
-  if (consecutive >= 3) {
-    return { energy: yesterdayEnergy, label: ENERGY_LABELS[yesterdayEnergy] };
-  }
-
-  let matchCount = 0;
-  for (let i = 1; i <= 4; i += 1) {
-    if (energyByYmd[ymdDaysAgo(i, now)] === yesterdayEnergy) matchCount += 1;
-  }
-  if (matchCount >= 3) {
-    return { energy: yesterdayEnergy, label: ENERGY_LABELS[yesterdayEnergy] };
-  }
-
-  return null;
+  return { energy: yesterdayEnergy, label: ENERGY_LABELS[yesterdayEnergy] };
 }
 
 export function recordV2FrisseStartAccepted(ymd = todayYmd()): void {

@@ -92,6 +92,11 @@ export default function ShutdownV2Client() {
     goToDump();
   };
 
+  const confirmNotCalm = () => {
+    trackV2ShutdownSentiment({ sentiment: "calm_no" });
+    goToDump();
+  };
+
   const stepNumber = phase === "review" ? 1 : 2;
 
   return (
@@ -195,6 +200,9 @@ export default function ShutdownV2Client() {
             </section>
             <button type="button" onClick={confirmCalm} className="btn-primary w-full">
               Ja, rustig
+            </button>
+            <button type="button" onClick={confirmNotCalm} className="v2-link mx-auto">
+              Niet echt
             </button>
             <button type="button" onClick={skipSentiment} className="v2-link mx-auto">
               Overslaan

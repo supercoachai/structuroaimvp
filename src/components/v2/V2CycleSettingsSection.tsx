@@ -2,6 +2,10 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 
+import CycleDatePicker, {
+  isoDateLocal,
+  parseLocalIsoDate,
+} from "@/components/cycle/CycleDatePicker";
 import { useI18n } from "@/lib/i18n";
 import {
   CYCLE_LENGTH_MAX,
@@ -20,27 +24,6 @@ import {
 import { type V2Settings } from "./v2Settings";
 import { ensureV2CyclePeriodStart } from "./V2CycleChip";
 import { v2Styles } from "./theme";
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function parseLocalIsoDate(iso: string): Date | null {
-  const parts = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!parts) return null;
-  const year = Number(parts[1]);
-  const month = Number(parts[2]) - 1;
-  const day = Number(parts[3]);
-  const d = new Date(year, month, day);
-  if (d.getFullYear() !== year || d.getMonth() !== month || d.getDate() !== day) {
-    return null;
-  }
-  return d;
-}
 
 function formatDate(iso: string | null, locale: string): string {
   if (!iso) return "";
@@ -129,11 +112,11 @@ export default function V2CycleSettingsSection({
   const consentOn = state.cyclusOptIn;
   const [adjustOpen, setAdjustOpen] = useState(false);
 
-  const todayStr = useMemo(() => isoDate(new Date()), []);
+  const todayStr = useMemo(() => isoDateLocal(new Date()), []);
   const minBack = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - CYCLE_SETUP_MAX_DAYS_BACK);
-    return isoDate(d);
+    return isoDateLocal(d);
   }, []);
 
   const periodDisplay = formatDate(settings.lastPeriodStart, locale);
@@ -181,19 +164,12 @@ export default function V2CycleSettingsSection({
                 <label htmlFor="v2-cycle-period-start" style={{ ...v2Styles.settingsHint, margin: 0 }}>
                   {t("cycle.setupPeriodLabel")}
                 </label>
-                <input
+                <CycleDatePicker
                   id="v2-cycle-period-start"
-                  type="date"
-                  className="v2-field"
                   value={draftPeriod}
                   min={minBack}
                   max={todayStr}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (!v) return;
-                    patch({ lastPeriodStart: v });
-                  }}
-                  style={{ ...v2Styles.input, fontSize: 15, minHeight: 48 }}
+                  onChange={(v) => patch({ lastPeriodStart: v })}
                 />
                 <button
                   type="button"

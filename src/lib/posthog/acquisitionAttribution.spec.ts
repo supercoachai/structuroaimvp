@@ -94,6 +94,29 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.source).toBe("structuro_eu");
   });
 
+  it("/v2/onboarding is organische EU-entry (geen TikTok)", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/v2/onboarding",
+      searchParams: new URLSearchParams(
+        "utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=hero_primary"
+      ),
+      referrer: "https://www.structuro.eu/v2",
+    });
+    expect(result.is_tiktok).toBe(false);
+    expect(result.source).toBe("structuro_eu");
+    expect(result.utm_campaign).toBe("eu_v2");
+  });
+
+  it("kale /v2/onboarding zonder utm krijgt structuro_eu default", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/v2/onboarding",
+      searchParams: new URLSearchParams(),
+      referrer: null,
+    });
+    expect(result.is_tiktok).toBe(false);
+    expect(result.source).toBe("structuro_eu");
+  });
+
   it("direct verkeer blijft direct", () => {
     const result = resolveAcquisitionAttribution({
       pathname: "/registreren",

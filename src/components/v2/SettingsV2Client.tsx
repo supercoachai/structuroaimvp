@@ -209,7 +209,8 @@ export default function SettingsV2Client() {
           <h1 style={v2Styles.title}>{t("settings.title")}</h1>
           <p style={v2Styles.body}>{t("settings.subtitle")}</p>
           <p style={{ ...v2Styles.settingsHint, marginTop: 8 }}>
-            Testomgeving: login, abonnement en cloud-sync werken alleen in productie.
+            Account en cloud-sync via Bewaar je dag. Tot die tijd blijft alles lokaal
+            op dit apparaat.
           </p>
         </header>
 

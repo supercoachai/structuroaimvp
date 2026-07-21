@@ -19,6 +19,8 @@ type OAuthSignInButtonsProps = {
   nextPath?: string;
   /** Provider die als gevulde primaire knop bovenaan komt (rest is secundair). */
   primaryProvider?: OAuthProviderId;
+  /** Grijze "binnenkort"-knoppen (bijv. Microsoft). Standaard uit: minder keuzedruk. */
+  showComingSoon?: boolean;
   onError?: (message: string) => void;
 };
 
@@ -60,11 +62,12 @@ export function OAuthSignInButtons({
   disabled,
   nextPath = "/",
   primaryProvider,
+  showComingSoon = false,
   onError,
 }: OAuthSignInButtonsProps) {
   const { t } = useI18n();
   const enabled = getEnabledOAuthProviders();
-  const comingSoonProviders = getComingSoonOAuthProviders();
+  const comingSoonProviders = showComingSoon ? getComingSoonOAuthProviders() : [];
   const [busy, setBusy] = useState<OAuthProviderId | null>(null);
 
   if (enabled.length === 0 && comingSoonProviders.length === 0) return null;

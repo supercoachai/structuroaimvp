@@ -1,63 +1,69 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { V2Header, V2Page, V2Progress, V2Reassurance } from "./V2Chrome";
+import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
   v2FlowLayoutForOnboardingPhase,
   v2FlowWrapStyle,
   v2Styles,
 } from "./theme";
 import { scrollV2ToTop, useV2Go } from "./v2nav";
+import { useV2, type V2Energy } from "./V2Context";
 import {
-  V2_ENERGY_OPTIONS,
-  useV2,
-  type V2Energy,
-} from "./V2Context";
-import {
-  v2HasThings,
+  v2BuildAdjustOptions,
   v2MaxSlotsForEnergy,
   v2NormalizeThings,
   v2StructuroThingPicks,
-  v2SuggestionEnergyLabel,
-  v2SuggestionsForDayEnergy,
-  v2ThingCounter,
-  v2ThingTitle,
 } from "./v2Things";
-import V2CycleChip, { useV2CycleChip } from "./V2CycleChip";
-import V2PickWho from "./V2PickWho";
-import V2EnergyStep, { v2GreetingWord } from "./V2EnergyStep";
-import V2SwipeDeck from "./V2SwipeDeck";
+import V2IntroStep from "./V2IntroStep";
+import type { V2CycleOptInStage } from "./V2CycleOptInStep";
+import V2ProgressDots from "./V2ProgressDots";
+import V2AccountSaveCta from "./V2AccountSaveCta";
+import { patchV2Settings } from "./v2Settings";
 
-type Phase =
-  | "welcome"
-  | "energy"
-  | "pick_who"
-  | "thing"
-  | "thing_custom"
-  | "why_intro"
-  | "why_outcome"
-  | "why_reflect"
-  | "done";
+/** Latere fases: CycleRing/heroicons/setup niet in welcome-bundle. */
+const V2ProposeStep = dynamic(() => import("./V2ProposeStep"), {
+  ssr: false,
+  loading: () => null,
+});
+const V2AdjustStep = dynamic(() => import("./V2AdjustStep"), {
+  ssr: false,
+  loading: () => null,
+});
+const V2CycleOptInStep = dynamic(() => import("./V2CycleOptInStep"), {
+  ssr: false,
+  loading: () => null,
+});
+const V2DoneStep = dynamic(() => import("./V2DoneStep"), {
+  ssr: false,
+  loading: () => null,
+});
 
-const TOTAL_STEPS = 4;
+/**
+ * Design-phone happy path: welcome → cyclus intro → (bij Ja: setup) → energy+voorstellen → klaar.
+ * Escape: zelf aanpassen (checkbox). Geen pick_who / swipe.
+ * Progress: 3 segmenten; welcome telt niet. Cycle intro+setup delen stap 1; adjust deelt stap met energy.
+ * Cyclus vóór energy: orb-ring + fase-label + info-sheet op propose (geen chip).
+ */
+type Phase = "welcome" | "cycle" | "energy" | "adjust" | "done";
 
+const TOTAL_STEPS = 3;
+
+/** Progress na welcome: cycle=1, energy/adjust=2, done=3. Welcome heeft geen bar. */
 function stepNumberFor(phase: Phase): number {
   switch (phase) {
     case "welcome":
+      return 0;
+    case "cycle":
       return 1;
     case "energy":
+    case "adjust":
       return 2;
-    case "pick_who":
-    case "thing":
-    case "thing_custom":
-    case "why_intro":
-    case "why_outcome":
-    case "why_reflect":
-      return 3;
     case "done":
-      return 4;
+      return 3;
   }
 }
 
@@ -68,39 +74,37 @@ export default function OnboardingV2Client() {
   const { state, update } = useV2();
   const [phase, setPhase] = useState<Phase>("welcome");
   const [history, setHistory] = useState<Phase[]>([]);
-  const [customThing, setCustomThing] = useState("");
+  const [cycleStage, setCycleStage] = useState<V2CycleOptInStage>("intro");
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
-  const [suggestedByStructuro, setSuggestedByStructuro] = useState(false);
-  const [energySkipped, setEnergySkipped] = useState(false);
-  const [greeting, setGreeting] = useState("");
-  const cycleChip = useV2CycleChip();
   const replayHandled = useRef(false);
 
-  useEffect(() => {
-    setGreeting(v2GreetingWord());
-  }, []);
-
-  // Settings "Tour opnieuw" → /v2/onboarding?replay=1
   useEffect(() => {
     if (replayHandled.current) return;
     if (searchParams.get("replay") !== "1") return;
     replayHandled.current = true;
     setPhase("welcome");
     setHistory([]);
+    setCycleStage("intro");
     setSelectedThings([]);
-    setSuggestedByStructuro(false);
-    setEnergySkipped(false);
-    setCustomThing("");
     router.replace("/v2/onboarding", { scroll: false });
   }, [router, searchParams]);
 
   const maxSlots = v2MaxSlotsForEnergy(state.energy);
   const things = v2NormalizeThings(state.things);
 
-  // Bij elke stap-overgang terug naar boven, zodat de kop nooit onder de vouw staat.
+  const proposals = useMemo(
+    () => (state.energy ? v2StructuroThingPicks(state.energy, maxSlots) : []),
+    [state.energy, maxSlots],
+  );
+
+  const adjustOptions = useMemo(
+    () => v2BuildAdjustOptions(state.energy, selectedThings),
+    [state.energy, selectedThings],
+  );
+
   useEffect(() => {
     scrollV2ToTop();
-  }, [phase]);
+  }, [phase, cycleStage]);
 
   const goTo = useCallback(
     (next: Phase) => {
@@ -111,408 +115,172 @@ export default function OnboardingV2Client() {
   );
 
   const goBack = useCallback(() => {
+    if (phase === "cycle" && cycleStage === "setup") {
+      setCycleStage("intro");
+      return;
+    }
     setHistory((prev) => {
       if (prev.length === 0) return prev;
       setPhase(prev[prev.length - 1]);
       return prev.slice(0, prev.length - 1);
     });
-  }, []);
+  }, [phase, cycleStage]);
 
   const stepNumber = stepNumberFor(phase);
-  const canGoBack = history.length > 0 && phase !== "welcome";
+  const canGoBack =
+    (phase === "cycle" && cycleStage === "setup") ||
+    (history.length > 0 && phase !== "welcome" && phase !== "done");
+  const isWelcome = phase === "welcome";
 
-  const suggestions = useMemo(
-    () => v2SuggestionsForDayEnergy(state.energy),
-    [state.energy],
-  );
+  const pickEnergy = (energy: V2Energy) => {
+    update({ energy });
+    setSelectedThings(v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy)));
+  };
+
+  const proceedToEnergy = (extra?: { cyclusOptIn?: boolean }) => {
+    // Geen pre-select: eerst energie-pill, dan voorstellen (één lus).
+    setSelectedThings([]);
+    update({
+      energy: null,
+      ...(extra?.cyclusOptIn ? { cyclusOptIn: true } : {}),
+    });
+    goTo("energy");
+  };
+
+  const enableCycle = () => {
+    setCycleStage("setup");
+  };
+
+  const skipCycle = () => {
+    setCycleStage("intro");
+    proceedToEnergy();
+  };
+
+  const completeCycleSetup = async (
+    lastPeriodStart: string,
+    averageLength: number,
+    menstruationDuration: number,
+  ) => {
+    patchV2Settings({
+      lastPeriodStart,
+      cycleLength: averageLength,
+      menstruationDuration,
+    });
+    proceedToEnergy({ cyclusOptIn: true });
+  };
 
   const finishThings = (nextThings: string[]) => {
-    update({ things: v2NormalizeThings(nextThings) });
-    goTo("why_intro");
+    update({ things: v2NormalizeThings(nextThings), todayDone: false });
+    goTo("done");
   };
 
-  const selectEnergy = (energy: V2Energy) => {
-    update({ energy });
-    setSelectedThings([]);
-    setSuggestedByStructuro(false);
-    setEnergySkipped(false);
-    goTo("pick_who");
+  const confirmProposals = () => {
+    const picks = selectedThings.length > 0 ? selectedThings : proposals;
+    finishThings(picks);
   };
 
-  const skipEnergy = () => {
-    // Overslaan = genoeg als neutrale default, geen oude "hoog"/"laag" meenemen.
-    update({ energy: "enough" });
-    setSelectedThings([]);
-    setSuggestedByStructuro(false);
-    setEnergySkipped(true);
-    goTo("pick_who");
+  const openAdjust = () => {
+    const picks = selectedThings.length > 0 ? selectedThings : proposals;
+    setSelectedThings(picks);
+    goTo("adjust");
   };
 
-  const energyLabel =
-    V2_ENERGY_OPTIONS.find((o) => o.value === (state.energy ?? "enough"))?.label ??
-    "Genoeg";
-
-  const pickStructuro = () => {
-    setSelectedThings(v2StructuroThingPicks(state.energy, maxSlots));
-    setSuggestedByStructuro(true);
-    goTo("thing");
-  };
-
-  const pickSelf = () => {
-    setSelectedThings([]);
-    setSuggestedByStructuro(false);
-    goTo("thing");
-  };
-
-  const toggleThing = (item: string) => {
-    setSuggestedByStructuro(false);
-    if (selectedThings.includes(item)) {
-      setSelectedThings(selectedThings.filter((x) => x !== item));
-      return;
-    }
-    if (selectedThings.length >= maxSlots) return;
-    const next = [...selectedThings, item];
-    // Na Structuro-suggestie altijd eerst bevestigen; bij zelf kiezen met 1 slot mag direct door.
-    if (maxSlots === 1 && !suggestedByStructuro) {
-      finishThings(next);
-      return;
-    }
-    setSelectedThings(next);
-  };
-
-  const confirmSelection = () => finishThings(selectedThings);
-
-  const skipThings = () => finishThings([]);
-
-  const confirmCustomThing = () => {
-    const trimmed = customThing.trim();
-    if (maxSlots === 1) {
-      finishThings(trimmed.length > 0 ? [trimmed] : []);
-      return;
-    }
-    if (trimmed.length === 0) {
-      goTo("thing");
-      return;
-    }
+  const toggleAdjust = (title: string) => {
     setSelectedThings((prev) => {
-      const without = prev.filter((x) => x !== trimmed);
-      if (without.length >= maxSlots) return prev;
-      return [...without, trimmed].slice(0, maxSlots);
+      if (prev.includes(title)) return prev.filter((x) => x !== title);
+      if (prev.length >= maxSlots) return prev;
+      return [...prev, title];
     });
-    setCustomThing("");
-    goTo("thing");
   };
-
-  const counter = v2ThingCounter(selectedThings.length, maxSlots);
-
-  const submitWhyOutcome = () => {
-    if (state.why.trim().length > 0 || state.whyOutcome.trim().length > 0) {
-      goTo("why_reflect");
-    } else {
-      goTo("done");
-    }
-  };
-
-  const skipWhy = () => goTo("done");
 
   const finish = () => {
     go("/v2/home", { todayDone: false });
   };
 
-  const showAnchorInDone = state.energy === "low" && state.why.trim().length > 0;
+  const beginIntro = () => {
+    setCycleStage("intro");
+    goTo("cycle");
+  };
+
   const flowLayout = v2FlowLayoutForOnboardingPhase(phase);
+  const showReassurance = phase === "energy" || phase === "done";
 
   return (
     <V2Page>
-      <V2Header exitHref="/v2" />
-      <V2Progress step={stepNumber} total={TOTAL_STEPS} showReassurance={false} />
-
-      <div style={v2Styles.flowShell}>
-        <div style={v2FlowWrapStyle(flowLayout)}>
-          <section
-            key={phase}
-            className="v2-fade"
-            style={{
-              ...(phase === "energy" ? v2Styles.cardEnergy : v2Styles.card),
-              ...(phase === "energy" ? { position: "relative" as const } : null),
-            }}
-            aria-live="polite"
-          >
-        {phase === "welcome" && (
-          <>
-            <h1 style={v2Styles.title}>Even rustig. We doen één ding tegelijk.</h1>
-            <p style={v2Styles.body}>
-              Je hoeft niks te onthouden en niks goed te doen. Fout bestaat hier niet.
-            </p>
-            <div style={v2Styles.actions}>
-              <button type="button" className="btn-primary w-full" onClick={() => goTo("energy")}>
-                Begin
-              </button>
-            </div>
-          </>
-        )}
-
-        {phase === "energy" && (
-          <>
-            {cycleChip ? <V2CycleChip info={cycleChip} /> : null}
-            <V2EnergyStep
-              greeting={greeting || undefined}
-              userName={state.name.trim() || undefined}
-              energy={state.energy}
-              title="Hoe is je energie?"
-              subtitle="Eén tik. Dit bepaalt alleen wat Structuro straks voorstelt."
-              onPick={selectEnergy}
-              onSkip={skipEnergy}
-            />
-          </>
-        )}
-
-        {phase === "pick_who" && (
-          <V2PickWho
-            energyLabel={energySkipped ? undefined : energyLabel}
-            onStructuro={pickStructuro}
-            onSelf={pickSelf}
+      {!isWelcome ? (
+        <>
+          <V2Header
+            exitHref="/v2"
+            exitLabel="Stoppen"
+            onBack={canGoBack ? goBack : undefined}
+            brandMode="flow"
           />
-        )}
+          <V2ProgressDots step={stepNumber} total={TOTAL_STEPS} showLabel={false} />
+        </>
+      ) : null}
 
-        {phase === "thing" && !suggestedByStructuro ? (
-          <V2SwipeDeck
-            suggestions={suggestions}
-            maxSlots={maxSlots}
-            initialKept={selectedThings}
-            onDone={finishThings}
-            onCustom={() => {
-              setCustomThing("");
-              goTo("thing_custom");
-            }}
-            onSkipAll={skipThings}
-          />
-        ) : null}
-
-        {phase === "thing" && suggestedByStructuro ? (
-          <>
-            <h1 style={v2Styles.title}>{v2ThingTitle(maxSlots)}</h1>
-            <p style={v2Styles.body}>
-              Structuro koos dit bij jouw energie. Pas aan of bevestig.
-            </p>
-            {counter ? (
-              <p style={{ ...v2Styles.body, marginTop: -4, color: "var(--text-muted)" }}>
-                {counter}
-              </p>
-            ) : null}
-            <div style={v2Styles.optionList}>
-              {suggestions.map((s) => {
-                const picked = selectedThings.includes(s.title);
-                return (
-                  <button
-                    key={`${s.energy}:${s.title}`}
-                    type="button"
-                    className="v2-choice"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
-                    onClick={() => toggleThing(s.title)}
-                    aria-pressed={picked}
-                  >
-                    <span style={{ textAlign: "left" }}>
-                      {picked ? `✓ ${s.title}` : s.title}
-                    </span>
-                    <span className="v2-meta" style={{ flexShrink: 0 }}>
-                      {v2SuggestionEnergyLabel(s.energy)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={v2Styles.softActions}>
-              {selectedThings.length > 0 ? (
-                <button type="button" className="btn-primary w-full" onClick={confirmSelection}>
-                  Dit kies ik
-                </button>
+      {isWelcome ? (
+        <V2IntroStep onBegin={beginIntro} />
+      ) : (
+        <div style={v2Styles.flowShell}>
+          <div style={v2FlowWrapStyle(flowLayout)}>
+            <section
+              key={`${phase}-${cycleStage}`}
+              className="v2-fade"
+              style={
+                phase === "energy" || phase === "cycle"
+                  ? v2Styles.cardEnergy
+                  : v2Styles.card
+              }
+              aria-live="polite"
+            >
+              {phase === "cycle" ? (
+                <V2CycleOptInStep
+                  stage={cycleStage}
+                  onEnable={enableCycle}
+                  onSkip={skipCycle}
+                  onSetupSubmit={completeCycleSetup}
+                />
               ) : null}
-              <button
-                type="button"
-                className="v2-link"
-                onClick={() => {
-                  setCustomThing("");
-                  setSuggestedByStructuro(false);
-                  goTo("thing_custom");
-                }}
-              >
-                Iets anders
-              </button>
-              <button type="button" className="v2-link" onClick={skipThings}>
-                Niks kiezen, ook goed
-              </button>
-            </div>
-          </>
-        ) : null}
 
-        {phase === "thing_custom" && (
-          <>
-            <h1 style={v2Styles.title}>Wat zou jouw kleine ding zijn?</h1>
-            <p style={v2Styles.body}>
-              {maxSlots === 1
-                ? "In je eigen woorden. Eén regel is genoeg."
-                : "In je eigen woorden. Je komt daarna terug om eventueel meer te kiezen."}
-            </p>
-            <label htmlFor="v2-custom-thing" style={v2Styles.srOnly}>
-              Jouw eigen kleine ding
-            </label>
-            <input
-              id="v2-custom-thing"
-              type="text"
-              className="v2-field"
-              value={customThing}
-              onChange={(e) => setCustomThing(e.target.value)}
-              placeholder="Bijvoorbeeld: vijf minuten lezen"
-              autoComplete="off"
-            />
-            <div style={v2Styles.actions}>
-              <button type="button" className="btn-primary w-full" onClick={confirmCustomThing}>
-                {maxSlots === 1 ? "Dit kies ik" : "Toevoegen"}
-              </button>
-            </div>
-          </>
-        )}
+              {phase === "energy" ? (
+                <V2ProposeStep
+                  energy={state.energy}
+                  proposals={
+                    selectedThings.length > 0 ? selectedThings : proposals
+                  }
+                  onPickEnergy={pickEnergy}
+                  onConfirm={confirmProposals}
+                  onAdjust={openAdjust}
+                />
+              ) : null}
 
-        {phase === "why_intro" && (
-          <>
-            <p style={v2Styles.kicker}>
-              Optioneel. Zo weet Structuro waarvoor jij dit doet.
-            </p>
-            <h1 style={v2Styles.title}>Waarvoor doe je dit?</h1>
-            <p style={v2Styles.body}>Kort, in je eigen woorden. Dit blijft van jou.</p>
-            <label htmlFor="v2-why" style={v2Styles.srOnly}>
-              Waarvoor doe je dit
-            </label>
-            <input
-              id="v2-why"
-              type="text"
-              className="v2-field"
-              value={state.why}
-              onChange={(e) => update({ why: e.target.value })}
-              placeholder="Bijvoorbeeld: rust in mijn hoofd"
-              autoComplete="off"
-            />
-            <div style={v2Styles.actions}>
-              <button
-                type="button"
-                className="btn-primary w-full"
-                onClick={() => goTo("why_outcome")}
-              >
-                Volgende
-              </button>
-              <button type="button" className="v2-link" onClick={skipWhy}>
-                Overslaan
-              </button>
-            </div>
-          </>
-        )}
+              {phase === "adjust" ? (
+                <V2AdjustStep
+                  options={adjustOptions}
+                  selected={selectedThings}
+                  maxSlots={maxSlots}
+                  onToggle={toggleAdjust}
+                  onConfirm={() => finishThings(selectedThings)}
+                  onSkip={() => finishThings([])}
+                />
+              ) : null}
 
-        {phase === "why_outcome" && (
-          <>
-            <h1 style={v2Styles.title}>En wat zou dat je opleveren?</h1>
-            <p style={v2Styles.body}>Ook dit mag je overslaan.</p>
-            <label htmlFor="v2-why-outcome" style={v2Styles.srOnly}>
-              Wat het je oplevert
-            </label>
-            <input
-              id="v2-why-outcome"
-              type="text"
-              className="v2-field"
-              value={state.whyOutcome}
-              onChange={(e) => update({ whyOutcome: e.target.value })}
-              placeholder="Bijvoorbeeld: meer ruimte voor mezelf"
-              autoComplete="off"
-            />
-            <div style={v2Styles.actions}>
-              <button type="button" className="btn-primary w-full" onClick={submitWhyOutcome}>
-                Klaar
-              </button>
-              <button type="button" className="v2-link" onClick={skipWhy}>
-                Overslaan
-              </button>
-            </div>
-          </>
-        )}
-
-        {phase === "why_reflect" && (
-          <>
-            <h1 style={v2Styles.title}>Dit is jouw waarom.</h1>
-            <div style={v2Styles.anchorCard}>
-              {state.why.trim().length > 0 && (
-                <p style={v2Styles.anchorQuote}>&ldquo;{state.why.trim()}&rdquo;</p>
-              )}
-              {state.whyOutcome.trim().length > 0 && (
-                <p style={v2Styles.anchorOutcome}>
-                  Het levert je op: {state.whyOutcome.trim()}
-                </p>
-              )}
-            </div>
-            <p style={v2Styles.body}>
-              Daar mag je op terugvallen als een dag zwaar is. Structuro laat dit
-              zachtjes terugkomen op een dag met lage energie, als reden om tóch dat
-              ene kleine ding te doen.
-            </p>
-            <div style={v2Styles.actions}>
-              <button type="button" className="btn-primary w-full" onClick={() => goTo("done")}>
-                Verder
-              </button>
-            </div>
-          </>
-        )}
-
-        {phase === "done" && (
-          <>
-            {v2HasThings(things) ? (
-              <>
-                <h1 style={v2Styles.title}>Klaar. Dit staat voor je klaar:</h1>
-                <div style={v2Styles.resultCard}>
-                  <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
-                    {things.map((t) => (
-                      <li key={t} style={v2Styles.resultThing}>
-                        {t}
-                      </li>
-                    ))}
-                  </ul>
-                  {showAnchorInDone && (
-                    <p style={v2Styles.resultAnchor}>
-                      Je deed dit voor: &ldquo;{state.why.trim()}&rdquo;
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <h1 style={v2Styles.title}>Klaar.</h1>
-                <div style={v2Styles.resultCard}>
-                  <p style={v2Styles.resultThing}>Vandaag hoeft er niks. Ook goed.</p>
-                </div>
-              </>
-            )}
-            <p style={v2Styles.body}>Meer hoeft niet vandaag.</p>
-            <div style={v2Styles.actions}>
-              <button type="button" className="btn-primary w-full" onClick={finish}>
-                Naar je home
-              </button>
-            </div>
-          </>
-        )}
-          </section>
-
-          <V2Reassurance />
-        </div>
-      </div>
-
-      {canGoBack && (
-        <div style={v2Styles.footer}>
-          <button type="button" className="v2-link" style={v2Styles.backLink} onClick={goBack}>
-            Terug
-          </button>
+              {phase === "done" ? (
+                <V2DoneStep
+                  things={things}
+                  onContinue={finish}
+                  continueLabel="Naar je dag"
+                  secondary={
+                    <V2AccountSaveCta content="v2_onboarding_done" />
+                  }
+                />
+              ) : null}
+            </section>
+            {showReassurance ? (
+              <V2Reassurance>Stoppen kan altijd.</V2Reassurance>
+            ) : null}
+          </div>
         </div>
       )}
     </V2Page>

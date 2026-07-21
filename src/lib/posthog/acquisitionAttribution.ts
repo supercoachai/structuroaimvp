@@ -88,7 +88,12 @@ export function resolveAcquisitionAttribution(input: {
   const refDomain = referrerDomain(input.referrer);
 
   const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
-  const fromOrganicRoute = bridgeChannelFromPath(landing_path) === "organic";
+  // Organic EU productiepad (tot cutover): /v2/onboarding.
+  const fromV2OrganicEntry =
+    landing_path === "/v2/onboarding" ||
+    landing_path.startsWith("/v2/onboarding/");
+  const fromOrganicRoute =
+    bridgeChannelFromPath(landing_path) === "organic" || fromV2OrganicEntry;
   const fromJasperRoute = isJasperLandingPath(landing_path);
 
   // Kale /tiktok bio-link: geen eigen utm_source/source en geen ttclid in de URL.

@@ -96,46 +96,6 @@ export default function AbonnementV2Client({
     setWhyAnchor(resolvePaywallWhyAnchor(state.why, state.whyOutcome));
   }, [state.why, state.whyOutcome]);
 
-  const isTrialActive = reason === "trial_active";
-  // Altijd de granted trial van dit account (stats.trialDays = signup_source).
-  const displayTrialDays =
-    Number.isFinite(stats.trialDays) && stats.trialDays > 0
-      ? stats.trialDays
-      : Number.isFinite(trialDays) && trialDays > 0
-        ? trialDays
-        : DEFAULT_STRIPE_TRIAL_DAYS;
-  const daysLeft =
-    trialDaysLeft != null && Number.isFinite(trialDaysLeft) && trialDaysLeft > 0
-      ? trialDaysLeft
-      : displayTrialDays;
-
-  const kicker = isTrialActive
-    ? "Je proef loopt nog"
-    : reason === "subscription_ended"
-      ? "Je toegang is beëindigd"
-      : "Je proefperiode is voorbij";
-
-  const headline = isTrialActive
-    ? `Nog ${daysLeft} ${daysLeft === 1 ? "dag" : "dagen"} gratis`
-    : `Dit bouwde je in ${displayTrialDays} dagen op.`;
-
-  const lead = isTrialActive ? (
-    <>
-      Je kunt Structuro nu alvast vastleggen. Dan ga je na je proef gewoon door,
-      zonder onderbreking. Je voortgang blijft staan.
-    </>
-  ) : (
-    <>
-      {displayTrialDays} dagen lang hield Structuro je op koers. Je ritme, je lijsten,
-      je rust: die blijven precies zoals ze nu zijn.{" "}
-      <strong>Dit ritme blijft staan als je doorgaat.</strong>
-    </>
-  );
-
-  const primaryLabel = isTrialActive
-    ? "Abonneer nu"
-    : "Ik blijf, behoud mijn systeem";
-
   const startCheckout = useCallback(async () => {
     if (!canCheckout) {
       toast("Log eerst in om te betalen.");
@@ -171,6 +131,91 @@ export default function AbonnementV2Client({
     setDoneMode("stop");
   }, []);
 
+  // Zonder sessie: geen nep-trial of demostats. Eerlijke login-staat.
+  if (!canCheckout) {
+    return (
+      <V2Page>
+        <V2Header exitHref="/v2/home" exitLabel="Naar home" />
+        <div className="v2-abonnement v2-fade">
+          <V2Eyebrow>Abonnement</V2Eyebrow>
+          <h1 style={{ ...v2Styles.title, fontSize: "var(--fs-display)", marginTop: 8 }}>
+            Log in om te starten
+          </h1>
+          <p style={{ ...v2Styles.body, marginTop: 12 }}>
+            Om je proefperiode of abonnement te bekijken, log je eerst in. Geen
+            account? Start via de acquisitiepagina, daar kun je 3 dagen gratis
+            beginnen.
+          </p>
+          <section className="v2-abonnement__decision" style={{ marginTop: 24 }}>
+            <button
+              type="button"
+              className="btn-primary w-full"
+              onClick={() => router.push("/v2/login?next=/v2/abonnement")}
+            >
+              Log in
+            </button>
+            <button
+              type="button"
+              className="v2-link"
+              style={{ marginTop: 12 }}
+              onClick={() =>
+                router.push(
+                  "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=v2_abonnement"
+                )
+              }
+            >
+              Start 3 dagen gratis
+            </button>
+          </section>
+          <p className="v2-abonnement__trust">
+            Checkout werkt met een echte sessie. Zonder login kun je eerst de app
+            proberen.
+          </p>
+        </div>
+      </V2Page>
+    );
+  }
+
+  const isTrialActive = reason === "trial_active";
+  // Altijd de granted trial van dit account (stats.trialDays = signup_source).
+  const displayTrialDays =
+    Number.isFinite(stats.trialDays) && stats.trialDays > 0
+      ? stats.trialDays
+      : Number.isFinite(trialDays) && trialDays > 0
+        ? trialDays
+        : DEFAULT_STRIPE_TRIAL_DAYS;
+  const daysLeft =
+    trialDaysLeft != null && Number.isFinite(trialDaysLeft) && trialDaysLeft > 0
+      ? trialDaysLeft
+      : displayTrialDays;
+
+  const kicker = isTrialActive
+    ? "Je proef loopt nog"
+    : reason === "subscription_ended"
+      ? "Je toegang is beëindigd"
+      : "Je proefperiode is voorbij";
+
+  const headline = isTrialActive
+    ? `Nog ${daysLeft} ${daysLeft === 1 ? "dag" : "dagen"} gratis`
+    : `Dit bouwde je in ${displayTrialDays} dagen op.`;
+
+  const lead = isTrialActive ? (
+    <>
+      Je proef loopt nog. Geen haast. Als je wilt doorgaan na je proef, kun je dat
+      hier vastleggen. Je voortgang blijft staan.
+    </>
+  ) : (
+    <>
+      {displayTrialDays} dagen lang hield Structuro je op koers. Je ritme, je lijsten,
+      je rust: die blijven precies zoals ze nu zijn.{" "}
+      <strong>Dit ritme blijft staan als je doorgaat.</strong>
+    </>
+  );
+
+  const primaryLabel = isTrialActive
+    ? "Doorgaan met Structuro"
+    : "Ik blijf, behoud mijn systeem";
+
   const doneTitle =
     doneMode === "stop" ? "Helemaal goed." : "Alles blijft staan.";
   const stopText =
@@ -188,9 +233,6 @@ export default function AbonnementV2Client({
       <V2Header exitHref="/v2/home" exitLabel="Naar home" />
 
       <div className="v2-abonnement v2-fade">
-        {!canCheckout ? (
-          <p className="v2-preview-badge">Preview · log in voor echte checkout</p>
-        ) : null}
         <V2Eyebrow>{kicker}</V2Eyebrow>
         <h1 style={{ ...v2Styles.title, fontSize: "var(--fs-display)", marginTop: 8 }}>
           {headline}
@@ -199,14 +241,9 @@ export default function AbonnementV2Client({
         <section className="v2-abonnement__built" aria-label="Jouw Structuro tot nu toe">
           <p className="v2-abonnement__built-label">Jouw Structuro tot nu toe</p>
           <div className="v2-abonnement__stats">
-            <Stat n={stats.daysActive} label="dagen op rij actief" />
+            <Stat n={stats.daysActive} label="dagen actief" />
             <Stat n={stats.tasksCompleted} label="taken afgevinkt" />
             <Stat n={stats.openTasks} label="openstaande taken" />
-          </div>
-          <div className="v2-abonnement__streak" aria-hidden>
-            {Array.from({ length: stats.trialDays }, (_, i) => (
-              <span key={i} data-on={i < stats.streakFilled ? "true" : "false"} />
-            ))}
           </div>
         </section>
 
@@ -232,30 +269,61 @@ export default function AbonnementV2Client({
         ) : null}
 
         <section className="v2-abonnement__decision">
-          <button
-            type="button"
-            className="btn-primary w-full"
-            disabled={busy}
-            onClick={() => void startCheckout()}
-          >
-            {primaryLabel}
-          </button>
-
-          {canCheckout ? (
-            <StripeWalletButtons
-              visibleWallets={visibleWallets}
-              disabled={busy}
-              onSuccess={handleStaySuccess}
-              onUnavailable={() => setWalletFallback(true)}
-              onError={(msg) => toast.error(msg, { durationMs: 5000 })}
-            />
-          ) : null}
-
-          {walletFallback ? (
-            <div className="v2-abonnement__wallet-fallback">
-              <p style={{ ...v2Styles.body, fontSize: 14, margin: 0 }}>
-                {WALLET_UNAVAILABLE_MESSAGE}
-              </p>
+          {isTrialActive ? (
+            <>
+              <button
+                type="button"
+                className="btn-primary w-full"
+                onClick={() => router.push("/v2/home")}
+              >
+                Terug naar Structuro
+              </button>
+              <button
+                type="button"
+                className="v2-link"
+                style={{ marginTop: 8 }}
+                disabled={busy}
+                onClick={() => void startCheckout()}
+              >
+                {primaryLabel}
+              </button>
+              {canCheckout ? (
+                <StripeWalletButtons
+                  visibleWallets={visibleWallets}
+                  disabled={busy}
+                  onSuccess={handleStaySuccess}
+                  onUnavailable={() => setWalletFallback(true)}
+                  onError={(msg) => toast.error(msg, { durationMs: 5000 })}
+                />
+              ) : null}
+              {walletFallback ? (
+                <div className="v2-abonnement__wallet-fallback">
+                  <p style={{ ...v2Styles.body, fontSize: 14, margin: 0 }}>
+                    {WALLET_UNAVAILABLE_MESSAGE}
+                  </p>
+                  <button
+                    type="button"
+                    className="v2-link"
+                    disabled={busy}
+                    onClick={() => void startCheckout()}
+                  >
+                    {primaryLabel}
+                  </button>
+                </div>
+              ) : null}
+              {jasperOffer ? (
+                <p className="v2-abonnement__price">
+                  {(() => {
+                    const offer = getJasperOffer();
+                    return `${offer.discountedPrice} per maand de eerste ${JASPER_OFFER_DISCOUNTED_MONTHS} maanden, daarna ${offer.regularPrice} per maand. Maandelijks opzegbaar.`;
+                  })()}
+                </p>
+              ) : (
+                <p className="v2-abonnement__price">€12,99 per maand · maandelijks opzegbaar</p>
+              )}
+            </>
+          ) : (
+            <>
               <button
                 type="button"
                 className="btn-primary w-full"
@@ -264,31 +332,51 @@ export default function AbonnementV2Client({
               >
                 {primaryLabel}
               </button>
-            </div>
-          ) : null}
 
-          {jasperOffer ? (
-            <p className="v2-abonnement__price">
-              {(() => {
-                const offer = getJasperOffer();
-                return `${offer.discountedPrice} per maand de eerste ${JASPER_OFFER_DISCOUNTED_MONTHS} maanden, daarna ${offer.regularPrice} per maand. Maandelijks opzegbaar.`;
-              })()}
-            </p>
-          ) : (
-            <p className="v2-abonnement__price">€12,99 per maand · maandelijks opzegbaar</p>
+              {canCheckout ? (
+                <StripeWalletButtons
+                  visibleWallets={visibleWallets}
+                  disabled={busy}
+                  onSuccess={handleStaySuccess}
+                  onUnavailable={() => setWalletFallback(true)}
+                  onError={(msg) => toast.error(msg, { durationMs: 5000 })}
+                />
+              ) : null}
+
+              {walletFallback ? (
+                <div className="v2-abonnement__wallet-fallback">
+                  <p style={{ ...v2Styles.body, fontSize: 14, margin: 0 }}>
+                    {WALLET_UNAVAILABLE_MESSAGE}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-primary w-full"
+                    disabled={busy}
+                    onClick={() => void startCheckout()}
+                  >
+                    {primaryLabel}
+                  </button>
+                </div>
+              ) : null}
+
+              {jasperOffer ? (
+                <p className="v2-abonnement__price">
+                  {(() => {
+                    const offer = getJasperOffer();
+                    return `${offer.discountedPrice} per maand de eerste ${JASPER_OFFER_DISCOUNTED_MONTHS} maanden, daarna ${offer.regularPrice} per maand. Maandelijks opzegbaar.`;
+                  })()}
+                </p>
+              ) : (
+                <p className="v2-abonnement__price">€12,99 per maand · maandelijks opzegbaar</p>
+              )}
+
+              <div className="v2-abonnement__secondary">
+                <button type="button" className="v2-link" onClick={handleStop}>
+                  Liever later beslissen
+                </button>
+              </div>
+            </>
           )}
-
-          <div className="v2-abonnement__secondary">
-            {isTrialActive ? (
-              <button type="button" className="v2-link" onClick={() => router.push("/v2/home")}>
-                Terug naar Structuro
-              </button>
-            ) : (
-              <button type="button" className="v2-link" onClick={handleStop}>
-                Liever later beslissen
-              </button>
-            )}
-          </div>
         </section>
 
         <p className="v2-abonnement__trust">

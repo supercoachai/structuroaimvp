@@ -1,26 +1,14 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { useSupportsHover } from "@/hooks/useSupportsHover";
 
 import { V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
-
-type V2EnergyMeta = {
-  value: V2Energy;
-  label: string;
-  level: 1 | 2 | 3;
-  /** Sage/ink-spectrum, geen paars (Variant F). */
-  color: string;
-};
-
-const V2_ENERGY_META: V2EnergyMeta[] = [
-  { value: "low", label: "Laag", level: 1, color: "#5FA88A" },
-  { value: "enough", label: "Genoeg", level: 2, color: "#2D5A56" },
-  { value: "high", label: "Hoog", level: 3, color: "#1A2340" },
-];
-
-const DEFAULT_ORB = "#2D5A56";
+import {
+  V2_ENERGY_DEFAULT_ORB,
+  V2_ENERGY_META,
+} from "./v2EnergyMeta";
 
 function V2Battery({
   level,
@@ -82,6 +70,7 @@ export default function V2EnergyStep({
   onPick,
   onSkip,
   abovePills,
+  headerSlot,
 }: {
   greeting?: string;
   userName?: string;
@@ -91,33 +80,39 @@ export default function V2EnergyStep({
   onPick: (energy: V2Energy) => void;
   onSkip: () => void;
   abovePills?: ReactNode;
+  /**
+   * Optioneel slot in de energiestap (bijv. cyclus-chip).
+   * Prefer variant="absolute" (rustig rechtsboven); niet gecentreerd boven de begroeting.
+   */
+  headerSlot?: ReactNode;
 }) {
   const supportsHover = useSupportsHover();
   const [hovered, setHovered] = useState<V2Energy | null>(null);
 
   const activeMeta =
     V2_ENERGY_META.find((m) => m.value === (hovered ?? energy)) ?? null;
-  const orbColor = activeMeta?.color ?? DEFAULT_ORB;
+  const orbColor = activeMeta?.color ?? V2_ENERGY_DEFAULT_ORB;
   const hint =
     V2_ENERGY_OPTIONS.find((o) => o.value === (hovered ?? energy))?.hint ??
     null;
 
   return (
-    <div
-      className="v2-energy-step"
-      style={
-        {
-          ["--v2-orb" as string]: orbColor,
-          ["--v2-wash" as string]: orbColor,
-        } as CSSProperties
-      }
-    >
-      {greeting ? (
-        <p className="v2-energy-step__greeting">{greeting}</p>
-      ) : null}
-      {userName ? <p className="v2-energy-step__name">{userName}</p> : null}
+    <div className="v2-energy-step">
+      {/* Geen layout-wrapper: absolute chip positioneert t.o.v. .v2-energy-step */}
+      {headerSlot}
 
-      <div className="v2-energy-step__orb" aria-hidden>
+      <div className="v2-energy-step__intro">
+        {greeting ? (
+          <p className="v2-energy-step__greeting">{greeting}</p>
+        ) : null}
+        {userName ? <p className="v2-energy-step__name">{userName}</p> : null}
+      </div>
+
+      <div
+        className="v2-energy-step__orb"
+        style={{ ["--v2-orb" as string]: orbColor }}
+        aria-hidden
+      >
         <span className="v2-energy-step__ring v2-energy-step__ring--outer" />
         <span className="v2-energy-step__ring v2-energy-step__ring--inner" />
         <span className="v2-energy-step__core" />

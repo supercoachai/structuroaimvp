@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 
 import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
+import type { Locale } from "@/lib/i18n/types";
 import type { LpCampaign, LpHeroId } from "@/lib/tiktok/lpConfig";
 import { getLpThemeTokens, type LpThemeTokens } from "@/lib/tiktok/lpTheme";
 
@@ -11,6 +12,7 @@ export type TikTokHeroShellProps = {
   campaign: LpCampaign;
   heroId: LpHeroId;
   channel: BridgeChannel;
+  locale?: Locale;
   signupHref: string;
   onCtaClick: (event: MouseEvent<HTMLAnchorElement>) => void;
   footerNote?: string;

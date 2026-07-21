@@ -1,0 +1,41 @@
+---
+description: Bij v2-wijzigingen ook de score-canvas bijwerken met actuele stand en per-as notities
+globs:
+  - src/components/v2/**
+  - src/app/v2/**
+alwaysApply: false
+---
+
+# v2 score-canvas sync
+
+De live score-herbeoordeling staat in de Cursor-canvas, niet in een los repo-rapport.
+
+**Canvas-pad:** `/Users/nielsvandenhurk/.cursor/projects/Users-nielsvandenhurk-structuroai-mvp/canvases/v2-herbeoordeling.canvas.tsx`
+
+## Wanneer bijwerken
+
+Bij elke wijziging onder `src/components/v2/` of `src/app/v2/` die gebruikerservaring, flows of scores beïnvloedt:
+
+1. Open en update `v2-herbeoordeling.canvas.tsx`.
+2. Pas het **gemiddelde v2 nu** aan als de wijziging een of meer assen rechtvaardigt.
+3. Per as (14 dimensies uit de scorecard): houd **score**, **Waarom nu** en **Wat beter kan** actueel.
+4. Voeg significante features toe aan de tabel **Recente v2-features → score-impact**.
+5. Laat **gecapte assen** eerlijk: terugkeer-trigger (~6,5) en emotionele veiligheid/RSD (~7,5) tot gemeten gedrag.
+
+## Score-regels
+
+- Scores zijn 1-10, onderbouwde herbeoordeling, geen live PostHog tenzij expliciet verankerd.
+- Wees conservatief: UX-winst ≠ gedragsbewijs voor terugkeer en RSD.
+- Geen em-dashes in user-facing canvas-tekst (zie `no-em-dashes.mdc`).
+- Canvas alleen importeren uit `cursor/canvas`; geen fetch of helper-bestanden.
+
+## Referentie-canvases (niet primair)
+
+- `adhd-onboarding-scorecard.canvas.tsx`: v1 baseline, 10 dimensies
+- `onboarding-actieplan.canvas.tsx`: hendels H1-H10 en doelscores
+
+## Agent-gedrag
+
+- De canvas **is** het deliverable; maak geen nieuwe analyse-`.md` in de repo.
+- Na canvas-edit: controleer de `Canvas TypeScript check` in de tool-output.
+- Vermeld in het antwoord het canvas-pad als markdown-link zodat de gebruiker het naast de chat kan openen.

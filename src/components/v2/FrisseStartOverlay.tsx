@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
 import { recordV2FrisseStartAccepted } from "./v2Adaptive";
-import { trackV2FrisseStartAccepted, trackV2SessionStart } from "./v2Analytics";
+import { trackV2FrisseStartAccepted } from "./v2Analytics";
 import { readV2Settings } from "./v2Settings";
 import {
   daysSinceLastVisit,
@@ -15,16 +15,6 @@ import {
   recordV2Visit,
   shouldShowFrisseStart,
 } from "./v2Visit";
-
-export function V2VisitTracker() {
-  useEffect(() => {
-    trackV2SessionStart();
-    if (!shouldShowFrisseStart()) {
-      recordV2Visit();
-    }
-  }, []);
-  return null;
-}
 
 export function FrisseStartOverlay() {
   const { update } = useV2();

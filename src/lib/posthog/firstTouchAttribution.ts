@@ -224,9 +224,13 @@ export function captureFirstTouchAttribution(): void {
       window.location.pathname === "/tiktok" ||
       window.location.pathname.startsWith("/tiktok/");
     const fromTikTokPath = isTikTokPath ? "tiktok" : "";
+    const path = window.location.pathname;
     const fromOrganicPath =
-      window.location.pathname === "/start" ||
-      window.location.pathname.startsWith("/start/")
+      path === "/start" ||
+      path.startsWith("/start/") ||
+      // Organic EU productiepad (tot cutover): /v2/onboarding.
+      path === "/v2/onboarding" ||
+      path.startsWith("/v2/onboarding/")
         ? "structuro_eu"
         : "";
     const isJasperPath = isJasperLandingPath(window.location.pathname);

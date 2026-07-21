@@ -45,60 +45,70 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
+    /**
+     * Legacy waitlist-URL's zijn organisch verkeer. Doorsturen naar de acquisitie-bridge
+     * /start met structuro_eu-attributie zodat de funnel cta_clicked -> /start ->
+     * signup_completed intact blijft. Nooit naar /tiktok (paid social) redirecten.
+     * De /wachtlijst en /inschrijven paden zonder-trailing-slash landen op de
+     * bestaande Next-pages (die zelf redirecten met eventuele source-param).
+     */
+    const LEGACY_WAITLIST_TARGET =
+      "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy";
     return [
+      // Engelse bio-links: echte HTTP-redirect (query params blijven behouden).
+      {
+        source: "/en/start",
+        destination: "/start?lang=en",
+        permanent: false,
+      },
+      {
+        source: "/en/tiktok",
+        destination: "/tiktok?lang=en",
+        permanent: false,
+      },
+      // Engelse en hoofdlettervarianten: statische redirect (geen page-equivalent).
       {
         source: "/waitlist",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
         source: "/waitlist/:path*",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
         source: "/Wachtlijst",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
         source: "/Wachtlijst/:path*",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
         source: "/Inschrijven",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
         source: "/Inschrijven/:path*",
-        destination: "/registreren",
+        destination: LEGACY_WAITLIST_TARGET,
+        permanent: true,
+      },
+      // Deep-paths onder /wachtlijst en /inschrijven: statisch, geen source-preservatie
+      // nodig omdat historische deep-links geen ?source= droegen. `:path+` (minstens
+      // 1 segment) zorgt dat /wachtlijst en /inschrijven zelf naar de app-pages
+      // gaan die de query wél kunnen doorgeven.
+      {
+        source: "/wachtlijst/:path+",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {
-        source: "/wachtlijst",
-        destination: "/registreren",
-        permanent: true,
-      },
-      {
-        source: "/wachtlijst/",
-        destination: "/registreren",
-        permanent: true,
-      },
-      {
-        source: "/inschrijven",
-        destination: "/registreren",
-        permanent: true,
-      },
-      {
-        source: "/inschrijven/",
-        destination: "/registreren",
-        permanent: true,
-      },
-      {
-        source: "/inschrijven/:path*",
-        destination: "/registreren",
+        source: "/inschrijven/:path+",
+        destination: LEGACY_WAITLIST_TARGET,
         permanent: true,
       },
       {

@@ -102,7 +102,7 @@
       return window.structuroSignupBridgeUrl(contentId);
     }
     return (
-      'https://www.structuro.ai/start?utm_source=structuro_eu&utm_content=' +
+      'https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
       (contentId || 'zelftest_sticky')
     );
   }

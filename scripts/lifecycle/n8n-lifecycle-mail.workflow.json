@@ -1,0 +1,120 @@
+{
+  "name": "Structuro lifecycle mail (optional trigger)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      },
+      "name": "Every hour (welcome)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.STRUCTURO_APP_ORIGIN}}/api/cron/lifecycle-mail?wave=welcome",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.STRUCTURO_CRON_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Trigger welcome wave",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Morning 08:30 Amsterdam≈06:30 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 220]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.STRUCTURO_APP_ORIGIN}}/api/cron/lifecycle-mail?wave=morning",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.STRUCTURO_CRON_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Trigger morning wave",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 220]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 16 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Evening 18:00 Amsterdam≈16:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 440]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.STRUCTURO_APP_ORIGIN}}/api/cron/lifecycle-mail?wave=evening",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.STRUCTURO_CRON_SECRET}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Trigger evening wave",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 440]
+    }
+  ],
+  "connections": {
+    "Every hour (welcome)": {
+      "main": [[{ "node": "Trigger welcome wave", "type": "main", "index": 0 }]]
+    },
+    "Morning 08:30 Amsterdam≈06:30 UTC": {
+      "main": [[{ "node": "Trigger morning wave", "type": "main", "index": 0 }]]
+    },
+    "Evening 18:00 Amsterdam≈16:00 UTC": {
+      "main": [[{ "node": "Trigger evening wave", "type": "main", "index": 0 }]]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Alleen handmatig/n8n. vercel.json crons blijven leeg tot bewuste v1-launch. Env: STRUCTURO_APP_ORIGIN, STRUCTURO_CRON_SECRET. App-defaults: LIFECYCLE_MAIL_AUDIENCE=off (v1 merkt niets)."
+  }
+}

@@ -48,8 +48,10 @@ function RegistrerenAccountInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const signInMode = searchParams.get("signin") === "1";
+  const showDevLocalBypass =
+    process.env.NODE_ENV === "development" && searchParams.get("dev_local") === "1";
 
-  // Inloggen gebeurt alleen op /login (enige plek met magic link).
+  // Inloggen gebeurt alleen op /login (zelfde Google-first rust als hier).
   useEffect(() => {
     if (signInMode) {
       router.replace(buildLoginHref(searchParams));
@@ -166,31 +168,31 @@ function RegistrerenAccountInner({
       ? "registrerenPage.accountSubheadingAcquisition"
       : "registrerenPage.accountSubheading";
 
-  const linkClass = useStoryLayer
-    ? "font-semibold text-[var(--story-accent)] hover:text-[#234845]"
-    : "font-semibold text-blue-600 hover:text-blue-800";
-
   const mutedTextClass = useStoryLayer
     ? "text-[var(--story-text-muted)]"
     : "text-slate-500";
 
   return (
-    <RegistrerenShell error={error} visual={visual}>
+    <RegistrerenShell
+      error={error}
+      visual={visual}
+      showLocaleToggle={false}
+      compactBrand
+    >
       <div className="mx-auto w-full text-center">
-        {postDagstart ? null : useStoryLayer ? (
-          <p className="st-story-eyebrow mb-3 inline-flex items-center gap-2.5">
-            <span className="st-story-eyebrow-pulse" aria-hidden />
-            {t("registrerenPage.organicEyebrow")}
-          </p>
-        ) : (
+        {!postDagstart && !useStoryLayer ? (
           <p className="mb-3">
             <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
               {t("registrerenPage.trialBadge", { days: String(trialDays) })}
             </span>
           </p>
-        )}
+        ) : null}
         <h2
-          className={`text-lg tracking-tight sm:text-xl ${useStoryLayer ? "st-story-serif font-semibold text-[var(--story-text)]" : "font-semibold text-slate-900"}`}
+          className={`tracking-tight ${
+            useStoryLayer
+              ? "st-story-serif text-[1.35rem] font-semibold leading-snug text-[var(--story-text)] sm:text-[1.5rem]"
+              : "text-lg font-semibold text-slate-900 sm:text-xl"
+          }`}
         >
           {t(headingKey)}
         </h2>
@@ -219,23 +221,28 @@ function RegistrerenAccountInner({
       </div>
 
       {!eventSignupFlow ? (
-        <p className={`text-center text-sm ${mutedTextClass}`}>
+        <p className={`text-center text-xs ${mutedTextClass}`}>
           {t("registrerenPage.hasAccount")}{" "}
-          <Link href={buildLoginHref(searchParams)} className={linkClass}>
+          <Link
+            href={buildLoginHref(searchParams)}
+            className={
+              useStoryLayer
+                ? "underline underline-offset-2 hover:text-[var(--story-text)]"
+                : "underline underline-offset-2 hover:text-slate-800"
+            }
+          >
             {t("registrerenPage.loginLink")}
           </Link>
         </p>
       ) : null}
 
-      {process.env.NODE_ENV === "development" ? (
+      {showDevLocalBypass ? (
         <div className="mx-auto w-full pt-2 text-center">
           <button
             type="button"
             onClick={() => {
-              if (process.env.NODE_ENV === "development") {
-                document.cookie =
-                  "structuro_dev_local_bypass=1; path=/; max-age=604800; samesite=lax";
-              }
+              document.cookie =
+                "structuro_dev_local_bypass=1; path=/; max-age=604800; samesite=lax";
               window.location.assign("/");
             }}
             className={`text-xs font-medium underline underline-offset-2 ${mutedTextClass}`}
@@ -256,7 +263,7 @@ export default function RegistrerenAccountClient({
   return (
     <Suspense
       fallback={
-        <RegistrerenShell visual="story">
+        <RegistrerenShell visual="story" showLocaleToggle={false} compactBrand>
           <p className="text-center text-sm text-[var(--story-text-muted)]">…</p>
         </RegistrerenShell>
       }

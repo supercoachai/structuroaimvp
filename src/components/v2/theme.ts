@@ -7,21 +7,17 @@ export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
   switch (phase) {
     case "welcome":
     case "energy":
-    case "pick_who":
-    case "thing":
-    case "thing_custom":
-    case "why_intro":
-    case "why_outcome":
-    case "why_reflect":
+    case "cycle":
     case "done":
       return "welcome";
+    case "adjust":
     default:
       return "choices";
   }
 }
 
 export function v2FlowLayoutForDagstartPhase(phase: string): V2FlowLayout {
-  return phase === "done" || phase === "energy" || phase === "pick_who"
+  return phase === "welcome" || phase === "done" || phase === "energy"
     ? "welcome"
     : "choices";
 }
@@ -128,7 +124,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 8,
   },
   brandLogo: {
-    height: 22,
+    height: 16,
     width: 22,
     objectFit: "contain",
   },
@@ -719,7 +715,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
     gap: 0,
-    padding: "8px 6px max(1rem, env(safe-area-inset-bottom, 0px))",
+    padding: "6px 4px max(0.75rem, env(safe-area-inset-bottom, 0px))",
     borderTop: "1px solid var(--border)",
     backgroundColor: "var(--surface)",
   },
@@ -731,13 +727,13 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   appNavItem: {
-    minHeight: 44,
+    minHeight: 40,
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
+    gap: 1,
     padding: "4px 2px",
     borderRadius: 12,
     border: "none",
@@ -745,6 +741,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     color: "var(--text-muted)",
     textDecoration: "none",
     cursor: "pointer",
+    transition: "opacity 140ms ease, color 140ms ease",
   },
   appNavItemActive: {
     color: "var(--accent)",
@@ -752,10 +749,10 @@ export const v2Styles: Record<string, CSSProperties> = {
   appNavLabel: {
     width: "100%",
     textAlign: "center" as const,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 600,
-    lineHeight: 1.15,
-    letterSpacing: "0.04em",
+    lineHeight: 1.1,
+    letterSpacing: "0.03em",
   },
   appNavIcon: {
     flexShrink: 0,

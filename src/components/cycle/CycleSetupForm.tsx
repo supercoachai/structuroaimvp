@@ -14,25 +14,19 @@ import {
   maxMenstruationDurationForCycle,
 } from "@/lib/cycle/types";
 
+import CycleDatePicker, { isoDateLocal } from "./CycleDatePicker";
+
 const PRIMARY_BUTTON_BASE =
   "w-full rounded-xl bg-amber-400 py-3.5 text-base font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-amber-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
 
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function todayIso(): string {
-  return isoDate(new Date());
+  return isoDateLocal(new Date());
 }
 
 function maxBackIso(): string {
   const d = new Date();
   d.setDate(d.getDate() - CYCLE_SETUP_MAX_DAYS_BACK);
-  return isoDate(d);
+  return isoDateLocal(d);
 }
 
 export type CycleSetupFormProps = {
@@ -48,6 +42,8 @@ export type CycleSetupFormProps = {
   /** Optionele knop linksonder (bv. "Annuleren") in modals. */
   secondaryAction?: { label: string; onClick: () => void; disabled?: boolean };
   submitLabelOverride?: string;
+  /** v2: cream+navy custom kalender i.p.v. native date input. */
+  variant?: "default" | "v2";
 };
 
 export default function CycleSetupForm({
@@ -57,6 +53,7 @@ export default function CycleSetupForm({
   onSubmit,
   secondaryAction,
   submitLabelOverride,
+  variant = "default",
 }: CycleSetupFormProps) {
   const { t } = useI18n();
   const todayStr = useMemo(todayIso, []);
@@ -133,20 +130,31 @@ export default function CycleSetupForm({
         >
           {t("cycle.setupPeriodLabel")}
         </label>
-        <input
-          id="cycle-period-start"
-          type="date"
-          value={periodStart}
-          min={minBack}
-          max={todayStr}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (!v) return;
-            setPeriodStart(v);
-          }}
-          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
-          style={{ colorScheme: "light" } as CSSProperties}
-        />
+        {variant === "v2" ? (
+          <CycleDatePicker
+            id="cycle-period-start"
+            value={periodStart}
+            min={minBack}
+            max={todayStr}
+            onChange={setPeriodStart}
+            disabled={busy}
+          />
+        ) : (
+          <input
+            id="cycle-period-start"
+            type="date"
+            value={periodStart}
+            min={minBack}
+            max={todayStr}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) return;
+              setPeriodStart(v);
+            }}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+            style={{ colorScheme: "light" } as CSSProperties}
+          />
+        )}
         <p className="text-xs text-slate-500">{t("cycle.setupPeriodHint")}</p>
       </div>
 

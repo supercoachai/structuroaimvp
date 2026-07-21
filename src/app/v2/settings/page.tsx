@@ -4,7 +4,7 @@ import SettingsV2Client from "@/components/v2/SettingsV2Client";
 
 export const metadata: Metadata = {
   title: "Structuro v2 | Instellingen",
-  description: "Rustige voorkeuren voor de v2-testomgeving.",
+  description: "Rustige voorkeuren: reminders, cyclus, data.",
   robots: { index: false, follow: false },
 };
 

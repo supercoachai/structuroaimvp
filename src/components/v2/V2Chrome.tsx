@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { CSSProperties, ReactNode } from "react";
@@ -12,6 +13,9 @@ import {
 } from "@/components/navigation/mainAppNav";
 
 import { v2ScopedCss, v2Styles } from "./theme";
+
+/** 112×81 mark (~9KB) i.p.v. 1024×740 /logo-structuro.png (~502KB). */
+const V2_LOGO_SRC = "/v2/logo-mark.png";
 
 function IconDump({ className }: { className?: string }) {
   return (
@@ -35,33 +39,6 @@ function IconDump({ className }: { className?: string }) {
   );
 }
 
-function IconSettings({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="M4.93 4.93l1.41 1.41" />
-      <path d="M17.66 17.66l1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="M4.93 19.07l1.41-1.41" />
-      <path d="M17.66 6.34l1.41-1.41" />
-    </svg>
-  );
-}
-
 /** Pagina-omhulsel: prikkelarme achtergrond, een kolom, gedeelde CSS. */
 export function V2Page({ children }: { children: ReactNode }) {
   return (
@@ -74,32 +51,73 @@ export function V2Page({ children }: { children: ReactNode }) {
   );
 }
 
-/** Merkregel: logo + wordmark + testbadge, in de website-huisstijl. */
+/** Merkregel: logo + wordmark, in de website-huisstijl. */
 function V2Brand() {
   return (
     <Link href="/v2" style={v2Styles.wordmark}>
       <span style={v2Styles.brandRow}>
-        <img src="/logo-structuro.png" alt="" style={v2Styles.brandLogo} />
+        <Image
+          src={V2_LOGO_SRC}
+          alt=""
+          width={22}
+          height={16}
+          style={v2Styles.brandLogo}
+          priority
+        />
         Structuro
-        <span style={v2Styles.badge}>v2 test</span>
       </span>
     </Link>
   );
 }
 
-/** Kop met wordmark + testbadge. Optioneel een rustige uitgang (geen shame). */
+/**
+ * Flow-header (design phone): Terug | STRUCTURO | Stoppen.
+ * brandMode="flow" = uppercase tracked text, geen logo/badge.
+ */
 export function V2Header({
   exitHref,
   exitLabel = "Stoppen",
+  onBack,
+  brandMode = "default",
 }: {
   exitHref?: string;
   exitLabel?: string;
+  /** Toont "< Terug" links; alleen op stappen na welcome. */
+  onBack?: () => void;
+  /** "flow" = design-phone woordmerk gecentreerd. */
+  brandMode?: "default" | "flow";
 }) {
+  if (brandMode === "flow") {
+    return (
+      <header className="v2-flow-header">
+        {onBack ? (
+          <button type="button" className="v2-flow-header__side" onClick={onBack}>
+            {"< Terug"}
+          </button>
+        ) : (
+          <span className="v2-flow-header__side" aria-hidden="true" />
+        )}
+        <p className="v2-flow-header__brand">Structuro</p>
+        {exitHref ? (
+          <Link href={exitHref} className="v2-flow-header__side v2-flow-header__exit">
+            {exitLabel}
+          </Link>
+        ) : (
+          <span className="v2-flow-header__side" aria-hidden="true" />
+        )}
+      </header>
+    );
+  }
+
   return (
     <header style={v2Styles.header}>
       <V2Brand />
       {exitHref ? (
-        <Link href={exitHref} className="v2-textlink" style={v2Styles.textlink}>
+        <Link
+          href={exitHref}
+          className="v2-textlink"
+          style={{ ...v2Styles.textlink, opacity: 0.42 }}
+        >
           {exitLabel}
         </Link>
       ) : (
@@ -146,7 +164,7 @@ function V2BottomNav() {
     {
       id: "shutdown",
       href: "/v2/shutdown",
-      label: "Dagafsluiting",
+      label: "Afsluit",
       Icon: IconShutdown,
     },
   ];
@@ -157,7 +175,9 @@ function V2BottomNav() {
         const active = tab.href ? isActiveTab(pathname, tab.href) : false;
         const itemStyle: CSSProperties = {
           ...v2Styles.appNavItem,
+          ...(active ? v2Styles.appNavItemActive : {}),
           color: active ? "var(--accent)" : "var(--text-muted)",
+          opacity: active ? 1 : 0.48,
         };
         const Icon = tab.Icon;
         const inner = (
@@ -165,7 +185,12 @@ function V2BottomNav() {
             <span style={v2Styles.appNavIcon}>
               <Icon />
             </span>
-            <span style={v2Styles.appNavLabel}>{tab.label}</span>
+            {/* Alleen actieve tab toont label: 5 gelijke labels = cognitieve tax. */}
+            {active ? (
+              <span style={v2Styles.appNavLabel}>{tab.label}</span>
+            ) : (
+              <span className="sr-only">{tab.label}</span>
+            )}
           </>
         );
         if (tab.href) {
@@ -174,14 +199,23 @@ function V2BottomNav() {
               key={tab.id}
               href={tab.href}
               style={itemStyle}
+              aria-label={tab.label}
               aria-current={active ? "page" : undefined}
+              title={tab.label}
             >
               {inner}
             </Link>
           );
         }
         return (
-          <button key={tab.id} type="button" onClick={tab.onClick} style={itemStyle}>
+          <button
+            key={tab.id}
+            type="button"
+            onClick={tab.onClick}
+            style={itemStyle}
+            aria-label={tab.label}
+            title={tab.label}
+          >
             {inner}
           </button>
         );
@@ -200,57 +234,73 @@ export function V2AppShell({
   children,
   scroll = true,
   bottomSlot,
+  /** Dunne 5-tab nav: iconen + alleen actief label. */
+  showBottomNav = true,
+  /** "flow" = design-phone: Home | STRUCTURO (geen logo/settings). */
+  chrome = "app",
 }: {
   children: ReactNode;
   scroll?: boolean;
   /** Soft-prompt boven de bottom-nav (bijv. avondwolkje), buiten de scroll. */
   bottomSlot?: ReactNode;
+  showBottomNav?: boolean;
+  chrome?: "app" | "flow";
 }) {
   const pathname = usePathname();
   const onSettings = isActiveTab(pathname, "/v2/settings");
+  const headerPad = {
+    paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))",
+    paddingLeft: 24,
+    paddingRight: 24,
+  } as const;
 
   return (
     <>
       <style>{v2ScopedCss}</style>
       <div style={v2Styles.appPage}>
-        <header
-          style={{
-            ...v2Styles.appHeader,
-            paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))",
-            paddingLeft: 24,
-            paddingRight: 24,
-          }}
-        >
-          <Link href="/v2" style={v2Styles.appShellBrand}>
-            <img
-              src="/logo-structuro.png"
-              alt=""
-              style={v2Styles.appShellLogo}
-              width={28}
-              height={28}
-            />
-            <span style={v2Styles.appShellWordmark}>Structuro</span>
-            <span style={v2Styles.appShellBadge}>v2 test</span>
-          </Link>
-          <div style={v2Styles.appHeaderActions}>
-            <Link
-              href="/v2/settings"
-              className="v2-headerlink"
-              style={{
-                ...v2Styles.appHeaderLink,
-                ...(onSettings ? v2Styles.appHeaderLinkActive : {}),
-              }}
-              aria-label="Instellingen"
-              aria-current={onSettings ? "page" : undefined}
-            >
-              <IconSettings />
-              <span>Instellingen</span>
+        {chrome === "flow" ? (
+          <header className="v2-flow-header" style={headerPad}>
+            <Link href="/v2/home" className="v2-flow-header__side">
+              {"< Home"}
             </Link>
-            <Link href="/v2" className="v2-headerlink" style={v2Styles.appHeaderLink}>
-              Sluiten
+            <p className="v2-flow-header__brand">Structuro</p>
+            <span className="v2-flow-header__side" aria-hidden="true" />
+          </header>
+        ) : (
+          <header
+            style={{
+              ...v2Styles.appHeader,
+              ...headerPad,
+            }}
+          >
+            <Link href="/v2" style={v2Styles.appShellBrand}>
+              <Image
+                src={V2_LOGO_SRC}
+                alt=""
+                width={28}
+                height={20}
+                style={v2Styles.appShellLogo}
+                priority
+              />
+              <span style={v2Styles.appShellWordmark}>Structuro</span>
             </Link>
-          </div>
-        </header>
+            <div style={v2Styles.appHeaderActions}>
+              <Link
+                href="/v2/settings"
+                className="v2-headerlink"
+                style={{
+                  ...v2Styles.appHeaderLink,
+                  ...(onSettings ? v2Styles.appHeaderLinkActive : {}),
+                  opacity: onSettings ? 1 : 0.6,
+                }}
+                aria-label="Instellingen"
+                aria-current={onSettings ? "page" : undefined}
+              >
+                <span>Instellingen</span>
+              </Link>
+            </div>
+          </header>
+        )}
 
         <main style={scroll ? v2Styles.appMainScroll : v2Styles.appMainFixed}>
           {children}
@@ -262,7 +312,7 @@ export function V2AppShell({
           </div>
         ) : null}
 
-        <V2BottomNav />
+        {showBottomNav ? <V2BottomNav /> : null}
       </div>
     </>
   );

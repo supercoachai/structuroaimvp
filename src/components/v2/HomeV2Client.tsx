@@ -6,7 +6,6 @@ import Link from "next/link";
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import { useV2 } from "./V2Context";
 import { useV2Go } from "./v2nav";
-import { loadV2Dump, v2DumpHasVisible } from "./v2Dump";
 import {
   dismissV2HomePrompt,
   resolveV2HomePrompt,
@@ -31,6 +30,7 @@ import {
 import { v2HasThings, v2NormalizeThings } from "./v2Things";
 import { markV2OpenTaskReminderShown } from "./v2OpenTaskReminder";
 import { markV2QuoteShown } from "./v2Quotes";
+import V2AccountSaveCta from "./V2AccountSaveCta";
 
 const ENERGY_LABEL: Record<string, string> = {
   low: "Energie: laag",
@@ -78,7 +78,6 @@ export default function HomeV2Client() {
   const go = useV2Go();
   const { state, ready, update } = useV2();
   const [greeting, setGreeting] = useState("");
-  const [hasDump, setHasDump] = useState(false);
   const [homePrompt, setHomePrompt] = useState<V2HomePrompt | null>(null);
   const [promptTracked, setPromptTracked] = useState(false);
 
@@ -93,7 +92,6 @@ export default function HomeV2Client() {
 
   useEffect(() => {
     if (!ready) return;
-    setHasDump(v2DumpHasVisible(loadV2Dump()));
     setHomePrompt(resolveV2HomePrompt(state));
     setPromptTracked(false);
   }, [ready, state]);
@@ -333,42 +331,19 @@ export default function HomeV2Client() {
         {!isBottomPrompt ? renderPrompt() : null}
 
         <header>
-          <V2Eyebrow>{greeting || "Welkom"}</V2Eyebrow>
-          <div className="mt-2 flex items-center justify-between gap-3">
+          <V2Eyebrow>Vandaag</V2Eyebrow>
+          <div className="mt-1 flex items-end justify-between gap-3">
             <h1
               className="v2-serif min-w-0 flex-1"
-              style={{ fontSize: "var(--fs-display)" }}
+              style={{ fontSize: "1.875rem", letterSpacing: "-0.02em" }}
             >
-              {name || "Welkom"}
+              {name || greeting || "Welkom"}
             </h1>
             {energyLabel ? (
-              <span
-                className="shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium"
-                style={{
-                  background: "var(--accent-soft)",
-                  color: "var(--accent)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                {energyLabel}
-              </span>
+              <span className="v2-home-chip shrink-0">{energyLabel}</span>
             ) : null}
           </div>
         </header>
-
-        {ready && hasDump ? (
-          <Link
-            href="/v2/dump"
-            className="rounded-[14px] px-4 py-3 text-center text-[14px] no-underline"
-            style={{
-              background: "var(--accent-soft)",
-              border: "1px solid var(--border)",
-              color: "var(--accent)",
-            }}
-          >
-            Naar extern geheugen
-          </Link>
-        ) : null}
 
         {!ready ? (
           <div
@@ -408,33 +383,29 @@ export default function HomeV2Client() {
           </section>
         ) : hasThings ? (
           <>
-            <section className="v2-card v2-fade p-6">
+            <section className="v2-card v2-fade p-5">
               <p
                 className="text-[11px] font-semibold uppercase tracking-[0.16em]"
                 style={{ color: "var(--accent)" }}
               >
-                {things.length === 1 ? "Je ene ding van vandaag" : "Je dingen van vandaag"}
+                Je dingen van vandaag
               </p>
-              {things.length === 1 ? (
-                <h2
-                  className="v2-serif mt-4"
-                  style={{ fontSize: "var(--fs-title)", lineHeight: "var(--lh-tight)" }}
-                >
-                  {things[0]}
-                </h2>
-              ) : (
-                <ul className="mt-4 flex flex-col gap-2" style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                  {things.map((t) => (
-                    <li
-                      key={t}
-                      className="v2-serif"
-                      style={{ fontSize: "var(--fs-title)", lineHeight: "var(--lh-tight)" }}
-                    >
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div
+                className="v2-serif mt-3"
+                style={{
+                  fontSize: "1.125rem",
+                  lineHeight: 1.7,
+                  letterSpacing: "-0.01em",
+                  color: "var(--text)",
+                }}
+              >
+                {things.map((t, i) => (
+                  <span key={t}>
+                    {i > 0 ? <br /> : null}
+                    {t}
+                  </span>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => go("/v2/focus")}
@@ -444,18 +415,30 @@ export default function HomeV2Client() {
               </button>
             </section>
 
-            <div className="flex flex-col items-center gap-1">
-              <Link href="/v2/dagstart" className="btn-ghost w-full">
-                Open je dagstart
+            <nav
+              className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1"
+              aria-label="Snel naar"
+            >
+              <Link href="/v2/dump" className="v2-link text-[13px]">
+                Dump
               </Link>
               <button
                 type="button"
                 onClick={() => go("/v2/shutdown")}
-                className="v2-link"
+                className="v2-link text-[13px]"
               >
-                Klaar voor vandaag
+                Afsluit
               </button>
+            </nav>
+            <div className="mt-4">
+              <V2AccountSaveCta content="v2_home_after_dagstart" variant="soft" />
             </div>
+            <p
+              className="mt-auto pt-6 text-center text-[10.5px] italic"
+              style={{ color: "rgba(26,35,64,0.5)" }}
+            >
+              Meer hoeft niet vandaag.
+            </p>
           </>
         ) : (
           <section className="v2-card v2-fade p-6 text-center">
@@ -463,7 +446,7 @@ export default function HomeV2Client() {
               Nog niks gekozen, en dat is prima.
             </h2>
             <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              Begin je dag rustig en kies een ding.
+              Begin je dag rustig. Structuro stelt voor, jij bevestigt.
             </p>
             <button
               type="button"
@@ -472,6 +455,9 @@ export default function HomeV2Client() {
             >
               Doe je dagstart
             </button>
+            <Link href="/v2/dump" className="v2-link mx-auto mt-2 block">
+              Leg iets vast (Dump)
+            </Link>
           </section>
         )}
       </div>

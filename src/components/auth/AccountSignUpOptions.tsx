@@ -3,14 +3,17 @@
 import { useState } from "react";
 
 import {
-  getComingSoonOAuthProviders,
   getEnabledOAuthProviders,
   oauthProviderLabelKey,
   type OAuthProviderId,
 } from "@/lib/auth/authProviders";
 import { finalizeNewAccountSession } from "@/lib/auth/completeSignUpSession";
 import { signUpWithEmailPassword } from "@/lib/auth/emailPasswordSignUp";
-import { isProviderNotEnabledError, startOAuthSignIn } from "@/lib/auth/socialSignIn";
+import {
+  isProviderNotEnabledError,
+  startOAuthSignIn,
+  verifySignupEmailOtp,
+} from "@/lib/auth/socialSignIn";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
@@ -22,7 +25,6 @@ import {
   getResolvedSignupSourceForProfile,
   getSignupAttributionSource,
   getStoredSignupCampaign,
-  getStoredSignupSource,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { captureMarketingEvent } from "@/lib/posthog/track";
@@ -62,7 +64,12 @@ function OrDivider({ label, visual }: { label: string; visual: SignUpVisual }) {
   );
 }
 
-function oauthButtonClass(visual: SignUpVisual, provider: OAuthProviderId): string {
+/** Google = enige gevulde primary; overige OAuth (indien ooit aan) blijft secundair. */
+function oauthButtonClass(
+  visual: SignUpVisual,
+  provider: OAuthProviderId,
+  primary: boolean
+): string {
   const base =
     "flex w-full items-center justify-center gap-2.5 rounded-xl px-6 py-[15px] text-base font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60";
 
@@ -70,16 +77,18 @@ function oauthButtonClass(visual: SignUpVisual, provider: OAuthProviderId): stri
     return `${base} border border-transparent bg-[#1A1A1B] text-white hover:bg-[#2E2E30]`;
   }
 
+  if (primary) {
+    if (visual === "story") {
+      return `${base} border-none bg-[var(--story-cta)] text-white shadow-[0_8px_20px_rgba(26,35,64,0.22)] hover:bg-[var(--story-cta-hover)]`;
+    }
+    return `${base} border-none bg-[var(--st-ink)] text-white hover:opacity-90`;
+  }
+
   if (visual === "story") {
     return `${base} border border-[var(--story-border)] bg-white text-[var(--story-text)] shadow-sm hover:border-[var(--story-accent)] hover:shadow-md`;
   }
 
   return `${base} border border-[var(--st-line)] bg-white text-[var(--st-ink)] hover:bg-[var(--st-surface-2)]`;
-}
-
-/** Grijze, niet-klikbare placeholder-knop voor providers die nog komen. */
-function oauthComingSoonClass(): string {
-  return "flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-dashed border-[var(--story-border,var(--st-line))] bg-[var(--st-surface-2,#f1f5f9)] px-6 py-[15px] text-base font-semibold text-[var(--st-muted-2,#94a3b8)] opacity-70";
 }
 
 function fieldClass(visual: SignUpVisual): string {
@@ -102,6 +111,13 @@ function primaryBtnClass(visual: SignUpVisual): string {
   return "st-btn-primary h-12 w-full text-base disabled:cursor-not-allowed";
 }
 
+function emailTextLinkClass(visual: SignUpVisual): string {
+  if (visual === "story") {
+    return "mx-auto block text-center text-sm text-[var(--story-text-muted)] underline-offset-2 transition-colors hover:text-[var(--story-text)] hover:underline disabled:cursor-not-allowed disabled:opacity-50";
+  }
+  return "mx-auto block text-center text-sm text-slate-500 underline-offset-2 transition-colors hover:text-slate-800 hover:underline disabled:cursor-not-allowed disabled:opacity-50";
+}
+
 export function AccountSignUpOptions({
   visual = "work",
   disabled,
@@ -113,8 +129,14 @@ export function AccountSignUpOptions({
   onSessionReady,
 }: AccountSignUpOptionsProps) {
   const { t } = useI18n();
-  const providers = getEnabledOAuthProviders();
-  const comingSoonProviders = getComingSoonOAuthProviders();
+  const enabled = getEnabledOAuthProviders();
+  const primaryProvider: OAuthProviderId | undefined = enabled.includes("google")
+    ? "google"
+    : enabled[0];
+  const providers =
+    enabled.length > 0 && primaryProvider
+      ? [primaryProvider, ...enabled.filter((p) => p !== primaryProvider)]
+      : enabled;
   const [busyOAuth, setBusyOAuth] = useState<OAuthProviderId | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [name, setName] = useState("");
@@ -122,6 +144,8 @@ export function AccountSignUpOptions({
   const [password, setPassword] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailConfirmPending, setEmailConfirmPending] = useState<string | null>(null);
+  const [confirmOtp, setConfirmOtp] = useState("");
+  const [confirmBusy, setConfirmBusy] = useState(false);
   const {
     enabled: captchaEnabled,
     captchaRef,
@@ -262,23 +286,80 @@ export function AccountSignUpOptions({
 
   if (emailConfirmPending) {
     return (
-      <div
-        className={
-          visual === "story"
-            ? "rounded-xl border border-[var(--story-border)] bg-white/80 px-4 py-3 text-sm leading-relaxed text-[var(--story-text-muted)]"
-            : "rounded-xl border border-[var(--st-green-haze)] bg-[var(--st-green-haze)] px-4 py-3 text-sm leading-relaxed text-[var(--st-green-deep)]"
-        }
-      >
-        <p className="font-medium text-[var(--story-text,var(--st-green-deep))]">
-          {t("signup.emailConfirmTitle")}
-        </p>
-        <p className="mt-1">{t("signup.emailConfirmBody", { email: emailConfirmPending })}</p>
+      <div className="space-y-3">
+        <div
+          className={
+            visual === "story"
+              ? "rounded-xl border border-[var(--story-border)] bg-white/80 px-4 py-3 text-sm leading-relaxed text-[var(--story-text-muted)]"
+              : "rounded-xl border border-[var(--st-green-haze)] bg-[var(--st-green-haze)] px-4 py-3 text-sm leading-relaxed text-[var(--st-green-deep)]"
+          }
+        >
+          <p className="font-medium text-[var(--story-text,var(--st-green-deep))]">
+            {t("signup.emailConfirmTitle")}
+          </p>
+          <p className="mt-1">
+            {t("signup.emailConfirmBody", { email: emailConfirmPending })}
+          </p>
+          <p className="mt-2 text-[13px]">{t("signup.emailConfirmTip")}</p>
+        </div>
+        <label htmlFor="signup-confirm-otp" className={labelClass(visual)}>
+          {t("signup.emailConfirmOtpLabel")}
+        </label>
+        <input
+          id="signup-confirm-otp"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={8}
+          value={confirmOtp}
+          onChange={(e) =>
+            setConfirmOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 8))
+          }
+          className={fieldClass(visual)}
+          placeholder="123456"
+        />
+        <button
+          type="button"
+          disabled={disabled || confirmBusy || confirmOtp.length < 6}
+          className={primaryBtnClass(visual)}
+          onClick={() => {
+            void (async () => {
+              setConfirmBusy(true);
+              try {
+                const supabase = createClient();
+                if (!supabase) {
+                  onError?.(t("login.noServer"));
+                  return;
+                }
+                const user = await verifySignupEmailOtp(
+                  supabase,
+                  emailConfirmPending,
+                  confirmOtp
+                );
+                await finishSession(user.id, user.email ?? emailConfirmPending);
+              } catch (err) {
+                const raw =
+                  err instanceof Error ? err.message : t("signup.emailConfirmOtpInvalid");
+                onError?.(
+                  raw.toLowerCase().includes("token") ||
+                    raw.toLowerCase().includes("otp")
+                    ? t("signup.emailConfirmOtpInvalid")
+                    : mapAuthCaptchaError(raw, t)
+                );
+              } finally {
+                setConfirmBusy(false);
+              }
+            })();
+          }}
+        >
+          {confirmBusy ? t("login.busy") : t("signup.emailConfirmOtpCta")}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {providers.length > 0 ? (
         <div className="space-y-3">
           {providers.map((provider) => (
@@ -287,7 +368,11 @@ export function AccountSignUpOptions({
               type="button"
               disabled={disabled || busyOAuth !== null || emailBusy}
               onClick={() => void handleOAuth(provider)}
-              className={oauthButtonClass(visual, provider)}
+              className={oauthButtonClass(
+                visual,
+                provider,
+                provider === primaryProvider
+              )}
             >
               {busyOAuth === provider
                 ? t("login.busy")
@@ -304,11 +389,7 @@ export function AccountSignUpOptions({
           type="button"
           disabled={disabled || emailBusy || busyOAuth !== null}
           onClick={() => setEmailOpen(true)}
-          className={
-            visual === "story"
-              ? "flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--story-border)] bg-transparent px-6 py-3 text-sm font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] hover:text-[var(--story-accent)] disabled:cursor-not-allowed disabled:opacity-60"
-              : "flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--st-line)] bg-transparent px-6 py-3 text-sm font-semibold text-[var(--st-ink)] transition-colors hover:border-[var(--st-blue)] hover:text-[var(--st-blue)] disabled:cursor-not-allowed disabled:opacity-60"
-          }
+          className={emailTextLinkClass(visual)}
         >
           {t("signup.emailFallbackToggle")}
         </button>

@@ -65,10 +65,13 @@ function ConditionalAppShell({ children }: { children: ReactNode }) {
   if (isWaitlistMarketingPath(pathname)) {
     return <Suspense fallback={<AppShellSuspenseFallback />}>{children}</Suspense>;
   }
+  /** /v2 heeft eigen V2Context + localStorage; TaskProvider is zware sync die niet nodig is. */
   const skipTaskProvider =
     pathname === "/abonnement" ||
     pathname?.startsWith("/abonnement/") ||
-    pathname?.startsWith("/welkom/install");
+    pathname?.startsWith("/welkom/install") ||
+    pathname === "/v2" ||
+    Boolean(pathname?.startsWith("/v2/"));
   const content = shouldUseAppShell(pathname) ? (
     <AppLayout>{children}</AppLayout>
   ) : (

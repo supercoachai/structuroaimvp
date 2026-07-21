@@ -3,16 +3,22 @@
 
   /**
    * EU landing analytics (site=eu in PostHog).
-   * Primaire conversie: cta_clicked → structuro.ai/start → signup_completed (niet waitlist).
-   * Organisch EU: /start + utm_source=structuro_eu. TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok.
-   * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/registreren (zie vercel.json).
+   * Primaire conversie: cta_clicked → structuro.ai/v2/onboarding → signup_completed.
+   * Organisch EU: /v2/onboarding + utm_source=structuro_eu (tot cutover v2→v1-plaats).
+   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (blijft v1).
+   * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
    * Verouderde section_id "waarom" in historische data: sectie heet nu brein-termen / waarom-nodig.
    */
   /** Sectie-id's voor zichtbaarheid (moet overeenkomen met id="" op index.html). */
   var EU_SECTION_IDS = [
     "hero",
+    "top",
+    "herken",
     "brein-termen",
+    "proof",
     "wat-anderen-zeggen",
+    "verhaal",
+    "hoe",
     "loop",
     "founder",
     "voor-vrouwen",
@@ -39,12 +45,16 @@
     return false;
   }
 
+  function isEuV2LandingPath() {
+    var path = (window.location.pathname || "").replace(/\/+$/, "") || "/";
+    return path === "/v2" || path.indexOf("/v2/") === 0;
+  }
+
   function structuroSignupBridgeUrl(contentId) {
     var params = new URLSearchParams(window.location.search || "");
     var isTikTok = isTikTokAcquisitionTraffic(params);
-    var bridgePath = isTikTok ? "/tiktok" : "/start";
-    // Schone link: alleen functionele params. campaign, hero, utm_medium,
-    // utm_campaign en lang zijn al de defaults op /start en dus redundant.
+    // Organisch EU → V2 onboarding (productiepad tot cutover). TikTok → /tiktok (v1).
+    var bridgePath = isTikTok ? "/tiktok" : "/v2/onboarding";
     var bridgeParams = new URLSearchParams({
       utm_content: contentId || "cta",
     });
@@ -61,6 +71,12 @@
       );
     } else {
       bridgeParams.set("utm_source", "structuro_eu");
+      bridgeParams.set("utm_medium", "organic");
+      // /v2-landing: default eu_v2. Root: page-utm of website.
+      var organicCampaign =
+        params.get("utm_campaign") ||
+        (isEuV2LandingPath() ? "eu_v2" : "website");
+      bridgeParams.set("utm_campaign", organicCampaign);
     }
     // Cross-domain identity: geef het anonieme PostHog distinct_id mee zodat
     // structuro.ai met hetzelfde ID kan bootstrappen (1 persoon over .eu naar .ai).
@@ -80,7 +96,50 @@
     });
   }
 
+  /**
+   * Login-link met UTM-attributie. Anders komt EU-verkeer als "direct" binnen
+   * op structuro.ai en verpest zo de acquisitie-funnel (mismatch tussen
+   * cta_clicked op EU en signup_completed op AI).
+   */
+  function structuroLoginBridgeUrl(contentId) {
+    var params = new URLSearchParams(window.location.search || "");
+    var isTikTok = isTikTokAcquisitionTraffic(params);
+    var loginParams = new URLSearchParams({
+      utm_content: contentId || "login_link",
+    });
+    if (isTikTok) {
+      loginParams.set("utm_source", "tiktok");
+      loginParams.set(
+        "utm_medium",
+        (params.get("utm_medium") || "paid_social").toLowerCase()
+      );
+      loginParams.set(
+        "utm_campaign",
+        params.get("utm_campaign") || "tiktok_login"
+      );
+    } else {
+      loginParams.set("utm_source", "structuro_eu");
+      loginParams.set("utm_medium", "organic");
+      loginParams.set("utm_campaign", "eu_login_link");
+    }
+    try {
+      if (window.posthog && typeof window.posthog.get_distinct_id === "function") {
+        var did = window.posthog.get_distinct_id();
+        if (did) loginParams.set("_ph_did", did);
+      }
+    } catch (e) {}
+    return "https://www.structuro.ai/login?" + loginParams.toString();
+  }
+
+  function applyLoginBridgeLinks() {
+    document.querySelectorAll("[data-login-bridge]").forEach(function (el) {
+      var content = el.getAttribute("data-login-bridge") || "login_link";
+      el.setAttribute("href", structuroLoginBridgeUrl(content));
+    });
+  }
+
   window.structuroSignupBridgeUrl = structuroSignupBridgeUrl;
+  window.structuroLoginBridgeUrl = structuroLoginBridgeUrl;
 
   /**
    * Herbereken de bridge-href vlak vóór navigatie. De href wordt al gezet na
@@ -96,10 +155,17 @@
       function (e) {
         var target = e.target;
         if (!target || !target.closest) return;
-        var el = target.closest("[data-signup-bridge]");
-        if (!el) return;
-        var content = el.getAttribute("data-signup-bridge") || "cta";
-        el.setAttribute("href", structuroSignupBridgeUrl(content));
+        var signupEl = target.closest("[data-signup-bridge]");
+        if (signupEl) {
+          var signupContent = signupEl.getAttribute("data-signup-bridge") || "cta";
+          signupEl.setAttribute("href", structuroSignupBridgeUrl(signupContent));
+          return;
+        }
+        var loginEl = target.closest("[data-login-bridge]");
+        if (loginEl) {
+          var loginContent = loginEl.getAttribute("data-login-bridge") || "login_link";
+          loginEl.setAttribute("href", structuroLoginBridgeUrl(loginContent));
+        }
       },
       true
     );
@@ -361,6 +427,7 @@
 
   function attachLandingMeasurement() {
     applySignupBridgeLinks();
+    applyLoginBridgeLinks();
     attachSignupBridgeRefresh();
     attachScrollDepthMilestones();
     attachSectionVisibility();

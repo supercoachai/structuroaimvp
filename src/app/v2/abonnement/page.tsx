@@ -48,17 +48,15 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const userAgent = headerStore.get("user-agent") ?? "";
   const visibleWallets = getVisibleWalletButtonsFromUserAgent(userAgent);
 
-  // Zonder login: toon de paywall met democijfers (v2-testomgeving).
+  // Zonder login: eerlijke login-staat (geen nep-trial of demostats).
   if (!user?.id) {
-    const reason = parseReason(params.reason) ?? "trial_expired";
     return (
       <AbonnementV2Client
-        reason={reason}
+        reason="trial_expired"
         trialDays={V2_ABONNEMENT_DEMO_STATS.trialDays}
-        trialDaysLeft={reason === "trial_active" ? 5 : undefined}
         visibleWallets={visibleWallets}
-        jasperOffer={params.preview === "jasper"}
-        stats={V2_ABONNEMENT_DEMO_STATS}
+        jasperOffer={false}
+        stats={emptyRetentionStats(null)}
         canCheckout={false}
       />
     );

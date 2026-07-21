@@ -23,6 +23,9 @@ export const APP_ROUTES = [
   { path: "/registreren/plan", kind: "public", status: [200] },
   { path: "/tiktok", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/start", kind: "public", status: [200], needles: ["structuro"] },
+  // Next streamt page-level redirect() soms als RSC NEXT_REDIRECT met HTTP 200.
+  { path: "/en/start", kind: "public", status: [200, 307, 308], needles: ["start", "lang=en", "NEXT_REDIRECT"] },
+  { path: "/en/tiktok", kind: "public", status: [200, 307, 308], needles: ["tiktok", "lang=en", "NEXT_REDIRECT"] },
   { path: "/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
   { path: "/abonnement", kind: "public", status: [200, 307, 308] },
   { path: "/adhd-cafe", kind: "public", status: [200], needles: ["structuro"] },
@@ -41,7 +44,7 @@ export const APP_ROUTES = [
   { path: "/v2/home", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/v2/dagstart", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/v2/todo", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/dump", kind: "public", status: [200], needles: ["structuro", "dumplijst", "rustig bekijken"] },
+  { path: "/v2/dump", kind: "public", status: [200], needles: ["structuro", "dump", "extern geheugen"] },
   { path: "/v2/focus", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/v2/shutdown", kind: "public", status: [200], needles: ["structuro", "dagafsluiting"] },
   { path: "/v2/settings", kind: "public", status: [200], needles: ["structuro", "instellingen"] },
@@ -78,6 +81,16 @@ export const APP_ROUTES = [
   { path: "/api/posthog-error-test", kind: "api", status: [404] },
   { path: "/api/dev/signup", kind: "api", method: "POST", status: [404, 405] },
   { path: "/api/cron/expire-trials", kind: "api", status: [200, 401, 405] },
+  {
+    path: "/api/cron/lifecycle-mail?wave=welcome",
+    kind: "api",
+    status: [200, 400, 401, 405, 500],
+  },
+  {
+    path: "/api/lifecycle/unsubscribe",
+    kind: "api",
+    status: [200, 405],
+  },
   {
     path: "/api/auth/request-password-reset",
     kind: "api",

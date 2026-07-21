@@ -65,3 +65,6 @@ next-env.d.ts
 # Lokale AI/tool config (niet productcode)
 .cursor/mcp.json
 .claude/
+
+# Claude Design temp extract
+.design-export-tmp/

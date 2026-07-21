@@ -23,11 +23,37 @@ export type V2State = {
   whyOutcome: string;
   /** Shutdown-light: lus van vandaag gesloten. */
   todayDone: boolean;
-  /** Of cyclus optioneel is aangezet (na eerste waarde). */
+  /** Of cyclus optioneel is aangezet (vóór eerste energy/dagstart). */
   cyclusOptIn: boolean;
 };
 
 const STORAGE_KEY = "v2_journey";
+
+/** Anonieme v2-keys op shared browsers. Niet user-scoped; wis bij login. */
+export const V2_ANONYMOUS_STORAGE_KEYS = [
+  STORAGE_KEY,
+  "v2_dump",
+  "v2_dump_draft",
+  "v2_tasks",
+  "v2_settings",
+  "v2_adaptive",
+] as const;
+
+/**
+ * Privacy over anon-state: bij auth wissen we anonieme v2-localStorage zodat
+ * gebruiker B op een gedeelde browser geen dump/taken/journey van A ziet.
+ * (Geen user.id-keying vandaag; cloud/session is de bron na login.)
+ */
+export function clearAnonymousV2LocalStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    for (const key of V2_ANONYMOUS_STORAGE_KEYS) {
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // Privémodus / blocked storage: negeren.
+  }
+}
 
 type LegacyV2Stored = Partial<V2State> & { thing?: string | null; learnHints?: boolean };
 
@@ -116,18 +142,7 @@ export function V2Provider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const resetAllLocalData = useCallback(() => {
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.removeItem(STORAGE_KEY);
-        window.localStorage.removeItem("v2_dump");
-        window.localStorage.removeItem("v2_dump_draft");
-        window.localStorage.removeItem("v2_tasks");
-        window.localStorage.removeItem("v2_settings");
-        window.localStorage.removeItem("v2_adaptive");
-      } catch {
-        // negeren
-      }
-    }
+    clearAnonymousV2LocalStorage();
     persist(v2EmptyState);
   }, [persist]);
 

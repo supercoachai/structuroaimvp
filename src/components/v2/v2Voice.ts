@@ -66,7 +66,13 @@ export function createV2SpeechSession(
   };
 
   rec.onend = () => {
-    if (!stopped && !gotResult) onError("");
+    if (gotResult) return;
+    // Altijd fallback-pad: lege sessie of Stop zonder transcript (geen hangende "Verwerken…").
+    onError(
+      stopped
+        ? "Niets gehoord. Typ kort wat je zei."
+        : "Spraak gestopt. Typ kort wat je zei.",
+    );
   };
 
   return {

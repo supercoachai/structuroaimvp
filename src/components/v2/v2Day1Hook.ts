@@ -1,6 +1,5 @@
 "use client";
 
-import { readV2Adaptive } from "./v2Adaptive";
 import { isV2MutedToday, patchV2Settings, readV2Settings } from "./v2Settings";
 import { todayYmd } from "./v2Tasks";
 import { v2HasThings, v2NormalizeThings } from "./v2Things";
@@ -19,7 +18,10 @@ function isMorningWindow(now = new Date()): boolean {
   return h >= 6 && h < 12;
 }
 
-/** Day-1 ochtend na rustige day-0 (geen dingen gekozen). */
+/**
+ * Day-1 ochtend na rustige day-0: geen dingen gekozen / vandaag leeg.
+ * Energie op day-0 mag wél (rust = geen things, niet "geen energie gekozen").
+ */
 export function shouldShowDay1SkipHook(state: V2State, now = new Date()): boolean {
   if (typeof window === "undefined") return false;
   if (!isMorningWindow(now)) return false;
@@ -35,9 +37,6 @@ export function shouldShowDay1SkipHook(state: V2State, now = new Date()): boolea
 
   const things = v2NormalizeThings(state.things);
   if (v2HasThings(things)) return false;
-
-  const { energyByYmd } = readV2Adaptive();
-  if (energyByYmd[firstOpenYmd]) return false;
 
   return true;
 }

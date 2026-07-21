@@ -12,6 +12,8 @@ const DAY2_FIRED_PREFIX = "v2_day2_return_fired_";
 
 function trackV2(event: string, properties?: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
+  // Opt-in: settings-toggle moet aan staan (doctrine: geen stille tracking).
+  if (!readV2Settings().analyticsConsent) return;
   captureAnonymousEvent(event, { ...properties, surface: "v2" });
 }
 
@@ -196,7 +198,7 @@ export function trackV2HomePromptPriority(props: { prompt_kind: string }): void 
 }
 
 export function trackV2ShutdownSentiment(props: {
-  sentiment: "calm_yes" | "skipped";
+  sentiment: "calm_yes" | "calm_no" | "skipped";
 }): void {
   trackV2("v2_shutdown_sentiment", { sentiment: props.sentiment });
 }

@@ -42,36 +42,40 @@
     },
     {
       "source": "/waitlist",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     },
     {
       "source": "/waitlist/",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     },
     {
       "source": "/inschrijven",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     },
     {
       "source": "/inschrijven/",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     },
     {
       "source": "/wachtlijst",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     },
     {
       "source": "/wachtlijst/",
-      "destination": "https://www.structuro.ai/registreren",
+      "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy",
       "permanent": false
     }
   ],
   "rewrites": [
+    {
+      "source": "/v2",
+      "destination": "/v2/index.html"
+    },
     {
       "source": "/cyclus",
       "destination": "/cyclus/index.html"

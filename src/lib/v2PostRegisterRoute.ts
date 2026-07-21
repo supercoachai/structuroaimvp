@@ -1,6 +1,7 @@
-import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
-
-/** Na account/registratie in v2: eerst PWA-hint op mobiel, anders direct onboarding. */
-export function v2RouteAfterRegister(): "/v2/install" | "/v2/onboarding" {
-  return shouldShowPwaInstallHint() ? "/v2/install" : "/v2/onboarding";
+/**
+ * Na v2-register: altijd eerst waarde (onboarding), niet PWA-tutorial.
+ * Install blijft bereikbaar via settings (/v2/install?from=settings).
+ */
+export function v2RouteAfterRegister(): "/v2/onboarding" {
+  return "/v2/onboarding";
 }

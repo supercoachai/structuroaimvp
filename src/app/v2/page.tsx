@@ -5,8 +5,8 @@ import { V2Eyebrow, V2Header, V2Page } from "@/components/v2/V2Chrome";
 import { v2Styles } from "@/components/v2/theme";
 
 export const metadata: Metadata = {
-  title: "Structuro v2 (testomgeving)",
-  description: "De v2-testomgeving van Structuro. Loop de hele reis rustig door.",
+  title: "Structuro",
+  description: "Rustig beginnen: maximaal drie dingen voor vandaag.",
   robots: { index: false, follow: false },
 };
 
@@ -24,8 +24,8 @@ const SURFACES: V2Surface[] = [
   { href: "/v2/install", title: "Installeren", desc: "Beginscherm-hint voor mobiel." },
   { href: "/v2/abonnement", title: "Abonnement", desc: "Paywall in v2-stijl." },
   { href: "/v2/jasper", title: "Jasper-landing", desc: "Variant voor podcastluisteraars." },
-  { href: "/v2/login", title: "Inloggen", desc: "Preview: magic-link-flow, geen echte auth." },
-  { href: "/v2/register", title: "Account", desc: "Preview: licht aanmaken, lokaal." },
+  { href: "/v2/login", title: "Inloggen", desc: "Google of e-mail. Echte auth naar /v2/home." },
+  { href: "/v2/register", title: "Account", desc: "Lokaal starten zonder cloud-account." },
 ];
 
 export default function V2EntryPage() {
@@ -34,12 +34,11 @@ export default function V2EntryPage() {
       <V2Header />
 
       <section className="v2-fade" style={v2Styles.card}>
-        <V2Eyebrow>Testomgeving</V2Eyebrow>
-        <h1 style={v2Styles.title}>Dit is de v2 van Structuro.</h1>
+        <V2Eyebrow>Structuro</V2Eyebrow>
+        <h1 style={v2Styles.title}>Begin rustig. Eén ding tegelijk.</h1>
         <p style={v2Styles.body}>
-          Hier loop je de hele reis rustig door, met alle verbeteringen ingebouwd.
-          Een huisstijl over alles, van de site tot diep in de app. Geen account
-          nodig, niets gaat kapot. Begin gewoon en stop wanneer je wilt.
+          Hier kies je energie, bevestig je maximaal drie dingen, en start je
+          focus. Geen account nodig om te beginnen. Stop wanneer je wilt.
         </p>
         <div style={v2Styles.actions}>
           <Link href="/v2/onboarding" className="btn-primary">

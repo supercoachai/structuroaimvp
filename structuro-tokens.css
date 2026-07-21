@@ -1,0 +1,157 @@
+/* ============================================================================
+   STRUCTURO — DESIGN TOKENS  (single source of truth)
+   ----------------------------------------------------------------------------
+   Eén bestand. Geïmporteerd door ZOWEL de app (src/app/globals.css)
+   ALS de website (structuro-eu-landing). Geen tweede brand-theme.json,
+   geen losse --structuro-blue meer.
+
+   Het kleurbudget is bewust krap: 3 kleuren dragen alles.
+     • SURFACE  = warm papier   (kiezen / lezen / reflecteren = licht)
+     • INK      = ink-navy      (het logo, de enige actiekleur)
+     • ACCENT   = sage teal     (rust-accent, nooit een knop)
+
+   Mode-signal (kern van variant F):
+     LICHT  = kiezen & reflecteren   → Dagstart, Selectie, Shutdown
+     DONKER = uitvoeren & focussen    → Focus Modus
+   De flip ZELF is de affordance. Geen extra UI nodig om "nu doe je iets" te zeggen.
+   ============================================================================ */
+
+:root {
+  /* --- KERN: 3-kleurenbudget ---------------------------------------------- */
+  --surface:        #FDFBF4;  /* warm papier — basis van elke kies/lees-staat */
+  --ink:            #1A2340;  /* ink-navy — logo + DE enige gevulde actiekleur */
+  --ink-hover:      #2C3753;  /* hover/pressed op ink-acties                   */
+  --accent:         #2D5A56;  /* sage teal — rust-accent, lijnen, subtiele nadruk */
+  --accent-soft:    rgba(45, 90, 86, 0.12);  /* teal-wash voor vlakken         */
+  --accent-ring:    rgba(45, 90, 86, 0.28);  /* focus-ring in lichte modus      */
+
+  /* --- TEKST --------------------------------------------------------------- */
+  --text:           #1A1A1B;  /* primaire tekst op surface                     */
+  --text-muted:     #5C6478;  /* secundair, labels, hints                      */
+  --text-on-ink:    #F5F2EA;  /* tekst op ink-navy vlakken                     */
+
+  /* --- LIJNEN / VLAKKEN ---------------------------------------------------- */
+  --border:         rgba(26, 26, 27, 0.10);
+  --surface-raised: #FFFFFF;  /* kaart boven het papier, spaarzaam              */
+
+  /* --- FOCUS MODUS (de donkere flip) -------------------------------------- */
+  --focus-bg:       #1A2340;  /* zelfde ink-navy, nu als heel vlak              */
+  --focus-fg:       #F5F2EA;  /* warme off-white tekst, geen hard wit          */
+  --focus-muted:    #9AA2B8;  /* secundaire tekst in focus                      */
+  --focus-accent:   #5FB8AF;  /* helderdere teal-stap — alleen hier, voor de
+                                 timer-ring / actieve micro-stap. Genoeg contrast
+                                 op donker zonder neon. */
+  --focus-border:   rgba(245, 242, 234, 0.12);
+
+  /* --- TYPOGRAFIE ---------------------------------------------------------- */
+  --font-serif:     var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-ui:        var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:      var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --text-display:   2.5rem;   /* serif, kop van een staat                       */
+  --text-title:     1.5rem;   /* serif, sectiekop                               */
+  --text-body:      1rem;     /* ui                                             */
+  --text-small:     0.875rem; /* ui, labels                                     */
+  --text-micro:     0.75rem;  /* ui, hints                                      */
+
+  --leading-tight:  1.15;
+  --leading-body:   1.55;
+
+  /* --- RITME / RUIMTE (uit DESIGN_SYSTEM.md) ------------------------------- */
+  --space-xs:  8px;
+  --space-sm:  12px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --container-max: 1100px;
+  --container-pad: 24px;
+
+  /* Bewust geen schaduw-stack: Progressive Visual Silence. Eén zachte lift max. */
+  --lift: 0 1px 2px rgba(26, 35, 64, 0.06), 0 8px 24px rgba(26, 35, 64, 0.06);
+}
+
+/* ----------------------------------------------------------------------------
+   FOCUS-MODUS SCOPE
+   Zet data-mode="focus" op <html> of de Focus-container. Alle bg/tekst/accent
+   tokens flippen mee — componenten hoeven niets te weten van licht vs donker.
+   ---------------------------------------------------------------------------- */
+[data-mode="focus"] {
+  --surface:        var(--focus-bg);
+  --surface-raised: #222C4D;
+  --text:           var(--focus-fg);
+  --text-muted:     var(--focus-muted);
+  --border:         var(--focus-border);
+  --accent:         var(--focus-accent);
+  --accent-ring:    rgba(95, 184, 175, 0.40);
+  /* ink-acties op donker: de off-white wordt de "gevulde" knop, ink-navy de tekst */
+  --ink:            #F5F2EA;
+  --ink-hover:      #E8E2D4;
+  --text-on-ink:    #1A2340;
+}
+
+/* ============================================================================
+   TAILWIND v4 BRIDGE
+   ----------------------------------------------------------------------------
+   Tailwind v4 leest @theme. Hierdoor werken bg-surface, text-ink, border-border,
+   text-on-ink, font-serif, rounded-lg enz. — en ze blijven verwijzen naar de
+   :root variabelen, dus de focus-flip werkt automatisch door.
+   (Plaats dit @theme blok in het bestand dat Tailwind compileert.)
+   ============================================================================ */
+@theme inline {
+  --color-surface:        var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink:            var(--ink);
+  --color-ink-hover:      var(--ink-hover);
+  --color-accent:         var(--accent);
+  --color-accent-soft:    var(--accent-soft);
+  --color-text:           var(--text);
+  --color-text-muted:     var(--text-muted);
+  --color-on-ink:         var(--text-on-ink);
+  --color-border:         var(--border);
+
+  --font-serif: var(--font-serif);
+  --font-sans:  var(--font-ui);
+  --font-mono:  var(--font-mono);
+
+  --radius-sm:  var(--radius-sm);
+  --radius-md:  var(--radius-md);
+  --radius-lg:  var(--radius-lg);
+}
+
+/* ----------------------------------------------------------------------------
+   PRIMITIEVEN — de twee dingen die op élk scherm hetzelfde moeten zijn.
+   ---------------------------------------------------------------------------- */
+
+/* DE actie. Max één gevulde per scherm. Al het andere is tekst-link of ghost. */
+.btn-primary {
+  background: var(--ink);
+  color: var(--text-on-ink);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.btn-primary:hover { background: var(--ink-hover); }
+.btn-primary:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+
+/* De niet-actie. Geen tweede kleur — alleen rand. Houdt het scherm stil. */
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}

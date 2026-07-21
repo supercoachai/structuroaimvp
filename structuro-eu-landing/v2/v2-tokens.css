@@ -1,0 +1,8 @@
+:root{
+  --v2-paper:#FDFBF4; --v2-sand:#F1ECDD; --v2-navy:#1A2340; --v2-navy-soft:#242E52;
+  --v2-teal:#2D5A56; --v2-teal-on-navy:#9DC4BA;
+  --v2-text:#1A2340; --v2-text-soft:rgba(26,35,64,.68); --v2-text-faint:rgba(26,35,64,.30);
+  --v2-on-navy:#F5F2EA; --v2-on-navy-soft:rgba(245,242,234,.66);
+  --v2-line:rgba(26,35,64,.12); --v2-line-navy:rgba(245,242,234,.16);
+  --v2-serif:'Newsreader',Georgia,serif; --v2-sans:'Inter',system-ui,sans-serif;
+}

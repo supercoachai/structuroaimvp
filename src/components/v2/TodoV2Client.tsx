@@ -297,38 +297,51 @@ function TaskRow({
         </button>
       </div>
 
-      {expanded && hasDetails ? (
+      {expanded ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 36 }}>
-          {task.why || task.outcome ? (
-            <p className="text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
-              {task.why ? task.why : null}
-              {task.why && task.outcome ? " · " : null}
-              {task.outcome ? `Levert op: ${task.outcome}` : null}
-            </p>
-          ) : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {deadline ? (
-              <span className="v2-meta" data-overdue={overdue ? "true" : "false"}>
-                {overdue ? `${deadline} (verlopen)` : deadline}
-              </span>
-            ) : null}
-            {repeat ? <span className="v2-meta">{repeat}</span> : null}
-            {prio ? <span className="v2-meta">{prio}</span> : null}
-            {energy ? <span className="v2-meta">{energy}</span> : null}
-            {task.microSteps.length > 0 ? (
-              <span className="v2-meta">
-                {microDone}/{task.microSteps.length} microstappen
-              </span>
-            ) : null}
-          </div>
-          {task.microSteps.length > 0 ? (
-            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
-              {task.microSteps.map((m) => (
-                <li key={m.id} className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                  {m.title}
-                </li>
-              ))}
-            </ul>
+          {hasDetails ? (
+            <>
+              {task.why || task.outcome ? (
+                <p className="text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
+                  {task.why ? task.why : null}
+                  {task.why && task.outcome ? " · " : null}
+                  {task.outcome ? `Levert op: ${task.outcome}` : null}
+                </p>
+              ) : null}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {deadline ? (
+                  <span className="v2-meta" data-overdue={overdue ? "true" : "false"}>
+                    {overdue ? `${deadline} (verlopen)` : deadline}
+                  </span>
+                ) : null}
+                {repeat ? <span className="v2-meta">{repeat}</span> : null}
+                {prio ? <span className="v2-meta">{prio}</span> : null}
+                {energy ? <span className="v2-meta">{energy}</span> : null}
+                {task.microSteps.length > 0 ? (
+                  <span className="v2-meta">
+                    {microDone}/{task.microSteps.length} microstappen
+                  </span>
+                ) : null}
+              </div>
+              {task.microSteps.length > 0 ? (
+                <ul
+                  style={{
+                    margin: 0,
+                    padding: 0,
+                    listStyle: "none",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  {task.microSteps.map((m) => (
+                    <li key={m.id} className="text-[13px]" style={{ color: "var(--text-muted)" }}>
+                      {m.title}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
           ) : null}
           {!task.done ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

@@ -20,6 +20,8 @@ export function isAcquisitionMarketingPath(pathname: string | null | undefined):
   if (pathname === "/tiktok" || pathname.startsWith("/tiktok/")) return true;
   if (pathname === "/start" || pathname.startsWith("/start/")) return true;
   if (pathname === "/jasper" || pathname.startsWith("/jasper/")) return true;
+  // Organic EU productiepad tot cutover: /v2/*
+  if (pathname === "/v2" || pathname.startsWith("/v2/")) return true;
   return false;
 }
 

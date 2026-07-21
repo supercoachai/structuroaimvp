@@ -289,18 +289,36 @@ export default function FocusV2Client() {
                   <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
                     Past bij deze taak: {suggested.label.toLowerCase()}
                   </p>
-                ) : null}
-                <div className="flex items-center justify-center gap-2">
-                  {BUCKETS.map((b) => (
-                    <button
-                      key={b.key}
-                      type="button"
-                      onClick={() => start(b)}
-                      className={`btn-ghost ${suggested?.key === b.key ? "ring-1 ring-[var(--accent)]" : ""}`}
-                    >
-                      {b.label}
-                    </button>
-                  ))}
+                ) : (
+                  <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
+                    Kies één duur. Geen perfecte keuze nodig.
+                  </p>
+                )}
+                <div className="flex flex-col items-stretch gap-2">
+                  {(suggested
+                    ? [suggested, ...BUCKETS.filter((b) => b.key !== suggested.key)]
+                    : BUCKETS
+                  ).map((b) => {
+                    const isSuggested = suggested?.key === b.key;
+                    return (
+                      <button
+                        key={b.key}
+                        type="button"
+                        onClick={() => start(b)}
+                        className={
+                          isSuggested || (!suggested && b.key === "kort")
+                            ? "btn-primary w-full"
+                            : "btn-ghost w-full"
+                        }
+                      >
+                        {isSuggested
+                          ? `${b.label} (past bij deze taak)`
+                          : !suggested && b.key === "kort"
+                            ? `${b.label}, begin hier`
+                            : b.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
@@ -309,42 +327,37 @@ export default function FocusV2Client() {
               <div className="flex flex-col items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => setPaused((p) => !p)}
+                  className="btn-primary w-full"
+                >
+                  {paused ? "Verder" : "Pauze"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setRunning(false);
                     setPaused(false);
                     setFinished(true);
                   }}
-                  className="btn-primary w-full"
-                >
-                  Stoppen
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaused((p) => !p)}
                   className="v2-link"
                 >
-                  {paused ? "Verder" : "Pauze"}
+                  Afronden
                 </button>
               </div>
             ) : null}
 
             {extended && !finished ? (
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={handleDone} className="btn-primary w-full">
-                  Ik ben klaar
-                </button>
-                <button type="button" onClick={() => setExtended(true)} className="btn-ghost w-full">
-                  Nog even bezig
-                </button>
-              </div>
+              <button type="button" onClick={handleDone} className="btn-primary w-full">
+                Ik ben klaar
+              </button>
             ) : null}
 
             {finished ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-2">
                 <button type="button" onClick={handleDone} className="btn-primary w-full">
                   Ik ben klaar
                 </button>
-                <button type="button" onClick={handleStillBusy} className="btn-ghost w-full">
+                <button type="button" onClick={handleStillBusy} className="v2-link">
                   Nog even bezig
                 </button>
               </div>

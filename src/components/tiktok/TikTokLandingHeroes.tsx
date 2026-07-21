@@ -3,10 +3,15 @@
 import { useState } from "react";
 
 import type { BridgeChannel } from "@/lib/acquisition/bridgePaths";
+import type { Locale } from "@/lib/i18n/types";
 import {
   LP_RITUAL_STEPS,
   type LpHeroId,
 } from "@/lib/tiktok/lpConfig";
+import {
+  getLpHeroUiCopy,
+  LP_RITUAL_STEPS_EN,
+} from "@/lib/tiktok/lpLocalized";
 import { getLpThemeTokens } from "@/lib/tiktok/lpTheme";
 
 import {
@@ -20,17 +25,16 @@ import {
 
 type HeroProps = TikTokHeroShellProps & { heroId: LpHeroId };
 
-const DEMO_ENERGY = ["Laag", "Midden", "Hoog"] as const;
-type DemoEnergy = (typeof DEMO_ENERGY)[number];
+type DemoEnergy = "low" | "medium" | "high";
 
-const DEMO_TASKS: Record<DemoEnergy, string[]> = {
-  Laag: ["Drink een glas water"],
-  Midden: ["Mail terugsturen naar Sanne", "10 min opruimen"],
-  Hoog: ["Offerte afmaken", "Sportschool", "Bel de tandarts"],
-};
+function resolveLocale(locale?: Locale): Locale {
+  return locale === "en" ? "en" : "nl";
+}
 
 export function HeroLayoutA(props: HeroProps) {
-  const { campaign, heroId, channel } = props;
+  const { campaign, heroId, channel, locale: localeProp } = props;
+  const locale = resolveLocale(localeProp);
+  const ui = getLpHeroUiCopy(locale);
   const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
@@ -40,12 +44,10 @@ export function HeroLayoutA(props: HeroProps) {
       mainClassName="items-center text-center"
     >
       {theme.isStory ? (
-        <StoryEyebrow onNavy={theme.isDark}>
-          Voor ADHD-breinen die niet beginnen
-        </StoryEyebrow>
+        <StoryEyebrow onNavy={theme.isDark}>{ui.eyebrowStory}</StoryEyebrow>
       ) : (
         <TikTokEyebrow campaign={campaign} heroId={heroId} channel={channel}>
-          Voor ADHD-breinen
+          {ui.eyebrow}
         </TikTokEyebrow>
       )}
       <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel} centered>
@@ -59,10 +61,17 @@ export function HeroLayoutA(props: HeroProps) {
 }
 
 export function HeroLayoutB(props: HeroProps) {
-  const { campaign, heroId, channel } = props;
+  const { campaign, heroId, channel, locale: localeProp } = props;
+  const locale = resolveLocale(localeProp);
+  const ui = getLpHeroUiCopy(locale);
   const theme = getLpThemeTokens(campaign, heroId, channel);
-  const [energy, setEnergy] = useState<DemoEnergy>("Midden");
-  const tasks = DEMO_TASKS[energy];
+  const energyLabels: Record<DemoEnergy, string> = {
+    low: ui.energyLow,
+    medium: ui.energyMedium,
+    high: ui.energyHigh,
+  };
+  const [energy, setEnergy] = useState<DemoEnergy>("medium");
+  const tasks = ui.demoTasks[energy];
 
   return (
     <TikTokLandingShell {...props}>
@@ -73,7 +82,7 @@ export function HeroLayoutB(props: HeroProps) {
         {campaign.subline}
       </TikTokSubline>
       <p className="mt-3 text-sm leading-relaxed" style={{ color: theme.inkSoft }}>
-        Tik hieronder je energie. Zo ziet Structuro morgenochtend eruit.
+        {ui.demoHint}
       </p>
 
       <div
@@ -81,10 +90,10 @@ export function HeroLayoutB(props: HeroProps) {
         style={{ backgroundColor: theme.surface, borderColor: theme.surfaceBorder }}
       >
         <p className="text-xs font-bold uppercase tracking-wider" style={{ color: theme.muted }}>
-          Hoeveel energie heb je?
+          {ui.demoEnergyLabel}
         </p>
         <div className="mt-3 grid grid-cols-3 gap-2">
-          {DEMO_ENERGY.map((level) => {
+          {(Object.keys(energyLabels) as DemoEnergy[]).map((level) => {
             const active = energy === level;
             const accent = theme.isStory ? theme.ctaBg : campaign.accent;
             return (
@@ -99,13 +108,13 @@ export function HeroLayoutB(props: HeroProps) {
                   color: active ? theme.ctaText : theme.ink,
                 }}
               >
-                {level}
+                {energyLabels[level]}
               </button>
             );
           })}
         </div>
         <p className="mt-4 text-xs font-bold uppercase tracking-wider" style={{ color: theme.muted }}>
-          Vandaag → {tasks.length} {tasks.length === 1 ? "taak" : "taken"}
+          {ui.todayTasks(tasks.length)}
         </p>
         <ul className="mt-2 space-y-2">
           {tasks.map((task) => (
@@ -133,22 +142,22 @@ export function HeroLayoutB(props: HeroProps) {
 }
 
 export function HeroLayoutC(props: HeroProps) {
-  const { campaign, heroId, channel } = props;
+  const { campaign, heroId, channel, locale: localeProp } = props;
+  const locale = resolveLocale(localeProp);
+  const ui = getLpHeroUiCopy(locale);
   const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
     <TikTokLandingShell {...props}>
       {theme.isStory ? (
-        <StoryEyebrow onNavy={theme.isDark}>
-          Voor ADHD-breinen die niet beginnen
-        </StoryEyebrow>
+        <StoryEyebrow onNavy={theme.isDark}>{ui.eyebrowStory}</StoryEyebrow>
       ) : (
         <div
           className="inline-flex items-center gap-2 self-start rounded-full border px-3 py-1.5 text-sm font-semibold"
           style={{ borderColor: theme.surfaceBorder, color: theme.eyebrowClass }}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-          Voor breinen die vastlopen op starten
+          {ui.layoutCSubline}
         </div>
       )}
       <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel}>
@@ -158,25 +167,25 @@ export function HeroLayoutC(props: HeroProps) {
         {campaign.subline}
       </TikTokSubline>
       <p className="mt-6 text-sm" style={{ color: theme.muted }}>
-        Eén keer &apos;s ochtends je energie kiezen. Structuro zet 1, 2 of 3 taken klaar. Meer niet.
+        {ui.layoutCBullet}
       </p>
     </TikTokLandingShell>
   );
 }
 
 export function HeroLayoutD(props: HeroProps) {
-  const { campaign, heroId, channel } = props;
+  const { campaign, heroId, channel, locale: localeProp } = props;
+  const locale = resolveLocale(localeProp);
+  const ui = getLpHeroUiCopy(locale);
   const theme = getLpThemeTokens(campaign, heroId, channel);
 
   return (
     <TikTokLandingShell {...props} mainClassName="items-center text-center">
       {theme.isStory ? (
-        <StoryEyebrow onNavy={theme.isDark}>
-          Voor ADHD-breinen die niet beginnen
-        </StoryEyebrow>
+        <StoryEyebrow onNavy={theme.isDark}>{ui.eyebrowStory}</StoryEyebrow>
       ) : (
         <TikTokEyebrow campaign={campaign} heroId={heroId} channel={channel}>
-          Voor het ADHD-brein
+          {ui.layoutDEyebrow}
         </TikTokEyebrow>
       )}
       <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel} centered>
@@ -190,20 +199,21 @@ export function HeroLayoutD(props: HeroProps) {
 }
 
 export function HeroLayoutE(props: HeroProps) {
-  const { campaign, heroId, channel } = props;
+  const { campaign, heroId, channel, locale: localeProp } = props;
+  const locale = resolveLocale(localeProp);
+  const ui = getLpHeroUiCopy(locale);
   const theme = getLpThemeTokens(campaign, heroId, channel);
   const accent = theme.isStory ? "#2D5A56" : campaign.accent;
+  const ritualSteps = locale === "en" ? LP_RITUAL_STEPS_EN : LP_RITUAL_STEPS;
 
   return (
     <TikTokLandingShell {...props}>
       {theme.isStory ? (
-        <StoryEyebrow onNavy={theme.isDark}>
-          Voor ADHD-breinen die niet beginnen
-        </StoryEyebrow>
+        <StoryEyebrow onNavy={theme.isDark}>{ui.eyebrowStory}</StoryEyebrow>
       ) : (
         <div className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-          Voor ADHD-breinen die vastlopen
+          {ui.layoutEStuck}
         </div>
       )}
       <TikTokHeadline campaign={campaign} heroId={heroId} channel={channel}>
@@ -219,7 +229,7 @@ export function HeroLayoutE(props: HeroProps) {
           style={{ background: `linear-gradient(${accent}, transparent)` }}
           aria-hidden
         />
-        {LP_RITUAL_STEPS.map((step, index) => (
+        {ritualSteps.map((step, index) => (
           <li key={step.title} className="relative flex items-start gap-4">
             <span
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-extrabold text-white"
@@ -242,10 +252,7 @@ export function HeroLayoutE(props: HeroProps) {
   );
 }
 
-const HERO_LAYOUTS: Record<
-  LpHeroId,
-  React.ComponentType<HeroProps>
-> = {
+const HERO_LAYOUTS: Record<LpHeroId, React.ComponentType<HeroProps>> = {
   A: HeroLayoutA,
   B: HeroLayoutB,
   C: HeroLayoutC,

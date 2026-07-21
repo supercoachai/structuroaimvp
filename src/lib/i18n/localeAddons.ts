@@ -205,6 +205,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       exchangeTitle: "Inloggen via de link lukte niet",
       exchangeBody:
         "De code werd al gebruikt of is ongeldig. Vraag zo nodig een nieuwe herstellink aan.",
+      pkceTitle: "Open de link in dezelfde browser",
+      pkceBody:
+        "De inloglink hoort bij de browser waarin je hem vroeg. Open je mail opnieuw in die browser, of vraag hier een nieuwe link aan. Tip: geen in-app browser van Gmail of Apple Mail.",
       missingTitle: "Ongeldige of incomplete link",
       missingBody: "Open de link uit je mail opnieuw, of vraag een nieuw wachtwoord aan.",
       genericTitle: "Er ging iets mis met inloggen",
@@ -212,6 +215,7 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
         "Probeer opnieuw of vraag een nieuw wachtwoord aan via het inlogscherm.",
       ctaReset: "Nieuw wachtwoord aanvragen",
       ctaLogin: "Terug naar inloggen",
+      ctaMagic: "Nieuwe inloglink aanvragen",
     },
     passwordSetup: {
       checking: "Bezig met laden…",
@@ -974,12 +978,16 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       exchangeTitle: "Could not sign in with this link",
       exchangeBody:
         "The code was already used or is invalid. Request a new reset link if needed.",
+      pkceTitle: "Open the link in the same browser",
+      pkceBody:
+        "This sign-in link belongs to the browser where you requested it. Open your email again in that browser, or request a new link here. Tip: avoid Gmail or Apple Mail in-app browsers.",
       missingTitle: "Invalid or incomplete link",
       missingBody: "Open the link from your email again, or request a new password.",
       genericTitle: "Something went wrong signing in",
       genericBody: "Try again or request a new password from the sign-in screen.",
       ctaReset: "Request new password",
       ctaLogin: "Back to sign in",
+      ctaMagic: "Request a new sign-in link",
     },
     passwordSetup: {
       checking: "Loading…",
