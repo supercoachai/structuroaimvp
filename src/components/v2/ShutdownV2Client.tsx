@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { V2AppShell, V2Eyebrow, V2Progress } from "./V2Chrome";
+import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet from "./V2InfoSheet";
+import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { scrollV2ToTop, useV2Go } from "./v2nav";
 import {
   addV2DumpItem,
@@ -17,6 +20,7 @@ import {
   trackV2ShutdownCompleted,
   trackV2ShutdownSentiment,
 } from "./v2Analytics";
+import { markV2FirstValue } from "./v2CycleOptInPrompt";
 import { markReturnPermissionPending, shouldOfferReturnPermission } from "./v2ReturnPermission";
 
 type Phase = "review" | "sentiment" | "dump";
@@ -44,6 +48,7 @@ export default function ShutdownV2Client() {
   const [phase, setPhase] = useState<Phase>("review");
   const [eveningDraft, setEveningDraft] = useState("");
   const [tasks, setTasks] = useState<V2Task[]>([]);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     setTasks(loadV2Tasks());
@@ -70,6 +75,7 @@ export default function ShutdownV2Client() {
       }
     }
     trackV2ShutdownCompleted({ winCount: wins.length, dumpAdded });
+    markV2FirstValue();
     if (wins.length >= 1 && shouldOfferReturnPermission()) {
       markReturnPermissionPending();
     }
@@ -103,7 +109,17 @@ export default function ShutdownV2Client() {
     <V2AppShell>
       <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-10 pt-6">
         <header>
-          <V2Eyebrow>Dagafsluiting</V2Eyebrow>
+          <div className="v2-info-head">
+            <V2Eyebrow>Dagafsluiting</V2Eyebrow>
+            <V2InfoHint
+              infoId="v2_shutdown"
+              expanded={infoOpen}
+              onToggle={() => setInfoOpen((v) => !v)}
+              expandLabel={V2_INFO_SHEETS.shutdown.openAria}
+              collapseLabel={V2_INFO_SHEETS.shutdown.closeAria}
+              controlsId="v2-shutdown-info-sheet"
+            />
+          </div>
           <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
             {phase === "review"
               ? "Wat is af vandaag"
@@ -238,6 +254,7 @@ export default function ShutdownV2Client() {
               type="button"
               onClick={() => {
                 trackV2ShutdownCompleted({ winCount: wins.length, dumpAdded: false });
+                markV2FirstValue();
                 if (wins.length >= 1 && shouldOfferReturnPermission()) {
                   markReturnPermissionPending();
                 }
@@ -250,6 +267,17 @@ export default function ShutdownV2Client() {
           </>
         )}
       </div>
+
+      <V2InfoSheet
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        eyebrow={V2_INFO_SHEETS.shutdown.eyebrow}
+        title={V2_INFO_SHEETS.shutdown.title}
+        rows={V2_INFO_SHEETS.shutdown.rows}
+        gotItLabel={V2_INFO_SHEETS.shutdown.gotIt}
+        closeAria={V2_INFO_SHEETS.shutdown.closeAria}
+        panelId="v2-shutdown-info-sheet"
+      />
     </V2AppShell>
   );
 }

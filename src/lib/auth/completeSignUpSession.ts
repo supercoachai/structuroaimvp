@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { claimAnonymousOnboardingForAccount } from "@/lib/auth/claimAnonymousOnboarding";
+import { migrateV2LocalDataToSupabase } from "@/lib/migrateV2LocalDataToSupabase";
 import {
   getSignupAttributionSource,
   getStoredSignupCampaign,
@@ -20,6 +21,16 @@ export async function finalizeNewAccountSession(
     source: getSignupAttributionSource(),
     utm_campaign: getStoredSignupCampaign(),
   });
+
+  // V2 local-first: bewaar journey/taken/dump vóórdat we naar de cloud-app gaan.
+  try {
+    const v2 = await migrateV2LocalDataToSupabase(userId);
+    if (v2.migrated) {
+      return "/";
+    }
+  } catch {
+    /* best-effort; TaskContext/V2ClaimOnAuth kan retryen */
+  }
 
   // Account aangemaakt vanuit de anonieme acquisitie-flow: onboarding al gedaan,
   // dus niet opnieuw starten. Lokale taken migreren mee. Daarna meteen de app in.

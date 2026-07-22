@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import DagstartV2Client from "@/components/v2/DagstartV2Client";
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function V2DagstartPage() {
-  return <DagstartV2Client />;
+  return (
+    <Suspense>
+      <DagstartV2Client />
+    </Suspense>
+  );
 }

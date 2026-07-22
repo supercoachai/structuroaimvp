@@ -19,22 +19,21 @@ import {
   v2StructuroThingPicks,
 } from "./v2Things";
 import V2IntroStep from "./V2IntroStep";
-import type { V2CycleOptInStage } from "./V2CycleOptInStep";
 import V2ProgressDots from "./V2ProgressDots";
-import V2AccountSaveCta from "./V2AccountSaveCta";
-import { patchV2Settings } from "./v2Settings";
+import {
+  trackV2OnboardingDone,
+  trackV2OnboardingEnergy,
+  trackV2OnboardingStep,
+  trackV2OnboardingTasks,
+} from "./v2OnboardingFunnel";
 import { useI18n } from "@/lib/i18n";
 
-/** Latere fases: CycleRing/heroicons/setup niet in welcome-bundle. */
+/** Latere fases: heroicons niet in welcome-bundle. */
 const V2ProposeStep = dynamic(() => import("./V2ProposeStep"), {
   ssr: false,
   loading: () => null,
 });
 const V2AdjustStep = dynamic(() => import("./V2AdjustStep"), {
-  ssr: false,
-  loading: () => null,
-});
-const V2CycleOptInStep = dynamic(() => import("./V2CycleOptInStep"), {
   ssr: false,
   loading: () => null,
 });
@@ -44,27 +43,26 @@ const V2DoneStep = dynamic(() => import("./V2DoneStep"), {
 });
 
 /**
- * Design-phone happy path: welcome → cyclus intro → (bij Ja: setup) → energy+voorstellen → klaar.
- * Escape: zelf aanpassen (checkbox). Geen pick_who / swipe.
- * Progress: 3 segmenten; welcome telt niet. Cycle intro+setup delen stap 1; adjust deelt stap met energy.
- * Cyclus vóór energy: orb-ring + fase-label + info-sheet op propose (geen chip).
+ * Happy path: welcome → energy+voorstellen → klaar → home.
+ * Geen naam/register in dit pad (naam bij account).
+ * Cyclus: compacte toggle op energy (Zonder/Cyclus), live orb-transform.
+ * Escape: zelf aanpassen. Geen save-CTA op done.
+ * Progress: 2 segmenten; welcome telt niet. Adjust deelt energy.
  */
-type Phase = "welcome" | "cycle" | "energy" | "adjust" | "done";
+type Phase = "welcome" | "energy" | "adjust" | "done";
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 2;
 
-/** Progress na welcome: cycle=1, energy/adjust=2, done=3. Welcome heeft geen bar. */
+/** Progress na welcome: energy/adjust=1, done=2. */
 function stepNumberFor(phase: Phase): number {
   switch (phase) {
     case "welcome":
       return 0;
-    case "cycle":
-      return 1;
     case "energy":
     case "adjust":
-      return 2;
+      return 1;
     case "done":
-      return 3;
+      return 2;
   }
 }
 
@@ -76,7 +74,6 @@ export default function OnboardingV2Client() {
   const { state, update } = useV2();
   const [phase, setPhase] = useState<Phase>("welcome");
   const [history, setHistory] = useState<Phase[]>([]);
-  const [cycleStage, setCycleStage] = useState<V2CycleOptInStage>("intro");
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
   const replayHandled = useRef(false);
 
@@ -86,7 +83,6 @@ export default function OnboardingV2Client() {
     replayHandled.current = true;
     setPhase("welcome");
     setHistory([]);
-    setCycleStage("intro");
     setSelectedThings([]);
     router.replace("/v2/onboarding", { scroll: false });
   }, [router, searchParams]);
@@ -109,7 +105,12 @@ export default function OnboardingV2Client() {
 
   useEffect(() => {
     scrollV2ToTop();
-  }, [phase, cycleStage]);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "welcome") trackV2OnboardingStep("welcome");
+    if (phase === "energy") trackV2OnboardingStep("energy");
+  }, [phase]);
 
   const goTo = useCallback(
     (next: Phase) => {
@@ -120,21 +121,15 @@ export default function OnboardingV2Client() {
   );
 
   const goBack = useCallback(() => {
-    if (phase === "cycle" && cycleStage === "setup") {
-      setCycleStage("intro");
-      return;
-    }
     setHistory((prev) => {
       if (prev.length === 0) return prev;
       setPhase(prev[prev.length - 1]);
       return prev.slice(0, prev.length - 1);
     });
-  }, [phase, cycleStage]);
+  }, []);
 
   const stepNumber = stepNumberFor(phase);
-  const canGoBack =
-    (phase === "cycle" && cycleStage === "setup") ||
-    (history.length > 0 && phase !== "welcome" && phase !== "done");
+  const canGoBack = history.length > 0 && phase !== "welcome" && phase !== "done";
   const isWelcome = phase === "welcome";
 
   const pickEnergy = (energy: V2Energy) => {
@@ -142,48 +137,29 @@ export default function OnboardingV2Client() {
     setSelectedThings(
       v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy), locale),
     );
+    trackV2OnboardingEnergy(energy);
   };
 
-  const proceedToEnergy = (extra?: { cyclusOptIn?: boolean }) => {
-    // Geen pre-select: eerst energie-pill, dan voorstellen (één lus).
+  const beginIntro = () => {
     setSelectedThings([]);
-    update({
-      energy: null,
-      ...(extra?.cyclusOptIn ? { cyclusOptIn: true } : {}),
-    });
+    update({ energy: null });
     goTo("energy");
   };
 
-  const enableCycle = () => {
-    setCycleStage("setup");
-  };
-
-  const skipCycle = () => {
-    setCycleStage("intro");
-    proceedToEnergy();
-  };
-
-  const completeCycleSetup = async (
-    lastPeriodStart: string,
-    averageLength: number,
-    menstruationDuration: number,
-  ) => {
-    patchV2Settings({
-      lastPeriodStart,
-      cycleLength: averageLength,
-      menstruationDuration,
+  const finishThings = (nextThings: string[], adjusted: boolean) => {
+    const normalized = v2NormalizeThings(nextThings);
+    update({ things: normalized, todayDone: false });
+    trackV2OnboardingTasks({
+      energy: state.energy,
+      thingCount: normalized.length,
+      adjusted,
     });
-    proceedToEnergy({ cyclusOptIn: true });
-  };
-
-  const finishThings = (nextThings: string[]) => {
-    update({ things: v2NormalizeThings(nextThings), todayDone: false });
     goTo("done");
   };
 
   const confirmProposals = () => {
     const picks = selectedThings.length > 0 ? selectedThings : proposals;
-    finishThings(picks);
+    finishThings(picks, false);
   };
 
   const openAdjust = () => {
@@ -201,12 +177,12 @@ export default function OnboardingV2Client() {
   };
 
   const finish = () => {
+    trackV2OnboardingDone({
+      energy: state.energy,
+      thingCount: things.length,
+      cycleOptIn: state.cyclusOptIn,
+    });
     go("/v2/home", { todayDone: false });
-  };
-
-  const beginIntro = () => {
-    setCycleStage("intro");
-    goTo("cycle");
   };
 
   const flowLayout = v2FlowLayoutForOnboardingPhase(phase);
@@ -232,24 +208,11 @@ export default function OnboardingV2Client() {
         <div style={v2Styles.flowShell}>
           <div style={v2FlowWrapStyle(flowLayout)}>
             <section
-              key={`${phase}-${cycleStage}`}
+              key={phase}
               className="v2-fade"
-              style={
-                phase === "energy" || phase === "cycle"
-                  ? v2Styles.cardEnergy
-                  : v2Styles.card
-              }
+              style={phase === "energy" ? v2Styles.cardEnergy : v2Styles.card}
               aria-live="polite"
             >
-              {phase === "cycle" ? (
-                <V2CycleOptInStep
-                  stage={cycleStage}
-                  onEnable={enableCycle}
-                  onSkip={skipCycle}
-                  onSetupSubmit={completeCycleSetup}
-                />
-              ) : null}
-
               {phase === "energy" ? (
                 <V2ProposeStep
                   energy={state.energy}
@@ -259,6 +222,7 @@ export default function OnboardingV2Client() {
                   onPickEnergy={pickEnergy}
                   onConfirm={confirmProposals}
                   onAdjust={openAdjust}
+                  showCycleToggle
                 />
               ) : null}
 
@@ -268,8 +232,8 @@ export default function OnboardingV2Client() {
                   selected={selectedThings}
                   maxSlots={maxSlots}
                   onToggle={toggleAdjust}
-                  onConfirm={() => finishThings(selectedThings)}
-                  onSkip={() => finishThings([])}
+                  onConfirm={() => finishThings(selectedThings, true)}
+                  onSkip={() => finishThings([], true)}
                 />
               ) : null}
 
@@ -278,9 +242,6 @@ export default function OnboardingV2Client() {
                   things={things}
                   onContinue={finish}
                   continueLabel={t("v2.flowToDay")}
-                  secondary={
-                    <V2AccountSaveCta content="v2_onboarding_done" />
-                  }
                 />
               ) : null}
             </section>

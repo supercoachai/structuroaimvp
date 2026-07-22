@@ -7,6 +7,7 @@ import { patchV2Settings } from "./v2Settings";
 
 /**
  * Welkom/intro-stap: full-bleed cream, geen witte kaart, geen progress.
+ * Tekst-wordmark bovenaan, display-kop, korte lead + soft next-steps, navy CTA.
  * Minimale NL/EN-toggle + browser-detect via I18n/bootstrap.
  */
 export default function V2IntroStep({ onBegin }: { onBegin: () => void }) {
@@ -27,13 +28,34 @@ export default function V2IntroStep({ onBegin }: { onBegin: () => void }) {
           <em className="v2-it">{t("v2.introTitleEm")}</em>
           {t("v2.introTitleAfter")}
         </h1>
+        <p className="v2-intro__lead">{t("v2.introLead")}</p>
+        <ol className="v2-intro__steps" aria-label={t("v2.introStepsAria")}>
+          <li>
+            <span className="v2-intro__step-n" aria-hidden>
+              1
+            </span>
+            <span>{t("v2.introStep1")}</span>
+          </li>
+          <li>
+            <span className="v2-intro__step-n" aria-hidden>
+              2
+            </span>
+            <span>{t("v2.introStep2")}</span>
+          </li>
+          <li>
+            <span className="v2-intro__step-n" aria-hidden>
+              3
+            </span>
+            <span>{t("v2.introStep3")}</span>
+          </li>
+        </ol>
       </div>
 
       <div className="v2-intro__footer">
         <button type="button" className="btn-primary w-full" onClick={onBegin}>
           {t("v2.introBegin")}
         </button>
-        <p className="v2-intro__reassurance">{t("v2.flowAlwaysStop")}</p>
+        <p className="v2-intro__reassurance">{t("v2.introNoAccount")}</p>
       </div>
     </div>
   );

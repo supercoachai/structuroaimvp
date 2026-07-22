@@ -30,11 +30,31 @@ type AcquisitionBridgeClientProps = {
 };
 
 /**
- * Organic EU: V2 onboarding (productiepad tot cutover v2→v1-plaats).
- * TikTok blijft v1-onboarding.
+ * Organic EU: V2 onboarding. TikTok blijft v1-onboarding.
  */
 function bridgeSignupHrefForChannel(channel: BridgeChannel): string {
   return channel === "organic" ? "/v2/onboarding" : "/onboarding";
+}
+
+/**
+ * Alleen EU V2-landing (utm_campaign=eu_v2): attributie schrijven en doorsturen.
+ * Kale /start en bio-links met andere campaigns blijven leesbaar.
+ */
+function shouldSoftAdvanceFromEuLanding(searchParams: URLSearchParams): boolean {
+  const campaign = (searchParams.get("utm_campaign") || "").toLowerCase();
+  return campaign === "eu_v2" || campaign.startsWith("eu_v2_");
+}
+
+/** Soft-advance behoudt lang; attributie zit al in storage/cookie vanaf /start. */
+function softAdvanceHref(
+  signupHref: string,
+  searchParams: URLSearchParams
+): string {
+  const lang = searchParams.get("lang") || searchParams.get("locale");
+  if (!lang || (lang !== "en" && lang !== "nl")) return signupHref;
+  const next = new URL(signupHref, "https://www.structuro.ai");
+  next.searchParams.set("lang", lang);
+  return `${next.pathname}?${next.searchParams.toString()}`;
 }
 
 function AcquisitionBridgeInner({
@@ -55,6 +75,23 @@ function AcquisitionBridgeInner({
   useEffect(() => {
     applySignupAttributionFromSearchParams(searchParams);
   }, [searchParams]);
+
+  // Dunne bridge: EU V2-CTA's landen op /start, schrijven attributie, en gaan door.
+  // Geen tweede cta_clicked: die is al op structuro.eu afgevuurd.
+  useEffect(() => {
+    if (channel !== "organic") return;
+    if (!shouldSoftAdvanceFromEuLanding(searchParams)) return;
+    if (hasSupabaseAuthHintOnClient()) return;
+
+    applySignupAttributionFromSearchParams(searchParams);
+
+    const target = softAdvanceHref(signupHref, searchParams);
+    const timer = window.setTimeout(() => {
+      window.location.assign(target);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [channel, searchParams, signupHref]);
 
   function handleCtaClick(event: MouseEvent<HTMLAnchorElement>) {
     trackAcquisitionCtaClicked({
@@ -79,7 +116,7 @@ function AcquisitionBridgeInner({
       const reset = shouldResetAnonymousOnboardingFromClient();
       enterAnonymousOnboarding(reset ? { reset: true } : undefined);
     }
-    window.location.assign(signupHref);
+    window.location.assign(softAdvanceHref(signupHref, searchParams));
   }
 
   return (
@@ -89,7 +126,7 @@ function AcquisitionBridgeInner({
       heroId={variant.hero.id}
       campaign={variant.campaign}
       locale={locale}
-      signupHref={signupHref}
+      signupHref={softAdvanceHref(signupHref, searchParams)}
       onCtaClick={handleCtaClick}
       ctaLabel={variant.campaign.ctaLabel ?? presentation.ctaLabel}
       footerNote={presentation.footerNote}

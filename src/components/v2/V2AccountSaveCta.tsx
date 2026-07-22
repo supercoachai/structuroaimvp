@@ -3,70 +3,78 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 import { buildV2RegistrerenHref } from "@/lib/v2/v2RegistrerenHref";
 
-import { v2Styles } from "./theme";
+import {
+  dismissAccountSavePrompt,
+  shouldShowAccountSavePrompt,
+} from "./v2AccountSavePrompt";
+import {
+  trackV2AccountSaveClicked,
+  trackV2AccountSaveShown,
+} from "./v2OnboardingFunnel";
 
 type V2AccountSaveCtaProps = {
   /** utm_content voor attributie */
   content: string;
-  /**
-   * link = rustige tekst onder primary (done/home).
-   * soft = lichte card zonder filled CTA (minder concurrentie met Start focus).
-   */
-  variant?: "link" | "soft" | "card";
+  /** Analytics-surface. */
+  surface?: "home";
 };
 
 /**
- * Soft account-brug na eerste waarde in V2.
- * Google-first: /registreren is al Google-primary; copy stuurt daarheen
- * zonder multi-CTA-muur in v2 zelf.
+ * Soft account-brug op Home, alleen na eerste focus- of shutdown-win
+ * (`firstValueAt` via shouldShowAccountSavePrompt).
  */
 export default function V2AccountSaveCta({
   content,
-  variant = "link",
+  surface = "home",
 }: V2AccountSaveCtaProps) {
   const [href, setHref] = useState("/registreren?from=v2");
-  const [hidden, setHidden] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (hasSupabaseAuthHintOnClient()) {
-      setHidden(true);
+    if (!shouldShowAccountSavePrompt()) {
+      setVisible(false);
       return;
     }
     setHref(buildV2RegistrerenHref({ content }));
-  }, [content]);
+    setVisible(true);
+    trackV2AccountSaveShown(surface);
+  }, [content, surface]);
 
-  if (hidden) return null;
+  if (!visible) return null;
 
-  if (variant === "soft" || variant === "card") {
-    return (
-      <section
-        className="v2-fade rounded-[16px] px-4 py-3"
-        style={{
-          background: "transparent",
-          border: "1px solid var(--border)",
-        }}
-        aria-label="Account bewaren"
-      >
-        <p className="text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
-          Wil je dit bewaren? Google is genoeg. Geen druk.
-        </p>
+  return (
+    <section
+      className="v2-fade rounded-[16px] px-4 py-3"
+      style={{
+        background: "transparent",
+        border: "1px solid var(--border)",
+      }}
+      aria-label="Account bewaren"
+    >
+      <p className="text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
+        Wil je dit bewaren? Google is genoeg. Geen druk.
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
         <Link
           href={href}
-          className="v2-link mt-2 inline-flex w-full items-center justify-center"
-          style={{ textAlign: "center" }}
+          className="v2-link inline-flex items-center justify-center"
+          onClick={() => trackV2AccountSaveClicked(surface)}
         >
           Bewaar met Google
         </Link>
-      </section>
-    );
-  }
-
-  return (
-    <Link href={href} className="v2-link" style={v2Styles.backLink}>
-      Bewaar met Google
-    </Link>
+        <button
+          type="button"
+          className="v2-link text-[13px]"
+          onClick={() => {
+            dismissAccountSavePrompt();
+            setVisible(false);
+          }}
+        >
+          Niet nu
+        </button>
+      </div>
+    </section>
   );
 }

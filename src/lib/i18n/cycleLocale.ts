@@ -56,7 +56,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     setupSaveError: "Kon niet opslaan: {detail}",
     settingsTitle: "Cyclus-tracking",
     settingsHint:
-      "Optioneel. Structuro berekent je fase en slaat die op bij je dagstart. Niets meer.",
+      "Optioneel. Altijd hier aan of uit te zetten. Structuro berekent je fase bij je dagstart. Niets meer.",
     settingsToggleOn: "Aan",
     settingsToggleOff: "Uit",
     settingsEnable: "Inschakelen",
@@ -236,7 +236,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     setupSaveError: "Could not save: {detail}",
     settingsTitle: "Cycle tracking",
     settingsHint:
-      "Optional. Structuro calculates your phase and stores it with your day start. Nothing else.",
+      "Optional. You can always turn this on or off here. Structuro calculates your phase with your day start. Nothing else.",
     settingsToggleOn: "On",
     settingsToggleOff: "Off",
     settingsEnable: "Turn on",

@@ -7,7 +7,6 @@ export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
   switch (phase) {
     case "welcome":
     case "energy":
-    case "cycle":
     case "done":
       return "welcome";
     case "adjust":
@@ -481,6 +480,8 @@ export const v2Styles: Record<string, CSSProperties> = {
   appBottomSlot: {
     flexShrink: 0,
     width: "100%",
+    display: "flex",
+    justifyContent: "center",
     padding: "0 16px 8px",
     backgroundColor: "var(--surface)",
   },

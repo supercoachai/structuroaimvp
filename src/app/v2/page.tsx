@@ -25,7 +25,6 @@ const SURFACES: V2Surface[] = [
   { href: "/v2/abonnement", title: "Abonnement", desc: "Paywall in v2-stijl." },
   { href: "/v2/jasper", title: "Jasper-landing", desc: "Variant voor podcastluisteraars." },
   { href: "/v2/login", title: "Inloggen", desc: "Google of e-mail. Echte auth naar /v2/home." },
-  { href: "/v2/register", title: "Account", desc: "Lokaal starten zonder cloud-account." },
 ];
 
 export default function V2EntryPage() {

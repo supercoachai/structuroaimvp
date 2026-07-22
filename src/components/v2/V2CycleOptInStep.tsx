@@ -7,6 +7,8 @@ import { useI18n } from "@/lib/i18n";
 
 import V2CycleSetupStep from "./V2CycleSetupStep";
 import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet from "./V2InfoSheet";
+import { V2_INFO_SHEETS } from "./v2InfoSheets";
 
 export type V2CycleOptInStage = "intro" | "setup";
 
@@ -31,10 +33,32 @@ export default function V2CycleOptInStep({
 }) {
   const { t } = useI18n();
   const [infoOpen, setInfoOpen] = useState(false);
+  const sheet = V2_INFO_SHEETS.cycleOptIn;
 
   if (stage === "setup") {
     return <V2CycleSetupStep onSubmit={onSetupSubmit} onSkip={onSkip} />;
   }
+
+  const rows = [
+    {
+      key: "b1",
+      icon: "meaning" as const,
+      title: t("cycle.infoSheetMeaningTitle"),
+      body: t("cycle.optInBullet1"),
+    },
+    {
+      key: "b2",
+      icon: "plan" as const,
+      title: t("cycle.infoSheetPlanTitle"),
+      body: t("cycle.optInBullet2"),
+    },
+    {
+      key: "b3",
+      icon: "private" as const,
+      title: t("cycle.infoSheetPrivateTitle"),
+      body: t("cycle.optInBullet3"),
+    },
+  ];
 
   return (
     <div className="v2-cycle-optin">
@@ -50,19 +74,11 @@ export default function V2CycleOptInStep({
           onToggle={() => setInfoOpen((v) => !v)}
           expandLabel={t("cycle.energyContextExpandAria")}
           collapseLabel={t("cycle.energyContextCollapseAria")}
-          controlsId="v2-cycle-optin-info"
+          controlsId="v2-cycle-optin-info-sheet"
         />
       </div>
 
       <p className="v2-cycle-optin__body">{t("cycle.optInBody")}</p>
-
-      {infoOpen ? (
-        <ul id="v2-cycle-optin-info" className="v2-cycle-optin__panel">
-          <li>{t("cycle.optInBullet1")}</li>
-          <li>{t("cycle.optInBullet2")}</li>
-          <li>{t("cycle.optInBullet3")}</li>
-        </ul>
-      ) : null}
 
       <div className="v2-cycle-optin__actions">
         <button type="button" className="btn-primary w-full" onClick={onEnable}>
@@ -72,6 +88,18 @@ export default function V2CycleOptInStep({
           {t("cycle.optInNo")}
         </button>
       </div>
+
+      <V2InfoSheet
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        eyebrow={sheet.eyebrow}
+        title={t("cycle.optInTitle")}
+        rows={rows}
+        gotItLabel={t("cycle.infoSheetGotIt")}
+        closeAria={t("cycle.infoSheetCloseAria")}
+        panelId="v2-cycle-optin-info-sheet"
+        tone="warm"
+      />
     </div>
   );
 }

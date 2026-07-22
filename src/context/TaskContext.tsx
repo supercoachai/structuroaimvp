@@ -23,6 +23,7 @@ import { getCalendarDateAmsterdam } from '../lib/dagstartCookie';
 import { toast } from '@/components/Toast';
 import { scheduleReminders } from '@/components/ReminderEngine';
 import { migrateLocalTasksToSupabase } from '@/lib/migrateLocalTasksToSupabase';
+import { migrateV2LocalDataToSupabase } from '@/lib/migrateV2LocalDataToSupabase';
 import type { MicroStep } from '@/lib/microSteps';
 
 /** Tijdelijke id tijdens optimistic add; wordt vervangen zodra Supabase insert klaar is. */
@@ -320,11 +321,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user?.id) return;
     let cancelled = false;
-    void migrateLocalTasksToSupabase(user.id).then((count) => {
+    void (async () => {
+      try {
+        const v2 = await migrateV2LocalDataToSupabase(user.id);
+        if (!cancelled && v2.migrated) {
+          void fetchTasks();
+        }
+      } catch {
+        /* best-effort */
+      }
+      const count = await migrateLocalTasksToSupabase(user.id);
       if (!cancelled && count > 0) {
         void fetchTasks();
       }
-    });
+    })();
     return () => {
       cancelled = true;
     };

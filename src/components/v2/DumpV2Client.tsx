@@ -4,8 +4,10 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { V2AppShell } from "./V2Chrome";
-import { V2LearnHintOnce } from "./V2LearnHintOnce";
+import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet from "./V2InfoSheet";
 import { recordV2Snooze, v2AdaptiveDumpKey } from "./v2Adaptive";
+import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { isV2MutedToday } from "./v2Settings";
 import { createV2SpeechSession, isV2SpeechAvailable } from "./v2Voice";
 import { useV2, type V2Energy } from "./V2Context";
@@ -86,6 +88,7 @@ export default function DumpV2Client() {
   const mutedToday = isV2MutedToday();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [listOpen, setListOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -528,14 +531,24 @@ export default function DumpV2Client() {
   const speechOk = isV2SpeechAvailable();
 
   return (
-    <V2AppShell chrome="flow">
+    <V2AppShell>
       <div className="v2-dump">
         <div className="v2-dump__hero">
-          <header>
-            <p className="v2-dump__eyebrow">
-              <span className="v2-eyebrow-dot--static" aria-hidden="true" />
-              Extern geheugen
-            </p>
+          <header className="v2-dump__header">
+            <div className="v2-dump__header-top">
+              <p className="v2-dump__eyebrow">
+                <span className="v2-eyebrow-dot--static" aria-hidden="true" />
+                Extern geheugen
+              </p>
+              <V2InfoHint
+                infoId="v2_dump_extern_geheugen"
+                expanded={infoOpen}
+                onToggle={() => setInfoOpen((v) => !v)}
+                expandLabel={V2_INFO_SHEETS.dump.openAria}
+                collapseLabel={V2_INFO_SHEETS.dump.closeAria}
+                controlsId="v2-dump-info-sheet"
+              />
+            </div>
             <h1 className="v2-dump__title">Dump</h1>
             <p className="v2-dump__lead">
               Leg vast wat in je hoofd zit. Structuur hoeft niet.
@@ -659,8 +672,6 @@ export default function DumpV2Client() {
         </div>
 
         <div className="v2-dump__more">
-          <V2LearnHintOnce feature="dump" />
-
           {softWarn ? (
             <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
               {atMax
@@ -844,6 +855,17 @@ export default function DumpV2Client() {
           </div>
         ) : null}
       </div>
+
+      <V2InfoSheet
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        eyebrow={V2_INFO_SHEETS.dump.eyebrow}
+        title={V2_INFO_SHEETS.dump.title}
+        rows={V2_INFO_SHEETS.dump.rows}
+        gotItLabel={V2_INFO_SHEETS.dump.gotIt}
+        closeAria={V2_INFO_SHEETS.dump.closeAria}
+        panelId="v2-dump-info-sheet"
+      />
     </V2AppShell>
   );
 }

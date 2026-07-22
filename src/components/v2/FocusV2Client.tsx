@@ -5,11 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { v2ScopedCss } from "./theme";
-import { V2LearnHintOnce } from "./V2LearnHintOnce";
+import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet from "./V2InfoSheet";
+import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { useV2 } from "./V2Context";
 import { useV2Go } from "./v2nav";
 import { loadV2Tasks, type V2DurationBucket } from "./v2Tasks";
 import { v2NormalizeThings, v2PrimaryThing } from "./v2Things";
+import { markV2FirstValue } from "./v2CycleOptInPrompt";
 import { recordV2FocusCompleted, recordV2FocusStart } from "./v2OpenTaskReminder";
 import {
   clearV2FocusTimer,
@@ -56,6 +59,7 @@ export default function FocusV2Client() {
   const [finished, setFinished] = useState(false);
   const [extended, setExtended] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const tasks = useMemo(() => loadV2Tasks(), []);
@@ -152,6 +156,7 @@ export default function FocusV2Client() {
 
   const handleDone = () => {
     recordV2FocusCompleted(thingLabel);
+    markV2FirstValue();
     clearV2FocusTimer();
     go("/v2/home", { todayDone: false });
   };
@@ -191,12 +196,24 @@ export default function FocusV2Client() {
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 pb-10">
         <div className="flex w-full max-w-[480px] flex-col items-center">
-          <p
-            className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: "var(--accent)" }}
-          >
-            Nu aan zet
-          </p>
+          <div className="v2-info-head v2-info-head--center">
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: "var(--accent)" }}
+            >
+              Nu aan zet
+            </p>
+            {!bucket && !finished ? (
+              <V2InfoHint
+                infoId="v2_focus_tijd"
+                expanded={infoOpen}
+                onToggle={() => setInfoOpen((v) => !v)}
+                expandLabel={V2_INFO_SHEETS.focus.openAria}
+                collapseLabel={V2_INFO_SHEETS.focus.closeAria}
+                controlsId="v2-focus-info-sheet"
+              />
+            ) : null}
+          </div>
           <h1
             className="v2-serif mt-2 line-clamp-2 text-center"
             style={{ fontSize: "var(--fs-title)", color: "var(--text)" }}
@@ -284,7 +301,6 @@ export default function FocusV2Client() {
           <div className="mt-10 w-full">
             {!bucket && !finished ? (
               <div className="flex flex-col gap-2">
-                <V2LearnHintOnce feature="focus" className="text-center" />
                 {suggested ? (
                   <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
                     Past bij deze taak: {suggested.label.toLowerCase()}
@@ -377,6 +393,17 @@ export default function FocusV2Client() {
           </div>
         </div>
       </div>
+
+      <V2InfoSheet
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        eyebrow={V2_INFO_SHEETS.focus.eyebrow}
+        title={V2_INFO_SHEETS.focus.title}
+        rows={V2_INFO_SHEETS.focus.rows}
+        gotItLabel={V2_INFO_SHEETS.focus.gotIt}
+        closeAria={V2_INFO_SHEETS.focus.closeAria}
+        panelId="v2-focus-info-sheet"
+      />
     </div>
   );
 }

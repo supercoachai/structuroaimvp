@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { V2LayoutOverlays } from "@/components/v2/V2LayoutOverlays";
 import { V2Provider } from "@/components/v2/V2Context";
 import { V2VisitTracker } from "@/components/v2/V2VisitTracker";
+import V2ClaimOnAuth from "@/components/v2/V2ClaimOnAuth";
 import V2LocaleSync from "@/components/v2/V2LocaleSync";
 import "@/components/v2/structuro-tokens.css";
 
@@ -25,6 +26,7 @@ export default function V2Layout({ children }: { children: ReactNode }) {
       <V2Provider>
         <V2LocaleSync />
         <V2VisitTracker />
+        <V2ClaimOnAuth />
         <V2LayoutOverlays />
         <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
       </V2Provider>

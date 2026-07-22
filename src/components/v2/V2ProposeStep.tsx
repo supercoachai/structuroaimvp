@@ -8,11 +8,18 @@ import CycleRing, {
 import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
 import { useI18n } from "@/lib/i18n";
 
-import { V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
-import { useV2CycleChip, type V2CycleChipInfo } from "./V2CycleChip";
+import { useV2, V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
+import {
+  ensureV2CyclePeriodStart,
+  useV2CycleChip,
+  type V2CycleChipInfo,
+} from "./V2CycleChip";
 import V2CycleInfoSheet, {
   V2CyclePhaseInfoButton,
 } from "./V2CycleInfoSheet";
+import V2CycleModeToggle from "./V2CycleModeToggle";
+import { trackV2OnboardingCycle } from "./v2OnboardingFunnel";
+import { patchV2Settings } from "./v2Settings";
 import { v2Styles } from "./theme";
 import { v2EnergyOrbColor } from "./v2EnergyMeta";
 
@@ -29,6 +36,7 @@ export default function V2ProposeStep({
   onAdjust,
   headerSlot,
   cycleInfo,
+  showCycleToggle = false,
   confirmLabel,
   adjustLabel,
 }: {
@@ -42,10 +50,13 @@ export default function V2ProposeStep({
   headerSlot?: ReactNode;
   /** Bij opt-in + periodedata: orb-ring + fase-label + info-sheet. Geen chip. */
   cycleInfo?: V2CycleChipInfo | null;
+  /** Eerste dagstart (onboarding): compacte Zonder/Cyclus-bar. */
+  showCycleToggle?: boolean;
   confirmLabel?: string;
   adjustLabel?: string;
 }) {
   const { t } = useI18n();
+  const { state, update } = useV2();
   const [sheetOpen, setSheetOpen] = useState(false);
   /** Hook hier (lazy chunk) i.p.v. parent welcome-bundle: CycleRing blijft uit first paint. */
   const cycleFromContext = useV2CycleChip();
@@ -53,13 +64,7 @@ export default function V2ProposeStep({
   const canConfirm = energy != null && proposals.length > 0;
   const orbColor = v2EnergyOrbColor(energy);
   const hasCycle = resolvedCycle != null;
-  const energyHint = energy
-    ? t(
-        `v2.energyHint${
-          energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"
-        }`,
-      )
-    : null;
+  const energyHint = energy ? t(`v2.energyHint${energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"}`) : null;
 
   const resolvedTitle =
     title ??
@@ -79,8 +84,26 @@ export default function V2ProposeStep({
     : null;
   const phaseAccent = phaseKey ? V2_ORB_PHASE_COLORS[phaseKey] : "#C4785A";
 
+  const setCycleMode = (on: boolean) => {
+    if (on === state.cyclusOptIn) return;
+    if (on) {
+      ensureV2CyclePeriodStart();
+      patchV2Settings({ cycleOptInPromptDismissed: true });
+    } else {
+      setSheetOpen(false);
+    }
+    update({ cyclusOptIn: on });
+    trackV2OnboardingCycle({ optedIn: on });
+  };
+
   return (
     <div className="v2-propose-step" style={wrapStyle}>
+      {showCycleToggle ? (
+        <div className="v2-propose-step__cycle-toggle">
+          <V2CycleModeToggle on={state.cyclusOptIn} onChange={setCycleMode} />
+        </div>
+      ) : null}
+
       {headerSlot ? (
         <div style={{ width: "100%", marginBottom: 8 }}>{headerSlot}</div>
       ) : null}

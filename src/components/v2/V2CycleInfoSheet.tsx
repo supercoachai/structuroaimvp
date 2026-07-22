@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useId, useMemo } from "react";
+import { useMemo } from "react";
 
 import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
-import {
-  getCyclePhaseColor,
-} from "@/components/dagstart/design/CycleRing";
+import { getCyclePhaseColor } from "@/components/dagstart/design/CycleRing";
 import type { CyclePhaseKey } from "@/lib/cycle/cyclePhaseRanges";
 import { useI18n } from "@/lib/i18n";
 
 import type { V2CycleChipInfo } from "./V2CycleChip";
 import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet, { type V2InfoSheetRow } from "./V2InfoSheet";
 
 const PHASE_ORDER: CyclePhaseKey[] = [
   "menstrual",
@@ -40,69 +39,6 @@ type V2CycleInfoSheetProps = {
   onClose: () => void;
 };
 
-function SheetIcon({ kind }: { kind: "meaning" | "plan" | "private" }) {
-  const common = {
-    width: 18,
-    height: 18,
-    viewBox: "0 0 18 18",
-    fill: "none",
-    "aria-hidden": true as const,
-  };
-  if (kind === "meaning") {
-    return (
-      <svg {...common}>
-        <circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-        <path
-          d="M6.2 9.2c.6-1.4 1.6-2.2 2.8-2.2s2.2.8 2.8 2.2"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-  if (kind === "plan") {
-    return (
-      <svg {...common}>
-        <rect
-          x="3.5"
-          y="4"
-          width="11"
-          height="10"
-          rx="2"
-          stroke="currentColor"
-          strokeWidth="1.4"
-        />
-        <path
-          d="M6 2.8v2.4M12 2.8v2.4M3.5 7.5h11"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg {...common}>
-      <rect
-        x="5"
-        y="8"
-        width="8"
-        height="6.5"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path
-        d="M6.5 8V6.2a2.5 2.5 0 0 1 5 0V8"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /**
  * Bottom sheet bij (i) op de propose-energiestap (Optie 2).
  * Tip-copy zit hier, niet permanent boven de orb.
@@ -113,7 +49,6 @@ export default function V2CycleInfoSheet({
   onClose,
 }: V2CycleInfoSheetProps) {
   const { t } = useI18n();
-  const titleId = useId();
   const phaseKey = resolveCurrentPhaseKey(
     info.day,
     info.cycleLength,
@@ -126,23 +61,25 @@ export default function V2CycleInfoSheet({
       : (`cycle.energyContextTip_${phaseKey}` as const);
 
   const phaseTitle = t(`cycle.infoSheetPhaseTitle_${phaseKey}`);
-  /** Concept + chip-tip (tip niet meer permanent boven de orb). */
   const meaningBody = `${t(`cycle.infoSheetMeaning_${phaseKey}`)} ${t(tipKey)}`;
 
-  const rows = useMemo(
+  const rows = useMemo<V2InfoSheetRow[]>(
     () => [
       {
-        key: "meaning" as const,
+        key: "meaning",
+        icon: "meaning",
         title: t("cycle.infoSheetMeaningTitle"),
         body: meaningBody,
       },
       {
-        key: "plan" as const,
+        key: "plan",
+        icon: "plan",
         title: t("cycle.infoSheetPlanTitle"),
         body: t("cycle.infoSheetPlanBody"),
       },
       {
-        key: "private" as const,
+        key: "private",
+        icon: "private",
         title: t("cycle.infoSheetPrivateTitle"),
         body: t("cycle.infoSheetPrivateBody"),
       },
@@ -150,90 +87,45 @@ export default function V2CycleInfoSheet({
     [meaningBody, t],
   );
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div className="v2-cycle-sheet" role="presentation">
-      <button
-        type="button"
-        className="v2-cycle-sheet__backdrop"
-        aria-label={t("cycle.infoSheetCloseAria")}
-        onClick={onClose}
-      />
+    <V2InfoSheet
+      open={open}
+      onClose={onClose}
+      eyebrow={t("cycle.infoSheetEyebrow", {
+        day: String(info.day),
+        length: String(info.cycleLength),
+      })}
+      title={phaseTitle}
+      rows={rows}
+      tone="warm"
+      panelId="v2-cycle-info-sheet"
+      gotItLabel={t("cycle.infoSheetGotIt")}
+      closeAria={t("cycle.infoSheetCloseAria")}
+    >
       <div
-        id="v2-cycle-info-sheet"
-        className="v2-cycle-sheet__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
+        className="v2-cycle-sheet__phases"
+        role="list"
+        aria-label={t("cycle.infoSheetPhasesAria")}
       >
-        <p className="v2-cycle-sheet__eyebrow">
-          {t("cycle.infoSheetEyebrow", {
-            day: String(info.day),
-            length: String(info.cycleLength),
-          })}
-        </p>
-        <h2 id={titleId} className="v2-cycle-sheet__title">
-          {phaseTitle}
-        </h2>
-
-        <div
-          className="v2-cycle-sheet__phases"
-          role="list"
-          aria-label={t("cycle.infoSheetPhasesAria")}
-        >
-          {PHASE_ORDER.map((key) => {
-            const active = key === phaseKey;
-            const color = V2_PHASE_BAR_COLORS[key] ?? getCyclePhaseColor(key);
-            return (
-              <div
-                key={key}
-                role="listitem"
-                className={`v2-cycle-sheet__phase${active ? " is-active" : ""}`}
-                style={{ ["--v2-phase" as string]: color }}
-              >
-                <span className="v2-cycle-sheet__phase-bar" aria-hidden />
-                <span className="v2-cycle-sheet__phase-lbl">
-                  {PHASE_BAR_SHORT[key]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <ul className="v2-cycle-sheet__rows">
-          {rows.map((row) => (
-            <li key={row.key} className="v2-cycle-sheet__row">
-              <span className="v2-cycle-sheet__row-icon" aria-hidden>
-                <SheetIcon kind={row.key} />
+        {PHASE_ORDER.map((key) => {
+          const active = key === phaseKey;
+          const color = V2_PHASE_BAR_COLORS[key] ?? getCyclePhaseColor(key);
+          return (
+            <div
+              key={key}
+              role="listitem"
+              className={`v2-cycle-sheet__phase${active ? " is-active" : ""}`}
+              style={{ ["--v2-phase" as string]: color }}
+            >
+              <span className="v2-cycle-sheet__phase-bar" aria-hidden />
+              <span className="v2-cycle-sheet__phase-lbl">
+                {PHASE_BAR_SHORT[key]}
               </span>
-              <div className="v2-cycle-sheet__row-copy">
-                <strong>{row.title}</strong>
-                <p>{row.body}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        <button type="button" className="btn-primary w-full" onClick={onClose}>
-          {t("cycle.infoSheetGotIt")}
-        </button>
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </V2InfoSheet>
   );
 }
 

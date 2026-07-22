@@ -203,7 +203,44 @@ function RegistrerenAccountInner({
         </p>
       </div>
 
-      <div className="mx-auto w-full">
+      <div className="mx-auto w-full space-y-4">
+        <div className="space-y-1 text-left">
+          <label
+            htmlFor="registreren-preferred-name"
+            className={`block text-sm font-medium ${
+              useStoryLayer ? "text-[var(--story-text)]" : "text-slate-700"
+            }`}
+          >
+            {t("registrerenPage.nameLabel")}
+          </label>
+          <input
+            id="registreren-preferred-name"
+            type="text"
+            value={preferredName}
+            onChange={(e) => {
+              const next = e.target.value;
+              setPreferredName(next);
+              writePreferredNameCookie(next.trim());
+              try {
+                if (next.trim().length >= 2) {
+                  window.localStorage.setItem("structuro_user_name", next.trim());
+                }
+              } catch {
+                /* ignore */
+              }
+            }}
+            autoComplete="given-name"
+            placeholder={t("registrerenPage.namePh")}
+            className={
+              useStoryLayer
+                ? "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 text-base text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
+                : "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+            }
+          />
+          <p className={`text-xs ${mutedTextClass}`}>
+            Alleen je voornaam, voor een persoonlijke begroeting.
+          </p>
+        </div>
         <AccountSignUpOptions
           visual={visual}
           showPasskey={false}

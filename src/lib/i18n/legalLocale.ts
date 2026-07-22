@@ -15,6 +15,7 @@ export const legalLocaleBundles: Record<Locale, { legal: Record<string, string> 
     legal: {
       backLogin: "Terug naar inloggen",
       backSettings: "Terug naar instellingen",
+      backHome: "Terug naar home",
       privacyTitle: "Privacybeleid",
       privacyUpdated: "Versie 1.1, geldig vanaf 26 mei 2026.",
       privacyBody: privacyBodyNlV11,
@@ -27,6 +28,7 @@ export const legalLocaleBundles: Record<Locale, { legal: Record<string, string> 
     legal: {
       backLogin: "Back to sign in",
       backSettings: "Back to settings",
+      backHome: "Back to home",
       privacyTitle: "Privacy policy",
       privacyUpdated: "Version 1.1, effective from 26 May 2026.",
       privacyBody: privacyBodyEnV11,

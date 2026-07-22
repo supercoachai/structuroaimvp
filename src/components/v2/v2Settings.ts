@@ -42,6 +42,12 @@ export type V2Settings = {
   morningEveningDumpDismissedItemId: string | null;
   /** Why-suggestie weggeswiped (task:id of journey). */
   whySuggestionDismissedId: string | null;
+  /** Kalenderdag (YMD) van de idle-open teller voor why-suggestie. */
+  whySuggestionIdleOpensOn: string | null;
+  /** Aantal app-opens vandaag zonder dagstart/taak (voor soft why-nudge). */
+  whySuggestionIdleOpenCount: number;
+  /** Why-anker (zacht zetje) vandaag weggeklikt. */
+  whyAnchorDismissedOn: string | null;
   /** A/B-variant terugkeer (bij eerste opt-in dagstart-herinnering). */
   returnVariant: "notification" | "widget_hint" | null;
   /** Onderdruk zachte prompts/notificaties voor vandaag. */
@@ -54,6 +60,15 @@ export type V2Settings = {
   shutdownNudgeDismissedOn: string | null;
   /** Return-permission prompt permanent weggeswiped. */
   returnPermissionPromptDismissed: boolean;
+  /** Soft "Bewaar met Google" op home weggeklikt. */
+  accountSavePromptDismissed: boolean;
+  /**
+   * Eerste waarde-moment (focus afgerond of shutdown voltooid).
+   * Soft prompts zoals cyclus-opt-in en account-nudge wachten hierop.
+   */
+  firstValueAt: string | null;
+  /** Cyclus home-prompt eenmalig weggeklikt of afgerond. */
+  cycleOptInPromptDismissed: boolean;
   cycleLength: number;
   menstruationDuration: number;
   lastPeriodStart: string | null;
@@ -76,12 +91,18 @@ export const v2SettingsDefaults: V2Settings = {
   firstOpenYmd: null,
   morningEveningDumpDismissedItemId: null,
   whySuggestionDismissedId: null,
+  whySuggestionIdleOpensOn: null,
+  whySuggestionIdleOpenCount: 0,
+  whyAnchorDismissedOn: null,
   returnVariant: null,
   muteTodayPaused: false,
   muteTodayPausedOn: null,
   day1SkipHookDismissedOn: null,
   shutdownNudgeDismissedOn: null,
   returnPermissionPromptDismissed: false,
+  accountSavePromptDismissed: false,
+  firstValueAt: null,
+  cycleOptInPromptDismissed: false,
   cycleLength: CYCLE_LENGTH_DEFAULT,
   menstruationDuration: MENSTRUATION_DURATION_DEFAULT,
   lastPeriodStart: null,
@@ -119,6 +140,19 @@ export function hydrateV2Settings(raw: string | null): V2Settings {
         typeof parsed.whySuggestionDismissedId === "string"
           ? parsed.whySuggestionDismissedId
           : null,
+      whySuggestionIdleOpensOn:
+        typeof parsed.whySuggestionIdleOpensOn === "string"
+          ? parsed.whySuggestionIdleOpensOn
+          : null,
+      whySuggestionIdleOpenCount:
+        typeof parsed.whySuggestionIdleOpenCount === "number" &&
+        Number.isFinite(parsed.whySuggestionIdleOpenCount)
+          ? Math.max(0, Math.floor(parsed.whySuggestionIdleOpenCount))
+          : 0,
+      whyAnchorDismissedOn:
+        typeof parsed.whyAnchorDismissedOn === "string"
+          ? parsed.whyAnchorDismissedOn
+          : null,
       returnVariant:
         parsed.returnVariant === "notification" || parsed.returnVariant === "widget_hint"
           ? parsed.returnVariant
@@ -135,6 +169,10 @@ export function hydrateV2Settings(raw: string | null): V2Settings {
           ? parsed.shutdownNudgeDismissedOn
           : null,
       returnPermissionPromptDismissed: parsed.returnPermissionPromptDismissed === true,
+      accountSavePromptDismissed: parsed.accountSavePromptDismissed === true,
+      firstValueAt:
+        typeof parsed.firstValueAt === "string" ? parsed.firstValueAt : null,
+      cycleOptInPromptDismissed: parsed.cycleOptInPromptDismissed === true,
       reminderCadence: normalizeReminderCadence(parsed),
       openTaskReminderEnabled: parsed.openTaskReminderEnabled === true,
       quoteEnabled: parsed.quoteEnabled === true,

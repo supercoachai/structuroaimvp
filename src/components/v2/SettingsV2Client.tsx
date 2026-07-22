@@ -2,20 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
 import { useI18n } from "@/lib/i18n";
-
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
 
-import V2CycleSettingsSection from "./V2CycleSettingsSection";
+import V2CycleSettingsSection, {
+  v2CycleSettingsSummary,
+} from "./V2CycleSettingsSection";
 import { V2AppShell } from "./V2Chrome";
 import { useV2 } from "./V2Context";
+import { getV2CycleChipInfo } from "./V2CycleChip";
+import { persistV2PreferredName } from "./v2DisplayName";
+import V2SettingsAccordion, {
+  V2SettingsIconAccount,
+  V2SettingsIconBell,
+  V2SettingsIconCycle,
+  V2SettingsIconLock,
+  V2SettingsIconUser,
+  V2SettingsIconWarn,
+} from "./V2SettingsAccordion";
 import {
   V2LocaleButtons,
-  V2SettingsLinkActions,
-  V2SettingsRow,
-  V2SettingsSection,
   V2SettingsTextLink,
   V2SettingsToggle,
 } from "./V2SettingsUi";
@@ -29,11 +38,9 @@ import {
   type V2Settings,
 } from "./v2Settings";
 import { todayYmd } from "./v2Tasks";
-import { v2Styles } from "./theme";
 import {
   disableV2ReturnReminder,
   enableV2ReturnReminder,
-  getV2ReturnVariant,
   requestV2NotificationPermission,
   scheduleV2ReturnNotification,
   setReminderCadence,
@@ -54,6 +61,8 @@ const CADENCE_OPTIONS: { value: V2ReminderCadence; label: string }[] = [
   { value: "both", label: "Beide" },
 ];
 
+type AccordionId = "basis" | "cyclus" | "meldingen" | "privacy" | "account";
+
 export default function SettingsV2Client() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
@@ -65,6 +74,7 @@ export default function SettingsV2Client() {
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [showInstallHint, setShowInstallHint] = useState(false);
+  const [openId, setOpenId] = useState<AccordionId | null>(null);
 
   useEffect(() => {
     setShowInstallHint(shouldShowPwaInstallHint());
@@ -83,8 +93,34 @@ export default function SettingsV2Client() {
 
   const wipeWord = locale === "en" ? "DELETE" : "WISSEN";
 
+  const cyclePhaseLabel = useMemo(() => {
+    if (!state.cyclusOptIn) return null;
+    const info = getV2CycleChipInfo(true);
+    if (!info) return null;
+    const key = resolveCurrentPhaseKey(
+      info.day,
+      info.cycleLength,
+      info.menstruationDuration,
+    );
+    return key ? t(`cycle.contextPhase_${key}`) : null;
+  }, [state.cyclusOptIn, settings.lastPeriodStart, settings.cycleLength, settings.menstruationDuration, t]);
+
+  const cycleSubtitle = v2CycleSettingsSummary(
+    state.cyclusOptIn,
+    settings,
+    cyclePhaseLabel,
+  );
+
+  const cadenceLabel =
+    CADENCE_OPTIONS.find((o) => o.value === settings.reminderCadence)?.label ??
+    "Geen";
+
+  const toggle = (id: AccordionId) => {
+    setOpenId((prev) => (prev === id ? null : id));
+  };
+
   const handleSaveName = () => {
-    const value = nameInput.trim();
+    const value = persistV2PreferredName(nameInput);
     update({ name: value });
     setNameSaved(true);
     window.setTimeout(() => setNameSaved(false), 1800);
@@ -144,8 +180,6 @@ export default function SettingsV2Client() {
     if (turningOn) trackV2QuoteOptIn({});
   };
 
-  const returnVariant = getV2ReturnVariant();
-
   const handleMuteTodayToggle = () => {
     const turningOn = !settings.muteTodayPaused;
     const next = {
@@ -204,248 +238,297 @@ export default function SettingsV2Client() {
 
   return (
     <V2AppShell>
-      <div style={v2Styles.settingsPage}>
-        <header>
-          <h1 style={v2Styles.title}>{t("settings.title")}</h1>
-          <p style={v2Styles.body}>{t("settings.subtitle")}</p>
-          <p style={{ ...v2Styles.settingsHint, marginTop: 8 }}>
-            Account en cloud-sync via Bewaar je dag. Tot die tijd blijft alles lokaal
-            op dit apparaat.
-          </p>
+      <div className="v2-settings">
+        <header className="v2-settings__header">
+          <h1
+            className="v2-serif"
+            style={{ fontSize: "var(--fs-display)" }}
+          >
+            {t("settings.title")}
+          </h1>
+          <p className="v2-settings__subtitle">Tik open wat je wilt aanpassen.</p>
         </header>
 
-        <V2SettingsSection title={t("settings.sectionPreferences")}>
-          <V2SettingsRow label={t("settings.languageTitle")} hint={t("settings.languageHint")}>
-            <V2LocaleButtons
-              locale={settings.locale}
-              onChange={handleLocaleChange}
-              labels={{
-                nl: t("settings.languageNl"),
-                en: t("settings.languageEn"),
-              }}
-            />
-          </V2SettingsRow>
-
-          <V2SettingsRow
-            label={t("settings.displayNameTitle")}
-            hint={t("settings.displayNameHint")}
-            stack
-            last
+        <div className="v2-settings__list">
+          <V2SettingsAccordion
+            id="basis"
+            title="Basis"
+            subtitle="Taal · Aanspreeknaam"
+            icon={<V2SettingsIconUser />}
+            open={openId === "basis"}
+            onToggle={() => toggle("basis")}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="v2-settings-panel">
+              <div className="v2-settings-panel__block">
+                <p className="v2-settings-panel__label">{t("settings.languageTitle")}</p>
+                <p className="v2-settings-panel__hint">{t("settings.languageHint")}</p>
+                <div className="v2-settings-panel__control">
+                  <V2LocaleButtons
+                    locale={settings.locale}
+                    onChange={handleLocaleChange}
+                    labels={{
+                      nl: t("settings.languageNl"),
+                      en: t("settings.languageEn"),
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="v2-settings-panel__block">
+                <p className="v2-settings-panel__label">{t("settings.displayNameTitle")}</p>
+                <p className="v2-settings-panel__hint">{t("settings.displayNameHint")}</p>
+                <div className="v2-settings-panel__stack">
+                  <input
+                    type="text"
+                    className="v2-field"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveName();
+                    }}
+                    placeholder={t("settings.displayNamePlaceholder")}
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleSaveName}
+                    style={{
+                      alignSelf: "flex-start",
+                      minHeight: 44,
+                      padding: "10px 18px",
+                      fontSize: 14,
+                    }}
+                  >
+                    {nameSaved ? t("settings.toastNameSaved") : t("settings.save")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </V2SettingsAccordion>
+
+          <V2SettingsAccordion
+            id="cyclus"
+            title="Cyclus"
+            subtitle={cycleSubtitle}
+            icon={<V2SettingsIconCycle />}
+            open={openId === "cyclus"}
+            onToggle={() => toggle("cyclus")}
+          >
+            <V2CycleSettingsSection
+              settings={settings}
+              onSettingsChange={handleCycleSettingsChange}
+            />
+          </V2SettingsAccordion>
+
+          <V2SettingsAccordion
+            id="meldingen"
+            title="Meldingen & nudges"
+            subtitle={`Cadans: ${cadenceLabel}`}
+            icon={<V2SettingsIconBell />}
+            open={openId === "meldingen"}
+            onToggle={() => toggle("meldingen")}
+          >
+            <div className="v2-settings-panel">
+              <div className="v2-settings-panel__block">
+                <p className="v2-settings-panel__label">Herinneringscadans</p>
+                <p className="v2-settings-panel__hint">
+                  Opt-in, standaard uit. Max 1 melding per 24 uur.
+                </p>
+                <div className="v2-settings-panel__pills">
+                  {CADENCE_OPTIONS.map((opt) => {
+                    const active = settings.reminderCadence === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`v2-settings-pill${active ? " is-active" : ""}`}
+                        onClick={() => void handleCadenceChange(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="v2-settings-panel__row">
+                <button
+                  type="button"
+                  className="v2-settings-panel__row-copy"
+                  onClick={handleOpenTaskReminderToggle}
+                >
+                  <span className="v2-settings-panel__label">Open ding van vandaag</span>
+                  <span className="v2-settings-panel__hint">
+                    Alleen als focus gestart is en nog niet afgerond.
+                  </span>
+                </button>
+                <V2SettingsToggle
+                  checked={settings.openTaskReminderEnabled}
+                  onChange={handleOpenTaskReminderToggle}
+                  ariaLabel="Open ding van vandaag"
+                />
+              </div>
+
+              <div className="v2-settings-panel__row">
+                <button
+                  type="button"
+                  className="v2-settings-panel__row-copy"
+                  onClick={handleQuoteToggle}
+                >
+                  <span className="v2-settings-panel__label">Af en toe een rustige zin</span>
+                  <span className="v2-settings-panel__hint">
+                    Max 1× per dag. Warm, geen druk.
+                  </span>
+                </button>
+                <V2SettingsToggle
+                  checked={settings.quoteEnabled}
+                  onChange={handleQuoteToggle}
+                  ariaLabel="Af en toe een rustige zin"
+                />
+              </div>
+
+              <div className="v2-settings-panel__row">
+                <button
+                  type="button"
+                  className="v2-settings-panel__row-copy"
+                  onClick={handleMuteTodayToggle}
+                >
+                  <span className="v2-settings-panel__label">Alles vandaag op pauze</span>
+                  <span className="v2-settings-panel__hint">
+                    Onderdrukt zachte prompts. Reset morgen.
+                  </span>
+                </button>
+                <V2SettingsToggle
+                  checked={mutedToday}
+                  onChange={handleMuteTodayToggle}
+                  ariaLabel="Alles vandaag op pauze"
+                />
+              </div>
+            </div>
+          </V2SettingsAccordion>
+
+          <V2SettingsAccordion
+            id="privacy"
+            title="Privacy"
+            subtitle={`Anonieme analyse: ${settings.analyticsConsent ? "aan" : "uit"}`}
+            icon={<V2SettingsIconLock />}
+            open={openId === "privacy"}
+            onToggle={() => toggle("privacy")}
+          >
+            <div className="v2-settings-panel">
+              <div className="v2-settings-panel__row">
+                <button
+                  type="button"
+                  className="v2-settings-panel__row-copy"
+                  onClick={handleAnalyticsToggle}
+                >
+                  <span className="v2-settings-panel__label">
+                    {t("settings.analyticsTitle")}
+                  </span>
+                  <span className="v2-settings-panel__hint">
+                    {t("settings.analyticsHint")}
+                  </span>
+                </button>
+                <V2SettingsToggle
+                  checked={settings.analyticsConsent}
+                  onChange={handleAnalyticsToggle}
+                  ariaLabel={t("settings.analyticsTitle")}
+                />
+              </div>
+            </div>
+          </V2SettingsAccordion>
+
+          <V2SettingsAccordion
+            id="account"
+            title="Account"
+            subtitle="Homescreen · export · uitloggen"
+            icon={<V2SettingsIconAccount />}
+            open={openId === "account"}
+            onToggle={() => toggle("account")}
+          >
+            <div className="v2-settings-panel v2-settings-panel--links">
+              {showInstallHint ? (
+                <Link href="/v2/install?from=settings" className="v2-settings-link">
+                  {t("welkomPage.installTitle")}
+                </Link>
+              ) : null}
+              <button
+                type="button"
+                className="v2-settings-link"
+                onClick={handleExport}
+              >
+                {t("settings.exportCta")}
+              </button>
+              <button
+                type="button"
+                className="v2-settings-link"
+                onClick={handleReplayIntro}
+              >
+                {t("settings.tourCta")}
+              </button>
+              <Link href="/v2/login" className="v2-settings-link">
+                {t("settings.logout")}
+              </Link>
+            </div>
+          </V2SettingsAccordion>
+        </div>
+
+        <section className="v2-settings-danger" aria-label="Gevaarlijke acties">
+          <div className="v2-settings-danger__head">
+            <span className="v2-settings-danger__icon" aria-hidden>
+              <V2SettingsIconWarn />
+            </span>
+            <div>
+              <p className="v2-settings-danger__title">
+                Account & gegevens verwijderen
+              </p>
+              <p className="v2-settings-danger__body">
+                Verwijdert je account en alle gegevens permanent. Kan niet ongedaan
+                gemaakt worden.
+              </p>
+            </div>
+          </div>
+
+          {!confirmWipe ? (
+            <button
+              type="button"
+              className="v2-settings-danger__cta"
+              onClick={handleWipeData}
+            >
+              Alle gegevens wissen
+            </button>
+          ) : (
+            <div className="v2-settings-danger__confirm">
+              <p className="v2-settings-panel__hint" style={{ margin: 0 }}>
+                {t("settings.wipeConfirmLine", { word: wipeWord })}
+              </p>
               <input
                 type="text"
                 className="v2-field"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveName();
-                }}
-                placeholder={t("settings.displayNamePlaceholder")}
-                style={v2Styles.input}
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={t("settings.wipePlaceholder")}
               />
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handleSaveName}
-                style={{
-                  alignSelf: "flex-start",
-                  minHeight: 44,
-                  padding: "10px 18px",
-                  fontSize: 14,
-                }}
-              >
-                {nameSaved ? t("settings.toastNameSaved") : t("settings.save")}
-              </button>
-            </div>
-          </V2SettingsRow>
-        </V2SettingsSection>
-
-        <V2SettingsSection title={t("cycle.settingsTitle")}>
-          <V2CycleSettingsSection
-            settings={settings}
-            onSettingsChange={handleCycleSettingsChange}
-          />
-        </V2SettingsSection>
-
-        <V2SettingsSection title="Vandaag">
-          <V2SettingsRow
-            label="Zet alles vandaag op pauze"
-            hint="Onderdrukt zachte prompts en suggesties voor vandaag. Reset vanzelf morgen."
-            last
-            onLabelClick={handleMuteTodayToggle}
-          >
-            <V2SettingsToggle
-              checked={mutedToday}
-              onChange={handleMuteTodayToggle}
-              ariaLabel="Zet alles vandaag op pauze"
-            />
-          </V2SettingsRow>
-        </V2SettingsSection>
-
-        <V2SettingsSection title="Herinneringen">
-          <V2SettingsRow
-            label="Herinneringscadans"
-            hint={
-              returnVariant
-                ? `Opt-in, standaard uit. Max 1 melding per 24 uur. Variant: ${returnVariant === "notification" ? "melding" : "widget op home"}. Werkt lokaal zolang een tab open is.`
-                : "Opt-in, standaard uit. Max 1 melding per 24 uur. Werkt lokaal zolang een tab open is."
-            }
-            stack
-          >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {CADENCE_OPTIONS.map((opt) => {
-                const active = settings.reminderCadence === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => void handleCadenceChange(opt.value)}
-                    style={{
-                      borderRadius: 10,
-                      padding: "8px 12px",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      border: active ? "none" : "1px solid var(--border)",
-                      backgroundColor: active ? "var(--accent)" : "#FFFFFF",
-                      color: active ? "#FFFFFF" : "var(--text)",
-                      cursor: "pointer",
-                      touchAction: "manipulation",
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </V2SettingsRow>
-
-          <V2SettingsRow
-            label="Open ding van vandaag"
-            hint="Alleen als je focus gestart hebt en nog niet afgerond. Max 1× per dag, altijd skippable."
-            onLabelClick={handleOpenTaskReminderToggle}
-          >
-            <V2SettingsToggle
-              checked={settings.openTaskReminderEnabled}
-              onChange={handleOpenTaskReminderToggle}
-              ariaLabel="Open ding van vandaag"
-            />
-          </V2SettingsRow>
-
-          <V2SettingsRow
-            label="Af en toe een rustige zin"
-            hint="Max 1× per dag op home of in een ochtendmelding. Warm, geen druk."
-            last
-            onLabelClick={handleQuoteToggle}
-          >
-            <V2SettingsToggle
-              checked={settings.quoteEnabled}
-              onChange={handleQuoteToggle}
-              ariaLabel="Af en toe een rustige zin"
-            />
-          </V2SettingsRow>
-        </V2SettingsSection>
-
-        <V2SettingsSection title={t("settings.sectionPrivacy")}>
-          <V2SettingsRow
-            label={t("settings.analyticsTitle")}
-            hint={t("settings.analyticsHint")}
-            last
-            onLabelClick={handleAnalyticsToggle}
-          >
-            <V2SettingsToggle
-              checked={settings.analyticsConsent}
-              onChange={handleAnalyticsToggle}
-              ariaLabel={t("settings.analyticsTitle")}
-            />
-          </V2SettingsRow>
-        </V2SettingsSection>
-
-        <V2SettingsSection title={t("settings.sectionAccount")}>
-          <V2SettingsLinkActions>
-            {showInstallHint ? (
-              <Link
-                href="/v2/install?from=settings"
-                className="v2-link"
-                style={v2Styles.textlink}
-              >
-                {t("welkomPage.installTitle")}
-              </Link>
-            ) : null}
-            <V2SettingsTextLink onClick={handleExport}>
-              {t("settings.exportCta")}
-            </V2SettingsTextLink>
-            <V2SettingsTextLink onClick={handleReplayIntro}>
-              {t("settings.tourCta")}
-            </V2SettingsTextLink>
-            <Link href="/v2/login" className="v2-link" style={v2Styles.textlink}>
-              {t("settings.logout")}
-            </Link>
-            <p style={{ ...v2Styles.settingsHint, margin: "4px 0 0" }}>
-              Inloggen en uitloggen zijn in v2 alleen ter referentie. Productie gebruikt /login.
-            </p>
-          </V2SettingsLinkActions>
-
-          <div
-            style={{
-              borderTop: "1px solid var(--border)",
-              padding: "16px 18px",
-            }}
-          >
-            <p style={v2Styles.settingsLabel}>{t("settings.wipeTitle")}</p>
-            <p style={v2Styles.settingsHint}>{t("settings.wipeHint")}</p>
-
-            {!confirmWipe ? (
-              <div style={{ marginTop: 12 }}>
-                <V2SettingsTextLink variant="danger" onClick={handleWipeData}>
-                  {t("settings.wipeCta")}
+              <div className="v2-settings-danger__confirm-actions">
+                <button
+                  type="button"
+                  className="v2-settings-danger__cta"
+                  onClick={handleWipeData}
+                >
+                  {t("settings.wipeFinal")}
+                </button>
+                <V2SettingsTextLink onClick={cancelWipe}>
+                  {t("settings.cancel")}
                 </V2SettingsTextLink>
               </div>
-            ) : (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  backgroundColor: "rgba(45, 90, 86, 0.04)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                <p style={{ ...v2Styles.settingsHint, margin: 0 }}>
-                  {t("settings.wipeConfirmLine", { word: wipeWord })}
-                </p>
-                <input
-                  type="text"
-                  className="v2-field"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder={t("settings.wipePlaceholder")}
-                  style={{ ...v2Styles.input, fontSize: 14, minHeight: 44 }}
-                />
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                  <V2SettingsTextLink variant="danger" onClick={handleWipeData}>
-                    {t("settings.wipeFinal")}
-                  </V2SettingsTextLink>
-                  <V2SettingsTextLink onClick={cancelWipe}>
-                    {t("settings.cancel")}
-                  </V2SettingsTextLink>
-                </div>
-              </div>
-            )}
-          </div>
-        </V2SettingsSection>
+            </div>
+          )}
+        </section>
 
-        <p style={{ ...v2Styles.settingsHint, textAlign: "center", margin: 0 }}>
-          {t("settings.footerPrivacy")}
-        </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-          <Link href="/privacy" className="v2-link" style={v2Styles.textlink}>
+        <div className="v2-settings__legal">
+          <Link href="/v2/privacy" className="v2-link">
             {t("settings.legalPrivacy")}
           </Link>
-          <Link href="/terms" className="v2-link" style={v2Styles.textlink}>
+          <Link href="/v2/terms" className="v2-link">
             {t("settings.legalTerms")}
           </Link>
         </div>

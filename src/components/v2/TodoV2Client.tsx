@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
-import { V2LearnHintOnce } from "./V2LearnHintOnce";
+import V2InfoHint from "./V2InfoHint";
+import V2InfoSheet from "./V2InfoSheet";
+import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { recordV2Snooze, v2AdaptiveDumpKey, v2AdaptiveTaskKey } from "./v2Adaptive";
 import { useV2 } from "./V2Context";
 import { v2NormalizeThings } from "./v2Things";
@@ -37,6 +39,7 @@ export default function TodoV2Client() {
   const [isNew, setIsNew] = useState(false);
   const [microDraft, setMicroDraft] = useState("");
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+  const [infoOpen, setInfoOpen] = useState(false);
 
   // Laad uit localStorage. Zaai bij een lege lijst de gekozen dingen van de reis.
   useEffect(() => {
@@ -158,7 +161,17 @@ export default function TodoV2Client() {
     <V2AppShell>
       <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-8 pt-6">
         <header>
-          <V2Eyebrow>Je lijst</V2Eyebrow>
+          <div className="v2-info-head">
+            <V2Eyebrow>Je lijst</V2Eyebrow>
+            <V2InfoHint
+              infoId="v2_todo_snooze"
+              expanded={infoOpen}
+              onToggle={() => setInfoOpen((v) => !v)}
+              expandLabel={V2_INFO_SHEETS.snooze.openAria}
+              collapseLabel={V2_INFO_SHEETS.snooze.closeAria}
+              controlsId="v2-todo-info-sheet"
+            />
+          </div>
           <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
             Taken
           </h1>
@@ -169,7 +182,6 @@ export default function TodoV2Client() {
                 ? "Eén ding staat open. Meer hoeft niet."
                 : `${openCount} dingen staan open. Pak er gerust één.`}
           </p>
-          <V2LearnHintOnce feature="snooze" className="mt-2" />
         </header>
 
         {visibleTasks.length > 0 ? (
@@ -215,6 +227,17 @@ export default function TodoV2Client() {
           </button>
         )}
       </div>
+
+      <V2InfoSheet
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        eyebrow={V2_INFO_SHEETS.snooze.eyebrow}
+        title={V2_INFO_SHEETS.snooze.title}
+        rows={V2_INFO_SHEETS.snooze.rows}
+        gotItLabel={V2_INFO_SHEETS.snooze.gotIt}
+        closeAria={V2_INFO_SHEETS.snooze.closeAria}
+        panelId="v2-todo-info-sheet"
+      />
     </V2AppShell>
   );
 }

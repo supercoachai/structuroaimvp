@@ -3,8 +3,8 @@
 
   /**
    * EU landing analytics (site=eu in PostHog).
-   * Primaire conversie: cta_clicked → structuro.ai/v2/onboarding → signup_completed.
-   * Organisch EU: /v2/onboarding + utm_source=structuro_eu (tot cutover v2→v1-plaats).
+   * Primaire conversie: cta_clicked → structuro.ai/start → /v2/onboarding → signup_completed.
+   * Organisch EU: /start + utm_source=structuro_eu (attributie-bridge; /start auto-advances bij eu_v2).
    * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (blijft v1).
    * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
    * Verouderde section_id "waarom" in historische data: sectie heet nu brein-termen / waarom-nodig.
@@ -25,6 +25,7 @@
     "gezien-in",
     "prijs",
     "faq",
+    "slot",
     "eu-sluitstuk",
   ];
 
@@ -53,8 +54,8 @@
   function structuroSignupBridgeUrl(contentId) {
     var params = new URLSearchParams(window.location.search || "");
     var isTikTok = isTikTokAcquisitionTraffic(params);
-    // Organisch EU → V2 onboarding (productiepad tot cutover). TikTok → /tiktok (v1).
-    var bridgePath = isTikTok ? "/tiktok" : "/v2/onboarding";
+    // Organisch EU → /start (attributie-bridge). TikTok → /tiktok (v1).
+    var bridgePath = isTikTok ? "/tiktok" : "/start";
     var bridgeParams = new URLSearchParams({
       utm_content: contentId || "cta",
     });
@@ -77,6 +78,16 @@
         params.get("utm_campaign") ||
         (isEuV2LandingPath() ? "eu_v2" : "website");
       bridgeParams.set("utm_campaign", organicCampaign);
+    }
+    // Behoud taalkeuze van de landing (NL default; EN expliciet).
+    var pageLang =
+      (typeof window.currentLang === "string" && window.currentLang) ||
+      params.get("lang") ||
+      params.get("locale") ||
+      "";
+    pageLang = String(pageLang).toLowerCase();
+    if (pageLang === "en" || pageLang === "nl") {
+      bridgeParams.set("lang", pageLang);
     }
     // Cross-domain identity: geef het anonieme PostHog distinct_id mee zodat
     // structuro.ai met hetzelfde ID kan bootstrappen (1 persoon over .eu naar .ai).
@@ -140,6 +151,7 @@
 
   window.structuroSignupBridgeUrl = structuroSignupBridgeUrl;
   window.structuroLoginBridgeUrl = structuroLoginBridgeUrl;
+  window.applySignupBridgeLinks = applySignupBridgeLinks;
 
   /**
    * Herbereken de bridge-href vlak vóór navigatie. De href wordt al gezet na

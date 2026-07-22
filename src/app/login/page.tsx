@@ -23,6 +23,7 @@ import {
   getLastAuthMethod,
 } from "@/lib/auth/returningUser";
 import { claimAnonymousOnboardingForAccount } from "@/lib/auth/claimAnonymousOnboarding";
+import { migrateV2LocalDataToSupabase } from "@/lib/migrateV2LocalDataToSupabase";
 import Link from "next/link";
 import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
 import {
@@ -233,6 +234,11 @@ function LoginPageInner() {
 
   const finishLogin = async (userId: string, userEmail: string | null | undefined) => {
     markReturningUser();
+    try {
+      await migrateV2LocalDataToSupabase(userId);
+    } catch {
+      /* best-effort */
+    }
     await claimAnonymousOnboardingForAccount(userId);
     clearStructuroLocalModeCookie();
     clearCheckoutReturn();

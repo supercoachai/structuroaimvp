@@ -11,10 +11,12 @@ import {
   shouldShowShutdownNudge,
   SHUTDOWN_NUDGE_LINE,
 } from "./v2ShutdownNudge";
-import { isV2MutedToday } from "./v2Settings";
+import { isV2MutedToday, patchV2Settings, readV2Settings } from "./v2Settings";
+import { todayYmd } from "./v2Tasks";
 import {
   dismissV2WhySuggestion,
   getV2WhySuggestion,
+  shouldShowWhySuggestionAfterIdleOpens,
   type V2WhySuggestion,
 } from "./v2WhySuggestion";
 import {
@@ -33,6 +35,11 @@ import {
   markV2QuoteShown,
   shouldShowV2QuoteOnHome,
 } from "./v2Quotes";
+import {
+  CYCLE_OPTIN_PROMPT_LINE,
+  dismissCycleOptInPrompt,
+  shouldShowCycleOptInPrompt,
+} from "./v2CycleOptInPrompt";
 import { v2HasThings, v2NormalizeThings } from "./v2Things";
 import type { V2State } from "./V2Context";
 
@@ -42,6 +49,7 @@ export type V2HomePromptKind =
   | "widget_hint"
   | "open_task_reminder"
   | "shutdown_nudge"
+  | "cycle_optin"
   | "why_suggestion"
   | "why_anchor"
   | "quote";
@@ -55,6 +63,7 @@ export type V2HomePrompt =
   | { kind: "widget_hint"; line: string }
   | { kind: "open_task_reminder"; line: string }
   | { kind: "shutdown_nudge"; line: string }
+  | { kind: "cycle_optin"; line: string }
   | { kind: "why_suggestion"; suggestion: V2WhySuggestion }
   | { kind: "why_anchor"; why: string; whyOutcome: string }
   | { kind: "quote"; line: string };
@@ -65,6 +74,7 @@ const PRIORITY: V2HomePromptKind[] = [
   "widget_hint",
   "open_task_reminder",
   "shutdown_nudge",
+  "cycle_optin",
   "why_suggestion",
   "why_anchor",
   "quote",
@@ -87,6 +97,7 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
         "day1_skip_hook",
         "widget_hint",
         "open_task_reminder",
+        "cycle_optin",
         "why_suggestion",
         "why_anchor",
         "quote",
@@ -120,14 +131,32 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
     candidates.set("shutdown_nudge", { kind: "shutdown_nudge", line: SHUTDOWN_NUDGE_LINE });
   }
 
-  if (!muted && !hasThings && !state.todayDone) {
+  if (!muted && shouldShowCycleOptInPrompt(state)) {
+    candidates.set("cycle_optin", {
+      kind: "cycle_optin",
+      line: CYCLE_OPTIN_PROMPT_LINE,
+    });
+  }
+
+  // Soft why-nudge: pas na 2 idle opens, onderin (zelfde slot als avondwolkje).
+  if (
+    !muted &&
+    !hasThings &&
+    !state.todayDone &&
+    shouldShowWhySuggestionAfterIdleOpens(state, now)
+  ) {
     const suggestion = getV2WhySuggestion(state);
     if (suggestion) {
       candidates.set("why_suggestion", { kind: "why_suggestion", suggestion });
     }
   }
 
-  if (!muted && state.energy === "low" && state.why.trim().length > 0) {
+  if (
+    !muted &&
+    state.energy === "low" &&
+    state.why.trim().length > 0 &&
+    readV2Settings().whyAnchorDismissedOn !== todayYmd(now)
+  ) {
     candidates.set("why_anchor", {
       kind: "why_anchor",
       why: state.why.trim(),
@@ -164,10 +193,14 @@ export function dismissV2HomePrompt(prompt: V2HomePrompt): void {
     case "shutdown_nudge":
       dismissShutdownNudge();
       break;
+    case "cycle_optin":
+      dismissCycleOptInPrompt();
+      break;
     case "why_suggestion":
       dismissV2WhySuggestion(prompt.suggestion.id);
       break;
     case "why_anchor":
+      patchV2Settings({ whyAnchorDismissedOn: todayYmd() });
       break;
     case "quote":
       dismissV2QuoteToday();

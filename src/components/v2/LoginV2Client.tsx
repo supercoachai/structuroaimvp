@@ -12,6 +12,10 @@ import {
   isProviderNotEnabledError,
   startOAuthSignIn,
 } from "@/lib/auth/socialSignIn";
+import {
+  hasV2LocalDataToMigrate,
+  migrateV2LocalDataToSupabase,
+} from "@/lib/migrateV2LocalDataToSupabase";
 import { createClient } from "@/lib/supabase/client";
 
 import { V2Page } from "./V2Chrome";
@@ -47,9 +51,22 @@ export default function LoginV2Client() {
     resetCaptcha();
   }, [emailOpen, resetCaptcha]);
 
-  /** Wis anonieme v2-storage bij geslaagde auth (shared-browser privacy). */
-  const clearAnonBeforeAuthHome = () => {
+  /** Migreer lokale v2-data naar het account; wis pas daarna. */
+  const claimLocalThenContinue = async (userId: string): Promise<string> => {
+    if (hasV2LocalDataToMigrate()) {
+      try {
+        const result = await migrateV2LocalDataToSupabase(userId);
+        if (result.migrated) {
+          resetAllLocalData();
+          return "/";
+        }
+      } catch (err) {
+        console.warn("[LoginV2] migrate failed", err);
+      }
+    }
+    // Geen lokale data om te bewaren: wis eventuele lege/rest-state voor privacy.
     resetAllLocalData();
+    return NEXT_AFTER_LOGIN;
   };
 
   const continueWithGoogle = async () => {
@@ -63,10 +80,9 @@ export default function LoginV2Client() {
         setBusy(false);
         return;
       }
-      // Pas wissen ná geslaagde OAuth-start. Bij fout (provider uit, netwerk) blijft lokale data.
+      // Niet wissen vóór OAuth-return: V2ClaimOnAuth migreert na terugkomst.
       setLastAuthMethod("google");
       await startOAuthSignIn(supabase, "google", NEXT_AFTER_LOGIN);
-      clearAnonBeforeAuthHome();
     } catch (err) {
       setError(
         isProviderNotEnabledError(err)
@@ -107,9 +123,13 @@ export default function LoginV2Client() {
       if (data.user) {
         setLastAuthMethod("password");
         await supabase.auth.getSession();
-        clearAnonBeforeAuthHome();
+        const next = await claimLocalThenContinue(data.user.id);
         resetCaptcha();
-        router.push(NEXT_AFTER_LOGIN);
+        if (next === "/") {
+          window.location.assign("/");
+          return;
+        }
+        router.push(next);
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : "";
@@ -211,7 +231,7 @@ export default function LoginV2Client() {
         </div>
 
         <p className="v2-auth-gate__footer">
-          <Link href="/v2/register" className="v2-link">
+          <Link href="/v2/onboarding" className="v2-link">
             Nog geen account? Begin hier.
           </Link>
         </p>

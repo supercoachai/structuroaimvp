@@ -13,7 +13,9 @@
 <link rel="icon" href="/uploads/logo-structuro-favicon.png?v=20260722c" type="image/png" sizes="64x64"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-32.png?v=20260722c" type="image/png" sizes="32x32"/>
 <link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260722c"/>
-<script defer src="/js/analytics.js"></script>
+<script defer src="/js/ph-config.js?v=20260722a"></script>
+<script defer src="/js/analytics.js?v=20260722a"></script>
+<script defer src="/v2/v2-i18n.js?v=20260722a"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -55,10 +57,11 @@ header.scrolled{background:rgba(253,251,244,.97);border-bottom-color:rgba(26,35,
 .nav-cta .login{font-size:14px;font-weight:500;color:rgba(26,35,64,.78);white-space:nowrap}
 .nav-cta .btn{height:40px;padding:0 20px;font-size:14px;flex-shrink:1;min-width:0}
 .lang{display:flex;align-items:center;gap:4px;flex:none}
-.lang a{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:36px;height:32px;padding:0;border-radius:8px;border:1.5px solid transparent;color:var(--v2-text-faint);font-size:12px;font-weight:600;line-height:1;text-decoration:none;background:transparent;box-sizing:border-box}
-.lang a.on{color:var(--v2-text);background:rgba(26,35,64,.06);border-color:rgba(26,35,64,.10)}
-.lang a:hover{color:var(--v2-text);background:rgba(255,255,255,.7);border-color:rgba(26,35,64,.10)}
+.lang a,.lang button{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:36px;height:32px;padding:0;border-radius:8px;border:1.5px solid transparent;color:var(--v2-text-faint);font-size:12px;font-weight:600;line-height:1;text-decoration:none;background:transparent;box-sizing:border-box}
+.lang a.on,.lang button.on{color:var(--v2-text);background:rgba(26,35,64,.06);border-color:rgba(26,35,64,.10)}
+.lang a:hover,.lang button:hover{color:var(--v2-text);background:rgba(255,255,255,.7);border-color:rgba(26,35,64,.10)}
 .lang svg{display:block;width:22px;height:16px;flex:none;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.10)}
+.lang button{appearance:none;-webkit-appearance:none;font:inherit;cursor:pointer;margin:0}
 .lang .lang-code{display:none}
 .burger{display:none;background:none;border:0;cursor:pointer;padding:8px;margin-left:0;flex:none}
 .burger svg{display:block}
@@ -206,6 +209,14 @@ html.has-scroll-motion .loop-step.is-in{opacity:1;transform:translate3d(0,0,0)}
 .slot .support{max-width:460px;margin:20px auto 0}
 .slot .btn{margin-top:36px}
 .slot .cta-note{margin-top:14px}
+/* ---------- trust strip ---------- */
+.trust-strip{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:18px;max-width:440px}
+.trust-strip span{font-size:13px;font-weight:600;color:var(--v2-text-soft);display:inline-flex;align-items:center;gap:7px}
+.trust-strip span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--v2-teal);flex:none}
+/* ---------- sticky mobile CTA ---------- */
+.sticky-cta{display:none}
+.sticky-cta .btn{width:100%;min-height:48px;height:auto;padding:14px 22px}
+.sticky-cta .note{text-align:center;font-size:12px;color:var(--v2-text-faint);margin-top:8px}
 /* ---------- footer ---------- */
 footer{border-top:1px solid rgba(26,35,64,.07);padding:52px 0 44px}
 .foot-top{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
@@ -267,6 +278,9 @@ section{padding:64px 0;overflow-x:clip;max-width:100%}
 .marquee{max-width:100%}
 .marquee-track{gap:44px}
 .marquee img{height:36px}
+.sticky-cta.is-on{display:block;position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px max(12px,env(safe-area-inset-bottom));background:rgba(253,251,244,.96);border-top:1px solid rgba(26,35,64,.10);box-shadow:0 -10px 28px -18px rgba(26,35,64,.28);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px)}
+body.has-sticky-cta{padding-bottom:96px}
+.trust-strip{max-width:none}
 }
 @media (max-width:480px){
 .wrap{padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
@@ -303,48 +317,53 @@ html.has-scroll-motion .loop-step,
 <div class="wrap nav">
 <a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722c" alt="" width="30" height="30"></span>Structuro</a>
 <nav class="nav-links">
-<a href="#herken">Waarom</a>
-<a href="#hoe">Hoe het werkt</a>
-<a href="#prijs">Prijs</a>
-<a href="#faq">FAQ</a>
+<a href="#herken" data-i18n="nav_why">Waarom</a>
+<a href="#hoe" data-i18n="nav_how">Hoe het werkt</a>
+<a href="#prijs" data-i18n="nav_price">Prijs</a>
+<a href="#faq" data-i18n="nav_faq">FAQ</a>
 </nav>
 <div class="nav-cta">
-<a class="login" href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav_signin" data-ph-cta="nav_signin">Inloggen</a>
-<a class="btn btn-navy" href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav" data-signup-bridge="nav" data-ph-cta="nav">Start 3 dagen gratis</a>
+<a class="login" href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav_signin" data-ph-cta="nav_signin" data-i18n="nav_login">Inloggen</a>
+<a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav" data-signup-bridge="nav" data-ph-cta="nav" data-i18n="nav_cta">Start 3 dagen gratis</a>
 </div>
-<div class="lang" aria-label="Taal">
-<a class="on" href="#top" aria-label="Nederlands" aria-current="true" title="Nederlands">
+<div class="lang" data-i18n-aria="lang_label" aria-label="Taal">
+<button type="button" class="on" id="btnNL" aria-label="Nederlands" aria-current="true" title="Nederlands" onclick="setLang('nl')">
 <svg width="22" height="16" viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="16" fill="#AE1C28"/><rect y="5.33" width="22" height="5.34" fill="#FFFFFF"/><rect y="10.67" width="22" height="5.33" fill="#21468B"/></svg>
 <span class="lang-code">NL</span>
-</a>
-<a href="https://www.structuro.ai/v2/onboarding?lang=en&utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=lang_en" aria-label="English" title="English" data-ph-cta="lang_en">
+</button>
+<button type="button" id="btnEN" aria-label="English" aria-current="false" title="English" onclick="setLang('en')">
 <svg width="22" height="16" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="10"/><path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/></svg>
 <span class="lang-code">EN</span>
-</a>
+</button>
 </div>
-<button class="burger" aria-label="Menu" onclick="document.getElementById('mm').classList.toggle('open')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A2340" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+<button class="burger" data-i18n-aria="menu" aria-label="Menu" onclick="document.getElementById('mm').classList.toggle('open')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A2340" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
 </div>
 <nav class="mobile-menu" id="mm">
-<a href="#herken">Waarom</a>
-<a href="#hoe">Hoe het werkt</a>
-<a href="#prijs">Prijs</a>
-<a href="#faq">FAQ</a>
-<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_signin" data-ph-cta="mobile_signin">Inloggen</a>
-<a href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_nav" data-signup-bridge="mobile_nav" data-ph-cta="mobile_nav">Start 3 dagen gratis</a>
+<a href="#herken" data-i18n="nav_why">Waarom</a>
+<a href="#hoe" data-i18n="nav_how">Hoe het werkt</a>
+<a href="#prijs" data-i18n="nav_price">Prijs</a>
+<a href="#faq" data-i18n="nav_faq">FAQ</a>
+<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_signin" data-ph-cta="mobile_signin" data-i18n="nav_login">Inloggen</a>
+<a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_nav" data-signup-bridge="mobile_nav" data-ph-cta="mobile_nav" data-i18n="nav_cta">Start 3 dagen gratis</a>
 </nav>
 </header>
 
 <section class="hero" id="top" data-screen-label="Hero">
 <div class="wrap hero-grid">
 <div>
-<div class="eyebrow"><i></i>Voor ADHD-breinen die niet beginnen</div>
-<h1 class="serif">Je weet wat je moet doen.<br>Je <span class="it">begint</span> alleen niet.</h1>
-<p class="support">Structuro kiest maximaal drie dingen voor vandaag. Jij bevestigt, en begint.</p>
+<div class="eyebrow"><i></i><span data-i18n="hero_eyebrow">Voor ADHD-breinen die niet beginnen</span></div>
+<h1 class="serif" data-i18n="hero_h1">Je weet wat je moet doen.<br>Je <span class="it">begint</span> alleen niet.</h1>
+<p class="support" data-i18n="hero_support">Structuro kiest maximaal drie dingen voor vandaag. Jij bevestigt, en begint.</p>
 <div class="cta-row">
-<a class="btn btn-navy" href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=hero_primary" data-signup-bridge="hero_primary" data-ph-cta="hero_primary">Start 3 dagen gratis</a>
-<a class="btn btn-ghost" href="#hoe">Bekijk hoe het werkt</a>
+<a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=hero_primary" data-signup-bridge="hero_primary" data-ph-cta="hero_primary" data-i18n="nav_cta">Start 3 dagen gratis</a>
+<a class="btn btn-ghost" href="#hoe" data-i18n="hero_secondary">Bekijk hoe het werkt</a>
 </div>
-<p class="cta-note">Daarna €12,99 per maand. Stoppen kan altijd.</p>
+<p class="cta-note" data-i18n="hero_note">3 dagen gratis. 14 dagen niet goed, geld terug. Stoppen kan altijd.</p>
+<div class="trust-strip" data-i18n-aria="trust_aria" aria-label="Wat Structuro niet is">
+<span data-i18n="trust_1">Geen planner</span>
+<span data-i18n="trust_2">Elke dag fris, zonder schuld</span>
+<span data-i18n="trust_3">Privacy in de EU</span>
+</div>
 </div>
 <div class="phone-col">
 <div class="phone" aria-hidden="true">
@@ -355,22 +374,22 @@ html.has-scroll-motion .loop-step,
 <span class="iphone-side iphone-side--camctl"></span>
 <div class="iphone-island"><span class="iphone-island-cam"></span></div>
 <div class="phone-screen">
-<div class="p-nav"><span class="b">Structuro</span><span style="opacity:.42">Stoppen</span></div>
+<div class="p-nav"><span class="b">Structuro</span><span style="opacity:.42" data-i18n="phone_stop">Stoppen</span></div>
 <div class="p-prog"><i class="on"></i><i class="on"></i><i></i></div>
 <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding-top:6px;min-height:0">
 <div class="orb"></div>
-<div class="serif" style="font-size:18px">Kies je energie.</div>
-<div class="pills"><div class="pill">Laag</div><div class="pill active">Genoeg</div><div class="pill">Hoog</div></div>
-<p style="font-size:12px;color:var(--v2-text-soft);margin:0;text-align:center">Twee dingen zijn haalbaar.</p>
+<div class="serif" style="font-size:18px" data-i18n="phone_energy">Kies je energie.</div>
+<div class="pills"><div class="pill" data-i18n="phone_low">Laag</div><div class="pill active" data-i18n="phone_ok">Genoeg</div><div class="pill" data-i18n="phone_high">Hoog</div></div>
+<p style="font-size:12px;color:var(--v2-text-soft);margin:0;text-align:center" data-i18n="phone_feasible">Twee dingen zijn haalbaar.</p>
 <div style="width:100%;height:1px;background:rgba(26,35,64,.08)"></div>
 <div style="width:100%;display:flex;flex-direction:column;gap:7px">
-<div style="font-size:12px;color:var(--v2-text-soft)">Structuro stelt voor:</div>
-<div class="p-task"><span class="chk">1</span><span class="lbl">Aan dat ene project beginnen</span></div>
-<div class="p-task"><span class="chk">2</span><span class="lbl">Eén glas water pakken</span></div>
+<div style="font-size:12px;color:var(--v2-text-soft)" data-i18n="phone_suggest">Structuro stelt voor:</div>
+<div class="p-task"><span class="chk">1</span><span class="lbl" data-i18n="phone_task1">Aan dat ene project beginnen</span></div>
+<div class="p-task"><span class="chk">2</span><span class="lbl" data-i18n="phone_task2">Eén glas water pakken</span></div>
 </div>
 </div>
-<div class="p-btn">Dit is goed</div>
-<div class="p-quiet">Zelf aanpassen</div>
+<div class="p-btn" data-i18n="phone_confirm">Dit is goed</div>
+<div class="p-quiet" data-i18n="phone_edit">Zelf aanpassen</div>
 </div>
 </div>
 </div>
@@ -381,9 +400,9 @@ html.has-scroll-motion .loop-step,
 <div class="wrap">
 <div class="hk-root">
 <div class="sec-head">
-<div class="eyebrow center"><i></i>Waarom dit werkt</div>
-<h2 class="serif">Welke herken jij?</h2>
-<p class="support">Tik aan wat klopt. Je ziet per punt wat Structuro ermee doet.</p>
+<div class="eyebrow center"><i></i><span data-i18n="herken_eyebrow">Waarom dit werkt</span></div>
+<h2 class="serif" data-i18n="herken_h2">Welke herken jij?</h2>
+<p class="support" data-i18n="herken_support">Tik aan wat klopt. Je ziet per punt wat Structuro ermee doet.</p>
 </div>
 <div id="hkStickyHost" class="hk-sticky-host" aria-live="polite"></div>
 <div id="hkMount" class="hk-rows"></div>
@@ -394,34 +413,13 @@ html.has-scroll-motion .loop-step,
 <section id="proof" data-screen-label="Social proof" style="padding-bottom:72px">
 <div class="wrap">
 <div class="sec-head">
-<div class="eyebrow center"><i></i>Wat anderen zeggen</div>
-<h2 class="serif">Herkenning, geen beloftes.</h2>
+<div class="eyebrow center"><i></i><span data-i18n="proof_eyebrow">Wat anderen zeggen</span></div>
+<h2 class="serif" data-i18n="proof_h2">Herkenning, geen beloftes.</h2>
 </div>
 <div class="quotes">
-<div class="quote"><p>ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten. Eén taak voor me neerleggen, geen lijst van twintig, en ik begin.</p><div class="who"><span class="av">S</span><span><b>Sarah</b><span>app developer</span></span></div></div>
-<div class="quote"><p>Alles voelt even urgent en ik schat de tijd verkeerd in. Drie taken per dag. Meer krijg ik toch niet gedaan, maar nu voelt het haalbaar.</p><div class="who"><span class="av">M</span><span><b>Mirthe</b><span>zelfstandig professional</span></span></div></div>
-<div class="quote"><p>Ik zit vast in mijn hoofd en kan er niet uit. De dagstart vraagt niet wat ik allemaal moet. Alleen wat de eerste stap is vandaag.</p><div class="who"><span class="av">J</span><span><b>Judith</b><span>ondernemer</span></span></div></div>
-</div>
-</div>
-</section>
-
-<div class="press" data-screen-label="Gezien in">
-<div class="press-label">Gezien in</div>
-<p class="press-quote">“Eindelijk iets dat niet uitgaat van een neurotypisch brein.”</p>
-<div class="marquee"><div class="marquee-track" id="mqt">
-<img src="/uploads/media/ad-hq.png" alt="AD" width="96" height="88" loading="lazy" decoding="async"><img src="/uploads/media/ed-hq.png" alt="ED" width="108" height="88" loading="lazy" decoding="async"><img src="/uploads/media/impuls-woortblind-hq.png" alt="Impuls &amp; Woortblind" width="232" height="88" loading="lazy" decoding="async"><img src="/uploads/media/adhd-cafe-hq.png" alt="ADHD café" width="150" height="88" loading="lazy" decoding="async"><img src="/uploads/media/bd-hq.png" alt="BD" width="98" height="88" loading="lazy" decoding="async">
-</div></div>
-</div>
-
-<section class="story" id="verhaal" data-screen-label="Het verhaal">
-<div class="wrap story-grid">
-<div class="story-photo"><img src="/uploads/niels-full.jpg" alt="Niels, maker van Structuro"></div>
-<div class="story-txt">
-<div class="eyebrow"><i></i>Het verhaal achter Structuro</div>
-<h2 class="serif">Ik ben Niels. Ik heb ADHD. En ik bouw <span class="it">Structuro</span>.</h2>
-<p>Trots op mijn brein. En vanochtend liep ik vast op één mail. Allebei waar, op dezelfde dag.</p>
-<p>Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.</p>
-<div class="story-quote"><p>Elk brein is <em>mooi</em>. Maar niet elk systeem past.</p><span>Niels, founder met ADHD</span></div>
+<div class="quote"><p data-i18n="quote1">ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten. Eén taak voor me neerleggen, geen lijst van twintig, en ik begin.</p><div class="who"><span class="av">S</span><span><b>Sarah</b><span data-i18n="quote1_role">app developer</span></span></div></div>
+<div class="quote"><p data-i18n="quote2">Alles voelt even urgent en ik schat de tijd verkeerd in. Drie taken per dag. Meer krijg ik toch niet gedaan, maar nu voelt het haalbaar.</p><div class="who"><span class="av">M</span><span><b>Mirthe</b><span data-i18n="quote2_role">zelfstandig professional</span></span></div></div>
+<div class="quote"><p data-i18n="quote3">Ik zit vast in mijn hoofd en kan er niet uit. De dagstart vraagt niet wat ik allemaal moet. Alleen wat de eerste stap is vandaag.</p><div class="who"><span class="av">J</span><span><b>Judith</b><span data-i18n="quote3_role">ondernemer</span></span></div></div>
 </div>
 </div>
 </section>
@@ -429,38 +427,38 @@ html.has-scroll-motion .loop-step,
 <section id="hoe" data-screen-label="De dagelijkse loop" style="padding-bottom:72px">
 <div class="wrap">
 <div class="sec-head">
-<div class="eyebrow center"><i></i>De dagelijkse loop</div>
-<h2 class="serif">Geen overzicht. Een ritme.</h2>
-<p class="support">Drie momenten per dag. Meer hoeft niet.</p>
+<div class="eyebrow center"><i></i><span data-i18n="loop_eyebrow">De dagelijkse loop</span></div>
+<h2 class="serif" data-i18n="loop_h2">Geen overzicht. Een ritme.</h2>
+<p class="support" data-i18n="loop_support">Drie momenten per dag. Meer hoeft niet.</p>
 </div>
 <div class="loop-row">
-<div class="loop-step"><span class="n">01 · Open</span><b>Hoe vol is je batterij?</b><p>Eerst energie. Dan past de dag zich aan.</p></div>
-<div class="loop-step"><span class="n">02 · Doen</span><b>Niet meer dan je brein aankan.</b><p>Eén tot drie taken vandaag. De rest blijft staan, zonder schuld.</p></div>
-<div class="loop-step"><span class="n">03 · Afsluiten</span><b>Klaar is klaar.</b><p>Twee minuten. Leeg hoofd voor morgen.</p></div>
+<div class="loop-step"><span class="n" data-i18n="loop_1_n">01 · Open</span><b data-i18n="loop_1_b">Hoe vol is je batterij?</b><p data-i18n="loop_1_p">Eerst energie. Dan past de dag zich aan.</p></div>
+<div class="loop-step"><span class="n" data-i18n="loop_2_n">02 · Doen</span><b data-i18n="loop_2_b">Niet meer dan je brein aankan.</b><p data-i18n="loop_2_p">Eén tot drie taken vandaag. De rest blijft staan, zonder schuld.</p></div>
+<div class="loop-step"><span class="n" data-i18n="loop_3_n">03 · Afsluiten</span><b data-i18n="loop_3_b">Klaar is klaar.</b><p data-i18n="loop_3_p">Twee minuten. Leeg hoofd voor morgen.</p></div>
 </div>
-<p class="loop-link"><a href="#faq-cyclus">Lees hoe cyclus en ADHD samenkomen →</a></p>
+<p class="loop-link"><a href="#faq-cyclus" data-i18n="loop_link">Lees hoe cyclus en ADHD samenkomen →</a></p>
 </div>
 </section>
 
 <section id="prijs" data-screen-label="Prijs">
 <div class="wrap">
 <div class="sec-head">
-<div class="eyebrow center"><i></i>Prijs</div>
-<h2 class="serif">Eerlijk. Eén prijs.</h2>
+<div class="eyebrow center"><i></i><span data-i18n="price_eyebrow">Prijs</span></div>
+<h2 class="serif" data-i18n="price_h2">Eerlijk. Eén prijs.</h2>
 </div>
 <div class="price-card">
-<div class="price-amt">€12,99<small>/maand</small></div>
-<p class="price-trial">3 dagen gratis, daarna pas betalen.</p>
+<div class="price-amt">€12,99<small data-i18n="price_period">/maand</small></div>
+<p class="price-trial" data-i18n="price_trial">3 dagen gratis, daarna pas betalen.</p>
 <ul class="price-checks">
-<li>Geen lijst die groeit terwijl jij stilstaat</li>
-<li>Een eerste stap klein genoeg om echt te beginnen</li>
-<li>Je dag past zich aan hoe vol je batterij vandaag is</li>
+<li data-i18n="price_feat1">Geen lijst die groeit terwijl jij stilstaat</li>
+<li data-i18n="price_feat2">Een eerste stap klein genoeg om echt te beginnen</li>
+<li data-i18n="price_feat3">Je dag past zich aan hoe vol je batterij vandaag is</li>
 </ul>
-<a class="btn btn-navy" href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=price_primary" data-signup-bridge="price_primary" data-ph-cta="price_primary">Start 3 dagen gratis</a>
-<p class="price-note">14 dagen niet goed, geld terug. Liever jaarlijks? <a href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=price_yearly" data-signup-bridge="price_yearly" data-ph-cta="price_yearly">€119 per jaar</a></p>
+<a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=price_primary" data-signup-bridge="price_primary" data-ph-cta="price_primary" data-i18n="nav_cta">Start 3 dagen gratis</a>
+<p class="price-note"><span data-i18n="price_note_before">14 dagen niet goed, geld terug. Liever jaarlijks?</span> <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=price_yearly" data-signup-bridge="price_yearly" data-ph-cta="price_yearly" data-i18n="price_yearly">€119 per jaar</a></p>
 <details class="price-math">
-<summary>Goedkoper dan wat je vergeet op te zeggen (€58 per maand)</summary>
-<div><span>Vergeten sportschool<b>€30</b></span><span>Ongebruikte streaming<b>€13</b></span><span>Apps die je nooit opent<b>€15</b></span></div>
+<summary data-i18n="price_math">Goedkoper dan wat je vergeet op te zeggen (€58 per maand)</summary>
+<div><span><span data-i18n="price_math_1">Vergeten sportschool</span><b>€30</b></span><span><span data-i18n="price_math_2">Ongebruikte streaming</span><b>€13</b></span><span><span data-i18n="price_math_3">Apps die je nooit opent</span><b>€15</b></span></div>
 </details>
 </div>
 </div>
@@ -469,45 +467,71 @@ html.has-scroll-motion .loop-step,
 <section id="faq" data-screen-label="FAQ" style="padding-top:0">
 <div class="wrap">
 <div class="sec-head">
-<div class="eyebrow center"><i></i>Vragen die je waarschijnlijk hebt</div>
-<h2 class="serif">Eerlijke antwoorden.</h2>
+<div class="eyebrow center"><i></i><span data-i18n="faq_eyebrow">Vragen die je waarschijnlijk hebt</span></div>
+<h2 class="serif" data-i18n="faq_h2">Eerlijke antwoorden.</h2>
 </div>
 <div class="faq-list">
-<details class="faq-item" id="faq-cyclus"><summary>Hoe komen cyclus en ADHD samen?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Sommige weken voelt je brein anders. Structuro houdt optioneel rekening met je cyclusfase: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Meer lezen? <a href="/cyclus/">Bekijk de cyclus-pagina</a>.</p></details>
-<details class="faq-item"><summary>Hoe werken proefperiode en geld-terug-garantie?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Je start met 3 dagen gratis, zonder verplichting. Daarna betaal je €12,99 per maand. Niet goed binnen 14 dagen? Je krijgt je geld terug, zonder gedoe.</p></details>
-<details class="faq-item"><summary>Werkt dit ook als ik niet elke dag iets doe?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint gewoon opnieuw.</p></details>
-<details class="faq-item"><summary>Waarom geen klassieke planner of integraties?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Klassieke planners gaan uit van overzicht en discipline. Structuro gaat uit van executie: één eerste stap, aangepast aan je energie. Minder systeem, meer beginnen.</p></details>
-<details class="faq-item"><summary>Hoe gaan jullie om met mijn gegevens?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Je gegevens blijven van jou, opgeslagen binnen de EU. We verkopen niets door en je kunt alles op elk moment verwijderen.</p></details>
-<details class="faq-item"><summary>Wat zie ik als ik de eerste keer inlog?<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa">Eén vraag: hoe is je energie? Daarna stelt Structuro maximaal drie dingen voor. Jij bevestigt, en je dag is begonnen. Geen setup, geen lege lijsten.</p></details>
+<details class="faq-item" data-faq-id="geen-planner"><summary><span data-i18n="faq_planner_q">Waarom geen klassieke planner of integraties?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_planner_a">Klassieke planners gaan uit van overzicht en discipline. Structuro gaat uit van executie: één eerste stap, aangepast aan je energie. Minder systeem, meer beginnen.</p></details>
+<details class="faq-item" data-faq-id="geen-day"><summary><span data-i18n="faq_day_q">Werkt dit ook als ik niet elke dag iets doe?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_day_a">Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint gewoon opnieuw.</p></details>
+<details class="faq-item" data-faq-id="refund"><summary><span data-i18n="faq_refund_q">Hoe werken proefperiode en geld-terug-garantie?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_refund_a">Je start met 3 dagen gratis, zonder verplichting. Daarna betaal je €12,99 per maand. Niet goed binnen 14 dagen? Je krijgt je geld terug, zonder gedoe.</p></details>
+<details class="faq-item" data-faq-id="privacy"><summary><span data-i18n="faq_privacy_q">Hoe gaan jullie om met mijn gegevens?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_privacy_a">Je gegevens blijven van jou, opgeslagen binnen de EU. We verkopen niets door en je kunt alles op elk moment verwijderen.</p></details>
+<details class="faq-item" data-faq-id="eerste-keer"><summary><span data-i18n="faq_first_q">Wat zie ik als ik de eerste keer inlog?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_first_a">Eén vraag: hoe is je energie? Daarna stelt Structuro maximaal drie dingen voor. Jij bevestigt, en je dag is begonnen. Geen setup, geen lege lijsten.</p></details>
+<details class="faq-item" id="faq-cyclus" data-faq-id="cyclus"><summary><span data-i18n="faq_cycle_q">Hoe komen cyclus en ADHD samen?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_cycle_a">Sommige weken voelt je brein anders. Structuro houdt optioneel rekening met je cyclusfase: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Meer lezen? <a href="/cyclus/">Bekijk de cyclus-pagina</a>.</p></details>
 </div>
 </div>
 </section>
 
-<section class="slot" data-screen-label="Slot CTA" style="padding-top:24px">
-<div class="wrap">
-<h2 class="serif">Je brein verdient rust.<br>Niet meer <span class="it">systemen</span>.</h2>
-<p class="support">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
-<a class="btn btn-navy" href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=slot_primary" data-signup-bridge="slot_primary" data-ph-cta="slot_primary">Start 3 dagen gratis</a>
-<p class="cta-note">Daarna €12,99 per maand. Stoppen kan altijd.</p>
+<div class="press" id="gezien-in" data-screen-label="Gezien in">
+<div class="press-label" data-i18n="press_label">Gezien in</div>
+<p class="press-quote" data-i18n="press_quote">“Eindelijk iets dat niet uitgaat van een neurotypisch brein.”</p>
+<div class="marquee"><div class="marquee-track" id="mqt">
+<img src="/uploads/media/ad-hq.png" alt="AD" width="96" height="88" loading="lazy" decoding="async"><img src="/uploads/media/ed-hq.png" alt="ED" width="108" height="88" loading="lazy" decoding="async"><img src="/uploads/media/impuls-woortblind-hq.png" alt="Impuls &amp; Woortblind" width="232" height="88" loading="lazy" decoding="async"><img src="/uploads/media/adhd-cafe-hq.png" alt="ADHD café" width="150" height="88" loading="lazy" decoding="async"><img src="/uploads/media/bd-hq.png" alt="BD" width="98" height="88" loading="lazy" decoding="async">
+</div></div>
+</div>
+
+<section class="story" id="verhaal" data-screen-label="Het verhaal">
+<div class="wrap story-grid">
+<div class="story-photo"><img src="/uploads/niels-full.jpg" data-i18n-alt="story_alt" alt="Niels, maker van Structuro"></div>
+<div class="story-txt">
+<div class="eyebrow"><i></i><span data-i18n="story_eyebrow">Het verhaal achter Structuro</span></div>
+<h2 class="serif" data-i18n="story_h2">Ik ben Niels. Ik heb ADHD. En ik bouw <span class="it">Structuro</span>.</h2>
+<p data-i18n="story_p1">Trots op mijn brein. En vanochtend liep ik vast op één mail. Allebei waar, op dezelfde dag.</p>
+<p data-i18n="story_p2">Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.</p>
+<div class="story-quote"><p data-i18n="story_quote">Elk brein is <em>mooi</em>. Maar niet elk systeem past.</p><span data-i18n="story_role">Niels, founder met ADHD</span></div>
+</div>
 </div>
 </section>
+
+<section class="slot" id="slot" data-screen-label="Slot CTA" style="padding-top:24px">
+<div class="wrap">
+<h2 class="serif" data-i18n="slot_h2">Je brein verdient rust.<br>Niet meer <span class="it">systemen</span>.</h2>
+<p class="support" data-i18n="slot_support">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
+<a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=slot_primary" data-signup-bridge="slot_primary" data-ph-cta="slot_primary" data-i18n="nav_cta">Start 3 dagen gratis</a>
+<p class="cta-note" data-i18n="hero_note">3 dagen gratis. 14 dagen niet goed, geld terug. Stoppen kan altijd.</p>
+</div>
+</section>
+
+<div class="sticky-cta" id="stickyCta" hidden>
+<a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=sticky_footer" data-signup-bridge="sticky_footer" data-ph-cta="sticky_footer" data-i18n="nav_cta">Start 3 dagen gratis</a>
+<p class="note" data-i18n="sticky_note">14 dagen niet goed, geld terug</p>
+</div>
 
 <footer>
 <div class="wrap">
 <div class="foot-top">
 <a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722c" alt="" width="30" height="30"></span>Structuro</a>
 <nav class="foot-links">
-<a href="#herken">Waarom</a>
-<a href="#hoe">Hoe het werkt</a>
-<a href="#prijs">Prijs</a>
-<a href="#faq">FAQ</a>
-<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer_signin" data-ph-cta="footer_signin">Inloggen</a>
+<a href="#herken" data-i18n="nav_why">Waarom</a>
+<a href="#hoe" data-i18n="nav_how">Hoe het werkt</a>
+<a href="#prijs" data-i18n="nav_price">Prijs</a>
+<a href="#faq" data-i18n="nav_faq">FAQ</a>
+<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer_signin" data-ph-cta="footer_signin" data-i18n="nav_login">Inloggen</a>
 <a href="mailto:info@structuro.eu">info@structuro.eu</a>
 </nav>
 </div>
 <div class="foot-bottom">
-<span>© 2026 Structuro · Gemaakt in Nederland</span>
-<nav><a href="/privacy/">Privacy policy</a><a href="/terms/">Algemene voorwaarden</a><a href="/cookies/">Cookies</a><span>KvK: 97938289</span></nav>
+<span>© 2026 Structuro · <span data-i18n="footer_made">Gemaakt in Nederland</span></span>
+<nav><a href="/privacy/" data-i18n="footer_privacy">Privacy policy</a><a href="/terms/" data-i18n="footer_terms">Algemene voorwaarden</a><a href="/cookies/" data-i18n="footer_cookies">Cookies</a><span>KvK: 97938289</span></nav>
 </div>
 </div>
 </footer>
@@ -527,14 +551,7 @@ html.has-scroll-motion .loop-step,
   syncHeader();
 })();
 (function(){
-  var REASONS=[
-    {tag:'EXECUTIEF',title:'Taakinitiatie',short:'Ik weet wát ik moet doen, ik begin alleen niet.',body:'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',contentId:'herken_taakinitiatie'},
-    {tag:'COGNITIEF',title:'Werkgeheugen-overload',short:'Mijn hoofd zit vol, en een lange lijst maakt het erger.',body:'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te dóén in plaats van te onthouden.',contentId:'herken_werkgeheugen'},
-    {tag:'DOPAMINE',title:'Energie en motivatie',short:'De ene dag vlieg ik, de andere kom ik niet vooruit.',body:'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',contentId:'herken_energie'},
-    {tag:'TIJD',title:'Tijdblindheid',short:'Ik voel tijd niet, een dag heeft geen begin of eind.',body:'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',contentId:'herken_tijdblindheid'},
-    {tag:'CYCLUS',title:'Hormonen en focus',short:'Sommige weken werkt mijn brein gewoon anders.',body:'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',contentId:'herken_cyclus'},
-    {tag:'RUST',title:'Burn-out preventie',short:'Te veel keuzes per dag en ik ben op.',body:'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',contentId:'herken_keuzestress'}
-  ];
+  var CONTENT_IDS=['herken_taakinitiatie','herken_werkgeheugen','herken_energie','herken_tijdblindheid','herken_cyclus','herken_keuzestress'];
   var stickyHost=document.getElementById('hkStickyHost');
   var mount=document.getElementById('hkMount');
   if(!stickyHost||!mount) return;
@@ -543,6 +560,32 @@ html.has-scroll-motion .loop-step,
   var lastPrimary=null;
   var stickyEl,dotsEl,titleEl,subEl,ctaEl;
 
+  function tDict(){
+    var lang=(window.currentLang==='en')?'en':'nl';
+    return (window.V2_I18N&&window.V2_I18N[lang])||null;
+  }
+  function reasons(){
+    var t=tDict();
+    if(!t){
+      return [
+        {tag:'EXECUTIEF',title:'Taakinitiatie',short:'Ik weet wát ik moet doen, ik begin alleen niet.',body:'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',contentId:CONTENT_IDS[0]},
+        {tag:'COGNITIEF',title:'Werkgeheugen-overload',short:'Mijn hoofd zit vol, en een lange lijst maakt het erger.',body:'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te dóén in plaats van te onthouden.',contentId:CONTENT_IDS[1]},
+        {tag:'DOPAMINE',title:'Energie en motivatie',short:'De ene dag vlieg ik, de andere kom ik niet vooruit.',body:'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',contentId:CONTENT_IDS[2]},
+        {tag:'TIJD',title:'Tijdblindheid',short:'Ik voel tijd niet, een dag heeft geen begin of eind.',body:'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',contentId:CONTENT_IDS[3]},
+        {tag:'CYCLUS',title:'Hormonen en focus',short:'Sommige weken werkt mijn brein gewoon anders.',body:'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',contentId:CONTENT_IDS[4]},
+        {tag:'RUST',title:'Burn-out preventie',short:'Te veel keuzes per dag en ik ben op.',body:'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',contentId:CONTENT_IDS[5]}
+      ];
+    }
+    return [0,1,2,3,4,5].map(function(i){
+      return {
+        tag:t['hk'+i+'_tag'],
+        title:t['hk'+i+'_title'],
+        short:t['hk'+i+'_short'],
+        body:t['hk'+i+'_body'],
+        contentId:CONTENT_IDS[i]
+      };
+    });
+  }
   function capturePh(event,props){
     try{if(window.posthog&&typeof window.posthog.capture==='function'){window.posthog.capture(event,props||{},{send_instantly:true});}}catch(e){}
   }
@@ -550,17 +593,23 @@ html.has-scroll-motion .loop-step,
     var n=0;for(var k in picked){if(picked[k]) n++;}return n;
   }
   function message(count){
-    if(count<=2) return {t:count+' van 6 herkenbaar',s:'Precies hiervoor is Structuro gebouwd.'};
-    if(count<=4) return {t:count+' van 6 herkenbaar',s:'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.'};
-    return {t:count+' van 6 herkenbaar',s:'Meerdere punten? Dat is normaal bij ADHD.'};
+    var t=tDict()||{};
+    var of=t.herken_of||'van';
+    var rec=t.herken_recognizable||'herkenbaar';
+    var title=count+' '+of+' 6 '+rec;
+    if(count<=2) return {t:title,s:t.herken_msg_few_s||'Precies hiervoor is Structuro gebouwd.'};
+    if(count<=4) return {t:title,s:t.herken_msg_mid_s||'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.'};
+    return {t:title,s:t.herken_msg_many_s||'Meerdere punten? Dat is normaal bij ADHD.'};
   }
   function bridgeUrl(contentId){
     if(typeof window.structuroSignupBridgeUrl==='function') return window.structuroSignupBridgeUrl(contentId);
-    return 'https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content='+(contentId||'herken_sticky');
+    var lang=(window.currentLang==='en')?'&lang=en':'';
+    return 'https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content='+(contentId||'herken_sticky')+lang;
   }
   function primaryContentId(){
-    if(lastPrimary!==null&&picked[lastPrimary]) return REASONS[lastPrimary].contentId;
-    for(var i=0;i<REASONS.length;i++){if(picked[i]) return REASONS[i].contentId;}
+    var list=reasons();
+    if(lastPrimary!==null&&picked[lastPrimary]) return list[lastPrimary].contentId;
+    for(var i=0;i<list.length;i++){if(picked[i]) return list[i].contentId;}
     return 'herken_sticky';
   }
   function syncSticky(){
@@ -568,24 +617,39 @@ html.has-scroll-motion .loop-step,
     stickyHost.classList.toggle('is-visible',count>0);
     if(count===0) return;
     var msg=message(count);
+    var t=tDict()||{};
     titleEl.textContent=msg.t;
     subEl.textContent=msg.s;
     ctaEl.href=bridgeUrl(primaryContentId());
     ctaEl.setAttribute('data-ph-cta',primaryContentId());
     ctaEl.setAttribute('data-signup-bridge',primaryContentId());
+    ctaEl.textContent=t.herken_cta||'Start Structuro gratis';
     var dots=dotsEl.querySelectorAll('.hk-dot');
     for(var i=0;i<dots.length;i++){dots[i].classList.toggle('is-on',!!picked[i]);}
   }
   function syncRow(k){
+    var list=reasons();
+    var r=list[k];
     var row=mount.querySelector('[data-hk-row="'+k+'"]');
-    if(!row) return;
+    if(!row||!r) return;
     var on=!!picked[k];
     row.classList.toggle('is-on',on);
     var btn=row.querySelector('.hk-row-btn');
     var hint=row.querySelector('.hk-row-hint');
     var panel=row.querySelector('.hk-panel-wrap');
+    var short=row.querySelector('.hk-row-short');
+    var tag=row.querySelector('.hk-panel-tag');
+    var title=row.querySelector('.hk-panel-title');
+    var body=row.querySelector('.hk-panel-body');
+    if(short) short.textContent=r.short;
+    if(tag) tag.textContent='STRUCTURO • '+r.tag;
+    if(title) title.textContent=r.title;
+    if(body) body.textContent=r.body;
     if(btn) btn.setAttribute('aria-expanded',on?'true':'false');
-    if(hint){hint.hidden=!on;hint.textContent=on?'Ja, dit ben ik':'';}
+    if(hint){
+      hint.hidden=!on;
+      hint.textContent=on?((tDict()||{}).hk_yes||'Ja, dit ben ik'):'';
+    }
     if(panel) panel.classList.toggle('is-open',on);
   }
   function toggle(k){
@@ -593,7 +657,7 @@ html.has-scroll-motion .loop-step,
     if(picked[k]) lastPrimary=k;
     capturePh('zelftest_recognition_toggled',{
       card_index:k,
-      card_id:REASONS[k].contentId,
+      card_id:CONTENT_IDS[k],
       recognized:picked[k],
       recognition_count:countPicked(),
       page_path:window.location.pathname||'/v2/'
@@ -606,7 +670,7 @@ html.has-scroll-motion .loop-step,
   stickyEl.className='hk-sticky';
   dotsEl=document.createElement('div');
   dotsEl.className='hk-dots';
-  for(var d=0;d<REASONS.length;d++){
+  for(var d=0;d<CONTENT_IDS.length;d++){
     var dot=document.createElement('span');
     dot.className='hk-dot';
     dotsEl.appendChild(dot);
@@ -626,7 +690,7 @@ html.has-scroll-motion .loop-step,
   ctaEl.href=bridgeUrl('herken_sticky');
   ctaEl.setAttribute('data-ph-cta','herken_sticky');
   ctaEl.setAttribute('data-signup-bridge','herken_sticky');
-  ctaEl.textContent='Start Structuro gratis';
+  ctaEl.textContent=(tDict()||{}).herken_cta||'Start Structuro gratis';
   ctaEl.addEventListener('click',function(){
     capturePh('zelftest_cta_clicked',{
       cta_id:primaryContentId(),
@@ -637,7 +701,7 @@ html.has-scroll-motion .loop-step,
   stickyEl.appendChild(ctaEl);
   stickyHost.appendChild(stickyEl);
 
-  REASONS.forEach(function(r,k){
+  reasons().forEach(function(r,k){
     var row=document.createElement('div');
     row.className='hk-row';
     row.setAttribute('data-hk-row',String(k));
@@ -668,11 +732,16 @@ html.has-scroll-motion .loop-step,
     row.appendChild(wrap);
     mount.appendChild(row);
   });
+
+  window.refreshV2HerkenCopy=function(){
+    for(var i=0;i<CONTENT_IDS.length;i++) syncRow(i);
+    syncSticky();
+  };
 })();
 document.getElementById('mqt').innerHTML+=document.getElementById('mqt').innerHTML;
 document.querySelectorAll('#mm a').forEach(function(a){a.addEventListener('click',function(){document.getElementById('mm').classList.remove('open')})});
 
-/* Light scroll-motion: hero phone parallax + loop-step reveal */
+/* Loop-step reveal zonder parallax (minder afleiding op mobiel). */
 (function(){
   var reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
   if(reduce.matches) return;
@@ -680,42 +749,59 @@ document.querySelectorAll('#mm a').forEach(function(a){a.addEventListener('click
   document.documentElement.classList.add('has-scroll-motion');
 
   var steps=document.querySelectorAll('.loop-step');
-  if(steps.length){
-    if('IntersectionObserver' in window){
-      var io=new IntersectionObserver(function(entries){
-        entries.forEach(function(entry){
-          if(!entry.isIntersecting) return;
-          entry.target.classList.add('is-in');
-          io.unobserve(entry.target);
-        });
-      },{threshold:0.22,rootMargin:'0px 0px -6% 0px'});
-      steps.forEach(function(step){io.observe(step);});
-    }else{
-      steps.forEach(function(step){step.classList.add('is-in');});
+  if(!steps.length) return;
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(!entry.isIntersecting) return;
+        entry.target.classList.add('is-in');
+        io.unobserve(entry.target);
+      });
+    },{threshold:0.22,rootMargin:'0px 0px -6% 0px'});
+    steps.forEach(function(step){io.observe(step);});
+  }else{
+    steps.forEach(function(step){step.classList.add('is-in');});
+  }
+})();
+
+/* Mobiele sticky CTA: zichtbaar zodra hero uit beeld is. */
+(function(){
+  var bar=document.getElementById('stickyCta');
+  var hero=document.getElementById('top');
+  if(!bar||!hero||!window.matchMedia) return;
+  var mobile=window.matchMedia('(max-width:920px)');
+  function setVisible(on){
+    if(!mobile.matches){
+      bar.hidden=true;
+      bar.classList.remove('is-on');
+      document.body.classList.remove('has-sticky-cta');
+      return;
     }
+    bar.hidden=!on;
+    bar.classList.toggle('is-on',on);
+    document.body.classList.toggle('has-sticky-cta',on);
   }
-
-  var phone=document.querySelector('.hero .phone');
-  var hero=document.querySelector('.hero');
-  if(!phone||!hero) return;
-
-  var ticking=false;
-  function applyParallax(){
-    ticking=false;
+  function sync(){
+    if(!mobile.matches){setVisible(false);return;}
     var rect=hero.getBoundingClientRect();
-    var span=Math.max(rect.height*0.85,1);
-    var progress=Math.min(1,Math.max(0,-rect.top/span));
-    var y=progress*22;
-    var rot=progress*-2.4;
-    phone.style.transform='translate3d(0,'+y.toFixed(2)+'px,0) rotate('+rot.toFixed(3)+'deg)';
+    setVisible(rect.bottom<=68);
   }
-  function onScroll(){
-    if(ticking) return;
-    ticking=true;
-    requestAnimationFrame(applyParallax);
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      var entry=entries[0];
+      if(!entry) return;
+      setVisible(mobile.matches&&!entry.isIntersecting);
+    },{rootMargin:'-68px 0px 0px 0px',threshold:0});
+    io.observe(hero);
+    mobile.addEventListener('change',function(){
+      if(!mobile.matches) setVisible(false);
+      else sync();
+    });
+  }else{
+    window.addEventListener('scroll',sync,{passive:true});
+    mobile.addEventListener('change',sync);
+    sync();
   }
-  window.addEventListener('scroll',onScroll,{passive:true});
-  applyParallax();
 })();
 </script>
 </body>

@@ -279,3 +279,17 @@ export function energyLabel(e: V2TaskEnergy): string | null {
   if (e === "high") return "Energie: hoog";
   return null;
 }
+
+/** Match een vandaag-ding op een lokale taak (titel, case-insensitive trim). */
+export function findV2TaskByTitle(
+  tasks: V2Task[],
+  title: string,
+): V2Task | null {
+  const needle = title.trim().toLowerCase();
+  if (!needle) return null;
+  return (
+    tasks.find((t) => !t.done && t.title.trim().toLowerCase() === needle) ??
+    tasks.find((t) => t.title.trim().toLowerCase() === needle) ??
+    null
+  );
+}

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 
 import CycleDatePicker, {
   isoDateLocal,
   parseLocalIsoDate,
 } from "@/components/cycle/CycleDatePicker";
+import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
 import { useI18n } from "@/lib/i18n";
 import {
   CYCLE_LENGTH_MAX,
@@ -17,13 +18,10 @@ import {
 } from "@/lib/cycle/types";
 
 import { useV2 } from "./V2Context";
-import {
-  V2SettingsRow,
-  V2SettingsToggle,
-} from "./V2SettingsUi";
-import { type V2Settings } from "./v2Settings";
-import { ensureV2CyclePeriodStart } from "./V2CycleChip";
-import { v2Styles } from "./theme";
+import { V2SettingsToggle } from "./V2SettingsUi";
+import { patchV2Settings, readV2Settings, type V2Settings } from "./v2Settings";
+import { ensureV2CyclePeriodStart, getV2CycleChipInfo } from "./V2CycleChip";
+import { V2_ORB_PHASE_COLORS } from "@/components/dagstart/design/CycleRing";
 
 function formatDate(iso: string | null, locale: string): string {
   if (!iso) return "";
@@ -36,69 +34,68 @@ function formatDate(iso: string | null, locale: string): string {
   });
 }
 
-function Stepper({
+function CompactStepper({
+  label,
   value,
+  unit,
   onDecrease,
   onIncrease,
   decreaseDisabled,
   increaseDisabled,
   decreaseAria,
   increaseAria,
-  unit,
 }: {
+  label: string;
   value: number;
+  unit: string;
   onDecrease: () => void;
   onIncrease: () => void;
   decreaseDisabled: boolean;
   increaseDisabled: boolean;
   decreaseAria: string;
   increaseAria: string;
-  unit: string;
 }) {
   return (
-    <div style={v2Styles.settingsStepperRow}>
-      <button
-        type="button"
-        className="v2-stepper-btn"
-        aria-label={decreaseAria}
-        disabled={decreaseDisabled}
-        onClick={onDecrease}
-        style={{
-          ...v2Styles.settingsStepperBtn,
-          opacity: decreaseDisabled ? 0.4 : 1,
-        }}
-      >
-        −
-      </button>
-      <div style={v2Styles.settingsStepperValue}>
-        <p style={v2Styles.settingsStepperNumber}>{value}</p>
-        <p style={{ ...v2Styles.settingsHint, margin: "2px 0 0" }}>{unit}</p>
+    <div className="v2-cycle-compact-stepper">
+      <p className="v2-cycle-compact-stepper__label">{label}</p>
+      <div className="v2-cycle-compact-stepper__row">
+        <button
+          type="button"
+          className="v2-cycle-compact-stepper__btn"
+          aria-label={decreaseAria}
+          disabled={decreaseDisabled}
+          onClick={onDecrease}
+        >
+          −
+        </button>
+        <div className="v2-cycle-compact-stepper__value">
+          <span className="v2-cycle-compact-stepper__num">{value}</span>
+          <span className="v2-cycle-compact-stepper__unit">{unit}</span>
+        </div>
+        <button
+          type="button"
+          className="v2-cycle-compact-stepper__btn"
+          aria-label={increaseAria}
+          disabled={increaseDisabled}
+          onClick={onIncrease}
+        >
+          +
+        </button>
       </div>
-      <button
-        type="button"
-        className="v2-stepper-btn"
-        aria-label={increaseAria}
-        disabled={increaseDisabled}
-        onClick={onIncrease}
-        style={{
-          ...v2Styles.settingsStepperBtn,
-          opacity: increaseDisabled ? 0.4 : 1,
-        }}
-      >
-        +
-      </button>
     </div>
   );
 }
 
-const settingsFieldLabel: CSSProperties = {
-  margin: 0,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "var(--text-muted)",
-};
+export function v2CycleSettingsSummary(
+  cyclusOptIn: boolean,
+  settings: V2Settings,
+  phaseLabel: string | null,
+): string {
+  if (!cyclusOptIn) return "Uit";
+  const info = getV2CycleChipInfo(true);
+  if (!info || !phaseLabel) return "Aan";
+  return `Aan · dag ${info.day}, ${phaseLabel.toLowerCase()}`;
+}
 
 export default function V2CycleSettingsSection({
   settings,
@@ -125,90 +122,103 @@ export default function V2CycleSettingsSection({
       ? settings.lastPeriodStart
       : todayStr;
 
+  const chip = consentOn ? getV2CycleChipInfo(true) : null;
+  const phaseKey = chip
+    ? resolveCurrentPhaseKey(
+        chip.day,
+        chip.cycleLength,
+        chip.menstruationDuration,
+      )
+    : null;
+  const phaseLabel = phaseKey ? t(`cycle.contextPhase_${phaseKey}`) : null;
+  const phaseAccent = phaseKey ? V2_ORB_PHASE_COLORS[phaseKey] : "#C4785A";
+
   const patch = (next: Partial<V2Settings>) => onSettingsChange(next);
 
   const setConsent = (on: boolean) => {
     update({ cyclusOptIn: on });
-    if (on) ensureV2CyclePeriodStart();
+    if (on) {
+      ensureV2CyclePeriodStart();
+      patchV2Settings({ cycleOptInPromptDismissed: true });
+      const fresh = readV2Settings();
+      onSettingsChange({
+        lastPeriodStart: fresh.lastPeriodStart,
+        cycleLength: fresh.cycleLength,
+        menstruationDuration: fresh.menstruationDuration,
+      });
+    }
   };
 
   return (
-    <>
-      <V2SettingsRow
-        label={t("cycle.settingsTitle")}
-        hint={t("cycle.settingsHint")}
-        last={!consentOn}
-        onLabelClick={() => setConsent(!consentOn)}
-      >
+    <div className="v2-cycle-settings">
+      <div className="v2-cycle-settings__toggle-row">
+        <button
+          type="button"
+          className="v2-cycle-settings__toggle-copy"
+          onClick={() => setConsent(!consentOn)}
+        >
+          <span className="v2-cycle-settings__toggle-title">
+            {t("cycle.settingsTitle")}
+          </span>
+          <span className="v2-cycle-settings__toggle-hint">
+            Structuro berekent je fase bij de dagstart.
+          </span>
+        </button>
         <V2SettingsToggle
           checked={consentOn}
           onChange={() => setConsent(!consentOn)}
           ariaLabel={t("cycle.settingsTitle")}
         />
-      </V2SettingsRow>
+      </div>
 
       {consentOn ? (
-        <div style={v2Styles.settingsExpanded}>
-          <div style={v2Styles.settingsInnerCard}>
-            <p style={settingsFieldLabel}>{t("cycle.settingsPeriodLabel")}</p>
-            {periodDisplay ? (
-              <p style={v2Styles.settingsPeriodDate}>{periodDisplay}</p>
-            ) : (
-              <p style={v2Styles.settingsPeriodEmpty}>
-                {t("cycle.setupPeriodHint")}
-              </p>
-            )}
+        <div className="v2-cycle-settings__card">
+          <p className="v2-cycle-settings__field-label">
+            {t("cycle.settingsPeriodLabel")}
+          </p>
+          {periodDisplay ? (
+            <p className="v2-cycle-settings__date">{periodDisplay}</p>
+          ) : (
+            <p className="v2-cycle-settings__date-empty">
+              {t("cycle.setupPeriodHint")}
+            </p>
+          )}
 
-            {adjustOpen ? (
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-                <label htmlFor="v2-cycle-period-start" style={{ ...v2Styles.settingsHint, margin: 0 }}>
-                  {t("cycle.setupPeriodLabel")}
-                </label>
-                <CycleDatePicker
-                  id="v2-cycle-period-start"
-                  value={draftPeriod}
-                  min={minBack}
-                  max={todayStr}
-                  onChange={(v) => patch({ lastPeriodStart: v })}
-                />
-                <button
-                  type="button"
-                  className="v2-textlink"
-                  onClick={() => setAdjustOpen(false)}
-                  style={{
-                    ...v2Styles.textlink,
-                    alignSelf: "flex-start",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    padding: "4px 0",
-                  }}
-                >
-                  {t("cycle.settingsRemoveConfirmCancel")}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="v2-secondary"
-                onClick={() => setAdjustOpen(true)}
-                style={{
-                  ...v2Styles.ctaSecondary,
-                  marginTop: 10,
-                  alignSelf: "flex-start",
-                  width: "auto",
-                  minHeight: 40,
-                  padding: "8px 14px",
-                  fontSize: 13,
-                }}
+          <div className="v2-cycle-settings__status-row">
+            {chip && phaseLabel ? (
+              <span
+                className="v2-cycle-settings__pill"
+                style={{ color: phaseAccent, background: `${phaseAccent}1A` }}
               >
-                {t("cycle.settingsAdjustPeriod")}
-              </button>
+                • Dag {chip.day} • {phaseLabel}
+              </span>
+            ) : (
+              <span />
             )}
+            <button
+              type="button"
+              className="v2-cycle-settings__adjust"
+              onClick={() => setAdjustOpen((v) => !v)}
+            >
+              {adjustOpen ? t("cycle.settingsRemoveConfirmCancel") : "Pas aan"}
+            </button>
           </div>
 
-          <div style={v2Styles.settingsInnerCard}>
-            <p style={settingsFieldLabel}>{t("cycle.settingsLengthLabel")}</p>
-            <Stepper
+          {adjustOpen ? (
+            <div className="v2-cycle-settings__picker">
+              <CycleDatePicker
+                id="v2-cycle-period-start"
+                value={draftPeriod}
+                min={minBack}
+                max={todayStr}
+                onChange={(v) => patch({ lastPeriodStart: v })}
+              />
+            </div>
+          ) : null}
+
+          <div className="v2-cycle-settings__steppers">
+            <CompactStepper
+              label={locale === "en" ? "Cycle length" : "Cycluslengte"}
               value={settings.cycleLength}
               unit={t("cycle.setupLengthDays")}
               decreaseAria={t("cycle.setupLengthDecreaseAria")}
@@ -229,11 +239,10 @@ export default function V2CycleSettingsSection({
                 patch({ cycleLength: clampCycleLength(settings.cycleLength + 1) });
               }}
             />
-          </div>
-
-          <div style={v2Styles.settingsInnerCard}>
-            <p style={settingsFieldLabel}>{t("cycle.settingsMenstruationLabel")}</p>
-            <Stepper
+            <CompactStepper
+              label={
+                locale === "en" ? "Period length" : "Menstruatieduur"
+              }
               value={settings.menstruationDuration}
               unit={t("cycle.setupLengthDays")}
               decreaseAria={t("cycle.setupMenstruationDecreaseAria")}
@@ -263,6 +272,6 @@ export default function V2CycleSettingsSection({
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

@@ -42,9 +42,9 @@ export const V2_ANONYMOUS_STORAGE_KEYS = [
 ] as const;
 
 /**
- * Privacy over anon-state: bij auth wissen we anonieme v2-localStorage zodat
- * gebruiker B op een gedeelde browser geen dump/taken/journey van A ziet.
- * (Geen user.id-keying vandaag; cloud/session is de bron na login.)
+ * Privacy over anon-state: na migratie naar Supabase (of login zonder data)
+ * wissen we anonieme v2-localStorage zodat gebruiker B op een gedeelde browser
+ * geen dump/taken/journey van A ziet. Altijd migreren vóór wissen.
  */
 export function clearAnonymousV2LocalStorage(): void {
   if (typeof window === "undefined") return;

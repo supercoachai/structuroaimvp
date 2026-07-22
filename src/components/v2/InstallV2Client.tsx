@@ -58,7 +58,7 @@ export default function InstallV2Client() {
 
   return (
     <V2Page>
-      <V2Header exitHref={fromSettings ? "/v2/settings" : "/v2/register"} />
+      <V2Header exitHref={fromSettings ? "/v2/settings" : "/v2/onboarding"} />
 
       <div style={v2Styles.flowShell}>
         <div style={v2FlowWrapStyle("welcome")}>

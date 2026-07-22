@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
@@ -56,7 +57,11 @@ export default function DagstartV2Client() {
   const go = useV2Go();
   const { t, locale } = useI18n();
   const { state, update } = useV2();
-  const [phase, setPhase] = useState<Phase>("welcome");
+  const searchParams = useSearchParams();
+  const startAtEnergy = searchParams.get("start") === "energy";
+  const skippedWelcomeRef = useRef(false);
+
+  const [phase, setPhase] = useState<Phase>(startAtEnergy ? "energy" : "welcome");
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
 
@@ -75,6 +80,16 @@ export default function DagstartV2Client() {
     () => v2BuildAdjustOptions(state.energy, selectedThings, 8, locale),
     [state.energy, selectedThings, locale],
   );
+
+  // Soft entry vanaf home-nudge: sla welkomst over, frisse energiekeuze.
+  useEffect(() => {
+    if (!startAtEnergy || skippedWelcomeRef.current) return;
+    skippedWelcomeRef.current = true;
+    setSelectedThings([]);
+    update({ energy: null });
+    setPhase("energy");
+    setHistory([]);
+  }, [startAtEnergy, update]);
 
   useEffect(() => {
     scrollV2ToTop();
