@@ -10,7 +10,9 @@
 <meta property="og:description" content="Structuro kiest maximaal drie dingen voor vandaag. Jij bevestigt, en begint."/>
 <meta property="og:image" content="https://www.structuro.eu/uploads/structuro-icon.png"/>
 <meta property="og:url" content="https://www.structuro.eu/v2"/>
-<link rel="icon" href="/uploads/logo-structuro-favicon.png" type="image/png"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon.png?v=20260722c" type="image/png" sizes="64x64"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon-32.png?v=20260722c" type="image/png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260722c"/>
 <script defer src="/js/analytics.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,19 +20,19 @@
 <link rel="stylesheet" href="/v2/v2-tokens.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--v2-paper);color:var(--v2-text);font-family:var(--v2-sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;overflow-x:clip;width:100%;max-width:100%}
+body{background:var(--v2-paper);color:var(--v2-text);font-family:var(--v2-sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:clip;width:100%;max-width:100%;overscroll-behavior-x:none;touch-action:pan-y;position:relative}
 a{color:var(--v2-teal);text-decoration:none}
 a:hover{color:#1F433F}
-img{display:block;max-width:100%}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+img{display:block;max-width:100%;height:auto}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 24px}
 .serif{font-family:var(--v2-serif);font-weight:500;letter-spacing:-0.022em;line-height:1.08}
 .it{font-style:italic;font-weight:400;color:var(--v2-teal)}
-.eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--v2-teal)}
+.eyebrow{display:flex;align-items:center;gap:8px;max-width:100%;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--v2-teal)}
 .eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--v2-teal);flex:none}
 .eyebrow.center{justify-content:center}
-.support{font-size:17px;color:var(--v2-text-soft);text-wrap:pretty}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:52px;padding:0 28px;border-radius:999px;border:0;cursor:pointer;font-family:var(--v2-sans);font-weight:600;font-size:15.5px;letter-spacing:-0.006em;white-space:nowrap}
+.support{font-size:17px;color:var(--v2-text-soft);text-wrap:pretty;max-width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:52px;padding:0 28px;border-radius:999px;border:0;cursor:pointer;font-family:var(--v2-sans);font-weight:600;font-size:15.5px;letter-spacing:-0.006em;white-space:nowrap;max-width:100%;box-sizing:border-box}
 .btn-navy{background:var(--v2-navy);color:var(--v2-on-navy);box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 10px 24px -10px rgba(26,35,64,.5);transition:transform .15s ease,box-shadow .15s ease}
 .btn-navy:hover{color:var(--v2-on-navy);transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 14px 28px -10px rgba(26,35,64,.55)}
 .btn-ghost{background:transparent;color:var(--v2-text-soft);font-weight:600}
@@ -40,63 +42,101 @@ section{padding:96px 0}
 .sec-head h2{font-size:clamp(34px,4.4vw,48px)}
 .sec-head .support{max-width:520px}
 /* ---------- nav ---------- */
-header{position:sticky;top:0;z-index:50;background:rgba(253,251,244,.88);backdrop-filter:blur(14px);border-bottom:1px solid rgba(26,35,64,.07)}
-.nav{display:flex;align-items:center;gap:28px;height:68px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--v2-text);font-weight:600;font-size:16.5px;letter-spacing:-0.01em}
-.brand img{width:30px;height:30px;border-radius:50%}
-.nav-links{display:flex;gap:26px;margin-left:auto}
-.nav-links a{font-size:14px;font-weight:500;color:var(--v2-text-soft)}
+header{position:sticky;top:0;z-index:50;background:rgba(253,251,244,.92);backdrop-filter:saturate(140%) blur(16px);-webkit-backdrop-filter:saturate(140%) blur(16px);border-bottom:1px solid rgba(26,35,64,.10);box-shadow:0 1px 0 rgba(253,251,244,.55);transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;overflow-x:clip;max-width:100%}
+header.scrolled{background:rgba(253,251,244,.97);border-bottom-color:rgba(26,35,64,.12);box-shadow:0 1px 0 rgba(253,251,244,.7),0 8px 20px -16px rgba(26,35,64,.14)}
+.nav{display:flex;align-items:center;gap:28px;height:68px;min-width:0;flex-wrap:nowrap;max-width:100%}
+.brand{display:flex;align-items:center;gap:10px;color:var(--v2-text);font-weight:600;font-size:16.5px;letter-spacing:-0.01em;flex:0 0 auto;min-width:0}
+.brand-mark{width:30px;height:30px;aspect-ratio:1/1;border-radius:50%;overflow:hidden;flex:none;display:block;line-height:0}
+.brand-mark img,.brand img{width:30px;height:30px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;object-position:center;flex:none;display:block;max-width:none;max-height:none}
+.nav-links{display:flex;gap:26px;margin-left:auto;min-width:0}
+.nav-links a{font-size:14px;font-weight:500;color:rgba(26,35,64,.78);white-space:nowrap}
 .nav-links a:hover{color:var(--v2-text)}
-.nav-cta{display:flex;align-items:center;gap:18px}
-.nav-cta .login{font-size:14px;font-weight:500;color:var(--v2-text-soft)}
-.nav-cta .btn{height:40px;padding:0 20px;font-size:14px}
-.lang{display:flex;gap:2px;font-size:12px;font-weight:600;color:var(--v2-text-faint)}
-.lang span{padding:4px 7px;border-radius:8px}
-.lang .on{color:var(--v2-text);background:rgba(26,35,64,.06)}
-.burger{display:none;background:none;border:0;cursor:pointer;padding:8px;margin-left:auto}
+.nav-cta{display:flex;align-items:center;gap:18px;min-width:0;flex:0 1 auto}
+.nav-cta .login{font-size:14px;font-weight:500;color:rgba(26,35,64,.78);white-space:nowrap}
+.nav-cta .btn{height:40px;padding:0 20px;font-size:14px;flex-shrink:1;min-width:0}
+.lang{display:flex;align-items:center;gap:4px;flex:none}
+.lang a{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:36px;height:32px;padding:0;border-radius:8px;border:1.5px solid transparent;color:var(--v2-text-faint);font-size:12px;font-weight:600;line-height:1;text-decoration:none;background:transparent;box-sizing:border-box}
+.lang a.on{color:var(--v2-text);background:rgba(26,35,64,.06);border-color:rgba(26,35,64,.10)}
+.lang a:hover{color:var(--v2-text);background:rgba(255,255,255,.7);border-color:rgba(26,35,64,.10)}
+.lang svg{display:block;width:22px;height:16px;flex:none;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.10)}
+.lang .lang-code{display:none}
+.burger{display:none;background:none;border:0;cursor:pointer;padding:8px;margin-left:0;flex:none}
 .burger svg{display:block}
-.mobile-menu{display:none;position:absolute;top:68px;left:0;right:0;background:var(--v2-paper);border-bottom:1px solid rgba(26,35,64,.08);padding:12px 24px 20px;flex-direction:column;gap:2px}
+.mobile-menu{display:none;position:absolute;top:68px;left:0;right:0;background:var(--v2-paper);border-bottom:1px solid rgba(26,35,64,.08);padding:12px 24px 20px;flex-direction:column;gap:2px;max-width:100%}
 .mobile-menu a{padding:12px 0;font-size:16px;font-weight:500;color:var(--v2-text);border-bottom:1px solid rgba(26,35,64,.05)}
 /* ---------- hero ---------- */
-.hero{padding:88px 0 104px}
-.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
-.hero h1{font-size:clamp(44px,5.6vw,72px);line-height:1.02;margin:22px 0 20px}
+.hero{padding:88px 0 104px;position:relative;overflow-x:clip;max-width:100%}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center;min-width:0}
+.hero-grid>*{min-width:0;max-width:100%}
+.hero h1{font-size:clamp(44px,5.6vw,72px);line-height:1.02;margin:22px 0 20px;text-wrap:balance;max-width:100%}
 .hero .support{max-width:440px}
-.cta-row{display:flex;align-items:center;gap:22px;margin-top:36px;flex-wrap:wrap}
-.cta-note{font-size:13.5px;color:var(--v2-text-faint);margin-top:16px}
-/* phone */
-.phone-col{display:flex;justify-content:center}
-.phone{width:310px;height:640px;border-radius:42px;position:relative;display:flex;flex-direction:column;background:var(--v2-paper);padding:0 24px;box-shadow:0 0 0 1px rgba(26,35,64,.09),0 2px 6px rgba(26,35,64,.06),0 40px 80px -32px rgba(26,35,64,.38)}
-.phone::before{content:"";position:absolute;inset:0;border-radius:42px;pointer-events:none;background:radial-gradient(120% 60% at 50% -10%,rgba(241,236,221,.9),transparent 60%)}
-.phone>*{position:relative}
-.p-status{display:flex;justify-content:space-between;padding:18px 4px 0;font-size:12px;font-weight:600;color:rgba(26,35,64,.7)}
-.p-nav{display:flex;justify-content:space-between;align-items:center;padding:16px 2px 0;font-size:12px;font-weight:500;color:var(--v2-text-soft)}
+.cta-row{display:flex;align-items:center;gap:22px;margin-top:36px;flex-wrap:wrap;width:100%;max-width:100%}
+.cta-note{font-size:13.5px;color:var(--v2-text-faint);margin-top:16px;max-width:100%}
+/* phone (iPhone frame + huidige app UI) */
+.phone-col{display:flex;justify-content:center;position:relative;overflow-x:clip;max-width:100%;width:100%}
+.phone-col::before{content:"";position:absolute;width:min(380px,90vw);height:min(380px,90vw);background:radial-gradient(circle,rgba(45,90,86,.1),transparent 70%);top:50%;left:50%;transform:translate(-50%,-55%);border-radius:50%;z-index:0;pointer-events:none}
+.phone{width:290px;max-width:min(290px,72vw);position:relative;z-index:1;border-radius:42px;padding:8px;background:linear-gradient(155deg,#3d4148 0%,#17181c 18%,#0a0a0c 50%,#17181c 84%,#2c2f35 100%);box-shadow:0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),inset 0 0 0 1.5px rgba(120,128,140,.35),inset 0 1px 0 rgba(255,255,255,.14);will-change:transform;transform:translate3d(0,0,0)}
+.iphone-side{position:absolute;width:3.5px;border-radius:2px;z-index:0;background:linear-gradient(90deg,#42464e,#1b1d22 60%,#101114)}
+.iphone-side--action{left:-3px;top:17%;height:3.2%}
+.iphone-side--volup{left:-3px;top:23%;height:6%}
+.iphone-side--voldown{left:-3px;top:30.5%;height:6%}
+.iphone-side--power{right:-3px;top:24.5%;height:9.5%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114)}
+.iphone-side--camctl{right:-3px;top:38.5%;height:4.2%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114)}
+.iphone-island{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:35%;max-width:100px;height:25px;background:#000;border-radius:999px;z-index:6;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);pointer-events:none}
+.iphone-island-cam{width:11px;height:11px;border-radius:50%;position:relative;flex-shrink:0;background:radial-gradient(circle at 35% 32%,#232c40 0%,#0c0f18 48%,#000 100%);box-shadow:inset 0 0 3px rgba(90,130,255,.4),0 0 0 1.5px rgba(255,255,255,.05)}
+.iphone-island-cam::after{content:"";position:absolute;top:2px;left:2.5px;width:3px;height:3px;border-radius:50%;background:radial-gradient(circle,rgba(140,175,255,.85),rgba(140,175,255,0) 80%)}
+.phone-screen{position:relative;display:flex;flex-direction:column;width:100%;aspect-ratio:471/1024;border-radius:34px;overflow:hidden;background:var(--v2-paper);padding:0 20px 16px;box-shadow:inset 0 0 0 1px rgba(26,35,64,.04)}
+.phone-screen::before{content:"";position:absolute;inset:0;border-radius:34px;pointer-events:none;background:radial-gradient(120% 60% at 50% -10%,rgba(241,236,221,.9),transparent 60%);z-index:0}
+.phone-screen>*{position:relative;z-index:1}
+.p-nav{display:flex;justify-content:space-between;align-items:center;padding:48px 2px 0;font-size:12px;font-weight:500;color:var(--v2-text-soft)}
 .p-nav .b{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--v2-text)}
-.p-prog{display:flex;gap:6px;padding:16px 2px 0}
+.p-prog{display:flex;gap:6px;padding:14px 2px 0}
 .p-prog i{flex:1;height:3px;border-radius:3px;background:rgba(26,35,64,.10)}
 .p-prog i.on{background:var(--v2-teal)}
-.orb{width:88px;height:88px;border-radius:50%;background:var(--v2-teal);box-shadow:0 12px 26px -12px rgba(45,90,86,.4);margin:0 auto}
-.pills{display:flex;gap:9px;width:100%}
-.pill{flex:1;text-align:center;padding:12px 0;font-size:13px;font-weight:600;border-radius:999px;background:#FFF;border:1px solid rgba(26,35,64,.10);color:var(--v2-text-soft)}
+.orb{width:72px;height:72px;border-radius:50%;background:var(--v2-teal);box-shadow:0 12px 26px -12px rgba(45,90,86,.4);margin:0 auto}
+.pills{display:flex;gap:8px;width:100%}
+.pill{flex:1;text-align:center;padding:11px 0;font-size:12.5px;font-weight:600;border-radius:999px;background:#FFF;border:1px solid rgba(26,35,64,.10);color:var(--v2-text-soft)}
 .pill.active{background:var(--v2-navy);border-color:var(--v2-navy);color:var(--v2-on-navy);box-shadow:0 8px 18px -8px rgba(26,35,64,.5)}
-.p-task{display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:16px;background:#FFF;border:1.5px solid rgba(45,90,86,.4);box-shadow:0 1px 2px rgba(26,35,64,.04)}
-.p-task .chk{width:19px;height:19px;border-radius:50%;background:transparent;border:1.5px solid rgba(45,90,86,.55);color:var(--v2-teal);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
-.p-task .lbl{font-size:13px;font-weight:500}
-.p-btn{display:flex;align-items:center;justify-content:center;width:100%;height:50px;border-radius:15px;background:var(--v2-navy);color:var(--v2-on-navy);font-weight:600;font-size:14.5px;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 10px 24px -10px rgba(26,35,64,.5)}
-.p-quiet{text-align:center;font-size:12.5px;font-weight:600;color:var(--v2-text-soft);padding-top:10px}
-.p-foot{font-size:10.5px;font-style:italic;color:rgba(26,35,64,.45);text-align:center;padding:12px 0 20px}
+.p-task{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:14px;background:#FFF;border:1.5px solid rgba(45,90,86,.4);box-shadow:0 1px 2px rgba(26,35,64,.04)}
+.p-task .chk{width:18px;height:18px;border-radius:50%;background:transparent;border:1.5px solid rgba(45,90,86,.55);color:var(--v2-teal);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.p-task .lbl{font-size:12.5px;font-weight:500}
+.p-btn{display:flex;align-items:center;justify-content:center;width:100%;height:48px;border-radius:14px;background:var(--v2-navy);color:var(--v2-on-navy);font-weight:600;font-size:14px;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 10px 24px -10px rgba(26,35,64,.5);margin-top:auto}
+.p-quiet{text-align:center;font-size:12px;font-weight:600;color:var(--v2-text-soft);padding-top:10px}
 /* ---------- herken ---------- */
 .herken{background:#FFFFFF;border-top:1px solid rgba(26,35,64,.06);border-bottom:1px solid rgba(26,35,64,.06)}
-.hk-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:920px;margin:0 auto}
-.hk-card{text-align:left;background:var(--v2-paper);border:1px solid rgba(26,35,64,.09);border-radius:18px;padding:22px 24px;cursor:pointer;font-family:var(--v2-sans);transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
-.hk-card:hover{border-color:rgba(45,90,86,.4);transform:translateY(-1px);box-shadow:0 12px 28px -18px rgba(26,35,64,.25)}
-.hk-card .q{display:flex;align-items:baseline;justify-content:space-between;gap:16px;font-size:17px;font-weight:600;letter-spacing:-0.01em;color:var(--v2-text)}
-.hk-card .q svg{flex:none;transform:translateY(2px);transition:transform .2s ease}
-.hk-card .a{max-height:0;overflow:hidden;transition:max-height .25s ease,margin .25s ease;font-size:14.5px;color:var(--v2-text-soft)}
-.hk-card.open{border-color:rgba(45,90,86,.5);box-shadow:0 12px 28px -18px rgba(26,35,64,.22)}
-.hk-card.open .a{max-height:120px;margin-top:10px}
-.hk-card.open .q svg{transform:translateY(2px) rotate(45deg)}
-.hk-card .a em{font-family:var(--v2-serif);font-style:italic;color:var(--v2-teal)}
+.hk-root{max-width:780px;margin:0 auto}
+.hk-sticky-host{display:none;position:relative;z-index:42;margin-bottom:18px}
+.hk-sticky-host.is-visible{display:block}
+.hk-sticky{display:flex;align-items:center;gap:18px;background:var(--v2-navy);border:1px solid var(--v2-navy);border-radius:16px;padding:16px 22px;box-shadow:0 14px 36px -10px rgba(26,35,64,.42);max-width:100%;min-width:0}
+.hk-dots{display:flex;gap:5px;flex:0 0 auto}
+.hk-dot{width:12px;height:12px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .25s}
+.hk-dot.is-on{background:var(--v2-teal-on-navy)}
+.hk-sticky-copy{flex:1;min-width:0}
+.hk-sticky-title{font-weight:700;font-size:17px;color:var(--v2-on-navy);letter-spacing:-.01em}
+.hk-sticky-sub{font-size:14px;color:var(--v2-on-navy-soft);margin-top:2px}
+.hk-sticky-cta{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;background:var(--v2-teal);color:#fff;transition:background .2s,transform .2s;max-width:100%}
+.hk-sticky-cta:hover{background:#234845;color:#fff}
+.hk-rows{display:flex;flex-direction:column;gap:10px}
+.hk-row{background:var(--v2-paper);border:1px solid rgba(26,35,64,.09);border-radius:16px;box-shadow:0 1px 2px rgba(26,35,64,.03);transition:border-color .2s,box-shadow .25s;overflow:hidden}
+.hk-row:hover:not(.is-on){border-color:rgba(45,90,86,.35);box-shadow:0 2px 8px rgba(45,90,86,.08)}
+.hk-row.is-on{border-color:var(--v2-teal);box-shadow:0 2px 10px rgba(45,90,86,.12)}
+.hk-row-btn{width:100%;text-align:left;border:0;background:none;cursor:pointer;display:flex;align-items:center;gap:16px;padding:20px 22px;font:inherit;color:inherit;transition:background .2s}
+.hk-row:hover:not(.is-on) .hk-row-btn{background:rgba(45,90,86,.03)}
+.hk-check{flex:0 0 auto;width:30px;height:30px;border-radius:999px;border:2px solid rgba(26,35,64,.1);background:transparent;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.hk-check svg{transform:scale(.4);opacity:0;transition:all .18s}
+.hk-row.is-on .hk-check{border-color:var(--v2-teal);background:var(--v2-teal)}
+.hk-row.is-on .hk-check svg{transform:scale(1);opacity:1}
+.hk-row-short{flex:1;font-weight:700;font-size:clamp(16px,1.8vw,19px);letter-spacing:-.015em;color:var(--v2-text);line-height:1.3}
+.hk-row-hint{flex:0 0 auto;font-weight:700;font-size:13px;color:var(--v2-text-faint);white-space:nowrap;transition:color .2s}
+.hk-row.is-on .hk-row-hint{color:var(--v2-teal)}
+.hk-row:hover:not(.is-on) .hk-row-hint{color:var(--v2-teal)}
+.hk-panel-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.3,.8,.3,1)}
+.hk-panel-wrap.is-open{grid-template-rows:1fr}
+.hk-panel{overflow:hidden}
+.hk-panel-inner{margin:0 22px 22px 68px;padding:18px 20px;background:rgba(45,90,86,.06);border-radius:14px}
+.hk-panel-tag{font-weight:700;font-size:11px;letter-spacing:.16em;color:var(--v2-teal);margin-bottom:8px}
+.hk-panel-title{font-weight:700;font-size:17px;color:var(--v2-text);margin-bottom:6px;letter-spacing:-.01em}
+.hk-panel-body{margin:0;font-size:15.5px;line-height:1.6;color:var(--v2-text-soft);font-style:normal}
 /* ---------- proof ---------- */
 .quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1020px;margin:0 auto}
 .quote{background:#FFF;border:1px solid rgba(26,35,64,.07);border-radius:18px;padding:28px;box-shadow:0 1px 2px rgba(26,35,64,.03),0 12px 28px -18px rgba(26,35,64,.10);display:flex;flex-direction:column;gap:22px}
@@ -110,8 +150,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(253,251,244,.88);backdro
 .press-quote{text-align:center;font-family:var(--v2-serif);font-size:16px;font-style:italic;color:var(--v2-text-soft);max-width:420px;margin:0 auto 18px;padding:0 20px}
 .press-label{text-align:center;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--v2-text-faint);margin-bottom:28px}
 .marquee{overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
-.marquee-track{display:flex;align-items:center;gap:72px;width:max-content;animation:mq 36s linear infinite}
-.marquee img{height:26px;width:auto;filter:grayscale(1);opacity:.5}
+.marquee-track{display:flex;align-items:center;gap:56px;width:max-content;animation:mq 36s linear infinite}
+.marquee img{height:40px;width:auto;opacity:1;filter:none}
 @keyframes mq{to{transform:translateX(-50%)}}
 /* ---------- verhaal ---------- */
 .story{background:#FFFFFF;border-top:1px solid rgba(26,35,64,.06);border-bottom:1px solid rgba(26,35,64,.06)}
@@ -130,6 +170,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(253,251,244,.88);backdro
 .loop-step .n{font-family:var(--v2-serif);font-style:italic;font-size:15px;color:var(--v2-teal);display:block;margin-bottom:8px}
 .loop-step b{display:block;font-size:17px;font-weight:600;letter-spacing:-0.01em;margin-bottom:6px}
 .loop-step p{font-size:14px;color:var(--v2-text-soft)}
+html.has-scroll-motion .loop-step{opacity:0;transform:translate3d(0,16px,0);transition:opacity .55s ease,transform .55s ease}
+html.has-scroll-motion .loop-step:nth-child(2){transition-delay:.08s}
+html.has-scroll-motion .loop-step:nth-child(3){transition-delay:.16s}
+html.has-scroll-motion .loop-step.is-in{opacity:1;transform:translate3d(0,0,0)}
 .loop-link{text-align:center;margin-top:36px;font-size:14.5px;font-weight:600}
 /* ---------- prijs ---------- */
 .price-card{max-width:480px;margin:0 auto;background:#FFF;border:1px solid rgba(26,35,64,.08);border-radius:24px;padding:44px 40px;box-shadow:0 1px 2px rgba(26,35,64,.03),0 24px 56px -28px rgba(26,35,64,.18);text-align:center}
@@ -174,33 +218,82 @@ footer{border-top:1px solid rgba(26,35,64,.07);padding:52px 0 44px}
 .foot-bottom nav{display:flex;gap:18px;flex-wrap:wrap}
 /* ---------- mobile ---------- */
 @media (max-width:920px){
-section{padding:64px 0}
-.nav-links,.nav-cta .login,.lang{display:none}
-.burger{display:block}
-.nav{gap:14px}
-.nav-cta{margin-left:auto}
-.burger{margin-left:0}
+section{padding:64px 0;overflow-x:clip;max-width:100%}
+.wrap{padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+.mobile-menu{padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+.nav-links,.nav-cta{display:none}
+.lang{margin-left:auto;gap:4px}
+.lang a{width:34px;height:32px}
+.burger{display:block;margin-left:2px}
+.nav{gap:8px;min-width:0;justify-content:flex-start}
+.brand{max-width:none;flex-shrink:1}
 .mobile-menu.open{display:flex}
-.hero{padding:40px 0 48px}
+.hero{padding:40px 0 48px;overflow-x:clip}
 .hero-grid{grid-template-columns:1fr;gap:28px}
-.hero h1{font-size:clamp(34px,9vw,44px);margin:16px 0 14px}
+.hero h1{font-size:clamp(32px,8.4vw,44px);margin:16px 0 14px;letter-spacing:-0.028em}
 .hero .support{max-width:none;font-size:16px}
-.cta-row{gap:14px;margin-top:22px}
-.phone-col{order:-1}
-.phone{width:min(280px,72vw);height:auto;min-height:520px;padding:0 18px 16px}
-.p-foot{display:none}
-.hk-grid{grid-template-columns:1fr}
+.eyebrow{flex-wrap:wrap;letter-spacing:.12em;line-height:1.35;white-space:normal}
+.cta-row{gap:14px;margin-top:22px;width:100%;max-width:100%}
+.cta-row .btn{white-space:normal;flex:1 1 auto;min-width:0;justify-content:center;text-align:center;height:auto;min-height:48px;padding:12px 22px}
+.phone-col::before{width:min(280px,78vw);height:min(280px,78vw)}
+.phone{width:min(268px,72vw);max-width:min(268px,72vw)}
+.phone-screen{padding:0 16px 14px}
+.orb{width:64px;height:64px}
+.hk-sticky-host.is-visible{
+  position:sticky;
+  top:68px;
+  z-index:45;
+  margin:-4px 0 10px;
+  padding:6px 0 8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.97) 0%,rgba(255,255,255,.88) 100%);
+  backdrop-filter:saturate(160%) blur(10px);
+  -webkit-backdrop-filter:saturate(160%) blur(10px);
+  max-width:100%;
+}
+.hk-sticky{flex-wrap:wrap;gap:12px;padding:14px 16px}
+.hk-sticky-cta{width:100%;justify-content:center;margin-top:2px;white-space:normal}
+.hk-panel-inner{margin-left:22px}
+.hk-row-btn{gap:12px;padding:18px 16px}
+.hk-row-hint{display:none}
 .quotes{grid-template-columns:1fr;max-width:520px}
 .story-grid{grid-template-columns:1fr;gap:40px}
 .story-photo{max-width:440px}
+.story-quote{padding:22px 20px;max-width:100%}
 .loop-row{grid-template-columns:1fr;max-width:520px}
-.price-card{padding:36px 26px}
+.price-card{padding:36px 26px;max-width:100%}
+.faq-item{padding:0 18px}
 .slot{padding:88px 0}
+.slot .btn{max-width:100%}
+.marquee{max-width:100%}
+.marquee-track{gap:44px}
+.marquee img{height:36px}
 }
 @media (max-width:480px){
-.phone{width:280px;height:600px}
-.btn{width:100%}
-.cta-row .btn-ghost{width:auto}
+.wrap{padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+.mobile-menu{padding-left:max(22px,env(safe-area-inset-left,0px));padding-right:max(22px,env(safe-area-inset-right,0px))}
+.nav{height:auto;min-height:60px;padding-top:6px;padding-bottom:6px;gap:6px}
+.brand{font-size:15px;gap:8px}
+.brand-mark,.brand-mark img,.brand img{width:26px;height:26px}
+.hero h1{font-size:clamp(28px,7.8vw,36px);line-height:1.08}
+.phone{width:min(280px,72vw);max-width:min(280px,72vw)}
+.btn{width:100%;white-space:normal}
+.cta-row .btn-ghost{width:auto;flex:0 0 auto}
+.hk-sticky{padding:12px 14px}
+.hk-sticky-title{font-size:15px}
+.hk-sticky-sub{font-size:13px}
+.price-card{padding:28px 18px}
+.sec-head h2,.slot h2{font-size:clamp(28px,7vw,40px)}
+.marquee-track{gap:36px}
+.marquee img{height:34px}
+}
+@media (prefers-reduced-motion:reduce){
+html{scroll-behavior:auto}
+.marquee-track{animation:none!important}
+.phone{transform:none!important;will-change:auto}
+html.has-scroll-motion .loop-step,
+.loop-step{opacity:1!important;transform:none!important;transition:none!important}
+.btn-navy{transition:none}
+.btn-navy:hover{transform:none}
 }
 </style>
 </head>
@@ -208,7 +301,7 @@ section{padding:64px 0}
 
 <header>
 <div class="wrap nav">
-<a class="brand" href="#top"><img src="/uploads/structuro-icon.png" alt="Structuro">Structuro</a>
+<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722c" alt="" width="30" height="30"></span>Structuro</a>
 <nav class="nav-links">
 <a href="#herken">Waarom</a>
 <a href="#hoe">Hoe het werkt</a>
@@ -219,7 +312,16 @@ section{padding:64px 0}
 <a class="login" href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav_signin" data-ph-cta="nav_signin">Inloggen</a>
 <a class="btn btn-navy" href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav" data-signup-bridge="nav" data-ph-cta="nav">Start 3 dagen gratis</a>
 </div>
-<div class="lang"><span class="on">NL</span><a href="https://www.structuro.ai/v2/onboarding?lang=en&utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=lang_en" style="padding:4px 7px;border-radius:8px;color:inherit;text-decoration:none">EN</a></div>
+<div class="lang" aria-label="Taal">
+<a class="on" href="#top" aria-label="Nederlands" aria-current="true" title="Nederlands">
+<svg width="22" height="16" viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="22" height="16" fill="#AE1C28"/><rect y="5.33" width="22" height="5.34" fill="#FFFFFF"/><rect y="10.67" width="22" height="5.33" fill="#21468B"/></svg>
+<span class="lang-code">NL</span>
+</a>
+<a href="https://www.structuro.ai/v2/onboarding?lang=en&utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=lang_en" aria-label="English" title="English" data-ph-cta="lang_en">
+<svg width="22" height="16" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/><path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="10"/><path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="6"/></svg>
+<span class="lang-code">EN</span>
+</a>
+</div>
 <button class="burger" aria-label="Menu" onclick="document.getElementById('mm').classList.toggle('open')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A2340" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
 </div>
 <nav class="mobile-menu" id="mm">
@@ -228,6 +330,7 @@ section{padding:64px 0}
 <a href="#prijs">Prijs</a>
 <a href="#faq">FAQ</a>
 <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_signin" data-ph-cta="mobile_signin">Inloggen</a>
+<a href="https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_nav" data-signup-bridge="mobile_nav" data-ph-cta="mobile_nav">Start 3 dagen gratis</a>
 </nav>
 </header>
 
@@ -245,16 +348,22 @@ section{padding:64px 0}
 </div>
 <div class="phone-col">
 <div class="phone" aria-hidden="true">
-<div class="p-status"><span>9:41</span><span>100%</span></div>
+<span class="iphone-side iphone-side--action"></span>
+<span class="iphone-side iphone-side--volup"></span>
+<span class="iphone-side iphone-side--voldown"></span>
+<span class="iphone-side iphone-side--power"></span>
+<span class="iphone-side iphone-side--camctl"></span>
+<div class="iphone-island"><span class="iphone-island-cam"></span></div>
+<div class="phone-screen">
 <div class="p-nav"><span class="b">Structuro</span><span style="opacity:.42">Stoppen</span></div>
 <div class="p-prog"><i class="on"></i><i class="on"></i><i></i></div>
-<div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding-top:8px">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding-top:6px;min-height:0">
 <div class="orb"></div>
-<div class="serif" style="font-size:20px">Kies je energie.</div>
+<div class="serif" style="font-size:18px">Kies je energie.</div>
 <div class="pills"><div class="pill">Laag</div><div class="pill active">Genoeg</div><div class="pill">Hoog</div></div>
 <p style="font-size:12px;color:var(--v2-text-soft);margin:0;text-align:center">Twee dingen zijn haalbaar.</p>
 <div style="width:100%;height:1px;background:rgba(26,35,64,.08)"></div>
-<div style="width:100%;display:flex;flex-direction:column;gap:8px">
+<div style="width:100%;display:flex;flex-direction:column;gap:7px">
 <div style="font-size:12px;color:var(--v2-text-soft)">Structuro stelt voor:</div>
 <div class="p-task"><span class="chk">1</span><span class="lbl">Aan dat ene project beginnen</span></div>
 <div class="p-task"><span class="chk">2</span><span class="lbl">Eén glas water pakken</span></div>
@@ -265,22 +374,19 @@ section{padding:64px 0}
 </div>
 </div>
 </div>
+</div>
 </section>
 
 <section class="herken" id="herken" data-screen-label="Welke herken jij">
 <div class="wrap">
+<div class="hk-root">
 <div class="sec-head">
 <div class="eyebrow center"><i></i>Waarom dit werkt</div>
 <h2 class="serif">Welke herken jij?</h2>
 <p class="support">Tik aan wat klopt. Je ziet per punt wat Structuro ermee doet.</p>
 </div>
-<div class="hk-grid">
-<button class="hk-card"><span class="q">Ik weet wát ik moet doen, ik begin alleen niet.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Dagstart geeft je <em>één eerste stap</em>, klein genoeg om nu te doen.</span></button>
-<button class="hk-card"><span class="q">Mijn hoofd zit vol, en een lange lijst maakt het erger.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Dump vangt alles op. Vandaag zie je <em>maximaal drie</em> dingen.</span></button>
-<button class="hk-card"><span class="q">De ene dag vlieg ik, de andere kom ik niet vooruit.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Je dag past zich aan je <em>energie</em> aan: laag, genoeg of hoog.</span></button>
-<button class="hk-card"><span class="q">Ik voel tijd niet, een dag heeft geen begin of eind.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Drie vaste momenten: open, doen, afsluiten. <em>Klaar is klaar.</em></span></button>
-<button class="hk-card"><span class="q">Sommige weken werkt mijn brein gewoon anders.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Structuro rekent <em>met je cyclus mee</em>, niet ertegenin.</span></button>
-<button class="hk-card"><span class="q">Te veel keuzes per dag en ik ben op.<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2D5A56" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></span><span class="a">Structuro kiest voor. Jij bevestigt met <em>één tik</em>.</span></button>
+<div id="hkStickyHost" class="hk-sticky-host" aria-live="polite"></div>
+<div id="hkMount" class="hk-rows"></div>
 </div>
 </div>
 </section>
@@ -303,7 +409,7 @@ section{padding:64px 0}
 <div class="press-label">Gezien in</div>
 <p class="press-quote">“Eindelijk iets dat niet uitgaat van een neurotypisch brein.”</p>
 <div class="marquee"><div class="marquee-track" id="mqt">
-<img src="/uploads/media/t-ad.png" alt="AD"><img src="/uploads/media/t-ed.png" alt="ED"><img src="/uploads/media/t-impuls.png" alt="Impuls &amp; Woortblind"><img src="/uploads/media/t-adhd.png" alt="ADHD café"><img src="/uploads/media/t-bd.png" alt="BD">
+<img src="/uploads/media/ad-hq.png" alt="AD" width="96" height="88" loading="lazy" decoding="async"><img src="/uploads/media/ed-hq.png" alt="ED" width="108" height="88" loading="lazy" decoding="async"><img src="/uploads/media/impuls-woortblind-hq.png" alt="Impuls &amp; Woortblind" width="232" height="88" loading="lazy" decoding="async"><img src="/uploads/media/adhd-cafe-hq.png" alt="ADHD café" width="150" height="88" loading="lazy" decoding="async"><img src="/uploads/media/bd-hq.png" alt="BD" width="98" height="88" loading="lazy" decoding="async">
 </div></div>
 </div>
 
@@ -389,7 +495,7 @@ section{padding:64px 0}
 <footer>
 <div class="wrap">
 <div class="foot-top">
-<a class="brand" href="#top"><img src="/uploads/structuro-icon.png" alt="">Structuro</a>
+<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722c" alt="" width="30" height="30"></span>Structuro</a>
 <nav class="foot-links">
 <a href="#herken">Waarom</a>
 <a href="#hoe">Hoe het werkt</a>
@@ -407,9 +513,210 @@ section{padding:64px 0}
 </footer>
 
 <script>
-document.querySelectorAll('.hk-card').forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('open')})});
+(function(){
+  var header=document.querySelector('header');
+  if(!header) return;
+  var scrolled=false;
+  function syncHeader(){
+    var next=window.scrollY>8;
+    if(next===scrolled) return;
+    scrolled=next;
+    header.classList.toggle('scrolled',scrolled);
+  }
+  window.addEventListener('scroll',syncHeader,{passive:true});
+  syncHeader();
+})();
+(function(){
+  var REASONS=[
+    {tag:'EXECUTIEF',title:'Taakinitiatie',short:'Ik weet wát ik moet doen, ik begin alleen niet.',body:'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',contentId:'herken_taakinitiatie'},
+    {tag:'COGNITIEF',title:'Werkgeheugen-overload',short:'Mijn hoofd zit vol, en een lange lijst maakt het erger.',body:'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te dóén in plaats van te onthouden.',contentId:'herken_werkgeheugen'},
+    {tag:'DOPAMINE',title:'Energie en motivatie',short:'De ene dag vlieg ik, de andere kom ik niet vooruit.',body:'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',contentId:'herken_energie'},
+    {tag:'TIJD',title:'Tijdblindheid',short:'Ik voel tijd niet, een dag heeft geen begin of eind.',body:'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',contentId:'herken_tijdblindheid'},
+    {tag:'CYCLUS',title:'Hormonen en focus',short:'Sommige weken werkt mijn brein gewoon anders.',body:'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',contentId:'herken_cyclus'},
+    {tag:'RUST',title:'Burn-out preventie',short:'Te veel keuzes per dag en ik ben op.',body:'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',contentId:'herken_keuzestress'}
+  ];
+  var stickyHost=document.getElementById('hkStickyHost');
+  var mount=document.getElementById('hkMount');
+  if(!stickyHost||!mount) return;
+
+  var picked={};
+  var lastPrimary=null;
+  var stickyEl,dotsEl,titleEl,subEl,ctaEl;
+
+  function capturePh(event,props){
+    try{if(window.posthog&&typeof window.posthog.capture==='function'){window.posthog.capture(event,props||{},{send_instantly:true});}}catch(e){}
+  }
+  function countPicked(){
+    var n=0;for(var k in picked){if(picked[k]) n++;}return n;
+  }
+  function message(count){
+    if(count<=2) return {t:count+' van 6 herkenbaar',s:'Precies hiervoor is Structuro gebouwd.'};
+    if(count<=4) return {t:count+' van 6 herkenbaar',s:'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.'};
+    return {t:count+' van 6 herkenbaar',s:'Meerdere punten? Dat is normaal bij ADHD.'};
+  }
+  function bridgeUrl(contentId){
+    if(typeof window.structuroSignupBridgeUrl==='function') return window.structuroSignupBridgeUrl(contentId);
+    return 'https://www.structuro.ai/v2/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content='+(contentId||'herken_sticky');
+  }
+  function primaryContentId(){
+    if(lastPrimary!==null&&picked[lastPrimary]) return REASONS[lastPrimary].contentId;
+    for(var i=0;i<REASONS.length;i++){if(picked[i]) return REASONS[i].contentId;}
+    return 'herken_sticky';
+  }
+  function syncSticky(){
+    var count=countPicked();
+    stickyHost.classList.toggle('is-visible',count>0);
+    if(count===0) return;
+    var msg=message(count);
+    titleEl.textContent=msg.t;
+    subEl.textContent=msg.s;
+    ctaEl.href=bridgeUrl(primaryContentId());
+    ctaEl.setAttribute('data-ph-cta',primaryContentId());
+    ctaEl.setAttribute('data-signup-bridge',primaryContentId());
+    var dots=dotsEl.querySelectorAll('.hk-dot');
+    for(var i=0;i<dots.length;i++){dots[i].classList.toggle('is-on',!!picked[i]);}
+  }
+  function syncRow(k){
+    var row=mount.querySelector('[data-hk-row="'+k+'"]');
+    if(!row) return;
+    var on=!!picked[k];
+    row.classList.toggle('is-on',on);
+    var btn=row.querySelector('.hk-row-btn');
+    var hint=row.querySelector('.hk-row-hint');
+    var panel=row.querySelector('.hk-panel-wrap');
+    if(btn) btn.setAttribute('aria-expanded',on?'true':'false');
+    if(hint){hint.hidden=!on;hint.textContent=on?'Ja, dit ben ik':'';}
+    if(panel) panel.classList.toggle('is-open',on);
+  }
+  function toggle(k){
+    picked[k]=!picked[k];
+    if(picked[k]) lastPrimary=k;
+    capturePh('zelftest_recognition_toggled',{
+      card_index:k,
+      card_id:REASONS[k].contentId,
+      recognized:picked[k],
+      recognition_count:countPicked(),
+      page_path:window.location.pathname||'/v2/'
+    });
+    syncRow(k);
+    syncSticky();
+  }
+
+  stickyEl=document.createElement('div');
+  stickyEl.className='hk-sticky';
+  dotsEl=document.createElement('div');
+  dotsEl.className='hk-dots';
+  for(var d=0;d<REASONS.length;d++){
+    var dot=document.createElement('span');
+    dot.className='hk-dot';
+    dotsEl.appendChild(dot);
+  }
+  stickyEl.appendChild(dotsEl);
+  var copy=document.createElement('div');
+  copy.className='hk-sticky-copy';
+  titleEl=document.createElement('div');
+  titleEl.className='hk-sticky-title';
+  subEl=document.createElement('div');
+  subEl.className='hk-sticky-sub';
+  copy.appendChild(titleEl);
+  copy.appendChild(subEl);
+  stickyEl.appendChild(copy);
+  ctaEl=document.createElement('a');
+  ctaEl.className='hk-sticky-cta';
+  ctaEl.href=bridgeUrl('herken_sticky');
+  ctaEl.setAttribute('data-ph-cta','herken_sticky');
+  ctaEl.setAttribute('data-signup-bridge','herken_sticky');
+  ctaEl.textContent='Start Structuro gratis';
+  ctaEl.addEventListener('click',function(){
+    capturePh('zelftest_cta_clicked',{
+      cta_id:primaryContentId(),
+      recognition_count:countPicked(),
+      page_path:window.location.pathname||'/v2/'
+    });
+  });
+  stickyEl.appendChild(ctaEl);
+  stickyHost.appendChild(stickyEl);
+
+  REASONS.forEach(function(r,k){
+    var row=document.createElement('div');
+    row.className='hk-row';
+    row.setAttribute('data-hk-row',String(k));
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.className='hk-row-btn';
+    btn.setAttribute('aria-expanded','false');
+    btn.innerHTML='<span class="hk-check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+    var short=document.createElement('span');
+    short.className='hk-row-short';
+    short.textContent=r.short;
+    btn.appendChild(short);
+    var hint=document.createElement('span');
+    hint.className='hk-row-hint';
+    hint.hidden=true;
+    btn.appendChild(hint);
+    btn.addEventListener('click',function(){toggle(k);});
+    row.appendChild(btn);
+    var wrap=document.createElement('div');
+    wrap.className='hk-panel-wrap';
+    var panel=document.createElement('div');
+    panel.className='hk-panel';
+    var inner=document.createElement('div');
+    inner.className='hk-panel-inner';
+    inner.innerHTML='<div class="hk-panel-tag">STRUCTURO • '+r.tag+'</div><div class="hk-panel-title">'+r.title+'</div><p class="hk-panel-body">'+r.body+'</p>';
+    panel.appendChild(inner);
+    wrap.appendChild(panel);
+    row.appendChild(wrap);
+    mount.appendChild(row);
+  });
+})();
 document.getElementById('mqt').innerHTML+=document.getElementById('mqt').innerHTML;
 document.querySelectorAll('#mm a').forEach(function(a){a.addEventListener('click',function(){document.getElementById('mm').classList.remove('open')})});
+
+/* Light scroll-motion: hero phone parallax + loop-step reveal */
+(function(){
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
+  if(reduce.matches) return;
+
+  document.documentElement.classList.add('has-scroll-motion');
+
+  var steps=document.querySelectorAll('.loop-step');
+  if(steps.length){
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(!entry.isIntersecting) return;
+          entry.target.classList.add('is-in');
+          io.unobserve(entry.target);
+        });
+      },{threshold:0.22,rootMargin:'0px 0px -6% 0px'});
+      steps.forEach(function(step){io.observe(step);});
+    }else{
+      steps.forEach(function(step){step.classList.add('is-in');});
+    }
+  }
+
+  var phone=document.querySelector('.hero .phone');
+  var hero=document.querySelector('.hero');
+  if(!phone||!hero) return;
+
+  var ticking=false;
+  function applyParallax(){
+    ticking=false;
+    var rect=hero.getBoundingClientRect();
+    var span=Math.max(rect.height*0.85,1);
+    var progress=Math.min(1,Math.max(0,-rect.top/span));
+    var y=progress*22;
+    var rot=progress*-2.4;
+    phone.style.transform='translate3d(0,'+y.toFixed(2)+'px,0) rotate('+rot.toFixed(3)+'deg)';
+  }
+  function onScroll(){
+    if(ticking) return;
+    ticking=true;
+    requestAnimationFrame(applyParallax);
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  applyParallax();
+})();
 </script>
 </body>
 </html>
