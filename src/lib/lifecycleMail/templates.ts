@@ -47,12 +47,43 @@ const MAIL = {
   font: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
 } as const;
 
+const FOUNDER = {
+  name: "Niels van den Hurk",
+  title: "Founder Structuro",
+  /** Hosted op app-origin; circulaire crop via CSS (email-safe). */
+  photoPath: "/jasper/niels.jpg",
+} as const;
+
+function founderSignatureHtml(photoUrl: string): string {
+  const name = escapeHtml(FOUNDER.name);
+  const title = escapeHtml(FOUNDER.title);
+  const src = escapeHtml(photoUrl);
+  return `
+              <p style="margin:0 0 14px 0;font-family:${MAIL.font};font-size:14px;line-height:1.5;color:${MAIL.muted};">Groet,</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td valign="middle" width="56" style="width:56px;padding:0 14px 0 0;">
+                    <img src="${src}" width="56" height="56" alt="${name}" style="display:block;width:56px;height:56px;border-radius:50%;border:1px solid ${MAIL.border};object-fit:cover;" />
+                  </td>
+                  <td valign="middle" style="padding:0;">
+                    <div style="font-family:${MAIL.font};font-size:15px;font-weight:600;line-height:1.3;color:${MAIL.ink};">${name}</div>
+                    <div style="font-family:${MAIL.font};font-size:13px;line-height:1.4;color:${MAIL.muted};padding-top:2px;">${title}</div>
+                  </td>
+                </tr>
+              </table>`;
+}
+
+function founderSignatureText(): string {
+  return `Groet,\n${FOUNDER.name}\n${FOUNDER.title}`;
+}
+
 function wrapHtml(opts: {
   preview: string;
   bodyHtml: string;
   ctaLabel: string;
   ctaUrl: string;
   unsubscribeUrl: string;
+  photoUrl: string;
 }): string {
   const preview = escapeHtml(opts.preview);
   const ctaLabel = escapeHtml(opts.ctaLabel);
@@ -93,10 +124,12 @@ function wrapHtml(opts: {
             </td>
           </tr>
           <tr>
-            <td style="padding:28px 24px 28px 24px;font-family:${MAIL.font};font-size:14px;line-height:1.5;color:${MAIL.muted};">
-              Groet,<br />
-              Niels
-              <br /><br />
+            <td style="padding:28px 24px 12px 24px;font-family:${MAIL.font};">
+              ${founderSignatureHtml(opts.photoUrl)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 24px 28px 24px;font-family:${MAIL.font};font-size:14px;line-height:1.5;color:${MAIL.muted};">
               <a href="${opts.unsubscribeUrl}" style="color:${MAIL.muted};text-decoration:underline;">Afmelden voor deze mails</a>
             </td>
           </tr>
@@ -127,8 +160,9 @@ function buildMail(opts: {
 }): LifecycleRenderedMail {
   const origin = getAppOrigin();
   const ctaUrl = `${origin}${opts.ctaPath.startsWith("/") ? opts.ctaPath : `/${opts.ctaPath}`}`;
+  const photoUrl = `${origin}${FOUNDER.photoPath}`;
   const bodyText = opts.paragraphs.join("\n\n");
-  const text = `${bodyText}\n\n${opts.ctaLabel}: ${ctaUrl}\n\nGroet,\nNiels\n\nAfmelden: ${opts.unsubscribeUrl}`;
+  const text = `${bodyText}\n\n${opts.ctaLabel}: ${ctaUrl}\n\n${founderSignatureText()}\n\nAfmelden: ${opts.unsubscribeUrl}`;
   const bodyHtml = opts.paragraphs
     .map(
       (p) =>
@@ -146,6 +180,7 @@ function buildMail(opts: {
       ctaLabel: opts.ctaLabel,
       ctaUrl,
       unsubscribeUrl: opts.unsubscribeUrl,
+      photoUrl,
     }),
     ctaPath: opts.ctaPath,
   };

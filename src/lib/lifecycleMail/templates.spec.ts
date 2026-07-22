@@ -64,6 +64,21 @@ describe("lifecycleMail templates", () => {
     expect(mail.text).not.toContain("—");
   });
 
+  it("heeft founder-contactkaart met foto en naam", () => {
+    const mail = renderLifecycleMail(
+      "s4_pre_paywall",
+      base,
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.html).toContain("/jasper/niels.jpg");
+    expect(mail.html).toContain("Niels van den Hurk");
+    expect(mail.html).toContain("Founder Structuro");
+    expect(mail.html).toContain("border-radius:50%");
+    expect(mail.text).toContain("Niels van den Hurk");
+    expect(mail.text).toContain("Founder Structuro");
+    expect(mail.text).not.toMatch(/^Groet,\nNiels$/m);
+  });
+
   it("skip placeholder-namen in aanhef", () => {
     expect(resolveGreetingName({ ...base, preferred_name: "Gebruiker" })).toBeNull();
     expect(resolveGreetingName({ ...base, preferred_name: null })).toBeNull();
