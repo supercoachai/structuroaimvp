@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { v2SuggestionsRecordNl } from "./v2ThingBank";
+
 export type V2Energy = "low" | "enough" | "high";
 
 export type V2State = {
@@ -164,24 +166,9 @@ export function useV2(): V2ContextValue {
 /** Voorgekauwd ding met taak-energie (moeilijkheid), zichtbaar in de keuzelijst. */
 export type V2Suggestion = { title: string; energy: V2Energy };
 
-/** Voorgekauwde dingen per energie-bak. Geen minuten, geen tijdblindheid. */
-export const V2_SUGGESTIONS: Record<V2Energy, V2Suggestion[]> = {
-  low: [
-    { title: "Eén glas water pakken", energy: "low" },
-    { title: "Eén bericht beantwoorden", energy: "low" },
-    { title: "Twee minuten opruimen", energy: "low" },
-  ],
-  enough: [
-    { title: "Die ene mail versturen", energy: "enough" },
-    { title: "Tien minuten opruimen", energy: "enough" },
-    { title: "Een blokje om", energy: "enough" },
-  ],
-  high: [
-    { title: "Aan dat ene project beginnen", energy: "high" },
-    { title: "Administratie wegwerken", energy: "high" },
-    { title: "Een afspraak inplannen", energy: "high" },
-  ],
-};
+/** Voorgekauwde dingen per energie-bak. Bron: v2ThingBank (NL-spiegel voor legacy). */
+export const V2_SUGGESTIONS: Record<V2Energy, V2Suggestion[]> =
+  v2SuggestionsRecordNl();
 
 export const V2_ENERGY_OPTIONS: { value: V2Energy; label: string; hint: string }[] = [
   { value: "low", label: "Laag", hint: "Klein en zacht is prima vandaag." },

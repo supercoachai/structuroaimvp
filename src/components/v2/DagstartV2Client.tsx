@@ -21,6 +21,7 @@ import { recordV2EnergyForToday } from "./v2Adaptive";
 import V2IntroStep from "./V2IntroStep";
 import V2ProgressDots from "./V2ProgressDots";
 import { trackV2DagstartComplete } from "./v2Analytics";
+import { useI18n } from "@/lib/i18n";
 
 /** Energy/adjust/done: CycleRing e.d. niet in welcome first paint. */
 const V2ProposeStep = dynamic(() => import("./V2ProposeStep"), {
@@ -53,6 +54,7 @@ function stepNumberFor(phase: Phase): number {
 
 export default function DagstartV2Client() {
   const go = useV2Go();
+  const { t, locale } = useI18n();
   const { state, update } = useV2();
   const [phase, setPhase] = useState<Phase>("welcome");
   const [history, setHistory] = useState<Phase[]>([]);
@@ -62,13 +64,16 @@ export default function DagstartV2Client() {
   const things = v2NormalizeThings(state.things);
 
   const proposals = useMemo(
-    () => (state.energy ? v2StructuroThingPicks(state.energy, maxSlots) : []),
-    [state.energy, maxSlots],
+    () =>
+      state.energy
+        ? v2StructuroThingPicks(state.energy, maxSlots, locale)
+        : [],
+    [state.energy, maxSlots, locale],
   );
 
   const adjustOptions = useMemo(
-    () => v2BuildAdjustOptions(state.energy, selectedThings),
-    [state.energy, selectedThings],
+    () => v2BuildAdjustOptions(state.energy, selectedThings, 8, locale),
+    [state.energy, selectedThings, locale],
   );
 
   useEffect(() => {
@@ -106,7 +111,9 @@ export default function DagstartV2Client() {
   const pickEnergy = (energy: V2Energy) => {
     recordV2EnergyForToday(energy);
     update({ energy });
-    setSelectedThings(v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy)));
+    setSelectedThings(
+      v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy), locale),
+    );
   };
 
   const confirmProposals = () => {
@@ -150,7 +157,7 @@ export default function DagstartV2Client() {
         <>
           <V2Header
             exitHref="/v2/home"
-            exitLabel="Stoppen"
+            exitLabel={t("v2.flowStop")}
             onBack={canGoBack ? goBack : undefined}
             brandMode="flow"
           />
@@ -198,17 +205,17 @@ export default function DagstartV2Client() {
                 <V2DoneStep
                   things={things}
                   onContinue={toHome}
-                  continueLabel="Naar je dag"
+                  continueLabel={t("v2.flowToDay")}
                   secondary={
                     <button type="button" className="v2-link" onClick={finishDay}>
-                      Vandaag al genoeg
+                      {t("v2.flowEnoughToday")}
                     </button>
                   }
                 />
               ) : null}
             </section>
             {showReassurance ? (
-              <V2Reassurance>Stoppen kan altijd.</V2Reassurance>
+              <V2Reassurance>{t("v2.flowAlwaysStop")}</V2Reassurance>
             ) : null}
           </div>
         </div>

@@ -1,10 +1,16 @@
+import type { Locale } from "@/lib/i18n/types";
+
 import {
   V2_ENERGY_OPTIONS,
-  V2_SUGGESTIONS,
   type V2Energy,
   type V2Suggestion,
 } from "./V2Context";
 import { v2IsAnxietyTitle } from "./v2Anxiety";
+import {
+  v2LocalizedSuggestions,
+  v2NormalizeLocale,
+  v2SeededShuffle,
+} from "./v2ThingBank";
 import { loadV2Tasks, todayYmd, type V2Task, type V2TaskEnergy } from "./v2Tasks";
 
 export { v2IsAnxietyTitle } from "./v2Anxiety";
@@ -23,10 +29,25 @@ export function v2AllowedSuggestionEnergies(energy: V2Energy): V2Energy[] {
   return ["low"];
 }
 
+function suggestionSeed(
+  energy: V2Energy,
+  locale?: Locale | string | null,
+  day = todayYmd(),
+): string {
+  return `${day}|${energy}|${v2NormalizeLocale(locale)}`;
+}
+
 /** Suggesties voor zelf-swipen (breder). Niet gebruiken na "Structuro kiest". */
-export function v2SuggestionsForDayEnergy(energy: V2Energy | null): V2Suggestion[] {
+export function v2SuggestionsForDayEnergy(
+  energy: V2Energy | null,
+  locale?: Locale | string | null,
+): V2Suggestion[] {
   const day = energy ?? "enough";
-  return v2AllowedSuggestionEnergies(day).flatMap((e) => V2_SUGGESTIONS[e]);
+  const lang = v2NormalizeLocale(locale);
+  const seed = suggestionSeed(day, lang);
+  return v2AllowedSuggestionEnergies(day).flatMap((e) =>
+    v2LocalizedSuggestions(e, lang, `${seed}|pool-${e}`),
+  );
 }
 
 /**
@@ -37,13 +58,16 @@ export function v2BuildAdjustOptions(
   energy: V2Energy | null,
   selectedThings: string[],
   max = 8,
+  locale?: Locale | string | null,
 ): string[] {
   const today = todayYmd();
   const openTitles = loadV2Tasks()
     .filter((t) => isTaskVisibleForPick(t, today))
     .map((t) => t.title.trim())
     .filter(Boolean);
-  const suggestions = v2SuggestionsForDayEnergy(energy).map((s) => s.title);
+  const suggestions = v2SuggestionsForDayEnergy(energy, locale).map(
+    (s) => s.title,
+  );
   const merged = [...selectedThings, ...openTitles, ...suggestions];
   const seen = new Set<string>();
   return merged
@@ -74,11 +98,16 @@ function isTaskVisibleForPick(task: V2Task, today: string): boolean {
 /**
  * Structuro kiest: maxSlots items, niet de hele bak.
  * Volgorde: open taken met deadline eerst (dichtste eerst), passend bij energie,
- * daarna vaste suggesties uit dezelfde energie-bak.
+ * daarna vaste suggesties uit dezelfde energie-bak (locale).
  * Anxiety-titels (Belasting etc.) worden overgeslagen in de default-picks.
  */
-export function v2StructuroThingPicks(energy: V2Energy | null, maxSlots: number): string[] {
+export function v2StructuroThingPicks(
+  energy: V2Energy | null,
+  maxSlots: number,
+  locale?: Locale | string | null,
+): string[] {
   const day = energy ?? "enough";
+  const lang = v2NormalizeLocale(locale);
   const slots = Math.max(1, Math.min(3, maxSlots));
   const today = todayYmd();
   const picks: string[] = [];
@@ -108,7 +137,11 @@ export function v2StructuroThingPicks(energy: V2Energy | null, maxSlots: number)
 
   for (const task of openTasks) push(task.title);
 
-  for (const s of V2_SUGGESTIONS[day]) push(s.title);
+  const bankPool = v2SeededShuffle(
+    v2LocalizedSuggestions(day, lang),
+    suggestionSeed(day, lang),
+  );
+  for (const s of bankPool) push(s.title);
 
   return picks.slice(0, slots);
 }

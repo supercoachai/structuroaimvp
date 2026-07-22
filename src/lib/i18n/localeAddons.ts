@@ -2,6 +2,7 @@ import type { Locale } from "./types";
 import { legalLocaleBundles } from "./legalLocale";
 import { onboardingLocale } from "./onboardingLocale";
 import { cycleLocale } from "./cycleLocale";
+import { v2Locale } from "./v2Locale";
 
 /**
  * Extra vertalingen (naast bundles.ts). Top-level keys: shutdown, tasks, dayStart, …
@@ -779,6 +780,7 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
     ...legalLocaleBundles.nl,
     onboarding: onboardingLocale.nl,
     cycle: cycleLocale.nl,
+    v2: v2Locale.nl,
   },
   en: {
     common: {
@@ -1550,5 +1552,6 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
     ...legalLocaleBundles.en,
     onboarding: onboardingLocale.en,
     cycle: cycleLocale.en,
+    v2: v2Locale.en,
   },
 };

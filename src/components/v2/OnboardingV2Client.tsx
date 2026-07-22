@@ -23,6 +23,7 @@ import type { V2CycleOptInStage } from "./V2CycleOptInStep";
 import V2ProgressDots from "./V2ProgressDots";
 import V2AccountSaveCta from "./V2AccountSaveCta";
 import { patchV2Settings } from "./v2Settings";
+import { useI18n } from "@/lib/i18n";
 
 /** Latere fases: CycleRing/heroicons/setup niet in welcome-bundle. */
 const V2ProposeStep = dynamic(() => import("./V2ProposeStep"), {
@@ -71,6 +72,7 @@ export default function OnboardingV2Client() {
   const go = useV2Go();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, locale } = useI18n();
   const { state, update } = useV2();
   const [phase, setPhase] = useState<Phase>("welcome");
   const [history, setHistory] = useState<Phase[]>([]);
@@ -93,13 +95,16 @@ export default function OnboardingV2Client() {
   const things = v2NormalizeThings(state.things);
 
   const proposals = useMemo(
-    () => (state.energy ? v2StructuroThingPicks(state.energy, maxSlots) : []),
-    [state.energy, maxSlots],
+    () =>
+      state.energy
+        ? v2StructuroThingPicks(state.energy, maxSlots, locale)
+        : [],
+    [state.energy, maxSlots, locale],
   );
 
   const adjustOptions = useMemo(
-    () => v2BuildAdjustOptions(state.energy, selectedThings),
-    [state.energy, selectedThings],
+    () => v2BuildAdjustOptions(state.energy, selectedThings, 8, locale),
+    [state.energy, selectedThings, locale],
   );
 
   useEffect(() => {
@@ -134,7 +139,9 @@ export default function OnboardingV2Client() {
 
   const pickEnergy = (energy: V2Energy) => {
     update({ energy });
-    setSelectedThings(v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy)));
+    setSelectedThings(
+      v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy), locale),
+    );
   };
 
   const proceedToEnergy = (extra?: { cyclusOptIn?: boolean }) => {
@@ -211,7 +218,7 @@ export default function OnboardingV2Client() {
         <>
           <V2Header
             exitHref="/v2"
-            exitLabel="Stoppen"
+            exitLabel={t("v2.flowStop")}
             onBack={canGoBack ? goBack : undefined}
             brandMode="flow"
           />
@@ -270,7 +277,7 @@ export default function OnboardingV2Client() {
                 <V2DoneStep
                   things={things}
                   onContinue={finish}
-                  continueLabel="Naar je dag"
+                  continueLabel={t("v2.flowToDay")}
                   secondary={
                     <V2AccountSaveCta content="v2_onboarding_done" />
                   }
@@ -278,7 +285,7 @@ export default function OnboardingV2Client() {
               ) : null}
             </section>
             {showReassurance ? (
-              <V2Reassurance>Stoppen kan altijd.</V2Reassurance>
+              <V2Reassurance>{t("v2.flowAlwaysStop")}</V2Reassurance>
             ) : null}
           </div>
         </div>

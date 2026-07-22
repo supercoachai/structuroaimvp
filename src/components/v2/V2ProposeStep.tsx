@@ -29,8 +29,8 @@ export default function V2ProposeStep({
   onAdjust,
   headerSlot,
   cycleInfo,
-  confirmLabel = "Dit is goed",
-  adjustLabel = "Zelf aanpassen",
+  confirmLabel,
+  adjustLabel,
 }: {
   energy: V2Energy | null;
   proposals: string[];
@@ -54,12 +54,18 @@ export default function V2ProposeStep({
   const orbColor = v2EnergyOrbColor(energy);
   const hasCycle = resolvedCycle != null;
   const energyHint = energy
-    ? V2_ENERGY_OPTIONS.find((o) => o.value === energy)?.hint
+    ? t(
+        `v2.energyHint${
+          energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"
+        }`,
+      )
     : null;
 
   const resolvedTitle =
     title ??
-    (energy ? "Dit stelt Structuro voor." : "Hoe zit je energie?");
+    (energy ? t("v2.proposeSuggests") : t("v2.proposeHowEnergy"));
+  const resolvedConfirm = confirmLabel ?? t("v2.proposeConfirm");
+  const resolvedAdjust = adjustLabel ?? t("v2.proposeAdjust");
 
   const phaseKey = hasCycle
     ? resolveCurrentPhaseKey(
@@ -139,13 +145,19 @@ export default function V2ProposeStep({
             maxWidth: "28ch",
           }}
         >
-          Tik wat klopt. Voorstellen volgen meteen.
+          {t("v2.proposeTapHint")}
         </p>
       ) : null}
 
-      <div className="v2-propose-pills" role="group" aria-label="Energie">
+      <div className="v2-propose-pills" role="group" aria-label={t("v2.proposeEnergyAria")}>
         {V2_ENERGY_OPTIONS.map((opt) => {
           const active = energy === opt.value;
+          const labelKey =
+            opt.value === "low"
+              ? "v2.energyLow"
+              : opt.value === "high"
+                ? "v2.energyHigh"
+                : "v2.energyEnough";
           return (
             <button
               key={opt.value}
@@ -154,7 +166,7 @@ export default function V2ProposeStep({
               aria-pressed={active}
               onClick={() => onPickEnergy(opt.value)}
             >
-              {opt.label}
+              {t(labelKey)}
             </button>
           );
         })}
@@ -197,7 +209,7 @@ export default function V2ProposeStep({
               disabled={!canConfirm}
               onClick={onConfirm}
             >
-              {confirmLabel}
+              {resolvedConfirm}
             </button>
             <button
               type="button"
@@ -205,7 +217,7 @@ export default function V2ProposeStep({
               onClick={onAdjust}
               disabled={!energy}
             >
-              {adjustLabel}
+              {resolvedAdjust}
             </button>
           </div>
         </>
