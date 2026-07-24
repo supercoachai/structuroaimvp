@@ -17,8 +17,8 @@ const VERSION_KEY = "structuro_onboarding_version_local";
 const LOCAL_MODE_COOKIE = "structuro_local_mode";
 
 function ctaLink(page: Page) {
-  // Organic /start CTA → V2 onboarding (productiepad tot cutover).
-  return page.locator('a[href="/v2/onboarding"]').first();
+  // Organic /start CTA → v1 onboarding (geen v2-lekkage).
+  return page.locator('a[href="/onboarding"]').first();
 }
 
 /**
@@ -91,7 +91,7 @@ test.describe("Anonieme activatie-funnel", () => {
     await expect(cta).toBeEnabled();
   });
 
-  test("(b) organic CTA landt op /v2/onboarding zonder v1 local-mode cookie", async ({
+  test("(b) organic CTA landt op /onboarding met local-mode cookie", async ({
     page,
     context,
   }) => {
@@ -106,19 +106,21 @@ test.describe("Anonieme activatie-funnel", () => {
 
     await clickCtaWhenHydrated(page);
 
-    await page.waitForURL(/\/v2\/onboarding(\/|\?|$)/, {
+    await page.waitForURL(/\/onboarding(\/|\?|$)/, {
       timeout: 20_000,
       waitUntil: "commit",
     });
-    expect(page.url()).toMatch(/\/v2\/onboarding/);
+    expect(page.url()).toMatch(/\/onboarding/);
+    expect(page.url()).not.toMatch(/\/v2\//);
 
-    // Organic → V2: geen v1 anonymous onboarding-cookie.
     const cookies = await context.cookies();
     const localMode = cookies.find((c) => c.name === LOCAL_MODE_COOKIE);
-    expect(localMode).toBeUndefined();
+    expect(localMode?.value).toBe("1");
   });
 
-  test("(c) her-klik organic CTA blijft naar /v2/onboarding", async ({ page }) => {
+  test("(c) her-klik organic CTA blijft naar /onboarding zonder data-wipe", async ({
+    page,
+  }) => {
     await page.goto("/start", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
       try {
@@ -128,7 +130,7 @@ test.describe("Anonieme activatie-funnel", () => {
       }
     });
     await clickCtaWhenHydrated(page);
-    await page.waitForURL(/\/v2\/onboarding(\/|\?|$)/, {
+    await page.waitForURL(/\/onboarding(\/|\?|$)/, {
       timeout: 20_000,
       waitUntil: "commit",
     });
@@ -136,7 +138,7 @@ test.describe("Anonieme activatie-funnel", () => {
     await seedProgress(page);
 
     await page.goto("/start", { waitUntil: "domcontentloaded" });
-    await page.route("**/v2/onboarding**", async (route) => {
+    await page.route("**/onboarding**", async (route) => {
       if (route.request().resourceType() === "document") {
         await route.fulfill({
           status: 200,
@@ -149,7 +151,7 @@ test.describe("Anonieme activatie-funnel", () => {
     });
 
     await clickCtaWhenHydrated(page);
-    await page.waitForURL(/\/v2\/onboarding(\/|\?|$)/, {
+    await page.waitForURL(/\/onboarding(\/|\?|$)/, {
       timeout: 20_000,
       waitUntil: "commit",
     });

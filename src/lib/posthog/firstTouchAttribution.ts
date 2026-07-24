@@ -228,7 +228,7 @@ export function captureFirstTouchAttribution(): void {
     const fromOrganicPath =
       path === "/start" ||
       path.startsWith("/start/") ||
-      // Organic EU productiepad (tot cutover): /v2/onboarding.
+      // Legacy/preview hits op /v2/onboarding blijven organisch (geen TikTok).
       path === "/v2/onboarding" ||
       path.startsWith("/v2/onboarding/")
         ? "structuro_eu"

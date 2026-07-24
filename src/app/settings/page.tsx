@@ -37,11 +37,7 @@ import {
   SettingsTextLink,
   SettingsToggle,
 } from '@/components/settings/SettingsUi';
-import { refundMailtoHref } from '@/lib/refundContact';
 const NAME_KEY = 'structuro_user_name';
-
-/** Tijdelijk: abonnement-acties uit voor testers tot Stripe-flow live is. */
-const SUBSCRIPTION_ACTIONS_DISABLED = true;
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useI18n();
@@ -82,7 +78,9 @@ export default function SettingsPage() {
         if (user?.id) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('display_name, preferred_name, subscription_status, subscription_current_period_end, stripe_subscription_id')
+            .select(
+              'display_name, preferred_name, subscription_status, subscription_current_period_end, stripe_subscription_id'
+            )
             .eq('id', user.id)
             .maybeSingle();
           if (cancelled) return;
@@ -484,8 +482,20 @@ export default function SettingsPage() {
     });
   };
 
+  const canCancelSubscription =
+    Boolean(stripeSubscriptionId) &&
+    (subscriptionStatus === 'active' ||
+      subscriptionStatus === 'trialing' ||
+      subscriptionStatus === 'past_due');
+
   const subscriptionStatusLine = (() => {
     if (subscriptionStatus === 'active') return t('settings.subscriptionStatusActive');
+    if (subscriptionStatus === 'trialing') {
+      const until = formatPeriodEnd(subscriptionPeriodEnd);
+      return until
+        ? t('settings.subscriptionStatusTrialingUntil', { date: until })
+        : t('settings.subscriptionStatusTrialing');
+    }
     if (subscriptionStatus === 'cancelled') {
       return t('settings.subscriptionStatusCancelledEnd', {
         date: formatPeriodEnd(subscriptionPeriodEnd),
@@ -611,49 +621,38 @@ export default function SettingsPage() {
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
                   {subscriptionNeedsLink ? (
-                    SUBSCRIPTION_ACTIONS_DISABLED ? (
-                      <>
-                        <span className="text-sm font-medium text-slate-400">
-                          {t('settings.subscriptionSyncCta')}
-                        </span>
-                        <span className="text-sm font-medium text-slate-400">
-                          {t('settings.subscriptionGoAbonnement')}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <SettingsTextLink
-                          onClick={() => void handleSyncSubscription()}
-                          disabled={subscriptionSyncBusy}
-                        >
-                          {subscriptionSyncBusy
-                            ? t('settings.subscriptionSyncBusy')
-                            : t('settings.subscriptionSyncCta')}
-                        </SettingsTextLink>
-                        <Link
-                          href="/abonnement"
-                          className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
-                        >
-                          {t('settings.subscriptionGoAbonnement')}
-                        </Link>
-                      </>
-                    )
-                  ) : null}
-                  {subscriptionStatus === 'active' && stripeSubscriptionId ? (
                     <>
-                      <a
-                        href={refundMailtoHref(locale)}
+                      <SettingsTextLink
+                        onClick={() => void handleSyncSubscription()}
+                        disabled={subscriptionSyncBusy}
+                      >
+                        {subscriptionSyncBusy
+                          ? t('settings.subscriptionSyncBusy')
+                          : t('settings.subscriptionSyncCta')}
+                      </SettingsTextLink>
+                      <Link
+                        href="/abonnement"
                         className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
                       >
-                        {t('settings.refundSelfCta')}
-                      </a>
-                      <SettingsTextLink
-                        onClick={() => void handleCancelSubscription()}
-                        disabled={cancelBusy}
-                      >
-                        {cancelBusy ? t('settings.cancelBusy') : t('settings.cancelCta')}
-                      </SettingsTextLink>
+                        {t('settings.subscriptionGoAbonnement')}
+                      </Link>
                     </>
+                  ) : null}
+                  {canCancelSubscription ? (
+                    <SettingsTextLink
+                      onClick={() => void handleCancelSubscription()}
+                      disabled={cancelBusy}
+                    >
+                      {cancelBusy ? t('settings.cancelBusy') : t('settings.cancelCta')}
+                    </SettingsTextLink>
+                  ) : null}
+                  {!subscriptionNeedsLink && !canCancelSubscription ? (
+                    <Link
+                      href="/abonnement"
+                      className="text-sm font-medium text-blue-600 underline-offset-2 hover:underline"
+                    >
+                      {t('settings.subscriptionGoAbonnement')}
+                    </Link>
                   ) : null}
                 </div>
               </div>

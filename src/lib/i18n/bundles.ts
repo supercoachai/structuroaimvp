@@ -159,6 +159,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cancelDone: "Opzeggen staat aan. Je houdt toegang tot het einde van de periode.",
       cancelFail: "Kon niet opzeggen: {detail}",
       subscriptionStatusActive: "Actief",
+      subscriptionStatusTrialing: "Proefperiode actief",
+      subscriptionStatusTrialingUntil: "Proefperiode actief, tot {date}",
       subscriptionStatusCancelledEnd: "Opgezegd, toegang tot {date}",
       subscriptionStatusPastDue: "Betaling open",
       subscriptionStatusRefunded: "Terugbetaald",
@@ -173,16 +175,20 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "Geen abonnement gevonden voor dit e-mailadres in Stripe.",
       subscriptionSyncFail: "Kon status niet ophalen: {detail}",
       subscriptionGoAbonnement: "Naar abonnement",
-      refundSelfCta: "Mail voor geld terug",
+      refundSelfCta: "Terugbetaling aanvragen",
       refundModalBody:
-        "Je krijgt het volledige bedrag binnen 5-10 werkdagen terug op je rekening. Je toegang stopt direct. Doorgaan?",
+        "Je krijgt het volledige bedrag binnen 5-10 werkdagen terug. Je toegang stopt direct. Doorgaan?",
       refundModalConfirm: "Ja, terugbetalen",
       refundModalCancel: "Annuleren",
       refundBusy: "Bezig…",
-      refundDoneToast: "Terugbetaling gestart. Je ontvangt een mail.",
+      refundDoneToast: "Terugbetaling gestart. Je ontvangt een bevestiging per e-mail.",
       refundFailToast: "Kon geen terugbetaling starten: {detail}",
       refundPreviouslyRefunded:
-        "Voor een nieuw refund-verzoek, mail info@structuro.eu",
+        "Er is al een terugbetaling verwerkt voor dit account.",
+      refundOutsideWindow:
+        "De 14-dagen geld-terug-periode is verstreken. Je kunt wel opzeggen.",
+      refundNotEligible:
+        "Terugbetaling is nu niet beschikbaar. Je kunt wel opzeggen.",
       analyticsTitle: "Anonieme productanalyse",
       analyticsHint:
         "Optionele meetgegevens om de app te verbeteren. Geen inhoud van je taken of gedachten.",
@@ -465,10 +471,10 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat5: "Eindelijk rust in je hoofd. Elke dag opnieuw.",
       guaranteeLine: "Werkt het niet? Geld terug, geen vragen.",
       guaranteeIntro:
-        "Je hebt 14 dagen om te voelen of Structuro bij jouw brein past. Werkt het niet? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug en krijgt het volledige bedrag terug.",
-      guaranteeCtaBefore: "Wil je je geld terug? Mail",
-      guaranteeCtaAfter: ", je hoort binnen één werkdag.",
-      guaranteeMail: "info@structuro.eu",
+        "Je hebt 14 dagen om te voelen of Structuro bij jouw brein past. Werkt het niet? Volledige terugbetaling, geen vragen.",
+      guaranteeCtaBefore: "Werkt het niet?",
+      guaranteeCtaAfter: " Volledige terugbetaling, geen vragen.",
+      guaranteeMail: "",
       submitBusy: "Even geduld…",
       renewalDisclosure:
         "Je abonnement verlengt automatisch. Betaal je met iDEAL? Dan geef je ook een SEPA-incassomachtiging voor toekomstige termijnen. Opzeggen kan altijd in Instellingen.",
@@ -563,25 +569,23 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cta: "Kies dit abonnement",
       walletPayTitle: "Betaal snel met",
       walletPayHint: "Je kiest je betaalmethode op de veilige Stripe-pagina.",
-      guarantee:
-        "Werkt het niet? Mail info@structuro.eu met onderwerp 'Geld terug'. Je hoort binnen één werkdag terug.",
+      guarantee: "Werkt het niet? Binnen 14 dagen geld terug, geen vragen.",
       notConfigured: "Betalingen zijn nog niet geconfigureerd. Probeer het later opnieuw.",
       checkoutFail: "Kon de betaalpagina niet openen. Probeer het opnieuw.",
       waitingStripe: "Je betaling wordt verwerkt…",
       openApp: "Open de app",
       needLogin: "Log in om een abonnement te kiezen.",
-      refundMail: "Mail voor geld terug",
+      refundMail: "",
       stripePendingBody:
         "Je betaling is in behandeling. We sturen je binnen enkele minuten een bevestigingsmail. Je kunt deze pagina nu sluiten.",
       refreshStatus: "Ververs status",
     },
     subscription: {
       moneyBackTitle: "Werkt het niet? Geld terug, geen vragen.",
-      moneyBackBody:
-        "Niet tevreden binnen 14 dagen? Mail info@structuro.eu met onderwerp 'Geld terug'.",
+      moneyBackBody: "Niet tevreden binnen 14 dagen? Volledige terugbetaling, geen vragen.",
       moneyBackHowLink: "Hoe werkt dit?",
       moneyBackHowDetail:
-        "Je hoort binnen één werkdag terug. Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening.",
+        "Het bedrag staat meestal binnen 5 tot 10 werkdagen op je rekening.",
       paymentTrustLabel:
         "Veilig betalen via Stripe. Bij iDEAL geef je een SEPA-incassomachtiging voor verlengingen.",
       checkoutServiceRoleError:
@@ -745,6 +749,8 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cancelDone: "Cancellation is scheduled. You keep access until the period ends.",
       cancelFail: "Could not cancel: {detail}",
       subscriptionStatusActive: "Active",
+      subscriptionStatusTrialing: "Trial active",
+      subscriptionStatusTrialingUntil: "Trial active, until {date}",
       subscriptionStatusCancelledEnd: "Cancelling, access until {date}",
       subscriptionStatusPastDue: "Payment past due",
       subscriptionStatusRefunded: "Refunded",
@@ -759,16 +765,20 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
         "No subscription found in Stripe for this email address.",
       subscriptionSyncFail: "Could not fetch status: {detail}",
       subscriptionGoAbonnement: "Go to subscription",
-      refundSelfCta: "Email for refund",
+      refundSelfCta: "Request refund",
       refundModalBody:
         "You will receive the full amount back within 5-10 business days. Your access ends immediately. Continue?",
       refundModalConfirm: "Yes, refund me",
       refundModalCancel: "Cancel",
       refundBusy: "Working…",
-      refundDoneToast: "Refund initiated. You will receive an email.",
+      refundDoneToast: "Refund started. You will receive a confirmation email.",
       refundFailToast: "Could not start refund: {detail}",
       refundPreviouslyRefunded:
-        "For a new refund request, email info@structuro.eu",
+        "A refund has already been processed for this account.",
+      refundOutsideWindow:
+        "The 14-day money-back window has ended. You can still cancel.",
+      refundNotEligible:
+        "A refund is not available right now. You can still cancel.",
       analyticsTitle: "Anonymous product analytics",
       analyticsHint:
         "Optional usage metrics to improve the app. Never the text of your tasks or parked thoughts.",
@@ -1051,10 +1061,10 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       monthlyFeat5: "Finally quiet in your head. Every day anew.",
       guaranteeLine: "Not working? Full refund, no questions.",
       guaranteeIntro:
-        "You have 14 days to feel whether Structuro fits your brain. Not working? Email info@structuro.eu with subject 'Refund'. You hear back within one business day and get every cent back.",
-      guaranteeCtaBefore: "Want your money back? Email",
-      guaranteeCtaAfter: ", you'll hear back within one business day.",
-      guaranteeMail: "info@structuro.eu",
+        "You have 14 days to feel whether Structuro fits your brain. Not working? Full refund, no questions.",
+      guaranteeCtaBefore: "Not working?",
+      guaranteeCtaAfter: " Full refund, no questions.",
+      guaranteeMail: "",
       submitBusy: "Please wait…",
       renewalDisclosure:
         "Your subscription renews automatically. If you pay with iDEAL, you also authorize SEPA Direct Debit for future billing periods. You can cancel anytime in Settings.",
@@ -1146,25 +1156,23 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       cta: "Choose this plan",
       walletPayTitle: "Pay quickly with",
       walletPayHint: "You choose your payment method on the secure Stripe page.",
-      guarantee:
-        "Not working? Email info@structuro.eu with subject 'Refund'. You hear back within one business day.",
+      guarantee: "Not working? Full refund within 14 days, no questions.",
       notConfigured: "Payments are not configured yet. Please try again later.",
       checkoutFail: "Could not open checkout. Please try again.",
       waitingStripe: "Processing your payment…",
       openApp: "Open the app",
       needLogin: "Sign in to choose a subscription.",
-      refundMail: "Email for refund",
+      refundMail: "",
       stripePendingBody:
         "Your payment is being processed. We will send a confirmation email within a few minutes. You can close this page now.",
       refreshStatus: "Refresh status",
     },
     subscription: {
       moneyBackTitle: "Not working? Full refund, no questions.",
-      moneyBackBody:
-        "Not satisfied within 14 days? Email info@structuro.eu with subject 'Refund'.",
+      moneyBackBody: "Not satisfied within 14 days? Full refund, no questions.",
       moneyBackHowLink: "How does this work?",
       moneyBackHowDetail:
-        "We reply within one business day. The amount usually returns to your account within 5 to 10 business days.",
+        "The amount usually returns to your account within 5 to 10 business days.",
       paymentTrustLabel:
         "Secure checkout with Stripe. With iDEAL you authorize SEPA Direct Debit for renewals.",
       checkoutServiceRoleError:

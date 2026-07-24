@@ -30,15 +30,16 @@ type AcquisitionBridgeClientProps = {
 };
 
 /**
- * Organic EU: V2 onboarding. TikTok blijft v1-onboarding.
+ * Alle acquisitie-bridges (organic + TikTok) naar v1-onboarding.
+ * V2 is preview/experiment; geen productie-lekkage via /start.
  */
-function bridgeSignupHrefForChannel(channel: BridgeChannel): string {
-  return channel === "organic" ? "/v2/onboarding" : "/onboarding";
+function bridgeSignupHrefForChannel(_channel: BridgeChannel): string {
+  return "/onboarding";
 }
 
 /**
- * Alleen EU V2-landing (utm_campaign=eu_v2): attributie schrijven en doorsturen.
- * Kale /start en bio-links met andere campaigns blijven leesbaar.
+ * EU v2-landing (utm_campaign=eu_v2): attributie schrijven en soft-doorsturen
+ * naar v1-onboarding. Kale /start en andere campaigns blijven leesbaar.
  */
 function shouldSoftAdvanceFromEuLanding(searchParams: URLSearchParams): boolean {
   const campaign = (searchParams.get("utm_campaign") || "").toLowerCase();
@@ -111,11 +112,8 @@ function AcquisitionBridgeInner({
 
     event.preventDefault();
 
-    // V2 heeft eigen localStorage-state (V2Provider); geen v1 anonymous reset.
-    if (channel !== "organic") {
-      const reset = shouldResetAnonymousOnboardingFromClient();
-      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
-    }
+    const reset = shouldResetAnonymousOnboardingFromClient();
+    enterAnonymousOnboarding(reset ? { reset: true } : undefined);
     window.location.assign(softAdvanceHref(signupHref, searchParams));
   }
 

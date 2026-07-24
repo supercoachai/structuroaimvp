@@ -88,7 +88,7 @@ export function resolveAcquisitionAttribution(input: {
   const refDomain = referrerDomain(input.referrer);
 
   const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
-  // Organic EU productiepad (tot cutover): /v2/onboarding.
+  // Legacy/preview hits op /v2/onboarding blijven organisch (geen TikTok).
   const fromV2OrganicEntry =
     landing_path === "/v2/onboarding" ||
     landing_path.startsWith("/v2/onboarding/");

@@ -3,9 +3,9 @@
 
   /**
    * EU landing analytics (site=eu in PostHog).
-   * Primaire conversie: cta_clicked → structuro.ai/start → /v2/onboarding → signup_completed.
-   * Organisch EU: /start + utm_source=structuro_eu (attributie-bridge; /start auto-advances bij eu_v2).
-   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (blijft v1).
+   * Primaire conversie: cta_clicked → structuro.ai/start → /onboarding → signup_completed.
+   * Organisch EU: /start + utm_source=structuro_eu (attributie-bridge; /start auto-advances bij eu_v2 naar v1).
+   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (v1).
    * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
    * Verouderde section_id "waarom" in historische data: sectie heet nu brein-termen / waarom-nodig.
    */
