@@ -22,7 +22,6 @@ import {
   trackV2QuoteShown,
   trackV2ReturnReminderDismissed,
   trackV2ReturnReminderShown,
-  trackV2ShutdownNudgeShown,
   trackV2SkipDay1HookShown,
   trackV2WhySuggestionAccepted,
   trackV2WhySuggestionShown,
@@ -40,9 +39,10 @@ import { markV2OpenTaskReminderShown } from "./v2OpenTaskReminder";
 import { markV2QuoteShown } from "./v2Quotes";
 import { ensureV2ThingsHaveTasks } from "./v2MicroDefaults";
 import { dismissCycleOptInPrompt } from "./v2CycleOptInPrompt";
-import { shouldShowAccountSavePrompt } from "./v2AccountSavePrompt";
-import V2AccountSaveCta from "./V2AccountSaveCta";
 import { patchV2Settings } from "./v2Settings";
+import { getV2EnergyForToday } from "./v2Adaptive";
+import { v2TaskEnergyToDay } from "./v2EnergyMeta";
+import V2TaskBattery from "./V2TaskBattery";
 import {
   findV2TaskByTitle,
   saveV2Tasks,
@@ -75,9 +75,6 @@ function trackPromptShown(prompt: V2HomePrompt): void {
     case "day1_skip_hook":
       trackV2SkipDay1HookShown();
       break;
-    case "shutdown_nudge":
-      trackV2ShutdownNudgeShown();
-      break;
     case "widget_hint":
       trackV2ReturnReminderShown({ channel: "widget_hint" });
       break;
@@ -107,7 +104,6 @@ export default function HomeV2Client() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [tasks, setTasks] = useState<V2Task[]>([]);
   const [cycleSetupOpen, setCycleSetupOpen] = useState(false);
-  const [showAccountSave, setShowAccountSave] = useState(false);
 
   const things = v2NormalizeThings(state.things);
   const hasThings = v2HasThings(things);
@@ -132,10 +128,12 @@ export default function HomeV2Client() {
     trackV2OnboardingStep("home");
   }, [ready]);
 
+  // Herstel chip als journey-energy per ongeluk is gewist maar vandaag nog in adaptive staat.
   useEffect(() => {
-    if (!ready) return;
-    setShowAccountSave(shouldShowAccountSavePrompt());
-  }, [ready, state]);
+    if (!ready || state.energy) return;
+    const today = getV2EnergyForToday();
+    if (today) update({ energy: today });
+  }, [ready, state.energy, update]);
 
   useEffect(() => {
     setHeroIndex(0);
@@ -331,42 +329,6 @@ export default function HomeV2Client() {
       );
     }
 
-    if (homePrompt.kind === "shutdown_nudge") {
-      return (
-        <section className="v2-fade v2-evening-cloud" aria-live="polite">
-          <div className="v2-evening-cloud__body">
-            <span className="v2-evening-cloud__moon" aria-hidden>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M18.5 14.2A7.2 7.2 0 0 1 9.8 5.5 7.4 7.4 0 1 0 18.5 14.2Z"
-                  fill="currentColor"
-                  opacity="0.9"
-                />
-              </svg>
-            </span>
-            <p className="v2-evening-cloud__text">{homePrompt.line}</p>
-            <div className="v2-evening-cloud__actions">
-              <button
-                type="button"
-                className="v2-evening-cloud__cta"
-                onClick={() => go("/v2/shutdown")}
-              >
-                Naar dagafsluiting
-              </button>
-              <button
-                type="button"
-                className="v2-evening-cloud__later"
-                onClick={dismissPrompt}
-              >
-                Later
-              </button>
-            </div>
-          </div>
-          <span className="v2-evening-cloud__tail" aria-hidden />
-        </section>
-      );
-    }
-
     if (homePrompt.kind === "cycle_optin") {
       return (
         <section
@@ -423,7 +385,7 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
             >
               Naar dagstart
             </button>
@@ -434,7 +396,7 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
             >
               Naar dagstart
             </button>
@@ -493,8 +455,7 @@ export default function HomeV2Client() {
     );
   };
 
-  const isBottomPrompt =
-    homePrompt?.kind === "shutdown_nudge" || homePrompt?.kind === "why_suggestion";
+  const isBottomPrompt = homePrompt?.kind === "why_suggestion";
   const promptAtTop = cycleSetupOpen || (!isBottomPrompt && Boolean(homePrompt));
 
   return (
@@ -515,10 +476,13 @@ export default function HomeV2Client() {
 
         <header>
           <V2Eyebrow>Vandaag</V2Eyebrow>
-          <div className="mt-1 flex items-end justify-between gap-3">
+          <div className="mt-1 flex items-end justify-between gap-2">
             <h1
-              className="v2-serif min-w-0 flex-1"
-              style={{ fontSize: "1.875rem", letterSpacing: "-0.02em" }}
+              className="v2-serif min-w-0 flex-1 whitespace-nowrap"
+              style={{
+                fontSize: "clamp(1.35rem, 6.5vw, 1.875rem)",
+                letterSpacing: "-0.02em",
+              }}
             >
               {headline}
             </h1>
@@ -591,9 +555,16 @@ export default function HomeV2Client() {
                   lineHeight: 1.35,
                   letterSpacing: "-0.015em",
                   color: "var(--text)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
                 }}
               >
-                {activeThing}
+                <V2TaskBattery
+                  energy={v2TaskEnergyToDay(activeTask?.energy ?? null)}
+                  size={22}
+                />
+                <span className="min-w-0">{activeThing}</span>
               </h2>
 
               {microSteps.length > 0 ? (
@@ -669,12 +640,8 @@ export default function HomeV2Client() {
               </div>
             </section>
 
-            {showAccountSave ? (
-              <V2AccountSaveCta content="v2_home_after_win" surface="home" />
-            ) : null}
-
             <p
-              className="mt-auto pt-6 text-center text-[10.5px] italic"
+              className="mt-auto pt-6 text-center text-[10.5px]"
               style={{ color: "rgba(26,35,64,0.5)" }}
             >
               Meer hoeft niet vandaag.
@@ -690,7 +657,7 @@ export default function HomeV2Client() {
             </p>
             <button
               type="button"
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
               className="btn-primary mx-auto mt-5"
             >
               Doe je dagstart

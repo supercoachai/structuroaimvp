@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
 import { useI18n } from "@/lib/i18n";
+import { performClientLogout } from "@/lib/logoutClient";
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
 
 import V2CycleSettingsSection, {
@@ -78,6 +79,19 @@ export default function SettingsV2Client() {
 
   useEffect(() => {
     setShowInstallHint(shouldShowPwaInstallHint());
+  }, []);
+
+  useEffect(() => {
+    const section = new URLSearchParams(window.location.search).get("section");
+    if (
+      section === "basis" ||
+      section === "cyclus" ||
+      section === "meldingen" ||
+      section === "privacy" ||
+      section === "account"
+    ) {
+      setOpenId(section);
+    }
   }, []);
 
   useEffect(() => {
@@ -465,9 +479,13 @@ export default function SettingsV2Client() {
               >
                 {t("settings.tourCta")}
               </button>
-              <Link href="/v2/login" className="v2-settings-link">
+              <button
+                type="button"
+                className="v2-settings-link"
+                onClick={() => void performClientLogout(router)}
+              >
                 {t("settings.logout")}
-              </Link>
+              </button>
             </div>
           </V2SettingsAccordion>
         </div>

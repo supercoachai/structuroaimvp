@@ -19,9 +19,9 @@ const PHASE_ORDER: CyclePhaseKey[] = [
 ];
 
 const PHASE_BAR_SHORT: Record<CyclePhaseKey, string> = {
-  menstrual: "MENS.",
+  menstrual: "MENSTRUATIE",
   follicular: "FOLLICULAIR",
-  ovulation: "OVUL.",
+  ovulation: "OVULATIE",
   luteal: "LUTEAAL",
 };
 
@@ -70,6 +70,12 @@ export default function V2CycleInfoSheet({
         icon: "meaning",
         title: t("cycle.infoSheetMeaningTitle"),
         body: meaningBody,
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: t("cycle.infoSheetWhyTitle"),
+        body: t("cycle.infoSheetWhyBody"),
       },
       {
         key: "plan",

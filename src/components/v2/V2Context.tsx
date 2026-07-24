@@ -4,7 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -102,10 +102,12 @@ type V2ContextValue = {
 const V2Context = createContext<V2ContextValue | null>(null);
 
 export function V2Provider({ children }: { children: ReactNode }) {
+  // Eerste paint SSR = client (leeg), daarna layout-hydrate vóór user-klik.
+  // Zo geen hydration-mismatch én geen late useEffect die energie wist.
   const [state, setState] = useState<V2State>(v2EmptyState);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) setState(hydrateV2State(raw));

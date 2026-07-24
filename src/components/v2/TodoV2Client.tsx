@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
 import { V2_INFO_SHEETS } from "./v2InfoSheets";
-import { recordV2Snooze, v2AdaptiveDumpKey, v2AdaptiveTaskKey } from "./v2Adaptive";
+import { recordV2Snooze, v2AdaptiveTaskKey } from "./v2Adaptive";
 import { useV2 } from "./V2Context";
 import { v2NormalizeThings } from "./v2Things";
+import { v2TaskEnergyToDay } from "./v2EnergyMeta";
+import V2TaskBattery from "./V2TaskBattery";
 import {
+  compareV2TasksForList,
   emptyDraft,
   energyLabel,
   formatDeadline,
@@ -40,6 +43,7 @@ export default function TodoV2Client() {
   const [microDraft, setMicroDraft] = useState("");
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
   const [infoOpen, setInfoOpen] = useState(false);
+  const editAnchorRef = useRef<HTMLDivElement | null>(null);
 
   // Laad uit localStorage. Zaai bij een lege lijst de gekozen dingen van de reis.
   useEffect(() => {
@@ -58,22 +62,28 @@ export default function TodoV2Client() {
     setLoaded(true);
   }, [ready, loaded, state.things]);
 
+  // Inline-editor in beeld houden (geen jump naar pagina-onderkant).
+  useEffect(() => {
+    if (!draft || isNew) return;
+    editAnchorRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [draft?.id, isNew]);
+
   const persist = (next: V2Task[]) => {
     setTasks(next);
     saveV2Tasks(next);
   };
 
   const visibleTasks = useMemo(
-    () => tasks.filter((t) => isV2TaskVisible(t) || t.done),
+    () =>
+      tasks
+        .filter((t) => isV2TaskVisible(t) || t.done)
+        .slice()
+        .sort(compareV2TasksForList),
     [tasks],
   );
   const snoozedTasks = useMemo(
     () => tasks.filter((t) => !t.done && !isV2TaskVisible(t)),
     [tasks],
-  );
-  const openCount = useMemo(
-    () => visibleTasks.filter((t) => !t.done).length,
-    [visibleTasks],
   );
 
   const toggleDone = (id: string) => {
@@ -106,6 +116,12 @@ export default function TodoV2Client() {
   };
 
   const startEdit = (task: V2Task) => {
+    // Eén open editor: heropenen van dezelfde rij sluit af.
+    if (draft && !isNew && draft.id === task.id) {
+      setDraft(null);
+      setMicroDraft("");
+      return;
+    }
     setDraft({ ...task, microSteps: task.microSteps.map((m) => ({ ...m })) });
     setIsNew(false);
     setMicroDraft("");
@@ -156,6 +172,22 @@ export default function TodoV2Client() {
     patchDraft({ microSteps: draft.microSteps.filter((m) => m.id !== id) });
 
   const formOpen = draft !== null;
+  const editingId = formOpen && !isNew ? draft.id : null;
+
+  const formProps = draft
+    ? {
+        draft,
+        isNew,
+        microDraft,
+        onMicroDraft: setMicroDraft,
+        onAddMicro: addMicro,
+        onRemoveMicro: removeMicro,
+        onPatch: patchDraft,
+        onSave: saveDraft,
+        onCancel: cancelEdit,
+        onDelete: removeTask,
+      }
+    : null;
 
   return (
     <V2AppShell>
@@ -164,38 +196,40 @@ export default function TodoV2Client() {
           <div className="v2-info-head">
             <V2Eyebrow>Je lijst</V2Eyebrow>
             <V2InfoHint
-              infoId="v2_todo_snooze"
+              infoId="v2_todo"
               expanded={infoOpen}
               onToggle={() => setInfoOpen((v) => !v)}
-              expandLabel={V2_INFO_SHEETS.snooze.openAria}
-              collapseLabel={V2_INFO_SHEETS.snooze.closeAria}
+              expandLabel={V2_INFO_SHEETS.todo.openAria}
+              collapseLabel={V2_INFO_SHEETS.todo.closeAria}
               controlsId="v2-todo-info-sheet"
             />
           </div>
           <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
             Taken
           </h1>
-          <p className="mt-1 text-[15px]" style={{ color: "var(--text-muted)" }}>
-            {openCount === 0
-              ? "Niets open. Dat mag. Voeg iets toe als je wilt."
-              : openCount === 1
-                ? "Eén ding staat open. Meer hoeft niet."
-                : `${openCount} dingen staan open. Pak er gerust één.`}
-          </p>
         </header>
 
         {visibleTasks.length > 0 ? (
           <div className="flex flex-col gap-2.5">
-            {visibleTasks.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                fading={fadingIds.has(task.id)}
-                onToggle={() => toggleDone(task.id)}
-                onEdit={() => startEdit(task)}
-                onSnooze={(until) => snoozeTask(task.id, until)}
-              />
-            ))}
+            {visibleTasks.map((task) => {
+              const editing = editingId === task.id && formProps != null;
+              return (
+                <div key={task.id} ref={editing ? editAnchorRef : undefined}>
+                  <TaskRow
+                    task={task}
+                    fading={fadingIds.has(task.id)}
+                    editing={editing}
+                    onToggle={() => toggleDone(task.id)}
+                    onEdit={() => startEdit(task)}
+                    onSnooze={(until) => snoozeTask(task.id, until)}
+                  >
+                    {editing && formProps ? (
+                      <TaskForm key={draft!.id} {...formProps} compact />
+                    ) : null}
+                  </TaskRow>
+                </div>
+              );
+            })}
           </div>
         ) : null}
 
@@ -207,35 +241,23 @@ export default function TodoV2Client() {
           </p>
         ) : null}
 
-        {formOpen && draft ? (
-          <TaskForm
-            key={draft.id}
-            draft={draft}
-            isNew={isNew}
-            microDraft={microDraft}
-            onMicroDraft={setMicroDraft}
-            onAddMicro={addMicro}
-            onRemoveMicro={removeMicro}
-            onPatch={patchDraft}
-            onSave={saveDraft}
-            onCancel={cancelEdit}
-            onDelete={removeTask}
-          />
-        ) : (
+        {formOpen && isNew && formProps ? (
+          <TaskForm key={draft!.id} {...formProps} />
+        ) : !formOpen ? (
           <button type="button" onClick={startNew} className="btn-primary w-full">
             Nieuwe taak
           </button>
-        )}
+        ) : null}
       </div>
 
       <V2InfoSheet
         open={infoOpen}
         onClose={() => setInfoOpen(false)}
-        eyebrow={V2_INFO_SHEETS.snooze.eyebrow}
-        title={V2_INFO_SHEETS.snooze.title}
-        rows={V2_INFO_SHEETS.snooze.rows}
-        gotItLabel={V2_INFO_SHEETS.snooze.gotIt}
-        closeAria={V2_INFO_SHEETS.snooze.closeAria}
+        eyebrow={V2_INFO_SHEETS.todo.eyebrow}
+        title={V2_INFO_SHEETS.todo.title}
+        rows={V2_INFO_SHEETS.todo.rows}
+        gotItLabel={V2_INFO_SHEETS.todo.gotIt}
+        closeAria={V2_INFO_SHEETS.todo.closeAria}
         panelId="v2-todo-info-sheet"
       />
     </V2AppShell>
@@ -245,15 +267,19 @@ export default function TodoV2Client() {
 function TaskRow({
   task,
   fading,
+  editing = false,
   onToggle,
   onEdit,
   onSnooze,
+  children,
 }: {
   task: V2Task;
   fading?: boolean;
+  editing?: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onSnooze: (until: string | typeof V2_SNOOZE_REST) => void;
+  children?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
   const deadline = formatDeadline(task.dueDate);
@@ -264,6 +290,7 @@ function TaskRow({
   const microDone = task.microSteps.filter((m) => m.done).length;
   const hasDetails =
     Boolean(deadline || repeat || prio || energy || task.microSteps.length > 0 || task.why || task.outcome);
+  const showDetails = !editing && expanded;
 
   return (
     <div
@@ -299,28 +326,71 @@ function TaskRow({
 
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => {
+            if (editing) return;
+            setExpanded((v) => !v);
+          }}
           className="min-w-0 flex-1 text-left"
-          aria-expanded={expanded}
-          style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+          aria-expanded={editing || expanded}
+          style={{ background: "none", border: "none", padding: 0, cursor: editing ? "default" : "pointer" }}
         >
           <span
             style={{
               fontSize: 15,
               fontWeight: 500,
               color: task.done ? "var(--text-muted)" : "var(--text)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            {task.title}
+            <V2TaskBattery energy={v2TaskEnergyToDay(task.energy)} size={16} />
+            <span className="min-w-0">{task.title}</span>
           </span>
         </button>
 
-        <button type="button" onClick={onEdit} className="v2-link" style={{ padding: "2px 6px" }}>
-          Bewerken
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={editing ? "Bewerken sluiten" : "Bewerken"}
+          aria-pressed={editing}
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            marginTop: -4,
+            padding: 0,
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--text-muted)",
+            opacity: editing ? 0.85 : 0.42,
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </div>
 
-      {expanded ? (
+      {editing ? children : null}
+
+      {showDetails ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 36 }}>
           {hasDetails ? (
             <>
@@ -430,6 +500,7 @@ function TaskForm({
   onSave,
   onCancel,
   onDelete,
+  compact = false,
 }: {
   draft: V2Task;
   isNew: boolean;
@@ -441,17 +512,10 @@ function TaskForm({
   onSave: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  /** Inline onder een bestaande rij: iets compactere padding, geen grote titel. */
+  compact?: boolean;
 }) {
-  const hasAdvanced =
-    Boolean(draft.dueDate) ||
-    draft.repeat !== "none" ||
-    draft.priority !== null ||
-    draft.energy !== null ||
-    draft.durationBucket !== null ||
-    Boolean(draft.outcome?.trim()) ||
-    draft.microSteps.length > 0;
-
-  const [moreOpen, setMoreOpen] = useState(!isNew && hasAdvanced);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const deadlineChoice: "none" | "today" | "tomorrow" | "custom" = !draft.dueDate
     ? "none"
@@ -461,11 +525,26 @@ function TaskForm({
         ? "tomorrow"
         : "custom";
 
+  const canSave = draft.title.trim().length > 0;
+
   return (
-    <section className="v2-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 20 }}>
-      <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-        {isNew ? "Nieuwe taak" : "Taak bewerken"}
-      </h2>
+    <section
+      className={compact ? undefined : "v2-card"}
+      style={{
+        padding: compact ? "6px 0 0" : 20,
+        display: "flex",
+        flexDirection: "column",
+        gap: compact ? 14 : 16,
+        borderTop: compact ? "1px solid var(--border)" : undefined,
+        marginTop: compact ? 4 : undefined,
+        paddingTop: compact ? 14 : undefined,
+      }}
+    >
+      {!compact ? (
+        <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
+          Nieuwe taak
+        </h2>
+      ) : null}
 
       <div>
         <FieldLabel>Wat wil je doen?</FieldLabel>
@@ -481,23 +560,40 @@ function TaskForm({
       </div>
 
       <div>
-        <FieldLabel>Waarom? (optioneel)</FieldLabel>
-        <input
-          type="text"
-          className="v2-field"
-          value={draft.why ?? ""}
-          onChange={(e) => onPatch({ why: e.target.value || null })}
-          placeholder="Bijvoorbeeld: rust in mijn hoofd"
-          autoComplete="off"
-        />
+        <FieldLabel>Energie die het kost</FieldLabel>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {V2_ENERGY_TASK_OPTIONS.map((opt) => (
+            <button
+              key={String(opt.value)}
+              type="button"
+              className="v2-chip"
+              aria-pressed={draft.energy === opt.value}
+              onClick={() => onPatch({ energy: opt.value })}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!moreOpen ? (
         <button type="button" className="v2-link self-start" onClick={() => setMoreOpen(true)}>
-          Meer opties
+          Meer
         </button>
       ) : (
         <>
+          <div>
+            <FieldLabel>Waarom? (optioneel)</FieldLabel>
+            <input
+              type="text"
+              className="v2-field"
+              value={draft.why ?? ""}
+              onChange={(e) => onPatch({ why: e.target.value || null })}
+              placeholder="Bijvoorbeeld: rust in mijn hoofd"
+              autoComplete="off"
+            />
+          </div>
+
           <div>
             <FieldLabel>Wat levert het op? (optioneel)</FieldLabel>
             <input
@@ -609,23 +705,6 @@ function TaskForm({
           </div>
 
           <div>
-            <FieldLabel>Energie die het kost</FieldLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {V2_ENERGY_TASK_OPTIONS.map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  type="button"
-                  className="v2-chip"
-                  aria-pressed={draft.energy === opt.value}
-                  onClick={() => onPatch({ energy: opt.value })}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
             <FieldLabel>Duur (optioneel, voor focus)</FieldLabel>
             <p
               className="mb-2 text-[13px]"
@@ -708,13 +787,18 @@ function TaskForm({
           </div>
 
           <button type="button" className="v2-link self-start" onClick={() => setMoreOpen(false)}>
-            Minder opties
+            Minder
           </button>
         </>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button type="button" onClick={onSave} className="btn-primary w-full">
+        <button
+          type="button"
+          onClick={onSave}
+          className="btn-primary w-full"
+          disabled={!canSave}
+        >
           {isNew ? "Toevoegen" : "Opslaan"}
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

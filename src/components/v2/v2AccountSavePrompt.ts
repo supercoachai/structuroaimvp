@@ -2,17 +2,22 @@
 
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 
-import { hasV2FirstValue } from "./v2CycleOptInPrompt";
 import { patchV2Settings, readV2Settings } from "./v2Settings";
 
 /**
- * Soft "Bewaar met Google" op Home: pas ná eerste focus- of shutdown-win,
- * nooit direct na onboarding-binnenkomst.
+ * Soft "Bewaar met Google" op Home is verwijderd: account-save gebeurt in
+ * onboarding (V2AccountSaveStep). Altijd false zodat de home-CTA niet terugkomt.
  */
 export function shouldShowAccountSavePrompt(): boolean {
+  return false;
+}
+
+/**
+ * Direct na eerste onboarding-done: account-save voor guests, ook zonder firstValueAt.
+ */
+export function shouldShowPostOnboardingAccountSave(): boolean {
   if (typeof window === "undefined") return false;
   if (hasSupabaseAuthHintOnClient()) return false;
-  if (!hasV2FirstValue()) return false;
   if (readV2Settings().accountSavePromptDismissed) return false;
   return true;
 }

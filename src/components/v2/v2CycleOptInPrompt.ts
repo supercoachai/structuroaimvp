@@ -1,5 +1,7 @@
 "use client";
 
+import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
+
 import { patchV2Settings, readV2Settings } from "./v2Settings";
 import type { V2State } from "./V2Context";
 
@@ -19,6 +21,8 @@ export function hasV2FirstValue(): boolean {
 
 export function shouldShowCycleOptInPrompt(state: V2State): boolean {
   if (typeof window === "undefined") return false;
+  // Account: cycluskeuze zit in settings; niet elke ochtend opnieuw vragen.
+  if (hasSupabaseAuthHintOnClient()) return false;
   if (state.cyclusOptIn) return false;
   const settings = readV2Settings();
   if (settings.cycleOptInPromptDismissed) return false;

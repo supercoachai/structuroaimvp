@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { STRUCTURO_SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase/authStorage";
+
 import type { V2State } from "./V2Context";
 import {
   dismissCycleOptInPrompt,
@@ -19,8 +21,11 @@ const baseState: V2State = {
   cyclusOptIn: false,
 };
 
-function installLocalStorage() {
+function installLocalStorage(authHint = false) {
   const store = new Map<string, string>();
+  if (authHint) {
+    store.set(STRUCTURO_SUPABASE_AUTH_STORAGE_KEY, "session");
+  }
   const localStorage = {
     getItem: (k: string) => store.get(k) ?? null,
     setItem: (k: string, v: string) => {
@@ -34,6 +39,7 @@ function installLocalStorage() {
     },
   };
   vi.stubGlobal("localStorage", localStorage);
+  vi.stubGlobal("document", { cookie: "" });
   vi.stubGlobal("window", { localStorage });
   return localStorage;
 }
@@ -74,6 +80,12 @@ describe("v2CycleOptInPrompt", () => {
         cycleOptInPromptDismissed: true,
       }),
     );
+    expect(shouldShowCycleOptInPrompt(baseState)).toBe(false);
+  });
+
+  it("toont niet bij account-sessie (keuze zit in settings)", () => {
+    installLocalStorage(true);
+    markV2FirstValue();
     expect(shouldShowCycleOptInPrompt(baseState)).toBe(false);
   });
 });

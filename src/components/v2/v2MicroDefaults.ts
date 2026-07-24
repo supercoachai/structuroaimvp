@@ -15,6 +15,8 @@ import {
   type V2MicroStep,
   type V2Task,
 } from "./v2Tasks";
+import { v2DayEnergyToTask } from "./v2EnergyMeta";
+import { v2LookupThingEnergy } from "./v2Things";
 
 export function v2DefaultMicroTitlesForThing(
   title: string,
@@ -61,10 +63,20 @@ export function ensureV2ThingsHaveTasks(
     if (!existing) {
       const seed = emptyDraft();
       seed.title = title;
+      seed.energy = v2DayEnergyToTask(v2LookupThingEnergy(title));
       seed.microSteps = toMicroSteps(v2DefaultMicroTitlesForThing(title, lang));
       tasks = [...tasks, seed];
       changed = true;
       continue;
+    }
+    if (existing.energy == null) {
+      const inferred = v2DayEnergyToTask(v2LookupThingEnergy(title));
+      if (inferred) {
+        tasks = tasks.map((t) =>
+          t.id === existing.id ? { ...t, energy: inferred } : t,
+        );
+        changed = true;
+      }
     }
     if (existing.microSteps.length === 0) {
       tasks = tasks.map((t) =>

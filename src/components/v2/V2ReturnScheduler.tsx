@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Lokale herinneringen voor v2 (prototype).
  *
@@ -8,6 +6,9 @@
  *   een tab open blijft of bij een bezoek in het venster.
  * - Max 1 browsernotificatie per 24 uur (rollend venster).
  * - Widget_hint-variant toont een zachte banner op home i.p.v. Notification API.
+ * - Shutdown rond 21:30: alleen als Notification.permission al "granted" is;
+ *   geen nieuwe permission-prompt. Zonder permission: fallback = geen nudge
+ *   (Dag afsluiten blijft via home-loop / nav).
  *
  * Best effort: herplan bij tab-focus en visibilitychange.
  */
@@ -22,10 +23,16 @@ import {
   scheduleV2ReturnNotification,
 } from "./v2ReturnReminder";
 import {
+  clearV2ShutdownNotificationSchedule,
+  fireV2ShutdownNotification,
+  scheduleV2ShutdownNotification,
+} from "./v2ShutdownNudge";
+import {
   trackV2NotificationFired,
   trackV2OpenTaskReminderShown,
   trackV2QuoteShown,
   trackV2ReturnReminderShown,
+  trackV2ShutdownNudgeShown,
 } from "./v2Analytics";
 import {
   OPEN_TASK_REMINDER_LINE,
@@ -61,6 +68,14 @@ function runReminderCycle(state: V2State): void {
       trackV2OpenTaskReminderShown({ channel: "notification" });
     }
   }
+
+  // Open dag → 21:30 lokale notificatie (geen home-kaart). Permission fallback: stil.
+  const shutdownFired = fireV2ShutdownNotification(state);
+  if (shutdownFired) {
+    trackV2NotificationFired({ kind: "shutdown" });
+    trackV2ShutdownNudgeShown();
+  }
+  scheduleV2ShutdownNotification(state);
 }
 
 export function V2ReturnReminderScheduler() {
@@ -79,6 +94,7 @@ export function V2ReturnReminderScheduler() {
 
     return () => {
       clearV2ReturnNotificationSchedule();
+      clearV2ShutdownNotificationSchedule();
       window.removeEventListener("focus", onVisible);
       document.removeEventListener("visibilitychange", onVisible);
     };

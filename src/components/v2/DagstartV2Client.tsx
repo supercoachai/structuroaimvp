@@ -1,8 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
@@ -19,35 +17,24 @@ import {
   v2StructuroThingPicks,
 } from "./v2Things";
 import { recordV2EnergyForToday } from "./v2Adaptive";
-import V2IntroStep from "./V2IntroStep";
 import V2ProgressDots from "./V2ProgressDots";
 import { trackV2DagstartComplete } from "./v2Analytics";
 import { useI18n } from "@/lib/i18n";
-
-/** Energy/adjust/done: CycleRing e.d. niet in welcome first paint. */
-const V2ProposeStep = dynamic(() => import("./V2ProposeStep"), {
-  ssr: false,
-  loading: () => null,
-});
-const V2AdjustStep = dynamic(() => import("./V2AdjustStep"), {
-  ssr: false,
-  loading: () => null,
-});
-const V2DoneStep = dynamic(() => import("./V2DoneStep"), {
-  ssr: false,
-  loading: () => null,
-});
+import V2ProposeStep from "./V2ProposeStep";
+import V2AdjustStep from "./V2AdjustStep";
+import V2DoneStep from "./V2DoneStep";
 
 /**
- * Zelfde design-phone flow als onboarding:
- * welcome → energy+voorstellen → klaar. Escape: zelf aanpassen.
+ * Dagelijkse dagstart (terugkerend / met account):
+ * energy+voorstellen → klaar. Geen welkom-intro (ook onboarding start bij energy).
+ * Geen cyclus aan/uit-toggle: voorkeur zit in settings; status-ring mag wél.
+ * Escape: zelf aanpassen.
  */
-type Phase = "welcome" | "energy" | "adjust" | "done";
+type Phase = "energy" | "adjust" | "done";
 const TOTAL_STEPS = 3;
 
-/** welcome=0 (geen bar), energy=1, adjust=2, done=3 */
+/** energy=1, adjust=2, done=3 */
 function stepNumberFor(phase: Phase): number {
-  if (phase === "welcome") return 0;
   if (phase === "energy") return 1;
   if (phase === "adjust") return 2;
   return 3;
@@ -56,40 +43,45 @@ function stepNumberFor(phase: Phase): number {
 export default function DagstartV2Client() {
   const go = useV2Go();
   const { t, locale } = useI18n();
-  const { state, update } = useV2();
-  const searchParams = useSearchParams();
-  const startAtEnergy = searchParams.get("start") === "energy";
-  const skippedWelcomeRef = useRef(false);
+  const { state, update, ready } = useV2();
+  const freshEnergyRef = useRef(false);
+  const userPickedEnergy = useRef(false);
 
-  const [phase, setPhase] = useState<Phase>(startAtEnergy ? "energy" : "welcome");
+  const [phase, setPhase] = useState<Phase>("energy");
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
+  /**
+   * Lokale draft voor een frisse pill-keuze. Nooit `state.energy` wissen bij mount:
+   * anders verdwijnt de home-chip als je dagstart opent en weer weggaat (Stoppen/back).
+   */
+  const [draftEnergy, setDraftEnergy] = useState<V2Energy | null>(null);
 
-  const maxSlots = v2MaxSlotsForEnergy(state.energy);
+  const energy = draftEnergy;
+  const maxSlots = v2MaxSlotsForEnergy(energy);
   const things = v2NormalizeThings(state.things);
 
   const proposals = useMemo(
     () =>
-      state.energy
-        ? v2StructuroThingPicks(state.energy, maxSlots, locale)
-        : [],
-    [state.energy, maxSlots, locale],
+      energy ? v2StructuroThingPicks(energy, maxSlots, locale) : [],
+    [energy, maxSlots, locale],
   );
 
   const adjustOptions = useMemo(
-    () => v2BuildAdjustOptions(state.energy, selectedThings, 8, locale),
-    [state.energy, selectedThings, locale],
+    () => v2BuildAdjustOptions(energy, selectedThings, 8, locale),
+    [energy, selectedThings, locale],
   );
 
-  // Soft entry vanaf home-nudge: sla welkomst over, frisse energiekeuze.
-  useEffect(() => {
-    if (!startAtEnergy || skippedWelcomeRef.current) return;
-    skippedWelcomeRef.current = true;
+  // Pas ná provider-ready: frisse UI-keuze zonder hydrate-race of journey-wipe.
+  useLayoutEffect(() => {
+    if (!ready) return;
+    if (freshEnergyRef.current) return;
+    if (userPickedEnergy.current) return;
+    freshEnergyRef.current = true;
     setSelectedThings([]);
-    update({ energy: null });
+    setDraftEnergy(null);
     setPhase("energy");
     setHistory([]);
-  }, [startAtEnergy, update]);
+  }, [ready]);
 
   useEffect(() => {
     scrollV2ToTop();
@@ -113,21 +105,29 @@ export default function DagstartV2Client() {
 
   const finishThings = (nextThings: string[]) => {
     const normalized = v2NormalizeThings(nextThings);
-    update({ things: normalized, todayDone: false });
-    if (state.energy) recordV2EnergyForToday(state.energy);
+    const nextEnergy = energy ?? state.energy;
+    update({
+      things: normalized,
+      todayDone: false,
+      ...(nextEnergy ? { energy: nextEnergy } : {}),
+    });
+    if (nextEnergy) recordV2EnergyForToday(nextEnergy);
     trackV2DagstartComplete({
-      energy: state.energy,
+      energy: nextEnergy,
       thingCount: normalized.length,
       hasWhy: state.why.trim().length > 0,
     });
     goTo("done");
   };
 
-  const pickEnergy = (energy: V2Energy) => {
-    recordV2EnergyForToday(energy);
-    update({ energy });
+  const pickEnergy = (next: V2Energy) => {
+    userPickedEnergy.current = true;
+    freshEnergyRef.current = true;
+    setDraftEnergy(next);
+    recordV2EnergyForToday(next);
+    update({ energy: next });
     setSelectedThings(
-      v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy), locale),
+      v2StructuroThingPicks(next, v2MaxSlotsForEnergy(next), locale),
     );
   };
 
@@ -153,88 +153,70 @@ export default function DagstartV2Client() {
   const toHome = () => go("/v2/home");
   const finishDay = () => go("/v2/home", { todayDone: true });
 
-  const canGoBack =
-    history.length > 0 && phase !== "welcome" && phase !== "done";
+  // Ook op klaar/confirm: terug naar propose of adjust (niet Stoppen).
+  const canGoBack = history.length > 0;
   const flowLayout = v2FlowLayoutForDagstartPhase(phase);
-  const isWelcome = phase === "welcome";
-  const showReassurance = phase === "energy" || phase === "done";
-
-  const beginIntro = () => {
-    // Frisse keuze: geen pre-select "Genoeg". Pills eerst, voorstellen live.
-    setSelectedThings([]);
-    update({ energy: null });
-    goTo("energy");
-  };
+  const showReassurance = phase === "energy";
 
   return (
     <V2Page>
-      {!isWelcome ? (
-        <>
-          <V2Header
-            exitHref="/v2/home"
-            exitLabel={t("v2.flowStop")}
-            onBack={canGoBack ? goBack : undefined}
-            brandMode="flow"
-          />
-          <V2ProgressDots
-            step={stepNumberFor(phase)}
-            total={TOTAL_STEPS}
-            showLabel={false}
-          />
-        </>
-      ) : null}
+      <V2Header
+        exitHref="/v2/home"
+        exitLabel={t("v2.flowStop")}
+        onBack={canGoBack ? goBack : undefined}
+        brandMode="flow"
+      />
+      <V2ProgressDots
+        step={stepNumberFor(phase)}
+        total={TOTAL_STEPS}
+        showLabel={false}
+      />
 
-      {isWelcome ? (
-        <V2IntroStep onBegin={beginIntro} />
-      ) : (
-        <div style={v2Styles.flowShell}>
-          <div style={v2FlowWrapStyle(flowLayout)}>
-            <section
-              key={phase}
-              className="v2-fade"
-              style={phase === "energy" ? v2Styles.cardEnergy : v2Styles.card}
-              aria-live="polite"
-            >
-              {phase === "energy" ? (
-                <V2ProposeStep
-                  energy={state.energy}
-                  proposals={selectedThings.length > 0 ? selectedThings : proposals}
-                  onPickEnergy={pickEnergy}
-                  onConfirm={confirmProposals}
-                  onAdjust={openAdjust}
-                />
-              ) : null}
-
-              {phase === "adjust" ? (
-                <V2AdjustStep
-                  options={adjustOptions}
-                  selected={selectedThings}
-                  maxSlots={maxSlots}
-                  onToggle={toggleAdjust}
-                  onConfirm={() => finishThings(selectedThings)}
-                  onSkip={() => finishThings([])}
-                />
-              ) : null}
-
-              {phase === "done" ? (
-                <V2DoneStep
-                  things={things}
-                  onContinue={toHome}
-                  continueLabel={t("v2.flowToDay")}
-                  secondary={
-                    <button type="button" className="v2-link" onClick={finishDay}>
-                      {t("v2.flowEnoughToday")}
-                    </button>
-                  }
-                />
-              ) : null}
-            </section>
-            {showReassurance ? (
-              <V2Reassurance>{t("v2.flowAlwaysStop")}</V2Reassurance>
+      <div style={v2Styles.flowShell}>
+        <div style={v2FlowWrapStyle(flowLayout)}>
+          <section
+            style={phase === "energy" ? v2Styles.cardEnergy : v2Styles.card}
+            aria-live="polite"
+          >
+            {phase === "energy" ? (
+              <V2ProposeStep
+                energy={energy}
+                proposals={selectedThings.length > 0 ? selectedThings : proposals}
+                onPickEnergy={pickEnergy}
+                onConfirm={confirmProposals}
+                onAdjust={openAdjust}
+              />
             ) : null}
-          </div>
+
+            {phase === "adjust" ? (
+              <V2AdjustStep
+                options={adjustOptions}
+                selected={selectedThings}
+                maxSlots={maxSlots}
+                onToggle={toggleAdjust}
+                onConfirm={() => finishThings(selectedThings)}
+                onSkip={() => finishThings([])}
+              />
+            ) : null}
+
+            {phase === "done" ? (
+              <V2DoneStep
+                things={things}
+                onContinue={toHome}
+                continueLabel={t("v2.flowToDay")}
+                secondary={
+                  <button type="button" className="v2-link" onClick={finishDay}>
+                    {t("v2.flowEnoughToday")}
+                  </button>
+                }
+              />
+            ) : null}
+          </section>
+          {showReassurance ? (
+            <V2Reassurance>{t("v2.flowAlwaysStop")}</V2Reassurance>
+          ) : null}
         </div>
-      )}
+      </div>
     </V2Page>
   );
 }

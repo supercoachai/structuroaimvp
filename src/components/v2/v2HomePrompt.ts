@@ -6,11 +6,6 @@ import {
   getV2MorningEveningReminder,
   type V2MorningEveningReminder,
 } from "./v2MorningReminder";
-import {
-  dismissShutdownNudge,
-  shouldShowShutdownNudge,
-  SHUTDOWN_NUDGE_LINE,
-} from "./v2ShutdownNudge";
 import { isV2MutedToday, patchV2Settings, readV2Settings } from "./v2Settings";
 import { todayYmd } from "./v2Tasks";
 import {
@@ -48,7 +43,6 @@ export type V2HomePromptKind =
   | "day1_skip_hook"
   | "widget_hint"
   | "open_task_reminder"
-  | "shutdown_nudge"
   | "cycle_optin"
   | "why_suggestion"
   | "why_anchor"
@@ -62,7 +56,6 @@ export type V2HomePrompt =
   | { kind: "day1_skip_hook"; line: string }
   | { kind: "widget_hint"; line: string }
   | { kind: "open_task_reminder"; line: string }
-  | { kind: "shutdown_nudge"; line: string }
   | { kind: "cycle_optin"; line: string }
   | { kind: "why_suggestion"; suggestion: V2WhySuggestion }
   | { kind: "why_anchor"; why: string; whyOutcome: string }
@@ -73,7 +66,6 @@ const PRIORITY: V2HomePromptKind[] = [
   "day1_skip_hook",
   "widget_hint",
   "open_task_reminder",
-  "shutdown_nudge",
   "cycle_optin",
   "why_suggestion",
   "why_anchor",
@@ -87,22 +79,6 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
   const things = v2NormalizeThings(state.things);
   const hasThings = v2HasThings(things);
   const muted = isV2MutedToday();
-  const evening = now.getHours() >= 20;
-
-  // Avond: shutdown-nudge wint van andere soft-prompts (één ding in viewport).
-  const priority = evening
-    ? ([
-        "shutdown_nudge",
-        "morning_reminder",
-        "day1_skip_hook",
-        "widget_hint",
-        "open_task_reminder",
-        "cycle_optin",
-        "why_suggestion",
-        "why_anchor",
-        "quote",
-      ] as const)
-    : PRIORITY;
 
   const morningReminder = getV2MorningEveningReminder(now);
   if (morningReminder) {
@@ -127,10 +103,6 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
     });
   }
 
-  if (shouldShowShutdownNudge(state, now)) {
-    candidates.set("shutdown_nudge", { kind: "shutdown_nudge", line: SHUTDOWN_NUDGE_LINE });
-  }
-
   if (!muted && shouldShowCycleOptInPrompt(state)) {
     candidates.set("cycle_optin", {
       kind: "cycle_optin",
@@ -138,7 +110,7 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
     });
   }
 
-  // Soft why-nudge: pas na 2 idle opens, onderin (zelfde slot als avondwolkje).
+  // Soft why-nudge: pas na 2 idle opens, onderin.
   if (
     !muted &&
     !hasThings &&
@@ -168,7 +140,7 @@ export function resolveV2HomePrompt(state: V2State, now = new Date()): V2HomePro
     candidates.set("quote", { kind: "quote", line: getV2QuoteForToday(now) });
   }
 
-  for (const kind of priority) {
+  for (const kind of PRIORITY) {
     const prompt = candidates.get(kind);
     if (prompt) return prompt;
   }
@@ -189,9 +161,6 @@ export function dismissV2HomePrompt(prompt: V2HomePrompt): void {
       break;
     case "open_task_reminder":
       dismissV2OpenTaskReminderToday();
-      break;
-    case "shutdown_nudge":
-      dismissShutdownNudge();
       break;
     case "cycle_optin":
       dismissCycleOptInPrompt();

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Design-phone progress: 3 segmenten (teal fill).
- * Welcome/intro uitgesloten; geen dikke voortgangsbalk.
+ * Design-phone progress: segmenten (teal fill).
+ * Geen dikke voortgangsbalk.
  */
 export default function V2ProgressDots({
   step,

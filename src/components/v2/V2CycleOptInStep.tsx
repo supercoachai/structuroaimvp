@@ -47,6 +47,12 @@ export default function V2CycleOptInStep({
       body: t("cycle.optInBullet1"),
     },
     {
+      key: "why",
+      icon: "why" as const,
+      title: t("cycle.infoSheetWhyTitle"),
+      body: t("cycle.infoSheetWhyBody"),
+    },
+    {
       key: "b2",
       icon: "plan" as const,
       title: t("cycle.infoSheetPlanTitle"),

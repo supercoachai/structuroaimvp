@@ -10,6 +10,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 import { useV2 } from "./V2Context";
+import {
+  peekV2PostAccountNamePending,
+  V2_POST_ACCOUNT_NAME_PATH,
+} from "./v2PostAccountName";
 
 /**
  * Na OAuth/login: migreer V2 localStorage → Supabase vóór wipe.
@@ -46,8 +50,12 @@ export default function V2ClaimOnAuth() {
         if (cancelled) return;
         if (result.migrated) {
           resetAllLocalData();
-          // Cloud-data leeft in de v1-app; stuur daarheen na geslaagde migratie.
-          window.location.assign("/");
+          // Post-auth naamstap wint van v1-root redirect.
+          const askName =
+            peekV2PostAccountNamePending() ||
+            (typeof window !== "undefined" &&
+              new URLSearchParams(window.location.search).get("name") === "1");
+          window.location.assign(askName ? V2_POST_ACCOUNT_NAME_PATH : "/");
           return;
         }
       } catch (err) {

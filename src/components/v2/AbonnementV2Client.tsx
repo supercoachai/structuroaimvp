@@ -150,14 +150,6 @@ export default function AbonnementV2Client({
             <button
               type="button"
               className="btn-primary w-full"
-              onClick={() => router.push("/v2/login?next=/v2/abonnement")}
-            >
-              Log in
-            </button>
-            <button
-              type="button"
-              className="v2-link"
-              style={{ marginTop: 12 }}
               onClick={() =>
                 router.push(
                   "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=v2_abonnement"
@@ -165,6 +157,14 @@ export default function AbonnementV2Client({
               }
             >
               Start 3 dagen gratis
+            </button>
+            <button
+              type="button"
+              className="v2-link"
+              style={{ marginTop: 12 }}
+              onClick={() => router.push("/v2/login?next=/v2/abonnement")}
+            >
+              Log in
             </button>
           </section>
           <p className="v2-abonnement__trust">
@@ -407,7 +407,7 @@ export default function AbonnementV2Client({
               className="btn-primary w-full"
               onClick={() => {
                 if (doneMode === "stay") {
-                  router.replace("/v2/dagstart");
+                  router.replace("/v2/dagstart?start=energy");
                   return;
                 }
                 setDoneMode(null);

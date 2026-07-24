@@ -20,10 +20,11 @@ import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import type { V2Energy } from "./V2Context";
 
 export type V2OnboardingStep =
-  | "welcome"
   | "energy"
   | "tasks"
   | "done"
+  | "account"
+  | "name"
   | "home";
 
 const STEP_FIRED_PREFIX = "v2_onboarding_step_fired_";
@@ -60,7 +61,7 @@ function mapEnergy(energy: V2Energy | null): "low" | "medium" | "high" | null {
 
 /**
  * Fijnmazige client-stap. Eén keer per browsersessie per stap.
- * Daarnaast: bestaande activatie-events waar die mappen (welcome/done).
+ * Daarnaast: bestaande activatie-events waar die mappen (energy/done).
  */
 export function trackV2OnboardingStep(
   step: V2OnboardingStep,
@@ -72,7 +73,7 @@ export function trackV2OnboardingStep(
   const props = { ...attribution(), step, ...properties };
   captureActivationFunnelEvent("v2_onboarding_step", props);
 
-  if (step === "welcome") {
+  if (step === "energy") {
     trackOnboardingStarted();
   }
 }
@@ -132,18 +133,41 @@ export function trackV2OnboardingDone(props: {
   });
 }
 
-export function trackV2AccountSaveShown(surface: "home"): void {
+export function trackV2AccountSaveShown(
+  surface: "home" | "onboarding",
+): void {
   captureActivationFunnelEvent("v2_account_save_shown", {
     ...attribution(),
     surface,
-    after_first_value: true,
+    after_first_value: surface === "home",
   });
 }
 
-export function trackV2AccountSaveClicked(surface: "home"): void {
+export function trackV2AccountSaveClicked(
+  surface: "home" | "onboarding",
+): void {
   captureActivationFunnelEvent("v2_account_save_clicked", {
     ...attribution(),
     surface,
-    after_first_value: true,
+    after_first_value: surface === "home",
+  });
+}
+
+export function trackV2NameStepShown(): void {
+  trackV2OnboardingStep("name");
+  captureActivationFunnelEvent("v2_name_step_shown", {
+    ...attribution(),
+    surface: "onboarding",
+  });
+}
+
+export function trackV2NameStepCompleted(props: {
+  skipped: boolean;
+  hadPrefill: boolean;
+}): void {
+  captureActivationFunnelEvent("v2_name_step_completed", {
+    ...attribution(),
+    skipped: props.skipped,
+    had_prefill: props.hadPrefill,
   });
 }

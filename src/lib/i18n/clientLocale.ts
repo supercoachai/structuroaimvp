@@ -112,7 +112,7 @@ export type ErrorUiCopy = {
 const ERROR_UI: Record<Locale, ErrorUiCopy> = {
   nl: {
     title: "Er ging iets mis",
-    body: "De app liep tegen een onverwachte fout aan. Vernieuw de pagina (F5, Cmd+R of het vernieuw-icoon in de browser).",
+    body: "Even vastgelopen. Geen stress. Probeer opnieuw, of vernieuw de pagina.",
     translatorNote:
       "Zet automatische vertaling voor structuro.ai uit in je browser. Vertalers kunnen interactieve pagina's breken.",
     detailsLabel: "Technische details",
@@ -121,7 +121,7 @@ const ERROR_UI: Record<Locale, ErrorUiCopy> = {
   },
   en: {
     title: "Something went wrong",
-    body: "The app hit an unexpected error. Refresh the page (F5, Cmd+R, or your browser refresh button).",
+    body: "We hit a snag. No stress. Try again, or refresh the page.",
     translatorNote:
       "If you use automatic translation for this site, turn it off for structuro.ai. Translators can break interactive pages.",
     detailsLabel: "Technical details",
@@ -142,14 +142,14 @@ export function getRouteErrorUiCopy(): Pick<
   if (locale === "en") {
     return {
       title: ERROR_UI.en.title,
-      body: "This page hit an unexpected error. Try again or refresh the page.",
+      body: ERROR_UI.en.body,
       refreshLabel: ERROR_UI.en.refreshLabel,
       retryLabel: ERROR_UI.en.retryLabel,
     };
   }
   return {
     title: ERROR_UI.nl.title,
-    body: "Deze pagina liep tegen een onverwachte fout aan. Probeer opnieuw of vernieuw de pagina.",
+    body: ERROR_UI.nl.body,
     refreshLabel: ERROR_UI.nl.refreshLabel,
     retryLabel: ERROR_UI.nl.retryLabel,
   };

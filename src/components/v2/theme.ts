@@ -1,13 +1,17 @@
 import type { CSSProperties } from "react";
 
-/** Welkom/reflectie: verticaal gecentreerd in flowShell. Keuzestappen: hoger uitgelijnd voor opties boven de vouw. */
+/**
+ * welcome: energy/afronding, verticaal gecentreerd in flowShell.
+ * choices: langere keuzestappen hoger uitgelijnd (opties boven de vouw).
+ */
 export type V2FlowLayout = "welcome" | "choices";
 
 export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
   switch (phase) {
-    case "welcome":
     case "energy":
     case "done":
+    case "account":
+    case "name":
       return "welcome";
     case "adjust":
     default:
@@ -16,9 +20,7 @@ export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
 }
 
 export function v2FlowLayoutForDagstartPhase(phase: string): V2FlowLayout {
-  return phase === "welcome" || phase === "done" || phase === "energy"
-    ? "welcome"
-    : "choices";
+  return phase === "done" || phase === "energy" ? "welcome" : "choices";
 }
 
 export function v2FlowWrapStyle(layout: V2FlowLayout): CSSProperties {
@@ -66,7 +68,7 @@ export const v2Styles: Record<string, CSSProperties> = {
   },
   shell: {
     width: "100%",
-    maxWidth: 480,
+    maxWidth: 560,
     marginLeft: "auto",
     marginRight: "auto",
     display: "flex",
@@ -82,7 +84,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     minHeight: 0,
   },
-  /** Welkom, energie en afronding: verticaal gecentreerd in de beschikbare hoogte. */
+  /** Energy/afronding: verticaal gecentreerd in beschikbare hoogte (onder header/progress). */
   flowCardWrapWelcome: {
     flex: 1,
     display: "flex",
@@ -90,11 +92,11 @@ export const v2Styles: Record<string, CSSProperties> = {
     alignItems: "stretch",
     justifyContent: "center",
     width: "100%",
-    paddingTop: "clamp(1rem, 4vh, 2.5rem)",
-    paddingBottom: "max(clamp(2rem, 10vh, 4.5rem), env(safe-area-inset-bottom, 0px))",
+    paddingTop: "clamp(0.5rem, 2vh, 1.25rem)",
+    paddingBottom: "max(clamp(1.25rem, 6vh, 3rem), env(safe-area-inset-bottom, 0px))",
     gap: 12,
   },
-  /** Langere keuzestappen: opties bovenaan houden, shell blijft horizontaal gecentreerd. */
+  /** Langere keuzestappen: opties bovenaan houden. */
   flowCardWrapChoices: {
     flex: 1,
     display: "flex",
@@ -102,7 +104,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     alignItems: "stretch",
     justifyContent: "flex-start",
     width: "100%",
-    paddingTop: "clamp(0.75rem, 5vh, 2.5rem)",
+    paddingTop: "clamp(0.5rem, 2.5vh, 1.5rem)",
     gap: 12,
   },
   header: {
@@ -190,15 +192,15 @@ export const v2Styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 14,
   },
-  /** Energiestap: geen witte kaart, content zweeft op cream. */
+  /** Energiestap: geen witte kaart, content op cream met iets meer ademruimte. */
   cardEnergy: {
     backgroundColor: "transparent",
     border: "none",
     borderRadius: 0,
-    padding: "12px 4px 8px",
+    padding: "8px 8px 12px",
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: 16,
     boxShadow: "none",
   },
   kicker: {
@@ -443,7 +445,8 @@ export const v2Styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    padding: "16px 20px",
+    minHeight: 56,
+    padding: "12px 20px",
     borderBottom: "1px solid var(--border)",
     backgroundColor: "var(--surface)",
   },
@@ -486,16 +489,18 @@ export const v2Styles: Record<string, CSSProperties> = {
     backgroundColor: "var(--surface)",
   },
   appShellBrand: {
-    display: "flex",
+    display: "inline-flex",
     minWidth: 0,
     alignItems: "center",
     gap: 8,
     textDecoration: "none",
+    lineHeight: 1,
   },
   appShellLogo: {
     height: 28,
     width: 28,
     flexShrink: 0,
+    display: "block",
     objectFit: "contain" as const,
   },
   appShellWordmark: {
@@ -503,6 +508,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     fontSize: "1.25rem",
     fontWeight: 600,
     letterSpacing: "-0.01em",
+    lineHeight: 1,
     color: "var(--text)",
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -523,20 +529,24 @@ export const v2Styles: Record<string, CSSProperties> = {
   appHeaderActions: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 4,
     flexShrink: 0,
   },
   appHeaderLink: {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     minHeight: 44,
+    minWidth: 44,
     padding: "8px 10px",
     borderRadius: 12,
     border: "none",
     background: "none",
     fontSize: 14,
     fontWeight: 500,
+    lineHeight: 1,
     color: "var(--text-muted)",
     textDecoration: "none",
     cursor: "pointer",
@@ -658,7 +668,6 @@ export const v2Styles: Record<string, CSSProperties> = {
     margin: "6px 0 0",
     fontSize: 14,
     color: "var(--text-muted)",
-    fontStyle: "italic" as const,
   },
   settingsStepperRow: {
     display: "flex",
@@ -735,28 +744,36 @@ export const v2Styles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
-    padding: "4px 2px",
+    padding: "5px 4px",
     borderRadius: 12,
     border: "none",
-    background: "none",
+    backgroundColor: "transparent",
     color: "var(--text-muted)",
     textDecoration: "none",
     cursor: "pointer",
-    transition: "opacity 140ms ease, color 140ms ease",
+    WebkitTapHighlightColor: "transparent",
+    transition:
+      "opacity 140ms ease, color 140ms ease, background-color 140ms ease, transform 100ms ease",
   },
+  /** Soft sage-pill + accent; geen gevulde knop / floating glass. */
   appNavItemActive: {
     color: "var(--accent)",
+    backgroundColor: "var(--accent-soft)",
   },
   appNavLabel: {
     width: "100%",
     textAlign: "center" as const,
-    fontSize: 9,
-    fontWeight: 600,
+    fontSize: 10,
+    fontWeight: 700,
     lineHeight: 1.1,
-    letterSpacing: "0.03em",
+    letterSpacing: "0.02em",
+    color: "var(--accent)",
   },
   appNavIcon: {
     flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 };
 
@@ -779,7 +796,7 @@ export const v2ScopedCss = `
   display: flex !important;
   flex-direction: column !important;
   width: 100% !important;
-  max-width: 480px !important;
+  max-width: 560px !important;
   margin-left: auto !important;
   margin-right: auto !important;
   box-sizing: border-box !important;
@@ -822,6 +839,17 @@ export const v2ScopedCss = `
 .v2-input:focus { border-color: var(--accent) !important; }
 .v2-navitem { transition: color 160ms ease; }
 .v2-navitem:hover { color: var(--text) !important; }
+.v2-app-nav__item:active {
+  opacity: 0.72;
+  transform: scale(0.96);
+}
+.v2-app-nav__item.is-active svg {
+  stroke-width: 2.15;
+}
+.v2-app-nav__item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .v2-headerlink { transition: color 160ms ease, background-color 160ms ease; }
 .v2-headerlink:hover { color: var(--text) !important; background-color: rgba(45, 90, 86, 0.06); }
 .v2-eyebrow-dot { animation: v2EyebrowPulse 2.4s ease-in-out infinite; }
@@ -854,7 +882,8 @@ export const v2ScopedCss = `
 }
 @media (prefers-reduced-motion: reduce) {
   .v2-fade { animation: none !important; }
-  .v2-cta, .v2-secondary, .v2-option, .v2-nav, .v2-textlink, .v2-navitem, .v2-headerlink, .v2-stepper-btn { transition: none !important; }
+  .v2-cta, .v2-secondary, .v2-option, .v2-nav, .v2-textlink, .v2-navitem, .v2-headerlink, .v2-stepper-btn, .v2-app-nav__item { transition: none !important; }
+  .v2-app-nav__item:active { transform: none !important; }
   .v2-progress-fill { transition: none !important; }
   .v2-eyebrow-dot { animation: none !important; }
   .v2-fade-out { animation: none !important; opacity: 0 !important; }
