@@ -27,9 +27,13 @@ async function seedV2Journey(page: Page, things: string[]) {
   );
 }
 
-async function seedV2Task(page: Page, title: string) {
+async function seedV2Task(
+  page: Page,
+  title: string,
+  microSteps: Array<{ id: string; title: string; done: boolean }> = [],
+) {
   await page.addInitScript(
-    ({ taskTitle }) => {
+    ({ taskTitle, steps }) => {
       const now = new Date().toISOString();
       const task = {
         id: "e2e-v2t-1",
@@ -40,7 +44,7 @@ async function seedV2Task(page: Page, title: string) {
         repeatIntervalDays: null,
         priority: null,
         energy: null,
-        microSteps: [],
+        microSteps: steps,
         why: null,
         outcome: null,
         snoozeUntil: null,
@@ -53,7 +57,7 @@ async function seedV2Task(page: Page, title: string) {
         /* ignore */
       }
     },
-    { taskTitle: title },
+    { taskTitle: title, steps: microSteps },
   );
 }
 
@@ -78,6 +82,41 @@ test.describe("V2 focus-einde en snooze", () => {
 
     await page.waitForURL(/\/v2\/home(\/|\?|$)/, { timeout: 15_000 });
     expect(page.url()).toMatch(/\/v2\/home/);
+  });
+
+  test("focus: toont microstappen en laat afvinken toe", async ({ page }) => {
+    const title = "E2E micro focus";
+    await seedV2Journey(page, [title]);
+    await seedV2Task(page, title, [
+      { id: "ms-1", title: "Eerste mini-stap", done: false },
+      { id: "ms-2", title: "Tweede mini-stap", done: false },
+    ]);
+    await page.goto(`/v2/focus?thing=${encodeURIComponent(title)}`, {
+      waitUntil: "domcontentloaded",
+    });
+
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+    const list = page.getByRole("list", { name: "Microstappen" });
+    await expect(list).toBeVisible();
+    const first = page.getByRole("button", { name: /Eerste mini-stap/i });
+    await expect(first).toHaveAttribute("aria-pressed", "false");
+    await first.click();
+    await expect(first).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("focus: soft voorstel bij lege microstappen", async ({ page }) => {
+    const title = "E2E leeg micro";
+    await seedV2Journey(page, [title]);
+    await seedV2Task(page, title, []);
+    await page.goto(`/v2/focus?thing=${encodeURIComponent(title)}`, {
+      waitUntil: "domcontentloaded",
+    });
+
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Opsplitsen in kleine stappen?")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ja, voorstellen" })).toBeVisible();
+    await page.getByRole("button", { name: "Niet nu" }).click();
+    await expect(page.getByText("Opsplitsen in kleine stappen?")).toHaveCount(0);
   });
 
   test("todo: snooze Vanavond haalt taak uit zichtbare lijst", async ({ page }) => {

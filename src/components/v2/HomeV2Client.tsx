@@ -43,6 +43,8 @@ import { dismissCycleOptInPrompt } from "./v2CycleOptInPrompt";
 import { shouldShowAccountSavePrompt } from "./v2AccountSavePrompt";
 import V2AccountSaveCta from "./V2AccountSaveCta";
 import { patchV2Settings } from "./v2Settings";
+import { v2TaskEnergyToDay } from "./v2EnergyMeta";
+import V2TaskBattery from "./V2TaskBattery";
 import {
   findV2TaskByTitle,
   saveV2Tasks,
@@ -423,7 +425,7 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
             >
               Naar dagstart
             </button>
@@ -434,7 +436,7 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
             >
               Naar dagstart
             </button>
@@ -515,10 +517,13 @@ export default function HomeV2Client() {
 
         <header>
           <V2Eyebrow>Vandaag</V2Eyebrow>
-          <div className="mt-1 flex items-end justify-between gap-3">
+          <div className="mt-1 flex items-end justify-between gap-2">
             <h1
-              className="v2-serif min-w-0 flex-1"
-              style={{ fontSize: "1.875rem", letterSpacing: "-0.02em" }}
+              className="v2-serif min-w-0 flex-1 whitespace-nowrap"
+              style={{
+                fontSize: "clamp(1.35rem, 6.5vw, 1.875rem)",
+                letterSpacing: "-0.02em",
+              }}
             >
               {headline}
             </h1>
@@ -591,9 +596,16 @@ export default function HomeV2Client() {
                   lineHeight: 1.35,
                   letterSpacing: "-0.015em",
                   color: "var(--text)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
                 }}
               >
-                {activeThing}
+                <V2TaskBattery
+                  energy={v2TaskEnergyToDay(activeTask?.energy ?? null)}
+                  size={22}
+                />
+                <span className="min-w-0">{activeThing}</span>
               </h2>
 
               {microSteps.length > 0 ? (
@@ -674,7 +686,7 @@ export default function HomeV2Client() {
             ) : null}
 
             <p
-              className="mt-auto pt-6 text-center text-[10.5px] italic"
+              className="mt-auto pt-6 text-center text-[10.5px]"
               style={{ color: "rgba(26,35,64,0.5)" }}
             >
               Meer hoeft niet vandaag.
@@ -690,7 +702,7 @@ export default function HomeV2Client() {
             </p>
             <button
               type="button"
-              onClick={() => go("/v2/dagstart")}
+              onClick={() => go("/v2/dagstart?start=energy")}
               className="btn-primary mx-auto mt-5"
             >
               Doe je dagstart

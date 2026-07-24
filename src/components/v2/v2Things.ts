@@ -6,14 +6,28 @@ import {
   type V2Suggestion,
 } from "./V2Context";
 import { v2IsAnxietyTitle } from "./v2Anxiety";
+import { v2TaskEnergyToDay } from "./v2EnergyMeta";
 import {
+  v2FindThingBankItemByTitle,
   v2LocalizedSuggestions,
   v2NormalizeLocale,
   v2SeededShuffle,
 } from "./v2ThingBank";
-import { loadV2Tasks, todayYmd, type V2Task, type V2TaskEnergy } from "./v2Tasks";
+import {
+  findV2TaskByTitle,
+  loadV2Tasks,
+  todayYmd,
+  type V2Task,
+  type V2TaskEnergy,
+} from "./v2Tasks";
 
 export { v2IsAnxietyTitle } from "./v2Anxiety";
+
+/** Voorstel-regel met energie (batterij in propose). */
+export type V2ThingProposal = {
+  title: string;
+  energy: V2Energy | null;
+};
 
 /** Aantal dingen dat bij het energieniveau hoort (v2: laag=1, genoeg=2, hoog=3). */
 export function v2MaxSlotsForEnergy(energy: V2Energy | null): number {
@@ -96,6 +110,33 @@ function isTaskVisibleForPick(task: V2Task, today: string): boolean {
 }
 
 /**
+ * Zoek energie voor een titel: open taak eerst, daarna thing-bank.
+ * Gebruikt voor batterij in propose/home.
+ */
+export function v2LookupThingEnergy(title: string): V2Energy | null {
+  const task = findV2TaskByTitle(loadV2Tasks(), title);
+  const fromTask = v2TaskEnergyToDay(task?.energy ?? null);
+  if (fromTask) return fromTask;
+  const bank = v2FindThingBankItemByTitle(title);
+  return bank?.energy ?? null;
+}
+
+/** Verrijk titel-lijst met energie voor UI (batterij). */
+export function v2EnrichThingProposals(titles: string[]): V2ThingProposal[] {
+  return titles
+    .map((title) => title.trim())
+    .filter(Boolean)
+    .map((title) => ({
+      title,
+      energy: v2LookupThingEnergy(title),
+    }));
+}
+
+export function v2ThingProposalTitles(proposals: V2ThingProposal[]): string[] {
+  return proposals.map((p) => p.title);
+}
+
+/**
  * Structuro kiest: maxSlots items, niet de hele bak.
  * Volgorde: open taken met deadline eerst (dichtste eerst), passend bij energie,
  * daarna vaste suggesties uit dezelfde energie-bak (locale).
@@ -106,19 +147,30 @@ export function v2StructuroThingPicks(
   maxSlots: number,
   locale?: Locale | string | null,
 ): string[] {
+  return v2ThingProposalTitles(
+    v2StructuroThingProposals(energy, maxSlots, locale),
+  );
+}
+
+/** Zelfde als v2StructuroThingPicks, maar met energie per voorstel. */
+export function v2StructuroThingProposals(
+  energy: V2Energy | null,
+  maxSlots: number,
+  locale?: Locale | string | null,
+): V2ThingProposal[] {
   const day = energy ?? "enough";
   const lang = v2NormalizeLocale(locale);
   const slots = Math.max(1, Math.min(3, maxSlots));
   const today = todayYmd();
-  const picks: string[] = [];
+  const picks: V2ThingProposal[] = [];
   const seen = new Set<string>();
 
-  const push = (title: string) => {
+  const push = (title: string, itemEnergy: V2Energy | null) => {
     const t = title.trim();
     if (!t || seen.has(t.toLowerCase()) || picks.length >= slots) return;
     if (v2IsAnxietyTitle(t)) return;
     seen.add(t.toLowerCase());
-    picks.push(t);
+    picks.push({ title: t, energy: itemEnergy });
   };
 
   const openTasks = loadV2Tasks()
@@ -135,13 +187,15 @@ export function v2StructuroThingPicks(
       return a.createdAt.localeCompare(b.createdAt);
     });
 
-  for (const task of openTasks) push(task.title);
+  for (const task of openTasks) {
+    push(task.title, v2TaskEnergyToDay(task.energy));
+  }
 
   const bankPool = v2SeededShuffle(
     v2LocalizedSuggestions(day, lang),
     suggestionSeed(day, lang),
   );
-  for (const s of bankPool) push(s.title);
+  for (const s of bankPool) push(s.title, s.energy);
 
   return picks.slice(0, slots);
 }

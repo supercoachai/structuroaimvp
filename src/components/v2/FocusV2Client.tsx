@@ -1,16 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { captureProductEvent } from "@/lib/posthog/track";
 
 import { v2ScopedCss } from "./theme";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
 import { V2_INFO_SHEETS } from "./v2InfoSheets";
-import { useV2 } from "./V2Context";
+import { useV2, type V2Energy } from "./V2Context";
 import { useV2Go } from "./v2nav";
-import { loadV2Tasks, type V2DurationBucket } from "./v2Tasks";
+import {
+  completeV2TaskByTitle,
+  emptyDraft,
+  findV2TaskByTitle,
+  loadV2Tasks,
+  removeV2ThingFromList,
+  saveV2Tasks,
+  v2Id,
+  type V2DurationBucket,
+  type V2MicroStep,
+  type V2Task,
+} from "./v2Tasks";
 import { v2NormalizeThings, v2PrimaryThing } from "./v2Things";
 import { markV2FirstValue } from "./v2CycleOptInPrompt";
 import { recordV2FocusCompleted, recordV2FocusStart } from "./v2OpenTaskReminder";
@@ -19,6 +32,13 @@ import {
   loadV2FocusTimer,
   saveV2FocusTimer,
 } from "./v2FocusTimer";
+import { v2ActiveMicroStepIndex, v2EnergyToMicro } from "./v2FocusMicro";
+import {
+  addV2DumpItem,
+  loadV2Dump,
+  saveV2Dump,
+  v2DumpAtMax,
+} from "./v2Dump";
 
 type Bucket = { key: string; label: string; minutes: number; durationBucket: V2DurationBucket };
 
@@ -38,10 +58,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-function suggestedBucketForThing(
-  thingLabel: string,
-  tasks: ReturnType<typeof loadV2Tasks>,
-): Bucket | null {
+function suggestedBucketForThing(thingLabel: string, tasks: V2Task[]): Bucket | null {
   const match = tasks.find((t) => t.title.trim() === thingLabel.trim() && t.durationBucket);
   if (!match?.durationBucket) return null;
   return BUCKETS.find((b) => b.durationBucket === match.durationBucket) ?? null;
@@ -60,15 +77,28 @@ export default function FocusV2Client() {
   const [extended, setExtended] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [tasks, setTasks] = useState<V2Task[]>([]);
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestDismissed, setSuggestDismissed] = useState(false);
+  const [parkDraft, setParkDraft] = useState("");
+  const [parkHint, setParkHint] = useState<string | null>(null);
+  const suggestShownRef = useRef(false);
+  const parkHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const tasks = useMemo(() => loadV2Tasks(), []);
 
   const things = v2NormalizeThings(state.things);
   const thingLabel =
     (focusParam && things.includes(focusParam) ? focusParam : null) ??
     v2PrimaryThing(things) ??
     "dit ene ding";
+
+  useEffect(() => {
+    setTasks(loadV2Tasks());
+    setSuggestDismissed(false);
+    setSuggestError(null);
+    suggestShownRef.current = false;
+  }, [thingLabel]);
 
   // Hervat na refresh / distractie.
   useEffect(() => {
@@ -127,6 +157,28 @@ export default function FocusV2Client() {
     };
   }, [running, paused]);
 
+  const activeTask = useMemo(
+    () => findV2TaskByTitle(tasks, thingLabel),
+    [tasks, thingLabel],
+  );
+  const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
+  const activeMicroIdx = v2ActiveMicroStepIndex(microSteps);
+  const showMicroList = microSteps.length > 0 && !finished;
+  const showMicroSuggest =
+    microSteps.length === 0 &&
+    !suggestDismissed &&
+    !finished &&
+    thingLabel.trim().length > 0 &&
+    thingLabel !== "dit ene ding";
+
+  useEffect(() => {
+    if (!showMicroSuggest || suggestShownRef.current) return;
+    suggestShownRef.current = true;
+    captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_shown, {
+      source: "focus_v2",
+    });
+  }, [showMicroSuggest]);
+
   const suggested = useMemo(
     () => suggestedBucketForThing(thingLabel, tasks),
     [thingLabel, tasks],
@@ -136,6 +188,97 @@ export default function FocusV2Client() {
   const ringDashOffset = RING_C * (1 - ratio);
   const timerActive = running || paused;
   const hideClock = timerActive && !finished;
+
+  const persistTasks = (next: V2Task[]) => {
+    setTasks(next);
+    saveV2Tasks(next);
+  };
+
+  const toggleMicroStep = (stepId: string) => {
+    if (!activeTask) return;
+    persistTasks(
+      tasks.map((t) => {
+        if (t.id !== activeTask.id) return t;
+        return {
+          ...t,
+          microSteps: t.microSteps.map((s) =>
+            s.id === stepId ? { ...s, done: !s.done } : s,
+          ),
+        };
+      }),
+    );
+  };
+
+  const applySuggestedSteps = async () => {
+    if (suggestBusy) return;
+    setSuggestBusy(true);
+    setSuggestError(null);
+    try {
+      const { fetchMicroStepSuggestions } = await import(
+        "@/lib/ai/fetchMicroStepSuggestions"
+      );
+      const energy =
+        activeTask?.energy ??
+        v2EnergyToMicro(state.energy as V2Energy | null);
+      const result = await fetchMicroStepSuggestions({
+        title: activeTask?.title || thingLabel,
+        energyLevel: energy,
+        durationMin: bucket?.minutes ?? null,
+        locale: "nl",
+      });
+      const nextSteps: V2MicroStep[] = result.steps.map((title) => ({
+        id: v2Id("ms"),
+        title,
+        done: false,
+      }));
+      if (activeTask) {
+        persistTasks(
+          tasks.map((t) =>
+            t.id === activeTask.id ? { ...t, microSteps: nextSteps } : t,
+          ),
+        );
+      } else {
+        const seed = emptyDraft();
+        seed.title = thingLabel;
+        seed.microSteps = nextSteps;
+        persistTasks([...tasks, seed]);
+      }
+      captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_accepted, {
+        source: "focus_v2",
+        step_count: nextSteps.length,
+      });
+    } catch {
+      setSuggestError("Voorstellen lukten niet. Probeer later opnieuw.");
+    } finally {
+      setSuggestBusy(false);
+    }
+  };
+
+  const showParkHint = (text: string) => {
+    setParkHint(text);
+    if (parkHintTimerRef.current) clearTimeout(parkHintTimerRef.current);
+    parkHintTimerRef.current = setTimeout(() => setParkHint(null), 2200);
+  };
+
+  const parkThought = () => {
+    const trimmed = parkDraft.trim();
+    if (!trimmed) return;
+    const items = loadV2Dump();
+    if (v2DumpAtMax(items)) {
+      showParkHint("Dump is vol. Ruim eerst iets op.");
+      return;
+    }
+    saveV2Dump(addV2DumpItem(trimmed, items));
+    setParkDraft("");
+    captureProductEvent("parked_thought_added", { source: "focus_v2" });
+    showParkHint("Opgeslagen. Focus blijft intact.");
+  };
+
+  useEffect(() => {
+    return () => {
+      if (parkHintTimerRef.current) clearTimeout(parkHintTimerRef.current);
+    };
+  }, []);
 
   const start = (b: Bucket) => {
     setBucket(b);
@@ -155,10 +298,17 @@ export default function FocusV2Client() {
   };
 
   const handleDone = () => {
+    // Zelfde contract als v1 focus-complete: taak écht afvinken + persist.
+    const nextTasks = completeV2TaskByTitle(tasks, thingLabel);
+    persistTasks(nextTasks);
+    const remainingThings = removeV2ThingFromList(things, thingLabel);
     recordV2FocusCompleted(thingLabel);
     markV2FirstValue();
     clearV2FocusTimer();
-    go("/v2/home", { todayDone: false });
+    go("/v2/home", {
+      things: remainingThings,
+      todayDone: remainingThings.length === 0,
+    });
   };
 
   const reset = () => {
@@ -194,7 +344,7 @@ export default function FocusV2Client() {
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 pb-10">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-6 pb-10">
         <div className="flex w-full max-w-[480px] flex-col items-center">
           <div className="v2-info-head v2-info-head--center">
             <p
@@ -298,7 +448,74 @@ export default function FocusV2Client() {
             </div>
           )}
 
-          <div className="mt-10 w-full">
+          {showMicroList ? (
+            <ul className="v2-focus-micro-list" aria-label="Microstappen">
+              {microSteps.map((step, idx) => {
+                const isActive = !step.done && idx === activeMicroIdx;
+                return (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleMicroStep(step.id)}
+                      className="v2-focus-micro"
+                      aria-pressed={step.done}
+                      data-active={isActive ? "1" : "0"}
+                    >
+                      <span
+                        className="v2-focus-micro__chk"
+                        aria-hidden
+                        data-done={step.done ? "1" : "0"}
+                        data-active={isActive ? "1" : "0"}
+                      >
+                        {step.done ? "✓" : ""}
+                      </span>
+                      <span
+                        className="v2-focus-micro__lbl"
+                        data-done={step.done ? "1" : "0"}
+                        data-active={isActive ? "1" : "0"}
+                      >
+                        {step.title}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+
+          {showMicroSuggest ? (
+            <section
+              className="v2-focus-micro-suggest"
+              aria-live="polite"
+            >
+              <p className="v2-focus-micro-suggest__title">
+                Opsplitsen in kleine stappen?
+              </p>
+              <p className="v2-focus-micro-suggest__lead">
+                Klein beginnen maakt starten makkelijker.
+              </p>
+              <button
+                type="button"
+                onClick={() => void applySuggestedSteps()}
+                disabled={suggestBusy}
+                className="btn-primary w-full"
+              >
+                {suggestBusy ? "Even denken..." : "Ja, voorstellen"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestDismissed(true)}
+                className="v2-link mt-2 w-full text-center"
+              >
+                Niet nu
+              </button>
+              {suggestError ? (
+                <p className="v2-focus-micro-suggest__err">{suggestError}</p>
+              ) : null}
+            </section>
+          ) : null}
+
+          <div className={`w-full ${showMicroList || showMicroSuggest ? "mt-6" : "mt-10"}`}>
             {!bucket && !finished ? (
               <div className="flex flex-col gap-2">
                 {suggested ? (
@@ -359,6 +576,36 @@ export default function FocusV2Client() {
                 >
                   Afronden
                 </button>
+                <form
+                  className="v2-focus-park"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    parkThought();
+                  }}
+                >
+                  <input
+                    type="text"
+                    name="park-thought"
+                    value={parkDraft}
+                    onChange={(e) => setParkDraft(e.target.value)}
+                    placeholder="Parkeer een gedachte…"
+                    className="v2-focus-park__input"
+                    autoComplete="off"
+                    aria-label="Parkeer een gedachte"
+                  />
+                  <button
+                    type="submit"
+                    className="v2-focus-park__save"
+                    disabled={parkDraft.trim().length === 0}
+                  >
+                    Bewaar
+                  </button>
+                </form>
+                {parkHint ? (
+                  <p className="v2-focus-park__hint" aria-live="polite">
+                    {parkHint}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
@@ -377,12 +624,6 @@ export default function FocusV2Client() {
                   Nog even bezig
                 </button>
               </div>
-            ) : null}
-
-            {!finished && !timerActive && !extended ? (
-              <Link href="/v2/dump?capture=1" className="v2-link mt-4 block text-center">
-                Parkeer gedachte
-              </Link>
             ) : null}
 
             {finished ? (

@@ -228,7 +228,7 @@ export const V2_PRIORITY_OPTIONS: { value: V2Priority; label: string }[] = [
 export const V2_ENERGY_TASK_OPTIONS: { value: V2TaskEnergy; label: string }[] = [
   { value: null, label: "Geen" },
   { value: "low", label: "Laag" },
-  { value: "medium", label: "Normaal" },
+  { value: "medium", label: "Genoeg" },
   { value: "high", label: "Hoog" },
 ];
 
@@ -275,9 +275,29 @@ export function priorityLabel(p: V2Priority): string | null {
 
 export function energyLabel(e: V2TaskEnergy): string | null {
   if (e === "low") return "Energie: laag";
-  if (e === "medium") return "Energie: normaal";
+  if (e === "medium") return "Energie: genoeg";
   if (e === "high") return "Energie: hoog";
   return null;
+}
+
+/** Rank voor Taken-lijst: hoog → genoeg → laag → onbekend (null). */
+export function v2TaskEnergySortRank(energy: V2TaskEnergy): number {
+  if (energy === "high") return 0;
+  if (energy === "medium") return 1;
+  if (energy === "low") return 2;
+  return 3;
+}
+
+/**
+ * Taken-lijst: open eerst, daarbinnen energie hoog → laag;
+ * klaar-taken achteraan (zelfde energie-volgorde).
+ */
+export function compareV2TasksForList(a: V2Task, b: V2Task): number {
+  if (a.done !== b.done) return a.done ? 1 : -1;
+  const ea = v2TaskEnergySortRank(a.energy);
+  const eb = v2TaskEnergySortRank(b.energy);
+  if (ea !== eb) return ea - eb;
+  return a.createdAt.localeCompare(b.createdAt);
 }
 
 /** Match een vandaag-ding op een lokale taak (titel, case-insensitive trim). */
@@ -292,4 +312,49 @@ export function findV2TaskByTitle(
     tasks.find((t) => t.title.trim().toLowerCase() === needle) ??
     null
   );
+}
+
+/**
+ * Markeer een taak af (focus "Ik ben klaar" / Todo-toggle).
+ * Geen match: maak een afgeronde taak aan zodat dagafsluiting de win ziet.
+ */
+export function completeV2TaskByTitle(
+  tasks: V2Task[],
+  title: string,
+): V2Task[] {
+  const trimmed = title.trim();
+  if (!trimmed) return tasks;
+  const existing = findV2TaskByTitle(tasks, trimmed);
+  if (existing) {
+    if (existing.done) return tasks;
+    return tasks.map((t) =>
+      t.id === existing.id
+        ? {
+            ...t,
+            done: true,
+            microSteps: t.microSteps.map((s) => ({ ...s, done: true })),
+          }
+        : t,
+    );
+  }
+  const seed = emptyDraft();
+  seed.title = trimmed;
+  seed.done = true;
+  return [...tasks, seed];
+}
+
+/** Haal een vandaag-ding uit de lijst (case-insensitive trim). */
+export function removeV2ThingFromList(
+  things: string[],
+  title: string,
+): string[] {
+  const needle = title.trim().toLowerCase();
+  return things
+    .filter(
+      (t): t is string =>
+        typeof t === "string" &&
+        t.trim().length > 0 &&
+        (!needle || t.trim().toLowerCase() !== needle),
+    )
+    .map((t) => t.trim());
 }

@@ -193,7 +193,6 @@ export default function V2CycleChip({
               fontSize: 9.5,
               fontWeight: 700,
               color: "#fff",
-              fontStyle: "italic",
               boxShadow: "0 0 0 2px #fff",
             }}
             aria-hidden

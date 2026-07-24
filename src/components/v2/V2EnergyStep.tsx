@@ -70,7 +70,6 @@ export default function V2EnergyStep({
   onPick,
   onSkip,
   abovePills,
-  headerSlot,
 }: {
   greeting?: string;
   userName?: string;
@@ -80,11 +79,6 @@ export default function V2EnergyStep({
   onPick: (energy: V2Energy) => void;
   onSkip: () => void;
   abovePills?: ReactNode;
-  /**
-   * Optioneel slot in de energiestap (bijv. cyclus-chip).
-   * Prefer variant="absolute" (rustig rechtsboven); niet gecentreerd boven de begroeting.
-   */
-  headerSlot?: ReactNode;
 }) {
   const supportsHover = useSupportsHover();
   const [hovered, setHovered] = useState<V2Energy | null>(null);
@@ -98,9 +92,6 @@ export default function V2EnergyStep({
 
   return (
     <div className="v2-energy-step">
-      {/* Geen layout-wrapper: absolute chip positioneert t.o.v. .v2-energy-step */}
-      {headerSlot}
-
       <div className="v2-energy-step__intro">
         {greeting ? (
           <p className="v2-energy-step__greeting">{greeting}</p>

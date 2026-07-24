@@ -105,7 +105,7 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         key: "meaning",
         icon: "meaning",
         title: "Wat dit doet",
-        body: "Structuro kleurt je dagstart zacht mee met je fase. Alleen als jij het aanzet.",
+        body: "Structuro toont je fase als inzicht naast je energie. Alleen als jij het aanzet. Geen sturing van voorstellen.",
       },
       {
         key: "plan",

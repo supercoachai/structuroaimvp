@@ -43,7 +43,7 @@
       cycleDay: 'Dag 14/28',
       cycleBio: 'Veel mensen ervaren meer helderheid.',
       cycleTip:
-        'Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Middel of laag is prima.',
+        'Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Genoeg of laag is prima.',
       matchMatch: 'Past bij je fase',
       matchSoftHigher: 'Hoger dan je fase aangeeft',
       matchSoftLower: 'Lager dan je fase aangeeft',
@@ -93,7 +93,7 @@
       cycleDay: 'Day 14/28',
       cycleBio: 'Many people experience more clarity.',
       cycleTip:
-        'Feeling clear and energetic? High may fit. Feeling calmer? Medium or low is fine too.',
+        'Feeling clear and energetic? High may fit. Feeling calmer? Okay or low is fine too.',
       matchMatch: 'Matches your phase',
       matchSoftHigher: 'Higher than your phase suggests',
       matchSoftLower: 'Lower than your phase suggests',

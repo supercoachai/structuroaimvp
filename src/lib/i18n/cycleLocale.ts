@@ -5,18 +5,18 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
   nl: {
     optInTitle: "Wil je je cyclus meenemen?",
     optInBody:
-      "Energie en focus schommelen vaak met je menstruatiecyclus. Zet dit aan om later patronen te zien tussen cyclus en je dagstart.",
+      "Energie en focus schommelen vaak met je menstruatiecyclus. Zet dit aan om je fase als inzicht te zien naast je energie, met een zachte reminder. Structuro stuurt niet.",
     optInYes: "Ja, zet aan",
     optInNo: "Nee, sla over",
     optInLearnMore: "Vertel me eerst meer",
     optInBullet1: "Alleen periodestart en cycluslengte",
-    optInBullet2: "Wij berekenen je fase en koppelen die aan je dagstart",
+    optInBullet2: "We tonen je fase stil naast je energie, nooit in plaats ervan",
     optInBullet3: "Geen symptoomtracking. Altijd uit te zetten",
     aboutTitle: "Hoe Structuro met je cyclus omgaat",
     aboutLine1:
       "Je deelt alleen wat nodig is: de start van je laatste menstruatie en je gemiddelde cycluslengte.",
     aboutLine2:
-      "Structuro berekent zelf de fase van vandaag (folliculair, ovulatie, luteaal, menstruatie) en slaat alleen die fase op bij je dagstart.",
+      "Structuro berekent de fase van vandaag op je apparaat en toont die als inzicht. Geen sturing van energie of voorstellen.",
     aboutLine3:
       "Geen pijn-, bloed- of symptoomtracking. Geen externe diensten. Je kunt alles op elk moment uitzetten en wissen.",
     aboutPrivacyLink: "Lees ons privacybeleid",
@@ -56,7 +56,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     setupSaveError: "Kon niet opslaan: {detail}",
     settingsTitle: "Cyclus-tracking",
     settingsHint:
-      "Optioneel. Altijd hier aan of uit te zetten. Structuro berekent je fase bij je dagstart. Niets meer.",
+      "Optioneel. Altijd hier aan of uit te zetten. Structuro toont je fase als inzicht naast je energie. Geen sturing.",
     settingsToggleOn: "Aan",
     settingsToggleOff: "Uit",
     settingsEnable: "Inschakelen",
@@ -101,13 +101,13 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextTip_menstrual:
       "Voel je je vermoeid of wazig? Laag past vaak. Voel je je toch redelijk? Kies wat klopt voor jou vandaag.",
     energyContextTip_follicular:
-      "Merkt je een opleving? Middel of hoog kan passen. Nog niet fris? Laag is ook oké.",
+      "Merk je een opleving? Genoeg of hoog kan passen. Nog niet fris? Laag is ook oké.",
     energyContextTip_ovulation:
-      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Middel of laag is prima.",
+      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Genoeg of laag is prima.",
     energyContextTip_luteal_early:
-      "Energie kan nog wisselen. Kies wat je nu voelt: stabiel voelt vaak als middel, moe als laag.",
+      "Energie kan nog wisselen. Kies wat je nu voelt: stabiel voelt vaak als genoeg, moe als laag.",
     energyContextTip_luteal_late:
-      "Brain fog of prikkelbaarheid? Laag is vaak realistisch. Goede dag? Middel kan ook.",
+      "Brain fog of prikkelbaarheid? Laag is vaak realistisch. Goede dag? Genoeg kan ook.",
     hintMenstrual:
       "Veel vrouwen met ADHD ervaren tijdens hun menstruatie minder energie en focus.",
     hintFollicular:
@@ -136,19 +136,19 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     contextTip_menstrual:
       "Voel je je vermoeid of wazig? Laag komt hier vaak voor. Voel je je toch redelijk? Kies wat klopt voor jou vandaag.",
     contextTip_follicular:
-      "Merkt je een opleving? Middel of hoog kan passen. Nog niet fris? Laag is ook oké.",
+      "Merk je een opleving? Genoeg of hoog kan passen. Nog niet fris? Laag is ook oké.",
     contextTip_ovulation:
-      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Middel of laag is prima.",
+      "Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Genoeg of laag is prima.",
     contextTip_luteal:
       "Energie kan wisselen. Brain fog of prikkelbaarheid komt voor. Kies wat je nu voelt.",
     contextOnboardingLegendNote:
       "De andere cyclus-fases zie je later in je dagstart.",
-    energyMatchTag_match: "Past bij je fase",
-    energyMatchTag_softHigher: "Hoger dan je fase aangeeft",
-    energyMatchTag_softLower: "Lager dan je fase aangeeft",
-    energyMatchTag_strong: "Afwijkend van fasepatroon",
+    energyMatchTag_match: "Past bij wat vaak in deze fase voorkomt",
+    energyMatchTag_softHigher: "Hoger dan wat vaak in deze fase voorkomt",
+    energyMatchTag_softLower: "Lager dan wat vaak in deze fase voorkomt",
+    energyMatchTag_strong: "Anders dan het gangbare fasepatroon",
     contextChip_menstrual: "Laag komt vaak voor",
-    contextChip_follicular: "Middel komt vaak voor",
+    contextChip_follicular: "Genoeg komt vaak voor",
     contextChip_ovulation: "Hoog kan passen",
     contextChip_luteal: "Varieert per dag",
     contextLegendExpand: "Bekijk alle fases",
@@ -173,30 +173,59 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
       "Veel mensen ervaren meer helderheid rond ovulatie.",
     infoSheetMeaning_luteal:
       "Focus en stemming kunnen wisselen. Dat hoort bij deze fase.",
-    infoSheetPlanTitle: "Hoe Structuro plant",
+    infoSheetPlanTitle: "Wat Structuro doet",
     infoSheetPlanBody:
-      "Kleinere stappen vandaag. Zwaardere taken later in je cyclus.",
+      "Toont je fase naast je energie en kan zacht herinneren. Geen sturing: jij kiest hoeveel en wat.",
     infoSheetPrivateTitle: "Privé",
     infoSheetPrivateBody: "Blijft op dit apparaat. Wordt nooit gedeeld.",
     infoSheetGotIt: "Begrepen",
     infoSheetOpenAria: "Meer over je cyclusfase",
     infoSheetCloseAria: "Sluit cyclusuitleg",
+    discoverHintEyebrow: "Eenmalig instellen",
+    discoverHint: "Je cyclus meenemen?",
+    discoverHintAria: "Meer over cyclus meenemen",
+    discoverEyebrow: "Eenmalig instellen",
+    discoverTitle: "Je cyclus meenemen?",
+    discoverBody:
+      "Optioneel. Structuro toont je fase stil naast je energie: inzicht en een zachte reminder. Nooit in plaats van wat jij aangeeft, en nooit minder of meer taken voor jou kiezen.",
+    discoverToggleLabel: "Cyclus meenemen",
+    discoverToggleOff: "Uit · voorstellen alleen op energie",
+    discoverToggleOn: "Aan · fase naast je energie",
+    discoverWhyTitle: "Waarom dit uitmaakt",
+    discoverWhyBody:
+      "Dezelfde taak kan in je lage dagen zwaarder voelen. Ken je je fase, dan begrijp je sneller waarom. Structuro toont die context; jij blijft kiezen.",
+    discoverHowTitle: "Hoe het werkt",
+    discoverHow1Before: "Je geeft ",
+    discoverHow1Em: "één keer",
+    discoverHow1After: " je laatste start door. Verder niets invullen.",
+    discoverHow2Before: "Structuro zet je fase stil naast je energie, ",
+    discoverHow2Em: "nooit in plaats van",
+    discoverHow2After: " wat jij aangeeft.",
+    discoverHow3Before: "Zeg je nee, dan is dit blad ",
+    discoverHow3Em: "weg",
+    discoverHow3After: ". Je ziet het niet opnieuw.",
+    discoverSettingsBefore: "Je kunt dit later altijd wijzigen via ",
+    discoverSettingsLink: "Instellingen → Cyclus",
+    discoverSettingsAfter: ".",
+    discoverEnable: "Ja, meenemen",
+    discoverNotNow: "Nee, niet nodig",
+    discoverCloseAria: "Sluit cyclusuitleg",
   },
   en: {
     optInTitle: "Want to include your cycle?",
     optInBody:
-      "Energy and focus often shift with your menstrual cycle. Turn this on to see patterns between your cycle and your daily check-in later.",
+      "Energy and focus often shift with your menstrual cycle. Turn this on to see your phase as insight next to your energy, plus a soft reminder. Structuro never steers.",
     optInYes: "Yes, turn on",
     optInNo: "No, skip",
     optInLearnMore: "Tell me more first",
     optInBullet1: "Only period start and cycle length",
-    optInBullet2: "We calculate your phase and link it to your check-in",
+    optInBullet2: "We show your phase quietly next to energy, never instead of it",
     optInBullet3: "No symptom tracking. Turn off anytime",
     aboutTitle: "How Structuro handles your cycle",
     aboutLine1:
       "You only share what is needed: the start of your last period and your average cycle length.",
     aboutLine2:
-      "Structuro calculates today's phase (follicular, ovulation, luteal, menstrual) on your device and only stores that phase with your day start.",
+      "Structuro calculates today's phase on your device and shows it as insight. No steering of energy or suggestions.",
     aboutLine3:
       "No pain, bleeding or symptom tracking. No external services. You can turn it off and erase the data at any time.",
     aboutPrivacyLink: "Read our privacy policy",
@@ -236,7 +265,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     setupSaveError: "Could not save: {detail}",
     settingsTitle: "Cycle tracking",
     settingsHint:
-      "Optional. You can always turn this on or off here. Structuro calculates your phase with your day start. Nothing else.",
+      "Optional. You can always turn this on or off here. Structuro shows your phase as insight next to your energy. No steering.",
     settingsToggleOn: "On",
     settingsToggleOff: "Off",
     settingsEnable: "Turn on",
@@ -281,13 +310,13 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     energyContextTip_menstrual:
       "Feeling tired or foggy? Low often fits. Feeling okay anyway? Choose what feels right for you today.",
     energyContextTip_follicular:
-      "Noticing an uptick? Medium or high may fit. Not feeling fresh yet? Low is fine too.",
+      "Noticing an uptick? Okay or high may fit. Not feeling fresh yet? Low is fine too.",
     energyContextTip_ovulation:
-      "Feeling clear and energetic? High may fit. Feeling calmer? Medium or low works too.",
+      "Feeling clear and energetic? High may fit. Feeling calmer? Okay or low works too.",
     energyContextTip_luteal_early:
-      "Energy can still fluctuate. Pick what you feel now: steady often means medium, tired means low.",
+      "Energy can still fluctuate. Pick what you feel now: steady often means okay, tired means low.",
     energyContextTip_luteal_late:
-      "Brain fog or irritability? Low is often realistic. Having a good day? Medium can work too.",
+      "Brain fog or irritability? Low is often realistic. Having a good day? Okay can work too.",
     hintMenstrual:
       "Many women with ADHD experience lower energy and focus during their period.",
     hintFollicular:
@@ -316,19 +345,19 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     contextTip_menstrual:
       "Feeling tired or foggy? Low is common here. Feeling okay anyway? Choose what fits you today.",
     contextTip_follicular:
-      "Noticing an uptick? Medium or high may fit. Not feeling fresh yet? Low is fine too.",
+      "Noticing an uptick? Okay or high may fit. Not feeling fresh yet? Low is fine too.",
     contextTip_ovulation:
-      "Feeling clear and energetic? High may fit. Feeling calmer? Medium or low works too.",
+      "Feeling clear and energetic? High may fit. Feeling calmer? Okay or low works too.",
     contextTip_luteal:
       "Energy can shift. Brain fog or irritability happens. Choose what you feel now.",
     contextOnboardingLegendNote:
       "You will see the other cycle phases later in your day start.",
-    energyMatchTag_match: "Fits your phase",
-    energyMatchTag_softHigher: "Higher than your phase suggests",
-    energyMatchTag_softLower: "Lower than your phase suggests",
-    energyMatchTag_strong: "Differs from phase pattern",
+    energyMatchTag_match: "Fits what often shows up in this phase",
+    energyMatchTag_softHigher: "Higher than what often shows up in this phase",
+    energyMatchTag_softLower: "Lower than what often shows up in this phase",
+    energyMatchTag_strong: "Different from the common phase pattern",
     contextChip_menstrual: "Low is common here",
-    contextChip_follicular: "Medium is common here",
+    contextChip_follicular: "Okay is common here",
     contextChip_ovulation: "High may fit",
     contextChip_luteal: "Varies by day",
     contextLegendExpand: "View all phases",
@@ -353,13 +382,42 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
       "Many people experience more clarity around ovulation.",
     infoSheetMeaning_luteal:
       "Focus and mood can shift. That belongs to this phase.",
-    infoSheetPlanTitle: "How Structuro plans",
+    infoSheetPlanTitle: "What Structuro does",
     infoSheetPlanBody:
-      "Smaller steps today. Heavier tasks later in your cycle.",
+      "Shows your phase next to your energy and can softly remind you. No steering: you choose how much and what.",
     infoSheetPrivateTitle: "Private",
     infoSheetPrivateBody: "Stays on this device. Never shared.",
     infoSheetGotIt: "Got it",
     infoSheetOpenAria: "More about your cycle phase",
     infoSheetCloseAria: "Close cycle explanation",
+    discoverHintEyebrow: "Set once",
+    discoverHint: "Include your cycle?",
+    discoverHintAria: "More about including your cycle",
+    discoverEyebrow: "Set once",
+    discoverTitle: "Include your cycle?",
+    discoverBody:
+      "Optional. Structuro shows your phase quietly next to your energy: insight and a soft reminder. Never instead of what you choose, and never fewer or more tasks chosen for you.",
+    discoverToggleLabel: "Include cycle",
+    discoverToggleOff: "Off · suggestions from energy only",
+    discoverToggleOn: "On · phase next to your energy",
+    discoverWhyTitle: "Why this matters",
+    discoverWhyBody:
+      "The same task can feel heavier on your low days. Knowing your phase helps you understand why. Structuro shows that context; you keep choosing.",
+    discoverHowTitle: "How it works",
+    discoverHow1Before: "You share ",
+    discoverHow1Em: "once",
+    discoverHow1After: " your last start date. Nothing else to fill in.",
+    discoverHow2Before: "Structuro places your phase quietly next to your energy, ",
+    discoverHow2Em: "never instead of",
+    discoverHow2After: " what you choose.",
+    discoverHow3Before: "If you say no, this sheet is ",
+    discoverHow3Em: "gone",
+    discoverHow3After: ". You will not see it again.",
+    discoverSettingsBefore: "You can always change this later via ",
+    discoverSettingsLink: "Settings → Cycle",
+    discoverSettingsAfter: ".",
+    discoverEnable: "Yes, include it",
+    discoverNotNow: "No, not needed",
+    discoverCloseAria: "Close cycle explanation",
   },
 };

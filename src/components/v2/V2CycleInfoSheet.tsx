@@ -19,9 +19,9 @@ const PHASE_ORDER: CyclePhaseKey[] = [
 ];
 
 const PHASE_BAR_SHORT: Record<CyclePhaseKey, string> = {
-  menstrual: "MENS.",
+  menstrual: "MENSTRUATIE",
   follicular: "FOLLICULAIR",
-  ovulation: "OVUL.",
+  ovulation: "OVULATIE",
   luteal: "LUTEAAL",
 };
 

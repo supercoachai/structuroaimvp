@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { CSSProperties, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 import {
   IconShutdown,
@@ -11,6 +11,10 @@ import {
   IconTarget,
   IconTasks,
 } from "@/components/navigation/mainAppNav";
+import { HAPTIC_PATTERNS, triggerHaptic } from "@/lib/haptics";
+import { useI18n } from "@/lib/i18n";
+import { performClientLogout } from "@/lib/logoutClient";
+import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 
 import { v2ScopedCss, v2Styles } from "./theme";
 
@@ -70,41 +74,88 @@ function V2Brand() {
   );
 }
 
+function isExternalHref(href: string): boolean {
+  return /^https?:\/\//i.test(href);
+}
+
+/** Interne Next-link of externe marketing-URL (zelfde tab). */
+function V2ExitLink({
+  href,
+  className,
+  style,
+  children,
+}: {
+  href: string;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
+  if (isExternalHref(href)) {
+    return (
+      <a href={href} className={className} style={style}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className} style={style}>
+      {children}
+    </Link>
+  );
+}
+
 /**
- * Flow-header (design phone): Terug | STRUCTURO | Stoppen.
+ * Flow-header: Stoppen (of Terug) | STRUCTURO | trailing (bijv. taalvlaggen).
  * brandMode="flow" = uppercase tracked text, geen logo/badge.
+ * Zonder terug: exit links. Met terug: Terug links, exit rechts (tenzij trailing).
  */
 export function V2Header({
   exitHref,
   exitLabel = "Stoppen",
   onBack,
+  trailing,
   brandMode = "default",
 }: {
   exitHref?: string;
   exitLabel?: string;
-  /** Toont "< Terug" links; alleen op stappen na welcome. */
+  /** Toont "< Terug" links wanneer er een vorige stap is. */
   onBack?: () => void;
+  /** Rechtsboven in flow-header (bijv. NL/EN-vlaggen op energy). */
+  trailing?: ReactNode;
   /** "flow" = design-phone woordmerk gecentreerd. */
   brandMode?: "default" | "flow";
 }) {
   if (brandMode === "flow") {
+    const left = onBack ? (
+      <button type="button" className="v2-flow-header__side" onClick={onBack}>
+        {"< Terug"}
+      </button>
+    ) : exitHref ? (
+      <V2ExitLink href={exitHref} className="v2-flow-header__side">
+        {exitLabel}
+      </V2ExitLink>
+    ) : (
+      <span className="v2-flow-header__side" aria-hidden="true" />
+    );
+
+    const right = trailing ? (
+      <div className="v2-flow-header__side v2-flow-header__trailing">{trailing}</div>
+    ) : onBack && exitHref ? (
+      <V2ExitLink
+        href={exitHref}
+        className="v2-flow-header__side v2-flow-header__exit"
+      >
+        {exitLabel}
+      </V2ExitLink>
+    ) : (
+      <span className="v2-flow-header__side" aria-hidden="true" />
+    );
+
     return (
       <header className="v2-flow-header">
-        {onBack ? (
-          <button type="button" className="v2-flow-header__side" onClick={onBack}>
-            {"< Terug"}
-          </button>
-        ) : (
-          <span className="v2-flow-header__side" aria-hidden="true" />
-        )}
+        {left}
         <p className="v2-flow-header__brand">Structuro</p>
-        {exitHref ? (
-          <Link href={exitHref} className="v2-flow-header__side v2-flow-header__exit">
-            {exitLabel}
-          </Link>
-        ) : (
-          <span className="v2-flow-header__side" aria-hidden="true" />
-        )}
+        {right}
       </header>
     );
   }
@@ -113,13 +164,13 @@ export function V2Header({
     <header style={v2Styles.header}>
       <V2Brand />
       {exitHref ? (
-        <Link
+        <V2ExitLink
           href={exitHref}
           className="v2-textlink"
           style={{ ...v2Styles.textlink, opacity: 0.42 }}
         >
           {exitLabel}
-        </Link>
+        </V2ExitLink>
       ) : (
         <span aria-hidden="true" />
       )}
@@ -142,10 +193,14 @@ function isActiveTab(pathname: string | null, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function pulseNavHaptic() {
+  triggerHaptic(HAPTIC_PATTERNS.NAV_TAP, { respectReducedMotion: true });
+}
+
 /**
  * v2 bottom-nav in Variant F: cream papier, rustige iconen. Active-tab krijgt
- * de sage-accentkleur (nooit een gevulde knop). "Dagafsluiting" opent het
- * shutdown-ritueel op /v2/shutdown.
+ * sage soft-pill + zwaardere stroke (geen gevulde knop / floating glass).
+ * "Afsluiten" opent het shutdown-ritueel op /v2/shutdown.
  */
 function V2BottomNav() {
   const pathname = usePathname();
@@ -177,8 +232,9 @@ function V2BottomNav() {
           ...v2Styles.appNavItem,
           ...(active ? v2Styles.appNavItemActive : {}),
           color: active ? "var(--accent)" : "var(--text-muted)",
-          opacity: active ? 1 : 0.48,
+          opacity: active ? 1 : 0.42,
         };
+        const itemClass = `v2-app-nav__item${active ? " is-active" : ""}`;
         const Icon = tab.Icon;
         const inner = (
           <>
@@ -198,10 +254,12 @@ function V2BottomNav() {
             <Link
               key={tab.id}
               href={tab.href}
+              className={itemClass}
               style={itemStyle}
               aria-label={tab.label}
               aria-current={active ? "page" : undefined}
               title={tab.label}
+              onClick={pulseNavHaptic}
             >
               {inner}
             </Link>
@@ -211,7 +269,11 @@ function V2BottomNav() {
           <button
             key={tab.id}
             type="button"
-            onClick={tab.onClick}
+            className={itemClass}
+            onClick={() => {
+              pulseNavHaptic();
+              tab.onClick?.();
+            }}
             style={itemStyle}
             aria-label={tab.label}
             title={tab.label}
@@ -247,12 +309,24 @@ export function V2AppShell({
   chrome?: "app" | "flow";
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { t } = useI18n();
   const onSettings = isActiveTab(pathname, "/v2/settings");
+  // Guest: geen Uitloggen (RSD/verwarring). Pas na mount; SSR = geen hint.
+  const [showLogout, setShowLogout] = useState(false);
   const headerPad = {
     paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))",
     paddingLeft: 24,
     paddingRight: 24,
   } as const;
+
+  useEffect(() => {
+    setShowLogout(hasSupabaseAuthHintOnClient());
+  }, []);
+
+  const handleLogout = () => {
+    void performClientLogout(router);
+  };
 
   return (
     <>
@@ -278,7 +352,7 @@ export function V2AppShell({
                 src={V2_LOGO_SRC}
                 alt=""
                 width={28}
-                height={20}
+                height={28}
                 style={v2Styles.appShellLogo}
                 priority
               />
@@ -299,8 +373,8 @@ export function V2AppShell({
                   href="/v2/settings"
                   className="v2-headerlink v2-headerlink--icon"
                   style={v2Styles.appHeaderLink}
-                  aria-label="Instellingen"
-                  title="Instellingen"
+                  aria-label={t("layout.settings")}
+                  title={t("layout.settings")}
                 >
                   <svg
                     width="20"
@@ -318,6 +392,32 @@ export function V2AppShell({
                   </svg>
                 </Link>
               )}
+              {showLogout ? (
+                <button
+                  type="button"
+                  className="v2-headerlink v2-headerlink--icon"
+                  style={v2Styles.appHeaderLink}
+                  onClick={handleLogout}
+                  aria-label={t("layout.logout")}
+                  title={t("layout.logout")}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.55"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                </button>
+              ) : null}
             </div>
           </header>
         )}

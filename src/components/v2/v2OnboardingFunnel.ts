@@ -20,7 +20,6 @@ import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 import type { V2Energy } from "./V2Context";
 
 export type V2OnboardingStep =
-  | "welcome"
   | "energy"
   | "tasks"
   | "done"
@@ -60,7 +59,7 @@ function mapEnergy(energy: V2Energy | null): "low" | "medium" | "high" | null {
 
 /**
  * Fijnmazige client-stap. Eén keer per browsersessie per stap.
- * Daarnaast: bestaande activatie-events waar die mappen (welcome/done).
+ * Daarnaast: bestaande activatie-events waar die mappen (energy/done).
  */
 export function trackV2OnboardingStep(
   step: V2OnboardingStep,
@@ -72,7 +71,7 @@ export function trackV2OnboardingStep(
   const props = { ...attribution(), step, ...properties };
   captureActivationFunnelEvent("v2_onboarding_step", props);
 
-  if (step === "welcome") {
+  if (step === "energy") {
     trackOnboardingStarted();
   }
 }

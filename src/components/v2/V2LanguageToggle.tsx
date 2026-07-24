@@ -1,10 +1,57 @@
 "use client";
 
+import type { ReactElement } from "react";
+
 import { useI18n, type Locale } from "@/lib/i18n";
 
+/** NL-vlag (zelfde SVG als structuro-eu-landing/v2). */
+function FlagNl() {
+  return (
+    <svg
+      width="22"
+      height="16"
+      viewBox="0 0 22 16"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect width="22" height="16" fill="#AE1C28" />
+      <rect y="5.33" width="22" height="5.34" fill="#FFFFFF" />
+      <rect y="10.67" width="22" height="5.33" fill="#21468B" />
+    </svg>
+  );
+}
+
+/** EN-vlag (UK Union Jack, zelfde SVG als landing). */
+function FlagEn() {
+  return (
+    <svg
+      width="22"
+      height="16"
+      viewBox="0 0 60 40"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect width="60" height="40" fill="#012169" />
+      <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" strokeWidth="6" />
+      <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" strokeWidth="4" />
+      <path d="M30,0 V40 M0,20 H60" stroke="#fff" strokeWidth="10" />
+      <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" strokeWidth="6" />
+    </svg>
+  );
+}
+
+const LANG_OPTS: {
+  code: Locale;
+  label: string;
+  Flag: () => ReactElement;
+}[] = [
+  { code: "nl", label: "Nederlands", Flag: FlagNl },
+  { code: "en", label: "English", Flag: FlagEn },
+];
+
 /**
- * Minimale NL/EN-schakelaar voor first-run (intro/dagstart).
- * Bewust klein: correctie op browser-detect, geen settings-paneel.
+ * NL/EN-schakelaar voor first-run (onboarding energy). Vlaggen zoals op de EU-landing;
+ * aria-label + title houden de taalnaam toegankelijk. Accounts: ook in settings.
  */
 export default function V2LanguageToggle({
   onChange,
@@ -21,48 +68,21 @@ export default function V2LanguageToggle({
   };
 
   return (
-    <div
-      className="v2-lang"
-      role="group"
-      aria-label={t("v2.languageAria")}
-      style={{
-        position: "absolute",
-        top: "max(4px, env(safe-area-inset-top, 0px))",
-        right: 0,
-        zIndex: 3,
-        display: "flex",
-        gap: 2,
-        padding: 3,
-        borderRadius: 10,
-        border: "1px solid var(--border)",
-        background: "color-mix(in srgb, var(--surface) 88%, white)",
-        backdropFilter: "blur(8px)",
-      }}
-    >
-      {(["nl", "en"] as const).map((code) => {
+    <div className="v2-lang" role="group" aria-label={t("v2.languageAria")}>
+      {LANG_OPTS.map(({ code, label, Flag }) => {
         const active = locale === code;
         return (
           <button
             key={code}
             type="button"
             className={`v2-lang__opt${active ? " is-active" : ""}`}
+            aria-label={label}
             aria-pressed={active}
+            title={label}
             onClick={() => pick(code)}
-            style={{
-              minWidth: 36,
-              border: "none",
-              borderRadius: 7,
-              padding: "6px 8px",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.04em",
-              cursor: "pointer",
-              touchAction: "manipulation",
-              color: active ? "var(--text-on-ink)" : "var(--text-muted)",
-              background: active ? "var(--ink)" : "transparent",
-            }}
           >
-            {code.toUpperCase()}
+            <Flag />
+            <span className="v2-lang__code">{code.toUpperCase()}</span>
           </button>
         );
       })}

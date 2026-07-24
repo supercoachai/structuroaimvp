@@ -9,6 +9,11 @@ import {
 } from "@/lib/acquisition/bridgePaths";
 import { getBridgePresentation } from "@/lib/acquisition/bridgeCopy";
 import {
+  organicSoftAdvanceTarget,
+  shouldSoftAdvanceOrganicLanding,
+  softAdvanceHref,
+} from "@/lib/acquisition/organicSoftAdvance";
+import {
   enterAnonymousOnboarding,
   shouldResetAnonymousOnboardingFromClient,
 } from "@/lib/auth/anonymousOnboardingEntry";
@@ -29,33 +34,11 @@ type AcquisitionBridgeClientProps = {
   locale: Locale;
 };
 
-/**
- * Alle acquisitie-bridges (organic + TikTok) naar v1-onboarding.
- * V2 is preview/experiment; geen productie-lekkage via /start.
- */
-function bridgeSignupHrefForChannel(_channel: BridgeChannel): string {
-  return "/onboarding";
-}
-
-/**
- * EU v2-landing (utm_campaign=eu_v2): attributie schrijven en soft-doorsturen
- * naar v1-onboarding. Kale /start en andere campaigns blijven leesbaar.
- */
-function shouldSoftAdvanceFromEuLanding(searchParams: URLSearchParams): boolean {
-  const campaign = (searchParams.get("utm_campaign") || "").toLowerCase();
-  return campaign === "eu_v2" || campaign.startsWith("eu_v2_");
-}
-
-/** Soft-advance behoudt lang; attributie zit al in storage/cookie vanaf /start. */
-function softAdvanceHref(
-  signupHref: string,
-  searchParams: URLSearchParams
-): string {
-  const lang = searchParams.get("lang") || searchParams.get("locale");
-  if (!lang || (lang !== "en" && lang !== "nl")) return signupHref;
-  const next = new URL(signupHref, "https://www.structuro.ai");
-  next.searchParams.set("lang", lang);
-  return `${next.pathname}?${next.searchParams.toString()}`;
+function bridgeSignupHrefForSearchParams(searchParams: URLSearchParams): string {
+  if (!shouldSoftAdvanceOrganicLanding(searchParams)) {
+    return "/onboarding";
+  }
+  return organicSoftAdvanceTarget(searchParams);
 }
 
 function AcquisitionBridgeInner({
@@ -66,7 +49,7 @@ function AcquisitionBridgeInner({
 }: AcquisitionBridgeClientProps) {
   const searchParams = useSearchParams();
   const landingPath = bridgePathForChannel(channel);
-  const signupHref = bridgeSignupHrefForChannel(channel);
+  const signupHref = bridgeSignupHrefForSearchParams(searchParams);
   const presentation = getBridgePresentation(channel, locale);
 
   useEffect(() => {
@@ -77,14 +60,20 @@ function AcquisitionBridgeInner({
     applySignupAttributionFromSearchParams(searchParams);
   }, [searchParams]);
 
-  // Dunne bridge: EU V2-CTA's landen op /start, schrijven attributie, en gaan door.
+  // Dunne bridge: EU-landing CTA's landen op /start, schrijven attributie, en gaan door.
   // Geen tweede cta_clicked: die is al op structuro.eu afgevuurd.
   useEffect(() => {
     if (channel !== "organic") return;
-    if (!shouldSoftAdvanceFromEuLanding(searchParams)) return;
+    if (!shouldSoftAdvanceOrganicLanding(searchParams)) return;
     if (hasSupabaseAuthHintOnClient()) return;
 
     applySignupAttributionFromSearchParams(searchParams);
+
+    // V1 anonieme local-mode alleen voor v1-/onboarding. V2 heeft eigen guest-storage.
+    if (!signupHref.startsWith("/v2")) {
+      const reset = shouldResetAnonymousOnboardingFromClient();
+      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
+    }
 
     const target = softAdvanceHref(signupHref, searchParams);
     const timer = window.setTimeout(() => {
@@ -112,8 +101,11 @@ function AcquisitionBridgeInner({
 
     event.preventDefault();
 
-    const reset = shouldResetAnonymousOnboardingFromClient();
-    enterAnonymousOnboarding(reset ? { reset: true } : undefined);
+    // V1 anonieme local-mode alleen voor v1-/onboarding. V2 heeft eigen guest-storage.
+    if (!signupHref.startsWith("/v2")) {
+      const reset = shouldResetAnonymousOnboardingFromClient();
+      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
+    }
     window.location.assign(softAdvanceHref(signupHref, searchParams));
   }
 

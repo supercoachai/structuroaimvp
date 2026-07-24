@@ -3,11 +3,13 @@
 import { useI18n } from "@/lib/i18n";
 
 import { v2Styles } from "./theme";
-import { v2IsAnxietyTitle } from "./v2Things";
+import V2TaskBattery from "./V2TaskBattery";
+import { v2EnrichThingProposals, v2IsAnxietyTitle } from "./v2Things";
 
 /**
  * Escape-pad: eenvoudige keuze tot max drie. Geen swipe als hoofdsysteem.
  * Zware onderwerpen krijgen een zachte meta ("Mag later"), geen shame-label.
+ * Energie-batterij per rij (zelfde lookup als propose/home).
  */
 export default function V2AdjustStep({
   options,
@@ -26,6 +28,7 @@ export default function V2AdjustStep({
 }) {
   const { t } = useI18n();
   const atMax = selected.length >= maxSlots;
+  const rows = v2EnrichThingProposals(options);
 
   const title =
     maxSlots >= 3 ? (
@@ -44,24 +47,25 @@ export default function V2AdjustStep({
     <>
       <h1 style={v2Styles.title}>{title}</h1>
       <div style={{ ...v2Styles.optionList, marginTop: 8 }}>
-        {options.map((optionTitle) => {
-          const on = selected.includes(optionTitle);
+        {rows.map((row) => {
+          const on = selected.includes(row.title);
           const lockedOut = !on && atMax;
-          const softLater = v2IsAnxietyTitle(optionTitle);
+          const softLater = v2IsAnxietyTitle(row.title);
           return (
             <button
-              key={optionTitle}
+              key={row.title}
               type="button"
               className="v2-adjust-task"
               aria-pressed={on}
               disabled={lockedOut}
-              onClick={() => onToggle(optionTitle)}
+              onClick={() => onToggle(row.title)}
             >
               <span className={`v2-adjust-task__chk${on ? " on" : ""}`} aria-hidden>
                 {on ? "✓" : ""}
               </span>
+              <V2TaskBattery energy={row.energy} size={18} />
               <span className="v2-adjust-task__body">
-                <span className="v2-adjust-task__lbl">{optionTitle}</span>
+                <span className="v2-adjust-task__lbl">{row.title}</span>
                 {softLater ? (
                   <span className="v2-adjust-task__meta">{t("v2.adjustLater")}</span>
                 ) : null}
