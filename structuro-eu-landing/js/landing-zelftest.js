@@ -101,8 +101,14 @@
     if (typeof window.structuroSignupBridgeUrl === 'function') {
       return window.structuroSignupBridgeUrl(contentId);
     }
+    var origin =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://www.structuro.ai';
     return (
-      'https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
+      origin +
+      '/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
       (contentId || 'zelftest_sticky')
     );
   }

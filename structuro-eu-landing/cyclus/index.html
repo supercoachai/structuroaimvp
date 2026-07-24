@@ -106,7 +106,7 @@ h1{margin:0;font-family:var(--story-serif);font-size:clamp(32px,5vw,44px);font-w
 .cycle-phase-days{font-size:11px;color:var(--sub);font-weight:500;}
 .cycle-phase-sub{font-size:12.5px;color:var(--sub);line-height:1.5;padding-left:16px;}
 .cycle-phase-structuro{font-size:11.5px;font-weight:600;color:var(--story-accent);margin-top:3px;padding-left:16px;}
-.cycle-disclaimer{margin-top:32px;font-size:12.5px;color:var(--place);font-style:italic;text-align:center;}
+.cycle-disclaimer{margin-top:32px;font-size:12.5px;color:var(--place);font-style:normal;text-align:center;}
 @media(max-width:720px){.voor-vrouwen{padding:32px 0 72px;}.cycle-disclaimer{text-align:left;}}
 .cycle-info-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--sub);font-size:11px;cursor:pointer;margin-left:auto;display:flex;align-items:center;justify-content:center;transition:all 150ms;flex-shrink:0;font-family:inherit;line-height:1;padding:0;}
 .cycle-info-btn:hover,.cycle-info-btn[aria-expanded="true"]{background:var(--phase-color,#2563EB);color:white;border-color:var(--phase-color,#2563EB);box-shadow:0 0 8px color-mix(in srgb,var(--phase-color,#2563EB) 50%,transparent);}
@@ -115,7 +115,7 @@ h1{margin:0;font-family:var(--story-serif);font-size:clamp(32px,5vw,44px);font-w
 .cycle-detail-block{display:flex;flex-direction:column;gap:3px;}
 .cycle-detail-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.10em;color:var(--phase-color,#2563EB);}
 .cycle-detail-text{font-size:12.5px;color:var(--sub);line-height:1.6;}
-.cycle-detail-disclaimer{font-size:11px;color:var(--place);font-style:italic;margin-top:4px;}
+.cycle-detail-disclaimer{font-size:11px;color:var(--place);font-style:normal;margin-top:4px;}
 @keyframes cycleIndicatorPulse{0%,100%{opacity:0.2;}50%{opacity:0.55;}}
 #cycleIndicator>circle:first-child{animation:cycleIndicatorPulse 1.8s ease-in-out infinite;}
 @media(prefers-reduced-motion:reduce){#cycleIndicator>circle:first-child{animation:none!important;opacity:0.3;}}
@@ -139,8 +139,8 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
 .reveal.visible{opacity:1;transform:none;}
 @media(prefers-reduced-motion:reduce){.reveal,.reveal.visible{opacity:1;transform:none;transition:none;}}
 </style>
-<script defer src="/js/ph-config.js?v=20260619c"></script>
-<script defer src="/js/analytics.js?v=20260619c"></script>
+<script defer src="/js/ph-config.js?v=20260724a"></script>
+<script defer src="/js/analytics.js?v=20260724a"></script>
 </head>
 <body>
 
@@ -156,7 +156,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <a href="/#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="/#faq" data-ph-cta="nav_faq">FAQ</a>
       <a href="https://www.structuro.ai/login" data-login-bridge="nav_login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="#" class="nav-cta" data-signup-bridge="nav" data-ph-cta="nav"><span data-cta-dynamic>Start gratis</span></a>
+      <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=nav" class="nav-cta" data-signup-bridge="nav" data-ph-cta="nav"><span data-cta-dynamic>Start 3 dagen gratis</span></a>
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" type="button" onclick="setLang('nl')" aria-label="Nederlands">
           <svg width="22" height="16" viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg" style="border-radius:3px;display:block;" aria-hidden="true">
