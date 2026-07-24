@@ -113,6 +113,13 @@ export function recordV2EnergyForToday(energy: V2Energy, ymd = todayYmd()): void
   patchV2Adaptive({ energyByYmd: { ...data.energyByYmd, [ymd]: energy } });
 }
 
+/** Energië van vandaag (adaptive), of null. */
+export function getV2EnergyForToday(ymd = todayYmd()): V2Energy | null {
+  const value = readV2Adaptive().energyByYmd[ymd];
+  if (value === "low" || value === "enough" || value === "high") return value;
+  return null;
+}
+
 function ymdDaysAgo(days: number, from = new Date()): string {
   const d = new Date(from);
   d.setDate(d.getDate() - days);

@@ -5,7 +5,12 @@ vi.mock("@/lib/supabase/authStorage", () => ({
 }));
 
 import { markV2FirstValue } from "./v2CycleOptInPrompt";
-import { shouldShowShutdownNudge } from "./v2ShutdownNudge";
+import {
+  canOfferShutdownNotification,
+  fireV2ShutdownNotification,
+  isShutdownNotificationWindow,
+  shouldShowShutdownNudge,
+} from "./v2ShutdownNudge";
 import type { V2State } from "./V2Context";
 
 const baseState: V2State = {
@@ -43,23 +48,70 @@ describe("shouldShowShutdownNudge", () => {
     vi.useRealTimers();
   });
 
-  it("toont niet vóór firstValue, ook niet in de avond", () => {
+  it("toont nooit meer als home-kaart", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-24T21:00:00"));
+    vi.setSystemTime(new Date("2026-07-24T21:30:00"));
+    markV2FirstValue(new Date("2026-07-24T21:30:00"));
     expect(shouldShowShutdownNudge(baseState)).toBe(false);
   });
+});
 
-  it("toont wél na firstValue in de avond", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-24T21:00:00"));
-    markV2FirstValue(new Date("2026-07-24T21:00:00"));
-    expect(shouldShowShutdownNudge(baseState)).toBe(true);
+describe("canOfferShutdownNotification", () => {
+  beforeEach(() => {
+    installLocalStorage();
+    vi.useRealTimers();
   });
 
-  it("toont niet overdag, ook niet met firstValue", () => {
+  it("nee vóór firstValue", () => {
+    expect(canOfferShutdownNotification(baseState)).toBe(false);
+  });
+
+  it("ja na firstValue met open dag", () => {
+    markV2FirstValue();
+    expect(canOfferShutdownNotification(baseState)).toBe(true);
+  });
+
+  it("nee als dag al afgesloten", () => {
+    markV2FirstValue();
+    expect(canOfferShutdownNotification({ ...baseState, todayDone: true })).toBe(false);
+  });
+});
+
+describe("isShutdownNotificationWindow", () => {
+  it("false vóór 21:30", () => {
+    expect(isShutdownNotificationWindow(new Date("2026-07-24T21:29:00"))).toBe(false);
+  });
+
+  it("true vanaf 21:30", () => {
+    expect(isShutdownNotificationWindow(new Date("2026-07-24T21:30:00"))).toBe(true);
+  });
+});
+
+describe("fireV2ShutdownNotification", () => {
+  beforeEach(() => {
+    installLocalStorage();
+    vi.useRealTimers();
+  });
+
+  it("vuurt niet zonder Notification permission", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-24T15:00:00"));
-    markV2FirstValue(new Date("2026-07-24T15:00:00"));
-    expect(shouldShowShutdownNudge(baseState)).toBe(false);
+    vi.setSystemTime(new Date("2026-07-24T21:30:00"));
+    markV2FirstValue(new Date("2026-07-24T21:30:00"));
+    const NotificationMock = Object.assign(vi.fn(), { permission: "default" as const });
+    vi.stubGlobal("Notification", NotificationMock);
+    vi.stubGlobal("window", { localStorage: window.localStorage, Notification: NotificationMock });
+    expect(fireV2ShutdownNotification(baseState)).toBe(false);
+  });
+
+  it("vuurt met granted permission in venster", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-24T21:30:00"));
+    markV2FirstValue(new Date("2026-07-24T21:30:00"));
+    const notify = vi.fn();
+    const NotificationMock = Object.assign(notify, { permission: "granted" as const });
+    vi.stubGlobal("Notification", NotificationMock);
+    vi.stubGlobal("window", { localStorage: window.localStorage, Notification: NotificationMock });
+    expect(fireV2ShutdownNotification(baseState)).toBe(true);
+    expect(notify).toHaveBeenCalledOnce();
   });
 });

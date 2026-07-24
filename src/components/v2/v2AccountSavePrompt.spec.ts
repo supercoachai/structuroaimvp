@@ -8,6 +8,7 @@ import { markV2FirstValue } from "./v2CycleOptInPrompt";
 import {
   dismissAccountSavePrompt,
   shouldShowAccountSavePrompt,
+  shouldShowPostOnboardingAccountSave,
 } from "./v2AccountSavePrompt";
 import { V2_SETTINGS_KEY, v2SettingsDefaults } from "./v2Settings";
 
@@ -35,30 +36,42 @@ describe("shouldShowAccountSavePrompt", () => {
     installLocalStorage();
   });
 
-  it("toont niet direct na onboarding (geen firstValueAt)", () => {
+  it("toont nooit meer op home (ook niet na firstValue)", () => {
+    expect(shouldShowAccountSavePrompt()).toBe(false);
+    markV2FirstValue();
     expect(shouldShowAccountSavePrompt()).toBe(false);
   });
 
-  it("toont pas na markV2FirstValue (focus/shutdown)", () => {
-    markV2FirstValue();
-    expect(shouldShowAccountSavePrompt()).toBe(true);
-  });
-
-  it("toont niet na dismiss", () => {
+  it("blijft false na dismiss", () => {
     markV2FirstValue();
     dismissAccountSavePrompt();
     expect(shouldShowAccountSavePrompt()).toBe(false);
   });
 
-  it("respecteert bestaande dismiss in settings", () => {
+  it("blijft false met bestaande settings", () => {
     localStorage.setItem(
       V2_SETTINGS_KEY,
       JSON.stringify({
         ...v2SettingsDefaults,
         firstValueAt: new Date().toISOString(),
-        accountSavePromptDismissed: true,
+        accountSavePromptDismissed: false,
       }),
     );
     expect(shouldShowAccountSavePrompt()).toBe(false);
+  });
+});
+
+describe("shouldShowPostOnboardingAccountSave", () => {
+  beforeEach(() => {
+    installLocalStorage();
+  });
+
+  it("toont na onboarding zonder firstValueAt (guest)", () => {
+    expect(shouldShowPostOnboardingAccountSave()).toBe(true);
+  });
+
+  it("toont niet na dismiss", () => {
+    dismissAccountSavePrompt();
+    expect(shouldShowPostOnboardingAccountSave()).toBe(false);
   });
 });

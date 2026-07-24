@@ -83,6 +83,18 @@ async function runOnboarding(
     page.getByRole("button", { name: /Naar je dag|To your day/i }),
   ).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: /Naar je dag|To your day/i }).click();
+
+  // Guest: soft account-save (Google / e-mail) na eerste onboarding.
+  const accountSave = page.getByRole("button", {
+    name: /Doorgaan met Google|Continue with Google/i,
+  });
+  const accountVisible = await accountSave
+    .isVisible({ timeout: 8_000 })
+    .catch(() => false);
+  if (accountVisible) {
+    await page.getByRole("button", { name: /Niet nu|Not now/i }).click();
+  }
+
   await expect(page).toHaveURL(/\/v2\/home/, { timeout: 15_000 });
 }
 
@@ -95,7 +107,7 @@ async function completeOneFocus(page: Page) {
   }
   await start.click();
   await expect(page).toHaveURL(/\/v2\/focus/, { timeout: 15_000 });
-  await page.getByRole("button", { name: /Kort|Short/i }).click();
+  await page.getByRole("button", { name: /Start focus/i }).click();
   await expect(page.getByRole("button", { name: /Pauze|Pause/i })).toBeVisible({
     timeout: 10_000,
   });
@@ -146,48 +158,46 @@ test.describe("V2 full flow audit ×2", () => {
       });
     }
 
-    // Shutdown-nudge mag first-session niet blokkeren
+    // Shutdown-nudge is geen home-kaart meer (21:30 notificatie i.p.v. sticky card)
     const shutdownNudge = page.getByText(/dag is nog open|day is still open/i);
     if (await shutdownNudge.isVisible().catch(() => false)) {
       findings.push({
         severity: "bug",
         where: "home",
-        detail: "Shutdown-nudge vóór firstValue",
+        detail: "Shutdown-nudge home-kaart nog zichtbaar",
       });
     } else {
       findings.push({
         severity: "ok",
         where: "home",
-        detail: "Geen shutdown-nudge vóór firstValue",
+        detail: "Geen shutdown-nudge home-kaart",
       });
     }
 
-    // Account CTA mag nog NIET
+    // Soft account-CTA op home is verwijderd (account-save zit in onboarding)
     const accountEarly = page.getByRole("link", { name: /Bewaar met Google|Save with Google/i });
     if (await accountEarly.isVisible().catch(() => false)) {
       findings.push({
         severity: "bug",
         where: "home",
-        detail: "Account-CTA zichtbaar vóór firstValue",
+        detail: "Account-CTA zichtbaar op home",
       });
     }
 
     await completeOneFocus(page);
 
     const account = page.getByRole("link", { name: /Bewaar met Google|Save with Google/i });
-    await expect(account).toBeVisible({ timeout: 10_000 });
-    const href = await account.getAttribute("href");
-    if (!href?.includes("/registreren") || !href.includes("from=v2")) {
+    if (await account.isVisible().catch(() => false)) {
       findings.push({
         severity: "bug",
         where: "account CTA",
-        detail: `Verkeerde href: ${href}`,
+        detail: "Home soft account-CTA nog zichtbaar na focus",
       });
     } else {
       findings.push({
         severity: "ok",
         where: "account CTA",
-        detail: `Href ok: ${href}`,
+        detail: "Geen soft account-CTA op home na focus",
       });
     }
 

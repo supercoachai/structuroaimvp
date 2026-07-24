@@ -28,6 +28,9 @@ describe("cycle discovery doctrine copy", () => {
     expect(nl.discoverHow2Em.toLowerCase()).toContain("nooit in plaats van");
     expect(nl.infoSheetPlanTitle).toMatch(/Wat Structuro doet/);
     expect(nl.infoSheetPlanBody.toLowerCase()).toMatch(/geen sturing/);
+    expect(nl.infoSheetWhyTitle).toMatch(/Waarom dit uitmaakt/);
+    expect(nl.infoSheetWhyBody.toLowerCase()).toMatch(/context/);
+    expect(nl.infoSheetWhyBody.toLowerCase()).toMatch(/jij blijft kiezen/);
 
     const blob = Object.values(nl).join("\n");
     for (const re of STEERING_PATTERNS) {
@@ -42,6 +45,9 @@ describe("cycle discovery doctrine copy", () => {
     expect(en.discoverBody.toLowerCase()).toMatch(/insight|reminder/);
     expect(en.infoSheetPlanTitle).toMatch(/What Structuro does/);
     expect(en.infoSheetPlanBody.toLowerCase()).toMatch(/no steering/);
+    expect(en.infoSheetWhyTitle).toMatch(/Why this matters/);
+    expect(en.infoSheetWhyBody.toLowerCase()).toMatch(/context/);
+    expect(en.infoSheetWhyBody.toLowerCase()).toMatch(/you still choose/);
 
     const blob = Object.values(en).join("\n");
     for (const re of STEERING_PATTERNS) {

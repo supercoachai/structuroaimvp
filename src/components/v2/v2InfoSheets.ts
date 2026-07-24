@@ -1,6 +1,12 @@
 import type { V2InfoSheetRow } from "./V2InfoSheet";
 
-export type V2InfoSheetKey = "dump" | "snooze" | "focus" | "cycleOptIn" | "shutdown";
+export type V2InfoSheetKey =
+  | "dump"
+  | "todo"
+  | "snooze"
+  | "focus"
+  | "cycleOptIn"
+  | "shutdown";
 
 export type V2InfoSheetCopy = {
   eyebrow: string;
@@ -27,6 +33,12 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         body: "Je hoofd hoeft niet alles te onthouden. Dump losse gedachten hier, zonder meteen te ordenen.",
       },
       {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Losse gedachten in je hoofd kosten energie, ook als je ze negeert. Even kwijtraken geeft ruimte, zonder dat je meteen hoeft te beslissen.",
+      },
+      {
         key: "plan",
         icon: "plan",
         title: "Hoe het werkt",
@@ -40,8 +52,41 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
       },
     ],
   },
-  snooze: {
+  todo: {
     eyebrow: "Je lijst",
+    title: "Taken",
+    openAria: "Uitleg over je takenlijst",
+    closeAria: "Uitleg sluiten",
+    gotIt: "Begrepen",
+    rows: [
+      {
+        key: "meaning",
+        icon: "plan",
+        title: "Wat dit is",
+        body: "Eén lijst voor wat je wilt doen. Geen mappen, geen chaos. Alles staat hier, zodat je hoofd het niet hoeft vast te houden.",
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Wat buiten je hoofd staat, schreeuwt minder. Dan kun je zien wat er is en kiezen wat nu past, in plaats van alles tegelijk te herinneren.",
+      },
+      {
+        key: "plan",
+        icon: "meaning",
+        title: "Wat je kunt doen",
+        body: "Voeg toe, vink af, of zet iets even op pauze. Open een taak om details aan te passen. Klein beginnen mag.",
+      },
+      {
+        key: "private",
+        icon: "private",
+        title: "Geen druk",
+        body: "Open laten staan is oké. Er is geen score, streak of oordeel. Alleen jouw lijst, in jouw tempo.",
+      },
+    ],
+  },
+  snooze: {
+    eyebrow: "Even pauzeren",
     title: "Snoozen",
     openAria: "Uitleg over snoozen",
     closeAria: "Uitleg sluiten",
@@ -52,6 +97,12 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         icon: "pause",
         title: "Wat dit betekent",
         body: "Snoozen is geen opgeven. Je zet iets even op pauze zodat je lijst niet schreeuwt.",
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Niet alles hoeft nu. Even pauzeren houdt je lijst eerlijk: wat wacht, mag wachten. Zo blijft er ruimte voor wat wél kan.",
       },
       {
         key: "plan",
@@ -77,14 +128,20 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
       {
         key: "meaning",
         icon: "clock",
-        title: "Geen minutenklok",
-        body: "Kies een grove bak: kort, middel of lang. Zo kun je focussen zonder de tijd te jagen.",
+        title: "Zachte start, geen deadline",
+        body: "De inschatting (ongeveer 5, 15 of 25 min) is een zachte start. Geen deadline en geen straf als je eerder stopt of langer doorgaat.",
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Een zachte tijdrand helpt je hoofd om te starten zonder perfecte minuten te raden. Je weet ongeveer hoe lang, en mag altijd bijsturen.",
       },
       {
         key: "plan",
         icon: "plan",
         title: "Hoe Structuro helpt",
-        body: "Eén ding tegelijk. Klaar of nog even? Jij bepaalt. Geen perfecte keuze nodig.",
+        body: "Eén ding tegelijk. Start met de inschatting, of kies zelf. Tijd bijplussen met ‘Iets langer’ mag tijdens focus.",
       },
       {
         key: "private",
@@ -106,6 +163,12 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         icon: "meaning",
         title: "Wat dit doet",
         body: "Structuro toont je fase als inzicht naast je energie. Alleen als jij het aanzet. Geen sturing van voorstellen.",
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Dezelfde taak kan in je lage dagen zwaarder voelen. Ken je je fase, dan begrijp je sneller waarom. Structuro toont die context; jij blijft kiezen.",
       },
       {
         key: "plan",
@@ -133,6 +196,12 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         icon: "meaning",
         title: "Wat dit is",
         body: "Een kort ritueel om te zien wat af is, zonder score of oordeel. Ook een rustige dag telt.",
+      },
+      {
+        key: "why",
+        icon: "why",
+        title: "Waarom dit uitmaakt",
+        body: "Open dagen blijven in je hoofd hangen. Even dichtzetten helpt de lus te sluiten, zodat je hoofd leger kan rusten en morgen frisser begint. Geen score, alleen afronden.",
       },
       {
         key: "plan",

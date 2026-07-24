@@ -50,34 +50,38 @@ export default function DagstartV2Client() {
   const [phase, setPhase] = useState<Phase>("energy");
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
+  /**
+   * Lokale draft voor een frisse pill-keuze. Nooit `state.energy` wissen bij mount:
+   * anders verdwijnt de home-chip als je dagstart opent en weer weggaat (Stoppen/back).
+   */
+  const [draftEnergy, setDraftEnergy] = useState<V2Energy | null>(null);
 
-  const maxSlots = v2MaxSlotsForEnergy(state.energy);
+  const energy = draftEnergy;
+  const maxSlots = v2MaxSlotsForEnergy(energy);
   const things = v2NormalizeThings(state.things);
 
   const proposals = useMemo(
     () =>
-      state.energy
-        ? v2StructuroThingPicks(state.energy, maxSlots, locale)
-        : [],
-    [state.energy, maxSlots, locale],
+      energy ? v2StructuroThingPicks(energy, maxSlots, locale) : [],
+    [energy, maxSlots, locale],
   );
 
   const adjustOptions = useMemo(
-    () => v2BuildAdjustOptions(state.energy, selectedThings, 8, locale),
-    [state.energy, selectedThings, locale],
+    () => v2BuildAdjustOptions(energy, selectedThings, 8, locale),
+    [energy, selectedThings, locale],
   );
 
-  // Pas ná provider-ready: frisse energiekeuze zonder hydrate-race.
+  // Pas ná provider-ready: frisse UI-keuze zonder hydrate-race of journey-wipe.
   useLayoutEffect(() => {
     if (!ready) return;
     if (freshEnergyRef.current) return;
     if (userPickedEnergy.current) return;
     freshEnergyRef.current = true;
     setSelectedThings([]);
-    update({ energy: null });
+    setDraftEnergy(null);
     setPhase("energy");
     setHistory([]);
-  }, [ready, update]);
+  }, [ready]);
 
   useEffect(() => {
     scrollV2ToTop();
@@ -101,23 +105,29 @@ export default function DagstartV2Client() {
 
   const finishThings = (nextThings: string[]) => {
     const normalized = v2NormalizeThings(nextThings);
-    update({ things: normalized, todayDone: false });
-    if (state.energy) recordV2EnergyForToday(state.energy);
+    const nextEnergy = energy ?? state.energy;
+    update({
+      things: normalized,
+      todayDone: false,
+      ...(nextEnergy ? { energy: nextEnergy } : {}),
+    });
+    if (nextEnergy) recordV2EnergyForToday(nextEnergy);
     trackV2DagstartComplete({
-      energy: state.energy,
+      energy: nextEnergy,
       thingCount: normalized.length,
       hasWhy: state.why.trim().length > 0,
     });
     goTo("done");
   };
 
-  const pickEnergy = (energy: V2Energy) => {
+  const pickEnergy = (next: V2Energy) => {
     userPickedEnergy.current = true;
     freshEnergyRef.current = true;
-    recordV2EnergyForToday(energy);
-    update({ energy });
+    setDraftEnergy(next);
+    recordV2EnergyForToday(next);
+    update({ energy: next });
     setSelectedThings(
-      v2StructuroThingPicks(energy, v2MaxSlotsForEnergy(energy), locale),
+      v2StructuroThingPicks(next, v2MaxSlotsForEnergy(next), locale),
     );
   };
 
@@ -146,7 +156,7 @@ export default function DagstartV2Client() {
   // Ook op klaar/confirm: terug naar propose of adjust (niet Stoppen).
   const canGoBack = history.length > 0;
   const flowLayout = v2FlowLayoutForDagstartPhase(phase);
-  const showReassurance = phase === "energy" || phase === "done";
+  const showReassurance = phase === "energy";
 
   return (
     <V2Page>
@@ -170,7 +180,7 @@ export default function DagstartV2Client() {
           >
             {phase === "energy" ? (
               <V2ProposeStep
-                energy={state.energy}
+                energy={energy}
                 proposals={selectedThings.length > 0 ? selectedThings : proposals}
                 onPickEnergy={pickEnergy}
                 onConfirm={confirmProposals}

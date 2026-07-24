@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { useI18n } from "@/lib/i18n";
 import { captureProductEvent } from "@/lib/posthog/track";
 
 import { v2ScopedCss } from "./theme";
@@ -33,6 +34,7 @@ import {
   saveV2FocusTimer,
 } from "./v2FocusTimer";
 import { v2ActiveMicroStepIndex, v2EnergyToMicro } from "./v2FocusMicro";
+import { estimateFocusDurationBucket } from "./v2FocusDurationEstimate";
 import {
   addV2DumpItem,
   loadV2Dump,
@@ -40,14 +42,20 @@ import {
   v2DumpAtMax,
 } from "./v2Dump";
 
-type Bucket = { key: string; label: string; minutes: number; durationBucket: V2DurationBucket };
+type Bucket = {
+  key: string;
+  minutes: number;
+  durationBucket: Exclude<V2DurationBucket, null>;
+};
 
 /** Grove bakken in plaats van een minuten-input (tijdblindheid). */
 const BUCKETS: Bucket[] = [
-  { key: "kort", label: "Kort", minutes: 5, durationBucket: "short" },
-  { key: "middel", label: "Middel", minutes: 15, durationBucket: "medium" },
-  { key: "lang", label: "Lang", minutes: 25, durationBucket: "long" },
+  { key: "kort", minutes: 5, durationBucket: "short" },
+  { key: "middel", minutes: 15, durationBucket: "medium" },
+  { key: "lang", minutes: 25, durationBucket: "long" },
 ];
+
+const EXTEND_SECS = BUCKETS[0].minutes * 60;
 
 const RING_R = 92;
 const RING_C = 2 * Math.PI * RING_R;
@@ -58,19 +66,21 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-function suggestedBucketForThing(thingLabel: string, tasks: V2Task[]): Bucket | null {
-  const match = tasks.find((t) => t.title.trim() === thingLabel.trim() && t.durationBucket);
-  if (!match?.durationBucket) return null;
-  return BUCKETS.find((b) => b.durationBucket === match.durationBucket) ?? null;
+function bucketByDuration(
+  durationBucket: Exclude<V2DurationBucket, null>,
+): Bucket {
+  return BUCKETS.find((b) => b.durationBucket === durationBucket) ?? BUCKETS[0];
 }
 
 export default function FocusV2Client() {
   const go = useV2Go();
+  const { t, locale } = useI18n();
   const { state } = useV2();
   const searchParams = useSearchParams();
   const focusParam = searchParams.get("thing");
   const [bucket, setBucket] = useState<Bucket | null>(null);
   const [remaining, setRemaining] = useState(0);
+  const [totalSecs, setTotalSecs] = useState(0);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -81,6 +91,7 @@ export default function FocusV2Client() {
   const [suggestBusy, setSuggestBusy] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [suggestDismissed, setSuggestDismissed] = useState(false);
+  const [selfEstimateOpen, setSelfEstimateOpen] = useState(false);
   const [parkDraft, setParkDraft] = useState("");
   const [parkHint, setParkHint] = useState<string | null>(null);
   const suggestShownRef = useRef(false);
@@ -91,12 +102,25 @@ export default function FocusV2Client() {
   const thingLabel =
     (focusParam && things.includes(focusParam) ? focusParam : null) ??
     v2PrimaryThing(things) ??
-    "dit ene ding";
+    t("v2.focusDefaultThing");
+
+  const bucketLabel = (b: Bucket) => {
+    if (b.durationBucket === "short") return t("v2.focusBucketShort");
+    if (b.durationBucket === "medium") return t("v2.focusBucketMedium");
+    return t("v2.focusBucketLong");
+  };
+
+  const ringMinutesLabel = (b: Bucket) => {
+    if (b.durationBucket === "short") return t("v2.focusRingMinutesShort");
+    if (b.durationBucket === "medium") return t("v2.focusRingMinutesMedium");
+    return t("v2.focusRingMinutesLong");
+  };
 
   useEffect(() => {
     setTasks(loadV2Tasks());
     setSuggestDismissed(false);
     setSuggestError(null);
+    setSelfEstimateOpen(false);
     suggestShownRef.current = false;
   }, [thingLabel]);
 
@@ -107,13 +131,21 @@ export default function FocusV2Client() {
       const b = BUCKETS.find((x) => x.key === snap.bucketKey) ?? null;
       if (b) {
         setBucket(b);
-        setRemaining(snap.remaining);
+        // Extended = open-ended: nooit restant-MM:SS hervatten.
+        const openEnded = snap.extended === true;
+        setRemaining(openEnded ? 0 : snap.remaining);
+        setTotalSecs(openEnded ? 0 : snap.totalSecs > 0 ? snap.totalSecs : b.minutes * 60);
         setRunning(snap.running && !snap.finished && !snap.extended);
         setPaused(snap.paused);
         setFinished(snap.finished);
         setExtended(snap.extended);
         if (snap.finished || snap.extended) {
-          saveV2FocusTimer({ ...snap, running: false });
+          saveV2FocusTimer({
+            ...snap,
+            remaining: openEnded ? 0 : snap.remaining,
+            totalSecs: openEnded ? 0 : snap.totalSecs,
+            running: false,
+          });
         }
       }
     }
@@ -131,14 +163,24 @@ export default function FocusV2Client() {
       thing: thingLabel,
       bucketKey: bucket.key,
       remaining,
-      totalSecs: bucket.minutes * 60,
+      totalSecs: totalSecs > 0 ? totalSecs : bucket.minutes * 60,
       running,
       paused,
       finished,
       extended,
       updatedAt: Date.now(),
     });
-  }, [hydrated, thingLabel, bucket, remaining, running, paused, finished, extended]);
+  }, [
+    hydrated,
+    thingLabel,
+    bucket,
+    remaining,
+    totalSecs,
+    running,
+    paused,
+    finished,
+    extended,
+  ]);
 
   useEffect(() => {
     if (!running || paused) return;
@@ -168,8 +210,12 @@ export default function FocusV2Client() {
     microSteps.length === 0 &&
     !suggestDismissed &&
     !finished &&
+    !extended &&
+    !running &&
+    !paused &&
+    !bucket &&
     thingLabel.trim().length > 0 &&
-    thingLabel !== "dit ene ding";
+    thingLabel !== t("v2.focusDefaultThing");
 
   useEffect(() => {
     if (!showMicroSuggest || suggestShownRef.current) return;
@@ -179,15 +225,34 @@ export default function FocusV2Client() {
     });
   }, [showMicroSuggest]);
 
-  const suggested = useMemo(
-    () => suggestedBucketForThing(thingLabel, tasks),
-    [thingLabel, tasks],
+  const estimate = useMemo(() => {
+    const energy =
+      activeTask?.energy ??
+      v2EnergyToMicro(state.energy as V2Energy | null);
+    return estimateFocusDurationBucket({
+      title: activeTask?.title || thingLabel,
+      energy,
+      taskDurationBucket: activeTask?.durationBucket ?? null,
+    });
+  }, [activeTask, thingLabel, state.energy]);
+
+  const suggestedBucket = useMemo(
+    () => bucketByDuration(estimate.durationBucket),
+    [estimate.durationBucket],
   );
-  const totalSecs = bucket ? bucket.minutes * 60 : 0;
-  const ratio = bucket && totalSecs > 0 ? Math.max(0, Math.min(1, remaining / totalSecs)) : 1;
+
+  const ringTotal = totalSecs > 0 ? totalSecs : bucket ? bucket.minutes * 60 : 0;
+  const ratio =
+    bucket && !extended && ringTotal > 0
+      ? Math.max(0, Math.min(1, remaining / ringTotal))
+      : 1;
   const ringDashOffset = RING_C * (1 - ratio);
   const timerActive = running || paused;
-  const hideClock = timerActive && !finished;
+  /** Tijdblind: geen MM:SS tijdens sessie én tijdens open-ended "Nog even bezig". */
+  const hideClock = (timerActive || extended) && !finished;
+  const preStart = !bucket && !finished && !extended;
+  const showSessionDock = (timerActive || extended) && !finished;
+  const showFinishDock = finished;
 
   const persistTasks = (next: V2Task[]) => {
     setTasks(next);
@@ -197,11 +262,11 @@ export default function FocusV2Client() {
   const toggleMicroStep = (stepId: string) => {
     if (!activeTask) return;
     persistTasks(
-      tasks.map((t) => {
-        if (t.id !== activeTask.id) return t;
+      tasks.map((tRow) => {
+        if (tRow.id !== activeTask.id) return tRow;
         return {
-          ...t,
-          microSteps: t.microSteps.map((s) =>
+          ...tRow,
+          microSteps: tRow.microSteps.map((s) =>
             s.id === stepId ? { ...s, done: !s.done } : s,
           ),
         };
@@ -223,8 +288,8 @@ export default function FocusV2Client() {
       const result = await fetchMicroStepSuggestions({
         title: activeTask?.title || thingLabel,
         energyLevel: energy,
-        durationMin: bucket?.minutes ?? null,
-        locale: "nl",
+        durationMin: suggestedBucket.minutes,
+        locale: locale === "en" ? "en" : "nl",
       });
       const nextSteps: V2MicroStep[] = result.steps.map((title) => ({
         id: v2Id("ms"),
@@ -233,8 +298,10 @@ export default function FocusV2Client() {
       }));
       if (activeTask) {
         persistTasks(
-          tasks.map((t) =>
-            t.id === activeTask.id ? { ...t, microSteps: nextSteps } : t,
+          tasks.map((tRow) =>
+            tRow.id === activeTask.id
+              ? { ...tRow, microSteps: nextSteps }
+              : tRow,
           ),
         );
       } else {
@@ -248,7 +315,7 @@ export default function FocusV2Client() {
         step_count: nextSteps.length,
       });
     } catch {
-      setSuggestError("Voorstellen lukten niet. Probeer later opnieuw.");
+      setSuggestError(t("v2.focusMicroSuggestError"));
     } finally {
       setSuggestBusy(false);
     }
@@ -265,13 +332,13 @@ export default function FocusV2Client() {
     if (!trimmed) return;
     const items = loadV2Dump();
     if (v2DumpAtMax(items)) {
-      showParkHint("Dump is vol. Ruim eerst iets op.");
+      showParkHint(t("v2.focusParkFull"));
       return;
     }
     saveV2Dump(addV2DumpItem(trimmed, items));
     setParkDraft("");
     captureProductEvent("parked_thought_added", { source: "focus_v2" });
-    showParkHint("Opgeslagen. Focus blijft intact.");
+    showParkHint(t("v2.focusParkSaved"));
   };
 
   useEffect(() => {
@@ -281,24 +348,48 @@ export default function FocusV2Client() {
   }, []);
 
   const start = (b: Bucket) => {
+    const secs = b.minutes * 60;
     setBucket(b);
-    setRemaining(b.minutes * 60);
+    setRemaining(secs);
+    setTotalSecs(secs);
     setFinished(false);
     setExtended(false);
     setPaused(false);
     setRunning(true);
+    setSelfEstimateOpen(false);
     recordV2FocusStart(thingLabel);
   };
 
+  /** Zachte verlenging: +kort bakje, klok blijft verborgen. */
+  const extendSoft = () => {
+    setRemaining((prev) => prev + EXTEND_SECS);
+    setTotalSecs((prev) =>
+      (prev > 0 ? prev : bucket ? bucket.minutes * 60 : EXTEND_SECS) +
+      EXTEND_SECS,
+    );
+    setFinished(false);
+    setExtended(false);
+    if (!running) {
+      setPaused(false);
+      setRunning(true);
+    }
+  };
+
+  /**
+   * Open-ended doorgaan zonder restant-countdown.
+   * Root cause van "04:15": Afronden liet remaining staan; extended + running:false
+   * zette hideClock uit, waardoor een bevroren MM:SS verscheen.
+   */
   const handleStillBusy = () => {
     setFinished(false);
     setExtended(true);
     setRunning(false);
     setPaused(false);
+    setRemaining(0);
+    setTotalSecs(0);
   };
 
   const handleDone = () => {
-    // Zelfde contract als v1 focus-complete: taak écht afvinken + persist.
     const nextTasks = completeV2TaskByTitle(tasks, thingLabel);
     persistTasks(nextTasks);
     const remainingThings = removeV2ThingFromList(things, thingLabel);
@@ -318,42 +409,62 @@ export default function FocusV2Client() {
     setExtended(false);
     setBucket(null);
     setRemaining(0);
+    setTotalSecs(0);
+    setSelfEstimateOpen(false);
     clearV2FocusTimer();
   };
+
+  const parkForm = (
+    <form
+      className="v2-focus-park"
+      onSubmit={(e) => {
+        e.preventDefault();
+        parkThought();
+      }}
+    >
+      <input
+        type="text"
+        name="park-thought"
+        value={parkDraft}
+        onChange={(e) => setParkDraft(e.target.value)}
+        placeholder={t("v2.focusParkPlaceholder")}
+        className="v2-focus-park__input"
+        autoComplete="off"
+        aria-label={t("v2.focusParkAria")}
+      />
+      <button
+        type="submit"
+        className="v2-focus-park__save"
+        disabled={parkDraft.trim().length === 0}
+      >
+        {t("v2.focusParkSave")}
+      </button>
+    </form>
+  );
 
   return (
     <div
       data-mode="focus"
-      className="flex min-h-[100dvh] w-full flex-col"
+      className="v2-focus-shell flex min-h-[100dvh] w-full flex-col"
       style={{ background: "var(--surface)", color: "var(--text)" }}
     >
       <style>{v2ScopedCss}</style>
-      <div className="flex shrink-0 items-center justify-between px-5 pt-[max(12px,env(safe-area-inset-top))] pb-1">
+      <div className="v2-focus-topbar">
         <button type="button" onClick={() => go("/v2/home")} className="v2-link">
-          Sluiten
+          {t("v2.focusClose")}
         </button>
         {paused ? (
-          <span
-            className="text-[11px] font-semibold uppercase tracking-wide"
-            style={{ color: "var(--accent)" }}
-          >
-            Gepauzeerd
-          </span>
+          <span className="v2-focus-topbar__status">{t("v2.focusPaused")}</span>
         ) : (
           <span className="w-16" aria-hidden />
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-6 pb-10">
-        <div className="flex w-full max-w-[480px] flex-col items-center">
+      <div className="v2-focus-stage">
+        <div className="v2-focus-stage__inner">
           <div className="v2-info-head v2-info-head--center">
-            <p
-              className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: "var(--accent)" }}
-            >
-              Nu aan zet
-            </p>
-            {!bucket && !finished ? (
+            <p className="v2-focus-kicker">{t("v2.focusNow")}</p>
+            {preStart ? (
               <V2InfoHint
                 infoId="v2_focus_tijd"
                 expanded={infoOpen}
@@ -364,19 +475,31 @@ export default function FocusV2Client() {
               />
             ) : null}
           </div>
-          <h1
-            className="v2-serif mt-2 line-clamp-2 text-center"
-            style={{ fontSize: "var(--fs-title)", color: "var(--text)" }}
-          >
-            {thingLabel}
-          </h1>
+          <h1 className="v2-serif v2-focus-title">{thingLabel}</h1>
 
-          {!finished ? (
+          {finished ? (
             <div
-              className={`relative mt-8 h-[210px] w-[210px] shrink-0 ${extended ? "v2-focus-bubble-extended rounded-full" : ""}`}
+              className="v2-focus-done"
+              role="img"
+              aria-label={t("v2.focusDone")}
+            >
+              <span className="v2-focus-done__mark" aria-hidden>
+                ✓
+              </span>
+            </div>
+          ) : (
+            <div
+              className={`v2-focus-ring ${extended ? "v2-focus-ring--soft" : ""}`}
             >
               <svg viewBox="0 0 210 210" aria-hidden className="h-full w-full">
-                <circle cx="105" cy="105" r={RING_R} fill="none" stroke="var(--border)" strokeWidth="10" />
+                <circle
+                  cx="105"
+                  cy="105"
+                  r={RING_R}
+                  fill="none"
+                  stroke="var(--border)"
+                  strokeWidth="10"
+                />
                 {bucket && !extended ? (
                   <circle
                     cx="105"
@@ -395,61 +518,57 @@ export default function FocusV2Client() {
                     cx="105"
                     cy="105"
                     r={RING_R}
-                    fill="rgba(45, 90, 86, 0.06)"
+                    fill="rgba(95, 184, 175, 0.08)"
                     stroke="var(--accent)"
                     strokeWidth="10"
                     strokeOpacity="0.35"
                   />
                 ) : null}
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                {hideClock ? (
-                  <div
-                    className="font-semibold leading-none tracking-tight"
-                    style={{ fontSize: 22, color: "var(--text-muted)" }}
-                    aria-hidden
-                  >
+              <div className="v2-focus-ring__center">
+                {extended ? (
+                  <>
+                    <div className="v2-focus-ring__ellipsis" aria-hidden>
+                      ···
+                    </div>
+                    <p className="v2-focus-ring__soft">
+                      {t("v2.focusExtendedSoft")}
+                    </p>
+                  </>
+                ) : hideClock ? (
+                  <div className="v2-focus-ring__ellipsis" aria-hidden>
                     ···
                   </div>
+                ) : preStart ? (
+                  <>
+                    <div className="v2-focus-ring__approx">
+                      {t("v2.focusApprox")}
+                    </div>
+                    <div className="v2-focus-ring__bucket">
+                      {ringMinutesLabel(suggestedBucket)}
+                    </div>
+                  </>
                 ) : (
                   <>
-                    <div
-                      className="font-bold leading-none tabular-nums tracking-tight"
-                      style={{ fontFamily: "var(--font-mono)", fontSize: 44, color: "var(--text)" }}
-                    >
+                    <div className="v2-focus-ring__time">
                       {bucket ? formatTime(remaining) : "--:--"}
                     </div>
-                    <div
-                      className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {bucket ? bucket.label : "Kies hoe lang"}
+                    <div className="v2-focus-ring__bucket-label">
+                      {bucket
+                        ? ringMinutesLabel(bucket)
+                        : t("v2.focusPickDuration")}
                     </div>
                   </>
                 )}
-                {extended ? (
-                  <p className="mt-2 px-6 text-center text-[13px]" style={{ color: "var(--accent)" }}>
-                    Nog even bezig
-                  </p>
-                ) : null}
               </div>
-            </div>
-          ) : (
-            <div
-              className="mt-8 flex h-[210px] w-[210px] shrink-0 flex-col items-center justify-center rounded-full text-center"
-              style={{ border: "1px solid var(--border)", background: "var(--surface-raised)" }}
-            >
-              <p className="v2-serif px-6" style={{ fontSize: "var(--fs-title)", color: "var(--text)" }}>
-                Tijd om te kiezen
-              </p>
-              <p className="mt-1 px-6 text-xs" style={{ color: "var(--text-muted)" }}>
-                Ben je klaar, of nog even bezig?
-              </p>
             </div>
           )}
 
           {showMicroList ? (
-            <ul className="v2-focus-micro-list" aria-label="Microstappen">
+            <ul
+              className="v2-focus-micro-list"
+              aria-label={t("v2.focusMicroListAria")}
+            >
               {microSteps.map((step, idx) => {
                 const isActive = !step.done && idx === activeMicroIdx;
                 return (
@@ -484,15 +603,12 @@ export default function FocusV2Client() {
           ) : null}
 
           {showMicroSuggest ? (
-            <section
-              className="v2-focus-micro-suggest"
-              aria-live="polite"
-            >
+            <section className="v2-focus-micro-suggest" aria-live="polite">
               <p className="v2-focus-micro-suggest__title">
-                Opsplitsen in kleine stappen?
+                {t("v2.focusMicroSuggestTitle")}
               </p>
               <p className="v2-focus-micro-suggest__lead">
-                Klein beginnen maakt starten makkelijker.
+                {t("v2.focusMicroSuggestLead")}
               </p>
               <button
                 type="button"
@@ -500,139 +616,123 @@ export default function FocusV2Client() {
                 disabled={suggestBusy}
                 className="btn-primary w-full"
               >
-                {suggestBusy ? "Even denken..." : "Ja, voorstellen"}
+                {suggestBusy
+                  ? t("v2.focusMicroSuggestBusy")
+                  : t("v2.focusMicroSuggestCta")}
               </button>
               <button
                 type="button"
                 onClick={() => setSuggestDismissed(true)}
                 className="v2-link mt-2 w-full text-center"
               >
-                Niet nu
+                {t("v2.focusMicroSuggestSkip")}
               </button>
               {suggestError ? (
                 <p className="v2-focus-micro-suggest__err">{suggestError}</p>
               ) : null}
             </section>
           ) : null}
+        </div>
+      </div>
 
-          <div className={`w-full ${showMicroList || showMicroSuggest ? "mt-6" : "mt-10"}`}>
-            {!bucket && !finished ? (
-              <div className="flex flex-col gap-2">
-                {suggested ? (
-                  <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
-                    Past bij deze taak: {suggested.label.toLowerCase()}
-                  </p>
-                ) : (
-                  <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
-                    Kies één duur. Geen perfecte keuze nodig.
-                  </p>
-                )}
-                <div className="flex flex-col items-stretch gap-2">
-                  {(suggested
-                    ? [suggested, ...BUCKETS.filter((b) => b.key !== suggested.key)]
-                    : BUCKETS
-                  ).map((b) => {
-                    const isSuggested = suggested?.key === b.key;
-                    return (
-                      <button
-                        key={b.key}
-                        type="button"
-                        onClick={() => start(b)}
-                        className={
-                          isSuggested || (!suggested && b.key === "kort")
-                            ? "btn-primary w-full"
-                            : "btn-ghost w-full"
-                        }
-                      >
-                        {isSuggested
-                          ? `${b.label} (past bij deze taak)`
-                          : !suggested && b.key === "kort"
-                            ? `${b.label}, begin hier`
-                            : b.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            {timerActive && !finished ? (
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaused((p) => !p)}
-                  className="btn-primary w-full"
-                >
-                  {paused ? "Verder" : "Pauze"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRunning(false);
-                    setPaused(false);
-                    setFinished(true);
-                  }}
-                  className="v2-link"
-                >
-                  Afronden
-                </button>
-                <form
-                  className="v2-focus-park"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    parkThought();
-                  }}
-                >
-                  <input
-                    type="text"
-                    name="park-thought"
-                    value={parkDraft}
-                    onChange={(e) => setParkDraft(e.target.value)}
-                    placeholder="Parkeer een gedachte…"
-                    className="v2-focus-park__input"
-                    autoComplete="off"
-                    aria-label="Parkeer een gedachte"
-                  />
+      <div className="v2-focus-dock">
+        {preStart ? (
+          <div className="v2-focus-dock__stack">
+            <button
+              type="button"
+              onClick={() => start(suggestedBucket)}
+              className="btn-primary w-full"
+            >
+              {t("v2.focusStart")}
+            </button>
+            {!selfEstimateOpen ? (
+              <button
+                type="button"
+                onClick={() => setSelfEstimateOpen(true)}
+                className="v2-link"
+              >
+                {t("v2.focusEstimateSelf")}
+              </button>
+            ) : (
+              <div className="v2-focus-self-buckets">
+                {BUCKETS.map((b) => (
                   <button
-                    type="submit"
-                    className="v2-focus-park__save"
-                    disabled={parkDraft.trim().length === 0}
+                    key={b.key}
+                    type="button"
+                    onClick={() => start(b)}
+                    className="btn-ghost w-full"
                   >
-                    Bewaar
+                    {bucketLabel(b)}
                   </button>
-                </form>
-                {parkHint ? (
-                  <p className="v2-focus-park__hint" aria-live="polite">
-                    {parkHint}
-                  </p>
-                ) : null}
+                ))}
               </div>
-            ) : null}
+            )}
+          </div>
+        ) : null}
 
-            {extended && !finished ? (
-              <button type="button" onClick={handleDone} className="btn-primary w-full">
-                Ik ben klaar
+        {showSessionDock ? (
+          <div className="v2-focus-dock__stack">
+            {extended ? (
+              <button
+                type="button"
+                onClick={handleDone}
+                className="btn-primary w-full"
+              >
+                {t("v2.focusDone")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPaused((p) => !p)}
+                className="btn-primary w-full"
+              >
+                {paused ? t("v2.focusResume") : t("v2.focusPause")}
+              </button>
+            )}
+            {!extended ? (
+              <button type="button" onClick={extendSoft} className="v2-link">
+                {t("v2.focusExtend")}
               </button>
             ) : null}
-
-            {finished ? (
-              <div className="flex flex-col gap-2">
-                <button type="button" onClick={handleDone} className="btn-primary w-full">
-                  Ik ben klaar
-                </button>
-                <button type="button" onClick={handleStillBusy} className="v2-link">
-                  Nog even bezig
-                </button>
-              </div>
-            ) : null}
-
-            {finished ? (
-              <button type="button" onClick={reset} className="v2-link mx-auto mt-4 block">
-                Nog een rondje
+            {!extended ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setRunning(false);
+                  setPaused(false);
+                  setFinished(true);
+                }}
+                className="v2-link"
+              >
+                {t("v2.focusFinish")}
               </button>
+            ) : null}
+            {parkForm}
+            {parkHint ? (
+              <p className="v2-focus-park__hint" aria-live="polite">
+                {parkHint}
+              </p>
             ) : null}
           </div>
-        </div>
+        ) : null}
+
+        {showFinishDock ? (
+          <div className="v2-focus-dock__stack">
+            <button
+              type="button"
+              onClick={handleDone}
+              className="btn-primary w-full"
+            >
+              {t("v2.focusDone")}
+            </button>
+            <button type="button" onClick={handleStillBusy} className="v2-link">
+              {t("v2.focusStillBusy")}
+            </button>
+            <button type="button" onClick={reset} className="v2-link">
+              {t("v2.focusAnotherRound")}
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <V2InfoSheet

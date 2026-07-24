@@ -234,7 +234,7 @@ export function trackV2QuoteDismissed(_props: Record<string, never>): void {
 }
 
 export function trackV2NotificationFired(props: {
-  kind: "morning" | "evening" | "open_task";
+  kind: "morning" | "evening" | "open_task" | "shutdown";
 }): void {
   trackV2("v2_notification_fired", { kind: props.kind });
 }

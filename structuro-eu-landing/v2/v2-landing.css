@@ -442,7 +442,7 @@ body.mobile-nav-open{overflow:hidden}
   height:36px;border-radius:12px;background:var(--v2-navy);color:#fff;
   font-size:13px;font-weight:600;
 }
-/* Focus phone = echte app (navy mode, ring, Kort/Middel/Lang) */
+/* Focus phone = echte app (navy mode, ring, soft 5/15/25 min) */
 .phone-screen--focus{
   background:#1A2340;color:#F5F2EA;
 }
@@ -577,9 +577,7 @@ body.mobile-nav-open{overflow:hidden}
 .phone[data-state="run"] .focus-actions--run,
 .phone[data-state="pause"] .focus-actions--run,
 .phone[data-state="done"] .focus-actions--done{display:flex}
-.phone[data-state="suggest"] .focus-actions--ready .focus-bucket-btn,
-.phone[data-state="suggest"] .focus-actions--ready .focus-hint{opacity:.35}
-.focus-hint{margin:0;text-align:center;font-size:11px;color:rgba(245,242,234,.55);line-height:1.3}
+.phone[data-state="suggest"] .focus-actions--ready .focus-bucket-btn{opacity:.35}
 .focus-bucket-btn{
   display:flex;align-items:center;justify-content:center;min-height:36px;border-radius:12px;
   font-size:12.5px;font-weight:600;border:1px solid rgba(245,242,234,.14);color:rgba(245,242,234,.78);

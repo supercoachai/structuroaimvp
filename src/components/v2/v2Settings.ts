@@ -62,6 +62,8 @@ export type V2Settings = {
   returnPermissionPromptDismissed: boolean;
   /** Soft "Bewaar met Google" op home weggeklikt. */
   accountSavePromptDismissed: boolean;
+  /** Post-auth aanspreeknaam-stap (na account-save) afgerond of overgeslagen. */
+  postAccountNamePromptDismissed: boolean;
   /**
    * Eerste waarde-moment (focus afgerond of shutdown voltooid).
    * Soft prompts zoals cyclus-opt-in en account-nudge wachten hierop.
@@ -101,6 +103,7 @@ export const v2SettingsDefaults: V2Settings = {
   shutdownNudgeDismissedOn: null,
   returnPermissionPromptDismissed: false,
   accountSavePromptDismissed: false,
+  postAccountNamePromptDismissed: false,
   firstValueAt: null,
   cycleOptInPromptDismissed: false,
   cycleLength: CYCLE_LENGTH_DEFAULT,
@@ -170,6 +173,8 @@ export function hydrateV2Settings(raw: string | null): V2Settings {
           : null,
       returnPermissionPromptDismissed: parsed.returnPermissionPromptDismissed === true,
       accountSavePromptDismissed: parsed.accountSavePromptDismissed === true,
+      postAccountNamePromptDismissed:
+        parsed.postAccountNamePromptDismissed === true,
       firstValueAt:
         typeof parsed.firstValueAt === "string" ? parsed.firstValueAt : null,
       cycleOptInPromptDismissed: parsed.cycleOptInPromptDismissed === true,

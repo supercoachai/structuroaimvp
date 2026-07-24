@@ -23,6 +23,8 @@ export type V2OnboardingStep =
   | "energy"
   | "tasks"
   | "done"
+  | "account"
+  | "name"
   | "home";
 
 const STEP_FIRED_PREFIX = "v2_onboarding_step_fired_";
@@ -131,18 +133,41 @@ export function trackV2OnboardingDone(props: {
   });
 }
 
-export function trackV2AccountSaveShown(surface: "home"): void {
+export function trackV2AccountSaveShown(
+  surface: "home" | "onboarding",
+): void {
   captureActivationFunnelEvent("v2_account_save_shown", {
     ...attribution(),
     surface,
-    after_first_value: true,
+    after_first_value: surface === "home",
   });
 }
 
-export function trackV2AccountSaveClicked(surface: "home"): void {
+export function trackV2AccountSaveClicked(
+  surface: "home" | "onboarding",
+): void {
   captureActivationFunnelEvent("v2_account_save_clicked", {
     ...attribution(),
     surface,
-    after_first_value: true,
+    after_first_value: surface === "home",
+  });
+}
+
+export function trackV2NameStepShown(): void {
+  trackV2OnboardingStep("name");
+  captureActivationFunnelEvent("v2_name_step_shown", {
+    ...attribution(),
+    surface: "onboarding",
+  });
+}
+
+export function trackV2NameStepCompleted(props: {
+  skipped: boolean;
+  hadPrefill: boolean;
+}): void {
+  captureActivationFunnelEvent("v2_name_step_completed", {
+    ...attribution(),
+    skipped: props.skipped,
+    had_prefill: props.hadPrefill,
   });
 }

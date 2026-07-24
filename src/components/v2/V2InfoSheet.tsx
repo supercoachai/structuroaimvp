@@ -4,6 +4,7 @@ import { useEffect, useId, type ReactNode } from "react";
 
 export type V2InfoSheetIconKind =
   | "meaning"
+  | "why"
   | "plan"
   | "private"
   | "brain"
@@ -79,6 +80,20 @@ function SheetIcon({ kind }: { kind: V2InfoSheetIconKind }) {
           strokeWidth="1.4"
           strokeLinecap="round"
         />
+      </svg>
+    );
+  }
+
+  if (kind === "why") {
+    return (
+      <svg {...common}>
+        <path
+          d="M9 3.2v2.2M9 12.6v2.2M3.2 9h2.2M12.6 9h2.2"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <circle cx="9" cy="9" r="2.6" stroke="currentColor" strokeWidth="1.4" />
       </svg>
     );
   }

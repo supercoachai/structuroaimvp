@@ -70,8 +70,8 @@ export default function V2ProposeStep({
   const hasCycle = resolvedCycle != null;
   const energyHint = energy ? t(`v2.energyHint${energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"}`) : null;
   const proposalRows = v2EnrichThingProposals(proposals);
-  const showDiscover =
-    showCycleDiscover && !state.cyclusOptIn && !discoverHidden && !hasCycle;
+  // Peeker blijft beschikbaar na Aan (om weer Uit te zetten); alleen Nee dismiss’t.
+  const showDiscover = showCycleDiscover && !discoverHidden;
 
   const resolvedTitle =
     title ??
@@ -105,9 +105,11 @@ export default function V2ProposeStep({
   };
 
   const enableCycleFromDiscover = () => {
-    setDiscoverOpen(false);
-    setDiscoverHidden(true);
     setCycleMode(true);
+  };
+
+  const disableCycleFromDiscover = () => {
+    setCycleMode(false);
   };
 
   const dismissDiscover = () => {
@@ -118,7 +120,10 @@ export default function V2ProposeStep({
   };
 
   return (
-    <div className="v2-propose-step" style={wrapStyle}>
+    <div
+      className={`v2-propose-step${showDiscover ? " v2-propose-step--discover" : ""}`}
+      style={wrapStyle}
+    >
       <div
         className={`v2-energy-step__orb v2-energy-step__orb--flat${
           hasCycle ? " v2-energy-step__orb--cycle" : ""
@@ -260,7 +265,10 @@ export default function V2ProposeStep({
 
       {showDiscover ? (
         <div className="v2-propose-step__discover">
-          <V2CycleDiscoverHint onOpen={() => setDiscoverOpen(true)} />
+          <V2CycleDiscoverHint
+            optedIn={state.cyclusOptIn}
+            onOpen={() => setDiscoverOpen(true)}
+          />
         </div>
       ) : null}
 
@@ -275,8 +283,10 @@ export default function V2ProposeStep({
       {showDiscover ? (
         <V2CycleDiscoverSheet
           open={discoverOpen}
+          enabled={state.cyclusOptIn}
           onClose={() => setDiscoverOpen(false)}
           onEnable={enableCycleFromDiscover}
+          onDisable={disableCycleFromDiscover}
           onNotNow={dismissDiscover}
         />
       ) : null}

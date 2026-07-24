@@ -3,9 +3,10 @@
 
   /**
    * EU landing analytics (site=eu in PostHog).
-   * Primaire conversie: cta_clicked → structuro.ai/start → /onboarding → signup_completed.
-   * Organisch EU: /start + utm_source=structuro_eu (attributie-bridge; /start auto-advances bij eu_v2 naar v1).
-   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (v1).
+   * Primaire conversie: cta_clicked → structuro.ai/start → soft-advance → onboarding → signup_completed.
+   * Organisch EU: /start + utm_source=structuro_eu (attributie-bridge). Soft-advance:
+   *   eu_v2* → /v2/onboarding; website* / waitlist_legacy → /onboarding (geen tweede klik).
+   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (v1, leesbare bridge).
    * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
    * Verouderde section_id "waarom" in historische data: sectie heet nu brein-termen / waarom-nodig.
    */
@@ -49,6 +50,15 @@
   function isEuV2LandingPath() {
     var path = (window.location.pathname || "").replace(/\/+$/, "") || "/";
     return path === "/v2" || path.indexOf("/v2/") === 0;
+  }
+
+  /** Productie: structuro.ai. Lokaal (landing :8765): app op :3000. */
+  function structuroAppOrigin() {
+    var h = (window.location.hostname || "").toLowerCase();
+    if (h === "localhost" || h === "127.0.0.1") {
+      return "http://localhost:3000";
+    }
+    return "https://www.structuro.ai";
   }
 
   function structuroSignupBridgeUrl(contentId) {
@@ -97,7 +107,7 @@
         if (did) bridgeParams.set("_ph_did", did);
       }
     } catch (e) {}
-    return "https://www.structuro.ai" + bridgePath + "?" + bridgeParams.toString();
+    return structuroAppOrigin() + bridgePath + "?" + bridgeParams.toString();
   }
 
   function applySignupBridgeLinks() {
@@ -139,7 +149,7 @@
         if (did) loginParams.set("_ph_did", did);
       }
     } catch (e) {}
-    return "https://www.structuro.ai/login?" + loginParams.toString();
+    return structuroAppOrigin() + "/login?" + loginParams.toString();
   }
 
   function applyLoginBridgeLinks() {
@@ -503,6 +513,13 @@
   }
 
   function bootstrap() {
+    // CTA/login-hrefs meteen zetten (niet wachten op PostHog idle/load).
+    // Anders blijven href="#" dead links tot PostHog klaar is of faalt.
+    // _ph_did wordt alsnog gezet via pointerdown-refresh.
+    applySignupBridgeLinks();
+    applyLoginBridgeLinks();
+    attachSignupBridgeRefresh();
+    attachCtaClicks();
     scheduleBootstrap();
   }
 

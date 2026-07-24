@@ -173,6 +173,9 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
       "Veel mensen ervaren meer helderheid rond ovulatie.",
     infoSheetMeaning_luteal:
       "Focus en stemming kunnen wisselen. Dat hoort bij deze fase.",
+    infoSheetWhyTitle: "Waarom dit uitmaakt",
+    infoSheetWhyBody:
+      "Dezelfde taak kan in je lage dagen zwaarder voelen. Ken je je fase, dan begrijp je sneller waarom. Structuro toont die context; jij blijft kiezen.",
     infoSheetPlanTitle: "Wat Structuro doet",
     infoSheetPlanBody:
       "Toont je fase naast je energie en kan zacht herinneren. Geen sturing: jij kiest hoeveel en wat.",
@@ -184,6 +187,11 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     discoverHintEyebrow: "Eenmalig instellen",
     discoverHint: "Je cyclus meenemen?",
     discoverHintAria: "Meer over cyclus meenemen",
+    discoverHintOnEyebrow: "Cyclus aan",
+    discoverHintOn: "Aanpassen",
+    discoverHintOnAria: "Cyclus aanpassen of uitzetten",
+    discoverDisable: "Uit zetten",
+    discoverDone: "Klaar",
     discoverEyebrow: "Eenmalig instellen",
     discoverTitle: "Je cyclus meenemen?",
     discoverBody:
@@ -382,6 +390,9 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
       "Many people experience more clarity around ovulation.",
     infoSheetMeaning_luteal:
       "Focus and mood can shift. That belongs to this phase.",
+    infoSheetWhyTitle: "Why this matters",
+    infoSheetWhyBody:
+      "The same task can feel heavier on your low days. Knowing your phase helps you understand why sooner. Structuro shows that context; you still choose.",
     infoSheetPlanTitle: "What Structuro does",
     infoSheetPlanBody:
       "Shows your phase next to your energy and can softly remind you. No steering: you choose how much and what.",
@@ -393,6 +404,11 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     discoverHintEyebrow: "Set once",
     discoverHint: "Include your cycle?",
     discoverHintAria: "More about including your cycle",
+    discoverHintOnEyebrow: "Cycle on",
+    discoverHintOn: "Adjust",
+    discoverHintOnAria: "Adjust or turn off cycle",
+    discoverDisable: "Turn off",
+    discoverDone: "Done",
     discoverEyebrow: "Set once",
     discoverTitle: "Include your cycle?",
     discoverBody:

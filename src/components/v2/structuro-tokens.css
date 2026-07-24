@@ -1576,22 +1576,37 @@
   justify-content: center;
   margin: 0 0 14px;
 }
+.v2-root .v2-propose-step--discover {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
 .v2-root .v2-propose-step__discover {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 180;
   width: 100%;
-  margin-top: 22px;
+  margin: 0;
   display: flex;
   justify-content: center;
+  padding: 0 max(12px, env(safe-area-inset-left, 0px)) 0
+    max(12px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.v2-root .v2-propose-step__discover .v2-cycle-discover-hint {
+  pointer-events: auto;
 }
 .v2-root .v2-cycle-discover-hint {
   appearance: none;
   position: relative;
   width: 100%;
-  max-width: 360px;
+  max-width: 480px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 18px 14px 14px;
+  padding: 18px 14px max(14px, env(safe-area-inset-bottom, 0px));
   border: 1px solid rgba(26, 35, 64, 0.08);
+  border-bottom: 0;
   border-radius: 16px 16px 0 0;
   background: #ffffff;
   box-shadow: 0 -4px 24px rgba(26, 35, 64, 0.06);
@@ -2066,6 +2081,39 @@
   box-shadow: 0 -8px 32px rgba(26, 35, 64, 0.12);
   animation: v2-info-sheet-up 220ms ease both;
 }
+
+/*
+ * Focus-mode flipt --surface naar navy. De (i)-sheet staat ín die tree en
+ * verdween daardoor in de achtergrond. Herstel licht papier + sterkere scrim
+ * zodat het sheet weer als overlay leest (Begrepen = navy CTA op cream).
+ */
+.v2-root [data-mode="focus"] .v2-info-sheet,
+.v2-root[data-mode="focus"] .v2-info-sheet {
+  --surface: #fdfbf4;
+  --surface-raised: #ffffff;
+  --text: #1a1a1b;
+  --text-muted: #5c6478;
+  --border: rgba(26, 26, 27, 0.1);
+  --ink: #1a2340;
+  --ink-hover: #2c3753;
+  --text-on-ink: #f5f2ea;
+  --accent: #2d5a56;
+  --accent-soft: rgba(45, 90, 86, 0.12);
+  --accent-ring: rgba(45, 90, 86, 0.28);
+}
+.v2-root [data-mode="focus"] .v2-info-sheet__backdrop,
+.v2-root[data-mode="focus"] .v2-info-sheet__backdrop {
+  background: rgba(10, 14, 28, 0.58);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.v2-root [data-mode="focus"] .v2-info-sheet__panel,
+.v2-root[data-mode="focus"] .v2-info-sheet__panel {
+  background: #f7f4ef;
+  color: #1a1a1b;
+  border-top: 1px solid rgba(245, 242, 234, 0.35);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.38);
+}
 .v2-root .v2-info-sheet__eyebrow,
 .v2-root .v2-cycle-sheet__eyebrow {
   margin: 0 0 8px;
@@ -2499,6 +2547,313 @@
   color: var(--accent);
   text-align: center;
 }
+
+/* Focus shell: stage boven, acties onderaan (pre-start / sessie / finish) */
+.v2-root .v2-focus-shell {
+  min-height: 100dvh;
+}
+.v2-root .v2-focus-topbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(12px, env(safe-area-inset-top)) 20px 8px;
+}
+.v2-root .v2-focus-topbar__status {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v2-root .v2-focus-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 8px 24px 16px;
+}
+.v2-root .v2-focus-stage__inner {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.v2-root .v2-focus-kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v2-root .v2-focus-title {
+  margin: 8px 0 0;
+  max-width: 100%;
+  text-align: center;
+  font-size: var(--fs-title);
+  line-height: var(--lh-tight);
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.v2-root .v2-focus-ring {
+  position: relative;
+  margin-top: 28px;
+  width: 210px;
+  height: 210px;
+  flex-shrink: 0;
+}
+.v2-root .v2-focus-ring--soft {
+  border-radius: 999px;
+}
+.v2-root .v2-focus-ring__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+}
+.v2-root .v2-focus-ring__ellipsis {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--text-muted);
+}
+.v2-root .v2-focus-ring__approx {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--text-muted);
+}
+.v2-root .v2-focus-ring__bucket {
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--text);
+}
+.v2-root .v2-focus-ring__time {
+  font-family: var(--font-mono);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.v2-root .v2-focus-ring__bucket-label {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.v2-root .v2-focus-ring__soft {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--accent);
+}
+.v2-root .v2-focus-done {
+  margin-top: 36px;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.v2-root .v2-focus-done__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+.v2-root .v2-focus-dock {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 12px 24px max(20px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--surface) 70%, transparent);
+}
+.v2-root .v2-focus-dock__stack {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.v2-root .v2-focus-self-buckets {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.v2-root .v2-focus-dock .v2-focus-park {
+  margin-top: 4px;
+  max-width: none;
+}
+
+/* Dagafsluiting: fixed shell (scroll=false), stage center, dock pinned. */
+.v2-root .v2-shutdown {
+  box-sizing: border-box;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 24px 20px 12px;
+  gap: 0;
+  overflow: hidden;
+}
+.v2-root .v2-shutdown__top {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.v2-root .v2-shutdown__title {
+  margin: 8px 0 0;
+  font-size: var(--fs-display);
+}
+.v2-root .v2-shutdown__lead {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.v2-root .v2-shutdown__progress {
+  margin-top: 14px;
+}
+.v2-root .v2-shutdown__stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  min-height: 0;
+  padding: clamp(0.75rem, 3vh, 1.5rem) 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.v2-root .v2-shutdown__card {
+  width: 100%;
+  border-radius: 16px;
+  padding: 18px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+.v2-root .v2-shutdown__kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v2-root .v2-shutdown__body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.v2-root .v2-shutdown__question {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 5vw, 1.65rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text);
+}
+.v2-root .v2-shutdown__muted {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.v2-root .v2-shutdown__single {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 6px 0;
+}
+.v2-root .v2-shutdown-wins {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v2-root .v2-shutdown-win {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.v2-root .v2-shutdown-win--hero {
+  justify-content: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.v2-root .v2-shutdown-win__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text);
+}
+.v2-root .v2-shutdown-win__label--hero {
+  flex: 0 1 auto;
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 5vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  text-align: center;
+}
+.v2-root .v2-shutdown__dock {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0 max(16px, env(safe-area-inset-bottom, 0px));
+}
+.v2-root .v2-shutdown__dock .v2-link {
+  align-self: center;
+}
+
 .v2-root .v2-home-loop {
   margin-top: 18px;
   padding-top: 14px;
@@ -2572,26 +2927,20 @@
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 8px 20px 32px;
+  /* Zelfde verticale adem als Taken (TodoV2Client: pt-6 px-5 pb-8). */
+  padding: 24px 20px 32px;
 }
 .v2-root .v2-dump__hero {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-.v2-root .v2-dump__header {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.v2-root .v2-info-head,
-.v2-root .v2-dump__header-top {
+.v2-root .v2-info-head {
   display: flex;
   align-items: center;
   gap: 14px;
 }
-.v2-root .v2-info-head .v2-info-hint,
-.v2-root .v2-dump__header-top .v2-info-hint {
+.v2-root .v2-info-head .v2-info-hint {
   margin-top: 0;
   margin-left: 2px;
   /* Ruimte voor pulse-ring zodat die niet door de eyebrow loopt. */
@@ -2599,27 +2948,6 @@
 }
 .v2-root .v2-info-head--center {
   justify-content: center;
-}
-.v2-root .v2-dump__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-micro);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.v2-root .v2-dump__title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: clamp(2rem, 7vw, 2.25rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.12;
-  color: var(--ink);
 }
 .v2-root .v2-dump__lead {
   margin: 0.35rem 0 0;

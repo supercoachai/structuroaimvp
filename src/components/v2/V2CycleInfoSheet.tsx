@@ -72,6 +72,12 @@ export default function V2CycleInfoSheet({
         body: meaningBody,
       },
       {
+        key: "why",
+        icon: "why",
+        title: t("cycle.infoSheetWhyTitle"),
+        body: t("cycle.infoSheetWhyBody"),
+      },
+      {
         key: "plan",
         icon: "plan",
         title: t("cycle.infoSheetPlanTitle"),

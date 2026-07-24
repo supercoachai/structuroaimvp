@@ -71,13 +71,15 @@ test.describe("V2 focus-einde en snooze", () => {
     await page.goto("/v2/focus", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByText("E2E focus ding")).toBeVisible({ timeout: 15_000 });
-    // P0: suggested/default is primary ("Kort, begin hier"), niet gelijke "Kort".
-    await page.getByRole("button", { name: /Kort/i }).click();
+    // P0: één primary Start focus (AI/fallback estimate), geen drie gelijke duurknoppen.
+    await page.getByRole("button", { name: /Start focus/i }).click();
     await expect(page.getByRole("button", { name: "Pauze" })).toBeVisible();
     await page.getByRole("button", { name: "Afronden" }).click();
 
     await expect(page.getByRole("button", { name: "Ik ben klaar" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Nog even bezig" })).toBeVisible();
+    // Finish: vinkje i.p.v. grijs "Tijd om te kiezen"-rondje.
+    await expect(page.getByText("Tijd om te kiezen")).toHaveCount(0);
     await page.getByRole("button", { name: "Ik ben klaar" }).click();
 
     await page.waitForURL(/\/v2\/home(\/|\?|$)/, { timeout: 15_000 });

@@ -196,11 +196,11 @@ export default function TodoV2Client() {
           <div className="v2-info-head">
             <V2Eyebrow>Je lijst</V2Eyebrow>
             <V2InfoHint
-              infoId="v2_todo_snooze"
+              infoId="v2_todo"
               expanded={infoOpen}
               onToggle={() => setInfoOpen((v) => !v)}
-              expandLabel={V2_INFO_SHEETS.snooze.openAria}
-              collapseLabel={V2_INFO_SHEETS.snooze.closeAria}
+              expandLabel={V2_INFO_SHEETS.todo.openAria}
+              collapseLabel={V2_INFO_SHEETS.todo.closeAria}
               controlsId="v2-todo-info-sheet"
             />
           </div>
@@ -253,11 +253,11 @@ export default function TodoV2Client() {
       <V2InfoSheet
         open={infoOpen}
         onClose={() => setInfoOpen(false)}
-        eyebrow={V2_INFO_SHEETS.snooze.eyebrow}
-        title={V2_INFO_SHEETS.snooze.title}
-        rows={V2_INFO_SHEETS.snooze.rows}
-        gotItLabel={V2_INFO_SHEETS.snooze.gotIt}
-        closeAria={V2_INFO_SHEETS.snooze.closeAria}
+        eyebrow={V2_INFO_SHEETS.todo.eyebrow}
+        title={V2_INFO_SHEETS.todo.title}
+        rows={V2_INFO_SHEETS.todo.rows}
+        gotItLabel={V2_INFO_SHEETS.todo.gotIt}
+        closeAria={V2_INFO_SHEETS.todo.closeAria}
         panelId="v2-todo-info-sheet"
       />
     </V2AppShell>

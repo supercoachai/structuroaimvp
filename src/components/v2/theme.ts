@@ -10,6 +10,8 @@ export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
   switch (phase) {
     case "energy":
     case "done":
+    case "account":
+    case "name":
       return "welcome";
     case "adjust":
     default:

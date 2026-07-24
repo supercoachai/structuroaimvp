@@ -18,12 +18,12 @@ type V2AccountSaveCtaProps = {
   /** utm_content voor attributie */
   content: string;
   /** Analytics-surface. */
-  surface?: "home";
+  surface?: "home" | "onboarding";
 };
 
 /**
- * Soft account-brug op Home, alleen na eerste focus- of shutdown-win
- * (`firstValueAt` via shouldShowAccountSavePrompt).
+ * Soft account-brug (legacy). Home toont deze CTA niet meer;
+ * account-save zit in onboarding (V2AccountSaveStep).
  */
 export default function V2AccountSaveCta({
   content,

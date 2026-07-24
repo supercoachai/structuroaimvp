@@ -81,13 +81,16 @@ function HowStep({
 }
 
 /**
- * Soft bottom hint voor guest-onboarding.
+ * Soft bottom peeker voor guest-onboarding.
  * Tik of swipe-omhoog opent de uitgebreide cyclus-uitleg.
+ * Blijft zichtbaar als cyclus aan staat (Aanpassen), tot Nee dismiss’t.
  */
 export function V2CycleDiscoverHint({
   onOpen,
+  optedIn = false,
 }: {
   onOpen: () => void;
+  optedIn?: boolean;
 }) {
   const { t } = useI18n();
   const startY = useRef<number | null>(null);
@@ -115,7 +118,9 @@ export function V2CycleDiscoverHint({
       onPointerCancel={() => {
         startY.current = null;
       }}
-      aria-label={t("cycle.discoverHintAria")}
+      aria-label={
+        optedIn ? t("cycle.discoverHintOnAria") : t("cycle.discoverHintAria")
+      }
     >
       <span className="v2-cycle-discover-hint__handle" aria-hidden />
       <span className="v2-cycle-discover-hint__icon" aria-hidden>
@@ -123,10 +128,12 @@ export function V2CycleDiscoverHint({
       </span>
       <span className="v2-cycle-discover-hint__label">
         <span className="v2-cycle-discover-hint__eyebrow">
-          {t("cycle.discoverHintEyebrow")}
+          {optedIn
+            ? t("cycle.discoverHintOnEyebrow")
+            : t("cycle.discoverHintEyebrow")}
         </span>
         <span className="v2-cycle-discover-hint__text">
-          {t("cycle.discoverHint")}
+          {optedIn ? t("cycle.discoverHintOn") : t("cycle.discoverHint")}
         </span>
       </span>
       <span className="v2-cycle-discover-hint__chevron" aria-hidden>
@@ -138,31 +145,34 @@ export function V2CycleDiscoverHint({
 
 type V2CycleDiscoverSheetProps = {
   open: boolean;
+  enabled: boolean;
   onClose: () => void;
   onEnable: () => void;
+  onDisable: () => void;
   onNotNow: () => void;
 };
 
 /**
  * Uitgebreide discovery-sheet: inzicht + reminder, nooit sturing.
  * Swipe-omlaag of backdrop sluit zonder keuze; Nee dismiss’t discovery.
+ * Aan/uit via toggle of CTAs; Aan dismiss’t discovery niet.
  */
 export default function V2CycleDiscoverSheet({
   open,
+  enabled,
   onClose,
   onEnable,
+  onDisable,
   onNotNow,
 }: V2CycleDiscoverSheetProps) {
   const { t } = useI18n();
   const titleId = useId();
   const dragStartY = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
-  const [previewOn, setPreviewOn] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setDragY(0);
-      setPreviewOn(false);
       return;
     }
     const onKey = (e: KeyboardEvent) => {
@@ -188,6 +198,12 @@ export default function V2CycleDiscoverSheet({
     },
     [onClose],
   );
+
+  const setEnabled = (on: boolean) => {
+    if (on === enabled) return;
+    if (on) onEnable();
+    else onDisable();
+  };
 
   if (!open) return null;
 
@@ -276,14 +292,14 @@ export default function V2CycleDiscoverSheet({
               {t("cycle.discoverToggleLabel")}
             </p>
             <p className="v2-cycle-discover-sheet__toggle-status">
-              {previewOn
+              {enabled
                 ? t("cycle.discoverToggleOn")
                 : t("cycle.discoverToggleOff")}
             </p>
           </div>
           <V2SettingsToggle
-            checked={previewOn}
-            onChange={() => setPreviewOn((v) => !v)}
+            checked={enabled}
+            onChange={() => setEnabled(!enabled)}
             ariaLabel={t("cycle.discoverToggleLabel")}
           />
         </div>
@@ -336,20 +352,46 @@ export default function V2CycleDiscoverSheet({
         </section>
 
         <div className="v2-cycle-discover-sheet__actions">
-          <button
-            type="button"
-            className="btn-ghost v2-cycle-discover-sheet__cta-no"
-            onClick={onNotNow}
-          >
-            {t("cycle.discoverNotNow")}
-          </button>
-          <button
-            type="button"
-            className="btn-primary v2-cycle-discover-sheet__cta-yes"
-            onClick={onEnable}
-          >
-            {t("cycle.discoverEnable")}
-          </button>
+          {enabled ? (
+            <>
+              <button
+                type="button"
+                className="btn-ghost v2-cycle-discover-sheet__cta-no"
+                onClick={() => {
+                  onDisable();
+                }}
+              >
+                {t("cycle.discoverDisable")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary v2-cycle-discover-sheet__cta-yes"
+                onClick={onClose}
+              >
+                {t("cycle.discoverDone")}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn-ghost v2-cycle-discover-sheet__cta-no"
+                onClick={onNotNow}
+              >
+                {t("cycle.discoverNotNow")}
+              </button>
+              <button
+                type="button"
+                className="btn-primary v2-cycle-discover-sheet__cta-yes"
+                onClick={() => {
+                  onEnable();
+                  onClose();
+                }}
+              >
+                {t("cycle.discoverEnable")}
+              </button>
+            </>
+          )}
         </div>
 
         {footer}

@@ -180,7 +180,7 @@
     },
     "emphasis": {
       "heroHighlight": {
-        "fontStyle": "italic",
+        "fontStyle": "normal",
         "fontWeight": 500,
         "color": "story.accent",
         "underline": "rgba(45, 90, 86, 0.14) highlight bar"

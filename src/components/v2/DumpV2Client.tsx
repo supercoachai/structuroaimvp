@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { V2AppShell } from "./V2Chrome";
+import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
 import { recordV2Snooze, v2AdaptiveDumpKey } from "./v2Adaptive";
@@ -534,12 +534,9 @@ export default function DumpV2Client() {
     <V2AppShell>
       <div className="v2-dump">
         <div className="v2-dump__hero">
-          <header className="v2-dump__header">
-            <div className="v2-dump__header-top">
-              <p className="v2-dump__eyebrow">
-                <span className="v2-eyebrow-dot--static" aria-hidden="true" />
-                Extern geheugen
-              </p>
+          <header>
+            <div className="v2-info-head">
+              <V2Eyebrow>Extern geheugen</V2Eyebrow>
               <V2InfoHint
                 infoId="v2_dump_extern_geheugen"
                 expanded={infoOpen}
@@ -549,7 +546,9 @@ export default function DumpV2Client() {
                 controlsId="v2-dump-info-sheet"
               />
             </div>
-            <h1 className="v2-dump__title">Dump</h1>
+            <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
+              Dump
+            </h1>
             <p className="v2-dump__lead">
               Leg vast wat in je hoofd zit. Structuur hoeft niet.
             </p>
