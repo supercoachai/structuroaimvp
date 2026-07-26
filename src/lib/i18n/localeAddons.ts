@@ -149,6 +149,8 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       back: "← terug",
       chipTask: "Taak",
       openTrigger: "Nieuwe taak toevoegen…",
+      titleRequired: "Geef je taak eerst een naam.",
+      pickDateHint: "Kies een datum om verder te gaan.",
     },
     dayShutdown: {
       toastPickSatisfaction: "Kies hoe je je vandaag voelt.",
@@ -923,6 +925,8 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       back: "← back",
       chipTask: "Task",
       openTrigger: "Add a new task…",
+      titleRequired: "Give your task a name first.",
+      pickDateHint: "Pick a date to continue.",
     },
     dayShutdown: {
       toastPickSatisfaction: "Choose how today felt.",
