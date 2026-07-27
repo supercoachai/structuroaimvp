@@ -100,6 +100,11 @@ export const APP_ROUTES = [
     status: [200, 401, 405],
   },
   {
+    path: "/api/lifecycle/preview-send",
+    kind: "api",
+    status: [200, 401, 405],
+  },
+  {
     path: "/api/auth/request-password-reset",
     kind: "api",
     method: "POST",
