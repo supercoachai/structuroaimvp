@@ -422,7 +422,7 @@ export default function DumpV2Client() {
 
         {toast ? (
           <div
-            className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[130] flex max-w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 items-center gap-3 rounded-[14px] px-4 py-3 text-[14px] shadow-sm"
+            className="fixed bottom-[calc(6.75rem+env(safe-area-inset-bottom))] left-1/2 z-[130] flex max-w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 items-center gap-3 rounded-[14px] px-4 py-3 text-[14px] shadow-sm"
             style={{
               background: "var(--ink)",
               color: "var(--text-on-ink)",

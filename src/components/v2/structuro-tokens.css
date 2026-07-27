@@ -594,7 +594,11 @@
 }
 /* Island: één zachte lift; geen glass/blur (prikkelarm, cream/teal). */
 .v2-root .v2-app-nav__island {
-  box-shadow: 0 1px 2px rgba(26, 35, 64, 0.05), 0 6px 18px rgba(26, 35, 64, 0.07);
+  box-shadow: 0 1px 2px rgba(26, 35, 64, 0.05), 0 8px 22px rgba(26, 35, 64, 0.09);
+}
+.v2-root .v2-app-nav__item svg {
+  width: 24px;
+  height: 24px;
 }
 .v2-root[data-mode="focus"] .v2-app-nav__island,
 .v2-root [data-mode="focus"] .v2-app-nav__island {
@@ -1928,7 +1932,8 @@
   line-height: 1.25;
   color: var(--ink);
   text-align: center;
-  max-width: 18ch;
+  max-width: 100%;
+  white-space: nowrap;
 }
 .v2-root .v2-propose-step__tap-hint {
   margin: 6px 0 0;
@@ -1979,7 +1984,8 @@
   }
   .v2-root .v2-propose-step__title {
     font-size: 1.8rem;
-    max-width: 22ch;
+    max-width: 100%;
+    white-space: nowrap;
   }
   .v2-root .v2-propose-pills {
     margin-top: 20px;

@@ -1,13 +1,15 @@
-/* Betaalpagina: exact design uit structuro-betaalpagina.html, scoped onder .retention-paywall */
+/* Betaalpagina: v2 Variant F (cream / ink / sage), scoped onder .retention-paywall */
 
 .retention-paywall {
-  --rp-navy: #0a1f5c;
-  --rp-cobalt: #2c5bff;
-  --rp-ink: #0a1f5c;
-  --rp-muted: #5b6b9a;
-  --rp-bg: #eef1fb;
+  --rp-navy: #1a2340;
+  --rp-cobalt: #2d5a56;
+  --rp-ink: #1a2340;
+  --rp-muted: #5c6478;
+  --rp-bg: #fdfbf4;
   --rp-surface: #ffffff;
-  --rp-line: #e3e8f7;
+  --rp-line: rgba(26, 26, 27, 0.1);
+  --rp-accent-soft: rgba(45, 90, 86, 0.12);
+  --rp-on-ink: #f5f2ea;
 
   position: fixed;
   inset: 0;
@@ -72,13 +74,13 @@
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(44, 91, 255, 0.45), transparent 70%);
+  background: radial-gradient(circle, rgba(95, 184, 175, 0.35), transparent 70%);
 }
 
 .retention-paywall .built-label {
   font-size: 13px;
   font-weight: 600;
-  color: #9fb0e8;
+  color: rgba(245, 242, 234, 0.65);
   margin: 0 0 16px;
   position: relative;
   letter-spacing: 0.02em;
@@ -108,7 +110,7 @@
 
 .retention-paywall .stat .l {
   font-size: 13px;
-  color: #b9c4ed;
+  color: rgba(245, 242, 234, 0.7);
   font-weight: 500;
   margin-top: 6px;
   line-height: 1.3;
@@ -157,20 +159,21 @@
   width: 100%;
   min-height: 62px;
   border: none;
-  border-radius: 18px;
-  background: var(--rp-cobalt);
-  color: #fff;
+  border-radius: 16px;
+  background: var(--rp-ink);
+  color: var(--rp-on-ink);
   font-family: inherit;
   font-size: 19px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 12px 26px -8px rgba(44, 91, 255, 0.55);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
 .retention-paywall .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 32px -8px rgba(44, 91, 255, 0.6);
+  background: #2c3753;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 14px 28px -10px rgba(26, 35, 64, 0.55);
 }
 
 .retention-paywall .btn-primary:active:not(:disabled) {
@@ -212,14 +215,14 @@
   height: 0.95em;
   margin-top: 0.08em;
   border-radius: 6px;
-  background: rgba(10, 31, 92, 0.12);
+  background: rgba(26, 35, 64, 0.12);
   vertical-align: baseline;
 }
 
 .retention-paywall .paywall-skeleton-bar {
   display: block;
   border-radius: 8px;
-  background: rgba(91, 107, 154, 0.18);
+  background: rgba(92, 100, 120, 0.18);
 }
 
 .retention-paywall .paywall-skeleton-bar--short {
@@ -391,7 +394,7 @@
 .retention-paywall .proof-head {
   font-size: 14px;
   font-weight: 600;
-  color: var(--rp-muted);
+  color: var(--rp-cobalt);
   margin: 0 0 16px;
 }
 
@@ -425,7 +428,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  color: #fff;
+  color: var(--rp-accent, #2d5a56);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -435,11 +438,13 @@
 }
 
 .retention-paywall .a1 {
-  background: linear-gradient(135deg, #2c5bff, #0a1f5c);
+  background: var(--rp-accent-soft);
+  color: #2d5a56;
 }
 
 .retention-paywall .a2 {
-  background: linear-gradient(135deg, #5b6b9a, #0a1f5c);
+  background: rgba(26, 35, 64, 0.1);
+  color: var(--rp-ink);
 }
 
 .retention-paywall .trust {
@@ -454,8 +459,8 @@
 .retention-paywall .done-state {
   position: fixed;
   inset: 0;
-  background: var(--rp-navy);
-  color: #fff;
+  background: var(--rp-bg);
+  color: var(--rp-ink);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -477,7 +482,8 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: var(--rp-cobalt);
+  background: var(--rp-ink);
+  color: var(--rp-on-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -504,13 +510,13 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 0 0 10px;
-  color: #fff;
+  color: var(--rp-ink);
 }
 
 .retention-paywall .done-state p {
   margin: 0;
   font-size: 17px;
-  color: #b9c4ed;
+  color: var(--rp-muted);
   font-weight: 500;
   max-width: 30ch;
 }
@@ -518,9 +524,9 @@
 .retention-paywall .done-state .btn-primary {
   margin-top: 28px;
   max-width: 280px;
-  background: #fff;
-  color: var(--rp-navy);
-  box-shadow: none;
+  background: var(--rp-ink);
+  color: var(--rp-on-ink);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {

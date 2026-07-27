@@ -59,6 +59,7 @@ function canAccessWithoutActiveSubscription(pathname: string): boolean {
   if (pathname === "/consent" || pathname.startsWith("/consent/")) return true;
   if (isAnonymousPublicPage(pathname)) return true;
   if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
+  if (pathname === "/v2/abonnement" || pathname.startsWith("/v2/abonnement/")) return true;
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return true;
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return true;
   if (pathname.startsWith("/api/stripe/webhook")) return true;
@@ -570,7 +571,8 @@ export async function updateSession(
       });
       if (!ok) {
         const url = request.nextUrl.clone();
-        url.pathname = "/abonnement";
+        // Live shell is v2: paywall in Variant F (cream/ink/sage), niet de oude blue page.
+        url.pathname = "/v2/abonnement";
         return NextResponse.redirect(url, 302);
       }
     }
@@ -604,6 +606,7 @@ function applyDagstartDbGate(
     !pathname.startsWith("/onboarding") &&
     !pathname.startsWith("/consent") &&
     !pathname.startsWith("/abonnement") &&
+    !pathname.startsWith("/v2/abonnement") &&
     !pathname.startsWith("/privacy") &&
     !pathname.startsWith("/terms") &&
     !pathname.startsWith("/api");

@@ -21,12 +21,13 @@ import { v2ScopedCss, v2Styles } from "./theme";
 /** 112×81 mark (~9KB) i.p.v. 1024×740 /logo-structuro.png (~502KB). */
 const V2_LOGO_SRC = "/v2/logo-mark.png";
 
+/** Tray + pijl omlaag: gedachten eruit, in extern geheugen. Rustig, geen ±. */
 function IconDump({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      width={20}
-      height={20}
+      width={24}
+      height={24}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -36,9 +37,10 @@ function IconDump({ className }: { className?: string }) {
       aria-hidden
     >
       <path d="M12 3v12" />
-      <path d="M8 7h8" />
+      <path d="M8 11l4 4 4-4" />
       <path d="M5 21h14" />
-      <path d="M9 17h6" />
+      <path d="M7 17v4" />
+      <path d="M17 17v4" />
     </svg>
   );
 }
@@ -198,8 +200,8 @@ function pulseNavHaptic() {
 }
 
 /**
- * v2 bottom-nav in Variant F: cream papier, rustige iconen. Active-tab krijgt
- * sage soft-pill + zwaardere stroke (geen gevulde knop / floating glass).
+ * v2 bottom-nav als rustige floating island (Variant F): raised cream papier,
+ * zachte navy-lift, sage soft-pill op actief. Bewust geen Instagram dark-glass.
  * "Afsluiten" opent het shutdown-ritueel op /v2/shutdown.
  */
 function V2BottomNav() {
@@ -225,70 +227,72 @@ function V2BottomNav() {
   ];
 
   return (
-    <nav style={v2Styles.appNav} aria-label="v2 navigatie">
-      {tabs.map((tab) => {
-        const active = tab.href ? isActiveTab(pathname, tab.href) : false;
-        const itemStyle: CSSProperties = {
-          ...v2Styles.appNavItem,
-          ...(active ? v2Styles.appNavItemActive : {}),
-          color: active ? "var(--accent)" : "var(--text-muted)",
-          opacity: active ? 1 : 0.42,
-        };
-        const itemClass = `v2-app-nav__item${active ? " is-active" : ""}`;
-        const Icon = tab.Icon;
-        const inner = (
-          <>
-            <span style={v2Styles.appNavIcon}>
-              <Icon />
-            </span>
-            {/* Alleen actieve tab toont label: 5 gelijke labels = cognitieve tax. */}
-            {active ? (
-              <span style={v2Styles.appNavLabel}>{tab.label}</span>
-            ) : (
-              <span className="sr-only">{tab.label}</span>
-            )}
-          </>
-        );
-        if (tab.href) {
+    <nav className="v2-app-nav" style={v2Styles.appNav} aria-label="v2 navigatie">
+      <div className="v2-app-nav__island" style={v2Styles.appNavIsland}>
+        {tabs.map((tab) => {
+          const active = tab.href ? isActiveTab(pathname, tab.href) : false;
+          const itemStyle: CSSProperties = {
+            ...v2Styles.appNavItem,
+            ...(active ? v2Styles.appNavItemActive : {}),
+            color: active ? "var(--accent)" : "var(--text-muted)",
+            opacity: active ? 1 : 0.42,
+          };
+          const itemClass = `v2-app-nav__item${active ? " is-active" : ""}`;
+          const Icon = tab.Icon;
+          const inner = (
+            <>
+              <span style={v2Styles.appNavIcon}>
+                <Icon />
+              </span>
+              {/* Alleen actieve tab toont label: 5 gelijke labels = cognitieve tax. */}
+              {active ? (
+                <span style={v2Styles.appNavLabel}>{tab.label}</span>
+              ) : (
+                <span className="sr-only">{tab.label}</span>
+              )}
+            </>
+          );
+          if (tab.href) {
+            return (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className={itemClass}
+                style={itemStyle}
+                aria-label={tab.label}
+                aria-current={active ? "page" : undefined}
+                title={tab.label}
+                onClick={pulseNavHaptic}
+              >
+                {inner}
+              </Link>
+            );
+          }
           return (
-            <Link
+            <button
               key={tab.id}
-              href={tab.href}
+              type="button"
               className={itemClass}
+              onClick={() => {
+                pulseNavHaptic();
+                tab.onClick?.();
+              }}
               style={itemStyle}
               aria-label={tab.label}
-              aria-current={active ? "page" : undefined}
               title={tab.label}
-              onClick={pulseNavHaptic}
             >
               {inner}
-            </Link>
+            </button>
           );
-        }
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            className={itemClass}
-            onClick={() => {
-              pulseNavHaptic();
-              tab.onClick?.();
-            }}
-            style={itemStyle}
-            aria-label={tab.label}
-            title={tab.label}
-          >
-            {inner}
-          </button>
-        );
-      })}
+        })}
+      </div>
     </nav>
   );
 }
 
 /**
  * v2 app-shell in Variant F: warm papier (--surface), serif wordmark, één
- * rustige tekst-uitgang (geen gevulde knop in de chrome), en de F-bottom-nav.
+ * rustige tekst-uitgang (geen gevulde knop in de chrome), en de floating island-nav.
  * Bewust GEEN echte AppLayout/DagstartOverlay/auth: alles draait zelfstandig op
  * lokale state, zodat de gate-bypass intact blijft.
  */

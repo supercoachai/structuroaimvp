@@ -730,20 +730,20 @@ export const v2Styles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding:
-      "6px max(14px, env(safe-area-inset-left, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-right, 0px))",
+      "10px max(16px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px))",
     backgroundColor: "var(--surface)",
   },
   /**
    * Structuro-island: raised papier, zachte navy-lift, geen glass/blur.
-   * Compacte pill zodat het “iets” heeft zonder Instagram-gloss.
+   * Proportioneel t.o.v. primary CTA’s (geen mini Instagram-dock).
    */
   appNavIsland: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 440,
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: 2,
-    padding: "5px 6px",
+    gap: 4,
+    padding: "8px 10px",
     borderRadius: 999,
     border: "1px solid var(--border)",
     backgroundColor: "var(--surface-raised)",
@@ -756,14 +756,14 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   appNavItem: {
-    minHeight: 38,
+    minHeight: 52,
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 1,
-    padding: "4px 4px",
+    gap: 3,
+    padding: "8px 6px",
     borderRadius: 999,
     border: "none",
     backgroundColor: "transparent",
@@ -782,14 +782,16 @@ export const v2Styles: Record<string, CSSProperties> = {
   appNavLabel: {
     width: "100%",
     textAlign: "center" as const,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 700,
-    lineHeight: 1.1,
-    letterSpacing: "0.02em",
+    lineHeight: 1.15,
+    letterSpacing: "0.01em",
     color: "var(--accent)",
   },
   appNavIcon: {
     flexShrink: 0,
+    width: 24,
+    height: 24,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -861,6 +863,10 @@ export const v2ScopedCss = `
 .v2-app-nav__item:active {
   opacity: 0.72;
   transform: scale(0.96);
+}
+.v2-app-nav__item svg {
+  width: 24px;
+  height: 24px;
 }
 .v2-app-nav__item.is-active svg {
   stroke-width: 2.15;
