@@ -90,9 +90,9 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Soft bottom peeker voor guest-onboarding.
- * Tik of swipe-omhoog opent de uitgebreide cyclus-uitleg.
- * Blijft zichtbaar als cyclus aan staat (Aanpassen), tot Nee dismiss’t.
+ * Soft bottom hint + sheet voor cyclus-discovery.
+ * Niet meer op dagstart/propose (progressive disclosure); component blijft
+ * beschikbaar voor hergebruik (settings/demo) tot de flow elders landt.
  */
 export function V2CycleDiscoverHint({
   onOpen,

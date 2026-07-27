@@ -18,9 +18,13 @@ import {
   formatDeadline,
   formatRepeat,
   isOverdue,
+  isV2TaskCompletedToday,
   isV2TaskVisible,
   loadV2Tasks,
+  markV2TaskCompleted,
   priorityLabel,
+  pruneStaleCompletedV2Tasks,
+  restoreV2Task,
   saveV2Tasks,
   todayYmd,
   v2Id,
@@ -41,8 +45,11 @@ export default function TodoV2Client() {
   const [draft, setDraft] = useState<V2Task | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [microDraft, setMicroDraft] = useState("");
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
   const [infoOpen, setInfoOpen] = useState(false);
+  const [completedOpen, setCompletedOpen] = useState(false);
   const editAnchorRef = useRef<HTMLDivElement | null>(null);
 
   // Laad uit localStorage. Zaai bij een lege lijst de gekozen dingen van de reis.
@@ -62,6 +69,29 @@ export default function TodoV2Client() {
     setLoaded(true);
   }, [ready, loaded, state.things]);
 
+  // Dagwisseling terwijl de pagina open blijft: oude voltooide taken weg.
+  useEffect(() => {
+    if (!loaded) return;
+    const pruneIfNeeded = () => {
+      const today = todayYmd();
+      setTasks((prev) => {
+        const next = pruneStaleCompletedV2Tasks(prev, today);
+        if (next.length === prev.length) return prev;
+        saveV2Tasks(next);
+        return next;
+      });
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") pruneIfNeeded();
+    };
+    window.addEventListener("focus", pruneIfNeeded);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", pruneIfNeeded);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [loaded]);
+
   // Inline-editor in beeld houden (geen jump naar pagina-onderkant).
   useEffect(() => {
     if (!draft || isNew) return;
@@ -73,12 +103,20 @@ export default function TodoV2Client() {
     saveV2Tasks(next);
   };
 
-  const visibleTasks = useMemo(
+  const activeTasks = useMemo(
     () =>
       tasks
-        .filter((t) => isV2TaskVisible(t) || t.done)
+        .filter((t) => !t.done && isV2TaskVisible(t))
         .slice()
         .sort(compareV2TasksForList),
+    [tasks],
+  );
+  const completedToday = useMemo(
+    () =>
+      tasks
+        .filter((t) => isV2TaskCompletedToday(t))
+        .slice()
+        .sort((a, b) => (b.completedDate ?? "").localeCompare(a.completedDate ?? "") || b.createdAt.localeCompare(a.createdAt)),
     [tasks],
   );
   const snoozedTasks = useMemo(
@@ -86,22 +124,32 @@ export default function TodoV2Client() {
     [tasks],
   );
 
-  const toggleDone = (id: string) => {
+  const completeTask = (id: string) => {
     const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    if (!task.done) {
-      setFadingIds((prev) => new Set(prev).add(id));
-      window.setTimeout(() => {
-        persist(tasks.map((t) => (t.id === id ? { ...t, done: true } : t)));
-        setFadingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
-      }, 300);
-      return;
-    }
-    persist(tasks.map((t) => (t.id === id ? { ...t, done: false } : t)));
+    if (!task || task.done) return;
+    setFadingIds((prev) => new Set(prev).add(id));
+    window.setTimeout(() => {
+      setTasks((prev) => {
+        const next = prev.map((t) =>
+          t.id === id ? markV2TaskCompleted(t) : t,
+        );
+        saveV2Tasks(next);
+        return next;
+      });
+      setFadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 300);
+  };
+
+  const restoreTask = (id: string) => {
+    setTasks((prev) => {
+      const next = prev.map((t) => (t.id === id ? restoreV2Task(t) : t));
+      saveV2Tasks(next);
+      return next;
+    });
   };
 
   const snoozeTask = (id: string, until: string | typeof V2_SNOOZE_REST) => {
@@ -171,6 +219,38 @@ export default function TodoV2Client() {
     draft &&
     patchDraft({ microSteps: draft.microSteps.filter((m) => m.id !== id) });
 
+  const suggestMicroSteps = async () => {
+    if (!draft || suggestBusy) return;
+    const title = draft.title.trim();
+    if (title.length === 0) {
+      setSuggestError("Vul eerst een titel in.");
+      return;
+    }
+    setSuggestBusy(true);
+    setSuggestError(null);
+    try {
+      const { fetchMicroStepSuggestions } = await import(
+        "@/lib/ai/fetchMicroStepSuggestions"
+      );
+      const result = await fetchMicroStepSuggestions({
+        title,
+        energyLevel: draft.energy,
+        locale: "nl",
+      });
+      patchDraft({
+        microSteps: result.steps.slice(0, 4).map((stepTitle) => ({
+          id: v2Id("ms"),
+          title: stepTitle,
+          done: false,
+        })),
+      });
+    } catch {
+      setSuggestError("Voorstellen lukten niet. Probeer later opnieuw.");
+    } finally {
+      setSuggestBusy(false);
+    }
+  };
+
   const formOpen = draft !== null;
   const editingId = formOpen && !isNew ? draft.id : null;
 
@@ -179,9 +259,12 @@ export default function TodoV2Client() {
         draft,
         isNew,
         microDraft,
+        suggestBusy,
+        suggestError,
         onMicroDraft: setMicroDraft,
         onAddMicro: addMicro,
         onRemoveMicro: removeMicro,
+        onSuggestMicro: () => void suggestMicroSteps(),
         onPatch: patchDraft,
         onSave: saveDraft,
         onCancel: cancelEdit,
@@ -209,9 +292,9 @@ export default function TodoV2Client() {
           </h1>
         </header>
 
-        {visibleTasks.length > 0 ? (
+        {activeTasks.length > 0 ? (
           <div className="flex flex-col gap-2.5">
-            {visibleTasks.map((task) => {
+            {activeTasks.map((task) => {
               const editing = editingId === task.id && formProps != null;
               return (
                 <div key={task.id} ref={editing ? editAnchorRef : undefined}>
@@ -219,7 +302,7 @@ export default function TodoV2Client() {
                     task={task}
                     fading={fadingIds.has(task.id)}
                     editing={editing}
-                    onToggle={() => toggleDone(task.id)}
+                    onToggle={() => completeTask(task.id)}
                     onEdit={() => startEdit(task)}
                     onSnooze={(until) => snoozeTask(task.id, until)}
                   >
@@ -248,6 +331,15 @@ export default function TodoV2Client() {
             Nieuwe taak
           </button>
         ) : null}
+
+        {completedToday.length > 0 ? (
+          <CompletedTodaySection
+            tasks={completedToday}
+            open={completedOpen}
+            onToggleOpen={() => setCompletedOpen((v) => !v)}
+            onRestore={restoreTask}
+          />
+        ) : null}
       </div>
 
       <V2InfoSheet
@@ -261,6 +353,128 @@ export default function TodoV2Client() {
         panelId="v2-todo-info-sheet"
       />
     </V2AppShell>
+  );
+}
+
+function CompletedTodaySection({
+  tasks,
+  open,
+  onToggleOpen,
+  onRestore,
+}: {
+  tasks: V2Task[];
+  open: boolean;
+  onToggleOpen: () => void;
+  onRestore: (id: string) => void;
+}) {
+  const count = tasks.length;
+  const label =
+    count === 1 ? "Voltooid vandaag (1)" : `Voltooid vandaag (${count})`;
+
+  return (
+    <section style={{ marginTop: 8 }}>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        aria-expanded={open}
+        className="w-full text-left"
+        style={{
+          background: "none",
+          border: "none",
+          padding: "8px 2px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            letterSpacing: "0.01em",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          aria-hidden="true"
+          style={{
+            fontSize: 12,
+            color: "var(--text-muted)",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 160ms ease",
+          }}
+        >
+          ▾
+        </span>
+      </button>
+
+      {open ? (
+        <div className="flex flex-col gap-2">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="v2-card"
+              style={{
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                opacity: 0.92,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  flexShrink: 0,
+                  background: "var(--accent)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 12l5 5 9-9"
+                    stroke="var(--text-on-ink)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <span
+                className="min-w-0 flex-1"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--text-muted)",
+                  textDecoration: "line-through",
+                  textDecorationColor: "color-mix(in srgb, var(--text-muted) 45%, transparent)",
+                }}
+              >
+                {task.title}
+              </span>
+              <button
+                type="button"
+                onClick={() => onRestore(task.id)}
+                className="v2-link shrink-0"
+                style={{ fontSize: 13, padding: "4px 2px" }}
+                aria-label={`Zet ${task.title} terug op de lijst`}
+              >
+                Terugzetten
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -301,8 +515,8 @@ function TaskRow({
         <button
           type="button"
           onClick={onToggle}
-          aria-pressed={task.done}
-          aria-label={task.done ? "Markeer als open" : "Markeer als klaar"}
+          aria-pressed={false}
+          aria-label="Markeer als klaar"
           style={{
             width: 24,
             height: 24,
@@ -310,19 +524,13 @@ function TaskRow({
             borderRadius: 999,
             flexShrink: 0,
             border: "1.5px solid var(--border)",
-            background: task.done ? "var(--accent)" : "transparent",
+            background: "transparent",
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
           }}
-        >
-          {task.done ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12l5 5 9-9" stroke="var(--text-on-ink)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : null}
-        </button>
+        />
 
         <button
           type="button"
@@ -338,7 +546,7 @@ function TaskRow({
             style={{
               fontSize: 15,
               fontWeight: 500,
-              color: task.done ? "var(--text-muted)" : "var(--text)",
+              color: "var(--text)",
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
@@ -436,13 +644,11 @@ function TaskRow({
               ) : null}
             </>
           ) : null}
-          {!task.done ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              <SnoozeChip label="Vanavond" onClick={() => onSnooze(v2SnoozeUntilEvening())} />
-              <SnoozeChip label="Morgen" onClick={() => onSnooze(v2SnoozeUntilTomorrowMorning())} />
-              <SnoozeChip label="Laat rusten" onClick={() => onSnooze(V2_SNOOZE_REST)} muted />
-            </div>
-          ) : null}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <SnoozeChip label="Vanavond" onClick={() => onSnooze(v2SnoozeUntilEvening())} />
+            <SnoozeChip label="Morgen" onClick={() => onSnooze(v2SnoozeUntilTomorrowMorning())} />
+            <SnoozeChip label="Laat rusten" onClick={() => onSnooze(V2_SNOOZE_REST)} muted />
+          </div>
         </div>
       ) : null}
     </div>
@@ -493,9 +699,12 @@ function TaskForm({
   draft,
   isNew,
   microDraft,
+  suggestBusy = false,
+  suggestError = null,
   onMicroDraft,
   onAddMicro,
   onRemoveMicro,
+  onSuggestMicro,
   onPatch,
   onSave,
   onCancel,
@@ -505,9 +714,12 @@ function TaskForm({
   draft: V2Task;
   isNew: boolean;
   microDraft: string;
+  suggestBusy?: boolean;
+  suggestError?: string | null;
   onMicroDraft: (v: string) => void;
   onAddMicro: () => void;
   onRemoveMicro: (id: string) => void;
+  onSuggestMicro?: () => void;
   onPatch: (patch: Partial<V2Task>) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -766,6 +978,34 @@ function TaskForm({
                     </button>
                   </div>
                 ))}
+              </div>
+            ) : onSuggestMicro ? (
+              <div style={{ marginBottom: 12 }}>
+                <button
+                  type="button"
+                  onClick={onSuggestMicro}
+                  disabled={suggestBusy || draft.title.trim().length === 0}
+                  className="btn-ghost w-full"
+                >
+                  {suggestBusy
+                    ? "Even denken..."
+                    : "Opsplitsen in stappen?"}
+                </button>
+                {suggestError ? (
+                  <p
+                    className="mt-2 text-[12px]"
+                    style={{ color: "var(--text-muted)", margin: "8px 0 0" }}
+                  >
+                    {suggestError}
+                  </p>
+                ) : (
+                  <p
+                    className="mt-2 text-[12px]"
+                    style={{ color: "var(--text-muted)", margin: "8px 0 0" }}
+                  >
+                    Structuro stelt vier kleine stappen voor. Jij beslist.
+                  </p>
+                )}
               </div>
             ) : null}
             <div style={{ display: "flex", gap: 8 }}>

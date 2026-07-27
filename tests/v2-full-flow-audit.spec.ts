@@ -297,7 +297,7 @@ test.describe("V2 full flow audit ×2", () => {
       findings.push({
         severity: "friction",
         where: "dagstart",
-        detail: "Cyclus-discovery zichtbaar op dagstart (verwacht alleen guest-onboarding)",
+        detail: "Cyclus-discovery peeker zichtbaar op dagstart (verwacht verwijderd; cyclus elders)",
       });
     }
     const genoeg = page.getByRole("button", { name: ENERGY.Genoeg });

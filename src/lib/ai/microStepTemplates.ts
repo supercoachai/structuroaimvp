@@ -49,6 +49,15 @@ const NL_TEMPLATES: Array<{ pattern: RegExp; steps: string[] }> = [
       "Controleer: inbox staat op nul",
     ],
   },
+  {
+    pattern: /abonnement|opzeg|cancel.*(sub|abo)/i,
+    steps: [
+      "Mail of app openen",
+      "Bevestigingsmail of abonnement vinden",
+      "Opzeggen aanklikken",
+      "Bevestigen en klaar",
+    ],
+  },
 ];
 
 const EN_TEMPLATES: Array<{ pattern: RegExp; steps: string[] }> = [
@@ -95,6 +104,15 @@ const EN_TEMPLATES: Array<{ pattern: RegExp; steps: string[] }> = [
       "Delete spam and newsletters that can go",
       "Reply, archive or delete each remaining email",
       "Verify inbox is at zero",
+    ],
+  },
+  {
+    pattern: /subscription|cancel.*(sub|abo)|unsubscribe/i,
+    steps: [
+      "Open mail or the app",
+      "Find the confirmation or subscription",
+      "Tap cancel",
+      "Confirm and done",
     ],
   },
 ];

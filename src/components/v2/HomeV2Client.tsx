@@ -1,15 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/lib/i18n";
 import Battery from "@/components/dagstart/design/Battery";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { captureProductEvent } from "@/lib/posthog/track";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import { useV2 } from "./V2Context";
 import { useV2Go } from "./v2nav";
+import { v2EnergyToMicro } from "./v2FocusMicro";
 import {
   dismissV2HomePrompt,
   resolveV2HomePrompt,
@@ -47,6 +50,7 @@ import V2TaskBattery from "./V2TaskBattery";
 import {
   findV2TaskByTitle,
   saveV2Tasks,
+  v2Id,
   type V2MicroStep,
   type V2Task,
 } from "./v2Tasks";
@@ -97,7 +101,7 @@ function trackPromptShown(prompt: V2HomePrompt): void {
 
 export default function HomeV2Client() {
   const go = useV2Go();
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const { state, ready, update } = useV2();
   const [greeting, setGreeting] = useState(greetingWord);
   const [homePrompt, setHomePrompt] = useState<V2HomePrompt | null>(null);
@@ -105,6 +109,10 @@ export default function HomeV2Client() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [tasks, setTasks] = useState<V2Task[]>([]);
   const [cycleSetupOpen, setCycleSetupOpen] = useState(false);
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestDismissed, setSuggestDismissed] = useState(false);
+  const suggestShownRef = useRef(false);
 
   const things = v2NormalizeThings(state.things);
   const hasThings = v2HasThings(things);
@@ -112,6 +120,10 @@ export default function HomeV2Client() {
     hasThings ? things[heroIndex % things.length] ?? things[0] : null;
   const activeTask = activeThing ? findV2TaskByTitle(tasks, activeThing) : null;
   const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
+  const showMicroSuggest =
+    Boolean(activeThing) &&
+    microSteps.length === 0 &&
+    !suggestDismissed;
 
   useEffect(() => {
     setGreeting(greetingWord());
@@ -138,7 +150,23 @@ export default function HomeV2Client() {
 
   useEffect(() => {
     setHeroIndex(0);
+    setSuggestDismissed(false);
+    suggestShownRef.current = false;
   }, [state.things]);
+
+  useEffect(() => {
+    setSuggestDismissed(false);
+    suggestShownRef.current = false;
+    setSuggestError(null);
+  }, [activeThing]);
+
+  useEffect(() => {
+    if (!showMicroSuggest || suggestShownRef.current) return;
+    suggestShownRef.current = true;
+    captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_shown, {
+      source: "home_v2",
+    });
+  }, [showMicroSuggest]);
 
   useEffect(() => {
     if (!ready || cycleSetupOpen) return;
@@ -173,6 +201,47 @@ export default function HomeV2Client() {
     });
     setTasks(next);
     saveV2Tasks(next);
+  };
+
+  const applySuggestedSteps = async () => {
+    if (!activeThing || suggestBusy) return;
+    setSuggestBusy(true);
+    setSuggestError(null);
+    try {
+      const { fetchMicroStepSuggestions } = await import(
+        "@/lib/ai/fetchMicroStepSuggestions"
+      );
+      const energy =
+        activeTask?.energy ??
+        v2EnergyToMicro(state.energy);
+      const result = await fetchMicroStepSuggestions({
+        title: activeTask?.title || activeThing,
+        energyLevel: energy,
+        locale: locale === "en" ? "en" : "nl",
+      });
+      const nextSteps: V2MicroStep[] = result.steps.slice(0, 4).map((title) => ({
+        id: v2Id("ms"),
+        title,
+        done: false,
+      }));
+      if (activeTask) {
+        const next = tasks.map((tRow) =>
+          tRow.id === activeTask.id
+            ? { ...tRow, microSteps: nextSteps }
+            : tRow,
+        );
+        setTasks(next);
+        saveV2Tasks(next);
+      }
+      captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_accepted, {
+        source: "home_v2",
+        step_count: nextSteps.length,
+      });
+    } catch {
+      setSuggestError(t("v2.focusMicroSuggestError"));
+    } finally {
+      setSuggestBusy(false);
+    }
   };
 
   const dismissPrompt = () => {
@@ -613,6 +682,35 @@ export default function HomeV2Client() {
                     </li>
                   ))}
                 </ul>
+              ) : showMicroSuggest ? (
+                <section className="v2-home-micro-suggest" aria-live="polite">
+                  <p className="v2-home-micro-suggest__title">
+                    {t("v2.focusMicroSuggestTitle")}
+                  </p>
+                  <p className="v2-home-micro-suggest__lead">
+                    {t("v2.focusMicroSuggestLead")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void applySuggestedSteps()}
+                    disabled={suggestBusy}
+                    className="btn-primary w-full"
+                  >
+                    {suggestBusy
+                      ? t("v2.focusMicroSuggestBusy")
+                      : t("v2.focusMicroSuggestCta")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSuggestDismissed(true)}
+                    className="v2-link mt-2 w-full text-center"
+                  >
+                    {t("v2.focusMicroSuggestSkip")}
+                  </button>
+                  {suggestError ? (
+                    <p className="v2-home-micro-suggest__err">{suggestError}</p>
+                  ) : null}
+                </section>
               ) : null}
 
               <button

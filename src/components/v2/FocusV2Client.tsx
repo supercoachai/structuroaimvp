@@ -341,7 +341,7 @@ export default function FocusV2Client() {
         durationMin: suggestedBucket.minutes,
         locale: locale === "en" ? "en" : "nl",
       });
-      const nextSteps: V2MicroStep[] = result.steps.map((title) => ({
+      const nextSteps: V2MicroStep[] = result.steps.slice(0, 4).map((title) => ({
         id: v2Id("ms"),
         title,
         done: false,

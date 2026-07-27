@@ -583,14 +583,22 @@
   }
 }
 
-/* Soft wolkje boven de bottom-nav (dagafsluiting-nudge + delayed why-suggestie). */
+/* Soft wolkje boven de floating island-nav (dagafsluiting-nudge + delayed why-suggestie). */
 .v2-root .v2-evening-cloud-slot {
   width: 100%;
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
-  padding: 10px 4px 4px;
+  padding: 8px 4px 2px;
   background: linear-gradient(to top, var(--surface) 55%, transparent);
+}
+/* Island: één zachte lift; geen glass/blur (prikkelarm, cream/teal). */
+.v2-root .v2-app-nav__island {
+  box-shadow: 0 1px 2px rgba(26, 35, 64, 0.05), 0 6px 18px rgba(26, 35, 64, 0.07);
+}
+.v2-root[data-mode="focus"] .v2-app-nav__island,
+.v2-root [data-mode="focus"] .v2-app-nav__island {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 20px rgba(0, 0, 0, 0.22);
 }
 .v2-root .v2-evening-cloud {
   position: relative;
@@ -1569,32 +1577,17 @@
   width: 100%;
   max-width: 400px;
   margin-inline: auto;
+  /* Ademruimte onder STRUCTURO / Stoppen / progress-dots. */
+  padding-top: 8px;
+}
+.v2-root .v2-propose-step > .v2-energy-step__orb--flat {
+  margin-top: 4px;
 }
 .v2-root .v2-propose-step__cycle-toggle {
   width: 100%;
   display: flex;
   justify-content: center;
   margin: 0 0 14px;
-}
-.v2-root .v2-propose-step--discover {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-}
-.v2-root .v2-propose-step__discover {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 180;
-  width: 100%;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  padding: 0 max(12px, env(safe-area-inset-left, 0px)) 0
-    max(12px, env(safe-area-inset-right, 0px));
-  pointer-events: none;
-}
-.v2-root .v2-propose-step__discover .v2-cycle-discover-hint {
-  pointer-events: auto;
 }
 .v2-root .v2-cycle-discover-hint {
   appearance: none;
@@ -2413,6 +2406,33 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 8px;
+}
+.v2-root .v2-home-micro-suggest {
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(45, 90, 86, 0.08);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.v2-root .v2-home-micro-suggest__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.v2-root .v2-home-micro-suggest__lead {
+  margin: 6px 0 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.v2-root .v2-home-micro-suggest__err {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
 }
 
 /* Focus: microstappen (zelfde interactie als home, tokens voor mode-flip) */

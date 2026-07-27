@@ -92,7 +92,8 @@ export const v2Styles: Record<string, CSSProperties> = {
     alignItems: "stretch",
     justifyContent: "center",
     width: "100%",
-    paddingTop: "clamp(0.5rem, 2vh, 1.25rem)",
+    /* Ruimte onder header/progress zodat de energy-orb niet tegen de top zit. */
+    paddingTop: "clamp(1.25rem, 4vh, 2.25rem)",
     paddingBottom: "max(clamp(1.25rem, 6vh, 3rem), env(safe-area-inset-bottom, 0px))",
     gap: 12,
   },
@@ -197,7 +198,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     backgroundColor: "transparent",
     border: "none",
     borderRadius: 0,
-    padding: "8px 8px 12px",
+    padding: "16px 8px 12px",
     display: "flex",
     flexDirection: "column",
     gap: 16,
@@ -719,15 +720,33 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 10,
     borderTop: "1px solid var(--border)",
   },
+  /**
+   * Wrapper rond de floating island: cream doorloop, safe-area onder,
+   * geen haarlijn-border (die maakte de balk “plakband” i.p.v. eiland).
+   */
   appNav: {
     flexShrink: 0,
     width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    padding:
+      "6px max(14px, env(safe-area-inset-left, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-right, 0px))",
+    backgroundColor: "var(--surface)",
+  },
+  /**
+   * Structuro-island: raised papier, zachte navy-lift, geen glass/blur.
+   * Compacte pill zodat het “iets” heeft zonder Instagram-gloss.
+   */
+  appNavIsland: {
+    width: "100%",
+    maxWidth: 420,
     display: "grid",
     gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: 0,
-    padding: "6px 4px max(0.75rem, env(safe-area-inset-bottom, 0px))",
-    borderTop: "1px solid var(--border)",
-    backgroundColor: "var(--surface)",
+    gap: 2,
+    padding: "5px 6px",
+    borderRadius: 999,
+    border: "1px solid var(--border)",
+    backgroundColor: "var(--surface-raised)",
   },
   appNavInner: {
     width: "100%",
@@ -737,15 +756,15 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   appNavItem: {
-    minHeight: 40,
+    minHeight: 38,
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
-    padding: "5px 4px",
-    borderRadius: 12,
+    padding: "4px 4px",
+    borderRadius: 999,
     border: "none",
     backgroundColor: "transparent",
     color: "var(--text-muted)",
@@ -755,7 +774,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     transition:
       "opacity 140ms ease, color 140ms ease, background-color 140ms ease, transform 100ms ease",
   },
-  /** Soft sage-pill + accent; geen gevulde knop / floating glass. */
+  /** Soft sage-pill + accent; geen gevulde knop / dark glass. */
   appNavItemActive: {
     color: "var(--accent)",
     backgroundColor: "var(--accent-soft)",

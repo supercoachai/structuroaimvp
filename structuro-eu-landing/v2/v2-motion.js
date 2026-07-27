@@ -247,18 +247,35 @@
   }
 
   function playCycleDemo(root) {
-    /* Peeker zichtbaar → discovery-sheet open (inzicht, geen sturing) → weer dicht */
-    var sequence = ["hint", "sheet", "hint"];
+    /* Voorstel (uit) → opt-in → cyclus aan (ring + fase) → loop */
+    var sequence = ["off", "optin", "on"];
+    var waits = { off: 2000, optin: 2400, on: 2800 };
     var i = 0;
-    setDemoState(root, "hint");
+    setDemoState(root, "off");
     function tick() {
       if (!root.classList.contains("is-playing")) return;
       i = (i + 1) % sequence.length;
-      setDemoState(root, sequence[i]);
-      var wait = sequence[i] === "sheet" ? 3800 : 2000;
-      root._timer = setTimeout(tick, wait);
+      var state = sequence[i];
+      setDemoState(root, state);
+      root._timer = setTimeout(tick, waits[state] || 2200);
     }
     root._timer = setTimeout(tick, 1600);
+  }
+
+  function playDumpDemo(root) {
+    /* Leeg → typen → bewaard met Maak taak / Verwijderen */
+    var sequence = ["idle", "typed", "saved"];
+    var waits = { idle: 1600, typed: 1800, saved: 2600 };
+    var i = 0;
+    setDemoState(root, "idle");
+    function tick() {
+      if (!root.classList.contains("is-playing")) return;
+      i = (i + 1) % sequence.length;
+      var state = sequence[i];
+      setDemoState(root, state);
+      root._timer = setTimeout(tick, waits[state] || 2000);
+    }
+    root._timer = setTimeout(tick, 1400);
   }
 
   var PLAYERS = {
@@ -267,6 +284,7 @@
     tasks: playTasksDemo,
     focus: playFocusDemo,
     cycle: playCycleDemo,
+    dump: playDumpDemo,
   };
 
   function stopDemo(root) {
@@ -286,7 +304,10 @@
       setDemoState(root, fallback);
     }
     if (root.getAttribute("data-demo") === "cycle") {
-      setDemoState(root, fallback || "hint");
+      setDemoState(root, fallback || "off");
+    }
+    if (root.getAttribute("data-demo") === "dump") {
+      setDemoState(root, fallback || "idle");
     }
     if (root.getAttribute("data-demo") === "focus") {
       var firstMicro = root.querySelector('[data-focus-micro="1"]');
