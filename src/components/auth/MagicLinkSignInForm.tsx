@@ -21,6 +21,8 @@ type MagicLinkSignInFormProps = {
   onVerified?: (user: { id: string; email: string | null | undefined }) => void;
   /** Direct open (bijv. in login e-mail-sectie), zonder toggle. */
   startOpen?: boolean;
+  /** Kortere copy + compacte layout (login Meer opties). */
+  compact?: boolean;
   visual?: "story" | "work";
 };
 
@@ -44,18 +46,21 @@ export function MagicLinkSignInForm({
   onError,
   onVerified,
   startOpen = false,
+  compact = false,
   visual = "work",
 }: MagicLinkSignInFormProps) {
   const { t } = useI18n();
   const isStory = visual === "story";
   const inputClass = isStory
-    ? "w-full rounded-xl border border-[var(--story-border)] bg-white px-4 py-3 text-base text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
+    ? "w-full min-w-0 rounded-xl border border-[var(--story-border)] bg-white px-4 py-2.5 text-[15px] text-[var(--story-text)] placeholder:text-[var(--story-text-muted)] focus:border-[var(--story-accent)] focus:outline-none focus:ring-2 focus:ring-[rgba(45,90,86,0.18)]"
     : "w-full rounded-[var(--st-r-md)] border border-[var(--st-line)] bg-[var(--st-surface-2)] px-4 py-3 text-base text-[var(--st-ink)] placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue-soft)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--st-blue)]/20";
   const ghostBtnClass = isStory
-    ? "flex w-full items-center justify-center rounded-xl border border-[var(--story-border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+    ? compact
+      ? "flex w-full items-center justify-center rounded-xl border border-[var(--story-border)] bg-[rgba(26,35,64,0.03)] px-4 py-2.5 text-[13px] font-semibold text-[var(--story-cta)] transition-colors hover:border-[var(--story-accent)] hover:bg-[rgba(45,90,86,0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+      : "flex w-full items-center justify-center rounded-xl border border-[var(--story-border)] bg-white px-6 py-3 text-sm font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] disabled:cursor-not-allowed disabled:opacity-60"
     : "st-btn-ghost h-11 w-full border border-[var(--st-line)] text-sm disabled:cursor-not-allowed";
   const primaryBtnClass = isStory
-    ? "flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+    ? "flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
     : "st-btn-primary h-11 w-full text-sm disabled:cursor-not-allowed";
   const mutedText = isStory ? "text-[var(--story-text-muted)]" : "text-[var(--st-muted)]";
   const mutedHover = isStory
@@ -80,19 +85,27 @@ export function MagicLinkSignInForm({
 
   if (sentEmail) {
     return (
-      <div className="space-y-3">
+      <div className={compact ? "space-y-3" : "space-y-3"}>
         <div
           className={
             isStory
-              ? "rounded-xl border border-[var(--story-border)] bg-white/80 px-4 py-3 text-sm leading-relaxed text-[var(--story-text)]"
+              ? compact
+                ? `text-center text-[13px] leading-snug ${mutedText}`
+                : "rounded-xl border border-[var(--story-border)] bg-white/80 px-4 py-3 text-sm leading-relaxed text-[var(--story-text)]"
               : "rounded-xl border border-[var(--st-green-haze)] bg-[var(--st-green-haze)] px-4 py-3 text-sm leading-relaxed text-[var(--st-green-deep)]"
           }
         >
-          <p className="font-medium">{t("login.magicLinkSentTitle")}</p>
-          <p className="mt-1">{t("login.magicLinkSentBody", { email: sentEmail })}</p>
-          <p className={`mt-2 text-[13px] ${mutedText}`}>{t("login.magicLinkSentTip")}</p>
+          {compact ? (
+            <p>{t("login.magicLinkSentBody", { email: sentEmail })}</p>
+          ) : (
+            <>
+              <p className="font-medium">{t("login.magicLinkSentTitle")}</p>
+              <p className="mt-1">{t("login.magicLinkSentBody", { email: sentEmail })}</p>
+              <p className={`mt-2 text-[13px] ${mutedText}`}>{t("login.magicLinkSentTip")}</p>
+            </>
+          )}
         </div>
-        <label htmlFor="v2-login-otp" className={`block text-sm ${mutedText}`}>
+        <label htmlFor="v2-login-otp" className={`block text-[13px] ${mutedText}`}>
           {t("login.otpLabel")}
         </label>
         <input
@@ -108,7 +121,7 @@ export function MagicLinkSignInForm({
         />
         <button
           type="button"
-          disabled={disabled || busy || otp.length < 6}
+          disabled={disabled || busy || otp.length !== 8}
           onClick={() => {
             void (async () => {
               setBusy(true);
@@ -132,9 +145,11 @@ export function MagicLinkSignInForm({
         >
           {busy ? t("login.busy") : t("login.otpCta")}
         </button>
-        <p className={`text-center text-[12px] leading-relaxed ${mutedText}`}>
-          {t("login.magicLinkLinkBackup")}
-        </p>
+        {!compact ? (
+          <p className={`text-center text-[12px] leading-relaxed ${mutedText}`}>
+            {t("login.magicLinkLinkBackup")}
+          </p>
+        ) : null}
         <button
           type="button"
           disabled={busy}
@@ -143,7 +158,7 @@ export function MagicLinkSignInForm({
             setOtp("");
             setEmail(sentEmail);
           }}
-          className={`w-full text-sm ${mutedHover}`}
+          className={`w-full text-[12px] ${mutedHover}`}
         >
           {t("login.otpResend")}
         </button>
@@ -195,31 +210,57 @@ export function MagicLinkSignInForm({
   };
 
   return (
-    <div className="space-y-3">
-      <p className={`text-sm leading-relaxed ${mutedText}`}>{t("login.magicLinkHelp")}</p>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={inputClass}
-        placeholder={t("login.emailPh")}
-        autoComplete="email"
-      />
-      <AuthCaptcha
-        ref={captchaRef}
-        onVerify={setCaptchaToken}
-        onExpire={() => setCaptchaToken(null)}
-        onError={() => setCaptchaToken(null)}
-        className="flex justify-center"
-      />
-      <button
-        type="button"
-        disabled={disabled || busy || !captchaReady}
-        onClick={() => void handleSend()}
-        className={ghostBtnClass}
-      >
-        {busy ? t("login.busy") : t("login.magicLinkCta")}
-      </button>
+    <div className={compact ? "space-y-2" : "space-y-3"}>
+      {compact ? (
+        <label
+          htmlFor="v2-login-magic-email"
+          className="block text-left text-[12px] font-medium text-[var(--story-text)]"
+        >
+          {t("login.email")}
+        </label>
+      ) : (
+        <p className={`text-sm leading-relaxed ${mutedText}`}>
+          {t("login.magicLinkHelp")}
+        </p>
+      )}
+      <div className={compact ? "flex w-full flex-col gap-2" : "space-y-3"}>
+        <input
+          id={compact ? "v2-login-magic-email" : undefined}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+          placeholder={t("login.emailPh")}
+          autoComplete="email"
+          aria-label={t("login.email")}
+        />
+        {!compact ? (
+          <AuthCaptcha
+            ref={captchaRef}
+            onVerify={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+            className="flex justify-center"
+          />
+        ) : null}
+        <button
+          type="button"
+          disabled={disabled || busy || !captchaReady}
+          onClick={() => void handleSend()}
+          className={ghostBtnClass}
+        >
+          {busy ? t("login.busy") : t("login.magicLinkCta")}
+        </button>
+      </div>
+      {compact ? (
+        <AuthCaptcha
+          ref={captchaRef}
+          onVerify={setCaptchaToken}
+          onExpire={() => setCaptchaToken(null)}
+          onError={() => setCaptchaToken(null)}
+          className="flex justify-center"
+        />
+      ) : null}
       {!startOpen ? (
         <button
           type="button"

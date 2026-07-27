@@ -53,21 +53,24 @@ describe("organicSoftAdvanceTarget", () => {
     );
   });
 
-  it("routes website to v1 /onboarding", () => {
+  it("routes website and waitlist_legacy to /v2/onboarding (cutover)", () => {
     expect(organicSoftAdvanceTarget(params("utm_campaign=website"))).toBe(
-      "/onboarding"
+      "/v2/onboarding"
     );
     expect(
       organicSoftAdvanceTarget(params("utm_campaign=waitlist_legacy"))
-    ).toBe("/onboarding");
+    ).toBe("/v2/onboarding");
   });
 });
 
 describe("softAdvanceHref", () => {
   it("preserves nl/en lang on the target", () => {
     expect(
-      softAdvanceHref("/onboarding", params("utm_campaign=website&lang=nl"))
-    ).toBe("/onboarding?lang=nl");
+      softAdvanceHref(
+        "/v2/onboarding",
+        params("utm_campaign=website&lang=nl")
+      )
+    ).toBe("/v2/onboarding?lang=nl");
     expect(
       softAdvanceHref(
         "/v2/onboarding",
@@ -78,7 +81,7 @@ describe("softAdvanceHref", () => {
 
   it("leaves href alone without lang", () => {
     expect(
-      softAdvanceHref("/onboarding", params("utm_campaign=website"))
-    ).toBe("/onboarding");
+      softAdvanceHref("/v2/onboarding", params("utm_campaign=website"))
+    ).toBe("/v2/onboarding");
   });
 });

@@ -34,7 +34,7 @@ async function postCheckout(request: Request) {
     );
   }
 
-  let body: { plan?: string };
+  let body: { plan?: string; surface?: string };
   try {
     body = await request.json();
   } catch {
@@ -45,6 +45,12 @@ async function postCheckout(request: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Expected plan: monthly | yearly" }, { status: 400 });
   }
+
+  const useV2Return = body.surface === "v2";
+  const successPath = useV2Return
+    ? "/v2/abonnement?from=stripe"
+    : "/abonnement?from=stripe";
+  const cancelPath = useV2Return ? "/v2/abonnement" : "/abonnement";
 
   const supabase = await createClient();
   const {
@@ -103,8 +109,8 @@ async function postCheckout(request: Request) {
     userId: user.id,
     email: user.email,
     trialDays: readCheckoutBonusTrialDays(profile),
-    successUrl: `${base}/abonnement?from=stripe`,
-    cancelUrl: `${base}/abonnement`,
+    successUrl: `${base}${successPath}`,
+    cancelUrl: `${base}${cancelPath}`,
     metadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
     subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
     discounts: jasperDiscount ?? undefined,

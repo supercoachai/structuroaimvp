@@ -145,6 +145,7 @@ export default function V2AccountSaveStep({
       await finalizeNewAccountSession(
         result.userId,
         result.email ?? emailTrimmed,
+        { homePath: "/v2/home" },
       );
       markV2PostAccountNamePending();
       onAccountCreated();

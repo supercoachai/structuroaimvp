@@ -115,6 +115,6 @@
   },
   "meta": {
     "templateCredsSetupCompleted": false,
-    "description": "Alleen handmatig/n8n. vercel.json crons blijven leeg tot bewuste v1-launch. Env: STRUCTURO_APP_ORIGIN, STRUCTURO_CRON_SECRET. App-defaults: LIFECYCLE_MAIL_AUDIENCE=off (v1 merkt niets)."
+    "description": "Optioneel. Primair: Vercel Cron in vercel.json (welcome uurlijks, morning 06:30 UTC, evening 16:00 UTC). Dit n8n-bestand is fallback. Env: STRUCTURO_APP_ORIGIN, STRUCTURO_CRON_SECRET (= Vercel CRON_SECRET). Audience via LIFECYCLE_MAIL_AUDIENCE."
   }
 }

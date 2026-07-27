@@ -98,8 +98,8 @@ function redirectToAuthError(
 
 /**
  * Profiel-routing voor OAuth/magic link (parity met wachtwoord-login).
- * Expliciete bestemming (`next` != "/") wint; anders stuurt onafgemaakte
- * onboarding naar /onboarding of /registreren/plan i.p.v. de app-root.
+ * Expliciete bestemming (`next` onder /v2 of anders ≠ "/") wint; anders stuurt
+ * onafgemaakte onboarding naar /onboarding of /registreren/plan i.p.v. de app-root.
  */
 async function resolveOAuthRedirectPath(
   supabase: SupabaseClient,
@@ -107,6 +107,7 @@ async function resolveOAuthRedirectPath(
   email: string | null | undefined,
   next: string
 ): Promise<string> {
+  if (next === "/v2" || next.startsWith("/v2/")) return next;
   if (next && next !== "/") return next;
   if (isProtectedTestAccount(email)) return "/";
 

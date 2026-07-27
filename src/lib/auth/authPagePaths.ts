@@ -4,7 +4,7 @@ type SearchParamsLike =
   | undefined;
 
 function buildAuthHref(
-  path: "/login" | "/registreren",
+  path: "/login" | "/registreren" | "/v2/login",
   searchParams: SearchParamsLike,
   omit: string[]
 ): string {
@@ -18,7 +18,8 @@ function buildAuthHref(
 
 /** Behoud utm/source voor dezelfde story-presentatie op /login. */
 export function buildLoginHref(searchParams: SearchParamsLike): string {
-  return buildAuthHref("/login", searchParams, [
+  const fromV2 = searchParams?.get("from") === "v2";
+  return buildAuthHref(fromV2 ? "/v2/login" : "/login", searchParams, [
     "signup",
     "signin",
     "herstel",

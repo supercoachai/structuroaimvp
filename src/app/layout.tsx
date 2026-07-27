@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 const newsreader = Newsreader({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
+  style: ['normal'],
   variable: '--font-newsreader',
   display: 'swap',
 })

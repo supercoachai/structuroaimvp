@@ -24,6 +24,12 @@ export function isProviderNotEnabledError(err: unknown): boolean {
   );
 }
 
+/**
+ * Start social login via Supabase Auth.
+ * `redirectTo` is de app-callback (structuro.ai/auth/callback). Google’s consent
+ * scherm toont desondanks het Supabase Auth-callback domein (*.supabase.co),
+ * tot er een Supabase custom domain + Google redirect URI is gezet.
+ */
 export async function startOAuthSignIn(
   supabase: SupabaseClient,
   provider: OAuthProviderId,
@@ -40,8 +46,9 @@ export async function startOAuthSignIn(
 }
 
 /**
- * Stuurt e-mail OTP (6-cijferige code + optionele link) voor bestaande accounts.
+ * Stuurt e-mail OTP (8-cijferige code + optionele link) voor bestaande accounts.
  * Primair pad: code typen in dezelfde browser (geen PKCE). Link blijft backup.
+ * Lengte volgt Supabase Auth → Email OTP length (dashboard), nu 8.
  */
 export async function sendLoginMagicLink(
   supabase: SupabaseClient,
@@ -64,7 +71,7 @@ export async function sendLoginMagicLink(
   if (error) throw error;
 }
 
-/** Verifieer 6-cijferige login-code in dezelfde browser (omzeilt PKCE-redirect). */
+/** Verifieer 8-cijferige login-code in dezelfde browser (omzeilt PKCE-redirect). */
 export async function verifyLoginEmailOtp(
   supabase: SupabaseClient,
   email: string,
@@ -73,7 +80,7 @@ export async function verifyLoginEmailOtp(
   const normalized = normalizeSignupEmail(email);
   const code = token.replace(/\s+/g, "").trim();
   if (!normalized) throw new Error("invalid_email");
-  if (!/^\d{6,8}$/.test(code)) throw new Error("invalid_otp");
+  if (!/^\d{8}$/.test(code)) throw new Error("invalid_otp");
 
   const { data, error } = await supabase.auth.verifyOtp({
     email: normalized,
@@ -95,7 +102,7 @@ export async function verifySignupEmailOtp(
   const normalized = normalizeSignupEmail(email);
   const code = token.replace(/\s+/g, "").trim();
   if (!normalized) throw new Error("invalid_email");
-  if (!/^\d{6,8}$/.test(code)) throw new Error("invalid_otp");
+  if (!/^\d{8}$/.test(code)) throw new Error("invalid_otp");
 
   const { data, error } = await supabase.auth.verifyOtp({
     email: normalized,

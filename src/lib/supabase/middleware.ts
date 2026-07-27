@@ -526,7 +526,7 @@ export async function updateSession(
     isPasswordCreatePath(pathname)
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = privacySetupDone ? "/" : "/consent";
+    url.pathname = privacySetupDone ? "/v2/home" : "/consent";
     return NextResponse.redirect(url, 302);
   }
 
@@ -547,7 +547,7 @@ export async function updateSession(
 
   if (pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
-    url.pathname = privacySetupDone ? "/" : "/consent";
+    url.pathname = privacySetupDone ? "/v2/home" : "/consent";
     return NextResponse.redirect(url, 302);
   }
 

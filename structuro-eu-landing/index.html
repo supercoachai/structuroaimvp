@@ -422,16 +422,36 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 .live-demo--in-phone .live-demo-screen{border-radius:32px;min-height:0;height:100%;max-height:none;aspect-ratio:471/1024;padding:0 0 12px;font-size:11px;display:flex;flex-direction:column;}
 .live-demo--in-phone .live-demo-topbar{margin-top:46px;height:36px;padding:0 14px;flex-shrink:0;border-bottom:1px solid rgba(26,35,64,.07);}
 .live-demo-energy-stack{width:100%;max-width:100%;position:relative;display:flex;flex-direction:column;align-items:center;}
-.live-demo-energy-stack .live-demo-cycle-btn{position:absolute;top:-10px;right:0;z-index:3;}
 .live-demo-energy-center{width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 2px 0;}
 .live-demo--in-phone .live-demo-energy-center{padding:8px 2px 0;}
-.live-demo-cycle-btn{appearance:none;border:1px solid rgba(26,35,64,0.12);background:transparent;min-width:auto;height:auto;padding:6px 12px 6px 7px;border-radius:999px;font:inherit;font-size:11px;font-weight:500;color:#6B7280;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:none;transition:background 200ms,border-color 200ms;}
-.live-demo-cycle-btn[aria-expanded="true"]{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.4);color:#B45309;}
-.live-demo-cycle-btn--pulse{animation:live-demo-cycle-pulse 2s ease-in-out infinite;}
-.live-demo-greeting{margin:0;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#ABB3C5;}
-.live-demo-user-name{margin:6px 0 24px;font-size:22px;font-weight:500;letter-spacing:-.02em;color:#1A2340;line-height:1.2;}
-.live-demo-phase--energy{position:relative;align-items:center;text-align:center;padding-top:2px;padding-bottom:18px;}
-.live-demo--in-phone .live-demo-phase--energy{justify-content:center;padding:0;width:100%;}
+.live-demo-energy-hint{margin:0 0 14px;font-size:12px;line-height:1.35;color:#6B7280;max-width:26ch;}
+.live-demo--in-phone .live-demo-energy-hint{font-size:9.5px;margin-bottom:10px;}
+.live-demo-cycle-hint{
+  appearance:none;border:1px solid rgba(26,35,64,.08);border-bottom:0;background:#fff;
+  width:100%;margin-top:auto;padding:16px 12px 12px;border-radius:14px 14px 0 0;
+  display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;position:relative;
+  box-shadow:0 -3px 16px rgba(26,35,64,.06);font:inherit;color:inherit;
+}
+.live-demo-cycle-hint--pulse{animation:live-demo-cycle-pulse 2s ease-in-out infinite;}
+.live-demo-cycle-hint[aria-expanded="true"]{border-color:rgba(45,90,86,.28);}
+.live-demo-cycle-hint__handle{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:28px;height:3px;border-radius:999px;background:rgba(26,35,64,.16);
+}
+.live-demo-cycle-hint__icon{flex:none;display:flex;margin-top:2px;}
+.live-demo-cycle-hint__label{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+.live-demo-cycle-hint__eyebrow{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2D7A6E;}
+.live-demo-cycle-hint__text{font-size:13px;font-weight:650;line-height:1.25;color:#1A2340;}
+.live-demo--in-phone .live-demo-cycle-hint{padding:14px 10px 10px;margin-top:8px;}
+.live-demo--in-phone .live-demo-cycle-hint__eyebrow{font-size:8px;}
+.live-demo--in-phone .live-demo-cycle-hint__text{font-size:10.5px;}
+.live-demo-cycle-hint__chevron{flex:none;display:flex;color:rgba(26,35,64,.35);}
+/* Legacy cycle-btn selectors (niet meer in markup; veilig behouden) */
+.live-demo-cycle-btn{display:none!important;}
+.live-demo-greeting{display:none;}
+.live-demo-user-name{display:none;}
+.live-demo-phase--energy{position:relative;align-items:center;text-align:center;padding-top:2px;padding-bottom:0;}
+.live-demo--in-phone .live-demo-phase--energy{justify-content:flex-start;padding:0;width:100%;}
 .live-demo--in-phone .live-demo-phone{height:100%;display:flex;flex-direction:column;min-height:0;}
 .live-demo--in-phone .live-demo-body{flex:1;min-height:0;overflow:hidden;overscroll-behavior:none;padding:0 14px 12px;display:flex;flex-direction:column;}
 .live-demo--in-phone .live-demo-body:has(#liveDemoPhaseEnergy:not([hidden])){justify-content:center;}
@@ -559,7 +579,7 @@ h2{margin:0 0 14px;font-family:var(--story-serif);font-size:clamp(28px,5vw,40px)
 @keyframes live-demo-cycle-pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.35);}50%{box-shadow:0 0 0 6px rgba(245,158,11,0);}}
 @keyframes live-demo-breathe-out{0%,100%{transform:scale(.96);opacity:.55;}50%{transform:scale(1.04);opacity:1;}}
 @keyframes live-demo-breathe-core{0%,100%{transform:scale(.92);}50%{transform:scale(1.06);}}
-@media(prefers-reduced-motion:reduce){.live-demo-battery-ring,.live-demo-battery-core,.live-demo-cycle-btn--pulse{animation:none!important;}}
+@media(prefers-reduced-motion:reduce){.live-demo-battery-ring,.live-demo-battery-core,.live-demo-cycle-hint--pulse{animation:none!important;}}
 .live-demo-bars{display:flex;gap:2px;align-items:flex-end;height:14px;}
 .live-demo-bar{width:4px;border-radius:2px;background:#CBD5E1;}
 .live-demo-bar.on{background:currentColor;}
@@ -1804,8 +1824,8 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <a href="/cyclus/" data-ph-cta="nav_cyclus" data-i18n="nav_vrouwen">Cyclus</a>
       <a href="#prijs" data-ph-cta="nav_prijs" data-i18n="nav_price">Prijs</a>
       <a href="#faq" data-ph-cta="nav_faq">FAQ</a>
-      <a href="https://www.structuro.ai/login" data-login-bridge="nav_login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
-      <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=nav" class="nav-cta" data-signup-bridge="nav" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic>Start 3 dagen gratis</span></a>
+      <a href="https://www.structuro.ai/v2/login" data-login-bridge="nav_login" data-ph-cta="nav_login_ai" data-i18n="nav_login">Inloggen</a>
+      <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav" class="nav-cta" data-signup-bridge="nav" data-event="nav_cta_click" data-ph-cta="nav"><span data-cta-dynamic>Start 3 dagen gratis</span></a>
       <!-- Language switcher -->
       <div class="lang-switcher" id="langSwitcher">
         <button class="lang-btn active" id="btnNL" onclick="setLang('nl')" aria-label="Nederlands">
@@ -1842,7 +1862,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
       <h1 data-i18n="hero_h1">Je weet wat je<br/>moet doen.<br/>Je <span class="stuck">begint</span> alleen niet.</h1>
       <p class="hero-positioning" data-i18n="hero_positioning">Al je taken blijven in Structuro staan.<span class="hero-positioning-gap" aria-hidden="true"></span>Dagstart kiest er maximaal drie voor vandaag.</p>
       <div class="hero-cta">
-        <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=hero_primary" class="btn-primary" data-signup-bridge="hero_primary" data-event="hero_cta_click" data-ph-cta="hero_primary"><span data-i18n="hero_cta_start" data-cta-dynamic>Start 3 dagen gratis</span><span class="arrow-r" aria-hidden="true">→</span></a>
+        <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=hero_primary" class="btn-primary" data-signup-bridge="hero_primary" data-event="hero_cta_click" data-ph-cta="hero_primary"><span data-i18n="hero_cta_start" data-cta-dynamic>Start 3 dagen gratis</span><span class="arrow-r" aria-hidden="true">→</span></a>
       </div>
       <p class="hero-cta-note" data-i18n="hero_cta_note">3 dagen gratis. Geen verplichting.</p>
       <p class="hero-recognition">
@@ -2005,19 +2025,14 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
           <div class="live-demo-body">
             <div class="live-demo-phase live-demo-phase--energy" id="liveDemoPhaseEnergy">
               <div class="live-demo-energy-stack">
-              <button type="button" class="live-demo-cycle-btn live-demo-cycle-btn--pulse" id="liveDemoCycleBtn" aria-expanded="false" aria-label="Cyclus tracker, dag 14 van 28">
-                <svg class="live-demo-cycle-ring-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="#FDE68A" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/></svg>
-                <span class="live-demo-cycle-btn-day" id="liveDemoCycleBtnDay">Dag 14</span>
-              </button>
               <div class="live-demo-energy-center">
-                <p class="live-demo-greeting" id="liveDemoGreeting">Goedemorgen</p>
-                <p class="live-demo-user-name" id="liveDemoUserName">Sarah</p>
                 <div class="live-demo-battery-wrap" id="liveDemoBatteryWrap" aria-hidden="true">
                   <div class="live-demo-battery-ring live-demo-battery-ring--outer"></div>
                   <div class="live-demo-battery-ring live-demo-battery-ring--inner"></div>
                   <div class="live-demo-battery-core" id="liveDemoBatteryCore"></div>
                 </div>
-                <h3 class="live-demo-energy-q" data-i18n="live_demo_energy_title">Hoe is je energie?</h3>
+                <h3 class="live-demo-energy-q" data-i18n="live_demo_energy_title">Hoe zit je energie?</h3>
+                <p class="live-demo-energy-hint" data-i18n="live_demo_energy_hint">Tik wat klopt. Voorstellen volgen meteen.</p>
                 <div class="live-demo-energy-btns" role="group" aria-label="Energieniveau">
                   <button type="button" class="live-demo-energy-btn" data-live-energy="low" aria-pressed="false">
                     <span class="live-demo-battery-icon" data-battery-level="1" data-battery-filled="1" data-battery-color="#10B981" aria-hidden="true"></span>
@@ -2025,7 +2040,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
                   </button>
                   <button type="button" class="live-demo-energy-btn" data-live-energy="normal" aria-pressed="false">
                     <span class="live-demo-battery-icon" data-battery-level="2" data-battery-filled="2" data-battery-color="#3B6BF7" aria-hidden="true"></span>
-                    <span class="live-demo-energy-btn-label" data-i18n="energy_normal">Normaal</span>
+                    <span class="live-demo-energy-btn-label" data-i18n="energy_normal">Genoeg</span>
                   </button>
                   <button type="button" class="live-demo-energy-btn" data-live-energy="high" aria-pressed="false">
                     <span class="live-demo-battery-icon" data-battery-level="3" data-battery-filled="3" data-battery-color="#8B5CF6" aria-hidden="true"></span>
@@ -2044,6 +2059,15 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
                 <p class="live-demo-cycle-body" id="liveDemoCycleBody"></p>
                 <a href="/cyclus/" class="live-demo-cycle-more" data-i18n="live_demo_cycle_more" data-ph-cta="live_demo_cycle_more">Lees hoe cyclus en ADHD samenkomen →</a>
               </div>
+              <button type="button" class="live-demo-cycle-hint" id="liveDemoCycleBtn" aria-expanded="false" aria-label="Meer over cyclus meenemen">
+                <span class="live-demo-cycle-hint__handle" aria-hidden="true"></span>
+                <span class="live-demo-cycle-hint__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 28 28" fill="none"><circle cx="12" cy="14" r="7.5" fill="#2d5a56" fill-opacity="0.88"/><circle cx="17.5" cy="14" r="7.5" fill="#a89bc8" fill-opacity="0.72" stroke="rgba(255,255,255,0.55)" stroke-width="1"/></svg></span>
+                <span class="live-demo-cycle-hint__label">
+                  <span class="live-demo-cycle-hint__eyebrow" data-i18n="live_demo_cycle_eyebrow">Eenmalig instellen</span>
+                  <span class="live-demo-cycle-hint__text" data-i18n="live_demo_cycle_hint">Je cyclus meenemen?</span>
+                </span>
+                <span class="live-demo-cycle-hint__chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </button>
               <span class="live-demo-match" id="liveDemoEnergyMatch" hidden></span>
             </div>
             <div class="live-demo-phase" id="liveDemoPhaseChoice" hidden>
@@ -2110,7 +2134,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
                 <p class="live-demo-micro" id="liveDemoMicro">Eerste stap: open je inbox</p>
                 <button type="button" class="live-demo-cta" id="liveDemoCta">Start focus</button>
               </div>
-              <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=live_demo" class="live-demo-signup" data-signup-bridge="live_demo" data-event="live_demo_cta_click" data-ph-cta="live_demo" data-i18n="live_demo_signup">Begin jouw eerste dag →</a>
+              <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=live_demo" class="live-demo-signup" data-signup-bridge="live_demo" data-event="live_demo_cta_click" data-ph-cta="live_demo" data-i18n="live_demo_signup">Begin jouw eerste dag →</a>
               <button type="button" class="live-demo-restart" id="liveDemoRestart" data-i18n="live_demo_restart">↻ Demo opnieuw doorlopen</button>
             </div>
           </div>
@@ -2268,7 +2292,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
           </div>
         </div>
 
-        <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=pricing" class="btn-primary" data-signup-bridge="pricing" data-event="pricing_cta_click" data-ph-cta="pricing">
+        <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=pricing" class="btn-primary" data-signup-bridge="pricing" data-event="pricing_cta_click" data-ph-cta="pricing">
           <span data-i18n="price_available">Start je eerste dag</span>
           <span class="arrow-r">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -2279,7 +2303,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
         </div>
         <p class="pricing-yearly-link">
           <span data-i18n="pricing_yearly_prompt">Liever jaarlijks?</span>
-          <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=pricing_yearly" data-signup-bridge="pricing_yearly" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
+          <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=pricing_yearly" data-signup-bridge="pricing_yearly" data-i18n="pricing_yearly_link">€119/jaar, bijna 3 maanden gratis →</a>
         </p>
       </div>
     </div>
@@ -2310,7 +2334,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
     <h2 data-i18n="footer_h2">Je brein verdient rust.<br/>Niet meer systemen.</h2>
     <p class="footer-cta-body" data-i18n="footer_body">Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.</p>
     <div class="footer-cta-actions">
-      <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=footer" class="btn-primary" data-signup-bridge="footer" data-event="footer_cta_click" data-ph-cta="footer">
+      <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer" class="btn-primary" data-signup-bridge="footer" data-event="footer_cta_click" data-ph-cta="footer">
         <span data-cta-dynamic data-i18n="footer_cta_btn">Start je eerste dag</span>
       </a>
     </div>
@@ -2341,7 +2365,7 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
         <a href="/cyclus/" data-ph-cta="footer_cyclus" data-i18n="nav_vrouwen">Cyclus</a>
         <a href="#prijs" data-ph-cta="footer_prijs" data-i18n="nav_price">Prijs</a>
         <a href="#faq" data-ph-cta="footer_faq">FAQ</a>
-        <a href="https://www.structuro.ai/login" data-login-bridge="footer_login" data-ph-cta="footer_login_ai" data-i18n="nav_login">Inloggen</a>
+        <a href="https://www.structuro.ai/v2/login" data-login-bridge="footer_login" data-ph-cta="footer_login_ai" data-i18n="nav_login">Inloggen</a>
         <a href="mailto:info@structuro.eu" data-ph-cta="footer_email">info@structuro.eu</a>
       </div>
     </div>
@@ -2376,8 +2400,8 @@ footer{background:var(--story-bg);border-top:1px solid var(--story-border);paddi
 <script defer src="/js/ph-config.js?v=20260724a"></script>
 <script defer src="/js/ph-noise-filter.js?v=20260724a"></script>
 <script defer src="/js/analytics.js?v=20260724a"></script>
-<script defer src="/js/landing-page.js?v=20260724a"></script>
-<script defer src="/js/landing-lazy-load.js?v=20260619d"></script>
+<script defer src="/js/landing-page.js?v=20260725a"></script>
+<script defer src="/js/landing-lazy-load.js?v=20260725a"></script>
 <script>
 (function () {
   var track = document.getElementById('mediaSeenTrack');

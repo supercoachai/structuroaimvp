@@ -10,11 +10,19 @@ import {
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 
+type FinalizeNewAccountOptions = {
+  /** Na v2 account-save / claim: blijf in /v2/* (geen v1-root). */
+  homePath?: string;
+};
+
 /** Na OAuth, e-mail/wachtwoord of passkey: attributie, analytics, redirect-pad. */
 export async function finalizeNewAccountSession(
   userId: string,
-  email: string | null | undefined
+  email: string | null | undefined,
+  options?: FinalizeNewAccountOptions
 ): Promise<string> {
+  const homePath = options?.homePath ?? "/";
+
   await persistSignupAttributionToProfile(userId);
   queueSignupCompletedForAnalytics();
   await trackRegistrationFunnelServer("signup_completed", {
@@ -26,7 +34,7 @@ export async function finalizeNewAccountSession(
   try {
     const v2 = await migrateV2LocalDataToSupabase(userId);
     if (v2.migrated) {
-      return "/";
+      return options?.homePath ?? "/v2/home";
     }
   } catch {
     /* best-effort; TaskContext/V2ClaimOnAuth kan retryen */
@@ -35,7 +43,7 @@ export async function finalizeNewAccountSession(
   // Account aangemaakt vanuit de anonieme acquisitie-flow: onboarding al gedaan,
   // dus niet opnieuw starten. Lokale taken migreren mee. Daarna meteen de app in.
   if (await claimAnonymousOnboardingForAccount(userId)) {
-    return "/";
+    return homePath;
   }
 
   const supabase = createClient();

@@ -133,7 +133,7 @@ export function emptyDraft(): V2Task {
     repeat: "none",
     repeatIntervalDays: 14,
     priority: null,
-    energy: null,
+    energy: "low",
     microSteps: [],
     why: null,
     outcome: null,
@@ -215,7 +215,7 @@ export const V2_REPEAT_OPTIONS: { value: V2Repeat; label: string }[] = [
   { value: "daily", label: "Dagelijks" },
   { value: "weekdays", label: "Werkdagen" },
   { value: "weekly", label: "Wekelijks" },
-  { value: "interval", label: "Elke N dagen" },
+  { value: "interval", label: "Elke ... dagen" },
 ];
 
 export const V2_PRIORITY_OPTIONS: { value: V2Priority; label: string }[] = [
@@ -225,8 +225,11 @@ export const V2_PRIORITY_OPTIONS: { value: V2Priority; label: string }[] = [
   { value: 3, label: "Hoog" },
 ];
 
-export const V2_ENERGY_TASK_OPTIONS: { value: V2TaskEnergy; label: string }[] = [
-  { value: null, label: "Geen" },
+/** Keuze-opties bij aanmaken/bewerken. Geen "Geen": een taak kost altijd energie. */
+export const V2_ENERGY_TASK_OPTIONS: {
+  value: Exclude<V2TaskEnergy, null>;
+  label: string;
+}[] = [
   { value: "low", label: "Laag" },
   { value: "medium", label: "Genoeg" },
   { value: "high", label: "Hoog" },

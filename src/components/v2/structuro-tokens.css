@@ -1613,8 +1613,12 @@
   color: var(--text-muted);
   cursor: pointer;
   text-align: left;
-  touch-action: pan-y;
-  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  /* Own vertical swipe; pan-y liet de page-scroll de gesture stelen. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease,
+    transform 160ms ease;
 }
 .v2-root .v2-cycle-discover-hint:hover {
   background: #ffffff;
@@ -1674,6 +1678,7 @@
   max-height: min(92dvh, 720px);
   overflow-y: auto;
   text-align: left;
+  touch-action: pan-y;
 }
 .v2-root .v2-cycle-discover-sheet__grab {
   appearance: none;
@@ -1683,9 +1688,20 @@
   justify-content: center;
   width: 100%;
   padding: 6px 0 8px;
-  cursor: pointer;
+  cursor: grab;
   position: relative;
   min-height: 28px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.v2-root .v2-cycle-discover-sheet__grab:active {
+  cursor: grabbing;
+}
+.v2-root .v2-cycle-discover-sheet__head[data-sheet-drag] {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .v2-root .v2-cycle-discover-sheet__grab .v2-cycle-discover-hint__handle {
   position: static;
@@ -1920,6 +1936,15 @@
   color: var(--ink);
   text-align: center;
   max-width: 18ch;
+}
+.v2-root .v2-propose-step__tap-hint {
+  margin: 6px 0 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 100%;
 }
 .v2-root .v2-propose-pills {
   display: flex;
@@ -2712,6 +2737,40 @@
   flex-direction: column;
   gap: 8px;
 }
+.v2-root .v2-focus-custom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.v2-root .v2-focus-custom__input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: transparent;
+  padding: 12px 20px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+}
+.v2-root .v2-focus-custom__input::placeholder {
+  color: var(--text-muted);
+}
+.v2-root .v2-focus-custom__input:focus {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+.v2-root .v2-focus-custom__hint {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
 .v2-root .v2-focus-dock .v2-focus-park {
   margin-top: 4px;
   max-width: none;
@@ -2909,6 +2968,7 @@
 .v2-root .v2-home-chip {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 5px 10px;
   border-radius: 999px;
   font-size: 11px;
@@ -2917,6 +2977,15 @@
   white-space: nowrap;
   background: rgba(45, 90, 86, 0.08);
   color: var(--accent);
+}
+.v2-root .v2-home-chip__battery {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  line-height: 0;
+}
+.v2-root .v2-home-chip__battery .ds-battery {
+  display: block;
 }
 
 /* Dump (D1): design-phone first viewport, cream + navy CTA */
@@ -2964,7 +3033,10 @@
   padding: 16px;
 }
 .v2-root .v2-dump__field {
+  box-sizing: border-box;
   width: 100%;
+  /* Vaste start-hoogte (≈ 4 regels); resize blijft mogelijk zonder SSR-mismatch. */
+  height: 112px;
   min-height: 112px;
   resize: vertical;
   border: 1px solid var(--border);
@@ -3057,6 +3129,28 @@
   flex-direction: column;
   gap: 16px;
   padding-top: 8px;
+}
+.v2-root .v2-dump__row {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  /* Geen asymmetrische border-left: dat breekt de afronding links. */
+  box-shadow: none;
+}
+.v2-root .v2-dump__row--pending {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.v2-root .v2-dump__row--aged {
+  box-shadow: inset 3px 0 0 var(--accent-soft);
+}
+.v2-root .v2-dump__row--resting {
+  background: var(--surface);
+  opacity: 0.72;
 }
 
 /* Cyclus opt-in (onboarding): cream + navy, gecentreerd, compact. */
@@ -3155,7 +3249,8 @@
   opacity: 1;
 }
 .v2-root .v2-info-hint.is-pulse {
-  animation: v2-info-hint-pulse 1.2s ease-in-out infinite;
+  /* Eindig: 3 zachte pulsen, daarna stil (V2InfoHint markeert seen). */
+  animation: v2-info-hint-pulse 1.2s ease-in-out 3;
 }
 @keyframes v2-info-hint-pulse {
   0%,

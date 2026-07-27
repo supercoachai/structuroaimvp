@@ -26,7 +26,7 @@ export function PrivacySetupGate({ children }: { children: ReactNode }) {
     const onConsentPage = pathname === "/consent" || pathname.startsWith("/consent/");
 
     if (isPrivacySetupCompleted()) {
-      if (onConsentPage) router.replace("/");
+      if (onConsentPage) router.replace("/v2/home");
       return;
     }
 

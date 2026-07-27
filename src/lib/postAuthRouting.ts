@@ -24,6 +24,7 @@ type ProfileRow = {
  * Bepaalt waar een user na login/auth naartoe gaat.
  * Nieuwe betalende users (onboarding nog open) gaan altijd naar /onboarding,
  * ook na PWA-installatie en opnieuw inloggen in standalone mode.
+ * Expliciete /v2/* next-paden winnen altijd (geen v1-lekkage na v2-login).
  */
 export function resolvePostLoginPathFromProfile(
   profile: ProfileRow | null | undefined,
@@ -34,6 +35,9 @@ export function resolvePostLoginPathFromProfile(
   }
 ): string {
   const safeNext = safeAppPath(options.next);
+  if (safeNext && (safeNext === "/v2" || safeNext.startsWith("/v2/"))) {
+    return safeNext;
+  }
 
   if (isProtectedTestAccount(options.email ?? null)) {
     return safeNext ?? (options.afterCheckoutLogin ? "/onboarding" : "/");

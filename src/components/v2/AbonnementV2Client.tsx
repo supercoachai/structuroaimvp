@@ -108,7 +108,7 @@ export default function AbonnementV2Client({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ plan: "monthly" }),
+        body: JSON.stringify({ plan: "monthly", surface: "v2" }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {

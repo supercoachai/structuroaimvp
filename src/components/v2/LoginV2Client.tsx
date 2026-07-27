@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
@@ -31,7 +30,6 @@ function tCaptcha(key: string): string {
 }
 
 export default function LoginV2Client() {
-  const router = useRouter();
   const { resetAllLocalData } = useV2();
   const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -58,7 +56,7 @@ export default function LoginV2Client() {
         const result = await migrateV2LocalDataToSupabase(userId);
         if (result.migrated) {
           resetAllLocalData();
-          return "/";
+          return NEXT_AFTER_LOGIN;
         }
       } catch (err) {
         console.warn("[LoginV2] migrate failed", err);
@@ -125,11 +123,8 @@ export default function LoginV2Client() {
         await supabase.auth.getSession();
         const next = await claimLocalThenContinue(data.user.id);
         resetCaptcha();
-        if (next === "/") {
-          window.location.assign("/");
-          return;
-        }
-        router.push(next);
+        window.location.assign(next);
+        return;
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : "";

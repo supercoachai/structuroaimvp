@@ -482,7 +482,9 @@ export default function SettingsV2Client() {
               <button
                 type="button"
                 className="v2-settings-link"
-                onClick={() => void performClientLogout(router)}
+                onClick={() =>
+                  void performClientLogout(router, { loginPath: "/v2/login" })
+                }
               >
                 {t("settings.logout")}
               </button>

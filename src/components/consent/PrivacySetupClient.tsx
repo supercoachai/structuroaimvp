@@ -14,11 +14,13 @@ import {
 } from "@/utils/pushNotifications";
 import { toast } from "@/components/Toast";
 import { NotificationsHint } from "@/components/settings/NotificationsHint";
+import { V2Header, V2Page } from "@/components/v2/V2Chrome";
 import {
-  SettingsRow,
-  SettingsSection,
-  SettingsToggle,
-} from "@/components/settings/SettingsUi";
+  V2SettingsRow,
+  V2SettingsSection,
+  V2SettingsToggle,
+} from "@/components/v2/V2SettingsUi";
+import { v2Styles } from "@/components/v2/theme";
 
 export default function PrivacySetupClient() {
   const { t } = useI18n();
@@ -121,31 +123,31 @@ export default function PrivacySetupClient() {
     setFinishing(true);
     if (consent === "unknown") deny();
     markPrivacySetupCompleted();
-    router.replace("/");
+    router.replace("/v2/home");
   };
 
   return (
-    <div className="flex min-h-[100dvh] w-full items-start justify-center overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-8 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
-      <div className="mx-auto w-full max-w-lg space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {t("consentSetup.title")}
-          </h1>
-          <p className="text-sm leading-relaxed text-slate-600">
-            {t("consentSetup.subtitle")}
+    <V2Page>
+      <V2Header />
+
+      <div style={{ ...v2Styles.flowShell, gap: 16 }}>
+        <header style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <h1 style={v2Styles.title}>{t("consentSetup.title")}</h1>
+          <p style={v2Styles.body}>{t("consentSetup.subtitle")}</p>
+        </header>
+
+        <div style={v2Styles.anchorCard}>
+          <p style={{ ...v2Styles.body, color: "var(--text)", margin: 0 }}>
+            {t("consentSetup.remindersIntro")}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-sm leading-relaxed text-slate-700">
-          {t("consentSetup.remindersIntro")}
-        </div>
-
-        <SettingsSection title={t("settings.sectionPrivacy")}>
-          <SettingsRow
+        <V2SettingsSection title={t("settings.sectionPrivacy")}>
+          <V2SettingsRow
             label={t("settings.analyticsTitle")}
             hint={t("settings.analyticsHint")}
           >
-            <SettingsToggle
+            <V2SettingsToggle
               checked={consent === "granted"}
               onChange={() => {
                 if (consent === "granted") deny();
@@ -153,47 +155,72 @@ export default function PrivacySetupClient() {
               }}
               ariaLabel={t("settings.analyticsTitle")}
             />
-          </SettingsRow>
+          </V2SettingsRow>
 
-          <SettingsRow
+          <V2SettingsRow
             label={t("settings.notificationsTitle")}
             hint={
               pushChecked ? (
                 <NotificationsHint
                   permission={notificationPermission}
                   needsHomescreen={needsHomescreen}
+                  linkClassName="font-semibold underline-offset-2 hover:underline"
+                  linkStyle={{ color: "var(--accent)" }}
                 />
               ) : (
                 " "
               )
             }
+            last
           >
-            <SettingsToggle
+            <V2SettingsToggle
               checked={notificationsOn}
               onChange={handleNotificationToggle}
               disabled={notificationsToggleDisabled}
-              busy={notificationBusy}
               ariaLabel={t("settings.notificationsTitle")}
             />
-          </SettingsRow>
-        </SettingsSection>
+          </V2SettingsRow>
+        </V2SettingsSection>
 
-        <button
-          type="button"
-          onClick={handleContinue}
-          disabled={finishing}
-          className="w-full rounded-xl bg-blue-600 px-4 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        <div style={v2Styles.actions}>
+          <button
+            type="button"
+            className="v2-cta"
+            onClick={handleContinue}
+            disabled={finishing}
+            style={{
+              ...v2Styles.cta,
+              opacity: finishing ? 0.6 : 1,
+              cursor: finishing ? "not-allowed" : "pointer",
+            }}
+          >
+            {finishing ? t("consentSetup.continueBusy") : t("consentSetup.continueCta")}
+          </button>
+        </div>
+
+        <p
+          style={{
+            ...v2Styles.body,
+            fontSize: 13,
+            textAlign: "center",
+            margin: 0,
+          }}
         >
-          {finishing ? t("consentSetup.continueBusy") : t("consentSetup.continueCta")}
-        </button>
-
-        <p className="text-center text-xs leading-relaxed text-slate-500">
           {t("consentSetup.footer")}{" "}
-          <Link href="/privacy" className="text-blue-600 underline-offset-2 hover:underline">
+          <Link
+            href="/privacy"
+            className="v2-textlink"
+            style={{
+              color: "var(--accent)",
+              fontWeight: 600,
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+            }}
+          >
             {t("settings.legalPrivacy")}
           </Link>
         </p>
       </div>
-    </div>
+    </V2Page>
   );
 }

@@ -20,7 +20,6 @@ import { useI18n } from "@/lib/i18n";
 import {
   markReturningUser,
   setLastAuthMethod,
-  getLastAuthMethod,
 } from "@/lib/auth/returningUser";
 import { claimAnonymousOnboardingForAccount } from "@/lib/auth/claimAnonymousOnboarding";
 import { migrateV2LocalDataToSupabase } from "@/lib/migrateV2LocalDataToSupabase";
@@ -43,7 +42,7 @@ import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 import { buildRegistrerenHref } from "@/lib/auth/authPagePaths";
-import { RegistrerenShell } from "@/components/registreren/RegistrerenShell";
+import { LoginShell } from "@/components/login/LoginShell";
 
 /**
  * Productie (Vercel build): geen open registratie, alleen inloggen + wachtwoord vergeten.
@@ -168,6 +167,7 @@ function LoginPageInner() {
   const [signupRedirecting, setSignupRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const splashTargetRef = useRef<string | null>(null);
   const showDevLocalBypass =
     process.env.NODE_ENV === "development" && searchParams.get("dev_local") === "1";
@@ -182,7 +182,7 @@ function LoginPageInner() {
 
   useEffect(() => {
     resetCaptcha();
-  }, [forgotPassword, emailOpen, isSignUp, resetCaptcha]);
+  }, [forgotPassword, emailOpen, passwordOpen, isSignUp, resetCaptcha]);
 
   const handleSplashDone = useCallback(() => {
     const target = splashTargetRef.current ?? "/";
@@ -194,14 +194,6 @@ function LoginPageInner() {
   useEffect(() => {
     if (!SIGNUP_ALLOWED) {
       setIsSignUp(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Alleen e-mail/wachtwoord openklappen als dat hun vorige methode was.
-    const last = getLastAuthMethod();
-    if (last === "password" || last === "magic") {
-      setEmailOpen(true);
     }
   }, []);
 
@@ -230,7 +222,6 @@ function LoginPageInner() {
   }, [searchParams, t, email]);
 
   const afterCheckoutLogin = searchParams?.get("checkout") === "1";
-  const showSignInExtras = !isSignUp && !forgotPassword;
 
   const finishLogin = async (userId: string, userEmail: string | null | undefined) => {
     markReturningUser();
@@ -420,33 +411,34 @@ function LoginPageInner() {
     : isSignUp
       ? "login.signUp"
       : "login.storyHeading";
-  const subheadingKey = forgotPassword
-    ? null
-    : isSignUp
+  const welcomeKey =
+    !forgotPassword && !isSignUp ? "login.storyWelcome" : null;
+  const subheadingKey =
+    !forgotPassword && isSignUp
       ? "registrerenPage.accountSubheadingAcquisition"
-      : "login.storySubheading";
+      : null;
 
   if (signupRedirecting) {
     return (
-      <RegistrerenShell visual="story" showLocaleToggle={false} compactBrand>
+      <LoginShell>
         <p className="text-center text-sm text-[var(--story-text-muted)]">{t("login.loading")}</p>
-      </RegistrerenShell>
+      </LoginShell>
     );
   }
 
   return (
     <>
       {showSplash ? <LoginSuccessSplash onDone={handleSplashDone} /> : null}
-      <RegistrerenShell
-        error={error}
-        visual="story"
-        showLocaleToggle={false}
-        compactBrand
-      >
+      <LoginShell error={error}>
         <div className="mx-auto w-full text-center">
-          <h2 className="st-story-serif text-[1.35rem] font-semibold leading-snug tracking-tight text-[var(--story-text)] sm:text-[1.5rem]">
+          <h2 className="st-story-serif text-[1.625rem] font-semibold leading-snug tracking-tight text-[var(--story-text)] sm:text-[1.5rem]">
             {t(headingKey)}
           </h2>
+          {welcomeKey ? (
+            <p className="mt-2 text-[15px] leading-snug text-[rgba(26,35,64,0.68)] sm:mt-1.5 sm:text-[13px] sm:text-[var(--story-text-muted)]">
+              {t(welcomeKey)}
+            </p>
+          ) : null}
           {subheadingKey ? (
             <p className="mt-2 text-sm leading-relaxed text-[var(--story-text-muted)]">
               {t(subheadingKey)}
@@ -608,23 +600,40 @@ function LoginPageInner() {
               </div>
             ) : null}
 
-            {!emailOpen ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setEmailOpen(true);
-                  setError(null);
-                }}
-                className={loginMutedLinkClass}
-                aria-expanded={false}
-              >
-                {t("login.magicLinkToggle")}
-              </button>
-            ) : (
-              <div className="w-full space-y-5 text-left">
+            <details
+              className="group w-full border-t border-[var(--story-border)] pt-5"
+              open={emailOpen}
+              onToggle={(e) => {
+                const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
+                setEmailOpen(nextOpen);
+                if (!nextOpen) setPasswordOpen(false);
+                if (nextOpen) setError(null);
+              }}
+            >
+              <summary className="mx-auto flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 rounded-full border border-[var(--story-border)] bg-white px-4 py-2.5 text-[15px] font-medium text-[var(--story-cta)] shadow-[0_1px_2px_rgba(26,35,64,0.04)] transition-colors hover:border-[var(--story-accent)] hover:bg-[rgba(45,90,86,0.04)] sm:min-h-0 sm:gap-1.5 sm:px-3.5 sm:py-1.5 sm:text-[13px] [&::-webkit-details-marker]:hidden">
+                {t("login.moreOptions")}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden
+                  className="size-3.5 shrink-0 transition-transform duration-200 group-open:rotate-180 sm:size-3"
+                >
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </summary>
+              <div className="mt-5 w-full space-y-3 text-left">
                 <MagicLinkSignInForm
                   visual="story"
                   startOpen
+                  compact
                   disabled={loading || showSplash}
                   nextPath={
                     safeAppPath(searchParams?.get("next") ?? null) ?? "/"
@@ -635,52 +644,40 @@ function LoginPageInner() {
                     void finishLogin(user.id, user.email);
                   }}
                 />
-                <details className="group">
-                  <summary
-                    className={`cursor-pointer list-none text-center text-sm ${loginQuietLinkClass}`}
-                  >
-                    {t("login.emailFallbackHelp")}
-                  </summary>
-                  <form onSubmit={handleAuth} className="mt-4 w-full space-y-4">
-                    <div className="space-y-1.5">
-                      <label htmlFor="email" className={loginLabelClass}>
-                        {t("login.email")}
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={loginInputClass}
-                        placeholder={t("login.emailPh")}
-                        required
-                        autoComplete="email"
-                      />
-                    </div>
 
-                    <div className="space-y-1.5">
-                      <label htmlFor="password" className={loginLabelClass}>
-                        {t("login.password")}
-                      </label>
-                      <div className="relative">
-                        <input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className={loginPasswordInputClass}
-                          placeholder="••••••••"
-                          required
-                          minLength={6}
-                          autoComplete="current-password"
-                        />
-                        <PasswordVisibilityToggle
-                          shown={showPassword}
-                          onToggle={() => setShowPassword((v) => !v)}
-                          showLabel={t("login.showPassword")}
-                          hideLabel={t("login.hidePassword")}
-                        />
-                      </div>
+                {passwordOpen ? (
+                  <form onSubmit={handleAuth} className="w-full space-y-3 pt-1">
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={loginInputClass}
+                      placeholder={t("login.emailPh")}
+                      required
+                      autoComplete="email"
+                      aria-label={t("login.email")}
+                    />
+
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={loginPasswordInputClass}
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                        autoComplete="current-password"
+                        aria-label={t("login.password")}
+                      />
+                      <PasswordVisibilityToggle
+                        shown={showPassword}
+                        onToggle={() => setShowPassword((v) => !v)}
+                        showLabel={t("login.showPassword")}
+                        hideLabel={t("login.hidePassword")}
+                      />
                     </div>
 
                     <AuthCaptcha
@@ -707,44 +704,55 @@ function LoginPageInner() {
                           setError(null);
                           setMessage(null);
                         }}
-                        className={loginQuietLinkClass}
+                        className="text-[11px] text-[var(--story-text-muted)]/75 underline-offset-2 transition-colors hover:text-[var(--story-text-muted)] hover:underline"
                       >
                         {t("login.forgot")}
                       </button>
                     </div>
                   </form>
-                </details>
-              </div>
-            )}
-          </div>
-        ) : null}
+                ) : null}
 
-        {registrationEnabled && showSignInExtras ? (
-          <p className={`text-center ${loginQuietLinkClass}`}>
-            {t("login.noAccount")}{" "}
-            <Link
-              href={buildRegistrerenHref(searchParams)}
-              className="underline underline-offset-2"
-            >
-              {t("login.createAccount")}
-            </Link>
-          </p>
-        ) : SIGNUP_ALLOWED && showSignInExtras ? (
-          <p className={`text-center ${loginQuietLinkClass}`}>
-            {t("login.noAccount")}{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(true);
-                setForgotPassword(false);
-                setError(null);
-                setMessage(null);
-              }}
-              className="underline underline-offset-2"
-            >
-              {t("login.createAccount")}
-            </button>
-          </p>
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-3 text-[12px] text-[var(--story-text-muted)]/75">
+                  <button
+                    type="button"
+                    onClick={() => setPasswordOpen((v) => !v)}
+                    className="underline-offset-2 transition-colors hover:text-[var(--story-text-muted)] hover:underline"
+                    aria-expanded={passwordOpen}
+                  >
+                    {t("login.emailFallbackHelp")}
+                  </button>
+                  {registrationEnabled || SIGNUP_ALLOWED ? (
+                    <>
+                      <span aria-hidden className="opacity-40">
+                        ·
+                      </span>
+                      {registrationEnabled ? (
+                        <Link
+                          href={buildRegistrerenHref(searchParams)}
+                          className="underline-offset-2 transition-colors hover:text-[var(--story-text-muted)] hover:underline"
+                        >
+                          {t("login.noAccount")}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSignUp(true);
+                            setForgotPassword(false);
+                            setError(null);
+                            setMessage(null);
+                          }}
+                          className="underline-offset-2 transition-colors hover:text-[var(--story-text-muted)] hover:underline"
+                        >
+                          {t("login.noAccount")}
+                        </button>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </details>
+          </div>
         ) : null}
 
         {SIGNUP_ALLOWED && isSignUp && !registrationEnabled ? (
@@ -788,7 +796,7 @@ function LoginPageInner() {
             </button>
           </div>
         ) : null}
-      </RegistrerenShell>
+      </LoginShell>
     </>
   );
 }
@@ -797,9 +805,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <RegistrerenShell visual="story" showLocaleToggle={false} compactBrand>
+        <LoginShell>
           <p className="text-center text-sm text-[var(--story-text-muted)]">Laden…</p>
-        </RegistrerenShell>
+        </LoginShell>
       }
     >
       <LoginPageInner />

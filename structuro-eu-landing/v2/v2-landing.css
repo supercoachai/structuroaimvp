@@ -266,6 +266,7 @@ body.mobile-nav-open{overflow:hidden}
 .phone[data-demo="energy"][data-state="idle"] .phone-tap-hint{
   opacity:1;max-height:3em;margin-top:6px;
 }
+.phone[data-demo="energy"][data-state="idle"] .phone-energy-title{ /* vraag vóór keuze */ }
 .p-feasible{
   font-size:12px;color:var(--v2-teal);font-weight:500;text-align:center;margin:0;min-height:1.4em;
 }
@@ -275,17 +276,19 @@ body.mobile-nav-open{overflow:hidden}
 .phone[data-energy="high"] .p-feasible [data-feasible="high"]{display:block}
 .phone[data-demo="energy"][data-state="idle"] .p-feasible{opacity:0}
 /* Zoals app energy-stap: nav/prog vast, content verticaal gecentreerd */
-.phone-screen--energy{justify-content:flex-start}
+.phone-screen--energy{justify-content:flex-start;position:relative;padding-bottom:0}
 .phone-energy-stack{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   width:100%;min-height:0;padding-bottom:6px;
 }
+.phone-energy-stack--cycle{justify-content:flex-start;padding-top:8px;padding-bottom:72px}
 .phone-energy-stack .orb--flat{margin:0 auto 14px}
 .phone-suggest-title{
   font-size:17px;text-align:center;margin:18px 0 14px;color:var(--v2-text);line-height:1.25;max-width:16ch;align-self:center;
 }
 .phone-screen--tasks .p-tasks{margin-top:0}
 .p-tasks{width:100%;display:flex;flex-direction:column;flex:1;min-height:0;gap:0}
+.p-tasks--energy{flex:0 1 auto;width:100%;margin-top:4px}
 .p-task{
   display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;
   background:#fff;border:1.5px solid rgba(45,90,86,.35);margin-top:7px;
@@ -303,6 +306,27 @@ body.mobile-nav-open{overflow:hidden}
 .phone[data-state="empty"] .p-task{
   opacity:0;transform:translateY(8px);max-height:0;margin-top:0;padding-top:0;padding-bottom:0;
 }
+/* Energy demo: energie kiezen → voorstellen verschijnen (aantal = energie) */
+.phone[data-demo="energy"][data-state="idle"] .p-tasks--energy .p-task,
+.phone[data-demo="energy"][data-state="idle"] .p-btn--energy,
+.phone[data-demo="energy"][data-state="idle"] .p-quiet--energy{
+  opacity:0;transform:translateY(8px);max-height:0;margin:0;padding:0;pointer-events:none;
+}
+.phone[data-demo="energy"]:not([data-state="idle"])[data-energy="low"] .p-tasks--energy .p-task:nth-child(1),
+.phone[data-demo="energy"]:not([data-state="idle"])[data-energy="ok"] .p-tasks--energy .p-task:nth-child(-n+2),
+.phone[data-demo="energy"]:not([data-state="idle"])[data-energy="high"] .p-tasks--energy .p-task{
+  opacity:1;transform:translateY(0);max-height:64px;margin-top:7px;padding-top:11px;padding-bottom:11px;
+}
+.phone[data-demo="energy"]:not([data-state="idle"])[data-energy="low"] .p-tasks--energy .p-task:nth-child(n+2),
+.phone[data-demo="energy"]:not([data-state="idle"])[data-energy="ok"] .p-tasks--energy .p-task:nth-child(n+3){
+  opacity:0;transform:translateY(8px);max-height:0;margin-top:0;padding-top:0;padding-bottom:0;
+}
+.phone[data-demo="energy"]:not([data-state="idle"]) .p-btn--energy,
+.phone[data-demo="energy"]:not([data-state="idle"]) .p-quiet--energy{
+  opacity:1;transform:none;max-height:none;pointer-events:auto;
+}
+.phone[data-demo="energy"] .p-btn--energy{margin-top:12px;flex:none;height:40px;font-size:13px}
+.phone[data-demo="energy"] .p-quiet--energy{padding-top:6px;font-size:11px;flex:none}
 .p-task .chk{
   width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(45,90,86,.55);
   color:var(--v2-teal);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;
@@ -324,124 +348,82 @@ body.mobile-nav-open{overflow:hidden}
 }
 .phone[data-demo="tasks"][data-state="t2"] .p-quiet,
 .phone[data-demo="tasks"][data-state="t3"] .p-quiet{opacity:1;transform:none}
-.phone-screen--cycle{position:relative;align-items:stretch}
-.p-nav--brand-only{flex:none}
-.cycle-stack{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  width:100%;min-height:0;padding-bottom:8px;
+
+/* Cyclus peeker (zoals app: Eenmalig instellen) */
+.phone-screen--cycle{position:relative;align-items:stretch;overflow:hidden}
+.cycle-discover-hint{
+  position:absolute;left:8px;right:8px;bottom:0;z-index:4;
+  display:flex;align-items:center;gap:8px;
+  padding:16px 10px 12px;border:1px solid rgba(26,35,64,.08);border-bottom:0;
+  border-radius:14px 14px 0 0;background:#fff;
+  box-shadow:0 -3px 16px rgba(26,35,64,.06);
 }
-.cycle-toggle{
-  display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(26,35,64,.06);
-  border:1px solid rgba(26,35,64,.08);margin:0 auto 10px;width:100%;max-width:200px;
+.cycle-discover-hint__handle{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  width:28px;height:3px;border-radius:999px;background:rgba(26,35,64,.16);
 }
-.cycle-toggle span{
-  flex:1;text-align:center;padding:7px 0;border-radius:999px;font-size:12px;font-weight:650;color:var(--v2-text-soft);
-  transition:background .2s ease,color .2s ease,box-shadow .2s ease;
+.cycle-discover-hint__icon{flex:none;display:flex;margin-top:2px}
+.cycle-discover-hint__label{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.cycle-discover-hint__eyebrow{
+  font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--v2-teal);
 }
-/* App: actieve toggle = wit + ink, niet navy */
-.phone[data-state="off"] .cycle-toggle span:first-child,
-.phone[data-state="on"] .cycle-toggle span:last-child,
-.phone[data-state="info"] .cycle-toggle span:last-child{
-  background:#fff;color:var(--v2-text);box-shadow:0 1px 3px rgba(26,35,64,.1);
+.cycle-discover-hint__text{
+  font-size:11px;font-weight:650;line-height:1.25;color:var(--v2-text);
 }
-/* Cyclus-orb: ring om de energie-orb heen (zoals in de app) */
-.cycle-orb{
-  position:relative;width:96px;height:96px;margin:8px auto 0;flex:none;
-}
-.cycle-orb .orb{
-  position:absolute;inset:12px;width:auto;height:auto;margin:0;
-  background:#2D7A6E;box-shadow:none;transform:none;
-  transition:background .35s ease,transform .35s ease;
-}
-.cycle-ring{
-  position:absolute;inset:0;border-radius:50%;
-  background:conic-gradient(#C4785A 0 25%,#8FAE8B 25% 55%,#D4A04A 55% 70%,#A89BC8 70% 100%);
-  mask:radial-gradient(circle at center,transparent 62%,#000 63%);
-  -webkit-mask:radial-gradient(circle at center,transparent 62%,#000 63%);
-  opacity:0;transform:scale(.92);transition:opacity .3s ease,transform .3s ease;
-  pointer-events:none;
-}
-.phone[data-state="on"] .cycle-ring,
-.phone[data-state="info"] .cycle-ring{opacity:1;transform:scale(1)}
-.cycle-label-row{
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  max-height:0;opacity:0;overflow:hidden;margin:0;
-  transition:opacity .25s ease,max-height .3s ease,margin .3s ease;
-}
-.phone[data-state="on"] .cycle-label-row,
-.phone[data-state="info"] .cycle-label-row{
-  max-height:28px;opacity:1;margin-top:12px;
-}
-.cycle-label{
-  font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;
-  text-align:center;margin:0;color:#8FAE8B;
-}
-.cycle-info-btn{
-  width:18px;height:18px;border-radius:50%;flex:none;
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;font-style:normal;line-height:1;
-  color:#8FAE8B;border:1.4px solid rgba(143,174,139,.55);background:rgba(143,174,139,.12);
-  transition:transform .2s ease,background .2s ease,box-shadow .2s ease;
-}
-.phone[data-state="info"] .cycle-info-btn{
-  background:#8FAE8B;color:#fff;border-color:#8FAE8B;
-  box-shadow:0 0 0 4px rgba(143,174,139,.22);transform:scale(1.08);
-}
-.cycle-body-hint{
-  font-size:12px;text-align:center;margin:14px 0 0;color:var(--v2-text-soft);line-height:1.35;
-  max-width:22ch;opacity:0;transition:opacity .25s ease;
-}
-.phone[data-state="on"] .cycle-body-hint,
-.phone[data-state="info"] .cycle-body-hint{opacity:1}
-.phone[data-state="off"] .cycle-body-hint{opacity:0}
-/* Fase-info sheet (zoals app bottom sheet na tip op i) */
-.cycle-sheet{
-  position:absolute;left:8px;right:8px;bottom:8px;z-index:5;
-  background:#fff;border:1px solid rgba(26,35,64,.08);border-radius:18px;
-  padding:10px 14px 12px;box-shadow:0 -8px 28px -12px rgba(26,35,64,.28);
+.cycle-discover-hint__chevron{flex:none;display:flex;color:rgba(26,35,64,.35)}
+.phone[data-demo="energy"] .cycle-discover-hint{position:relative;left:auto;right:auto;margin:8px -4px 0;flex:none}
+.phone[data-demo="energy"] .phone-energy-stack{padding-bottom:0;justify-content:flex-start;padding-top:4px}
+.phone[data-demo="energy"][data-state="idle"] .phone-energy-stack{justify-content:center}
+.phone[data-demo="cycle"][data-state="sheet"] .cycle-discover-hint{opacity:.35}
+.cycle-sheet--discover{
+  position:absolute;left:0;right:0;bottom:0;z-index:6;
+  background:#fff;border-radius:18px 18px 0 0;
+  padding:10px 14px 14px;box-shadow:0 -8px 28px rgba(26,35,64,.14);
   transform:translateY(110%);opacity:0;pointer-events:none;
   transition:transform .35s ease,opacity .25s ease;
 }
-.phone[data-state="info"] .cycle-sheet{
-  transform:none;opacity:1;pointer-events:auto;
+.phone[data-state="sheet"] .cycle-sheet--discover{
+  transform:translateY(0);opacity:1;pointer-events:auto;
 }
-.cycle-sheet__handle{
-  width:36px;height:4px;border-radius:999px;background:rgba(26,35,64,.12);
+.cycle-sheet--discover .cycle-sheet__handle{
+  width:32px;height:4px;border-radius:999px;background:rgba(26,35,64,.16);
   margin:0 auto 10px;
 }
-.cycle-sheet__eyebrow{
-  margin:0;font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--v2-text-faint);text-align:center;
+.cycle-sheet--discover .cycle-sheet__head{
+  display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;
 }
-.cycle-sheet__title{
-  margin:6px 0 10px;font-size:16px;text-align:center;color:var(--v2-text);line-height:1.2;
+.cycle-sheet--discover .cycle-sheet__head-icon{flex:none;margin-top:2px}
+.cycle-sheet--discover .cycle-sheet__eyebrow{
+  margin:0;font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--v2-teal);
 }
-.cycle-sheet__phases{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 10px;
+.cycle-sheet--discover .cycle-sheet__title{
+  margin:2px 0 0;font-size:15px;font-weight:500;color:var(--v2-text);line-height:1.2;
 }
-.cycle-sheet__phase{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  font-size:8px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--v2-text-faint);
+.cycle-sheet--discover .cycle-sheet__body{
+  margin:0 0 10px;font-size:10.5px;line-height:1.4;color:var(--v2-text-soft);
 }
-.cycle-sheet__phase::before{
-  content:"";display:block;width:100%;height:4px;border-radius:999px;
-  background:rgba(26,35,64,.10);
+.cycle-sheet--discover .cycle-sheet__row{
+  display:flex;flex-direction:column;gap:2px;margin-bottom:10px;
+  padding:8px 10px;border-radius:12px;background:rgba(26,35,64,.04);
 }
-.cycle-sheet__phase.is-active{color:var(--v2-phase,#8FAE8B)}
-.cycle-sheet__phase.is-active::before{background:var(--v2-phase,#8FAE8B)}
-.cycle-sheet__row{
-  display:flex;flex-direction:column;gap:2px;margin:0 0 8px;
-  font-size:11px;line-height:1.35;color:var(--v2-text-soft);
+.cycle-sheet--discover .cycle-sheet__row strong{
+  font-size:10px;font-weight:700;color:var(--v2-text);
 }
-.cycle-sheet__row strong{
-  font-size:11.5px;font-weight:700;color:var(--v2-text);
+.cycle-sheet--discover .cycle-sheet__row span{
+  font-size:10px;line-height:1.35;color:var(--v2-text-soft);
 }
-.cycle-sheet__cta{
-  margin-top:4px;display:flex;align-items:center;justify-content:center;
-  height:36px;border-radius:12px;background:var(--v2-navy);color:#fff;
-  font-size:13px;font-weight:600;
+.cycle-sheet--discover .cycle-sheet__actions{
+  display:flex;gap:8px;margin-top:4px;
 }
+.cycle-sheet--discover .cycle-sheet__cta{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  min-height:34px;border-radius:12px;font-size:11px;font-weight:650;
+  background:var(--v2-navy);color:var(--v2-on-navy);
+}
+.cycle-sheet--discover .cycle-sheet__cta--ghost{
+  background:transparent;color:var(--v2-text-soft);border:1px solid rgba(26,35,64,.12);
+}
+
 /* Focus phone = echte app (navy mode, ring, soft 5/15/25 min) */
 .phone-screen--focus{
   background:#1A2340;color:#F5F2EA;
@@ -473,7 +455,7 @@ body.mobile-nav-open{overflow:hidden}
   border-radius:14px;background:rgba(95,184,175,.12);border:1px solid rgba(245,242,234,.14);
   text-align:center;box-sizing:border-box;align-self:center;
 }
-.phone[data-state="ready"] .focus-micro-suggest{display:block}
+.phone[data-state="ready"] .focus-micro-suggest{display:none}
 .phone[data-state="suggest"] .focus-micro-suggest{display:block}
 .focus-micro-suggest__title{
   margin:0;font-size:12px;font-weight:650;color:#F5F2EA;line-height:1.3;
@@ -541,36 +523,36 @@ body.mobile-nav-open{overflow:hidden}
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;padding:18px;
 }
-.focus-dots,.focus-clock,.focus-bucket,.focus-done-bubble{display:none}
+.focus-dots,.focus-approx,.focus-bucket,.focus-extended-soft,.focus-done-mark{display:none}
 .focus-dots{font-size:20px;font-weight:600;color:rgba(245,242,234,.55);letter-spacing:.08em}
-.focus-clock{
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:24px;font-weight:700;
-  color:#F5F2EA;letter-spacing:-.02em;line-height:1;
-}
-.focus-bucket{
-  margin-top:5px;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+.focus-approx{
+  font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:lowercase;
   color:rgba(245,242,234,.55);
 }
-/* Done = apart rond vlak zoals in de app, niet tekst in de ring */
-.focus-done-bubble{
+.focus-bucket{
+  margin-top:4px;font-family:var(--v2-serif,Georgia,serif);font-size:22px;font-weight:500;
+  letter-spacing:-.01em;text-transform:none;color:#F5F2EA;line-height:1.1;
+}
+.focus-extended-soft{
+  margin-top:8px;font-size:11px;font-weight:600;color:#5FB8AF;line-height:1.3;
+}
+/* Done = checkmark zoals FocusV2, geen grijze tekstbubble */
+.focus-done-mark{
   width:118px;height:118px;margin:8px auto 6px;flex:none;border-radius:50%;
-  border:1px solid rgba(245,242,234,.14);background:#222C4D;
-  display:none;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:14px 12px;box-sizing:border-box;
+  border:1px solid rgba(245,242,234,.14);background:rgba(95,184,175,.12);
+  display:none;align-items:center;justify-content:center;
 }
-.focus-done-bubble .serif{
-  font-size:15px;font-weight:500;color:#F5F2EA;margin:0;line-height:1.2;letter-spacing:-.01em;
+.focus-done-mark span{
+  font-size:42px;font-weight:600;color:#5FB8AF;line-height:1;
 }
-.focus-done-bubble p:last-child{
-  margin:6px 0 0;font-size:10.5px;color:rgba(245,242,234,.55);line-height:1.3;max-width:11ch;
-}
-.phone[data-state="ready"] .focus-clock,
+.phone[data-state="ready"] .focus-approx,
 .phone[data-state="ready"] .focus-bucket,
-.phone[data-state="suggest"] .focus-clock,
+.phone[data-state="suggest"] .focus-approx,
 .phone[data-state="suggest"] .focus-bucket{display:block}
 .phone[data-state="run"] .focus-dots,
 .phone[data-state="pause"] .focus-dots{display:block}
-.phone[data-state="done"] .focus-done-bubble{display:flex}
+.phone[data-state="done"] .focus-done-mark{display:flex}
+.phone[data-state="done"] .focus-ring{display:none}
 .focus-actions{display:none;width:100%;flex-direction:column;gap:6px;margin-top:auto;flex-shrink:0}
 .phone[data-state="ready"] .focus-actions--ready,
 .phone[data-state="suggest"] .focus-actions--ready,

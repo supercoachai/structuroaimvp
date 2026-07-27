@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import RegistrerenPlanClient from "@/components/registreren/RegistrerenPlanClient";
 
 export const metadata: Metadata = {
-  title: "Kies je abonnement | Structuro",
-  description: "Kies maandelijks of jaarlijks en start met Structuro.",
+  title: "Abonnement | Structuro",
+  description: "Behoud je ritme. Ga verder met Structuro na je proefperiode.",
 };
 
 export default function RegistrerenPlanPage() {

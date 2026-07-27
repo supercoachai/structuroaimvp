@@ -125,6 +125,460 @@
   }
 }
 
+/* Login split shell: visual links (desktop), form rechts; mobiel form-first. */
+.login-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--story-bg);
+  color: var(--story-text);
+  overflow-x: hidden;
+}
+.login-shell__back {
+  position: absolute;
+  left: max(0.75rem, env(safe-area-inset-left));
+  top: max(0.75rem, env(safe-area-inset-top));
+  z-index: 20;
+  font-size: 0.875rem;
+  color: var(--story-text-muted);
+  transition: color 0.15s ease;
+}
+.login-shell__back:hover {
+  color: var(--story-text);
+}
+.login-shell__visual {
+  display: none;
+}
+.login-shell__form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(3.5rem, calc(env(safe-area-inset-top) + 2.5rem))
+    max(1rem, env(safe-area-inset-left))
+    max(2rem, calc(env(safe-area-inset-bottom) + 1rem))
+    max(1rem, env(safe-area-inset-right));
+}
+.login-shell__form-inner {
+  width: 100%;
+  max-width: 25.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.15rem;
+}
+.login-shell__mobile-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.35rem;
+}
+.login-shell__logo {
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-inline: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(26, 35, 64, 0.08));
+}
+/* Mobile-only brand (hidden ≥960px). Slightly larger than 32px so it holds vs Google CTA. */
+.login-shell__logo--sm {
+  width: 2.75rem; /* 44px */
+  height: 2.75rem;
+  filter: none;
+  opacity: 0.96;
+}
+.login-shell__logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  background: var(--story-accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+.login-shell__logo-fallback--sm {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+}
+.login-shell__banner {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  text-align: center;
+}
+.login-shell__banner--info {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #78350f;
+}
+.login-shell__banner--error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+@media (min-width: 960px) {
+  .login-shell {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .login-shell__back {
+    color: rgba(245, 242, 234, 0.72);
+  }
+  .login-shell__back:hover {
+    color: var(--story-text-on-navy);
+  }
+  .login-shell__visual {
+    display: flex;
+    width: min(48%, 34rem);
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+    /* v2-navy + teal accents (leesbaar navy, geen near-black) */
+    background:
+      radial-gradient(ellipse 85% 55% at 50% 100%, rgba(45, 90, 86, 0.55), transparent 62%),
+      radial-gradient(ellipse 70% 45% at 12% 8%, rgba(157, 196, 186, 0.18), transparent 55%),
+      linear-gradient(168deg, #242e52 0%, #1a2340 42%, #1f3f3c 100%);
+    color: var(--story-text-on-navy);
+  }
+  .login-shell__visual-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    width: 100%;
+    max-width: 18.5rem;
+  }
+  .login-shell__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
+  .login-shell__tagline {
+    margin: 0.85rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    color: rgba(245, 242, 234, 0.72);
+    text-wrap: balance;
+    max-width: 14rem;
+  }
+  .login-shell__mobile-brand {
+    display: none;
+  }
+  .login-shell__form {
+    padding: max(3rem, env(safe-area-inset-top)) 2rem
+      max(2rem, env(safe-area-inset-bottom));
+  }
+
+  /* Titanium iPhone (zelfde patroon als EU landing v2; halo zodat frame leest op navy) */
+  .login-shell__phone {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 17.5rem;
+    margin-inline: auto;
+    border-radius: 42px;
+    padding: 8px;
+    overflow: visible;
+    background: linear-gradient(
+      155deg,
+      #5a5f68 0%,
+      #2a2d33 16%,
+      #121316 48%,
+      #2a2d33 84%,
+      #4a4e56 100%
+    );
+    box-shadow:
+      0 0 0 1px rgba(157, 196, 186, 0.22),
+      0 0 48px rgba(157, 196, 186, 0.12),
+      0 32px 80px rgba(10, 16, 32, 0.45),
+      0 8px 24px rgba(10, 16, 32, 0.2),
+      inset 0 0 0 1.5px rgba(180, 188, 200, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  }
+  .login-shell__iphone-side {
+    position: absolute;
+    width: 3.5px;
+    border-radius: 2px;
+    z-index: 0;
+    background: linear-gradient(90deg, #7a808a, #3a3e46 55%, #1c1e22);
+    box-shadow: 0 0 0 0.5px rgba(157, 196, 186, 0.15);
+  }
+  .login-shell__iphone-side--action {
+    left: -3px;
+    top: 17%;
+    height: 3.2%;
+  }
+  .login-shell__iphone-side--volup {
+    left: -3px;
+    top: 23%;
+    height: 6%;
+  }
+  .login-shell__iphone-side--voldown {
+    left: -3px;
+    top: 30.5%;
+    height: 6%;
+  }
+  .login-shell__iphone-side--power {
+    right: -3px;
+    top: 24.5%;
+    height: 9.5%;
+    background: linear-gradient(270deg, #7a808a, #3a3e46 55%, #1c1e22);
+  }
+  .login-shell__iphone-side--camctl {
+    right: -3px;
+    top: 38.5%;
+    height: 4.2%;
+    background: linear-gradient(270deg, #7a808a, #3a3e46 55%, #1c1e22);
+  }
+  .login-shell__iphone-island {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 35%;
+    max-width: 100px;
+    height: 25px;
+    background: #000;
+    border-radius: 999px;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 7px;
+    box-shadow:
+      0 2px 6px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+  }
+  .login-shell__iphone-island-cam {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+    background: radial-gradient(circle at 35% 32%, #232c40 0%, #0c0f18 48%, #000 100%);
+    box-shadow:
+      inset 0 0 3px rgba(90, 130, 255, 0.4),
+      0 0 0 1.5px rgba(255, 255, 255, 0.05);
+  }
+  .login-shell__iphone-island-cam::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2.5px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(140, 175, 255, 0.85), rgba(140, 175, 255, 0) 80%);
+  }
+  .login-shell__phone-screen {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 471 / 1024;
+    border-radius: 34px;
+    overflow: hidden;
+    background: var(--story-bg);
+    color: var(--story-text);
+    padding: 40px 14px 18px;
+    gap: 0;
+    justify-content: flex-start;
+  }
+  .login-shell__home-top {
+    flex: none;
+    width: 100%;
+  }
+  .login-shell__home-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--story-accent);
+    text-align: left;
+  }
+  .login-shell__home-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .login-shell__home-greeting {
+    margin: 0;
+    font-family: var(--story-serif);
+    font-size: 15px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--story-cta);
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+  .login-shell__home-chip {
+    flex: none;
+    font-size: 8.5px;
+    font-weight: 650;
+    padding: 3px 5px;
+    border-radius: 999px;
+    background: rgba(45, 90, 86, 0.1);
+    color: var(--story-accent);
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .login-shell__home-card {
+    flex: none;
+    margin-top: 14px;
+    width: 100%;
+    background: #fff;
+    border: 1px solid rgba(26, 35, 64, 0.08);
+    border-radius: 16px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 1px 2px rgba(26, 35, 64, 0.03);
+    display: flex;
+    flex-direction: column;
+  }
+  .login-shell__home-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--story-accent);
+  }
+  .login-shell__home-card-count {
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+    color: rgba(26, 35, 64, 0.3);
+  }
+  .login-shell__home-card-title {
+    margin: 10px 0 0;
+    font-family: var(--story-serif);
+    font-size: 15px;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    color: var(--story-cta);
+    text-align: left;
+  }
+  .login-shell__home-micro {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 10px 0 0;
+    border-top: 1px solid rgba(45, 90, 86, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .login-shell__home-micro li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--story-text);
+    text-align: left;
+  }
+  .login-shell__home-micro-chk {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    border-radius: 5px;
+    border: 1.4px solid rgba(45, 90, 86, 0.35);
+    background: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    color: #fff;
+  }
+  .login-shell__home-micro-chk--done {
+    background: var(--story-cta);
+    border-color: var(--story-cta);
+  }
+  .login-shell__home-micro-done {
+    color: rgba(26, 35, 64, 0.3);
+    text-decoration: line-through;
+  }
+  .login-shell__home-focus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 40px;
+    margin-top: 14px;
+    border-radius: 14px;
+    background: var(--story-cta);
+    color: var(--story-text-on-navy);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .login-shell__home-other {
+    margin: 8px 0 0;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(26, 35, 64, 0.68);
+    text-align: center;
+  }
+  .login-shell__home-loop {
+    margin-top: 12px;
+    padding-top: 10px;
+    text-align: center;
+  }
+  .login-shell__home-loop-label {
+    margin: 0;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(26, 35, 64, 0.3);
+  }
+  .login-shell__home-loop-links {
+    margin: 5px 0 0;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--story-accent);
+  }
+  .login-shell__home-reassure {
+    margin-top: auto;
+    margin-bottom: 0;
+    padding-top: 18px;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(26, 35, 64, 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell__back {
+    transition: none;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -898,7 +1352,7 @@ body {
   padding: 8px 10px 2px;
   font-size: 10.5px;
   color: #8a93ac;
-  font-style: italic;
+  font-style: normal;
   line-height: 1.4;
 }
 

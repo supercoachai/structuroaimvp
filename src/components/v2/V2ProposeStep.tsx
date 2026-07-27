@@ -174,18 +174,7 @@ export default function V2ProposeStep({
       <h1 className="v2-propose-step__title">{resolvedTitle}</h1>
 
       {!energy ? (
-        <p
-          style={{
-            ...v2Styles.body,
-            fontSize: 13,
-            marginTop: 6,
-            marginBottom: 0,
-            textAlign: "center",
-            maxWidth: "28ch",
-          }}
-        >
-          {t("v2.proposeTapHint")}
-        </p>
+        <p className="v2-propose-step__tap-hint">{t("v2.proposeTapHint")}</p>
       ) : null}
 
       <div className="v2-propose-pills" role="group" aria-label={t("v2.proposeEnergyAria")}>

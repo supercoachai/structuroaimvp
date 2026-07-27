@@ -52,7 +52,7 @@
   }
 
   scheduleIdle(function () {
-    loadScript("/js/landing-live-demo.js?v=20260616n");
+    loadScript("/js/landing-live-demo.js?v=20260725a");
   }, 2500);
 
   observeSection(

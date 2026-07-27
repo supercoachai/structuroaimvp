@@ -529,19 +529,23 @@ function TaskForm({
 
   return (
     <section
-      className={compact ? undefined : "v2-card"}
+      className={compact ? undefined : "v2-card w-full"}
       style={{
-        padding: compact ? "6px 0 0" : 20,
+        boxSizing: "border-box",
+        width: compact ? undefined : "100%",
+        padding: compact ? "14px 0 0" : "24px 22px 22px",
         display: "flex",
         flexDirection: "column",
-        gap: compact ? 14 : 16,
+        gap: compact ? 14 : 18,
         borderTop: compact ? "1px solid var(--border)" : undefined,
         marginTop: compact ? 4 : undefined,
-        paddingTop: compact ? 14 : undefined,
       }}
     >
       {!compact ? (
-        <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
+        <h2
+          className="v2-serif"
+          style={{ fontSize: "var(--fs-title)", margin: 0, padding: 0 }}
+        >
           Nieuwe taak
         </h2>
       ) : null}

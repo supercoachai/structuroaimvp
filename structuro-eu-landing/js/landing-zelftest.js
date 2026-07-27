@@ -108,7 +108,7 @@
         : 'https://www.structuro.ai';
     return (
       origin +
-      '/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=' +
+      '/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=' +
       (contentId || 'zelftest_sticky')
     );
   }

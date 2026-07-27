@@ -20,7 +20,7 @@ const PLACEHOLDER_FIRST_NAMES = new Set([
 
 /**
  * Echte voornaam, of null als die ontbreekt / een placeholder is.
- * Mail zegt dan "Hoi," i.p.v. "Hoi Gebruiker,".
+ * Zonder naam: géén kale "Hoi," (voelt als template).
  */
 export function resolveGreetingName(c: LifecycleCandidate): string | null {
   const raw = (c.preferred_name ?? "").trim();
@@ -31,9 +31,18 @@ export function resolveGreetingName(c: LifecycleCandidate): string | null {
   return first;
 }
 
-export function greetingLine(c: LifecycleCandidate): string {
+/** Alleen met echte voornaam. Zonder naam: null (regel weglaten). */
+export function greetingLine(c: LifecycleCandidate): string | null {
   const name = resolveGreetingName(c);
-  return name ? `Hoi ${name},` : "Hoi,";
+  return name ? `Hoi ${name},` : null;
+}
+
+/** Subject met voornaam vooraan, anders de neutrale variant. */
+export function personalizedSubject(name: string | null, subject: string): string {
+  if (!name) return subject;
+  const trimmed = subject.trim();
+  if (!trimmed) return name;
+  return `${name}, ${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
 }
 
 /** Brand tokens (Variant F): surface / ink / accent. Inline voor e-mailclients. */
@@ -50,31 +59,44 @@ const MAIL = {
 const FOUNDER = {
   name: "Niels van den Hurk",
   title: "Founder Structuro",
-  /** Hosted op app-origin; circulaire crop via CSS (email-safe). */
-  photoPath: "/jasper/niels.jpg",
+  /** Compact mark (~9KB), zelfde asset als v2 chrome. */
+  logoPath: "/v2/logo-mark.png",
 } as const;
 
-function founderSignatureHtml(photoUrl: string): string {
+const MAIL_SERIF = "Georgia,'Times New Roman',Times,serif";
+
+/** Teksthandtekening: geen foto (crop/object-fit is onbetrouwbaar in mailclients). */
+function founderSignatureHtml(): string {
   const name = escapeHtml(FOUNDER.name);
   const title = escapeHtml(FOUNDER.title);
-  const src = escapeHtml(photoUrl);
   return `
-              <p style="margin:0 0 14px 0;font-family:${MAIL.font};font-size:14px;line-height:1.5;color:${MAIL.muted};">Groet,</p>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-                <tr>
-                  <td valign="middle" width="56" style="width:56px;padding:0 14px 0 0;">
-                    <img src="${src}" width="56" height="56" alt="${name}" style="display:block;width:56px;height:56px;border-radius:50%;border:1px solid ${MAIL.border};object-fit:cover;" />
-                  </td>
-                  <td valign="middle" style="padding:0;">
-                    <div style="font-family:${MAIL.font};font-size:15px;font-weight:600;line-height:1.3;color:${MAIL.ink};">${name}</div>
-                    <div style="font-family:${MAIL.font};font-size:13px;line-height:1.4;color:${MAIL.muted};padding-top:2px;">${title}</div>
-                  </td>
-                </tr>
-              </table>`;
+              <p style="margin:0 0 6px 0;font-family:${MAIL.font};font-size:14px;line-height:1.5;color:${MAIL.muted};">Groet,</p>
+              <div style="font-family:${MAIL.font};font-size:15px;font-weight:600;line-height:1.3;color:${MAIL.ink};">${name}</div>
+              <div style="font-family:${MAIL.font};font-size:13px;line-height:1.4;color:${MAIL.muted};padding-top:2px;">${title}</div>`;
 }
 
 function founderSignatureText(): string {
   return `Groet,\n${FOUNDER.name}\n${FOUNDER.title}`;
+}
+
+function brandHeaderHtml(logoUrl: string, homeUrl: string): string {
+  const src = escapeHtml(logoUrl);
+  const href = escapeHtml(homeUrl);
+  return `
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td valign="middle" style="padding:0 10px 0 0;vertical-align:middle;">
+                    <a href="${href}" style="text-decoration:none;">
+                      <img src="${src}" width="28" height="20" alt="" style="display:block;width:28px;height:20px;border:0;" />
+                    </a>
+                  </td>
+                  <td valign="middle" style="padding:0;vertical-align:middle;">
+                    <a href="${href}" style="font-family:${MAIL_SERIF};font-size:22px;font-weight:400;line-height:1;color:${MAIL.ink};text-decoration:none;">
+                      Structuro
+                    </a>
+                  </td>
+                </tr>
+              </table>`;
 }
 
 function wrapHtml(opts: {
@@ -82,11 +104,20 @@ function wrapHtml(opts: {
   bodyHtml: string;
   ctaLabel: string;
   ctaUrl: string;
+  ctaSubline?: string;
   unsubscribeUrl: string;
-  photoUrl: string;
+  logoUrl: string;
+  homeUrl: string;
 }): string {
   const preview = escapeHtml(opts.preview);
   const ctaLabel = escapeHtml(opts.ctaLabel);
+  const ctaSublineHtml = opts.ctaSubline
+    ? `<tr>
+            <td style="padding:10px 24px 0 24px;font-family:${MAIL.font};font-size:13px;line-height:1.5;color:${MAIL.muted};text-align:center;">
+              ${escapeHtml(opts.ctaSubline)}
+            </td>
+          </tr>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -102,17 +133,12 @@ function wrapHtml(opts: {
       <td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:${MAIL.card};border-radius:16px;border:1px solid ${MAIL.border};">
           <tr>
-            <td style="padding:28px 24px 8px 24px;font-family:${MAIL.font};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${MAIL.accent};">
-              Structuro
+            <td style="padding:28px 24px 0 24px;">
+              ${brandHeaderHtml(opts.logoUrl, opts.homeUrl)}
             </td>
           </tr>
           <tr>
-            <td style="padding:4px 24px 0 24px;">
-              <div style="height:2px;width:40px;background:${MAIL.accent};border-radius:2px;line-height:2px;font-size:0;">&nbsp;</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 24px 0 24px;font-family:${MAIL.font};font-size:16px;line-height:1.6;color:${MAIL.ink};">
+            <td style="padding:22px 24px 0 24px;font-family:${MAIL.font};font-size:16px;line-height:1.6;color:${MAIL.ink};">
               ${opts.bodyHtml}
             </td>
           </tr>
@@ -123,9 +149,10 @@ function wrapHtml(opts: {
               </a>
             </td>
           </tr>
+          ${ctaSublineHtml}
           <tr>
             <td style="padding:28px 24px 12px 24px;font-family:${MAIL.font};">
-              ${founderSignatureHtml(opts.photoUrl)}
+              ${founderSignatureHtml()}
             </td>
           </tr>
           <tr>
@@ -156,14 +183,19 @@ function buildMail(opts: {
   paragraphs: string[];
   ctaLabel: string;
   ctaPath: string;
+  ctaSubline?: string;
   unsubscribeUrl: string;
 }): LifecycleRenderedMail {
   const origin = getAppOrigin();
   const ctaUrl = `${origin}${opts.ctaPath.startsWith("/") ? opts.ctaPath : `/${opts.ctaPath}`}`;
-  const photoUrl = `${origin}${FOUNDER.photoPath}`;
-  const bodyText = opts.paragraphs.join("\n\n");
-  const text = `${bodyText}\n\n${opts.ctaLabel}: ${ctaUrl}\n\n${founderSignatureText()}\n\nAfmelden: ${opts.unsubscribeUrl}`;
-  const bodyHtml = opts.paragraphs
+  const logoUrl = `${origin}${FOUNDER.logoPath}`;
+  const paragraphs = opts.paragraphs
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+  const bodyText = paragraphs.join("\n\n");
+  const sublineText = opts.ctaSubline ? `\n${opts.ctaSubline}` : "";
+  const text = `${bodyText}\n\n${opts.ctaLabel}: ${ctaUrl}${sublineText}\n\n${founderSignatureText()}\n\nAfmelden: ${opts.unsubscribeUrl}`;
+  const bodyHtml = paragraphs
     .map(
       (p) =>
         `<p style="margin:0 0 16px 0;font-family:${MAIL.font};font-size:16px;line-height:1.6;color:${MAIL.ink};">${escapeHtml(p)}</p>`
@@ -179,8 +211,10 @@ function buildMail(opts: {
       bodyHtml,
       ctaLabel: opts.ctaLabel,
       ctaUrl,
+      ctaSubline: opts.ctaSubline,
       unsubscribeUrl: opts.unsubscribeUrl,
-      photoUrl,
+      logoUrl,
+      homeUrl: origin,
     }),
     ctaPath: opts.ctaPath,
   };
@@ -210,26 +244,29 @@ export function renderLifecycleMail(
   unsubscribeUrl: string,
   now = new Date()
 ): LifecycleRenderedMail {
+  const name = resolveGreetingName(candidate);
   const hi = greetingLine(candidate);
   const trialDays = resolveStripeTrialDaysForSignupSource(candidate.signup_source);
   const cohort = amsterdamYmd(now);
   const n = Math.max(0, candidate.checkin_count);
+  const paras = (...lines: Array<string | null>) =>
+    lines.filter((line): line is string => Boolean(line && line.trim()));
 
   switch (templateId) {
     case "s0_welcome":
       return buildMail({
         templateId,
         cohortKey: `signup:${candidate.user_id}`,
-        subject: "Je account staat klaar",
+        subject: personalizedSubject(name, "Je account staat klaar"),
         preview: "Eén stap: open de app en kies wat je vandaag wilt doen.",
-        paragraphs: [
+        paragraphs: paras(
           hi,
           `Je account is aangemaakt. Je hebt ${trialDays} dagen om Structuro rustig te proberen.`,
-          "Eén stap: open de app en kies wat je vandaag wilt doen.",
-          "Geen creditcard nodig deze dagen.",
-        ],
+          "Geen planning voor de hele week, geen lijst die groeit. Alleen vandaag.",
+          "Eén stap: open de app en kies wat je vandaag wilt doen. Geen creditcard nodig deze dagen."
+        ),
         ctaLabel: "Naar dagstart",
-        ctaPath: "/dagstart",
+        ctaPath: "/v2/dagstart",
         unsubscribeUrl,
       });
 
@@ -237,11 +274,11 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `day2:${cohort}`,
-        subject: "Gisteren was druk. Vandaag mag klein.",
+        subject: personalizedSubject(name, "Gisteren was druk. Vandaag mag klein."),
         preview: "Gisteren hoefde niet. Vandaag mag één klein ding.",
-        paragraphs: [hi, "Gisteren hoefde niet. Vandaag mag één klein ding."],
+        paragraphs: paras(hi, "Gisteren hoefde niet. Vandaag mag één klein ding."),
         ctaLabel: "Open Structuro",
-        ctaPath: "/",
+        ctaPath: "/v2/home",
         unsubscribeUrl,
       });
 
@@ -249,15 +286,15 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `still:${candidate.user_id}`,
-        subject: "Even stil. Geen achterstand.",
+        subject: personalizedSubject(name, "Even stil. Geen achterstand."),
         preview: "Structuro houdt geen lijst bij van wat je miste.",
-        paragraphs: [
+        paragraphs: paras(
           hi,
           "Structuro houdt geen lijst bij van wat je miste.",
-          "Als je wilt, kies je vandaag opnieuw één ding.",
-        ],
-        ctaLabel: "Naar de app",
-        ctaPath: "/",
+          "Als je wilt, kies je vandaag opnieuw één ding."
+        ),
+        ctaLabel: "Kies vandaag één ding",
+        ctaPath: "/v2/home",
         unsubscribeUrl,
       });
 
@@ -265,16 +302,19 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `value:${cohort}`,
-        subject: `Je deed ${n} keer iets terwijl het druk was`,
+        subject: personalizedSubject(
+          name,
+          `Je deed ${n} keer iets terwijl het druk was`
+        ),
         preview: "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen.",
-        paragraphs: [
+        paragraphs: paras(
           hi,
           `De afgelopen dagen startte je ${n} keer je dag in Structuro.`,
           `Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`,
-          "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt.",
-        ],
+          "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt."
+        ),
         ctaLabel: "Naar Structuro",
-        ctaPath: "/",
+        ctaPath: "/v2/home",
         unsubscribeUrl,
       });
 
@@ -282,15 +322,20 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `prepaywall:${cohort}`,
-        subject: "Morgen kies je of je door wilt",
-        preview: "Je proefperiode loopt morgen af. Geen automatische charge.",
-        paragraphs: [
+        subject: personalizedSubject(name, "Morgen kies je of je door wilt"),
+        preview: "Je proefperiode loopt morgen af.",
+        paragraphs: paras(
           hi,
-          "Je proefperiode loopt morgen af. Daarna kun je kiezen: door met Structuro, of stoppen.",
+          "Je proefperiode loopt morgen af.",
+          n > 0
+            ? `Je opende Structuro deze dagen ${n} keer. Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`
+            : "De afgelopen dagen kon je rustig wennen aan hoe Structuro werkt.",
+          "Daarna kun je kiezen: door met Structuro, of stoppen."
+        ),
+        ctaLabel: "Kies of je doorgaat",
+        ctaPath: "/v2/abonnement",
+        ctaSubline:
           "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
-        ],
-        ctaLabel: "Bekijk opties",
-        ctaPath: "/abonnement",
         unsubscribeUrl,
       });
 
@@ -298,14 +343,18 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `paywall:${candidate.user_id}`,
-        subject: "Je proefperiode is klaar",
-        preview: "Wil je doorgaan? €12,99 per maand, opzeggen wanneer je wilt.",
-        paragraphs: [
+        subject: personalizedSubject(name, "Je proefperiode is klaar"),
+        preview: "Wil je doorgaan? €12,99 per maand. 14 dagen niet-goed-geld-terug.",
+        paragraphs: paras(
           hi,
-          "Wil je doorgaan? €12,99 per maand, opzeggen wanneer je wilt.",
-        ],
-        ctaLabel: "Doorgaan met Structuro",
-        ctaPath: "/abonnement",
+          "Je proefperiode is voorbij.",
+          "Structuro is er niet om je week te plannen. Het blijft je helpen om vandaag te beginnen, zonder dat je daar eerst over hoeft na te denken.",
+          "€12,99 per maand."
+        ),
+        ctaLabel: "Ja, ik ga door",
+        ctaPath: "/v2/abonnement",
+        ctaSubline:
+          "Opzeggen wanneer je wilt. Niet tevreden binnen 14 dagen? Geld terug, geen vragen.",
         unsubscribeUrl,
       });
 
@@ -313,15 +362,17 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `winback:${candidate.user_id}`,
-        subject: "Nog een keer kijken?",
-        preview: "Je probeerde Structuro een paar dagen. Geen druk.",
-        paragraphs: [
+        subject: personalizedSubject(name, "Nog een keer kijken?"),
+        preview: "Geen druk. Je account staat nog klaar.",
+        paragraphs: paras(
           hi,
-          "Je probeerde Structuro een paar dagen. Geen druk.",
-          "Als je wilt, staat je account nog klaar.",
-        ],
+          n > 0
+            ? `Je opende Structuro toen ${n} keer.`
+            : "Je probeerde Structuro een paar dagen.",
+          "Geen druk. Als je wilt, staat je account nog klaar, precies zoals je het achterliet."
+        ),
         ctaLabel: "Naar Structuro",
-        ctaPath: "/",
+        ctaPath: "/v2/home",
         unsubscribeUrl,
       });
 

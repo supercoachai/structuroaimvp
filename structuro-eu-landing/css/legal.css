@@ -1,0 +1,104 @@
+/* Legal pages: privacy, terms, cookies (Structuro V2 brand) */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--v2-paper);color:var(--v2-text);
+  font-family:var(--v2-sans);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--v2-teal);text-decoration:none}
+a:hover{color:#1F433F}
+img{display:block;max-width:100%;height:auto}
+
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 24px}
+.serif{font-family:var(--v2-serif);font-weight:500;letter-spacing:-0.022em;line-height:1.12}
+
+.site-header{
+  position:sticky;top:0;z-index:80;
+  background:rgba(253,251,244,.92);
+  backdrop-filter:saturate(140%) blur(16px);
+  -webkit-backdrop-filter:saturate(140%) blur(16px);
+  border-bottom:1px solid rgba(26,35,64,.10);
+}
+.site-header .nav{
+  height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+}
+.brand{
+  display:inline-flex;align-items:center;gap:10px;
+  color:var(--v2-text);font-weight:600;font-size:17px;letter-spacing:-0.01em;
+}
+.brand:hover{color:var(--v2-text)}
+.brand-mark{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;line-height:0}
+.brand-mark img{width:30px;height:30px;border-radius:50%;object-fit:cover}
+
+.legal-nav{
+  display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;justify-content:flex-end;
+  font-size:13.5px;font-weight:500;color:var(--v2-text-soft);
+}
+.legal-nav a{color:var(--v2-text-soft)}
+.legal-nav a:hover{color:var(--v2-text)}
+.legal-nav .is-active{color:var(--v2-teal);font-weight:650}
+
+.legal-main{
+  max-width:720px;margin:0 auto;padding:40px 24px 72px;
+}
+.legal-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;margin:0 0 14px;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--v2-teal);
+}
+.legal-eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--v2-teal);flex:none}
+.legal-main h1{
+  margin:0 0 12px;font-size:clamp(32px,5vw,44px);color:var(--v2-text);
+}
+.legal-meta{
+  margin:0 0 24px;font-size:14.5px;color:var(--v2-text-soft);
+}
+.legal-scope{
+  margin:0 0 32px;padding:16px 18px;border-radius:14px;
+  background:rgba(45,90,86,.07);border:1px solid rgba(45,90,86,.16);
+  font-size:14.5px;color:var(--v2-text);line-height:1.5;
+}
+.legal-scope strong{color:var(--v2-teal);font-weight:700}
+
+.legal-prose h2{
+  margin:2.1rem 0 .7rem;font-size:1.05rem;font-weight:700;
+  letter-spacing:-0.01em;color:var(--v2-text);
+}
+.legal-prose h2:first-child{margin-top:0}
+.legal-prose p{
+  margin:0 0 1rem;color:rgba(26,35,64,.82);font-size:15.5px;line-height:1.65;
+}
+.legal-prose a{text-decoration:underline;text-underline-offset:2px}
+
+.legal-back{
+  display:inline-flex;align-items:center;gap:8px;margin-top:40px;
+  font-size:14.5px;font-weight:600;color:var(--v2-teal);
+}
+.legal-back:hover{color:#1F433F}
+
+footer.site-foot{
+  border-top:1px solid rgba(26,35,64,.07);padding:40px 0 36px;background:var(--v2-paper);
+}
+.foot-top{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.foot-links{display:flex;gap:22px;flex-wrap:wrap}
+.foot-links a{font-size:13.5px;color:var(--v2-text-soft)}
+.foot-links a:hover{color:var(--v2-text)}
+.foot-bottom{
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:28px;padding-top:20px;
+  border-top:1px solid rgba(26,35,64,.06);font-size:12.5px;color:var(--v2-text-faint);
+}
+.foot-bottom a{color:var(--v2-text-faint)}
+.foot-bottom a:hover{color:var(--v2-text-soft)}
+.foot-bottom nav{display:flex;gap:18px;flex-wrap:wrap}
+
+.verified-dr-badge{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);
+  white-space:nowrap;border:0;
+}
+
+@media (max-width:720px){
+  .wrap,.legal-main{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+  .site-header .nav{height:auto;min-height:64px;padding:12px 0;align-items:flex-start;flex-direction:column;gap:10px}
+  .legal-nav{justify-content:flex-start}
+}

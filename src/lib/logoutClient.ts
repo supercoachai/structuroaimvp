@@ -10,8 +10,11 @@ type RouterLike = {
   refresh: () => void;
 };
 
-/** Zelfde stappen als sidebar/focus: sessie wissen, lokale modus-cookie, dagstart-cookie, welkomst-sessie, naar /login. */
-export async function performClientLogout(router: RouterLike): Promise<void> {
+/** Zelfde stappen als sidebar/focus: sessie wissen, lokale modus-cookie, dagstart-cookie, welkomst-sessie, naar login. */
+export async function performClientLogout(
+  router: RouterLike,
+  options?: { loginPath?: string }
+): Promise<void> {
   try {
     await createClient().auth.signOut();
   } catch {
@@ -31,6 +34,6 @@ export async function performClientLogout(router: RouterLike): Promise<void> {
   clearLocalOnboardingDoneCookieOnClient();
   clearDagstartCookieOnClient();
   clearAllWelcomeDismissedSessionKeys();
-  router.push("/login");
+  router.push(options?.loginPath ?? "/login");
   router.refresh();
 }

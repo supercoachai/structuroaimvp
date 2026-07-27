@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useI18n } from "@/lib/i18n";
 
 type NotificationsHintProps = {
@@ -8,6 +9,9 @@ type NotificationsHintProps = {
   needsHomescreen: boolean;
   installLinkHref?: string;
   defaultHint?: "consent" | "settings";
+  /** Optioneel: v2 accent i.p.v. v1-blauw op de homescreen-link. */
+  linkClassName?: string;
+  linkStyle?: CSSProperties;
 };
 
 export function NotificationsHint({
@@ -15,6 +19,8 @@ export function NotificationsHint({
   needsHomescreen,
   installLinkHref = "/welkom/install?from=consent",
   defaultHint = "consent",
+  linkClassName = "font-semibold text-blue-600 underline-offset-2 hover:underline",
+  linkStyle,
 }: NotificationsHintProps) {
   const { t } = useI18n();
 
@@ -28,7 +34,8 @@ export function NotificationsHint({
         {t("settings.notificationsNeedsHomescreenHint")}{" "}
         <Link
           href={installLinkHref}
-          className="font-semibold text-blue-600 underline-offset-2 hover:underline"
+          className={linkClassName}
+          style={linkStyle}
         >
           {t("settings.notificationsHomescreenLink")}
         </Link>

@@ -14,9 +14,13 @@ import {
 import { useI18n } from "@/lib/i18n";
 
 import { V2SettingsToggle } from "./V2SettingsUi";
-
-const SWIPE_OPEN_PX = 36;
-const SWIPE_CLOSE_PX = 56;
+import {
+  CYCLE_DISCOVER_SWIPE_CLOSE_PX,
+  CYCLE_DISCOVER_SWIPE_OPEN_PX,
+  isCycleDiscoverDragSlopExceeded,
+  shouldCloseCycleDiscoverFromSwipe,
+  shouldOpenCycleDiscoverFromSwipe,
+} from "./v2CycleDiscoverSwipe";
 
 function CycleDiscoverIcon({ size = 28 }: { size?: number }) {
   return (
@@ -80,6 +84,11 @@ function HowStep({
   );
 }
 
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, a, [role='switch'], input, label"));
+}
+
 /**
  * Soft bottom peeker voor guest-onboarding.
  * Tik of swipe-omhoog opent de uitgebreide cyclus-uitleg.
@@ -94,16 +103,41 @@ export function V2CycleDiscoverHint({
 }) {
   const { t } = useI18n();
   const startY = useRef<number | null>(null);
+  const moved = useRef(false);
+  const [dragY, setDragY] = useState(0);
 
-  const onPointerDown = (e: ReactPointerEvent) => {
+  const resetDrag = useCallback(() => {
+    startY.current = null;
+    setDragY(0);
+  }, []);
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
     startY.current = e.clientY;
+    moved.current = false;
+    setDragY(0);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
-  const onPointerUp = (e: ReactPointerEvent) => {
+  const onPointerMove = (e: ReactPointerEvent<HTMLButtonElement>) => {
     const start = startY.current;
-    startY.current = null;
     if (start == null) return;
-    if (start - e.clientY >= SWIPE_OPEN_PX) {
+    const delta = e.clientY - start;
+    if (isCycleDiscoverDragSlopExceeded(delta)) moved.current = true;
+    // Alleen omhoog visueel meebewegen (peek tilt).
+    setDragY(Math.min(0, delta));
+  };
+
+  const endDrag = (clientY: number) => {
+    const start = startY.current;
+    if (start == null) return;
+    const delta = clientY - start;
+    resetDrag();
+    if (shouldOpenCycleDiscoverFromSwipe(delta, CYCLE_DISCOVER_SWIPE_OPEN_PX)) {
       onOpen();
     }
   };
@@ -112,14 +146,24 @@ export function V2CycleDiscoverHint({
     <button
       type="button"
       className="v2-cycle-discover-hint"
-      onClick={onOpen}
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerCancel={() => {
-        startY.current = null;
+      onClick={(e) => {
+        if (moved.current) {
+          e.preventDefault();
+          return;
+        }
+        onOpen();
       }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={(e) => endDrag(e.clientY)}
+      onPointerCancel={resetDrag}
       aria-label={
         optedIn ? t("cycle.discoverHintOnAria") : t("cycle.discoverHintAria")
+      }
+      style={
+        dragY < 0
+          ? { transform: `translateY(${dragY}px)`, transition: "none" }
+          : undefined
       }
     >
       <span className="v2-cycle-discover-hint__handle" aria-hidden />
@@ -154,7 +198,7 @@ type V2CycleDiscoverSheetProps = {
 
 /**
  * Uitgebreide discovery-sheet: inzicht + reminder, nooit sturing.
- * Swipe-omlaag of backdrop sluit zonder keuze; Nee dismiss’t discovery.
+ * Swipe-omlaag (handle/header) of backdrop sluit zonder keuze; Nee dismiss’t discovery.
  * Aan/uit via toggle of CTAs; Aan dismiss’t discovery niet.
  */
 export default function V2CycleDiscoverSheet({
@@ -167,12 +211,18 @@ export default function V2CycleDiscoverSheet({
 }: V2CycleDiscoverSheetProps) {
   const { t } = useI18n();
   const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
+  const dragMoved = useRef(false);
+  const dragFromGrab = useRef(false);
   const [dragY, setDragY] = useState(0);
 
   useEffect(() => {
     if (!open) {
       setDragY(0);
+      dragStartY.current = null;
+      dragMoved.current = false;
+      dragFromGrab.current = false;
       return;
     }
     const onKey = (e: KeyboardEvent) => {
@@ -187,14 +237,48 @@ export default function V2CycleDiscoverSheet({
     };
   }, [open, onClose]);
 
+  const beginDrag = useCallback(
+    (e: ReactPointerEvent<HTMLElement>, fromGrab: boolean) => {
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      if (isInteractiveTarget(e.target)) return;
+      dragStartY.current = e.clientY;
+      dragMoved.current = false;
+      dragFromGrab.current = fromGrab;
+      setDragY(0);
+      try {
+        panelRef.current?.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    },
+    [],
+  );
+
+  const onPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    const start = dragStartY.current;
+    if (start == null) return;
+    const delta = Math.max(0, e.clientY - start);
+    if (isCycleDiscoverDragSlopExceeded(delta)) dragMoved.current = true;
+    setDragY(delta);
+  }, []);
+
   const endDrag = useCallback(
     (clientY: number) => {
       const start = dragStartY.current;
       dragStartY.current = null;
       if (start == null) return;
       const delta = clientY - start;
+      const moved = dragMoved.current;
+      const fromGrab = dragFromGrab.current;
+      dragMoved.current = false;
+      dragFromGrab.current = false;
       setDragY(0);
-      if (delta >= SWIPE_CLOSE_PX) onClose();
+      if (shouldCloseCycleDiscoverFromSwipe(delta, CYCLE_DISCOVER_SWIPE_CLOSE_PX)) {
+        onClose();
+        return;
+      }
+      // Tap op de grab-handle (zonder drag) blijft sluiten; chevron is secundair.
+      if (fromGrab && !moved) onClose();
     },
     [onClose],
   );
@@ -230,39 +314,48 @@ export default function V2CycleDiscoverSheet({
         onClick={onClose}
       />
       <div
+        ref={panelRef}
         id="v2-cycle-discover-sheet"
         className="v2-info-sheet__panel v2-cycle-discover-sheet__panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        style={dragY > 0 ? { transform: `translateY(${dragY}px)` } : undefined}
-        onPointerDown={(e) => {
-          if ((e.target as HTMLElement).closest("button, a, [role='switch']")) {
-            return;
-          }
-          dragStartY.current = e.clientY;
-        }}
-        onPointerMove={(e) => {
-          if (dragStartY.current == null) return;
-          const delta = Math.max(0, e.clientY - dragStartY.current);
-          setDragY(delta);
-        }}
+        style={
+          dragY > 0
+            ? { transform: `translateY(${dragY}px)`, transition: "none" }
+            : undefined
+        }
+        onPointerMove={onPointerMove}
         onPointerUp={(e) => endDrag(e.clientY)}
         onPointerCancel={() => {
           dragStartY.current = null;
+          dragMoved.current = false;
+          dragFromGrab.current = false;
           setDragY(0);
         }}
       >
-        <button
-          type="button"
+        <div
           className="v2-cycle-discover-sheet__grab"
+          data-sheet-drag
+          role="button"
+          tabIndex={0}
           aria-label={t("cycle.discoverCloseAria")}
-          onClick={onClose}
+          onPointerDown={(e) => beginDrag(e, true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onClose();
+            }
+          }}
         >
           <span className="v2-cycle-discover-hint__handle" aria-hidden />
-        </button>
+        </div>
 
-        <div className="v2-cycle-discover-sheet__head">
+        <div
+          className="v2-cycle-discover-sheet__head"
+          data-sheet-drag
+          onPointerDown={(e) => beginDrag(e, false)}
+        >
           <span className="v2-cycle-discover-sheet__head-icon" aria-hidden>
             <CycleDiscoverIcon size={30} />
           </span>

@@ -1,4 +1,4 @@
-/** Eerste-bezoek hint voor info-icoon animatie (per apparaat). */
+/** Eerste-bezoek hint voor info-icoon animatie (per apparaat, per infoId). */
 const INFO_SEEN_PREFIX = "info_seen_";
 const INFO_DISMISSED_PREFIX = "info_dismissed_";
 

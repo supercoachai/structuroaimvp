@@ -36,6 +36,13 @@ import {
 import { v2ActiveMicroStepIndex, v2EnergyToMicro } from "./v2FocusMicro";
 import { estimateFocusDurationBucket } from "./v2FocusDurationEstimate";
 import {
+  clampFocusCustomMinutes,
+  parseFocusCustomMinutes,
+  V2_FOCUS_CUSTOM_BUCKET_KEY,
+  V2_FOCUS_CUSTOM_MAX,
+  V2_FOCUS_CUSTOM_MIN,
+} from "./v2FocusCustomMinutes";
+import {
   addV2DumpItem,
   loadV2Dump,
   saveV2Dump,
@@ -45,7 +52,7 @@ import {
 type Bucket = {
   key: string;
   minutes: number;
-  durationBucket: Exclude<V2DurationBucket, null>;
+  durationBucket: Exclude<V2DurationBucket, null> | "custom";
 };
 
 /** Grove bakken in plaats van een minuten-input (tijdblindheid). */
@@ -72,6 +79,26 @@ function bucketByDuration(
   return BUCKETS.find((b) => b.durationBucket === durationBucket) ?? BUCKETS[0];
 }
 
+function makeCustomBucket(minutes: number): Bucket {
+  return {
+    key: V2_FOCUS_CUSTOM_BUCKET_KEY,
+    minutes: clampFocusCustomMinutes(minutes),
+    durationBucket: "custom",
+  };
+}
+
+function bucketFromSnapshot(
+  bucketKey: string,
+  totalSecs: number,
+  remaining: number,
+): Bucket | null {
+  if (bucketKey === V2_FOCUS_CUSTOM_BUCKET_KEY) {
+    const fromTotal = totalSecs > 0 ? totalSecs / 60 : remaining / 60;
+    return makeCustomBucket(fromTotal > 0 ? fromTotal : V2_FOCUS_CUSTOM_MIN);
+  }
+  return BUCKETS.find((x) => x.key === bucketKey) ?? null;
+}
+
 export default function FocusV2Client() {
   const go = useV2Go();
   const { t, locale } = useI18n();
@@ -92,9 +119,13 @@ export default function FocusV2Client() {
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [suggestDismissed, setSuggestDismissed] = useState(false);
   const [selfEstimateOpen, setSelfEstimateOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState("");
+  const [customHint, setCustomHint] = useState<string | null>(null);
   const [parkDraft, setParkDraft] = useState("");
   const [parkHint, setParkHint] = useState<string | null>(null);
   const suggestShownRef = useRef(false);
+  const customInputRef = useRef<HTMLInputElement | null>(null);
   const parkHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -107,12 +138,18 @@ export default function FocusV2Client() {
   const bucketLabel = (b: Bucket) => {
     if (b.durationBucket === "short") return t("v2.focusBucketShort");
     if (b.durationBucket === "medium") return t("v2.focusBucketMedium");
+    if (b.durationBucket === "custom") {
+      return t("v2.focusRingMinutesCustom", { n: String(b.minutes) });
+    }
     return t("v2.focusBucketLong");
   };
 
   const ringMinutesLabel = (b: Bucket) => {
     if (b.durationBucket === "short") return t("v2.focusRingMinutesShort");
     if (b.durationBucket === "medium") return t("v2.focusRingMinutesMedium");
+    if (b.durationBucket === "custom") {
+      return t("v2.focusRingMinutesCustom", { n: String(b.minutes) });
+    }
     return t("v2.focusRingMinutesLong");
   };
 
@@ -121,14 +158,27 @@ export default function FocusV2Client() {
     setSuggestDismissed(false);
     setSuggestError(null);
     setSelfEstimateOpen(false);
+    setCustomOpen(false);
+    setCustomMinutes("");
+    setCustomHint(null);
     suggestShownRef.current = false;
   }, [thingLabel]);
+
+  useEffect(() => {
+    if (!customOpen) return;
+    const id = window.setTimeout(() => customInputRef.current?.focus(), 50);
+    return () => window.clearTimeout(id);
+  }, [customOpen]);
 
   // Hervat na refresh / distractie.
   useEffect(() => {
     const snap = loadV2FocusTimer(thingLabel);
     if (snap) {
-      const b = BUCKETS.find((x) => x.key === snap.bucketKey) ?? null;
+      const b = bucketFromSnapshot(
+        snap.bucketKey,
+        snap.totalSecs,
+        snap.remaining,
+      );
       if (b) {
         setBucket(b);
         // Extended = open-ended: nooit restant-MM:SS hervatten.
@@ -357,7 +407,18 @@ export default function FocusV2Client() {
     setPaused(false);
     setRunning(true);
     setSelfEstimateOpen(false);
+    setCustomOpen(false);
+    setCustomHint(null);
     recordV2FocusStart(thingLabel);
+  };
+
+  const startCustom = () => {
+    const mins = parseFocusCustomMinutes(customMinutes);
+    if (mins == null) {
+      setCustomHint(t("v2.focusCustomInvalid"));
+      return;
+    }
+    start(makeCustomBucket(mins));
   };
 
   /** Zachte verlenging: +kort bakje, klok blijft verborgen. */
@@ -411,6 +472,9 @@ export default function FocusV2Client() {
     setRemaining(0);
     setTotalSecs(0);
     setSelfEstimateOpen(false);
+    setCustomOpen(false);
+    setCustomMinutes("");
+    setCustomHint(null);
     clearV2FocusTimer();
   };
 
@@ -665,6 +729,58 @@ export default function FocusV2Client() {
                     {bucketLabel(b)}
                   </button>
                 ))}
+                {!customOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomOpen(true);
+                      setCustomHint(null);
+                    }}
+                    className="v2-link"
+                  >
+                    {t("v2.focusCustomPick")}
+                  </button>
+                ) : (
+                  <form
+                    className="v2-focus-custom"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      startCustom();
+                    }}
+                  >
+                    <label className="sr-only" htmlFor="v2-focus-custom-min">
+                      {t("v2.focusCustomAria")}
+                    </label>
+                    <input
+                      ref={customInputRef}
+                      id="v2-focus-custom-min"
+                      type="number"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      min={V2_FOCUS_CUSTOM_MIN}
+                      max={V2_FOCUS_CUSTOM_MAX}
+                      value={customMinutes}
+                      onChange={(e) => {
+                        setCustomMinutes(e.target.value);
+                        setCustomHint(null);
+                      }}
+                      placeholder={t("v2.focusCustomPh")}
+                      className="v2-focus-custom__input"
+                    />
+                    <button
+                      type="submit"
+                      className="btn-ghost w-full"
+                      disabled={parseFocusCustomMinutes(customMinutes) == null}
+                    >
+                      {t("v2.focusCustomStart")}
+                    </button>
+                    {customHint ? (
+                      <p className="v2-focus-custom__hint" role="status">
+                        {customHint}
+                      </p>
+                    ) : null}
+                  </form>
+                )}
               </div>
             )}
           </div>

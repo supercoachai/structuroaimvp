@@ -2,29 +2,52 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { clearStructuroLocalModeCookie } from "@/lib/localModeSession";
+
+import { V2Eyebrow, V2Header, V2Page } from "@/components/v2/V2Chrome";
+import V2LanguageToggle from "@/components/v2/V2LanguageToggle";
+import { v2Styles } from "@/components/v2/theme";
+import { useClientMounted } from "@/hooks/useClientMounted";
 import { markCheckoutStarted } from "@/lib/checkoutReturnStorage";
+import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
 import { useI18n } from "@/lib/i18n";
+import { clearStructuroLocalModeCookie } from "@/lib/localModeSession";
 import { setCreateWelcomeTaskFlag } from "@/lib/onboardingWelcomeTask";
-import {
-  defaultRegisterPlanId,
-  REGISTER_PLANS,
-  type RegisterPlanId,
-} from "@/lib/stripe/registerPlans";
-import { profileHasAppAccess } from "@/lib/subscriptionAccess";
-import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
-import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
-import { RegistrerenShell } from "./RegistrerenShell";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import {
   applySignupAttributionFromSearchParams,
   getStoredSignupSource,
   resolveRegistrationTrialDays,
 } from "@/lib/posthog/signupAttribution";
-import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
+import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
+import type { RetentionStats } from "@/lib/retentionStats";
+import { isRegistrationCheckoutEnabledClient } from "@/lib/stripe/registrationLaunch";
+import {
+  defaultRegisterPlanId,
+  REGISTER_PLANS,
+  type RegisterPlanId,
+} from "@/lib/stripe/registerPlans";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
-import { useClientMounted } from "@/hooks/useClientMounted";
+import { createClient } from "@/lib/supabase/client";
+import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+
+function emptyStats(trialDays: number): RetentionStats {
+  return {
+    trialDays,
+    daysActive: 0,
+    tasksCompleted: 0,
+    openTasks: 0,
+    streakFilled: 0,
+  };
+}
+
+function Stat({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="v2-abonnement__stat">
+      <div className="v2-abonnement__stat-n">{n}</div>
+      <div className="v2-abonnement__stat-l">{label}</div>
+    </div>
+  );
+}
 
 function RegistrerenPlanInner() {
   const { t } = useI18n();
@@ -34,6 +57,9 @@ function RegistrerenPlanInner() {
   const cancelled = searchParams?.get("cancelled") === "1";
   const confirmed = searchParams?.get("confirmed") === "1";
   const resume = searchParams?.get("resume") === "1";
+  const preview =
+    searchParams?.get("preview") === "1" &&
+    process.env.NODE_ENV === "development";
 
   const [selectedPlanId] = useState<RegisterPlanId>(defaultRegisterPlanId());
   const [welcomeTaskOptIn] = useState(true);
@@ -44,6 +70,7 @@ function RegistrerenPlanInner() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [trialDays, setTrialDays] = useState<number | null>(null);
+  const [stats, setStats] = useState<RetentionStats | null>(null);
   const [showYearlyOption, setShowYearlyOption] = useState(false);
   const mounted = useClientMounted();
   const planViewTrackedRef = useRef(false);
@@ -53,10 +80,11 @@ function RegistrerenPlanInner() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (preview) return;
     if (!isRegistrationCheckoutEnabledClient()) {
       router.replace("/login");
     }
-  }, [router]);
+  }, [preview, router]);
 
   useEffect(() => {
     if (cancelled) {
@@ -69,6 +97,22 @@ function RegistrerenPlanInner() {
   }, [cancelled, confirmed, resume, t]);
 
   useEffect(() => {
+    if (!preview) return;
+    setTrialDays(3);
+    setStats({
+      trialDays: 3,
+      daysActive: 2,
+      tasksCompleted: 7,
+      openTasks: 2,
+      streakFilled: 2,
+    });
+    setUserId("preview");
+    setUserEmail("preview@structuro.local");
+    setSessionChecked(true);
+  }, [preview]);
+
+  useEffect(() => {
+    if (preview) return;
     let cancelledEffect = false;
     (async () => {
       let readyToShowPlan = false;
@@ -141,7 +185,28 @@ function RegistrerenPlanInner() {
           getStoredSignupSource()
         );
 
+        let nextStats = emptyStats(days);
+        try {
+          const res = await fetch("/api/abonnement/retention-stats", {
+            credentials: "include",
+          });
+          if (res.ok) {
+            const body = (await res.json()) as RetentionStats;
+            nextStats = {
+              trialDays: body.trialDays > 0 ? body.trialDays : days,
+              daysActive: body.daysActive ?? 0,
+              tasksCompleted: body.tasksCompleted ?? 0,
+              openTasks: body.openTasks ?? 0,
+              streakFilled: body.streakFilled ?? 0,
+            };
+          }
+        } catch {
+          /* best-effort */
+        }
+
+        if (cancelledEffect) return;
         setTrialDays(days);
+        setStats(nextStats);
         setUserId(user.id);
         setUserEmail(user.email ?? null);
         readyToShowPlan = true;
@@ -156,10 +221,12 @@ function RegistrerenPlanInner() {
     return () => {
       cancelledEffect = true;
     };
-  }, [router, cancelled, confirmed, resume, t]);
+  }, [preview, router, cancelled, confirmed, resume, t]);
 
   useEffect(() => {
-    if (!mounted || !sessionChecked || !userId || planViewTrackedRef.current) return;
+    if (preview) return;
+    if (!mounted || !sessionChecked || !userId || planViewTrackedRef.current)
+      return;
     planViewTrackedRef.current = true;
     trackRegistrationFunnelServer("registreren_plan_viewed", {
       plan_id: "monthly",
@@ -167,13 +234,17 @@ function RegistrerenPlanInner() {
       cancelled,
       resume,
     });
-  }, [mounted, sessionChecked, userId, cancelled, resume]);
+  }, [preview, mounted, sessionChecked, userId, cancelled, resume]);
 
   const monthlyPlan = REGISTER_PLANS.find((p) => p.id === "monthly")!;
   const checkoutPlan =
     REGISTER_PLANS.find((p) => p.id === selectedPlanId) ?? monthlyPlan;
 
   async function handleLogout() {
+    if (preview) {
+      router.replace("/registreren");
+      return;
+    }
     try {
       await createClient().auth.signOut();
     } catch {
@@ -186,6 +257,10 @@ function RegistrerenPlanInner() {
 
   async function startCheckout(priceId: string) {
     if (!userId || !userEmail) return;
+    if (preview) {
+      setInfo("Preview: checkout staat uit lokaal.");
+      return;
+    }
 
     setCreateWelcomeTaskFlag(welcomeTaskOptIn);
 
@@ -244,7 +319,9 @@ function RegistrerenPlanInner() {
 
       await startCheckout(checkoutPlan.priceId);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("registrerenPage.errCheckout"));
+      setError(
+        err instanceof Error ? err.message : t("registrerenPage.errCheckout")
+      );
     } finally {
       setCheckoutLoading(false);
     }
@@ -263,90 +340,192 @@ function RegistrerenPlanInner() {
       const yearlyPlan = REGISTER_PLANS.find((p) => p.id === "yearly")!;
       await startCheckout(yearlyPlan.priceId);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t("registrerenPage.errCheckout"));
+      setError(
+        err instanceof Error ? err.message : t("registrerenPage.errCheckout")
+      );
     } finally {
       setCheckoutLoading(false);
     }
   }
 
-  if (!mounted || !sessionChecked || !userId || !userEmail || trialDays === null) {
+  if (
+    !mounted ||
+    !sessionChecked ||
+    !userId ||
+    !userEmail ||
+    trialDays === null ||
+    !stats
+  ) {
     return (
-      <RegistrerenShell page="plan" info={info}>
-        <p className="text-center text-sm text-slate-500">{t("registrerenPage.loading")}</p>
-      </RegistrerenShell>
+      <V2Page>
+        <V2Header brandMode="flow" trailing={<V2LanguageToggle />} />
+        <p style={{ ...v2Styles.body, textAlign: "center", marginTop: 48 }}>
+          {t("registrerenPage.loading")}
+        </p>
+      </V2Page>
     );
   }
 
+  const displayTrialDays =
+    stats.trialDays > 0 ? stats.trialDays : trialDays > 0 ? trialDays : 3;
+  const hasBuiltSomething =
+    stats.daysActive > 0 || stats.tasksCompleted > 0 || stats.openTasks > 0;
+
   return (
-    <RegistrerenShell page="plan" error={error} info={info}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
-        <div className="flex min-h-full flex-col justify-center py-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex w-full max-w-sm flex-col gap-5 px-1 text-center">
-            <p className="text-[11px] leading-tight text-slate-400">
-              {t("registrerenPage.resumeAs", { email: userEmail })}
-            </p>
+    <V2Page>
+      <V2Header
+        brandMode="flow"
+        exitHref="https://www.structuro.eu"
+        exitLabel={t("registrerenPage.backLink")}
+        trailing={<V2LanguageToggle />}
+      />
 
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-                {t("registrerenPage.planTrialHeadline", { days: String(trialDays) })}
-              </h2>
-              <p className="text-sm leading-relaxed text-slate-600">
-                {t("registrerenPage.planTrialSub")}
-              </p>
+      <div className="v2-abonnement v2-fade">
+        <V2Eyebrow>{t("registrerenPage.planTrialHeadline")}</V2Eyebrow>
+        <h1
+          style={{
+            ...v2Styles.title,
+            fontSize: "var(--fs-display)",
+            marginTop: 8,
+          }}
+        >
+          {hasBuiltSomething
+            ? t("registrerenPage.planBuiltHeadline", {
+                days: String(displayTrialDays),
+              })
+            : t("registrerenPage.planTrialHeadline")}
+        </h1>
+
+        {hasBuiltSomething ? (
+          <section
+            className="v2-abonnement__built"
+            aria-label={t("registrerenPage.planBuiltLabel")}
+          >
+            <p className="v2-abonnement__built-label">
+              {t("registrerenPage.planBuiltLabel")}
+            </p>
+            <div className="v2-abonnement__stats">
+              <Stat
+                n={stats.daysActive}
+                label={t("registrerenPage.planStatDays")}
+              />
+              <Stat
+                n={stats.tasksCompleted}
+                label={t("registrerenPage.planStatDone")}
+              />
+              <Stat
+                n={stats.openTasks}
+                label={t("registrerenPage.planStatOpen")}
+              />
             </div>
+          </section>
+        ) : null}
 
-            <button
-              type="button"
-              disabled={checkoutLoading}
-              onClick={() => void handleStartSelected()}
-              className="flex w-full items-center justify-center rounded-xl border-none bg-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.22)] transition-all duration-200 hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {checkoutLoading
-                ? t("registrerenPage.submitBusy")
-                : t("registrerenPage.planCtaTrial")}
-            </button>
+        <p style={{ ...v2Styles.body, marginTop: 4 }}>
+          {hasBuiltSomething
+            ? t("registrerenPage.planBuiltLead", {
+                days: String(displayTrialDays),
+              })
+            : t("registrerenPage.planTrialSub")}
+        </p>
 
-            <p className="text-xs leading-relaxed text-slate-500">
-              {t("registrerenPage.planTrialFootnote")}
-            </p>
+        {info ? (
+          <p
+            style={{
+              ...v2Styles.body,
+              marginTop: 12,
+              fontSize: 14,
+              color: "var(--text-muted)",
+            }}
+          >
+            {info}
+          </p>
+        ) : null}
 
-            <p className="text-xs leading-relaxed text-slate-400">
-              {t("registrerenPage.renewalDisclosure")}
-            </p>
+        {error ? (
+          <p
+            role="alert"
+            style={{
+              ...v2Styles.body,
+              marginTop: 12,
+              fontSize: 14,
+              color: "var(--danger, #b42318)",
+            }}
+          >
+            {error}
+          </p>
+        ) : null}
 
+        <section className="v2-abonnement__decision">
+          <button
+            type="button"
+            className="btn-primary w-full"
+            disabled={checkoutLoading}
+            onClick={() => void handleStartSelected()}
+          >
+            {checkoutLoading
+              ? t("registrerenPage.submitBusy")
+              : t("registrerenPage.planCtaStay")}
+          </button>
+
+          <p className="v2-abonnement__price">
+            {t("registrerenPage.planPriceLine")}
+          </p>
+
+          <div className="v2-abonnement__secondary">
             {showYearlyOption ? (
               <button
                 type="button"
+                className="v2-link"
                 disabled={checkoutLoading}
                 onClick={() => void handleStartYearly()}
-                className="text-xs font-medium text-blue-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t("registrerenPage.planYearlyCta")}
               </button>
             ) : (
               <button
                 type="button"
+                className="v2-link"
                 disabled={checkoutLoading}
                 onClick={() => setShowYearlyOption(true)}
-                className="text-xs text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t("registrerenPage.planYearlyReveal")}
               </button>
             )}
-
-            <p>
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="text-xs text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline"
-              >
-                {t("registrerenPage.logoutLink")}
-              </button>
-            </p>
           </div>
-        </div>
+        </section>
+
+        <p className="v2-abonnement__trust">
+          {t("registrerenPage.planTrust")}
+          <br />
+          {t("registrerenPage.planTrialFootnote")}
+        </p>
+
+        <p style={{ textAlign: "center", marginTop: 8 }}>
+          <button
+            type="button"
+            className="v2-link"
+            onClick={() => void handleLogout()}
+          >
+            {t("registrerenPage.logoutLink")}
+          </button>
+        </p>
+
+        {userEmail ? (
+          <p
+            style={{
+              ...v2Styles.body,
+              fontSize: 12,
+              textAlign: "center",
+              opacity: 0.55,
+              marginTop: 4,
+            }}
+          >
+            {t("registrerenPage.resumeAs", { email: userEmail })}
+          </p>
+        ) : null}
       </div>
-    </RegistrerenShell>
+    </V2Page>
   );
 }
 
@@ -354,9 +533,11 @@ export default function RegistrerenPlanClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
-          …
-        </div>
+        <V2Page>
+          <p style={{ ...v2Styles.body, textAlign: "center", marginTop: 48 }}>
+            …
+          </p>
+        </V2Page>
       }
     >
       <RegistrerenPlanInner />

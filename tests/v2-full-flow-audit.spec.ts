@@ -255,12 +255,12 @@ test.describe("V2 full flow audit ×2", () => {
 
     await clearV2(page);
     await runOnboarding(page, "Laag", { adjust: true });
-    await expect(page.getByText(/Energie:\s*laag/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel(/Energie:\s*laag/i)).toBeVisible({ timeout: 10_000 });
     findings.push({ severity: "ok", where: "onboarding laag+adjust", detail: "Home bereikt" });
 
     await clearV2(page);
     await runOnboarding(page, "Hoog", { cycle: true });
-    await expect(page.getByText(/Energie:\s*hoog/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel(/Energie:\s*hoog/i)).toBeVisible({ timeout: 10_000 });
     const thingsCount = await page.evaluate(() => {
       try {
         return (JSON.parse(localStorage.getItem("v2_journey") || "{}").things || []).length;

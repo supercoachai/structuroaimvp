@@ -15,12 +15,12 @@
 <link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260722d"/>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
 <script defer src="/js/analytics.js?v=20260724a"></script>
-<script defer src="/v2/v2-i18n.js?v=20260723n"></script>
-<script defer src="/v2/v2-motion.js?v=20260724mq"></script>
+<script defer src="/v2/v2-i18n.js?v=20260725b"></script>
+<script defer src="/v2/v2-motion.js?v=20260725b"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/v2/v2-tokens.css">
-<link rel="stylesheet" href="/v2/v2-landing.css?v=20260724mq2">
+<link rel="stylesheet" href="/v2/v2-landing.css?v=20260725b">
 </head>
 <body>
 
@@ -34,7 +34,7 @@
 <a href="#faq" data-i18n="nav_faq">FAQ</a>
 </nav>
 <div class="nav-cta">
-<a class="login" href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav_signin" data-ph-cta="nav_signin" data-i18n="nav_login">Inloggen</a>
+<a class="login" href="https://www.structuro.ai/v2/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav_signin" data-ph-cta="nav_signin" data-i18n="nav_login">Inloggen</a>
 <a class="btn btn-navy" href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=nav" data-signup-bridge="nav" data-ph-cta="nav" data-i18n="nav_cta">Start 3 dagen gratis</a>
 </div>
 <div class="lang" data-i18n-aria="lang_label" aria-label="Taal">
@@ -54,7 +54,7 @@
 <a href="#proof" data-i18n="nav_reviews">Reviews</a>
 <a href="#prijs" data-i18n="nav_price">Prijs</a>
 <a href="#faq" data-i18n="nav_faq">FAQ</a>
-<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_signin" data-ph-cta="mobile_signin" data-i18n="nav_login">Inloggen</a>
+<a href="https://www.structuro.ai/v2/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_signin" data-ph-cta="mobile_signin" data-i18n="nav_login">Inloggen</a>
 <a href="https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=mobile_nav" data-signup-bridge="mobile_nav" data-ph-cta="mobile_nav" data-i18n="nav_cta">Start 3 dagen gratis</a>
 </nav>
 </header>
@@ -97,8 +97,8 @@
 </div>
 <p class="serif home-card-title" data-home-title data-i18n="phone_task2">Eén glas water pakken</p>
 <ul class="home-micro">
-<li><span class="home-micro-chk"></span><span data-i18n="phone_home_micro1">Open het document</span></li>
-<li><span class="home-micro-chk is-done">✓</span><span class="is-done" data-i18n="phone_home_micro2">Zet timer klaar</span></li>
+<li><span class="home-micro-chk"></span><span data-i18n="phone_home_micro1">Glas pakken</span></li>
+<li><span class="home-micro-chk is-done">✓</span><span class="is-done" data-i18n="phone_home_micro2">Kraan open</span></li>
 </ul>
 <div class="p-btn home-focus-btn" data-i18n="phone_home_focus">Start focus</div>
 <button type="button" class="home-other" tabindex="-1" data-i18n="phone_home_other">Andere taak</button>
@@ -134,10 +134,10 @@
 <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
 <div class="phone-screen phone-screen--energy">
 <div class="p-nav"><span>Structuro</span><span class="muted" data-i18n="phone_stop">Stoppen</span></div>
-<div class="p-prog"><i class="on"></i><i></i><i></i></div>
+<div class="p-prog"><i class="on"></i><i></i></div>
 <div class="phone-energy-stack">
 <div class="orb orb--flat"></div>
-<p class="serif phone-energy-title" data-i18n="phone_energy">Hoe zit je energie?</p>
+<p class="serif phone-energy-title" data-energy-title data-i18n="phone_suggest_title">Dit stelt Structuro voor.</p>
 <p class="phone-tap-hint" data-i18n="phone_tap_hint">Tik wat klopt. Voorstellen volgen meteen.</p>
 <div class="pills">
 <div class="pill is-active" data-pill="low" data-i18n="phone_low">Laag</div>
@@ -149,6 +149,22 @@
 <span data-feasible="ok" data-i18n="phone_feasible_ok">Twee dingen zijn haalbaar.</span>
 <span data-feasible="high" data-i18n="phone_feasible_high">Drie dingen passen vandaag.</span>
 </p>
+<div class="p-tasks p-tasks--energy">
+<div class="p-task"><span class="chk">1</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl" data-i18n="phone_task2">Eén glas water pakken</span></div>
+<div class="p-task"><span class="chk">2</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#7BA89A" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#7BA89A"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#7BA89A"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task1">Aan dat ene project beginnen</span></div>
+<div class="p-task"><span class="chk">3</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#2D7A6E" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#2D7A6E"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task3">Inbox opruimen</span></div>
+</div>
+<div class="p-btn p-btn--energy" data-i18n="phone_confirm">Dit is goed</div>
+<div class="p-quiet p-quiet--energy" data-i18n="phone_edit">Zelf aanpassen</div>
+</div>
+<div class="cycle-discover-hint" data-discover-hint>
+<span class="cycle-discover-hint__handle" aria-hidden="true"></span>
+<span class="cycle-discover-hint__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 28 28" fill="none"><circle cx="12" cy="14" r="7.5" fill="#2d5a56" fill-opacity="0.88"/><circle cx="17.5" cy="14" r="7.5" fill="#a89bc8" fill-opacity="0.72" stroke="rgba(255,255,255,0.55)" stroke-width="1"/></svg></span>
+<span class="cycle-discover-hint__label">
+<span class="cycle-discover-hint__eyebrow" data-i18n="cycle_discover_eyebrow">Eenmalig instellen</span>
+<span class="cycle-discover-hint__text" data-i18n="cycle_discover_hint">Je cyclus meenemen?</span>
+</span>
+<span class="cycle-discover-hint__chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
 </div>
 </div>
 </div>
@@ -176,7 +192,7 @@
 <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
 <div class="phone-screen phone-screen--tasks">
 <div class="p-nav"><span>Structuro</span><span class="muted" data-i18n="phone_stop">Stoppen</span></div>
-<div class="p-prog"><i class="on"></i><i class="on"></i><i></i></div>
+<div class="p-prog"><i class="on"></i><i></i></div>
 <p class="serif phone-suggest-title" data-i18n="phone_suggest_title">Dit stelt Structuro voor.</p>
 <div class="p-tasks">
 <div class="p-task"><span class="chk">1</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl" data-i18n="phone_task1">Aan dat ene project beginnen</span></div>
@@ -202,7 +218,7 @@
 <p class="support" data-i18n="feat3_p">Geen dashboard vol keuzes. Kies een duur, laat Structuro mini-stappen voorstellen, werk één ding af. Pauze mag altijd.</p>
 </div>
 <div class="feature-visual" data-reveal>
-<div class="phone" data-demo="focus" data-demo-default="run" data-state="run" aria-hidden="true">
+<div class="phone" data-demo="focus" data-demo-default="ready" data-state="ready" aria-hidden="true">
 <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
@@ -223,14 +239,12 @@
 </svg>
 <div class="focus-ring-inner">
 <span class="focus-dots">···</span>
-<span class="focus-clock">--:--</span>
-<span class="focus-bucket" data-i18n="phone_focus_estimate">ongeveer 15 min</span>
+<span class="focus-approx" data-i18n="phone_focus_approx">ongeveer</span>
+<span class="focus-bucket" data-i18n="phone_focus_bucket">15 min</span>
+<span class="focus-extended-soft" data-i18n="phone_focus_still">Nog even bezig</span>
 </div>
 </div>
-<div class="focus-done-bubble" aria-hidden="true">
-<p class="serif" data-i18n="phone_focus_done_title">Tijd om<br>te kiezen</p>
-<p data-i18n="phone_focus_done_sub">Ben je klaar, of nog even bezig?</p>
-</div>
+<div class="focus-done-mark" aria-hidden="true"><span>✓</span></div>
 <div class="focus-micro-suggest" aria-hidden="true">
 <p class="focus-micro-suggest__title" data-i18n="phone_focus_suggest_title">Opsplitsen in kleine stappen?</p>
 <p class="focus-micro-suggest__lead" data-i18n="phone_focus_suggest_lead">Klein beginnen maakt starten makkelijker.</p>
@@ -238,8 +252,8 @@
 <div class="focus-micro-suggest__skip" data-i18n="phone_focus_suggest_skip">Niet nu</div>
 </div>
 <ul class="focus-micro" aria-hidden="true">
-<li data-focus-micro="1"><span class="focus-micro-chk"></span><span data-i18n="phone_home_micro1">Open het document</span></li>
-<li data-focus-micro="2"><span class="focus-micro-chk is-done">✓</span><span class="is-done" data-i18n="phone_home_micro2">Zet timer klaar</span></li>
+<li data-focus-micro="1"><span class="focus-micro-chk"></span><span data-i18n="phone_home_micro1">Glas pakken</span></li>
+<li data-focus-micro="2"><span class="focus-micro-chk is-done">✓</span><span class="is-done" data-i18n="phone_home_micro2">Kraan open</span></li>
 </ul>
 <div class="focus-actions focus-actions--ready">
 <div class="focus-bucket-btn is-primary" data-i18n="phone_focus_start">Start focus</div>
@@ -250,6 +264,7 @@
 <span class="focus-pause-label" data-i18n="phone_focus_pause">Pauze</span>
 <span class="focus-resume-label" data-i18n="phone_focus_resume">Verder</span>
 </div>
+<div class="p-quiet focus-quiet" data-i18n="phone_focus_extend">Iets langer</div>
 <div class="p-quiet focus-quiet" data-i18n="phone_focus_finish">Afronden</div>
 <div class="focus-park-field" aria-hidden="true">
 <span class="focus-park-field__input" data-i18n="phone_focus_park_ph">Parkeer een gedachte…</span>
@@ -274,10 +289,10 @@
 <button type="button" class="why-btn" data-why="cycle" data-i18n-aria="why_open_aria" aria-label="Waarom dit zo werkt">i</button>
 </div>
 <h2 class="serif" data-i18n="feat4_h2">Cyclus meenemen? Jij kiest.</h2>
-<p class="support" data-i18n="feat4_p">Geen verplichte setup. Zet cyclus aan in je dagstart als je patronen wilt zien. Of sla over.</p>
+<p class="support" data-i18n="feat4_p">Geen verplichte setup. Een peeker onderaan je dagstart: Eenmalig instellen. Inzicht naast je energie, nooit sturing.</p>
 </div>
 <div class="feature-visual" data-reveal>
-<div class="phone" data-demo="cycle" data-demo-default="on" data-state="on" aria-hidden="true">
+<div class="phone" data-demo="cycle" data-demo-default="hint" data-state="hint" aria-hidden="true">
 <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
@@ -285,38 +300,49 @@
 <span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
 <div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
 <div class="phone-screen phone-screen--cycle">
-<div class="p-nav p-nav--brand-only"><span>Structuro</span></div>
-<div class="cycle-stack">
-<div class="cycle-toggle"><span data-i18n="cycle_off">Zonder</span><span data-i18n="cycle_on">Cyclus</span></div>
-<div class="cycle-orb">
-<div class="cycle-ring" aria-hidden="true"></div>
-<div class="orb orb--flat"></div>
+<div class="p-nav"><span>Structuro</span><span class="muted" data-i18n="phone_stop">Stoppen</span></div>
+<div class="p-prog"><i class="on"></i><i></i></div>
+<div class="phone-energy-stack phone-energy-stack--cycle">
+<div class="orb orb--flat" style="background:#2D7A6E"></div>
+<p class="serif phone-energy-title" data-i18n="phone_suggest_title">Dit stelt Structuro voor.</p>
+<div class="pills">
+<div class="pill" data-i18n="phone_low">Laag</div>
+<div class="pill is-active" data-i18n="phone_ok">Genoeg</div>
+<div class="pill" data-i18n="phone_high">Hoog</div>
 </div>
-<div class="cycle-label-row">
-<p class="cycle-label" data-i18n="cycle_label">DAG 14 · FOLLICULAIR</p>
-<span class="cycle-info-btn" aria-hidden="true">i</span>
+<p class="p-feasible" style="opacity:1"><span data-i18n="phone_feasible_ok">Twee dingen zijn haalbaar.</span></p>
+<div class="p-tasks" style="flex:0">
+<div class="p-task is-in"><span class="chk">1</span><span class="lbl" data-i18n="phone_task2">Eén glas water pakken</span></div>
+<div class="p-task is-in"><span class="chk">2</span><span class="lbl" data-i18n="phone_task1">Aan dat ene project beginnen</span></div>
 </div>
-<p class="cycle-body-hint" data-i18n="cycle_hint">Alleen context. Geen druk.</p>
 </div>
-<div class="cycle-sheet" aria-hidden="true">
+<div class="cycle-discover-hint" data-discover-hint>
+<span class="cycle-discover-hint__handle" aria-hidden="true"></span>
+<span class="cycle-discover-hint__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 28 28" fill="none"><circle cx="12" cy="14" r="7.5" fill="#2d5a56" fill-opacity="0.88"/><circle cx="17.5" cy="14" r="7.5" fill="#a89bc8" fill-opacity="0.72" stroke="rgba(255,255,255,0.55)" stroke-width="1"/></svg></span>
+<span class="cycle-discover-hint__label">
+<span class="cycle-discover-hint__eyebrow" data-i18n="cycle_discover_eyebrow">Eenmalig instellen</span>
+<span class="cycle-discover-hint__text" data-i18n="cycle_discover_hint">Je cyclus meenemen?</span>
+</span>
+<span class="cycle-discover-hint__chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+</div>
+<div class="cycle-sheet cycle-sheet--discover" aria-hidden="true">
 <div class="cycle-sheet__handle"></div>
-<p class="cycle-sheet__eyebrow" data-i18n="cycle_sheet_eyebrow">JE CYCLUS · DAG 14 VAN 28</p>
-<p class="serif cycle-sheet__title" data-i18n="cycle_sheet_title">Folliculaire fase</p>
-<div class="cycle-sheet__phases" aria-hidden="true">
-<span class="cycle-sheet__phase" style="--v2-phase:#C4785A">Mens.</span>
-<span class="cycle-sheet__phase is-active" style="--v2-phase:#8FAE8B">Folliculair</span>
-<span class="cycle-sheet__phase" style="--v2-phase:#D4A04A">Ovul.</span>
-<span class="cycle-sheet__phase" style="--v2-phase:#A89BC8">Luteaal</span>
+<div class="cycle-sheet__head">
+<span class="cycle-sheet__head-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><circle cx="12" cy="14" r="7.5" fill="#2d5a56" fill-opacity="0.88"/><circle cx="17.5" cy="14" r="7.5" fill="#a89bc8" fill-opacity="0.72" stroke="rgba(255,255,255,0.55)" stroke-width="1"/></svg></span>
+<div>
+<p class="cycle-sheet__eyebrow" data-i18n="cycle_discover_eyebrow">Eenmalig instellen</p>
+<p class="serif cycle-sheet__title" data-i18n="cycle_discover_title">Je cyclus meenemen?</p>
 </div>
+</div>
+<p class="cycle-sheet__body" data-i18n="cycle_discover_body">Optioneel. Structuro toont je fase stil naast je energie: inzicht en een zachte reminder. Nooit sturing.</p>
 <div class="cycle-sheet__row">
-<strong data-i18n="cycle_sheet_meaning_title">Wat dit betekent</strong>
-<span data-i18n="cycle_sheet_meaning">Energie en focus nemen vaak geleidelijk toe in deze fase.</span>
+<strong data-i18n="cycle_discover_why_title">Waarom dit uitmaakt</strong>
+<span data-i18n="cycle_discover_why">Dezelfde taak kan in je lage dagen zwaarder voelen. Structuro toont die context; jij blijft kiezen.</span>
 </div>
-<div class="cycle-sheet__row">
-<strong data-i18n="cycle_sheet_plan_title">Hoe Structuro plant</strong>
-<span data-i18n="cycle_sheet_plan">Kleinere stappen vandaag. Zwaardere taken later in je cyclus.</span>
+<div class="cycle-sheet__actions">
+<div class="cycle-sheet__cta cycle-sheet__cta--ghost" data-i18n="cycle_discover_no">Nee, niet nodig</div>
+<div class="cycle-sheet__cta" data-i18n="cycle_discover_yes">Ja, meenemen</div>
 </div>
-<div class="cycle-sheet__cta" data-i18n="cycle_sheet_gotit">Begrepen</div>
 </div>
 </div>
 </div>
@@ -424,7 +450,7 @@
 <a href="#dagstart" data-i18n="nav_how">Dagstart</a>
 <a href="#prijs" data-i18n="nav_price">Prijs</a>
 <a href="#faq" data-i18n="nav_faq">FAQ</a>
-<a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer_signin" data-ph-cta="footer_signin" data-i18n="nav_login">Inloggen</a>
+<a href="https://www.structuro.ai/v2/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer_signin" data-ph-cta="footer_signin" data-i18n="nav_login">Inloggen</a>
 <a href="mailto:info@structuro.eu">info@structuro.eu</a>
 </nav>
 </div>

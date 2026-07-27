@@ -18,8 +18,10 @@ export type V2DumpItem = {
 
 export const V2_DUMP_KEY = "v2_dump";
 export const V2_DUMP_DRAFT_KEY = "v2_dump_draft";
-export const V2_DUMP_MAX = 30;
-export const V2_DUMP_SOFT_WARN = 25;
+/** Open dump die nog een keuze nodig heeft vóór de volgende dump. */
+export const V2_DUMP_PENDING_KEY = "v2_dump_pending_id";
+export const V2_DUMP_MAX = 15;
+export const V2_DUMP_SOFT_WARN = 12;
 
 /** Oudere items krijgen een zachte "al een tijdje" hint (uren). */
 export const V2_DUMP_AGE_HOURS = 24;
@@ -113,6 +115,56 @@ export function clearV2DumpDraft(): void {
   saveV2DumpDraft("");
 }
 
+export function loadV2DumpPendingId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(V2_DUMP_PENDING_KEY);
+    return typeof raw === "string" && raw.length > 0 ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveV2DumpPendingId(id: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!id) {
+      window.localStorage.removeItem(V2_DUMP_PENDING_KEY);
+    } else {
+      window.localStorage.setItem(V2_DUMP_PENDING_KEY, id);
+    }
+  } catch {
+    // Privémodus kan storage blokkeren.
+  }
+}
+
+export function clearV2DumpPendingId(): void {
+  saveV2DumpPendingId(null);
+}
+
+/**
+ * True als er een open dump is die eerst een keuze nodig heeft
+ * (taak, weg, of zo laten) vóór een nieuwe dump.
+ */
+export function v2DumpNeedsDisposition(
+  items: V2DumpItem[],
+  pendingId: string | null = loadV2DumpPendingId(),
+): boolean {
+  if (!pendingId) return false;
+  const item = items.find((i) => i.id === pendingId);
+  if (!item) return false;
+  if (item.disposition === "today" || item.disposition === "rest") return false;
+  return true;
+}
+
+/** Laatste toegevoegde item (nieuwste createdAt). */
+export function v2DumpLatestItem(items: V2DumpItem[]): V2DumpItem | null {
+  if (items.length === 0) return null;
+  return items.reduce((latest, item) =>
+    item.createdAt >= latest.createdAt ? item : latest,
+  );
+}
+
 export function v2DumpCount(items?: V2DumpItem[]): number {
   const list = items ?? loadV2Dump();
   return list.filter((i) => i.disposition !== "today").length;
@@ -126,6 +178,7 @@ export function v2DumpActiveCount(items?: V2DumpItem[]): number {
 export function addV2DumpItem(content: string, items: V2DumpItem[]): V2DumpItem[] {
   const trimmed = content.trim();
   if (trimmed.length === 0) return items;
+  if (v2DumpAtMax(items)) return items;
   const next: V2DumpItem = {
     id: dumpId(),
     content: trimmed,
@@ -205,11 +258,11 @@ export function v2DumpEnergySuggestions(
 }
 
 export function v2DumpSoftWarn(items: V2DumpItem[]): boolean {
-  return items.length >= V2_DUMP_SOFT_WARN;
+  return v2DumpCount(items) >= V2_DUMP_SOFT_WARN;
 }
 
 export function v2DumpAtMax(items: V2DumpItem[]): boolean {
-  return items.length >= V2_DUMP_MAX;
+  return v2DumpCount(items) >= V2_DUMP_MAX;
 }
 
 /** Zichtbare dump-items (niet al naar vandaag). */

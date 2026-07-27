@@ -32,24 +32,24 @@
       userName: 'Sarah',
       cycleBtnDay: 'Dag 14',
       hints: {
-        energy: 'Kies je energie. Tik op Cyclus rechtsboven voor je fase vandaag.',
+        energy: 'Kies je energie. Voorstellen volgen meteen. Onderaan: cyclus meenemen (optioneel).',
         choice: 'Stap 2: laat Structuro voorstellen of swipe zelf.',
-        suggested: 'Stap 3: haal weg wat niet past. Maximaal afhankelijk van je energie.',
-        swipe: 'Stap 3: links overslaan, rechts houden. Stop als je genoeg hebt.',
+        suggested: 'Haal weg wat niet past. Maximaal afhankelijk van je energie.',
+        swipe: 'Links overslaan, rechts houden. Stop als je genoeg hebt.',
         done: 'Dagstart opgeslagen. Zo eindigt de flow in de app.',
-        home: 'Dit is je dashboard: één actieblok. De rest wacht.',
+        home: 'Dit is je home: één taak aan zet. De rest wacht.',
       },
       cyclePhase: 'Ovulatie',
       cycleDay: 'Dag 14/28',
-      cycleBio: 'Veel mensen ervaren meer helderheid.',
+      cycleBio: 'Je fase staat stil naast je energie.',
       cycleTip:
-        'Voel je je helder en energiek? Hoog kan passen. Voel je je toch rustiger? Genoeg of laag is prima.',
+        'Alleen inzicht en een zachte reminder. Nooit sturing: jij kiest hoeveel en wat.',
       matchMatch: 'Past bij je fase',
       matchSoftHigher: 'Hoger dan je fase aangeeft',
       matchSoftLower: 'Lager dan je fase aangeeft',
       matchStrong: 'Afwijkend van fasepatroon',
       suggestSubLow: 'Past bij lage energie. Max 1 taak.',
-      suggestSubNormal: 'Past bij normale energie. Max 2 taken.',
+      suggestSubNormal: 'Past bij genoeg energie. Max 2 taken.',
       suggestSubHigh: 'Past bij hoge energie. Max 3 taken.',
       swipeSub: 'Links = niet vandaag. Rechts = wel vandaag.',
       swipeHintSkip: '← Niet vandaag',
@@ -82,24 +82,24 @@
       userName: 'Sarah',
       cycleBtnDay: 'Day 14',
       hints: {
-        energy: 'Pick your energy. Tap Cycle top-right for today\'s phase.',
+        energy: 'Pick your energy. Suggestions follow right away. Bottom: include cycle (optional).',
         choice: 'Step 2: let Structuro suggest or swipe yourself.',
-        suggested: 'Step 3: remove what does not fit. Max depends on your energy.',
-        swipe: 'Step 3: skip left, keep right. Stop when you have enough.',
+        suggested: 'Remove what does not fit. Max depends on your energy.',
+        swipe: 'Skip left, keep right. Stop when you have enough.',
         done: 'Day start saved. This is how the flow ends in the app.',
-        home: 'This is your dashboard: one action block. The rest waits.',
+        home: 'This is your home: one task up now. The rest waits.',
       },
       cyclePhase: 'Ovulation',
       cycleDay: 'Day 14/28',
-      cycleBio: 'Many people experience more clarity.',
+      cycleBio: 'Your phase sits quietly next to energy.',
       cycleTip:
-        'Feeling clear and energetic? High may fit. Feeling calmer? Okay or low is fine too.',
+        'Insight and a soft reminder only. Never steering: you choose how much and what.',
       matchMatch: 'Matches your phase',
       matchSoftHigher: 'Higher than your phase suggests',
       matchSoftLower: 'Lower than your phase suggests',
       matchStrong: 'Unusual for this phase',
       suggestSubLow: 'Fits low energy. Max 1 task.',
-      suggestSubNormal: 'Fits normal energy. Max 2 tasks.',
+      suggestSubNormal: 'Fits okay energy. Max 2 tasks.',
       suggestSubHigh: 'Fits high energy. Max 3 tasks.',
       swipeSub: 'Left = not today. Right = fits today.',
       swipeHintSkip: '← Not today',
@@ -326,9 +326,9 @@
         seen = sessionStorage.getItem('structuro_live_demo_cycle_seen') === '1';
       } catch (_) {}
       if (state.cycleOpen || seen) {
-        els.cycleBtn.classList.remove('live-demo-cycle-btn--pulse');
+        els.cycleBtn.classList.remove('live-demo-cycle-hint--pulse');
       } else {
-        els.cycleBtn.classList.add('live-demo-cycle-btn--pulse');
+        els.cycleBtn.classList.add('live-demo-cycle-hint--pulse');
       }
     }
 
@@ -410,24 +410,8 @@
     }
 
     function renderEnergyMatch() {
-      if (!els.energyMatch || !state.energy) {
-        if (els.energyMatch) els.energyMatch.hidden = true;
-        return;
-      }
-      var match = getEnergyPhaseMatch(energyToMedium(state.energy));
-      var c = t();
-      var label = c.matchMatch;
-      var cls = 'live-demo-match--match';
-      if (match.match === 'soft') {
-        label = match.direction === 'higher' ? c.matchSoftHigher : c.matchSoftLower;
-        cls = 'live-demo-match--soft';
-      } else if (match.match === 'strong') {
-        label = c.matchStrong;
-        cls = 'live-demo-match--strong';
-      }
-      els.energyMatch.textContent = label;
-      els.energyMatch.className = 'live-demo-match ' + cls;
-      els.energyMatch.hidden = false;
+      /* App: geen fase-match sturing meer op energie. Verborgen houden. */
+      if (els.energyMatch) els.energyMatch.hidden = true;
     }
 
     function renderSuggested() {
@@ -732,8 +716,11 @@
       });
       renderEnergyMatch();
       capture('live_demo_energy', { level: level });
+      /* Zoals v2: energie kiezen → voorstellen meteen (geen tussenkeuze). */
       state.advanceTimer = setTimeout(function () {
-        goTo('choice');
+        state.taskMode = 'suggested';
+        initSuggestedSelection();
+        goTo('tasks', 'suggested');
       }, 520);
     }
 
@@ -788,7 +775,7 @@
 
     function back() {
       if (state.step === 'choice') goTo('energy');
-      else if (state.step === 'tasks') goTo('choice');
+      else if (state.step === 'tasks') goTo('energy');
       else if (state.step === 'done') goTo('tasks', state.taskMode);
     }
 

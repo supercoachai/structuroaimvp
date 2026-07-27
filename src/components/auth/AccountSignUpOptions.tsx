@@ -174,7 +174,12 @@ export function AccountSignUpOptions({
   };
 
   const finishSession = async (userId: string, userEmail: string | null | undefined) => {
-    const path = await finalizeNewAccountSession(userId, userEmail);
+    const fromV2 =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("from") === "v2";
+    const path = await finalizeNewAccountSession(userId, userEmail, {
+      homePath: fromV2 ? "/v2/home" : "/",
+    });
     if (onSessionReady) {
       onSessionReady(path);
     } else {
@@ -210,7 +215,14 @@ export function AccountSignUpOptions({
         channel: "client",
         funnel: "acquisition",
       });
-      await startOAuthSignIn(supabase, provider);
+      const fromV2 =
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("from") === "v2";
+      await startOAuthSignIn(
+        supabase,
+        provider,
+        fromV2 ? "/v2/home" : "/onboarding"
+      );
     } catch (err) {
       onError?.(
         isProviderNotEnabledError(err)
@@ -316,11 +328,11 @@ export function AccountSignUpOptions({
             setConfirmOtp(e.target.value.replace(/[^\d]/g, "").slice(0, 8))
           }
           className={fieldClass(visual)}
-          placeholder="123456"
+          placeholder={t("login.otpPlaceholder")}
         />
         <button
           type="button"
-          disabled={disabled || confirmBusy || confirmOtp.length < 6}
+          disabled={disabled || confirmBusy || confirmOtp.length !== 8}
           className={primaryBtnClass(visual)}
           onClick={() => {
             void (async () => {

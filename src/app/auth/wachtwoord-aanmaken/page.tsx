@@ -109,7 +109,7 @@ export default function WachtwoordAanmakenPage() {
         return;
       }
 
-      router.push("/");
+      router.push("/v2/home");
       router.refresh();
     } catch (err) {
       setError(

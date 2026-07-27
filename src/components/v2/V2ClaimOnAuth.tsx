@@ -55,7 +55,7 @@ export default function V2ClaimOnAuth() {
             peekV2PostAccountNamePending() ||
             (typeof window !== "undefined" &&
               new URLSearchParams(window.location.search).get("name") === "1");
-          window.location.assign(askName ? V2_POST_ACCOUNT_NAME_PATH : "/");
+          window.location.assign(askName ? V2_POST_ACCOUNT_NAME_PATH : "/v2/home");
           return;
         }
       } catch (err) {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genereer statische privacy-, terms- en cookiepagina's uit src/lib/i18n/legalLocale.ts (NL)."""
+"""Genereer statische privacy-, terms- en cookiepagina's uit src/lib/i18n/legalBodiesNlV11.ts (NL)."""
 
 from __future__ import annotations
 
@@ -30,6 +30,12 @@ def read_nl_bodies() -> tuple[str, str]:
     return pm.group(1), tm.group(1)
 
 
+def inline_format(text: str) -> str:
+    """Escape HTML, zet **bold** om naar <strong>."""
+    safe = html.escape(text)
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
+
+
 def ts_to_html_paragraphs(body: str) -> str:
     parts = [p.strip() for p in body.split("\n\n") if p.strip()]
     chunks: list[str] = []
@@ -37,10 +43,10 @@ def ts_to_html_paragraphs(body: str) -> str:
         if re.match(r"^\d+\.\s+", p) and len(p) < 140 and "\n" not in p:
             chunks.append(f"<h2>{html.escape(p)}</h2>")
         elif "\n" in p:
-            safe = "<br/>".join(html.escape(line) for line in p.split("\n"))
+            safe = "<br/>".join(inline_format(line) for line in p.split("\n"))
             chunks.append(f"<p>{safe}</p>")
         else:
-            chunks.append(f"<p>{html.escape(p)}</p>")
+            chunks.append(f"<p>{inline_format(p)}</p>")
     return "\n".join(chunks)
 
 
@@ -61,17 +67,19 @@ def wrap_page(
     h1: str | None = None,
 ) -> str:
     h1_text = html.escape(h1 or title)
-    nav_other = []
+    nav_items = []
     for href, label, key in (
         ("/privacy/", "Privacybeleid", "privacy"),
         ("/terms/", "Algemene voorwaarden", "terms"),
         ("/cookies/", "Cookies", "cookies"),
     ):
         if key == active:
-            nav_other.append(f'<strong>{html.escape(label)}</strong>')
+            nav_items.append(
+                f'<span class="is-active" aria-current="page">{html.escape(label)}</span>'
+            )
         else:
-            nav_other.append(f'<a href="{href}">{html.escape(label)}</a>')
-    nav_join = " · ".join(nav_other)
+            nav_items.append(f'<a href="{href}">{html.escape(label)}</a>')
+    nav_join = "\n      ".join(nav_items)
 
     return f"""<!DOCTYPE html>
 <html lang="nl">
@@ -79,78 +87,70 @@ def wrap_page(
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{html.escape(title)} · Structuro</title>
-<link rel="icon" href="/uploads/logo-structuro.png" type="image/png"/>
-<link rel="apple-touch-icon" href="/uploads/logo-structuro.png"/>
+<link rel="canonical" href="https://www.structuro.eu/{active}/"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon.png?v=20260722d" type="image/png" sizes="64x64"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon-32.png?v=20260722d" type="image/png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260722d"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/v2/v2-tokens.css"/>
+<link rel="stylesheet" href="/css/legal.css?v=20260722a"/>
 <script>
   window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
-<style>
-:root {{
-  --text: #0F172A; --sub: #64748B; --border: #E2E8F0; --blue: #2563EB; --bg: #F8FAFC;
-}}
-* {{ box-sizing: border-box; }}
-body {{ margin: 0; font-family: 'DM Sans', system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; font-size: 16px; }}
-.legal-header {{
-  background: #fff; border-bottom: 1px solid var(--border);
-}}
-.legal-header-inner {{
-  max-width: 720px; margin: 0 auto; padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-}}
-.legal-header a.logo {{ display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; }}
-.legal-header a.logo img {{ height: 36px; width: auto; }}
-.legal-nav-links {{ font-size: 14px; color: var(--sub); }}
-.legal-nav-links a {{ color: var(--blue); text-decoration: none; }}
-.legal-nav-links a:hover {{ text-decoration: underline; }}
-main {{ max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }}
-.legal-scope {{
-  background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px;
-  padding: 14px 16px; font-size: 14px; color: var(--text); margin-bottom: 28px;
-}}
-.meta {{ color: var(--sub); font-size: 14px; margin-bottom: 28px; }}
-.legal-prose h2 {{ font-size: 1.05rem; font-weight: 700; margin: 2rem 0 0.75rem; }}
-.legal-prose h2:first-child {{ margin-top: 0; }}
-.legal-prose p {{ margin: 0 0 1rem; }}
-footer.legal-foot {{
-  margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
-  font-size: 14px; color: var(--sub); position: relative;
-}}
-footer.legal-foot a {{ color: var(--blue); text-decoration: none; }}
-.verified-dr-badge {{
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%);
-  white-space: nowrap; border: 0;
-}}
-</style>
 </head>
 <body>
-<header class="legal-header">
-  <div class="legal-header-inner">
-    <a href="/" class="logo">
-      <img src="/uploads/logo-structuro.png" alt="Structuro"/>
-      <span>Structuro</span>
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="30" height="30"/></span>
+      Structuro
     </a>
-    <div class="legal-nav-links">
+    <nav class="legal-nav" aria-label="Juridisch">
       {nav_join}
-    </div>
+    </nav>
   </div>
 </header>
-<main>
-  <h1 style="font-size:1.75rem;font-weight:700;margin:0 0 8px;line-height:1.25">{h1_text}</h1>
-  <p class="meta">{html.escape(updated)}</p>
+
+<main class="legal-main">
+  <p class="legal-eyebrow"><i></i><span>Juridisch</span></p>
+  <h1 class="serif">{h1_text}</h1>
+  <p class="legal-meta">{html.escape(updated)}</p>
   <p class="legal-scope"><strong>Toepassingsgebied.</strong> Deze teksten gelden voor de Structuro-dienst en deze website (structuro.eu), in lijn met het beleid voor de webapp.</p>
   <article class="legal-prose">
 {inner_html}
   </article>
-  <footer class="legal-foot">
-    <a href="/">← Terug naar de landingspagina</a>
-    <a class="verified-dr-badge" href="https://verifieddr.com/website/structuro-eu" target="_blank" rel="noopener"><img src="https://verifieddr.com/badge/structuro-eu.svg?style=minimal&amp;metric=truedr" alt="Verified DR - Verified Domain Rating for structuro.eu" width="200" height="24" loading="lazy" decoding="async" /></a>
-  </footer>
+  <a class="legal-back" href="/">← Terug naar de landingspagina</a>
+  <a class="verified-dr-badge" href="https://verifieddr.com/website/structuro-eu" target="_blank" rel="noopener"><img src="https://verifieddr.com/badge/structuro-eu.svg?style=minimal&amp;metric=truedr" alt="Verified DR - Verified Domain Rating for structuro.eu" width="200" height="24" loading="lazy" decoding="async" /></a>
 </main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <a class="brand" href="/">
+        <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="28" height="28"/></span>
+        Structuro
+      </a>
+      <nav class="foot-links">
+        <a href="/privacy/">Privacybeleid</a>
+        <a href="/terms/">Algemene voorwaarden</a>
+        <a href="/cookies/">Cookies</a>
+        <a href="mailto:info@structuro.eu">info@structuro.eu</a>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Structuro · Gemaakt in Nederland</span>
+      <nav>
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Voorwaarden</a>
+        <a href="/cookies/">Cookies</a>
+        <span>KvK: 97938289</span>
+      </nav>
+    </div>
+  </div>
+</footer>
 </body>
 </html>
 """
@@ -193,7 +193,7 @@ def main() -> None:
         wrap_page(
             "Cookie-informatie",
             "Zie hoofdstuk 6 van het privacybeleid. Versie 1.1, geldig vanaf 26 mei 2026.",
-            "<p>Onderstaande tekst komt uit het privacybeleid, sectie over cookies en lokale opslag. Het volledige beleid staat op <a href=\"/privacy/\">structuro.eu/privacy</a>.</p>\n"
+            '<p>Onderstaande tekst komt uit het privacybeleid, sectie over cookies en lokale opslag. Het volledige beleid staat op <a href="/privacy/">structuro.eu/privacy</a>.</p>\n'
             + cookie_html,
             "cookies",
         ),

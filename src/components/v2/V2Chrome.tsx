@@ -325,7 +325,7 @@ export function V2AppShell({
   }, []);
 
   const handleLogout = () => {
-    void performClientLogout(router);
+    void performClientLogout(router, { loginPath: "/v2/login" });
   };
 
   return (

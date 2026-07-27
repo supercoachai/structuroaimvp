@@ -109,6 +109,15 @@
     });
   }
 
+  function dictForLang() {
+    var lang = window.currentLang || "nl";
+    return (
+      (window.V2_I18N && window.V2_I18N[lang]) ||
+      (window.V2_I18N && window.V2_I18N.nl) ||
+      {}
+    );
+  }
+
   function setDemoState(root, state) {
     root.setAttribute("data-state", state);
     root.querySelectorAll("[data-pill]").forEach(function (el) {
@@ -117,6 +126,26 @@
         el.getAttribute("data-pill") === root.getAttribute("data-energy"),
       );
     });
+    syncEnergyTitle(root);
+    if (root.getAttribute("data-demo") === "cycle") {
+      var sheet = root.querySelector(".cycle-sheet--discover");
+      if (sheet) sheet.setAttribute("aria-hidden", state === "sheet" ? "false" : "true");
+    }
+  }
+
+  function syncEnergyTitle(root) {
+    if (root.getAttribute("data-demo") !== "energy") return;
+    var titleEl = root.querySelector("[data-energy-title]");
+    if (!titleEl) return;
+    var dict = dictForLang();
+    var state = root.getAttribute("data-state");
+    var key =
+      state === "idle" || state === "pick" ? "phone_energy" : "phone_suggest_title";
+    /* pick toont al energie-keuze + voorstellen (zoals app). */
+    if (state === "pick" || state === "propose") key = "phone_suggest_title";
+    if (state === "idle") key = "phone_energy";
+    titleEl.textContent = dict[key] || titleEl.textContent;
+    titleEl.setAttribute("data-i18n", key);
   }
 
   function playHomeDemo(root) {
@@ -127,25 +156,22 @@
     setDemoState(root, "t2");
     if (countEl) countEl.textContent = "1/1";
     if (titleEl) {
-      var lang = window.currentLang || "nl";
-      var dict =
-        (window.V2_I18N && window.V2_I18N[lang]) ||
-        (window.V2_I18N && window.V2_I18N.nl) ||
-        {};
+      var dict = dictForLang();
       titleEl.textContent = dict[key] || titleEl.textContent;
       titleEl.setAttribute("data-i18n", key);
     }
   }
 
   function playEnergyDemo(root) {
-    /* Alleen energie-stap: idle → laag/genoeg/hoog met haalbaar-hint. Geen taken. */
+    /* idle → energie kiezen → voorstellen verschijnen (merged zoals app). */
     var sequence = [
       { energy: "low", state: "idle" },
       { energy: "low", state: "pick" },
-      { energy: "ok", state: "pick" },
-      { energy: "high", state: "pick" },
+      { energy: "ok", state: "propose" },
+      { energy: "high", state: "propose" },
+      { energy: "low", state: "propose" },
     ];
-    var i = 1; /* pick + low as resting first paint */
+    var i = 1; /* pick + low als eerste paint met 1 voorstel */
     root.setAttribute("data-energy", "low");
     setDemoState(root, "pick");
     function tick() {
@@ -153,9 +179,15 @@
       i = (i + 1) % sequence.length;
       root.setAttribute("data-energy", sequence[i].energy);
       setDemoState(root, sequence[i].state);
-      root._timer = setTimeout(tick, sequence[i].state === "idle" ? 1600 : 1800);
+      var wait =
+        sequence[i].state === "idle"
+          ? 1500
+          : sequence[i].state === "pick"
+            ? 1600
+            : 2000;
+      root._timer = setTimeout(tick, wait);
     }
-    root._timer = setTimeout(tick, 1600);
+    root._timer = setTimeout(tick, 1800);
   }
 
   function playTasksDemo(root) {
@@ -164,13 +196,12 @@
   }
 
   function playFocusDemo(root) {
-    /* ready → suggest (soft prompt) → run met microstappen → pause → run → done */
-    var sequence = ["ready", "suggest", "run", "pause", "run", "done"];
+    /* ready → run → pause → run → done (checkmark), zoals huidige focus-flow */
+    var sequence = ["ready", "run", "pause", "run", "done"];
     var i = 0;
     var firstMicro = root.querySelector('[data-focus-micro="1"]');
     var firstChk = firstMicro && firstMicro.querySelector(".focus-micro-chk");
     var firstLbl = firstMicro && firstMicro.querySelector("span:last-child");
-    var suggestBtn = root.querySelector(".focus-micro-suggest__btn");
     function resetMicro() {
       if (!firstMicro) return;
       firstMicro.classList.remove("is-checked");
@@ -189,29 +220,14 @@
       }
       if (firstLbl) firstLbl.classList.add("is-done");
     }
-    function setSuggestBusy(on) {
-      if (!suggestBtn) return;
-      var lang = (document.documentElement.lang || "nl").slice(0, 2);
-      if (on) {
-        suggestBtn.textContent =
-          lang === "en" ? "Thinking…" : "Even denken…";
-      } else {
-        suggestBtn.textContent =
-          lang === "en" ? "Yes, suggest" : "Ja, voorstellen";
-      }
-    }
     setDemoState(root, "ready");
     resetMicro();
-    setSuggestBusy(false);
     function tick() {
       if (!root.classList.contains("is-playing")) return;
       i = (i + 1) % sequence.length;
       var state = sequence[i];
       setDemoState(root, state);
-      setSuggestBusy(state === "suggest");
-      if (state === "ready" || state === "done" || state === "suggest") {
-        resetMicro();
-      }
+      if (state === "ready" || state === "done") resetMicro();
       if (state === "run") {
         resetMicro();
         root._microTimer = setTimeout(function () {
@@ -220,32 +236,29 @@
         }, 900);
       }
       var wait =
-        state === "suggest"
-          ? 1600
-          : state === "run" || state === "pause"
-            ? 2200
-            : state === "done"
-              ? 2000
-              : 1600;
+        state === "run" || state === "pause"
+          ? 2200
+          : state === "done"
+            ? 2000
+            : 1600;
       root._timer = setTimeout(tick, wait);
     }
     root._timer = setTimeout(tick, 1800);
   }
 
   function playCycleDemo(root) {
-    /* off → on → tip op (i) → sheet een paar seconden → weer dicht */
-    var sequence = ["off", "on", "info", "on"];
-    var i = 1;
-    setDemoState(root, "on");
+    /* Peeker zichtbaar → discovery-sheet open (inzicht, geen sturing) → weer dicht */
+    var sequence = ["hint", "sheet", "hint"];
+    var i = 0;
+    setDemoState(root, "hint");
     function tick() {
       if (!root.classList.contains("is-playing")) return;
       i = (i + 1) % sequence.length;
       setDemoState(root, sequence[i]);
-      var wait =
-        sequence[i] === "info" ? 3600 : sequence[i] === "on" ? 2000 : 1600;
+      var wait = sequence[i] === "sheet" ? 3800 : 2000;
       root._timer = setTimeout(tick, wait);
     }
-    root._timer = setTimeout(tick, 1800);
+    root._timer = setTimeout(tick, 1600);
   }
 
   var PLAYERS = {
@@ -272,22 +285,19 @@
       root.setAttribute("data-energy", "low");
       setDemoState(root, fallback);
     }
+    if (root.getAttribute("data-demo") === "cycle") {
+      setDemoState(root, fallback || "hint");
+    }
     if (root.getAttribute("data-demo") === "focus") {
       var firstMicro = root.querySelector('[data-focus-micro="1"]');
       var firstChk = firstMicro && firstMicro.querySelector(".focus-micro-chk");
       var firstLbl = firstMicro && firstMicro.querySelector("span:last-child");
-      var suggestBtn = root.querySelector(".focus-micro-suggest__btn");
       if (firstMicro) firstMicro.classList.remove("is-checked");
       if (firstChk) {
         firstChk.classList.remove("is-done");
         firstChk.textContent = "";
       }
       if (firstLbl) firstLbl.classList.remove("is-done");
-      if (suggestBtn) {
-        var lang = (document.documentElement.lang || "nl").slice(0, 2);
-        suggestBtn.textContent =
-          lang === "en" ? "Yes, suggest" : "Ja, voorstellen";
-      }
     }
   }
 

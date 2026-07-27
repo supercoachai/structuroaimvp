@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/lib/i18n";
+import Battery from "@/components/dagstart/design/Battery";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import { useV2 } from "./V2Context";
@@ -41,7 +42,7 @@ import { ensureV2ThingsHaveTasks } from "./v2MicroDefaults";
 import { dismissCycleOptInPrompt } from "./v2CycleOptInPrompt";
 import { patchV2Settings } from "./v2Settings";
 import { getV2EnergyForToday } from "./v2Adaptive";
-import { v2TaskEnergyToDay } from "./v2EnergyMeta";
+import { V2_BATTERY_MUTED, v2EnergyMeta, v2TaskEnergyToDay } from "./v2EnergyMeta";
 import V2TaskBattery from "./V2TaskBattery";
 import {
   findV2TaskByTitle,
@@ -156,6 +157,7 @@ export default function HomeV2Client() {
   const headline = name
     ? `${greeting}, ${name}`
     : greeting || "Welkom";
+  const energyMeta = v2EnergyMeta(state.energy);
   const energyLabel = state.energy ? ENERGY_LABEL[state.energy] : null;
 
   const toggleMicroStep = (stepId: string) => {
@@ -486,8 +488,22 @@ export default function HomeV2Client() {
             >
               {headline}
             </h1>
-            {energyLabel ? (
-              <span className="v2-home-chip shrink-0">{energyLabel}</span>
+            {energyMeta && energyLabel ? (
+              <span
+                className="v2-home-chip shrink-0"
+                title={energyLabel}
+                aria-label={energyLabel}
+              >
+                <span className="v2-home-chip__battery" aria-hidden>
+                  <Battery
+                    level={energyMeta.level}
+                    color="currentColor"
+                    mutedColor={V2_BATTERY_MUTED}
+                    size={14}
+                  />
+                </span>
+                Energie
+              </span>
             ) : null}
           </div>
         </header>
