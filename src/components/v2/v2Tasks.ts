@@ -22,6 +22,12 @@ export type V2Task = {
   id: string;
   title: string;
   done: boolean;
+  /**
+   * Lokale kalenderdag (YYYY-MM-DD) waarop de taak is afgevinkt.
+   * Alleen taken met completedDate === vandaag blijven in "Voltooid vandaag";
+   * oudere done-taken worden bij load weggepraagd.
+   */
+  completedDate: string | null;
   /** Kalenderdag (YMD) van de deadline, of null. */
   dueDate: string | null;
   repeat: V2Repeat;
@@ -56,7 +62,12 @@ export function loadV2Tasks(): V2Task[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map(normalizeTask);
+    const normalized = parsed.map(normalizeTask);
+    const pruned = pruneStaleCompletedV2Tasks(normalized);
+    if (pruned.length !== normalized.length) {
+      saveV2Tasks(pruned);
+    }
+    return pruned;
   } catch {
     return [];
   }
@@ -73,10 +84,16 @@ export function saveV2Tasks(tasks: V2Task[]): void {
 
 function normalizeTask(raw: unknown): V2Task {
   const t = (raw ?? {}) as Partial<V2Task>;
+  const done = t.done === true;
+  const completedDate =
+    done && typeof t.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t.completedDate)
+      ? t.completedDate
+      : null;
   return {
     id: typeof t.id === "string" ? t.id : v2Id(),
     title: typeof t.title === "string" ? t.title : "",
-    done: t.done === true,
+    done,
+    completedDate,
     dueDate: typeof t.dueDate === "string" ? t.dueDate : null,
     repeat: isRepeat(t.repeat) ? t.repeat : "none",
     repeatIntervalDays:
@@ -129,6 +146,7 @@ export function emptyDraft(): V2Task {
     id: v2Id(),
     title: "",
     done: false,
+    completedDate: null,
     dueDate: null,
     repeat: "none",
     repeatIntervalDays: 14,
@@ -303,6 +321,56 @@ export function compareV2TasksForList(a: V2Task, b: V2Task): number {
   return a.createdAt.localeCompare(b.createdAt);
 }
 
+/** Of een taak vandaag is afgevinkt (lokale kalenderdag). */
+export function isV2TaskCompletedToday(
+  task: V2Task,
+  today: string = todayYmd(),
+): boolean {
+  return task.done === true && task.completedDate === today;
+}
+
+/**
+ * Verwijder afgeronde taken van eerdere dagen (of zonder geldige completedDate).
+ * Alleen "voltooid vandaag" blijft bewaard tot middernacht lokale tijd.
+ */
+export function pruneStaleCompletedV2Tasks(
+  tasks: V2Task[],
+  today: string = todayYmd(),
+): V2Task[] {
+  return tasks.filter((t) => {
+    if (!t.done) return true;
+    return t.completedDate === today;
+  });
+}
+
+/** Markeer een taak als klaar op de gegeven lokale dag. */
+export function markV2TaskCompleted(
+  task: V2Task,
+  today: string = todayYmd(),
+): V2Task {
+  if (task.done && task.completedDate === today) {
+    return {
+      ...task,
+      microSteps: task.microSteps.map((s) => ({ ...s, done: true })),
+    };
+  }
+  return {
+    ...task,
+    done: true,
+    completedDate: today,
+    microSteps: task.microSteps.map((s) => ({ ...s, done: true })),
+  };
+}
+
+/** Zet een voltooide taak terug naar de actieve lijst. */
+export function restoreV2Task(task: V2Task): V2Task {
+  return {
+    ...task,
+    done: false,
+    completedDate: null,
+  };
+}
+
 /** Match een vandaag-ding op een lokale taak (titel, case-insensitive trim). */
 export function findV2TaskByTitle(
   tasks: V2Task[],
@@ -324,26 +392,20 @@ export function findV2TaskByTitle(
 export function completeV2TaskByTitle(
   tasks: V2Task[],
   title: string,
+  today: string = todayYmd(),
 ): V2Task[] {
   const trimmed = title.trim();
   if (!trimmed) return tasks;
   const existing = findV2TaskByTitle(tasks, trimmed);
   if (existing) {
-    if (existing.done) return tasks;
+    if (existing.done && existing.completedDate === today) return tasks;
     return tasks.map((t) =>
-      t.id === existing.id
-        ? {
-            ...t,
-            done: true,
-            microSteps: t.microSteps.map((s) => ({ ...s, done: true })),
-          }
-        : t,
+      t.id === existing.id ? markV2TaskCompleted(t, today) : t,
     );
   }
   const seed = emptyDraft();
   seed.title = trimmed;
-  seed.done = true;
-  return [...tasks, seed];
+  return [...tasks, markV2TaskCompleted(seed, today)];
 }
 
 /** Haal een vandaag-ding uit de lijst (case-insensitive trim). */

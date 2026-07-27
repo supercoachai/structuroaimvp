@@ -4,7 +4,12 @@ import {
   compareV2TasksForList,
   completeV2TaskByTitle,
   emptyDraft,
+  isV2TaskCompletedToday,
+  markV2TaskCompleted,
+  pruneStaleCompletedV2Tasks,
   removeV2ThingFromList,
+  restoreV2Task,
+  todayYmd,
   type V2Task,
 } from "./v2Tasks";
 
@@ -17,7 +22,8 @@ function task(partial: Partial<V2Task> & { title: string }): V2Task {
 }
 
 describe("completeV2TaskByTitle", () => {
-  it("marks matching open task done and completes microsteps", () => {
+  it("marks matching open task done with today's completedDate and completes microsteps", () => {
+    const today = todayYmd();
     const open = task({
       id: "t1",
       title: "Aan dat ene project beginnen",
@@ -27,24 +33,76 @@ describe("completeV2TaskByTitle", () => {
         { id: "m2", title: "Schrijf zin", done: true },
       ],
     });
-    const next = completeV2TaskByTitle([open], "aan dat ene project beginnen");
+    const next = completeV2TaskByTitle([open], "aan dat ene project beginnen", today);
     expect(next).toHaveLength(1);
     expect(next[0].done).toBe(true);
+    expect(next[0].completedDate).toBe(today);
     expect(next[0].microSteps.every((s) => s.done)).toBe(true);
   });
 
-  it("is a no-op when already done", () => {
-    const done = task({ id: "t1", title: "Mail", done: true });
+  it("is a no-op when already done today", () => {
+    const today = todayYmd();
+    const done = task({
+      id: "t1",
+      title: "Mail",
+      done: true,
+      completedDate: today,
+    });
     const tasks = [done];
-    const next = completeV2TaskByTitle(tasks, "Mail");
+    const next = completeV2TaskByTitle(tasks, "Mail", today);
     expect(next).toBe(tasks);
   });
 
   it("creates a done task when title has no match", () => {
-    const next = completeV2TaskByTitle([], "Nieuw ding");
+    const today = "2026-07-27";
+    const next = completeV2TaskByTitle([], "Nieuw ding", today);
     expect(next).toHaveLength(1);
     expect(next[0].title).toBe("Nieuw ding");
     expect(next[0].done).toBe(true);
+    expect(next[0].completedDate).toBe(today);
+  });
+});
+
+describe("pruneStaleCompletedV2Tasks", () => {
+  it("keeps open tasks and today's completed, drops older done", () => {
+    const today = "2026-07-27";
+    const open = task({ id: "open", title: "Open", done: false });
+    const todayDone = task({
+      id: "today",
+      title: "Vandaag klaar",
+      done: true,
+      completedDate: today,
+    });
+    const yesterday = task({
+      id: "old",
+      title: "Gisteren",
+      done: true,
+      completedDate: "2026-07-26",
+    });
+    const legacyDone = task({
+      id: "legacy",
+      title: "Zonder datum",
+      done: true,
+      completedDate: null,
+    });
+
+    const next = pruneStaleCompletedV2Tasks(
+      [open, todayDone, yesterday, legacyDone],
+      today,
+    );
+    expect(next.map((t) => t.id)).toEqual(["open", "today"]);
+  });
+});
+
+describe("markV2TaskCompleted / restoreV2Task", () => {
+  it("sets done + completedDate and restores cleanly", () => {
+    const today = "2026-07-27";
+    const open = task({ id: "t1", title: "Taak", done: false });
+    const done = markV2TaskCompleted(open, today);
+    expect(isV2TaskCompletedToday(done, today)).toBe(true);
+    const back = restoreV2Task(done);
+    expect(back.done).toBe(false);
+    expect(back.completedDate).toBeNull();
   });
 });
 
@@ -75,6 +133,7 @@ describe("compareV2TasksForList", () => {
       title: "Klaar",
       energy: "high",
       done: true,
+      completedDate: "2026-07-27",
       createdAt: "2026-01-04T00:00:00.000Z",
     });
     const none = task({

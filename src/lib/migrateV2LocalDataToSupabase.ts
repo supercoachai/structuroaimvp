@@ -172,7 +172,11 @@ function v2TaskToInsert(task: V2Task): Omit<Task, "id"> {
     focusStartedAt: null,
     focusExitedAt: null,
     focusAttempts: 0,
-    completedAt: task.done ? task.createdAt : undefined,
+    completedAt: task.done
+      ? task.completedDate
+        ? `${task.completedDate}T12:00:00.000Z`
+        : task.createdAt
+      : undefined,
     reminders: [],
     repeat: repeatFields.repeat,
     repeatWeekdays: repeatFields.repeatWeekdays,
