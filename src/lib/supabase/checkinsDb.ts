@@ -49,17 +49,35 @@ export type UpsertCheckInResult = {
   top3_task_ids: string[] | null;
 };
 
+export type UpsertCheckInOptions = {
+  /**
+   * Gedrag wanneer de gebruiker taken koos maar geen enkele daarvan de
+   * sanitatie overleeft (allemaal ghost-ids: klaar, niet-vandaag of verwijderd).
+   * - "throw" (default): fout gooien zodat een interactieve save de gebruiker
+   *   kan waarschuwen dat zijn selectie niet kon worden opgeslagen.
+   * - "clear": stille self-heal — bewaar top3 als null i.p.v. te gooien. Bedoeld
+   *   voor de laad-/repair-flow, die verouderde ids juist hoort op te ruimen en
+   *   nooit het laden van een bestaande check-in mag blokkeren.
+   */
+  onAllTasksDropped?: "throw" | "clear";
+};
+
 export async function upsertCheckInToSupabase(
   userId: string,
   date: string,
-  payload: CheckInPayload
+  payload: CheckInPayload,
+  options?: UpsertCheckInOptions
 ): Promise<UpsertCheckInResult> {
   const maxTasks = ENERGY_MAX_TASKS[payload.energy_level] ?? 3;
   const requested =
     payload.top3_task_ids?.slice(0, maxTasks).filter(Boolean) ?? [];
   const ids = await sanitizeTop3TaskIdsForDate(userId, requested);
 
-  if (requested.length > 0 && ids.length === 0) {
+  if (
+    requested.length > 0 &&
+    ids.length === 0 &&
+    (options?.onAllTasksDropped ?? "throw") === "throw"
+  ) {
     throw new Error(
       "Geen van je gekozen taken kon worden opgeslagen. Vernieuw je takenlijst en probeer opnieuw."
     );

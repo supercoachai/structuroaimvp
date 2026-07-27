@@ -9,6 +9,7 @@ import {
   type CheckInPayload,
 } from "@/lib/supabase/checkinsDb";
 import { loadAndRepairCheckInTop3 } from "@/lib/supabase/top3Repair";
+import { captureClientException } from "@/lib/posthog/captureExceptionClient";
 import type { CyclePhase } from "@/lib/cycle/types";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 
@@ -95,6 +96,7 @@ export function useCheckIn(): {
       }
     } catch (e) {
       console.error("useCheckIn load error:", e);
+      captureClientException(e, { route: "useCheckIn.load", has_user: Boolean(user?.id) });
       setCheckIn(null);
     } finally {
       setLoading(false);
@@ -158,6 +160,10 @@ export function useCheckIn(): {
               window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
             }
           } else {
+            captureClientException(err, {
+              route: "useCheckIn.save",
+              selected_task_count: payload.top3_task_ids?.length ?? 0,
+            });
             throw err;
           }
         }
