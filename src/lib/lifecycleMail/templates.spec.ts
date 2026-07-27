@@ -101,6 +101,22 @@ describe("lifecycleMail templates", () => {
     expect(mail.text).toContain("Geen automatische charge");
   });
 
+  it("S6 winback telt geen opens en deelt preview met body", () => {
+    const mail = renderLifecycleMail(
+      "s6_winback",
+      { ...base, checkin_count: 3 },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.ctaPath).toBe("/v2/home");
+    expect(mail.html).toContain("Open Structuro");
+    expect(mail.html).toContain("Geen inhalen nodig");
+    expect(mail.text).toContain("Geen inhalen nodig");
+    expect(mail.html).not.toContain("opende Structuro");
+    expect(mail.text).not.toContain("opende Structuro");
+    expect(mail.html).toContain("&zwnj;&nbsp;");
+    expect(mail.html).not.toContain("—");
+  });
+
   it("gebruikt logo-header, sans body, teksthandtekening zonder foto", () => {
     const mail = renderLifecycleMail(
       "s4_pre_paywall",

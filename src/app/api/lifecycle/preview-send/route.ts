@@ -70,6 +70,20 @@ async function handle(request: Request) {
     return NextResponse.json({ error: "invalid to" }, { status: 400 });
   }
 
+  const onlyRaw = (url.searchParams.get("only") ?? "").trim();
+  const onlyIds = onlyRaw
+    ? onlyRaw.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const templates = onlyIds.length
+    ? PREVIEW_TEMPLATES.filter((id) => onlyIds.includes(id))
+    : PREVIEW_TEMPLATES;
+  if (onlyIds.length && templates.length === 0) {
+    return NextResponse.json(
+      { error: "unknown only template id", allowed: PREVIEW_TEMPLATES },
+      { status: 400 }
+    );
+  }
+
   const candidate = previewCandidate();
   const unsubscribeUrl = "https://www.structuro.ai/instellingen";
   const results: Array<{
@@ -81,7 +95,7 @@ async function handle(request: Request) {
     error?: string;
   }> = [];
 
-  for (const templateId of PREVIEW_TEMPLATES) {
+  for (const templateId of templates) {
     const mail = renderLifecycleMail(templateId, candidate, unsubscribeUrl);
     const subject = `[TEST] ${mail.subject}`;
     const result = await sendResendEmail({

@@ -118,6 +118,8 @@ function wrapHtml(opts: {
             </td>
           </tr>`
     : "";
+  // Vult de inbox-snippet zodat "Structuro" + body niet achter de preview plakt.
+  const previewPad = "&zwnj;&nbsp;".repeat(80);
   return `<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -127,7 +129,7 @@ function wrapHtml(opts: {
 <title>Structuro</title>
 </head>
 <body style="margin:0;padding:0;background:${MAIL.surface};font-family:${MAIL.font};color:${MAIL.ink};-webkit-text-size-adjust:100%;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${preview}</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${preview}${previewPad}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${MAIL.surface};padding:28px 16px;">
     <tr>
       <td align="center">
@@ -379,15 +381,13 @@ export function renderLifecycleMail(
         templateId,
         cohortKey: `winback:${candidate.user_id}`,
         subject: personalizedSubject(name, "Nog een keer kijken?"),
-        preview: "Geen druk. Je account staat nog klaar.",
+        preview: "Je account staat nog klaar. Geen inhalen nodig.",
         paragraphs: paras(
           hi,
-          n > 0
-            ? `Je opende Structuro toen ${n} keer.`
-            : "Je probeerde Structuro een paar dagen.",
-          "Geen druk. Als je wilt, staat je account nog klaar, precies zoals je het achterliet."
+          "Je account staat nog klaar. Geen inhalen nodig, geen lijst van wat je miste.",
+          "Als je wilt, open je de app en kies je vandaag opnieuw één ding."
         ),
-        ctaLabel: "Naar Structuro",
+        ctaLabel: "Open Structuro",
         ctaPath: "/v2/home",
         unsubscribeUrl,
       });
