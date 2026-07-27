@@ -26,8 +26,8 @@ function IconDump({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      width={24}
-      height={24}
+      width={22}
+      height={22}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -200,8 +200,8 @@ function pulseNavHaptic() {
 }
 
 /**
- * v2 bottom-nav als rustige floating island (Variant F): raised cream papier,
- * zachte navy-lift, sage soft-pill op actief. Bewust geen Instagram dark-glass.
+ * v2 bottom-nav als compacte frosted island: semi-transparant cream + blur,
+ * strakke icon-spacing, sage soft-pill op actief.
  * "Afsluiten" opent het shutdown-ritueel op /v2/shutdown.
  */
 function V2BottomNav() {
@@ -292,7 +292,7 @@ function V2BottomNav() {
 
 /**
  * v2 app-shell in Variant F: warm papier (--surface), serif wordmark, één
- * rustige tekst-uitgang (geen gevulde knop in de chrome), en de floating island-nav.
+ * rustige tekst-uitgang (geen gevulde knop in de chrome), en de frosted island-nav.
  * Bewust GEEN echte AppLayout/DagstartOverlay/auth: alles draait zelfstandig op
  * lokale state, zodat de gate-bypass intact blijft.
  */

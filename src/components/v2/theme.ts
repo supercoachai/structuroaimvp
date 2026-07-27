@@ -721,8 +721,8 @@ export const v2Styles: Record<string, CSSProperties> = {
     borderTop: "1px solid var(--border)",
   },
   /**
-   * Wrapper rond de floating island: cream doorloop, safe-area onder,
-   * geen haarlijn-border (die maakte de balk “plakband” i.p.v. eiland).
+   * Wrapper rond de floating island: transparant zodat frosted glass zichtbaar
+   * is, safe-area onder, eiland gecentreerd (niet edge-to-edge).
    */
   appNav: {
     flexShrink: 0,
@@ -730,23 +730,25 @@ export const v2Styles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding:
-      "10px max(16px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px))",
-    backgroundColor: "var(--surface)",
+      "8px max(16px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px))",
+    backgroundColor: "transparent",
   },
   /**
-   * Structuro-island: raised papier, zachte navy-lift, geen glass/blur.
-   * Proportioneel t.o.v. primary CTA’s (geen mini Instagram-dock).
+   * Structuro-island: compacte frosted dock (Instagram-achtig).
+   * Maten middenweg: ~44px targets / 22px iconen / 11px labels.
+   * Glass-styling in structuro-tokens.css (blur + semi-transparant).
    */
   appNavIsland: {
-    width: "100%",
-    maxWidth: 440,
-    display: "grid",
-    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-    gap: 4,
-    padding: "8px 10px",
+    width: "fit-content",
+    maxWidth: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0,
+    padding: "5px 6px",
     borderRadius: 999,
-    border: "1px solid var(--border)",
-    backgroundColor: "var(--surface-raised)",
+    border: "1px solid rgba(26, 35, 64, 0.08)",
+    /* Achtergrond + blur in structuro-tokens.css (focus-mode override). */
   },
   appNavInner: {
     width: "100%",
@@ -756,14 +758,14 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   appNavItem: {
-    minHeight: 52,
-    minWidth: 0,
+    minHeight: 44,
+    minWidth: 44,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    padding: "8px 6px",
+    gap: 2,
+    padding: "6px 8px",
     borderRadius: 999,
     border: "none",
     backgroundColor: "transparent",
@@ -774,7 +776,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     transition:
       "opacity 140ms ease, color 140ms ease, background-color 140ms ease, transform 100ms ease",
   },
-  /** Soft sage-pill + accent; geen gevulde knop / dark glass. */
+  /** Soft sage-pill + accent; geen gevulde knop. */
   appNavItemActive: {
     color: "var(--accent)",
     backgroundColor: "var(--accent-soft)",
@@ -782,7 +784,7 @@ export const v2Styles: Record<string, CSSProperties> = {
   appNavLabel: {
     width: "100%",
     textAlign: "center" as const,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 700,
     lineHeight: 1.15,
     letterSpacing: "0.01em",
@@ -790,8 +792,8 @@ export const v2Styles: Record<string, CSSProperties> = {
   },
   appNavIcon: {
     flexShrink: 0,
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -865,8 +867,8 @@ export const v2ScopedCss = `
   transform: scale(0.96);
 }
 .v2-app-nav__item svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 .v2-app-nav__item.is-active svg {
   stroke-width: 2.15;

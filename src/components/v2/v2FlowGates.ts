@@ -1,9 +1,12 @@
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 
 /**
- * Soft cyclus-discovery gate (historisch: peeker op guest-onboarding).
- * Propose/dagstart toont discovery niet meer; cyclus-uitleg leeft op de
- * aparte landing-demo / settings. Gate blijft voor tests en eventueel hergebruik.
+ * Soft cyclus-discovery (“Eenmalig instellen”): alleen tijdens eerste guest-onboarding.
+ * Met account staat de keuze in settings/profiel; niet elke ochtend opnieuw.
+ * Dagstart en landing-phone-mocks tonen deze hint niet.
+ *
+ * Alleen na client-mount aanroepen. Niet in useState-initializers:
+ * op de server is window afwezig en zou SSR vs hydration uit elkaar lopen.
  */
 export function shouldShowV2CycleDiscovery(): boolean {
   if (typeof window === "undefined") return false;

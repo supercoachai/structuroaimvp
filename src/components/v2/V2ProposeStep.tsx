@@ -8,14 +8,20 @@ import CycleRing, {
 import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
 import { useI18n } from "@/lib/i18n";
 
-import { V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
+import { useV2, V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
 import {
+  ensureV2CyclePeriodStart,
   useV2CycleChip,
   type V2CycleChipInfo,
 } from "./V2CycleChip";
+import V2CycleDiscoverSheet, {
+  V2CycleDiscoverHint,
+} from "./V2CycleDiscoverSheet";
 import V2CycleInfoSheet, {
   V2CyclePhaseInfoButton,
 } from "./V2CycleInfoSheet";
+import { trackV2OnboardingCycle } from "./v2OnboardingFunnel";
+import { patchV2Settings } from "./v2Settings";
 import { v2Styles } from "./theme";
 import { v2EnergyOrbColor } from "./v2EnergyMeta";
 import { v2EnrichThingProposals } from "./v2Things";
@@ -23,8 +29,8 @@ import V2TaskBattery from "./V2TaskBattery";
 
 /**
  * Happy-path stap: energie-pills updaten voorstellen live, daarna één primary.
- * Met cyclus (via settings/opt-in elders): flat orb + dunne fase-ring, DAG X · FASE + (i).
- * Geen cyclus-discovery hier; die leeft op de aparte cyclus-uitleg.
+ * Met cyclus: flat orb + dunne fase-ring, DAG X · FASE + (i) sheet (Optie 2).
+ * Guest-onboarding: soft “Eenmalig instellen” onderaan i.p.v. Zonder/Cyclus-toggle.
  */
 export default function V2ProposeStep({
   energy,
@@ -34,6 +40,7 @@ export default function V2ProposeStep({
   onConfirm,
   onAdjust,
   cycleInfo,
+  showCycleDiscover = false,
   confirmLabel,
   adjustLabel,
 }: {
@@ -46,11 +53,16 @@ export default function V2ProposeStep({
   onAdjust: () => void;
   /** Bij opt-in + periodedata: orb-ring + fase-label + info-sheet. Geen chip. */
   cycleInfo?: V2CycleChipInfo | null;
+  /** Guest-onboarding: soft cyclus-discovery onderaan. Niet op dagstart/landing. */
+  showCycleDiscover?: boolean;
   confirmLabel?: string;
   adjustLabel?: string;
 }) {
   const { t } = useI18n();
+  const { state, update } = useV2();
   const [phaseSheetOpen, setPhaseSheetOpen] = useState(false);
+  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [discoverHidden, setDiscoverHidden] = useState(false);
   const cycleFromContext = useV2CycleChip();
   const resolvedCycle = cycleInfo !== undefined ? cycleInfo : cycleFromContext;
   const canConfirm = energy != null && proposals.length > 0;
@@ -58,6 +70,8 @@ export default function V2ProposeStep({
   const hasCycle = resolvedCycle != null;
   const energyHint = energy ? t(`v2.energyHint${energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"}`) : null;
   const proposalRows = v2EnrichThingProposals(proposals);
+  // Hint blijft beschikbaar na Aan (om weer Uit te zetten); alleen Nee dismiss’t.
+  const showDiscover = showCycleDiscover && !discoverHidden;
 
   const resolvedTitle =
     title ??
@@ -77,8 +91,39 @@ export default function V2ProposeStep({
     : null;
   const phaseAccent = phaseKey ? V2_ORB_PHASE_COLORS[phaseKey] : "#C4785A";
 
+  const setCycleMode = (on: boolean) => {
+    if (on === state.cyclusOptIn) return;
+    if (on) {
+      ensureV2CyclePeriodStart();
+    } else {
+      setPhaseSheetOpen(false);
+    }
+    // Elke bewuste keuze (aan of uit) = niet later opnieuw op home vragen.
+    patchV2Settings({ cycleOptInPromptDismissed: true });
+    update({ cyclusOptIn: on });
+    trackV2OnboardingCycle({ optedIn: on });
+  };
+
+  const enableCycleFromDiscover = () => {
+    setCycleMode(true);
+  };
+
+  const disableCycleFromDiscover = () => {
+    setCycleMode(false);
+  };
+
+  const dismissDiscover = () => {
+    setDiscoverOpen(false);
+    setDiscoverHidden(true);
+    patchV2Settings({ cycleOptInPromptDismissed: true });
+    trackV2OnboardingCycle({ optedIn: false });
+  };
+
   return (
-    <div className="v2-propose-step" style={wrapStyle}>
+    <div
+      className={`v2-propose-step${showDiscover ? " v2-propose-step--discover" : ""}`}
+      style={wrapStyle}
+    >
       <div
         className={`v2-energy-step__orb v2-energy-step__orb--flat${
           hasCycle ? " v2-energy-step__orb--cycle" : ""
@@ -207,11 +252,31 @@ export default function V2ProposeStep({
         </>
       ) : null}
 
+      {showDiscover ? (
+        <div className="v2-propose-step__discover">
+          <V2CycleDiscoverHint
+            optedIn={state.cyclusOptIn}
+            onOpen={() => setDiscoverOpen(true)}
+          />
+        </div>
+      ) : null}
+
       {resolvedCycle ? (
         <V2CycleInfoSheet
           info={resolvedCycle}
           open={phaseSheetOpen}
           onClose={() => setPhaseSheetOpen(false)}
+        />
+      ) : null}
+
+      {showDiscover ? (
+        <V2CycleDiscoverSheet
+          open={discoverOpen}
+          enabled={state.cyclusOptIn}
+          onClose={() => setDiscoverOpen(false)}
+          onEnable={enableCycleFromDiscover}
+          onDisable={disableCycleFromDiscover}
+          onNotNow={dismissDiscover}
         />
       ) : null}
     </div>

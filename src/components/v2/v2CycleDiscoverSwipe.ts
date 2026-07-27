@@ -1,11 +1,11 @@
-/** Drempels voor cyclus discovery peek/sheet (px). */
+/** Drempels voor cyclus-discovery hint/sheet (px). */
 export const CYCLE_DISCOVER_SWIPE_OPEN_PX = 36;
 export const CYCLE_DISCOVER_SWIPE_CLOSE_PX = 56;
 /** Minimale beweging om een tap van een drag te onderscheiden. */
 export const CYCLE_DISCOVER_DRAG_SLOP_PX = 8;
 
 /**
- * Swipe omhoog op de peek: deltaY = clientY - startY (negatief = omhoog).
+ * Swipe omhoog op de hintstrook: deltaY = clientY - startY (negatief = omhoog).
  */
 export function shouldOpenCycleDiscoverFromSwipe(
   deltaY: number,

@@ -24,6 +24,7 @@ import {
 import { recordV2EnergyForToday } from "./v2Adaptive";
 import V2LanguageToggle from "./V2LanguageToggle";
 import V2ProgressDots from "./V2ProgressDots";
+import { shouldShowV2CycleDiscovery } from "./v2FlowGates";
 import { dismissCycleOptInPrompt } from "./v2CycleOptInPrompt";
 import { dismissAccountSavePrompt, shouldShowPostOnboardingAccountSave } from "./v2AccountSavePrompt";
 import {
@@ -83,6 +84,8 @@ export default function OnboardingV2Client() {
   const [phase, setPhase] = useState<Phase>(INITIAL_PHASE);
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
+  // Auth-hint alleen na mount; false is SSR-veilig (discovery zit niet in first paint).
+  const [showCycleDiscover, setShowCycleDiscover] = useState(false);
   const [namePrefill, setNamePrefill] = useState("");
   const [nameBusy, setNameBusy] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -204,6 +207,11 @@ export default function OnboardingV2Client() {
     freshStartHandled.current = true;
     resetToEnergy();
   }, [ready, resetToEnergy, searchParams]);
+
+  // Auth-hint na mount (SSR-veilig). Guests: soft cyclus-discovery; accounts: settings.
+  useEffect(() => {
+    setShowCycleDiscover(shouldShowV2CycleDiscovery());
+  }, []);
 
   const maxSlots = v2MaxSlotsForEnergy(state.energy);
   const things = v2NormalizeThings(state.things);
@@ -359,8 +367,9 @@ export default function OnboardingV2Client() {
   };
 
   const flowLayout = v2FlowLayoutForOnboardingPhase(phase);
+  // Cyclus-hint onderaan op energy: geen dubbele "Stoppen kan altijd" onderaan.
   // Done: bewust geen reassurance.
-  const showReassurance = phase === "energy";
+  const showReassurance = phase === "energy" && !showCycleDiscover;
   const langTrailing =
     phase === "energy" ? (
       <V2LanguageToggle
@@ -437,6 +446,7 @@ export default function OnboardingV2Client() {
                 onPickEnergy={pickEnergy}
                 onConfirm={confirmProposals}
                 onAdjust={openAdjust}
+                showCycleDiscover={showCycleDiscover}
               />
             ) : null}
 
