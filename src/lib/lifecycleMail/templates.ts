@@ -253,19 +253,35 @@ export function renderLifecycleMail(
     lines.filter((line): line is string => Boolean(line && line.trim()));
 
   switch (templateId) {
+    case "s0_hello":
+      return buildMail({
+        templateId,
+        cohortKey: `hello:${candidate.user_id}`,
+        subject: personalizedSubject(name, "Welkom bij Structuro"),
+        preview: "Welkom. Open de app en begin vandaag klein.",
+        paragraphs: paras(
+          hi,
+          "Welkom bij Structuro.",
+          `Je hebt ${trialDays} dagen om rustig te proberen. Geen planning voor de hele week, geen lijst die groeit. Alleen vandaag.`,
+          "Open de app en begin met één ding. Geen creditcard nodig deze dagen."
+        ),
+        ctaLabel: "Naar dagstart",
+        ctaPath: "/v2/dagstart",
+        unsubscribeUrl,
+      });
+
     case "s0_welcome":
       return buildMail({
         templateId,
         cohortKey: `signup:${candidate.user_id}`,
         subject: personalizedSubject(name, "Je account staat klaar"),
-        preview: "Eén stap: open de app en kies wat je vandaag wilt doen.",
+        preview: "Nog niet begonnen? Eén stap is genoeg.",
         paragraphs: paras(
           hi,
-          `Je account is aangemaakt. Je hebt ${trialDays} dagen om Structuro rustig te proberen.`,
-          "Geen planning voor de hele week, geen lijst die groeit. Alleen vandaag.",
-          "Eén stap: open de app en kies wat je vandaag wilt doen. Geen creditcard nodig deze dagen."
+          "Je account staat klaar. Als je nog niet bent begonnen: dat hoeft niet groot.",
+          "Eén stap: open de app en kies wat je vandaag wilt doen."
         ),
-        ctaLabel: "Naar dagstart",
+        ctaLabel: "Begin vandaag",
         ctaPath: "/v2/dagstart",
         unsubscribeUrl,
       });
@@ -286,7 +302,7 @@ export function renderLifecycleMail(
       return buildMail({
         templateId,
         cohortKey: `still:${candidate.user_id}`,
-        subject: personalizedSubject(name, "Even stil. Geen achterstand."),
+        subject: personalizedSubject(name, "Stil. Geen achterstand."),
         preview: "Structuro houdt geen lijst bij van wat je miste.",
         paragraphs: paras(
           hi,

@@ -30,6 +30,14 @@ export async function finalizeNewAccountSession(
     utm_campaign: getStoredSignupCampaign(),
   });
 
+  // Directe welkom-mail (idempotent met auth-callback + cron).
+  void fetch("/api/lifecycle/send-hello", {
+    method: "POST",
+    credentials: "same-origin",
+  }).catch(() => {
+    /* best-effort */
+  });
+
   // V2 local-first: bewaar journey/taken/dump vóórdat we naar de cloud-app gaan.
   try {
     const v2 = await migrateV2LocalDataToSupabase(userId);

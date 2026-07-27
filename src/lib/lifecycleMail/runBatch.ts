@@ -27,7 +27,7 @@ import type {
 
 export type RunLifecycleBatchOptions = {
   wave: LifecycleWave;
-  /** Default true: alleen S0/S4/S5. false = ook S1/S2/S3/S6. */
+  /** Default true: alleen hello/nudge/S4/S5. false = ook S1/S2/S3/S6. */
   p0Only?: boolean;
   dryRun?: boolean;
   limit?: number;

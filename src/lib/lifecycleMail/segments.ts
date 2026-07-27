@@ -77,7 +77,7 @@ export function eligibleTemplatesForCandidate(
   c: LifecycleCandidate,
   now = new Date()
 ): LifecycleTemplateId[] {
-  if (c.unsubscribe_lifecycle || c.is_test) return [];
+  if (c.unsubscribe_lifecycle) return [];
   if (!c.email?.trim()) return [];
   if (PAID_STATUSES.has((c.subscription_status ?? "").toLowerCase())) return [];
 
@@ -91,8 +91,13 @@ export function eligibleTemplatesForCandidate(
   const signupDay = daysSinceSignup(c, now);
   const trialLen = resolveStripeTrialDaysForSignupSource(c.signup_source);
 
-  // S0: 2–24u na signup, nog 0 checkins
-  if (hours >= 2 && hours < 24 && checkins === 0 && !expired) {
+  // S0 hello: directe welkom (ook mét checkin), 1× binnen 24u
+  if (hours >= 0 && hours < 24 && !expired) {
+    out.push("s0_hello");
+  }
+
+  // S0 welcome nudge: later als nog geen checkin (6–48u)
+  if (hours >= 6 && hours < 48 && checkins === 0 && !expired) {
     out.push("s0_welcome");
   }
 
@@ -145,7 +150,7 @@ export function eligibleTemplatesForCandidate(
 export function templatesForWave(wave: LifecycleWave): LifecycleTemplateId[] {
   switch (wave) {
     case "welcome":
-      return ["s0_welcome"];
+      return ["s0_hello", "s0_welcome"];
     case "morning":
       return ["s1_day2", "s5_paywall", "s6_winback"];
     case "evening":
@@ -157,11 +162,11 @@ export function templatesForWave(wave: LifecycleWave): LifecycleTemplateId[] {
   }
 }
 
-/** P0-only: S0/S4/S5 (beslisdocument week 1). */
+/** P0-only: hello + nudge + S4/S5 (beslisdocument week 1). */
 export function templatesForWaveP0(wave: LifecycleWave): LifecycleTemplateId[] {
   switch (wave) {
     case "welcome":
-      return ["s0_welcome"];
+      return ["s0_hello", "s0_welcome"];
     case "morning":
       return ["s5_paywall"];
     case "evening":

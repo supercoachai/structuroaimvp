@@ -1,5 +1,6 @@
 /** Template-IDs uit Obsidian blueprint (Lifecycle mail blueprint.md). */
 export type LifecycleTemplateId =
+  | "s0_hello"
   | "s0_welcome"
   | "s1_day2"
   | "s2_still"

@@ -94,6 +94,12 @@ export const APP_ROUTES = [
     status: [200, 405],
   },
   {
+    path: "/api/lifecycle/send-hello",
+    kind: "api",
+    method: "POST",
+    status: [200, 401, 405],
+  },
+  {
     path: "/api/auth/request-password-reset",
     kind: "api",
     method: "POST",

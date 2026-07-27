@@ -34,22 +34,36 @@ describe("lifecycleMail segments", () => {
     vi.useRealTimers();
   });
 
-  it("P0 waves zijn S0 / S5 / S4", () => {
-    expect(templatesForWaveP0("welcome")).toEqual(["s0_welcome"]);
+  it("P0 waves zijn hello+nudge / S5 / S4", () => {
+    expect(templatesForWaveP0("welcome")).toEqual(["s0_hello", "s0_welcome"]);
     expect(templatesForWaveP0("morning")).toEqual(["s5_paywall"]);
     expect(templatesForWaveP0("evening")).toEqual(["s4_pre_paywall"]);
   });
 
-  it("S0: 2–24u na signup zonder checkin", () => {
-    vi.setSystemTime(new Date("2026-07-15T14:00:00.000Z")); // +4u
+  it("S0 hello: direct na signup, ook mét checkin", () => {
+    vi.setSystemTime(new Date("2026-07-15T10:30:00.000Z")); // +0.5u
+    const ids = eligibleTemplatesForCandidate(
+      candidate({
+        created_at: "2026-07-15T10:00:00.000Z",
+        checkin_count: 1,
+        last_checkin_date: "2026-07-15",
+      })
+    );
+    expect(ids).toContain("s0_hello");
+    expect(ids).not.toContain("s0_welcome");
+  });
+
+  it("S0 welcome nudge: 6–48u zonder checkin", () => {
+    vi.setSystemTime(new Date("2026-07-15T18:00:00.000Z")); // +8u
     const ids = eligibleTemplatesForCandidate(
       candidate({ created_at: "2026-07-15T10:00:00.000Z", checkin_count: 0 })
     );
+    expect(ids).toContain("s0_hello");
     expect(ids).toContain("s0_welcome");
   });
 
-  it("S0 skip bij checkin", () => {
-    vi.setSystemTime(new Date("2026-07-15T14:00:00.000Z"));
+  it("S0 welcome skip bij checkin", () => {
+    vi.setSystemTime(new Date("2026-07-15T18:00:00.000Z"));
     const ids = eligibleTemplatesForCandidate(
       candidate({ checkin_count: 1, last_checkin_date: "2026-07-15" })
     );

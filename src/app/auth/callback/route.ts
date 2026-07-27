@@ -174,6 +174,14 @@ export async function GET(request: Request) {
             source: attr?.source ?? "direct",
             utm_campaign: attr?.utm_campaign ?? null,
           });
+          // Directe welkom-mail (idempotent; cron is vangnet).
+          void import("@/lib/lifecycleMail/sendOne")
+            .then(({ sendLifecycleHelloMail }) =>
+              sendLifecycleHelloMail(user.id)
+            )
+            .catch(() => {
+              /* best-effort */
+            });
         }
       }
 

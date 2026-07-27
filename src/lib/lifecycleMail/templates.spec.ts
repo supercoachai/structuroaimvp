@@ -24,22 +24,37 @@ const base: LifecycleCandidate = {
 };
 
 describe("lifecycleMail templates", () => {
-  it("S0 heeft één CTA, geen em-dash, en gepersonaliseerd subject", () => {
+  it("S0 hello is directe welkom met CTA naar dagstart", () => {
+    const mail = renderLifecycleMail(
+      "s0_hello",
+      base,
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.subject).toBe("Sam, welkom bij Structuro");
+    expect(mail.ctaPath).toBe("/v2/dagstart");
+    expect(mail.cohortKey).toBe("hello:u1");
+    expect(mail.html).toContain("Naar dagstart");
+    expect(mail.html).toContain("Welkom bij Structuro");
+    expect(mail.text).toContain("Naar dagstart");
+    expect(mail.html).not.toContain("—");
+  });
+
+  it("S0 welcome nudge heeft CTA Begin vandaag", () => {
     const mail = renderLifecycleMail(
       "s0_welcome",
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
     expect(mail.subject).toBe("Sam, je account staat klaar");
-    expect(mail.text).toContain("Naar dagstart");
+    expect(mail.text).toContain("Begin vandaag");
     expect(mail.text).not.toContain("—");
-    expect(mail.html).toContain("Naar dagstart");
+    expect(mail.html).toContain("Begin vandaag");
     expect(mail.html).toContain("Afmelden");
     expect(mail.html).toContain("Hoi Sam,");
     expect(mail.text).toContain("Hoi Sam,");
   });
 
-  it("S0 wijst naar /v2/dagstart", () => {
+  it("S0 welcome wijst naar /v2/dagstart", () => {
     const mail = renderLifecycleMail(
       "s0_welcome",
       base,
@@ -64,9 +79,9 @@ describe("lifecycleMail templates", () => {
     expect(mail.html).not.toContain("—");
   });
 
-  it("S0 noemt het alleen-vandaag principe", () => {
+  it("S0 hello noemt alleen-vandaag principe", () => {
     const mail = renderLifecycleMail(
-      "s0_welcome",
+      "s0_hello",
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );

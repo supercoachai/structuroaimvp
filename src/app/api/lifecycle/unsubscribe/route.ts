@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   const supabase = createServiceRoleClient();
   if (!supabase) {
     return htmlPage(
-      "Even niet mogelijk",
+      "Tijdelijk niet mogelijk",
       "<p>Afmelding kon nu niet worden opgeslagen. Mail info@structuro.eu, dan regelen we het handmatig.</p>"
     );
   }
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   if (error) {
     console.error("[lifecycle/unsubscribe]", error.message);
     return htmlPage(
-      "Even niet mogelijk",
+      "Tijdelijk niet mogelijk",
       "<p>Afmelding kon nu niet worden opgeslagen. Mail info@structuro.eu.</p>"
     );
   }
