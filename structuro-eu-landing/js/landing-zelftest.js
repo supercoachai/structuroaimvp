@@ -33,7 +33,7 @@
     {
       tag: 'CYCLUS',
       title: 'Hormonen en focus',
-      short: 'Sommige weken werkt mijn brein gewoon anders.',
+      short: 'Sommige weken werkt mijn brein anders.',
       body: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
       contentId: 'zelftest_cyclus',
     },
@@ -76,25 +76,43 @@
   }
 
   function message(count) {
+    var en = (window.currentLang || 'nl') === 'en';
     if (count === 0) {
-      return {
-        t: 'Kies wat op jou van toepassing is',
-        s: 'Je ziet per punt wat Structuro ermee doet.',
-      };
+      return en
+        ? {
+            t: 'Choose what applies to you',
+            s: 'Per point you see what Structuro does with it.',
+          }
+        : {
+            t: 'Kies wat op jou van toepassing is',
+            s: 'Je ziet per punt wat Structuro ermee doet.',
+          };
     }
     if (count <= 2) {
-      return { t: count + ' van 6 herkenbaar', s: 'Precies hiervoor is Structuro gebouwd.' };
+      return en
+        ? { t: count + ' of 6 familiar', s: 'This is exactly what Structuro was built for.' }
+        : { t: count + ' van 6 herkenbaar', s: 'Precies hiervoor is Structuro gebouwd.' };
     }
     if (count <= 4) {
-      return {
-        t: count + ' van 6 herkenbaar',
-        s: 'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.',
-      };
+      return en
+        ? {
+            t: count + ' of 6 familiar',
+            s: 'These are the friction points Structuro tackles, one by one.',
+          }
+        : {
+            t: count + ' van 6 herkenbaar',
+            s: 'Dit zijn stuk voor stuk de knelpunten die Structuro aanpakt.',
+          };
     }
-    return {
-      t: count + ' van 6 herkenbaar',
-      s: 'Meerdere punten? Dat is normaal bij ADHD.',
-    };
+    return en
+      ? {
+          t: count + ' of 6 familiar',
+          s: 'Several points? That is normal with ADHD.',
+        }
+      : {
+          t: count + ' van 6 herkenbaar',
+          s: 'Meerdere punten? Dat is normaal bij ADHD.',
+        };
   }
 
   function signupBridgeUrl(contentId) {
@@ -294,6 +312,6 @@
   build();
 
   window.refreshZelftestCopy = function () {
-    if (stickyCtaEl) stickyCtaEl.textContent = stickyCtaLabel();
+    syncSticky();
   };
 })();

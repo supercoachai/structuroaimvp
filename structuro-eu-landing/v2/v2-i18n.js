@@ -11,6 +11,7 @@
       meta_desc:
         "Structuro begint bij lage energie met één eerste stap. Jij bevestigt, en begint. Voor ADHD-breinen die niet beginnen.",
       nav_how: "Dagstart",
+      nav_why: "Herkenning",
       nav_reviews: "Reviews",
       nav_price: "Prijs",
       nav_faq: "FAQ",
@@ -20,9 +21,13 @@
       menu: "Menu",
       hero_eyebrow: "Voor ADHD-breinen die niet beginnen",
       hero_h1: 'Niet alles.<br><span class="it">Eén eerste stap.</span><br>Vandaag.',
-      hero_secondary: "Bekijk hoe het werkt",
+      hero_secondary: "Welke hiervan ben jij?",
       intro_support: "Structuro kiest wat haalbaar is. Jij bevestigt, en begint.",
       hero_note: "3 dagen gratis. Geen verplichting. Stoppen kan altijd.",
+      psych_eyebrow: "Waarom dit werkt",
+      psych_h2: "Welke hiervan ben jij?",
+      psych_lede:
+        "Je krijgt per punt precies het antwoord dat erbij hoort, en niets meer.",
       why_open_aria: "Waarom dit zo werkt",
       why_close_aria: "Uitleg sluiten",
       why_gotit: "Begrepen",
@@ -320,6 +325,7 @@
       meta_desc:
         "Structuro starts from low energy with one first step. You confirm, and start. For ADHD brains that don't begin.",
       nav_how: "Day start",
+      nav_why: "Recognition",
       nav_reviews: "Reviews",
       nav_price: "Pricing",
       nav_faq: "FAQ",
@@ -329,9 +335,12 @@
       menu: "Menu",
       hero_eyebrow: "For ADHD brains that don't start",
       hero_h1: 'Not everything.<br><span class="it">One first step.</span><br>Today.',
-      hero_secondary: "See how it works",
+      hero_secondary: "Which of these is you?",
       intro_support: "Structuro picks what is doable. You confirm, and begin.",
       hero_note: "3 days free. No commitment. Cancel anytime.",
+      psych_eyebrow: "Why this works",
+      psych_h2: "Which of these is you?",
+      psych_lede: "You get exactly the answer that fits each point, and nothing more.",
       why_open_aria: "Why this works",
       why_close_aria: "Close explanation",
       why_gotit: "Got it",
@@ -704,6 +713,9 @@
     }
     if (typeof window.refreshWhySheet === "function") {
       window.refreshWhySheet();
+    }
+    if (typeof window.refreshZelftestCopy === "function") {
+      window.refreshZelftestCopy();
     }
   }
 
