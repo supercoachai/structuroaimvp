@@ -19,6 +19,10 @@ export const ANALYTICS_EVENTS = {
   dagstart_empty_selection_hint_dismissed: "dagstart_empty_selection_hint_dismissed",
   dagstart_tasks_selected: "dagstart_tasks_selected",
   dagstart_completed: "dagstart_completed",
+  /** Anonieme eerste dagstart (v2), vóór account. */
+  dagstart_completed_anon: "dagstart_completed_anon",
+  /** Alias-meetpunt na account (naast signup_completed). */
+  account_created: "account_created",
   new_task_flow_opened: "new_task_flow_opened",
   new_task_flow_step_viewed: "new_task_flow_step_viewed",
   new_task_flow_abandoned: "new_task_flow_abandoned",
@@ -33,6 +37,11 @@ export const ANALYTICS_EVENTS = {
   password_reset_requested: "password_reset_requested",
   lifecycle_email_sent: "lifecycle_email_sent",
   lifecycle_email_unsubscribed: "lifecycle_email_unsubscribed",
+  trial_checkout_opened: "trial_checkout_opened",
+  trial_started: "trial_started",
+  trial_precharge_mailed: "trial_precharge_mailed",
+  trial_cancelled_one_click: "trial_cancelled_one_click",
+  trial_converted: "trial_converted",
 } as const;
 
 export type AnalyticsEventName =
