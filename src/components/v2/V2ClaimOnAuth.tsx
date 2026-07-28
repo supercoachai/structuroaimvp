@@ -14,6 +14,7 @@ import {
   peekV2PostAccountNamePending,
   V2_POST_ACCOUNT_NAME_PATH,
 } from "./v2PostAccountName";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
 /**
  * Na OAuth/login: migreer V2 localStorage → Supabase vóór wipe.
@@ -55,7 +56,23 @@ export default function V2ClaimOnAuth() {
             peekV2PostAccountNamePending() ||
             (typeof window !== "undefined" &&
               new URLSearchParams(window.location.search).get("name") === "1");
-          window.location.assign(askName ? V2_POST_ACCOUNT_NAME_PATH : "/v2/home");
+          if (askName) {
+            window.location.assign(V2_POST_ACCOUNT_NAME_PATH);
+            return;
+          }
+          // Jasper / café: geen kaart-poort; overige v2-cohort → checkout.
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("signup_source")
+            .eq("id", user.id)
+            .maybeSingle();
+          const source =
+            typeof profile?.signup_source === "string"
+              ? profile.signup_source
+              : null;
+          window.location.assign(
+            isEventSignupSource(source) ? "/v2/home" : "/v2/abonnement"
+          );
           return;
         }
       } catch (err) {

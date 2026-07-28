@@ -253,11 +253,16 @@ export function amsterdamYmd(now = new Date()): string {
   }).format(now);
 }
 
+export type RenderLifecycleMailExtras = {
+  cancelUrl?: string;
+};
+
 export function renderLifecycleMail(
   templateId: LifecycleTemplateId,
   candidate: LifecycleCandidate,
   unsubscribeUrl: string,
-  now = new Date()
+  now = new Date(),
+  extras?: RenderLifecycleMailExtras
 ): LifecycleRenderedMail {
   const name = resolveGreetingName(candidate);
   const hi = greetingLine(candidate);
@@ -349,26 +354,42 @@ export function renderLifecycleMail(
         unsubscribeUrl,
       });
 
-    case "s4_pre_paywall":
+    case "s4_pre_paywall": {
+      const cancelUrl = extras?.cancelUrl?.trim() || null;
+      let ctaPath = lifecycleCtaPaywall();
+      if (cancelUrl) {
+        try {
+          const parsed = new URL(cancelUrl, getAppOrigin());
+          ctaPath = `${parsed.pathname}${parsed.search}` || ctaPath;
+        } catch {
+          /* keep paywall fallback */
+        }
+      }
       return buildMail({
         templateId,
         cohortKey: `prepaywall:${cohort}`,
         subject: personalizedSubject(name, "Morgen kies je of je door wilt"),
-        preview: "Je proefperiode loopt morgen af.",
+        preview: cancelUrl
+          ? "Je proefperiode loopt morgen af. Stoppen kan met één klik."
+          : "Je proefperiode loopt morgen af.",
         paragraphs: paras(
           hi,
           "Je proefperiode loopt morgen af.",
           n > 0
             ? `Je opende Structuro deze dagen ${n} keer. Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`
             : "De afgelopen dagen kon je rustig wennen aan hoe Structuro werkt.",
-          "Daarna kun je kiezen: door met Structuro, of stoppen."
+          cancelUrl
+            ? "Wil je stoppen vóór de eerste afschrijving? Gebruik de knop hieronder. Geen formulier, geen nagesprek."
+            : "Daarna kun je kiezen: door met Structuro, of stoppen."
         ),
-        ctaLabel: "Kies of je doorgaat",
-        ctaPath: lifecycleCtaPaywall(),
-        ctaSubline:
-          "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
+        ctaLabel: cancelUrl ? "Stop abonnement" : "Kies of je doorgaat",
+        ctaPath,
+        ctaSubline: cancelUrl
+          ? "Eén klik. Je houdt toegang tot het einde van je proefperiode."
+          : "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
         unsubscribeUrl,
       });
+    }
 
     case "s5_paywall":
       return buildMail({

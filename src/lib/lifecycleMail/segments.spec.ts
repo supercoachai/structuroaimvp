@@ -16,6 +16,7 @@ function candidate(
     created_at: new Date("2026-07-15T10:00:00.000Z").toISOString(),
     signup_source: null,
     subscription_status: "none",
+    subscription_current_period_end: null,
     last_dagstart_date: null,
     unsubscribe_lifecycle: false,
     is_test: false,
@@ -34,10 +35,13 @@ describe("lifecycleMail segments", () => {
     vi.useRealTimers();
   });
 
-  it("P0 waves zijn hello+nudge / S5 / S4", () => {
+  it("P0 waves zijn hello+nudge / s1+S5 / s2+S4", () => {
     expect(templatesForWaveP0("welcome")).toEqual(["s0_hello", "s0_welcome"]);
-    expect(templatesForWaveP0("morning")).toEqual(["s5_paywall"]);
-    expect(templatesForWaveP0("evening")).toEqual(["s4_pre_paywall"]);
+    expect(templatesForWaveP0("morning")).toEqual(["s1_day2", "s5_paywall"]);
+    expect(templatesForWaveP0("evening")).toEqual([
+      "s2_still",
+      "s4_pre_paywall",
+    ]);
   });
 
   it("S0 hello: direct na signup, ook mét checkin", () => {
@@ -105,6 +109,28 @@ describe("lifecycleMail segments", () => {
     expect(
       eligibleTemplatesForCandidate(
         candidate({ subscription_status: "active", checkin_count: 0 })
+      )
+    ).toEqual([]);
+  });
+
+  it("Stripe trialing: S4 alleen op laatste volle dag (period_end)", () => {
+    vi.setSystemTime(new Date("2026-07-21T12:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-22T10:00:00.000Z",
+          checkin_count: 3,
+        })
+      )
+    ).toEqual(["s4_pre_paywall"]);
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-25T10:00:00.000Z",
+          checkin_count: 3,
+        })
       )
     ).toEqual([]);
   });

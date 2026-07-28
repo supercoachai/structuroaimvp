@@ -69,6 +69,14 @@ function daysSinceSignup(c: LifecycleCandidate, now: Date): number {
   return Math.floor((now.getTime() - t) / (24 * 60 * 60 * 1000));
 }
 
+function stripeTrialDaysLeft(c: LifecycleCandidate, now: Date): number {
+  const endIso = c.subscription_current_period_end;
+  if (!endIso) return 0;
+  const end = new Date(endIso).getTime();
+  if (Number.isNaN(end) || end <= now.getTime()) return 0;
+  return Math.ceil((end - now.getTime()) / (24 * 60 * 60 * 1000));
+}
+
 /**
  * Welke templates mag deze candidate krijgen op dit moment?
  * Idempotentie (al verstuurd) gebeurt in de runner, niet hier.
@@ -79,7 +87,15 @@ export function eligibleTemplatesForCandidate(
 ): LifecycleTemplateId[] {
   if (c.unsubscribe_lifecycle) return [];
   if (!c.email?.trim()) return [];
-  if (PAID_STATUSES.has((c.subscription_status ?? "").toLowerCase())) return [];
+
+  const status = (c.subscription_status ?? "").toLowerCase();
+  if (status === "active") return [];
+
+  // Stripe-trialing: alleen pre-charge (S4) op laatste volle dag.
+  if (status === "trialing") {
+    if (stripeTrialDaysLeft(c, now) === 1) return ["s4_pre_paywall"];
+    return [];
+  }
 
   const out: LifecycleTemplateId[] = [];
   const hours = hoursSince(c.created_at, now);
@@ -162,15 +178,15 @@ export function templatesForWave(wave: LifecycleWave): LifecycleTemplateId[] {
   }
 }
 
-/** P0-only: hello + nudge + S4/S5 (beslisdocument week 1). */
+/** P0: hello/nudge + dag2/stil + pre-charge/paywall. */
 export function templatesForWaveP0(wave: LifecycleWave): LifecycleTemplateId[] {
   switch (wave) {
     case "welcome":
       return ["s0_hello", "s0_welcome"];
     case "morning":
-      return ["s5_paywall"];
+      return ["s1_day2", "s5_paywall"];
     case "evening":
-      return ["s4_pre_paywall"];
+      return ["s2_still", "s4_pre_paywall"];
     default: {
       const _e: never = wave;
       throw new Error(`Onbekende wave: ${_e}`);

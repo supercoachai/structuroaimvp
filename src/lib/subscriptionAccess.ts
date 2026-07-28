@@ -3,6 +3,7 @@ import { hasLaunchGraceAccess } from "./launchGrace";
 import { hasFreeTrial } from "./freeTrialAccess";
 import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
 import { isInternalTeamAccount } from "./internalTeamAccount";
+import { isV2CardTrialCohort } from "./stripe/v2CardTrial";
 
 /** Toegang tot de app na betaalde launch: actief, of opgezegd maar nog binnen betaalperiode. */
 
@@ -37,8 +38,8 @@ export function profileHasAppAccess(row: {
  * Toegangscheck voor de paywall-gate: betalend abonnement, gratis proeftijd
  * (3 dagen na aanmaken account), of launch-grace (bestaande testers t/m 30 juni).
  *
- * Gebruik dit in de middleware-gate. De Stripe-only `profileHasAppAccess` blijft
- * bestaan voor flows die puur "heeft betaald?" willen weten (bijv. post-checkout redirect).
+ * V2 card-trial cohort (na cutoff): géén free-trial zonder Stripe; event-QR
+ * (jasper/café) blijft wel via event-trial.
  */
 export function profileHasAppAccessOrGrace(row: {
   email?: string | null | undefined;
@@ -56,9 +57,11 @@ export function profileHasAppAccessOrGrace(row: {
   if (status === "trial_expired") return false;
 
   if (profileHasAppAccess(row)) return true;
-  // Event-QR (bijv. café): 14 dagen app-toegang zonder Stripe bij signup
+  // Event-QR (bijv. café/jasper): app-toegang zonder Stripe bij signup
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;
-  // Gratis proeftijd: eerste 3 dagen na aanmaken account
+  // Nieuwe v2-cohort: kaart-trial verplicht, geen 3-dagen free trial
+  if (isV2CardTrialCohort(row.created_at)) return false;
+  // Gratis proeftijd: eerste 3 dagen na aanmaken account (v1 / legacy)
   if (hasFreeTrial(row.created_at)) return true;
   // Launch-grace: bestaande testers gratis t/m 30 juni 2026
   return hasLaunchGraceAccess({

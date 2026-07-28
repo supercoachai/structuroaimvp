@@ -13,6 +13,10 @@ import {
 
 import { useI18n } from "@/lib/i18n";
 
+import V2CycleSetupFields, {
+  readV2CycleSetupDefaults,
+  type V2CycleSetupValues,
+} from "./V2CycleSetupFields";
 import { V2SettingsToggle } from "./V2SettingsUi";
 import {
   CYCLE_DISCOVER_SWIPE_CLOSE_PX,
@@ -87,7 +91,11 @@ function HowStep({
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("button, a, [role='switch'], input, label"));
+  return Boolean(
+    target.closest(
+      "button, a, [role='switch'], input, label, .v2-cycle-setup__fields, .v2-cycle-datepicker",
+    ),
+  );
 }
 
 /**
@@ -196,12 +204,14 @@ type V2CycleDiscoverSheetProps = {
   onEnable: () => void;
   onDisable: () => void;
   onNotNow: () => void;
+  /** Bij Klaar / bevestigen: sla periode + lengtes op (geen stille dag-1). */
+  onConfirmSetup: (values: V2CycleSetupValues) => void;
 };
 
 /**
  * Uitgebreide discovery-sheet: inzicht + reminder, nooit sturing.
  * Swipe-omlaag (handle/header) of backdrop sluit zonder keuze; Nee dismiss’t discovery.
- * Aan/uit via toggle of CTAs; Aan dismiss’t discovery niet.
+ * Aan toont setup-velden; Klaar slaat start/lengte/menstruatie op.
  */
 export default function V2CycleDiscoverSheet({
   open,
@@ -210,6 +220,7 @@ export default function V2CycleDiscoverSheet({
   onEnable,
   onDisable,
   onNotNow,
+  onConfirmSetup,
 }: V2CycleDiscoverSheetProps) {
   const { t } = useI18n();
   const titleId = useId();
@@ -218,6 +229,15 @@ export default function V2CycleDiscoverSheet({
   const dragMoved = useRef(false);
   const dragFromGrab = useRef(false);
   const [dragY, setDragY] = useState(0);
+  const [setupValues, setSetupValues] = useState<V2CycleSetupValues>(
+    readV2CycleSetupDefaults,
+  );
+
+  useEffect(() => {
+    if (open && enabled) {
+      setSetupValues(readV2CycleSetupDefaults());
+    }
+  }, [open, enabled]);
 
   useEffect(() => {
     if (!open) {
@@ -355,19 +375,30 @@ export default function V2CycleDiscoverSheet({
           </div>
 
           <div
-            className="v2-cycle-discover-sheet__head"
+            className={[
+              "v2-cycle-discover-sheet__head",
+              enabled ? "v2-cycle-discover-sheet__head--setup" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             data-sheet-drag
             onPointerDown={(e) => beginDrag(e, false)}
           >
-            <span className="v2-cycle-discover-sheet__head-icon" aria-hidden>
-              <CycleDiscoverIcon size={30} />
-            </span>
+            {enabled ? null : (
+              <span className="v2-cycle-discover-sheet__head-icon" aria-hidden>
+                <CycleDiscoverIcon size={30} />
+              </span>
+            )}
             <div className="v2-cycle-discover-sheet__head-copy">
-              <p className="v2-cycle-discover-sheet__eyebrow">
-                {t("cycle.discoverEyebrow")}
-              </p>
+              {enabled ? null : (
+                <p className="v2-cycle-discover-sheet__eyebrow">
+                  {t("cycle.discoverEyebrow")}
+                </p>
+              )}
               <h2 id={titleId} className="v2-cycle-discover-sheet__title">
-                {t("cycle.discoverTitle")}
+                {enabled
+                  ? t("cycle.discoverSetupTitle")
+                  : t("cycle.discoverTitle")}
               </h2>
             </div>
             <button
@@ -380,75 +411,95 @@ export default function V2CycleDiscoverSheet({
             </button>
           </div>
 
-          <div className="v2-cycle-discover-sheet__scroll">
-            <p className="v2-cycle-discover-sheet__body">
-              {t("cycle.discoverBody")}
-            </p>
-
-            <div className="v2-cycle-discover-sheet__toggle-card">
-              <div className="v2-cycle-discover-sheet__toggle-copy">
-                <p className="v2-cycle-discover-sheet__toggle-title">
-                  {t("cycle.discoverToggleLabel")}
-                </p>
-                <p className="v2-cycle-discover-sheet__toggle-status">
-                  {enabled
-                    ? t("cycle.discoverToggleOn")
-                    : t("cycle.discoverToggleOff")}
-                </p>
-              </div>
-              <V2SettingsToggle
-                checked={enabled}
-                onChange={() => setEnabled(!enabled)}
-                ariaLabel={t("cycle.discoverToggleLabel")}
-              />
-            </div>
-
-            <section
-              className="v2-cycle-discover-sheet__why"
-              aria-labelledby={`${titleId}-why`}
-            >
-              <h3
-                id={`${titleId}-why`}
-                className="v2-cycle-discover-sheet__why-title"
+          <div
+            className={[
+              "v2-cycle-discover-sheet__scroll",
+              enabled ? "v2-cycle-discover-sheet__scroll--setup" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {enabled ? (
+              <section
+                className="v2-cycle-discover-sheet__setup"
+                aria-labelledby={titleId}
               >
-                {t("cycle.discoverWhyTitle")}
-              </h3>
-              <p className="v2-cycle-discover-sheet__why-body">
-                {t("cycle.discoverWhyBody")}
-              </p>
-            </section>
+                <V2CycleSetupFields
+                  key={`setup-${open}-${enabled}`}
+                  compact
+                  onChange={setSetupValues}
+                />
+              </section>
+            ) : (
+              <>
+                <p className="v2-cycle-discover-sheet__body">
+                  {t("cycle.discoverBody")}
+                </p>
 
-            <section
-              className="v2-cycle-discover-sheet__how"
-              aria-labelledby={`${titleId}-how`}
-            >
-              <h3
-                id={`${titleId}-how`}
-                className="v2-cycle-discover-sheet__how-title"
-              >
-                {t("cycle.discoverHowTitle")}
-              </h3>
-              <ol className="v2-cycle-discover-sheet__how-list">
-                <HowStep
-                  n={1}
-                  before={t("cycle.discoverHow1Before")}
-                  em={t("cycle.discoverHow1Em")}
-                  after={t("cycle.discoverHow1After")}
-                />
-                <HowStep
-                  n={2}
-                  before={t("cycle.discoverHow2Before")}
-                  em={t("cycle.discoverHow2Em")}
-                  after={t("cycle.discoverHow2After")}
-                />
-                <HowStep
-                  n={3}
-                  before={t("cycle.discoverHow3Before")}
-                  em={t("cycle.discoverHow3Em")}
-                  after={t("cycle.discoverHow3After")}
-                />
-              </ol>
-            </section>
+                <div className="v2-cycle-discover-sheet__toggle-card">
+                  <div className="v2-cycle-discover-sheet__toggle-copy">
+                    <p className="v2-cycle-discover-sheet__toggle-title">
+                      {t("cycle.discoverToggleLabel")}
+                    </p>
+                    <p className="v2-cycle-discover-sheet__toggle-status">
+                      {t("cycle.discoverToggleOff")}
+                    </p>
+                  </div>
+                  <V2SettingsToggle
+                    checked={false}
+                    onChange={() => setEnabled(true)}
+                    ariaLabel={t("cycle.discoverToggleLabel")}
+                  />
+                </div>
+
+                <section
+                  className="v2-cycle-discover-sheet__why"
+                  aria-labelledby={`${titleId}-why`}
+                >
+                  <h3
+                    id={`${titleId}-why`}
+                    className="v2-cycle-discover-sheet__why-title"
+                  >
+                    {t("cycle.discoverWhyTitle")}
+                  </h3>
+                  <p className="v2-cycle-discover-sheet__why-body">
+                    {t("cycle.discoverWhyBody")}
+                  </p>
+                </section>
+
+                <section
+                  className="v2-cycle-discover-sheet__how"
+                  aria-labelledby={`${titleId}-how`}
+                >
+                  <h3
+                    id={`${titleId}-how`}
+                    className="v2-cycle-discover-sheet__how-title"
+                  >
+                    {t("cycle.discoverHowTitle")}
+                  </h3>
+                  <ol className="v2-cycle-discover-sheet__how-list">
+                    <HowStep
+                      n={1}
+                      before={t("cycle.discoverHow1Before")}
+                      em={t("cycle.discoverHow1Em")}
+                      after={t("cycle.discoverHow1After")}
+                    />
+                    <HowStep
+                      n={2}
+                      before={t("cycle.discoverHow2Before")}
+                      em={t("cycle.discoverHow2Em")}
+                      after={t("cycle.discoverHow2After")}
+                    />
+                    <HowStep
+                      n={3}
+                      before={t("cycle.discoverHow3Before")}
+                      em={t("cycle.discoverHow3Em")}
+                      after={t("cycle.discoverHow3After")}
+                    />
+                  </ol>
+                </section>
+              </>
+            )}
           </div>
 
           <div className="v2-cycle-discover-sheet__foot">
@@ -467,7 +518,10 @@ export default function V2CycleDiscoverSheet({
                   <button
                     type="button"
                     className="btn-primary v2-cycle-discover-sheet__cta-yes"
-                    onClick={onClose}
+                    onClick={() => {
+                      onConfirmSetup(setupValues);
+                      onClose();
+                    }}
                   >
                     {t("cycle.discoverDone")}
                   </button>
@@ -486,7 +540,6 @@ export default function V2CycleDiscoverSheet({
                     className="btn-primary v2-cycle-discover-sheet__cta-yes"
                     onClick={() => {
                       onEnable();
-                      onClose();
                     }}
                   >
                     {t("cycle.discoverEnable")}

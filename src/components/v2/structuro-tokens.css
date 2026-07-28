@@ -418,6 +418,13 @@
       max(3rem, env(safe-area-inset-bottom, 0px))
   );
 }
+/* LoginShell split-layout vult de fixed v2-root (navy panel ≥960px). */
+.v2-root .login-shell {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
 .v2-root .v2-auth-gate {
   flex: 1;
   display: flex;
@@ -429,6 +436,11 @@
   gap: 28px;
   padding: clamp(1.5rem, 6vh, 3rem) 4px;
 }
+.v2-root .v2-auth-gate--shell {
+  flex: none;
+  padding: 0;
+  gap: 22px;
+}
 .v2-root .v2-auth-gate__brand {
   margin: 0;
   text-align: center;
@@ -439,12 +451,30 @@
   text-transform: uppercase;
   color: var(--ink);
 }
+.v2-root .v2-auth-gate__brand--logo {
+  display: flex;
+  justify-content: center;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.v2-root .v2-auth-gate__logo {
+  display: block;
+  width: 36px;
+  height: auto;
+  object-fit: contain;
+}
 .v2-root .v2-auth-gate__body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 16px;
+  gap: 22px;
   width: 100%;
+}
+.v2-root .v2-auth-gate__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
 }
 .v2-root .v2-auth-gate__title {
   margin: 0;
@@ -462,15 +492,64 @@
   text-align: center;
   font-family: var(--font-ui);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.45;
   color: var(--text-muted);
 }
 .v2-root .v2-auth-gate__actions {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 14px;
+  margin-top: 0;
+}
+.v2-root .v2-auth-gate__more {
+  width: 100%;
+  border-top: 1px solid rgba(26, 35, 64, 0.1);
+  padding-top: 14px;
+}
+.v2-root .v2-auth-gate__more-summary {
+  appearance: none;
+  list-style: none;
+  margin: 0 auto;
+  display: flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px solid rgba(26, 35, 64, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 550;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(26, 35, 64, 0.04);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.v2-root .v2-auth-gate__more-summary::-webkit-details-marker {
+  display: none;
+}
+.v2-root .v2-auth-gate__more-summary:hover {
+  border-color: rgba(45, 90, 86, 0.35);
+  background: rgba(45, 90, 86, 0.04);
+}
+.v2-root .v2-auth-gate__more-summary:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+.v2-root .v2-auth-gate__more[open] .v2-auth-gate__more-chevron {
+  transform: rotate(180deg);
+}
+.v2-root .v2-auth-gate__more-chevron {
+  display: block;
+  flex: none;
+  transition: transform 180ms ease;
+}
+.v2-root .v2-auth-gate__more .v2-auth-gate__email {
+  margin-top: 14px;
 }
 .v2-root .v2-auth-gate__email {
   display: flex;
@@ -1758,6 +1837,19 @@
   margin-bottom: 10px;
   flex: none;
 }
+.v2-root .v2-cycle-discover-sheet__head--setup {
+  margin-bottom: 14px;
+  align-items: center;
+}
+.v2-root .v2-cycle-discover-sheet__head--setup .v2-cycle-discover-sheet__title {
+  font-size: 20px;
+}
+.v2-root .v2-cycle-discover-sheet__scroll--setup {
+  padding-bottom: 4px;
+}
+.v2-root .v2-cycle-discover-sheet__scroll--setup .v2-cycle-discover-sheet__setup {
+  margin: 0;
+}
 .v2-root .v2-cycle-discover-sheet__head-icon {
   flex: none;
   margin-top: 2px;
@@ -1873,6 +1965,31 @@
 }
 .v2-root .v2-cycle-discover-sheet__how {
   margin: 0 0 4px;
+}
+.v2-root .v2-cycle-discover-sheet__setup {
+  margin: 0 0 4px;
+}
+.v2-root .v2-cycle-setup__fields {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+.v2-root .v2-cycle-setup__fields--compact {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.v2-root .v2-cycle-setup__fields--compact .v2-cycle-setup__question {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.v2-root .v2-cycle-setup__fields--compact .v2-cycle-setup__footnote {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.4;
 }
 .v2-root .v2-cycle-discover-sheet__how-title {
   margin: 0 0 8px;

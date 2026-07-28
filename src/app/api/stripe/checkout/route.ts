@@ -8,6 +8,10 @@ import {
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
 import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
 import {
+  V2_CARD_TRIAL_DAYS,
+  isV2CardTrialCohort,
+} from "@/lib/stripe/v2CardTrial";
+import {
   getJasperSubscriptionDiscount,
   isJasperSignupSource,
 } from "@/lib/jasper/jasperOffer";
@@ -89,7 +93,7 @@ async function postCheckout(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("signup_source, checkout_bonus_trial_days")
+    .select("signup_source, checkout_bonus_trial_days, created_at, subscription_status")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -100,19 +104,30 @@ async function postCheckout(request: Request) {
   const jasperDiscount = getJasperSubscriptionDiscount(signupSource);
   const jasperFlagged = isJasperSignupSource(signupSource);
 
-  // Herinschrijving na verlopen proefperiode: geen nieuwe trial. Bewuste
-  // uitzondering per account: checkout_bonus_trial_days (service_role only,
-  // bv. compensatie na een storing) schuift de eerste betaalde maand op.
-  // De webhook zet de kolom terug naar 0 na een afgeronde checkout.
+  // V2 card-cohort: eerste checkout krijgt 7 dagen Stripe-trial + PM.
+  // Herinschrijving na expiry / legacy: alleen bonus-dagen (meestal 0).
+  const status = (profile?.subscription_status as string | null)?.toLowerCase() ?? "none";
+  const freshV2CardTrial =
+    useV2Return &&
+    isV2CardTrialCohort(profile?.created_at as string | null) &&
+    (status === "none" || status === "");
+  const trialDays = freshV2CardTrial
+    ? Math.max(V2_CARD_TRIAL_DAYS, readCheckoutBonusTrialDays(profile))
+    : readCheckoutBonusTrialDays(profile);
+
   const session = await createSubscriptionCheckoutSession({
     stripe,
     priceId,
     userId: user.id,
     email: user.email,
-    trialDays: readCheckoutBonusTrialDays(profile),
+    trialDays,
     successUrl: `${base}${successPath}`,
     cancelUrl: `${base}${cancelPath}`,
-    metadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    metadata: {
+      ...(jasperFlagged ? { jasper_offer: "1" } : {}),
+      ...(freshV2CardTrial ? { v2_card_trial: "1" } : {}),
+      surface: useV2Return ? "v2" : "v1",
+    },
     subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
     discounts: jasperDiscount ?? undefined,
   });

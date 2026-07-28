@@ -19,6 +19,10 @@ import {
 } from "@/lib/retentionStatsServer";
 import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
 import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
+import {
+  requiresV2CardTrialCheckout,
+  V2_CARD_TRIAL_DAYS,
+} from "@/lib/stripe/v2CardTrial";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,9 +106,22 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
       : undefined;
 
   const signupSource = row?.signup_source ?? null;
-  // Exact de proefduur die dit account kreeg (3 default, 7 Jasper, 14 ADHD-café).
-  const trialDays = resolveStripeTrialDaysForSignupSource(signupSource);
+  const startCardTrial = row ? requiresV2CardTrialCheckout(row) : false;
+  // Exact de proefduur die dit account kreeg (3 default, 7 Jasper/v2-card, 14 ADHD-café).
+  const trialDays = startCardTrial
+    ? V2_CARD_TRIAL_DAYS
+    : resolveStripeTrialDaysForSignupSource(signupSource);
   const jasperOffer = isJasperSignupSource(signupSource);
+
+  const chargeAt = new Date(Date.now() + V2_CARD_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  const chargeAtLabel = new Intl.DateTimeFormat("nl-NL", {
+    timeZone: "Europe/Amsterdam",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(chargeAt);
 
   const stats = await fetchRetentionStatsForUser(supabase, user.id, {
     signupSource,
@@ -123,6 +140,8 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
         jasperOffer={jasperOffer}
         stats={alignedStats}
         canCheckout
+        startCardTrial={startCardTrial}
+        chargeAtLabel={startCardTrial ? chargeAtLabel : null}
       />
       <AbonnementV2StripeSync
         active={!previewMode && hasAccess && fromStripe}

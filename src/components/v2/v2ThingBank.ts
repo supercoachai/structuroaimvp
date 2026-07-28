@@ -68,6 +68,18 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
     },
   },
   {
+    id: "fresh-air-2",
+    energy: "low",
+    title: {
+      nl: "Twee minuten frisse neus",
+      en: "Two minutes of fresh air",
+    },
+    microSteps: {
+      nl: ["Jas of schoenen", "Naar buiten", "Twee minuten, weer terug"],
+      en: ["Coat or shoes", "Step outside", "Two minutes, then back"],
+    },
+  },
+  {
     id: "stretch-shoulders",
     energy: "low",
     title: {
@@ -1221,6 +1233,23 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
   }
 ] as const;
 
+/**
+ * Ultra-kleine starters voor eerste onboarding zonder eigen taken.
+ * Lichaam/omgeving, geen admin. Wordt vóór de volle bank geprioriteerd.
+ */
+export const V2_DAY1_STARTER_IDS: readonly string[] = [
+  "glass-of-water",
+  "open-window",
+  "fresh-air-2",
+  "stretch-shoulders",
+  "breathe-three",
+  "sit-outside-2",
+  "stand-up-once",
+  "wash-face",
+  "snack-fruit",
+  "drink-tea",
+] as const;
+
 const GENERIC_MICRO: Record<Locale, string[]> = {
   nl: [
     "De eerste kleine zet zetten",
@@ -1259,6 +1288,41 @@ export function v2FindThingBankItemByTitle(
       item.title.nl.toLowerCase() === key ||
       item.title.en.toLowerCase() === key,
   );
+}
+
+export function v2FindThingBankItemById(
+  id: string,
+): V2ThingBankItem | undefined {
+  return V2_THING_BANK.find((item) => item.id === id);
+}
+
+/**
+ * Day-1 starters (lege takenlijst): energie-match eerst, daarna andere starters.
+ * Altijd ultra-klein; geen admin/anxiety.
+ */
+export function v2Day1StarterSuggestions(
+  energy: V2ThingEnergy,
+  locale?: string | null,
+  seed?: string | null,
+): V2ThingSuggestion[] {
+  const lang = v2NormalizeLocale(locale);
+  const items = V2_DAY1_STARTER_IDS.map((id) => v2FindThingBankItemById(id)).filter(
+    (item): item is V2ThingBankItem => Boolean(item),
+  );
+  const preferred = items.filter((i) => i.energy === energy);
+  const rest = items.filter((i) => i.energy !== energy);
+  const ordered = [...preferred, ...rest];
+  const mapped = ordered.map((item) => ({
+    title: item.title[lang],
+    energy: item.energy,
+  }));
+  if (!seed) return mapped;
+  // Lichte shuffle binnen preferred / rest apart houden: shuffle whole with seed
+  // maar preferred blijft vooraan doordat we matched eerst mappen.
+  const prefN = preferred.length;
+  const shuffledPref = v2SeededShuffle(mapped.slice(0, prefN), `${seed}|d1p`);
+  const shuffledRest = v2SeededShuffle(mapped.slice(prefN), `${seed}|d1r`);
+  return [...shuffledPref, ...shuffledRest];
 }
 
 /** Stable hash for day-seeded shuffle (zelfde dag = zelfde volgorde). */

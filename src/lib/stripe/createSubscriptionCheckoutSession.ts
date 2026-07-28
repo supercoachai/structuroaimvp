@@ -41,6 +41,9 @@ export async function createSubscriptionCheckoutSession(
 
   if (trialDays > 0) {
     subscriptionData.trial_period_days = trialDays;
+    subscriptionData.trial_settings = {
+      end_behavior: { missing_payment_method: "cancel" },
+    };
   }
 
   const trialLabel =
@@ -76,7 +79,7 @@ export async function createSubscriptionCheckoutSession(
       ? {
           custom_text: {
             submit: {
-              message: `${trialLabel}, daarna wordt je abonnement automatisch verlengd. Je kunt altijd opzeggen in Instellingen.`,
+              message: `${trialLabel}, daarna €12,99 per maand tenzij je stopt. We mailen je een dag van tevoren met een stopknop.`,
             },
           },
         }
