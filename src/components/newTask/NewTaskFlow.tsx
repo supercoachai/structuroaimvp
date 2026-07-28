@@ -33,7 +33,7 @@ import {
 import { fetchMicroStepSuggestions } from "@/lib/ai/fetchMicroStepSuggestions";
 import { microSuggestErrorMessage } from "@/lib/ai/microSuggestErrorMessage";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
-import { captureProductEvent } from "@/lib/posthog/track";
+import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
 const AUTO_ADVANCE_MS = 280;
 const DONE_CLOSE_MS = 1800;
@@ -294,7 +294,7 @@ export default function NewTaskFlow({
   const analyticsBaseRef = useRef(analyticsBase);
   analyticsBaseRef.current = analyticsBase;
   useEffect(() => {
-    captureProductEvent(ANALYTICS_EVENTS.new_task_flow_opened, {
+    captureActivationFunnelEvent(ANALYTICS_EVENTS.new_task_flow_opened, {
       ...analyticsBaseRef.current,
     });
   }, []);
@@ -305,7 +305,7 @@ export default function NewTaskFlow({
     lastStepRef.current = step;
     if (step > firstStepIndex) engagedRef.current = true;
     if (step === doneStepIndex) return;
-    captureProductEvent(ANALYTICS_EVENTS.new_task_flow_step_viewed, {
+    captureActivationFunnelEvent(ANALYTICS_EVENTS.new_task_flow_step_viewed, {
       step,
       step_name: stepName(step),
       ...analyticsBaseRef.current,
@@ -318,7 +318,7 @@ export default function NewTaskFlow({
   useEffect(() => {
     return () => {
       if (engagedRef.current && !completedRef.current) {
-        captureProductEvent(ANALYTICS_EVENTS.new_task_flow_abandoned, {
+        captureActivationFunnelEvent(ANALYTICS_EVENTS.new_task_flow_abandoned, {
           step: lastStepRef.current,
           step_name: stepName(lastStepRef.current),
           ...analyticsBaseRef.current,
@@ -381,7 +381,7 @@ export default function NewTaskFlow({
       await onSave(payload);
       completedRef.current = true;
       const trimmedMicro = payload.microsteps;
-      captureProductEvent(ANALYTICS_EVENTS.new_task_flow_completed, {
+      captureActivationFunnelEvent(ANALYTICS_EVENTS.new_task_flow_completed, {
         micro_source:
           trimmedMicro.length === 0
             ? "skip"
@@ -445,6 +445,10 @@ export default function NewTaskFlow({
       setTitleHint(false);
       setStep(1);
     } else {
+      // Klikken op 'verder' zonder titel is ook engagement: zo telt het
+      // give-up-zonder-typen patroon mee als afhaken en vuurt
+      // new_task_flow_abandoned bij het sluiten.
+      engagedRef.current = true;
       setTitleHint(true);
     }
   }, [title]);
@@ -663,13 +667,13 @@ export default function NewTaskFlow({
           )}
 
           {!skipTitle && step === 0 ? (
+            // Altijd als een levende knop tonen: leeg klikken focust het veld en
+            // toont de hint (via attemptTitleNext), i.p.v. een dood ogende
+            // opacity-40/aria-disabled knop die de klik lijkt te negeren.
             <button
               type="button"
               onClick={attemptTitleNext}
-              aria-disabled={!String(title ?? "").trim()}
-              className={`new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] transition-opacity ${
-                String(title ?? "").trim() ? "" : "opacity-40"
-              }`}
+              className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)]"
             >
               {t("newTask.continue")}
             </button>
