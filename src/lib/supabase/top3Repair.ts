@@ -25,11 +25,19 @@ export async function loadAndRepairCheckInTop3(
   const row = await getCheckInFromSupabase(userId, date);
   if (!row?.top3_task_ids?.length) return row;
 
-  const saved = await upsertCheckInToSupabase(userId, date, {
-    energy_level: row.energy_level ?? "medium",
-    top3_task_ids: row.top3_task_ids,
-    cycle_phase: row.cycle_phase,
-  });
+  // Repair-flow: verouderde ids opruimen. Als ALLE gekozen taken inmiddels ghost
+  // zijn (klaar/niet-vandaag/verwijderd), moeten we top3 stil op null zetten i.p.v.
+  // te gooien — anders blokkeert een oude check-in het laden voor altijd.
+  const saved = await upsertCheckInToSupabase(
+    userId,
+    date,
+    {
+      energy_level: row.energy_level ?? "medium",
+      top3_task_ids: row.top3_task_ids,
+      cycle_phase: row.cycle_phase,
+    },
+    { onAllTasksDropped: "clear" }
+  );
 
   if (top3ArraysEqual(row.top3_task_ids, saved.top3_task_ids)) {
     return row;
@@ -53,5 +61,7 @@ export async function removeTaskIdFromTodayTop3(
     top3_task_ids: remaining.length > 0 ? remaining : null,
     cycle_phase: row.cycle_phase,
   };
-  await upsertCheckInToSupabase(userId, date, payload);
+  await upsertCheckInToSupabase(userId, date, payload, {
+    onAllTasksDropped: "clear",
+  });
 }

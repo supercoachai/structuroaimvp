@@ -125,10 +125,16 @@ export default function NewTaskFlow({
   const [microsteps, setMicrosteps] = useState<string[]>([]);
   const [microEditing, setMicroEditing] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
+  const [titleHint, setTitleHint] = useState(false);
 
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const microUsedAiRef = useRef(false);
+  // Funnel-instrumentatie: onthoud engagement + laatst geziene stap zodat we
+  // bij afhaken (unmount / sluiten) kunnen rapporteren waar de gebruiker stopte.
+  const engagedRef = useRef(false);
+  const completedRef = useRef(false);
+  const lastStepRef = useRef(step);
 
   const resetFlow = useCallback(() => {
     setStep(skipTitle && hasPresetTitle ? 1 : 0);
@@ -145,7 +151,13 @@ export default function NewTaskFlow({
     setRepeatIntervalDays(DEFAULT_INTERVAL_DAYS);
     setMicrosteps([]);
     setMicroEditing(false);
+    setTitleHint(false);
     microUsedAiRef.current = false;
+    // Verse sessie na een opgeslagen taak (inline mode): tracking terug op nul
+    // zodat een volgende afhaak-poging opnieuw meetelt.
+    engagedRef.current = false;
+    completedRef.current = false;
+    lastStepRef.current = skipTitle && hasPresetTitle ? 1 : 0;
   }, [skipTitle, hasPresetTitle, initialTitle]);
 
   useEffect(() => {
@@ -255,6 +267,67 @@ export default function NewTaskFlow({
   const doneStepIndex = skipDeadline ? 4 : 5;
   const firstStepIndex = skipTitle ? 1 : 0;
 
+  const stepName = useCallback(
+    (s: number): string => {
+      if (s === 0) return "title";
+      if (s === 1) return "energy";
+      if (s === 2) return "duration";
+      if (!skipDeadline && s === 3) return "plan";
+      if (s === microStepIndex) return "microsteps";
+      if (s === doneStepIndex) return "done";
+      return `step_${s}`;
+    },
+    [skipDeadline, microStepIndex, doneStepIndex]
+  );
+
+  const analyticsBase = useMemo(
+    () => ({
+      mode,
+      source: variant === "compact" ? "compact" : "default",
+      skip_title: skipTitle,
+      skip_deadline: skipDeadline,
+    }),
+    [mode, variant, skipTitle, skipDeadline]
+  );
+
+  // Vuur "opened" één keer bij mount zodat we het begin van de funnel zien.
+  const analyticsBaseRef = useRef(analyticsBase);
+  analyticsBaseRef.current = analyticsBase;
+  useEffect(() => {
+    captureProductEvent(ANALYTICS_EVENTS.new_task_flow_opened, {
+      ...analyticsBaseRef.current,
+    });
+  }, []);
+
+  // Per-stap progressie: elke keer dat een nieuwe (niet-done) stap in beeld
+  // komt loggen we 'm, plus of de gebruiker al betrokken is geraakt.
+  useEffect(() => {
+    lastStepRef.current = step;
+    if (step > firstStepIndex) engagedRef.current = true;
+    if (step === doneStepIndex) return;
+    captureProductEvent(ANALYTICS_EVENTS.new_task_flow_step_viewed, {
+      step,
+      step_name: stepName(step),
+      ...analyticsBaseRef.current,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Bij afhaken (modal gesloten / weg-genavigeerd) zonder opslaan: rapporteer
+  // waar de gebruiker vastliep. Alleen als 'ie daadwerkelijk begonnen was.
+  useEffect(() => {
+    return () => {
+      if (engagedRef.current && !completedRef.current) {
+        captureProductEvent(ANALYTICS_EVENTS.new_task_flow_abandoned, {
+          step: lastStepRef.current,
+          step_name: stepName(lastStepRef.current),
+          ...analyticsBaseRef.current,
+        });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const scheduleAdvance = useCallback((next: number) => {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     advanceTimerRef.current = setTimeout(() => setStep(next), AUTO_ADVANCE_MS);
@@ -306,6 +379,7 @@ export default function NewTaskFlow({
     setSaveBusy(true);
     try {
       await onSave(payload);
+      completedRef.current = true;
       const trimmedMicro = payload.microsteps;
       captureProductEvent(ANALYTICS_EVENTS.new_task_flow_completed, {
         micro_source:
@@ -364,10 +438,31 @@ export default function NewTaskFlow({
     (deadlinePick !== "custom" || Boolean(customDate.trim())) &&
     (scheduleDatePick !== "custom" || Boolean(scheduleCustomDate.trim()));
 
+  // Titel-stap: klik altijd verwerken. Leeg? Toon een hint i.p.v. de klik te
+  // slikken via een dood disabled-knopje.
+  const attemptTitleNext = useCallback(() => {
+    if (String(title ?? "").trim()) {
+      setTitleHint(false);
+      setStep(1);
+    } else {
+      setTitleHint(true);
+    }
+  }, [title]);
+
+  const handleTitleChange = useCallback((v: string) => {
+    setTitle(v);
+    if (v.trim()) {
+      setTitleHint(false);
+      // Titel typen telt als engagement: zo tellen ook afhaakmomenten op de
+      // titel-stap zelf mee, niet alleen na doorklikken.
+      engagedRef.current = true;
+    }
+  }, []);
+
   const showFooterPrimary =
     (!skipTitle && step === 0) ||
     (step === 2 && duration === "custom") ||
-    (!skipDeadline && step === 3 && deadlineStepReady);
+    (!skipDeadline && step === 3);
 
   const showMicroSubmit = step === microStepIndex && microEditing;
 
@@ -469,10 +564,9 @@ export default function NewTaskFlow({
         {!skipTitle && step === 0 ? (
           <StepTitle
             title={title}
-            onTitleChange={setTitle}
-            onNext={() => {
-              if (String(title ?? "").trim()) setStep(1);
-            }}
+            onTitleChange={handleTitleChange}
+            onNext={attemptTitleNext}
+            hint={titleHint}
             compact={compact}
           />
         ) : null}
@@ -571,11 +665,11 @@ export default function NewTaskFlow({
           {!skipTitle && step === 0 ? (
             <button
               type="button"
-              disabled={!String(title ?? "").trim()}
-              onClick={() => {
-                if (String(title ?? "").trim()) setStep(1);
-              }}
-              className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] disabled:pointer-events-none disabled:opacity-35"
+              onClick={attemptTitleNext}
+              aria-disabled={!String(title ?? "").trim()}
+              className={`new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] transition-opacity ${
+                String(title ?? "").trim() ? "" : "opacity-40"
+              }`}
             >
               {t("newTask.continue")}
             </button>
@@ -594,11 +688,15 @@ export default function NewTaskFlow({
             </button>
           ) : null}
 
-          {!skipDeadline && step === 3 && deadlineStepReady ? (
+          {!skipDeadline && step === 3 ? (
             <button
               type="button"
-              onClick={() => setStep(4)}
-              className="new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)]"
+              onClick={() => deadlineStepReady && setStep(4)}
+              aria-disabled={!deadlineStepReady}
+              title={deadlineStepReady ? undefined : t("newTask.pickDateHint")}
+              className={`new-task-flow-link new-task-flow-link--primary rounded-full px-3.5 py-2 text-sm font-medium text-[var(--st-blue)] transition-opacity ${
+                deadlineStepReady ? "" : "cursor-not-allowed opacity-40"
+              }`}
             >
               {t("newTask.continue")}
             </button>
@@ -680,11 +778,13 @@ function StepTitle({
   title,
   onTitleChange,
   onNext,
+  hint,
   compact,
 }: {
   title: string;
   onTitleChange: (v: string) => void;
   onNext: () => void;
+  hint?: boolean;
   compact?: boolean;
 }) {
   const { t } = useI18n();
@@ -694,6 +794,11 @@ function StepTitle({
     const id = window.setTimeout(() => ref.current?.focus(), 200);
     return () => window.clearTimeout(id);
   }, []);
+
+  // Zet de cursor terug op het lege veld zodra de hint verschijnt.
+  useEffect(() => {
+    if (hint) ref.current?.focus();
+  }, [hint]);
 
   return (
     <div className="new-task-flow-step w-full">
@@ -708,7 +813,10 @@ function StepTitle({
         autoCorrect="off"
         autoCapitalize="sentences"
         spellCheck={false}
-        className="new-task-flow-input w-full border-0 border-b-[1.5px] border-[var(--st-line-strong)] bg-transparent px-1 py-3.5 text-xl font-medium tracking-tight text-[var(--st-ink)] outline-none transition-colors placeholder:font-normal placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue)]"
+        aria-invalid={hint ? true : undefined}
+        className={`new-task-flow-input w-full border-0 border-b-[1.5px] bg-transparent px-1 py-3.5 text-xl font-medium tracking-tight text-[var(--st-ink)] outline-none transition-colors placeholder:font-normal placeholder:text-[var(--st-muted-2)] focus:border-[var(--st-blue)] ${
+          hint ? "border-[var(--st-red-deep,#EF4444)]" : "border-[var(--st-line-strong)]"
+        }`}
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
         onKeyDown={(e) => {
@@ -719,6 +827,11 @@ function StepTitle({
         }}
         placeholder={t("newTask.titlePh")}
       />
+      {hint ? (
+        <p className="mt-2.5 text-[13px] leading-relaxed text-[var(--st-red-deep,#EF4444)]">
+          {t("newTask.titleRequired")}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -1142,6 +1255,11 @@ function StepDeadline({
                 onChange={(e) => onScheduleCustomChange(e.target.value)}
                 className="w-full rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
               />
+              {!scheduleCustomDate.trim() ? (
+                <p className="mt-2 text-[12.5px] leading-relaxed text-[var(--st-muted)]">
+                  {t("newTask.pickDateHint")}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {scheduleDatePick !== "none" ? (
@@ -1219,6 +1337,11 @@ function StepDeadline({
                 onChange={(e) => onCustomChange(e.target.value)}
                 className="w-full rounded-[10px] border border-[var(--st-line-strong)] bg-white px-3 py-2.5 text-sm text-[var(--st-ink)] outline-none"
               />
+              {!customDate.trim() ? (
+                <p className="mt-2 text-[12.5px] leading-relaxed text-[var(--st-muted)]">
+                  {t("newTask.pickDateHint")}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>
