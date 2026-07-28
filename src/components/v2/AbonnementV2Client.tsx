@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { toast } from "@/components/Toast";
 import { StripeWalletButtons } from "@/components/subscription/StripeWalletButtons";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import {
   JASPER_OFFER_DISCOUNTED_MONTHS,
   getJasperOffer,
@@ -15,6 +16,7 @@ import type { RetentionStats } from "@/lib/retentionStats";
 import { DEFAULT_STRIPE_TRIAL_DAYS } from "@/lib/stripe/trialConfig";
 import { preloadStripeWallet, type WalletKind } from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
+import { captureMarketingEvent } from "@/lib/posthog/track";
 
 import { V2Eyebrow, V2Header, V2Page } from "./V2Chrome";
 import { useV2 } from "./V2Context";
@@ -66,6 +68,13 @@ export type AbonnementV2ClientProps = {
   stats: RetentionStats;
   /** True als er een echte sessie is (checkout mogelijk). */
   canCheckout: boolean;
+  /**
+   * V2 card-trial: na eerste dagstart + account, nog geen Stripe.
+   * Toont "Zeven dagen. Daarna kies je." i.p.v. expired-paywall.
+   */
+  startCardTrial?: boolean;
+  /** Exacte afschrijfdatum voor start-trial copy (Amsterdam). */
+  chargeAtLabel?: string | null;
 };
 
 function sleep(ms: number) {
@@ -80,6 +89,8 @@ export default function AbonnementV2Client({
   jasperOffer = false,
   stats,
   canCheckout,
+  startCardTrial = false,
+  chargeAtLabel = null,
 }: AbonnementV2ClientProps) {
   const router = useRouter();
   const { state } = useV2();
@@ -95,6 +106,15 @@ export default function AbonnementV2Client({
   useEffect(() => {
     setWhyAnchor(resolvePaywallWhyAnchor(state.why, state.whyOutcome));
   }, [state.why, state.whyOutcome]);
+
+  useEffect(() => {
+    if (!startCardTrial || !canCheckout) return;
+    captureMarketingEvent(ANALYTICS_EVENTS.trial_checkout_opened, {
+      surface: "v2",
+      v2_card_trial: true,
+      trial_cohort: "v2_card_7d",
+    });
+  }, [startCardTrial, canCheckout]);
 
   const startCheckout = useCallback(async () => {
     if (!canCheckout) {
@@ -143,8 +163,7 @@ export default function AbonnementV2Client({
           </h1>
           <p style={{ ...v2Styles.body, marginTop: 12 }}>
             Om je proefperiode of abonnement te bekijken, log je eerst in. Geen
-            account? Start via de acquisitiepagina, daar kun je 3 dagen gratis
-            beginnen.
+            account? Start via de acquisitiepagina.
           </p>
           <section className="v2-abonnement__decision" style={{ marginTop: 24 }}>
             <button
@@ -156,7 +175,7 @@ export default function AbonnementV2Client({
                 )
               }
             >
-              Start 3 dagen gratis
+              Start gratis
             </button>
             <button
               type="button"
@@ -167,9 +186,70 @@ export default function AbonnementV2Client({
               Log in
             </button>
           </section>
-          <p className="v2-abonnement__trust">
-            Checkout werkt met een echte sessie. Zonder login kun je eerst de app
-            proberen.
+        </div>
+      </V2Page>
+    );
+  }
+
+  if (startCardTrial) {
+    const chargeLine = chargeAtLabel
+      ? `Op ${chargeAtLabel} schrijven we €12,99 af, tenzij je vóór die tijd stopt.`
+      : "Over zeven dagen schrijven we €12,99 af, tenzij je vóór die tijd stopt.";
+    return (
+      <V2Page>
+        <Script src="https://js.stripe.com/v3/" strategy="afterInteractive" />
+        <V2Header exitHref="/v2/dagstart" exitLabel="Terug" />
+        <div className="v2-abonnement v2-fade">
+          <V2Eyebrow>Proefperiode</V2Eyebrow>
+          <h1
+            style={{
+              ...v2Styles.title,
+              fontSize: "var(--fs-display)",
+              marginTop: 8,
+            }}
+          >
+            Zeven dagen. Daarna kies je.
+          </h1>
+          <p style={{ ...v2Styles.body, marginTop: 16 }}>
+            Je hebt vandaag je eerste dagstart gedaan. Vanaf nu heb je zeven
+            dagen Structuro, gratis.
+          </p>
+          <p style={{ ...v2Styles.body, marginTop: 12 }}>{chargeLine}</p>
+          <p style={{ ...v2Styles.body, marginTop: 12 }}>
+            Stoppen is één knop. We mailen je een dag van tevoren met die knop
+            erin. Je hoeft niets te onthouden en niets op te zoeken. Geen
+            gesprek, geen reden opgeven.
+          </p>
+          <p style={{ ...v2Styles.body, marginTop: 12 }}>
+            Achteraf toch niet goed? Binnen veertien dagen geld terug.
+          </p>
+          <section className="v2-abonnement__decision" style={{ marginTop: 28 }}>
+            <button
+              type="button"
+              className="btn-primary w-full"
+              disabled={busy}
+              onClick={() => void startCheckout()}
+            >
+              {busy
+                ? "Even geduld…"
+                : "Start 7 dagen, daarna €12,99 per maand"}
+            </button>
+            {!walletFallback && visibleWallets.length > 0 ? (
+              <div style={{ marginTop: 16 }}>
+                <StripeWalletButtons
+                  visibleWallets={visibleWallets}
+                  disabled={busy}
+                  onUnavailable={() => setWalletFallback(true)}
+                  onError={(message) => toast(message)}
+                  onSuccess={() => {
+                    window.location.href = "/v2/home";
+                  }}
+                />
+              </div>
+            ) : null}
+          </section>
+          <p className="v2-abonnement__trust" style={{ marginTop: 16 }}>
+            Je kunt elk moment stoppen. Wij herinneren je een dag van tevoren.
           </p>
         </div>
       </V2Page>

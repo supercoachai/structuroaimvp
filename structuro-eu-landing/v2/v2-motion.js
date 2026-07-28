@@ -172,16 +172,59 @@
     /* Alleen Laag → Genoeg → Hoog, eindeloos (geen lege/idle tussenstap). */
     var sequence = ["low", "ok", "high"];
     var i = 0;
+    root._energyManual = false;
+    bindEnergyPills(root);
     root.setAttribute("data-energy", "low");
     setDemoState(root, "propose");
     function tick() {
       if (!root.classList.contains("is-playing")) return;
+      if (root._energyManual) return;
       i = (i + 1) % sequence.length;
       root.setAttribute("data-energy", sequence[i]);
       setDemoState(root, "propose");
       root._timer = setTimeout(tick, 2000);
     }
     root._timer = setTimeout(tick, 1800);
+  }
+
+  function bindEnergyPills(root) {
+    if (root.getAttribute("data-demo") !== "energy") return;
+    if (root._energyBound) return;
+    root._energyBound = true;
+    root.querySelectorAll("[data-pill]").forEach(function (pill) {
+      pill.setAttribute("role", "button");
+      pill.setAttribute("tabindex", "0");
+      function choose() {
+        var energy = pill.getAttribute("data-pill");
+        if (!energy) return;
+        root._energyManual = true;
+        if (root._timer) {
+          clearTimeout(root._timer);
+          root._timer = null;
+        }
+        root.setAttribute("data-energy", energy);
+        setDemoState(root, "propose");
+        try {
+          if (window.posthog && typeof window.posthog.capture === "function") {
+            window.posthog.capture("landing_energy_demo_tapped", {
+              energy: energy,
+              page_path: window.location.pathname || "/v2/",
+            });
+          }
+        } catch (e) {}
+      }
+      pill.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        choose();
+      });
+      pill.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          choose();
+        }
+      });
+    });
   }
 
   function playTasksDemo(root) {
@@ -415,6 +458,7 @@
 
   function stopDemo(root) {
     root.classList.remove("is-playing");
+    root._energyManual = false;
     if (root._timer) {
       clearTimeout(root._timer);
       root._timer = null;
@@ -459,12 +503,14 @@
     if (!demos.length) return;
     if (reduce) {
       demos.forEach(function (d) {
+        bindEnergyPills(d);
         setDemoState(d, d.getAttribute("data-demo-default") || "pick");
       });
       return;
     }
     if (!("IntersectionObserver" in window)) {
       demos.forEach(function (d) {
+        bindEnergyPills(d);
         var kind = d.getAttribute("data-demo");
         d.classList.add("is-playing");
         if (PLAYERS[kind]) PLAYERS[kind](d);
@@ -488,6 +534,7 @@
       { threshold: 0.28 },
     );
     demos.forEach(function (d) {
+      bindEnergyPills(d);
       io.observe(d);
     });
   }
