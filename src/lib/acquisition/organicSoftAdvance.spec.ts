@@ -44,44 +44,38 @@ describe("shouldSoftAdvanceOrganicLanding", () => {
 });
 
 describe("organicSoftAdvanceTarget", () => {
-  it("routes eu_v2 to /v2/onboarding", () => {
+  it("routes eu_v2 to v1 /onboarding", () => {
     expect(organicSoftAdvanceTarget(params("utm_campaign=eu_v2"))).toBe(
-      "/v2/onboarding"
+      "/onboarding"
     );
     expect(organicSoftAdvanceTarget(params("utm_campaign=eu_v2_ab"))).toBe(
-      "/v2/onboarding"
+      "/onboarding"
     );
   });
 
-  it("routes website and waitlist_legacy to /v2/onboarding (cutover)", () => {
+  it("routes website and waitlist_legacy to v1 /onboarding", () => {
     expect(organicSoftAdvanceTarget(params("utm_campaign=website"))).toBe(
-      "/v2/onboarding"
+      "/onboarding"
     );
     expect(
       organicSoftAdvanceTarget(params("utm_campaign=waitlist_legacy"))
-    ).toBe("/v2/onboarding");
+    ).toBe("/onboarding");
   });
 });
 
 describe("softAdvanceHref", () => {
   it("preserves nl/en lang on the target", () => {
     expect(
-      softAdvanceHref(
-        "/v2/onboarding",
-        params("utm_campaign=website&lang=nl")
-      )
-    ).toBe("/v2/onboarding?lang=nl");
+      softAdvanceHref("/onboarding", params("utm_campaign=website&lang=nl"))
+    ).toBe("/onboarding?lang=nl");
     expect(
-      softAdvanceHref(
-        "/v2/onboarding",
-        params("utm_campaign=eu_v2&lang=en")
-      )
-    ).toBe("/v2/onboarding?lang=en");
+      softAdvanceHref("/onboarding", params("utm_campaign=eu_v2&lang=en"))
+    ).toBe("/onboarding?lang=en");
   });
 
   it("leaves href alone without lang", () => {
     expect(
-      softAdvanceHref("/v2/onboarding", params("utm_campaign=website"))
-    ).toBe("/v2/onboarding");
+      softAdvanceHref("/onboarding", params("utm_campaign=website"))
+    ).toBe("/onboarding");
   });
 });

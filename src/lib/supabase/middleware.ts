@@ -12,6 +12,9 @@ import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
 import {
+  isV2CardTrialCohort,
+} from "../stripe/v2CardTrial";
+import {
   preOnboardingPath,
   canAccessOnboardingWithoutCheckout,
   requiresPaidSubscriptionBeforeOnboarding,
@@ -37,6 +40,7 @@ import {
   ADHD_CAFE_SIGNUP_CAMPAIGN,
   ADHD_CAFE_SIGNUP_SOURCE,
 } from "../stripe/trialConfig";
+import { isV2LabPath } from "../v2/v2LabAccess";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -60,6 +64,12 @@ function canAccessWithoutActiveSubscription(pathname: string): boolean {
   if (isAnonymousPublicPage(pathname)) return true;
   if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
   if (pathname === "/v2/abonnement" || pathname.startsWith("/v2/abonnement/")) return true;
+  if (pathname === "/v2/stop-abonnement" || pathname.startsWith("/v2/stop-abonnement/"))
+    return true;
+  if (pathname === "/v2/login" || pathname.startsWith("/v2/login/")) return true;
+  if (pathname === "/v2/register" || pathname.startsWith("/v2/register/")) return true;
+  if (pathname === "/v2/dagstart" || pathname.startsWith("/v2/dagstart/")) return true;
+  if (pathname === "/v2/onboarding" || pathname.startsWith("/v2/onboarding/")) return true;
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return true;
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return true;
   if (pathname.startsWith("/api/stripe/webhook")) return true;
@@ -171,6 +181,185 @@ function redirectAdhdCafeToRegistreren(request: NextRequest): NextResponse | nul
   return NextResponse.redirect(url, 302);
 }
 
+/** Anonieme/open v2-routes: geen login- of card-trial-gate. */
+function isPublicV2Path(pathname: string): boolean {
+  // Exact `/v2` is lab-index (private testlinks), niet publiek.
+  const prefixes = [
+    "/v2/onboarding",
+    "/v2/login",
+    "/v2/register",
+    "/v2/abonnement",
+    "/v2/stop-abonnement",
+    "/v2/privacy",
+    "/v2/terms",
+    "/v2/dagstart",
+  ];
+  return prefixes.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+
+function createMiddlewareSupabase(request: NextRequest): {
+  supabase: ReturnType<typeof createServerClient>;
+  supabaseResponse: NextResponse;
+} {
+  let supabaseResponse = NextResponse.next({ request });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request: { headers: request.headers },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+      auth: {
+        storageKey: STRUCTURO_SUPABASE_AUTH_STORAGE_KEY,
+      },
+    }
+  );
+  return { supabase, supabaseResponse };
+}
+
+/**
+ * Lab-directory (`/v2`) en private surfaces (`/v2/jasper`): alleen team/test.
+ * Publiek → soft bounce naar start (anon) of live home (ingelogd).
+ */
+async function gateV2LabRoute(request: NextRequest): Promise<NextResponse> {
+  if (process.env.NODE_ENV === "development") {
+    return NextResponse.next({ request });
+  }
+
+  if (!isSupabaseConfigured()) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url, 302);
+  }
+
+  const { supabase, supabaseResponse } = createMiddlewareSupabase(request);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const email = user?.email ?? null;
+  if (isProtectedTestAccount(email) || isInternalTeamAccount(email)) {
+    return supabaseResponse;
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = user?.id ? "/v2/home" : "/";
+  url.search = "";
+  return NextResponse.redirect(url, 302);
+}
+
+/**
+ * Lichte gate voor beschermde v2-app-routes. Onafhankelijk van
+ * STRUCTURO_MIDDLEWARE_PAYWALL: nieuwe card-cohort moet trialing/active hebben.
+ */
+async function gateProtectedV2Route(
+  request: NextRequest,
+  event?: NextFetchEvent
+): Promise<NextResponse> {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.next({ request });
+  }
+
+  const { supabase, supabaseResponse } = createMiddlewareSupabase(request);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/v2/login";
+    url.search = "";
+    url.searchParams.set(
+      "next",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    );
+    return NextResponse.redirect(url, 302);
+  }
+
+  if (
+    isProtectedTestAccount(user.email ?? null) ||
+    isInternalTeamAccount(user.email ?? null) ||
+    process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1"
+  ) {
+    return supabaseResponse;
+  }
+
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select(
+      "subscription_status, subscription_current_period_end, created_at, last_dagstart_date, signup_source, app_trial_override_until, last_seen_at"
+    )
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (
+    shouldTouchLastSeen(
+      prof?.last_seen_at != null ? String(prof.last_seen_at) : null
+    )
+  ) {
+    const touch = touchProfileLastSeenAt(supabase, user.id);
+    if (event?.waitUntil) event.waitUntil(touch);
+    else void touch;
+  }
+
+  const createdAt = prof?.created_at != null ? String(prof.created_at) : null;
+  // Alleen hard gate voor nieuwe card-cohort; legacy v2-users houden free-trial.
+  if (!isV2CardTrialCohort(createdAt)) {
+    return supabaseResponse;
+  }
+
+  const ok = profileHasAppAccessOrGrace({
+    email: user.email ?? null,
+    subscription_status:
+      typeof prof?.subscription_status === "string"
+        ? prof.subscription_status
+        : null,
+    subscription_current_period_end:
+      typeof prof?.subscription_current_period_end === "string"
+        ? prof.subscription_current_period_end
+        : prof?.subscription_current_period_end != null
+          ? String(prof.subscription_current_period_end)
+          : null,
+    created_at: createdAt,
+    last_dagstart_date:
+      prof?.last_dagstart_date != null
+        ? String(prof.last_dagstart_date).slice(0, 10)
+        : null,
+    signup_source:
+      typeof prof?.signup_source === "string" ? prof.signup_source : null,
+    app_trial_override_until:
+      prof?.app_trial_override_until != null
+        ? String(prof.app_trial_override_until)
+        : null,
+  });
+
+  if (!ok) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/v2/abonnement";
+    url.search = "";
+    return NextResponse.redirect(url, 302);
+  }
+
+  return supabaseResponse;
+}
+
 export async function updateSession(
   request: NextRequest,
   event?: NextFetchEvent
@@ -184,11 +373,17 @@ export async function updateSession(
     return NextResponse.next({ request });
   }
 
-  // /v2 is een zelfstandige front-end testomgeving: altijd direct serveren,
-  // ongeacht sessie. Strikt additief, vóór alle gates, zodat geen enkele
-  // /v2-route naar /login bouncet of de app-shell krijgt.
+  // Lab-index/private surfaces eerst: nooit publiek.
+  // Publieke v2-paden (anon onboarding/auth/legal/checkout): geen v1-gates.
+  // Beschermde v2-app-routes (/home, /todo, …): lichte sessie + card-trial gate.
   if (pathname === "/v2" || pathname.startsWith("/v2/")) {
-    return NextResponse.next({ request });
+    if (isV2LabPath(pathname)) {
+      return gateV2LabRoute(request);
+    }
+    if (isPublicV2Path(pathname)) {
+      return NextResponse.next({ request });
+    }
+    return gateProtectedV2Route(request, event);
   }
 
   const adhdCafeRedirect = redirectAdhdCafeToRegistreren(request);
@@ -607,6 +802,7 @@ function applyDagstartDbGate(
     !pathname.startsWith("/consent") &&
     !pathname.startsWith("/abonnement") &&
     !pathname.startsWith("/v2/abonnement") &&
+    !pathname.startsWith("/v2/stop-abonnement") &&
     !pathname.startsWith("/privacy") &&
     !pathname.startsWith("/terms") &&
     !pathname.startsWith("/api");

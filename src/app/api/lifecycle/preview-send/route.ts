@@ -40,6 +40,7 @@ function previewCandidate(): LifecycleCandidate {
     created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
     signup_source: null,
     subscription_status: "none",
+    subscription_current_period_end: null,
     last_dagstart_date: null,
     unsubscribe_lifecycle: false,
     is_test: true,

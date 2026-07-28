@@ -5,8 +5,8 @@ import { V2Eyebrow, V2Header, V2Page } from "@/components/v2/V2Chrome";
 import { v2Styles } from "@/components/v2/theme";
 
 export const metadata: Metadata = {
-  title: "Structuro",
-  description: "Rustig beginnen: maximaal drie dingen voor vandaag.",
+  title: "Structuro lab (intern)",
+  description: "Interne v2 scherm-directory. Niet publiek.",
   robots: { index: false, follow: false },
 };
 
@@ -33,11 +33,10 @@ export default function V2EntryPage() {
       <V2Header />
 
       <section className="v2-fade" style={v2Styles.card}>
-        <V2Eyebrow>Structuro</V2Eyebrow>
-        <h1 style={v2Styles.title}>Begin rustig. Eén ding tegelijk.</h1>
+        <V2Eyebrow>Intern lab</V2Eyebrow>
+        <h1 style={v2Styles.title}>v2 scherm-directory</h1>
         <p style={v2Styles.body}>
-          Hier kies je energie, bevestig je maximaal drie dingen, en start je
-          focus. Geen account nodig om te beginnen. Stop wanneer je wilt.
+          Alleen voor team/testaccounts. Publiek wordt hier weggeleid.
         </p>
         <div style={v2Styles.actions}>
           <Link href="/v2/onboarding" className="btn-primary">
@@ -46,9 +45,6 @@ export default function V2EntryPage() {
           <Link href="/v2/home" className="btn-ghost">
             Toon volledige app
           </Link>
-          <p style={{ ...v2Styles.body, fontSize: 13, textAlign: "center" }}>
-            De volledige app opent in dezelfde rustige huisstijl, met eigen navigatie.
-          </p>
         </div>
       </section>
 

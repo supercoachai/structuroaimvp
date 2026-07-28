@@ -2,12 +2,13 @@
  * Soft-advance vanaf /start: EU-landing CTA's schrijven attributie en gaan
  * door naar onboarding zonder tweede klik op de leesbare bridge.
  *
- * Destinations (cutover): alle herkende organische campaigns → /v2/onboarding.
+ * Destinations: herkende organische campaigns → v1 `/onboarding`.
+ * (v2 soft-advance cutover is teruggedraaid; acquisitie blijft v1.)
  * Kale /start zonder herkende campaign blijft leesbaar (geen soft-advance).
  * TikTok /tiktok blijft leesbaar (aparte channel-gate in de client).
  */
 
-export type OrganicSoftAdvanceTarget = "/v2/onboarding";
+export type OrganicSoftAdvanceTarget = "/onboarding";
 
 function campaignFromSearchParams(searchParams: URLSearchParams): string {
   return (searchParams.get("utm_campaign") || "").trim().toLowerCase();
@@ -36,7 +37,7 @@ export function shouldSoftAdvanceOrganicLanding(
 export function organicSoftAdvanceTarget(
   _searchParams: URLSearchParams
 ): OrganicSoftAdvanceTarget {
-  return "/v2/onboarding";
+  return "/onboarding";
 }
 
 /** Soft-advance behoudt lang; attributie zit al in storage/cookie vanaf /start. */
