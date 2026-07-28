@@ -16,6 +16,7 @@ import {
   getStoredSignupSource,
 } from "@/lib/posthog/signupAttribution";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 import type { V2Energy } from "./V2Context";
 
@@ -130,6 +131,13 @@ export function trackV2OnboardingDone(props: {
     has_cycle_phase: props.cycleOptIn,
     source: "v2",
     db_persisted: false,
+  });
+  captureActivationFunnelEvent(ANALYTICS_EVENTS.dagstart_completed_anon, {
+    ...attribution(),
+    energy_level: mapped,
+    tasks_selected_count: Math.min(3, Math.max(0, props.thingCount)),
+    has_cycle_phase: props.cycleOptIn,
+    source: "v2_onboarding",
   });
 }
 

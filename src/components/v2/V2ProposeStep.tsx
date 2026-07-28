@@ -10,7 +10,6 @@ import { useI18n } from "@/lib/i18n";
 
 import { useV2, V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
 import {
-  ensureV2CyclePeriodStart,
   useV2CycleChip,
   type V2CycleChipInfo,
 } from "./V2CycleChip";
@@ -20,6 +19,7 @@ import V2CycleDiscoverSheet, {
 import V2CycleInfoSheet, {
   V2CyclePhaseInfoButton,
 } from "./V2CycleInfoSheet";
+import type { V2CycleSetupValues } from "./V2CycleSetupFields";
 import { trackV2OnboardingCycle } from "./v2OnboardingFunnel";
 import { patchV2Settings } from "./v2Settings";
 import { V2SheetPortal } from "./v2SheetPortal";
@@ -94,12 +94,11 @@ export default function V2ProposeStep({
 
   const setCycleMode = (on: boolean) => {
     if (on === state.cyclusOptIn) return;
-    if (on) {
-      ensureV2CyclePeriodStart();
-    } else {
+    if (!on) {
       setPhaseSheetOpen(false);
     }
     // Elke bewuste keuze (aan of uit) = niet later opnieuw op home vragen.
+    // Geen stille "vandaag = dag 1": setup-velden in de sheet slaan de echte start op.
     patchV2Settings({ cycleOptInPromptDismissed: true });
     update({ cyclusOptIn: on });
     trackV2OnboardingCycle({ optedIn: on });
@@ -111,6 +110,19 @@ export default function V2ProposeStep({
 
   const disableCycleFromDiscover = () => {
     setCycleMode(false);
+  };
+
+  const confirmCycleSetupFromDiscover = (values: V2CycleSetupValues) => {
+    patchV2Settings({
+      lastPeriodStart: values.lastPeriodStart,
+      cycleLength: values.cycleLength,
+      menstruationDuration: values.menstruationDuration,
+      cycleOptInPromptDismissed: true,
+    });
+    if (!state.cyclusOptIn) {
+      update({ cyclusOptIn: true });
+      trackV2OnboardingCycle({ optedIn: true });
+    }
   };
 
   const dismissDiscover = () => {
@@ -249,6 +261,18 @@ export default function V2ProposeStep({
             >
               {resolvedAdjust}
             </button>
+            <p
+              style={{
+                ...v2Styles.body,
+                fontSize: 13,
+                marginTop: 4,
+                marginBottom: 0,
+                textAlign: "center",
+                opacity: 0.85,
+              }}
+            >
+              {t("v2.proposeOwnTasksHint")}
+            </p>
           </div>
         </>
       ) : null}
@@ -280,6 +304,7 @@ export default function V2ProposeStep({
           onEnable={enableCycleFromDiscover}
           onDisable={disableCycleFromDiscover}
           onNotNow={dismissDiscover}
+          onConfirmSetup={confirmCycleSetupFromDiscover}
         />
       ) : null}
     </div>

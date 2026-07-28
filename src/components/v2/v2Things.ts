@@ -8,6 +8,7 @@ import {
 import { v2IsAnxietyTitle } from "./v2Anxiety";
 import { v2TaskEnergyToDay } from "./v2EnergyMeta";
 import {
+  v2Day1StarterSuggestions,
   v2FindThingBankItemByTitle,
   v2LocalizedSuggestions,
   v2NormalizeLocale,
@@ -189,6 +190,16 @@ export function v2StructuroThingProposals(
 
   for (const task of openTasks) {
     push(task.title, v2TaskEnergyToDay(task.energy));
+  }
+
+  // Eerste dag / lege lijst: ultra-kleine starters vóór de volle bank.
+  if (openTasks.length === 0) {
+    const starters = v2Day1StarterSuggestions(
+      day,
+      lang,
+      suggestionSeed(day, lang),
+    );
+    for (const s of starters) push(s.title, s.energy);
   }
 
   const bankPool = v2SeededShuffle(

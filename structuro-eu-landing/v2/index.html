@@ -15,13 +15,13 @@
 <link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260722d"/>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
 <script defer src="/js/analytics.js?v=20260724a"></script>
-<script defer src="/v2/v2-i18n.js?v=20260728c"></script>
-<script defer src="/v2/v2-motion.js?v=20260728c"></script>
+<script defer src="/v2/v2-i18n.js?v=20260728j"></script>
+<script defer src="/v2/v2-motion.js?v=20260728i"></script>
 <script defer src="/js/landing-zelftest.js?v=20260728a"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/v2/v2-tokens.css?v=20260728c">
-<link rel="stylesheet" href="/v2/v2-landing.css?v=20260728c">
+<link rel="stylesheet" href="/v2/v2-tokens.css?v=20260728g">
+<link rel="stylesheet" href="/v2/v2-landing.css?v=20260728i">
 </head>
 <body>
 
@@ -79,7 +79,7 @@
 </div>
 </div>
 <div class="feature-visual hero-phone">
-<div class="phone" data-demo="home" data-demo-default="t2" data-state="t2" aria-hidden="true">
+<div class="phone" data-demo="home" data-demo-default="t2" data-energy="ok" data-state="t2" aria-hidden="true">
 <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
@@ -91,7 +91,18 @@
 <p class="home-eyebrow" data-i18n="phone_home_eyebrow">Vandaag</p>
 <div class="home-head">
 <p class="serif home-greeting" data-i18n="phone_home_greeting">Goedemorgen, Niels</p>
-<span class="home-chip" data-i18n="phone_home_energy">Energie: genoeg</span>
+<span class="home-chip" data-home-energy-chip data-i18n-aria="phone_home_energy_aria_ok" title="Energie: genoeg" aria-label="Energie: genoeg">
+<span class="home-chip__battery" aria-hidden="true">
+<svg class="ds-battery" width="14" height="8" viewBox="0 0 28 16" fill="none">
+<rect class="ds-battery-frame" x="1" y="2" width="22" height="12" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+<rect class="ds-battery-cap" x="24" y="6" width="3" height="4" rx="1.2" fill="currentColor"/>
+<rect class="ds-battery-bar" data-bar="0" x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="currentColor"/>
+<rect class="ds-battery-bar" data-bar="1" x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="currentColor"/>
+<rect class="ds-battery-bar" data-bar="2" x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/>
+</svg>
+</span>
+<span class="home-chip__label" data-i18n="phone_home_energy">Energie</span>
+</span>
 </div>
 </div>
 <div class="home-card">
@@ -143,7 +154,8 @@
 </div>
 </section>
 
-<section class="feature is-alt" id="dagstart" data-screen-label="Energie">
+<section class="feature is-alt" id="dagstart" data-screen-label="Dagstart" data-flow-section>
+<div id="taken" hidden aria-hidden="true"></div>
 <div class="wrap feature-grid is-flip">
 <div class="feature-copy" data-reveal>
 <div class="eyebrow-row">
@@ -151,10 +163,33 @@
 <button type="button" class="why-btn" data-why="energy" data-i18n-aria="why_open_aria" aria-label="Waarom dit zo werkt">i</button>
 </div>
 <h2 class="serif" data-i18n="feat1_h2">Eerst energie. Dan pas taken.</h2>
-<p class="support" data-i18n="feat1_p">Geen vaste lijst die je overvraagt. Structuro past het aantal dingen aan hoe vol je batterij vandaag is.</p>
+<p class="support" data-i18n="feat1_p">Je batterij bepaalt hoeveel past. Maximaal drie voorstellen. En de eerste stap is klein genoeg om echt te beginnen.</p>
+<ol class="flow-beats" aria-label="Dagstart in drie stappen">
+<li class="flow-beat is-active" data-flow-beat="energy">
+<span class="flow-beat__n">1</span>
+<span class="flow-beat__body">
+<strong data-i18n="flow_beat1_title">Energie eerst</strong>
+<span data-i18n="flow_beat1_p">Laag, genoeg of hoog. Het aantal dingen volgt jouw batterij.</span>
+</span>
+</li>
+<li class="flow-beat" data-flow-beat="propose">
+<span class="flow-beat__n">2</span>
+<span class="flow-beat__body">
+<strong data-i18n="flow_beat2_title">Maximaal drie</strong>
+<span data-i18n="flow_beat2_p">Structuro stelt voor. Jij bevestigt. De rest blijft staan, zonder schuld.</span>
+</span>
+</li>
+<li class="flow-beat" data-flow-beat="micro">
+<span class="flow-beat__n">3</span>
+<span class="flow-beat__body">
+<strong data-i18n="flow_beat3_title">Eerste stap klein</strong>
+<span data-i18n="flow_beat3_p">Niet het hele abonnement. Wel: mail of app openen.</span>
+</span>
+</li>
+</ol>
 </div>
 <div class="feature-visual" data-reveal>
-<div class="phone" data-demo="energy" data-demo-default="pick" data-energy="low" data-state="pick">
+<div class="phone" data-demo="energy" data-demo-default="propose" data-energy="low" data-state="propose" data-flow-phone>
 <span class="iphone-side iphone-side--action" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
 <span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
@@ -183,60 +218,25 @@
 <span data-feasible="high" data-i18n="phone_feasible_high">Drie dingen passen vandaag.</span>
 </p>
 <div class="p-tasks p-tasks--energy">
-<div class="p-task"><span class="chk">1</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl" data-i18n="phone_task2">Abonnement opzeggen</span></div>
+<div class="p-task p-task--lead"><span class="chk">1</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl" data-i18n="phone_task2">Abonnement opzeggen</span></div>
 <div class="p-task"><span class="chk">2</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#7BA89A" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#7BA89A"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#7BA89A"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task1">Project starten</span></div>
 <div class="p-task"><span class="chk">3</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#2D7A6E" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#2D7A6E"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task3">Inbox opruimen</span></div>
 </div>
 <div class="p-btn p-btn--energy" data-i18n="phone_confirm">Dit is goed</div>
 <div class="p-quiet p-quiet--energy" data-i18n="phone_edit">Zelf aanpassen</div>
 </div>
+<div class="phone-micro-sheet" data-micro-sheet aria-hidden="true">
+<div class="phone-micro-sheet__scrim" aria-hidden="true"></div>
+<div class="phone-micro-sheet__card">
+<p class="phone-micro-sheet__eyebrow" data-i18n="phone_micro_sheet_eyebrow">Eerste stap klein</p>
+<p class="serif phone-micro-sheet__title" data-i18n="phone_task2">Abonnement opzeggen</p>
+<ul class="phone-micro-sheet__list">
+<li><span class="phone-micro-sheet__n">1</span><span data-i18n="phone_home_micro1">Mail of app openen</span></li>
+<li><span class="phone-micro-sheet__n">2</span><span data-i18n="phone_home_micro2">Bevestigingsmail vinden</span></li>
+<li><span class="phone-micro-sheet__n">3</span><span data-i18n="phone_home_micro3">Opzeggen aanklikken</span></li>
+<li><span class="phone-micro-sheet__n">4</span><span data-i18n="phone_home_micro4">Bevestigen en klaar</span></li>
+</ul>
 </div>
-</div>
-</div>
-</div>
-</section>
-
-<section class="feature is-cream" id="taken" data-screen-label="Taken">
-<div class="wrap feature-grid">
-<div class="feature-copy" data-reveal>
-<div class="eyebrow-row">
-<div class="eyebrow"><i></i><span data-i18n="feat2_eyebrow">Voorstellen</span></div>
-<button type="button" class="why-btn" data-why="propose" data-i18n-aria="why_open_aria" aria-label="Waarom dit zo werkt">i</button>
-</div>
-<h2 class="serif" data-i18n="feat2_h2">Maximaal drie. Meer hoeft niet.</h2>
-<p class="support" data-i18n="feat2_p">Structuro stelt voor. Jij bevestigt of past aan. De rest blijft staan, zonder schuld.</p>
-</div>
-<div class="feature-visual" data-reveal>
-<div class="phone" data-demo="tasks" data-demo-default="t3" data-energy="high" data-state="t3" aria-hidden="true">
-<span class="iphone-side iphone-side--action" aria-hidden="true"></span>
-<span class="iphone-side iphone-side--volup" aria-hidden="true"></span>
-<span class="iphone-side iphone-side--voldown" aria-hidden="true"></span>
-<span class="iphone-side iphone-side--power" aria-hidden="true"></span>
-<span class="iphone-side iphone-side--camctl" aria-hidden="true"></span>
-<div class="iphone-island" aria-hidden="true"><span class="iphone-island-cam"></span></div>
-<div class="phone-screen phone-screen--tasks">
-<div class="p-nav p-nav--flow">
-<span class="p-nav__side muted" data-i18n="phone_stop">Stoppen</span>
-<span class="p-nav__brand">Structuro</span>
-<span class="p-nav__side" aria-hidden="true"></span>
-</div>
-<div class="p-prog"><i class="on"></i><i></i><i></i></div>
-<div class="phone-flow-stack">
-<div class="orb orb--flat"></div>
-<p class="serif phone-suggest-title" data-i18n="phone_suggest_title">Dit stelt Structuro voor.</p>
-<div class="pills">
-<div class="pill" data-i18n="phone_low">Laag</div>
-<div class="pill" data-i18n="phone_ok">Genoeg</div>
-<div class="pill is-active" data-i18n="phone_high">Hoog</div>
-</div>
-<p class="p-feasible" style="opacity:1"><span data-feasible="high" data-i18n="phone_feasible_high" style="display:block">Drie dingen passen vandaag.</span></p>
-<div class="p-tasks">
-<div class="p-task"><span class="chk">1</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl" data-i18n="phone_task1">Project starten</span></div>
-<div class="p-task"><span class="chk">2</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#7BA89A" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#7BA89A"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#7BA89A"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task2">Abonnement opzeggen</span></div>
-<div class="p-task"><span class="chk">3</span><span class="bat" aria-hidden="true"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#2D7A6E" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#2D7A6E"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#2D7A6E"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#C8D5D0"/></svg></span><span class="lbl" data-i18n="phone_task3">Inbox opruimen</span></div>
-</div>
-<div class="p-btn" data-i18n="phone_confirm">Dit is goed</div>
-<div class="p-quiet" data-i18n="phone_edit">Zelf aanpassen</div>
 </div>
 </div>
 </div>
@@ -244,7 +244,7 @@
 </div>
 </section>
 
-<section class="feature is-alt" id="focus" data-screen-label="Focus">
+<section class="feature is-cream" id="focus" data-screen-label="Focus">
 <div class="wrap feature-grid is-flip">
 <div class="feature-copy" data-reveal>
 <div class="eyebrow-row">
@@ -320,7 +320,7 @@
 </div>
 </section>
 
-<section class="feature is-cream" id="cyclus" data-screen-label="Cyclus">
+<section class="feature is-alt" id="cyclus" data-screen-label="Cyclus">
 <div class="wrap feature-grid">
 <div class="feature-copy" data-reveal>
 <div class="eyebrow-row">
@@ -553,12 +553,11 @@
 <div class="wrap story-grid">
 <div class="story-lead" data-reveal>
 <div class="eyebrow"><i></i><span data-i18n="story_eyebrow">Het verhaal achter Structuro</span></div>
-<h2 class="serif" data-i18n="story_h2">Ik ben Niels. Vast op één emailtje. En toch bouw ik <span class="it">Structuro</span>.</h2>
+<h2 class="serif" data-i18n="story_h2">Trots op mijn brein, maar soms gevloerd door één simpel mailtje.</h2>
 </div>
 <div class="story-photo" data-reveal><img src="/uploads/niels-full.jpg" data-i18n-alt="story_alt" alt="Niels, maker van Structuro" width="800" height="1000" loading="lazy" decoding="async"></div>
 <div class="story-body" data-reveal>
-<p data-i18n="story_p1">Trots op mijn brein. En vanochtend liep ik vast op één mail. Allebei waar, op dezelfde dag.</p>
-<p data-i18n="story_p2">Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.</p>
+<p data-i18n="story_p1">Allebei waar, op dezelfde dag. Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.</p>
 <div class="story-quote"><p data-i18n="story_quote">Elk brein is <em>mooi</em>. Maar niet elk systeem past.</p><span data-i18n="story_role">Niels, founder met ADHD</span></div>
 </div>
 </div>

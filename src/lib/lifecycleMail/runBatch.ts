@@ -18,6 +18,7 @@ import {
 } from "./segments";
 import { renderLifecycleMail } from "./templates";
 import { signLifecycleUnsubscribeToken } from "./unsubscribeToken";
+import { subscriptionCancelPageUrl } from "@/lib/stripe/subscriptionCancelToken";
 import type {
   LifecycleCandidate,
   LifecycleSendOutcome,
@@ -69,7 +70,7 @@ async function loadCandidates(): Promise<LifecycleCandidate[]> {
   const { data, error } = await supabase
     .from("lifecycle_candidates_v1")
     .select(
-      "user_id, email, preferred_name, created_at, signup_source, subscription_status, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkin_count, last_checkin_date"
+      "user_id, email, preferred_name, created_at, signup_source, subscription_status, subscription_current_period_end, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkin_count, last_checkin_date"
     )
     .limit(2000);
 
@@ -185,7 +186,10 @@ export async function runLifecycleBatch(
         templateId,
         c,
         unsubscribeUrlFor(c.user_id),
-        now
+        now,
+        templateId === "s4_pre_paywall"
+          ? { cancelUrl: subscriptionCancelPageUrl(c.user_id) ?? undefined }
+          : undefined
       );
 
       if (await alreadySent(c.user_id, templateId, mail.cohortKey)) {
@@ -259,6 +263,17 @@ export async function runLifecycleBatch(
           audience,
           channel: "server",
         });
+        if (templateId === "s4_pre_paywall") {
+          await captureServerEvent(
+            c.user_id,
+            ANALYTICS_EVENTS.trial_precharge_mailed,
+            {
+              cohort_key: mail.cohortKey,
+              wave: opts.wave,
+              channel: "server",
+            }
+          );
+        }
       } catch {
         /* best-effort */
       }

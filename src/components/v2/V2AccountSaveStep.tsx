@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
@@ -31,15 +32,16 @@ import {
   trackV2AccountSaveShown,
 } from "./v2OnboardingFunnel";
 
+/** Zelfde mark als V2Chrome (~9KB). */
+const V2_LOGO_SRC = "/v2/logo-mark.png";
+
 /**
- * Soft account-scherm na eerste onboarding (guest): Google of e-mail, of Niet nu.
- * Geen naam vóór account. Na succes → naamstap (onAccountCreated / OAuth next).
+ * Soft account-scherm na eerste onboarding (guest): Google-first zoals login-story,
+ * e-mail achter Meer opties. Geen “Niet nu”: zonder account geen app-toegang.
  */
 export default function V2AccountSaveStep({
-  onSkip,
   onAccountCreated,
 }: {
-  onSkip: () => void;
   /** E-mail-signup met sessie: blijf in SPA en ga naar naamstap. */
   onAccountCreated: () => void;
 }) {
@@ -124,7 +126,6 @@ export default function V2AccountSaveStep({
         setBusy(false);
         return;
       }
-      // Geen naam vóór account; personalisatie volgt in V2NameStep.
       const result = await signUpWithEmailPassword(supabase, {
         email: emailTrimmed,
         password,
@@ -145,7 +146,7 @@ export default function V2AccountSaveStep({
       await finalizeNewAccountSession(
         result.userId,
         result.email ?? emailTrimmed,
-        { homePath: "/v2/home" },
+        { homePath: "/v2/abonnement" },
       );
       markV2PostAccountNamePending();
       onAccountCreated();
@@ -164,11 +165,22 @@ export default function V2AccountSaveStep({
 
   return (
     <div className="v2-auth-gate v2-fade" aria-live="polite">
-      <p className="v2-auth-gate__brand">Structuro</p>
+      <div className="v2-auth-gate__brand v2-auth-gate__brand--logo">
+        <Image
+          src={V2_LOGO_SRC}
+          alt={t("v2.accountSaveLogoAria")}
+          width={36}
+          height={26}
+          className="v2-auth-gate__logo"
+          priority
+        />
+      </div>
 
       <div className="v2-auth-gate__body">
-        <h1 className="v2-auth-gate__title">{t("v2.accountSaveTitle")}</h1>
-        <p className="v2-auth-gate__sub">{t("v2.accountSaveSub")}</p>
+        <div className="v2-auth-gate__copy">
+          <h1 className="v2-auth-gate__title">{t("v2.accountSaveTitle")}</h1>
+          <p className="v2-auth-gate__sub">{t("v2.accountSaveSub")}</p>
+        </div>
 
         <div className="v2-auth-gate__actions">
           <button
@@ -182,19 +194,35 @@ export default function V2AccountSaveStep({
               : t("v2.accountSaveGoogle")}
           </button>
 
-          {!emailOpen ? (
-            <button
-              type="button"
-              className="v2-link"
-              onClick={() => {
-                setEmailOpen(true);
-                setError(null);
-              }}
-              disabled={busy}
-            >
-              {t("v2.accountSaveEmail")}
-            </button>
-          ) : (
+          <details
+            className="v2-auth-gate__more"
+            open={emailOpen}
+            onToggle={(e) => {
+              const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
+              setEmailOpen(nextOpen);
+              if (nextOpen) setError(null);
+            }}
+          >
+            <summary className="v2-auth-gate__more-summary">
+              {t("v2.accountSaveMoreOptions")}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden
+                className="v2-auth-gate__more-chevron"
+              >
+                <path
+                  d="M3 4.5L6 7.5L9 4.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </summary>
+
             <form
               className="v2-auth-gate__email"
               onSubmit={(e) => void signUpWithEmail(e)}
@@ -242,22 +270,13 @@ export default function V2AccountSaveStep({
                 {busy ? t("v2.accountSaveBusy") : t("v2.accountSaveEmailSubmit")}
               </button>
             </form>
-          )}
+          </details>
 
           {error ? (
             <p className="v2-auth-gate__error" role="alert">
               {error}
             </p>
           ) : null}
-
-          <button
-            type="button"
-            className="v2-link"
-            onClick={onSkip}
-            disabled={busy}
-          >
-            {t("v2.accountSaveSkip")}
-          </button>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { useI18n } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
 import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
@@ -108,7 +109,37 @@ export default function OnboardingV2Client() {
   );
 
   const goHomeAfterOnboarding = useCallback(() => {
-    go("/v2/home", { todayDone: false });
+    void (async () => {
+      try {
+        const supabase = createClient();
+        if (supabase) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user?.id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("signup_source")
+              .eq("id", user.id)
+              .maybeSingle();
+            const source =
+              typeof profile?.signup_source === "string"
+                ? profile.signup_source
+                : null;
+            // Jasper / café: app-trial zonder kaart → home. Anders checkout-gate.
+            if (isEventSignupSource(source)) {
+              go("/v2/home", { todayDone: false });
+              return;
+            }
+            go("/v2/abonnement", { todayDone: false });
+            return;
+          }
+        }
+      } catch {
+        /* anon pad */
+      }
+      go("/v2/home", { todayDone: false });
+    })();
   }, [go]);
 
   const enterNamePhase = useCallback(
@@ -314,12 +345,6 @@ export default function OnboardingV2Client() {
     goHomeAfterOnboarding();
   };
 
-  const skipAccountSave = () => {
-    // Home toont geen soft account-CTA meer; dismiss voorkomt herhaling.
-    dismissAccountSavePrompt();
-    goHomeAfterOnboarding();
-  };
-
   const finishName = async (name: string) => {
     setNameBusy(true);
     setNameError(null);
@@ -383,7 +408,6 @@ export default function OnboardingV2Client() {
     return (
       <V2Page>
         <V2AccountSaveStep
-          onSkip={skipAccountSave}
           onAccountCreated={() => {
             nameEntryHandled.current = true;
             freshStartHandled.current = true;

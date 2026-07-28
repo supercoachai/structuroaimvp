@@ -51,6 +51,7 @@ export const APP_ROUTES = [
   { path: "/v2/privacy", kind: "public", status: [200], needles: ["privacy"] },
   { path: "/v2/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
   { path: "/v2/abonnement", kind: "public", status: [200], needles: ["structuro", "abonnement", "proef"] },
+  { path: "/v2/stop-abonnement", kind: "public", status: [200], needles: ["structuro", "stop"] },
   { path: "/consent", kind: "public", status: [200, 307, 308] },
   { path: "/checkout-success", kind: "public", status: [200] },
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
@@ -103,6 +104,12 @@ export const APP_ROUTES = [
     path: "/api/lifecycle/preview-send",
     kind: "api",
     status: [200, 401, 405],
+  },
+  {
+    path: "/api/subscription/one-click-cancel",
+    kind: "api",
+    method: "POST",
+    status: [200, 400, 401, 404, 405, 500],
   },
   {
     path: "/api/auth/request-password-reset",

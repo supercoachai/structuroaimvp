@@ -164,7 +164,15 @@
       feat1_eyebrow: "Dagstart",
       feat1_h2: "Eerst energie. Dan pas taken.",
       feat1_p:
-        "Geen vaste lijst die je overvraagt. Structuro past het aantal dingen aan hoe vol je batterij vandaag is.",
+        "Je batterij bepaalt hoeveel past. Maximaal drie voorstellen. En de eerste stap is klein genoeg om echt te beginnen.",
+      flow_beat1_title: "Energie eerst",
+      flow_beat1_p: "Laag, genoeg of hoog. Het aantal dingen volgt jouw batterij.",
+      flow_beat2_title: "Maximaal drie",
+      flow_beat2_p: "Structuro stelt voor. Jij bevestigt. De rest blijft staan, zonder schuld.",
+      flow_beat3_title: "Eerste stap klein",
+      flow_beat3_p: "Niet het hele abonnement. Wel: mail of app openen.",
+      phone_micro_label: "Eerste stap",
+      phone_micro_sheet_eyebrow: "Eerste stap klein",
       feat2_eyebrow: "Voorstellen",
       feat2_h2: "Maximaal drie. Meer hoeft niet.",
       feat2_p:
@@ -211,7 +219,10 @@
       phone_edit: "Zelf aanpassen",
       phone_home_eyebrow: "Vandaag",
       phone_home_greeting: "Goedemorgen, Niels",
-      phone_home_energy: "Energie: genoeg",
+      phone_home_energy: "Energie",
+      phone_home_energy_aria_low: "Energie: laag",
+      phone_home_energy_aria_ok: "Energie: genoeg",
+      phone_home_energy_aria_high: "Energie: hoog",
       phone_home_turn: "Nu aan de beurt",
       phone_home_micro1: "Mail of app openen",
       phone_home_micro2: "Bevestigingsmail vinden",
@@ -305,11 +316,10 @@
       faq_cycle_a:
         'Sommige weken voelt je brein anders. Structuro houdt optioneel rekening met je cyclusfase: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Meer lezen? <a href="/cyclus/">Bekijk de cyclus-pagina</a>.',
       story_eyebrow: "Het verhaal achter Structuro",
-      story_h2: 'Ik ben Niels. Vast op één emailtje. En toch bouw ik <span class="it">Structuro</span>.',
+      story_h2:
+        "Trots op mijn brein, maar soms gevloerd door één simpel mailtje.",
       story_p1:
-        "Trots op mijn brein. En vanochtend liep ik vast op één mail. Allebei waar, op dezelfde dag.",
-      story_p2:
-        "Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.",
+        "Allebei waar, op dezelfde dag. Elke planner die ik probeerde ging uit van een brein dat ik niet heb. Dus bouwde ik, samen met honderd ADHD'ers, iets dat uitgaat van het brein dat je al hebt.",
       story_quote: "Elk brein is <em>mooi</em>. Maar niet elk systeem past.",
       story_role: "Niels, founder met ADHD",
       story_alt: "Niels, maker van Structuro",
@@ -479,7 +489,15 @@
       feat1_eyebrow: "Day start",
       feat1_h2: "Energy first. Then tasks.",
       feat1_p:
-        "No fixed list that overloads you. Structuro matches how many things fit your battery today.",
+        "Your battery sets how much fits. Three suggestions max. And the first step is small enough to actually start.",
+      flow_beat1_title: "Energy first",
+      flow_beat1_p: "Low, okay or high. How many things follow your battery.",
+      flow_beat2_title: "Three max",
+      flow_beat2_p: "Structuro suggests. You confirm. The rest stays, without guilt.",
+      flow_beat3_title: "First step small",
+      flow_beat3_p: "Not the whole subscription. Just: open mail or the app.",
+      phone_micro_label: "First step",
+      phone_micro_sheet_eyebrow: "First step small",
       feat2_eyebrow: "Suggestions",
       feat2_h2: "Three max. That is enough.",
       feat2_p:
@@ -526,7 +544,10 @@
       phone_edit: "Choose myself",
       phone_home_eyebrow: "Today",
       phone_home_greeting: "Good morning, Niels",
-      phone_home_energy: "Energy: okay",
+      phone_home_energy: "Energy",
+      phone_home_energy_aria_low: "Energy: low",
+      phone_home_energy_aria_ok: "Energy: okay",
+      phone_home_energy_aria_high: "Energy: high",
       phone_home_turn: "Up now",
       phone_home_micro1: "Open mail or the app",
       phone_home_micro2: "Find the confirmation email",
@@ -620,11 +641,10 @@
       faq_cycle_a:
         'Some weeks your brain feels different. Structuro can optionally factor in your cycle phase: gentler suggestions in heavier weeks, no pressure to do more. You turn it on yourself. Want more? <a href="/cyclus/">Read the cycle page</a>.',
       story_eyebrow: "The story behind Structuro",
-      story_h2: 'I\'m Niels. Stuck on one little email. And still I build <span class="it">Structuro</span>.',
+      story_h2:
+        "Proud of my brain, but sometimes floored by one simple email.",
       story_p1:
-        "Proud of my brain. And this morning I got stuck on one email. Both true, same day.",
-      story_p2:
-        "Every planner I tried assumed a brain I don't have. So I built, with a hundred ADHD people, something that starts from the brain you already have.",
+        "Both true, same day. Every planner I tried assumed a brain I don't have. So I built, with a hundred ADHD people, something that starts from the brain you already have.",
       story_quote: "Every brain is <em>beautiful</em>. But not every system fits.",
       story_role: "Niels, founder with ADHD",
       story_alt: "Niels, maker of Structuro",

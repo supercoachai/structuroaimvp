@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, useEffect, type CSSProperties } from "react";
 
 import CycleRing, {
   getCyclePhaseColor,
@@ -10,7 +10,11 @@ import { calculateDayInCycle } from "@/lib/cycle/calculatePhase";
 import { useI18n } from "@/lib/i18n";
 
 import { useV2 } from "./V2Context";
-import { patchV2Settings, readV2Settings } from "./v2Settings";
+import {
+  patchV2Settings,
+  readV2Settings,
+  V2_SETTINGS_CHANGED_EVENT,
+} from "./v2Settings";
 import { todayYmd } from "./v2Tasks";
 import { v2Styles } from "./theme";
 
@@ -265,8 +269,16 @@ export default function V2CycleChip({
 /** Chip-info als cyclus aan staat. Wacht tot localStorage hydrated is. */
 export function useV2CycleChip(): V2CycleChipInfo | null {
   const { state, ready } = useV2();
+  const [settingsRevision, setSettingsRevision] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setSettingsRevision((n) => n + 1);
+    window.addEventListener(V2_SETTINGS_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(V2_SETTINGS_CHANGED_EVENT, bump);
+  }, []);
+
   return useMemo(() => {
     if (!ready || !state.cyclusOptIn) return null;
     return getV2CycleChipInfo(true);
-  }, [ready, state.cyclusOptIn]);
+  }, [ready, state.cyclusOptIn, settingsRevision]);
 }

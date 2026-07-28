@@ -12,6 +12,7 @@ import {
 import { hasLaunchGraceAccess } from "@/lib/launchGrace";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import { isV2CardTrialCohort } from "@/lib/stripe/v2CardTrial";
 
 export type RetentionPaywallReason =
   | "trial_active"
@@ -30,6 +31,8 @@ export type RetentionPaywallProfile = {
 function hasOptionalSubscribeAccess(row: RetentionPaywallProfile): boolean {
   if (hasActiveAppTrialOverride(row.app_trial_override_until)) return true;
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;
+  // V2 card-cohort: geen soft free-trial paywall; die gaan naar start-trial.
+  if (isV2CardTrialCohort(row.created_at)) return false;
   if (hasFreeTrial(row.created_at)) return true;
   return hasLaunchGraceAccess({
     created_at: row.created_at,

@@ -17,7 +17,8 @@ import {
 } from "@/lib/migrateV2LocalDataToSupabase";
 import { createClient } from "@/lib/supabase/client";
 
-import { V2Page } from "./V2Chrome";
+import { LoginShell } from "@/components/login/LoginShell";
+
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
 
@@ -142,10 +143,8 @@ export default function LoginV2Client() {
   };
 
   return (
-    <V2Page>
-      <div className="v2-auth-gate v2-fade" aria-live="polite">
-        <p className="v2-auth-gate__brand">Structuro</p>
-
+    <LoginShell error={error}>
+      <div className="v2-auth-gate v2-auth-gate--shell v2-fade" aria-live="polite">
         <div className="v2-auth-gate__body">
           <h1 className="v2-auth-gate__title">Welkom terug.</h1>
 
@@ -216,12 +215,6 @@ export default function LoginV2Client() {
                 </button>
               </form>
             )}
-
-            {error ? (
-              <p className="v2-auth-gate__error" role="alert">
-                {error}
-              </p>
-            ) : null}
           </div>
         </div>
 
@@ -231,6 +224,6 @@ export default function LoginV2Client() {
           </Link>
         </p>
       </div>
-    </V2Page>
+    </LoginShell>
   );
 }

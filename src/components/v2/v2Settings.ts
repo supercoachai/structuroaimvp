@@ -78,6 +78,9 @@ export type V2Settings = {
 
 export const V2_SETTINGS_KEY = "v2_settings";
 
+/** Same-tab listeners (cycle chip, settings UI) na localStorage-write. */
+export const V2_SETTINGS_CHANGED_EVENT = "v2_settings_changed";
+
 export const v2SettingsDefaults: V2Settings = {
   locale: "nl",
   analyticsConsent: false,
@@ -221,6 +224,7 @@ export function writeV2Settings(next: V2Settings): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(V2_SETTINGS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent(V2_SETTINGS_CHANGED_EVENT));
   } catch {
     // Privémodus: negeren.
   }
