@@ -18,6 +18,7 @@ export type LifecycleCandidate = {
   created_at: string;
   signup_source: string | null;
   subscription_status: string | null;
+  subscription_current_period_end: string | null;
   last_dagstart_date: string | null;
   unsubscribe_lifecycle: boolean;
   is_test: boolean;
