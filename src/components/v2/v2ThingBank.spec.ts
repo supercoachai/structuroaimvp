@@ -11,13 +11,13 @@ import {
 } from "./v2ThingBank";
 
 describe("v2ThingBank", () => {
-  it("heeft 100 NL/EN items met microstappen", () => {
+  it("heeft 101 NL/EN items met microstappen", () => {
     const stats = v2ThingBankStats();
-    expect(stats.total).toBe(100);
-    expect(stats.low).toBe(40);
+    expect(stats.total).toBe(101);
+    expect(stats.low).toBe(41);
     expect(stats.enough).toBe(35);
     expect(stats.high).toBe(25);
-    expect(V2_THING_BANK).toHaveLength(100);
+    expect(V2_THING_BANK).toHaveLength(101);
     for (const item of V2_THING_BANK) {
       expect(item.title.nl.trim().length).toBeGreaterThan(0);
       expect(item.title.en.trim().length).toBeGreaterThan(0);
@@ -28,7 +28,7 @@ describe("v2ThingBank", () => {
 
   it("heeft unieke ids", () => {
     const ids = V2_THING_BANK.map((i) => i.id);
-    expect(new Set(ids).size).toBe(100);
+    expect(new Set(ids).size).toBe(101);
   });
 
   it("vindt items op NL- en EN-titel", () => {
@@ -43,7 +43,7 @@ describe("v2ThingBank", () => {
   it("geeft Engelse low-suggesties", () => {
     const titles = v2LocalizedSuggestions("low", "en").map((s) => s.title);
     expect(titles).toContain("Grab a glass of water");
-    expect(titles.length).toBe(40);
+    expect(titles.length).toBe(41);
   });
 
   it("seeded shuffle is stabiel per seed", () => {
@@ -57,8 +57,8 @@ describe("v2ThingBank", () => {
   it("day-seed verandert volgorde van suggesties", () => {
     const dayA = v2LocalizedSuggestions("low", "nl", "day-a").map((s) => s.title);
     const dayB = v2LocalizedSuggestions("low", "nl", "day-b").map((s) => s.title);
-    expect(dayA).toHaveLength(40);
-    expect(dayB).toHaveLength(40);
+    expect(dayA).toHaveLength(41);
+    expect(dayB).toHaveLength(41);
     expect(dayA).not.toEqual(dayB);
   });
 });
