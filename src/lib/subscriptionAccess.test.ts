@@ -3,11 +3,6 @@ import {
   profileHasAppAccess,
   profileHasAppAccessOrGrace,
 } from "./subscriptionAccess";
-import {
-  V2_CARD_TRIAL_CUTOFF_ISO,
-  isV2CardTrialCohort,
-} from "./stripe/v2CardTrial";
-import { hasFreeTrial } from "./freeTrialAccess";
 
 assert.equal(
   profileHasAppAccess({
@@ -39,56 +34,14 @@ assert.equal(
   false
 );
 
-const cutoffMs = new Date(V2_CARD_TRIAL_CUTOFF_ISO).getTime();
-const legacyCreatedAt = new Date(
-  Math.min(Date.now() - 60 * 60 * 1000, cutoffMs - 60 * 60 * 1000)
-).toISOString();
-
-if (hasFreeTrial(legacyCreatedAt) && !isV2CardTrialCohort(legacyCreatedAt)) {
-  assert.equal(
-    profileHasAppAccessOrGrace({
-      subscription_status: "none",
-      subscription_current_period_end: null,
-      created_at: legacyCreatedAt,
-      last_dagstart_date: null,
-    }),
-    true,
-    "legacy cohort binnen free trial: toegang"
-  );
-} else {
-  // Na cutoff+3d is free-trial historisch; card-cohort zonder Stripe blijft dicht.
-  assert.equal(
-    isV2CardTrialCohort(new Date().toISOString()),
-    true,
-    "na cutoff: nieuwe accounts zijn card-cohort"
-  );
-}
-
 assert.equal(
   profileHasAppAccessOrGrace({
     subscription_status: "none",
     subscription_current_period_end: null,
-    created_at: new Date(
-      Math.max(Date.now(), cutoffMs + 60_000)
-    ).toISOString(),
-    last_dagstart_date: "2026-07-28",
+    created_at: new Date().toISOString(),
+    last_dagstart_date: null,
   }),
-  false,
-  "v2 card-cohort zonder Stripe: geen free trial"
-);
-
-assert.equal(
-  profileHasAppAccessOrGrace({
-    subscription_status: "none",
-    subscription_current_period_end: null,
-    created_at: new Date(
-      Math.max(Date.now(), cutoffMs + 60_000)
-    ).toISOString(),
-    last_dagstart_date: "2026-07-28",
-    signup_source: "jasper_podcast",
-  }),
-  true,
-  "Jasper: 7d app-trial zonder kaart, ook na card-cutoff"
+  true
 );
 
 assert.equal(

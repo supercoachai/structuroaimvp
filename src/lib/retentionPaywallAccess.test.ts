@@ -1,40 +1,20 @@
 import assert from "node:assert/strict";
 import { resolveRetentionPaywallReason } from "./retentionPaywallAccess";
-import { V2_CARD_TRIAL_CUTOFF_ISO } from "./stripe/v2CardTrial";
-import { hasFreeTrial } from "./freeTrialAccess";
 
 const now = Date.now();
 const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString();
 const daysFromNow = (d: number) =>
   new Date(now + d * 24 * 60 * 60 * 1000).toISOString();
 
-const cutoffMs = new Date(V2_CARD_TRIAL_CUTOFF_ISO).getTime();
-const legacyCreatedAt = new Date(
-  Math.min(now - 60 * 60 * 1000, cutoffMs - 60 * 60 * 1000)
-).toISOString();
-
-if (hasFreeTrial(legacyCreatedAt)) {
-  assert.equal(
-    resolveRetentionPaywallReason({
-      subscription_status: "none",
-      subscription_current_period_end: null,
-      created_at: legacyCreatedAt,
-      signup_source: "organic",
-    }),
-    "trial_active",
-    "legacy cohort in gratis proef: optioneel abonneren, geen retention-copy"
-  );
-}
-
 assert.equal(
   resolveRetentionPaywallReason({
     subscription_status: "none",
     subscription_current_period_end: null,
-    created_at: new Date(Math.max(now - 60_000, cutoffMs + 60_000)).toISOString(),
+    created_at: hoursAgo(1),
     signup_source: "organic",
   }),
-  "trial_expired",
-  "v2 card-cohort zonder Stripe: hard gate (geen soft trial_active)"
+  "trial_active",
+  "nieuwe user in gratis proef: optioneel abonneren, geen retention-copy"
 );
 
 assert.equal(
