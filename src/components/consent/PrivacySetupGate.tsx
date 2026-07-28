@@ -8,6 +8,7 @@ import {
   migrateLegacyPrivacySetupIfNeeded,
 } from "@/lib/privacySetup";
 import { useConsent } from "@/lib/posthog/ConsentContext";
+import { resolveLiveHomePathClient } from "@/lib/v2/v2LabAccess";
 
 export function PrivacySetupGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -26,7 +27,7 @@ export function PrivacySetupGate({ children }: { children: ReactNode }) {
     const onConsentPage = pathname === "/consent" || pathname.startsWith("/consent/");
 
     if (isPrivacySetupCompleted()) {
-      if (onConsentPage) router.replace("/v2/home");
+      if (onConsentPage) router.replace(resolveLiveHomePathClient());
       return;
     }
 

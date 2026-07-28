@@ -27,6 +27,10 @@ import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
+import {
+  isV2PublicEnabled,
+  mapV2PathToV1,
+} from "@/lib/v2/v2LabAccess";
 
 function readCookie(request: Request, name: string): string | undefined {
   const header = request.headers.get("cookie");
@@ -107,7 +111,9 @@ async function resolveOAuthRedirectPath(
   email: string | null | undefined,
   next: string
 ): Promise<string> {
-  if (next === "/v2" || next.startsWith("/v2/")) return next;
+  if (next === "/v2" || next.startsWith("/v2/")) {
+    return isV2PublicEnabled() ? next : mapV2PathToV1(next);
+  }
   if (next && next !== "/") return next;
   if (isProtectedTestAccount(email)) return "/";
 

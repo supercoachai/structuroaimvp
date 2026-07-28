@@ -15,6 +15,7 @@ import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
+import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -46,7 +47,7 @@ async function postCheckout(request: Request) {
     return NextResponse.json({ error: "Expected plan: monthly | yearly" }, { status: 400 });
   }
 
-  const useV2Return = body.surface === "v2";
+  const useV2Return = body.surface === "v2" && isV2PublicEnabled();
   const successPath = useV2Return
     ? "/v2/abonnement?from=stripe"
     : "/abonnement?from=stripe";

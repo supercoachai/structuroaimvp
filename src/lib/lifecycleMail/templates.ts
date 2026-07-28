@@ -1,11 +1,24 @@
 import { getAppOrigin } from "@/lib/appUrl";
 import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
+import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 
 import type {
   LifecycleCandidate,
   LifecycleRenderedMail,
   LifecycleTemplateId,
 } from "./types";
+
+function lifecycleCtaHome(): string {
+  return isV2PublicEnabled() ? "/v2/home" : "/";
+}
+
+function lifecycleCtaDagstart(): string {
+  return isV2PublicEnabled() ? "/v2/dagstart" : "/?dagstart=open";
+}
+
+function lifecycleCtaPaywall(): string {
+  return isV2PublicEnabled() ? "/v2/abonnement" : "/abonnement";
+}
 
 /** Placeholder-namen die we niet in de aanhef willen (onboarding-fallback e.d.). */
 const PLACEHOLDER_FIRST_NAMES = new Set([
@@ -268,7 +281,7 @@ export function renderLifecycleMail(
           "Open de app en begin met één ding. Geen creditcard nodig deze dagen."
         ),
         ctaLabel: "Naar dagstart",
-        ctaPath: "/v2/dagstart",
+        ctaPath: lifecycleCtaDagstart(),
         unsubscribeUrl,
       });
 
@@ -284,7 +297,7 @@ export function renderLifecycleMail(
           "Eén stap: open de app en kies wat je vandaag wilt doen."
         ),
         ctaLabel: "Begin vandaag",
-        ctaPath: "/v2/dagstart",
+        ctaPath: lifecycleCtaDagstart(),
         unsubscribeUrl,
       });
 
@@ -296,7 +309,7 @@ export function renderLifecycleMail(
         preview: "Gisteren hoefde niet. Vandaag mag één klein ding.",
         paragraphs: paras(hi, "Gisteren hoefde niet. Vandaag mag één klein ding."),
         ctaLabel: "Open Structuro",
-        ctaPath: "/v2/home",
+        ctaPath: lifecycleCtaHome(),
         unsubscribeUrl,
       });
 
@@ -312,7 +325,7 @@ export function renderLifecycleMail(
           "Als je wilt, kies je vandaag opnieuw één ding."
         ),
         ctaLabel: "Kies vandaag één ding",
-        ctaPath: "/v2/home",
+        ctaPath: lifecycleCtaHome(),
         unsubscribeUrl,
       });
 
@@ -332,7 +345,7 @@ export function renderLifecycleMail(
           "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt."
         ),
         ctaLabel: "Naar Structuro",
-        ctaPath: "/v2/home",
+        ctaPath: lifecycleCtaHome(),
         unsubscribeUrl,
       });
 
@@ -351,7 +364,7 @@ export function renderLifecycleMail(
           "Daarna kun je kiezen: door met Structuro, of stoppen."
         ),
         ctaLabel: "Kies of je doorgaat",
-        ctaPath: "/v2/abonnement",
+        ctaPath: lifecycleCtaPaywall(),
         ctaSubline:
           "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
         unsubscribeUrl,
@@ -370,7 +383,7 @@ export function renderLifecycleMail(
           "€12,99 per maand."
         ),
         ctaLabel: "Ja, ik ga door",
-        ctaPath: "/v2/abonnement",
+        ctaPath: lifecycleCtaPaywall(),
         ctaSubline:
           "Opzeggen wanneer je wilt. Niet tevreden binnen 14 dagen? Geld terug, geen vragen.",
         unsubscribeUrl,
@@ -388,7 +401,7 @@ export function renderLifecycleMail(
           "Als je wilt, open je de app en kies je vandaag opnieuw één ding."
         ),
         ctaLabel: "Open Structuro",
-        ctaPath: "/v2/home",
+        ctaPath: lifecycleCtaHome(),
         unsubscribeUrl,
       });
 

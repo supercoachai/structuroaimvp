@@ -31,7 +31,7 @@ describe("lifecycleMail templates", () => {
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
     expect(mail.subject).toBe("Sam, welkom bij Structuro");
-    expect(mail.ctaPath).toBe("/v2/dagstart");
+    expect(mail.ctaPath).toBe("/?dagstart=open");
     expect(mail.cohortKey).toBe("hello:u1");
     expect(mail.html).toContain("Naar dagstart");
     expect(mail.html).toContain("Welkom bij Structuro");
@@ -54,22 +54,22 @@ describe("lifecycleMail templates", () => {
     expect(mail.text).toContain("Hoi Sam,");
   });
 
-  it("S0 welcome wijst naar /v2/dagstart", () => {
+  it("S0 welcome wijst naar v1 dagstart tijdens lockdown", () => {
     const mail = renderLifecycleMail(
       "s0_welcome",
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/v2/dagstart");
+    expect(mail.ctaPath).toBe("/?dagstart=open");
   });
 
-  it("S5 wijst naar /v2/abonnement met why, prijs en garantie-subline", () => {
+  it("S5 wijst naar /abonnement met why, prijs en garantie-subline", () => {
     const mail = renderLifecycleMail(
       "s5_paywall",
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/v2/abonnement");
+    expect(mail.ctaPath).toBe("/abonnement");
     expect(mail.cohortKey).toBe("paywall:u1");
     expect(mail.html).toContain("Ja, ik ga door");
     expect(mail.html).toContain("€12,99 per maand");
@@ -107,7 +107,7 @@ describe("lifecycleMail templates", () => {
       { ...base, checkin_count: 3 },
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/v2/home");
+    expect(mail.ctaPath).toBe("/");
     expect(mail.html).toContain("Open Structuro");
     expect(mail.html).toContain("Geen inhalen nodig");
     expect(mail.text).toContain("Geen inhalen nodig");

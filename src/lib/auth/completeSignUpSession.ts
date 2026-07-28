@@ -9,11 +9,33 @@ import {
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import {
+  isV2PublicEnabledClient,
+  resolveLiveHomePathClient,
+  resolveLivePaywallPathClient,
+} from "@/lib/v2/v2LabAccess";
 
 type FinalizeNewAccountOptions = {
-  /** Na v2 account-save / claim: blijf in /v2/* (geen v1-root). */
+  /** Na v2 account-save / claim: blijf in /v2/* (geen v1-root) als v2 publiek is. */
   homePath?: string;
 };
+
+function v2PostAccountPath(
+  homePath: string,
+  signupSource: string | null | undefined
+): string {
+  if (!isV2PublicEnabledClient()) {
+    if (isEventSignupSource(signupSource)) return "/";
+    return resolveLivePaywallPathClient();
+  }
+  const v2Home = homePath.startsWith("/v2") ? homePath : "/v2/home";
+  // Jasper / café: geen kaart-poort tijdens event-trial.
+  if (isEventSignupSource(signupSource)) {
+    return v2Home === "/v2/abonnement" ? "/v2/home" : v2Home;
+  }
+  return "/v2/abonnement";
+}
 
 /** Na OAuth, e-mail/wachtwoord of passkey: attributie, analytics, redirect-pad. */
 export async function finalizeNewAccountSession(
@@ -21,7 +43,7 @@ export async function finalizeNewAccountSession(
   email: string | null | undefined,
   options?: FinalizeNewAccountOptions
 ): Promise<string> {
-  const homePath = options?.homePath ?? "/";
+  const homePath = options?.homePath ?? resolveLiveHomePathClient();
 
   await persistSignupAttributionToProfile(userId);
   queueSignupCompletedForAnalytics();
@@ -38,19 +60,24 @@ export async function finalizeNewAccountSession(
     /* best-effort */
   });
 
+  const attributedSource = getSignupAttributionSource();
+
   // V2 local-first: bewaar journey/taken/dump vóórdat we naar de cloud-app gaan.
   try {
     const v2 = await migrateV2LocalDataToSupabase(userId);
     if (v2.migrated) {
-      return options?.homePath ?? "/v2/home";
+      return v2PostAccountPath(homePath, attributedSource);
     }
   } catch {
     /* best-effort; TaskContext/V2ClaimOnAuth kan retryen */
   }
 
   // Account aangemaakt vanuit de anonieme acquisitie-flow: onboarding al gedaan,
-  // dus niet opnieuw starten. Lokale taken migreren mee. Daarna meteen de app in.
+  // dus niet opnieuw starten. Lokale taken migreren mee.
   if (await claimAnonymousOnboardingForAccount(userId)) {
+    if (homePath.startsWith("/v2")) {
+      return v2PostAccountPath(homePath, attributedSource);
+    }
     return homePath;
   }
 

@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
         const payload = JSON.stringify({
           title: "Structuro: dagstart",
           body: "Goedemorgen. Je dagstart staat voor je klaar. Kies rustig je taken voor vandaag.",
-          url: "/dagstart",
+          url: "/",
           tag: "structuro-dagstart",
         });
 

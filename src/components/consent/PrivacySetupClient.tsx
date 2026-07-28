@@ -21,6 +21,7 @@ import {
   V2SettingsToggle,
 } from "@/components/v2/V2SettingsUi";
 import { v2Styles } from "@/components/v2/theme";
+import { resolveLiveHomePathClient } from "@/lib/v2/v2LabAccess";
 
 export default function PrivacySetupClient() {
   const { t } = useI18n();
@@ -123,7 +124,7 @@ export default function PrivacySetupClient() {
     setFinishing(true);
     if (consent === "unknown") deny();
     markPrivacySetupCompleted();
-    router.replace("/v2/home");
+    router.replace(resolveLiveHomePathClient());
   };
 
   return (

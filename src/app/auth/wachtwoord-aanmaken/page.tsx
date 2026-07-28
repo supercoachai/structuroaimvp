@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth/socialSignIn";
 import { RegistrerenShell } from "@/components/registreren/RegistrerenShell";
 import { useI18n } from "@/lib/i18n";
+import { resolveLiveHomePathClient } from "@/lib/v2/v2LabAccess";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -109,7 +110,7 @@ export default function WachtwoordAanmakenPage() {
         return;
       }
 
-      router.push("/v2/home");
+      router.push(resolveLiveHomePathClient());
       router.refresh();
     } catch (err) {
       setError(

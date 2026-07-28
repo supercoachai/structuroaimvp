@@ -3,6 +3,10 @@
 import { isProfileOnboardingUpToDate } from "@/lib/onboardingVersion";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
+import {
+  isV2PublicEnabledClient,
+  mapV2PathToV1,
+} from "@/lib/v2/v2LabAccess";
 
 function safeAppPath(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -24,7 +28,7 @@ type ProfileRow = {
  * Bepaalt waar een user na login/auth naartoe gaat.
  * Nieuwe betalende users (onboarding nog open) gaan altijd naar /onboarding,
  * ook na PWA-installatie en opnieuw inloggen in standalone mode.
- * Expliciete /v2/* next-paden winnen altijd (geen v1-lekkage na v2-login).
+ * Expliciete /v2/* next-paden winnen alleen als v2 publiek is.
  */
 export function resolvePostLoginPathFromProfile(
   profile: ProfileRow | null | undefined,
@@ -36,7 +40,8 @@ export function resolvePostLoginPathFromProfile(
 ): string {
   const safeNext = safeAppPath(options.next);
   if (safeNext && (safeNext === "/v2" || safeNext.startsWith("/v2/"))) {
-    return safeNext;
+    if (isV2PublicEnabledClient()) return safeNext;
+    return mapV2PathToV1(safeNext);
   }
 
   if (isProtectedTestAccount(options.email ?? null)) {

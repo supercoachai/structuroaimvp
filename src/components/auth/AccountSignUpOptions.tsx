@@ -28,6 +28,10 @@ import {
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
 import { captureMarketingEvent } from "@/lib/posthog/track";
+import {
+  isV2PublicEnabledClient,
+  resolveLiveHomePathClient,
+} from "@/lib/v2/v2LabAccess";
 
 export type SignUpVisual = "story" | "work";
 
@@ -176,9 +180,10 @@ export function AccountSignUpOptions({
   const finishSession = async (userId: string, userEmail: string | null | undefined) => {
     const fromV2 =
       typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("from") === "v2";
+      new URLSearchParams(window.location.search).get("from") === "v2" &&
+      isV2PublicEnabledClient();
     const path = await finalizeNewAccountSession(userId, userEmail, {
-      homePath: fromV2 ? "/v2/home" : "/",
+      homePath: fromV2 ? "/v2/home" : resolveLiveHomePathClient(),
     });
     if (onSessionReady) {
       onSessionReady(path);
@@ -217,7 +222,8 @@ export function AccountSignUpOptions({
       });
       const fromV2 =
         typeof window !== "undefined" &&
-        new URLSearchParams(window.location.search).get("from") === "v2";
+        new URLSearchParams(window.location.search).get("from") === "v2" &&
+        isV2PublicEnabledClient();
       await startOAuthSignIn(
         supabase,
         provider,

@@ -1,11 +1,11 @@
 import { updateSession } from './lib/supabase/middleware'
+import {
+  isV2AppPath,
+  isV2LockdownExemptPath,
+  isV2PublicEnabled,
+  mapV2PathToV1,
+} from './lib/v2/v2LabAccess'
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server'
-
-function isV2LabFailClosedPath(pathname: string): boolean {
-  if (pathname === '/v2' || pathname === '/v2/') return true
-  if (pathname === '/v2/jasper' || pathname.startsWith('/v2/jasper/')) return true
-  return false
-}
 
 function isFailOpenPath(pathname: string): boolean {
   if (pathname.startsWith('/_next')) return true
@@ -14,9 +14,15 @@ function isFailOpenPath(pathname: string): boolean {
   if (pathname.startsWith('/login')) return true
   if (pathname === '/registreren' || pathname.startsWith('/registreren/')) return true
   if (pathname === '/onboardingpro' || pathname.startsWith('/onboardingpro/')) return true
-  // Lab-index fail-closed (zie catch). Live /v2/* shell blijft fail-open.
-  if (pathname === '/v2' || pathname.startsWith('/v2/')) {
-    return !isV2LabFailClosedPath(pathname)
+  // /v2 nooit fail-open tijdens lockdown. Als publiek: alleen non-lab fail-open
+  // (lab blijft fail-closed via redirect hieronder).
+  if (isV2AppPath(pathname)) {
+    if (!isV2PublicEnabled()) return false
+    if (isV2LockdownExemptPath(pathname)) return true
+    // Lab-index/jasper: fail-closed. Overige live shell: fail-open.
+    if (pathname === '/v2' || pathname === '/v2/') return false
+    if (pathname === '/v2/jasper' || pathname.startsWith('/v2/jasper/')) return false
+    return true
   }
   if (pathname === '/welkom' || pathname.startsWith('/welkom/')) return true
   if (pathname === '/wachtlijst' || pathname.startsWith('/wachtlijst/')) return true
@@ -42,12 +48,25 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       return NextResponse.json({ error: 'middleware_unavailable' }, { status: 503 })
     }
 
-    // Private lab-directory nooit fail-open serveren.
-    if (isV2LabFailClosedPath(pathname)) {
-      const homeUrl = request.nextUrl.clone()
-      homeUrl.pathname = '/'
-      homeUrl.search = ''
-      return NextResponse.redirect(homeUrl)
+    // /v2 lockdown / lab: nooit fail-open serveren naar de shell.
+    if (isV2AppPath(pathname)) {
+      if (!isV2PublicEnabled() && !isV2LockdownExemptPath(pathname)) {
+        const bounce = request.nextUrl.clone()
+        bounce.pathname = mapV2PathToV1(pathname)
+        bounce.search = ''
+        return NextResponse.redirect(bounce)
+      }
+      if (
+        pathname === '/v2' ||
+        pathname === '/v2/' ||
+        pathname === '/v2/jasper' ||
+        pathname.startsWith('/v2/jasper/')
+      ) {
+        const homeUrl = request.nextUrl.clone()
+        homeUrl.pathname = '/'
+        homeUrl.search = ''
+        return NextResponse.redirect(homeUrl)
+      }
     }
 
     if (isFailOpenPath(pathname)) {

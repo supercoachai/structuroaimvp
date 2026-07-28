@@ -40,7 +40,14 @@ import {
   ADHD_CAFE_SIGNUP_CAMPAIGN,
   ADHD_CAFE_SIGNUP_SOURCE,
 } from "../stripe/trialConfig";
-import { isV2LabPath } from "../v2/v2LabAccess";
+import {
+  isV2LabPath,
+  isV2LockdownExemptPath,
+  isV2PublicEnabled,
+  resolveLiveHomePath,
+  resolveLivePaywallPath,
+  resolveV2LockdownBouncePath,
+} from "../v2/v2LabAccess";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -233,17 +240,21 @@ function createMiddlewareSupabase(request: NextRequest): {
 }
 
 /**
- * Lab-directory (`/v2`) en private surfaces (`/v2/jasper`): alleen team/test.
- * Publiek → soft bounce naar start (anon) of live home (ingelogd).
+ * Team/test-only gate voor lab-routes, of voor heel `/v2` tijdens lockdown.
+ * Bounce nooit terug naar `/v2/*` als de shell gelockt is.
  */
-async function gateV2LabRoute(request: NextRequest): Promise<NextResponse> {
-  if (process.env.NODE_ENV === "development") {
+async function gateV2InternalOnlyRoute(
+  request: NextRequest
+): Promise<NextResponse> {
+  // Lokaal open via isV2PublicEnabled(); lockdown forceert toch team-check
+  // alleen wanneer publiek uit staat (production default).
+  if (isV2PublicEnabled() && process.env.NODE_ENV === "development") {
     return NextResponse.next({ request });
   }
 
   if (!isSupabaseConfigured()) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = resolveV2LockdownBouncePath(request.nextUrl.pathname, false);
     url.search = "";
     return NextResponse.redirect(url, 302);
   }
@@ -259,7 +270,10 @@ async function gateV2LabRoute(request: NextRequest): Promise<NextResponse> {
   }
 
   const url = request.nextUrl.clone();
-  url.pathname = user?.id ? "/v2/home" : "/";
+  url.pathname = resolveV2LockdownBouncePath(
+    request.nextUrl.pathname,
+    Boolean(user?.id)
+  );
   url.search = "";
   return NextResponse.redirect(url, 302);
 }
@@ -373,12 +387,17 @@ export async function updateSession(
     return NextResponse.next({ request });
   }
 
-  // Lab-index/private surfaces eerst: nooit publiek.
-  // Publieke v2-paden (anon onboarding/auth/legal/checkout): geen v1-gates.
-  // Beschermde v2-app-routes (/home, /todo, …): lichte sessie + card-trial gate.
+  // /v2 lockdown: alles team/test, behalve one-click cancel.
+  // Als STRUCTURO_V2_PUBLIC=1: lab blijft team-only; rest zoals voorheen.
   if (pathname === "/v2" || pathname.startsWith("/v2/")) {
+    if (!isV2PublicEnabled()) {
+      if (isV2LockdownExemptPath(pathname)) {
+        return NextResponse.next({ request });
+      }
+      return gateV2InternalOnlyRoute(request);
+    }
     if (isV2LabPath(pathname)) {
-      return gateV2LabRoute(request);
+      return gateV2InternalOnlyRoute(request);
     }
     if (isPublicV2Path(pathname)) {
       return NextResponse.next({ request });
@@ -722,7 +741,7 @@ export async function updateSession(
     isPasswordCreatePath(pathname)
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = privacySetupDone ? "/v2/home" : "/consent";
+    url.pathname = privacySetupDone ? resolveLiveHomePath() : "/consent";
     return NextResponse.redirect(url, 302);
   }
 
@@ -743,7 +762,7 @@ export async function updateSession(
 
   if (pathname.startsWith("/onboarding")) {
     const url = request.nextUrl.clone();
-    url.pathname = privacySetupDone ? "/v2/home" : "/consent";
+    url.pathname = privacySetupDone ? resolveLiveHomePath() : "/consent";
     return NextResponse.redirect(url, 302);
   }
 
@@ -766,8 +785,7 @@ export async function updateSession(
       });
       if (!ok) {
         const url = request.nextUrl.clone();
-        // Live shell is v2: paywall in Variant F (cream/ink/sage), niet de oude blue page.
-        url.pathname = "/v2/abonnement";
+        url.pathname = resolveLivePaywallPath();
         return NextResponse.redirect(url, 302);
       }
     }
