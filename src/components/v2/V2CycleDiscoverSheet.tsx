@@ -21,6 +21,7 @@ import {
   shouldCloseCycleDiscoverFromSwipe,
   shouldOpenCycleDiscoverFromSwipe,
 } from "./v2CycleDiscoverSwipe";
+import { V2SheetPortal } from "./v2SheetPortal";
 
 function CycleDiscoverIcon({ size = 28 }: { size?: number }) {
   return (
@@ -307,189 +308,196 @@ export default function V2CycleDiscoverSheet({
   );
 
   return (
-    <div className="v2-info-sheet v2-cycle-discover-sheet" role="presentation">
-      <button
-        type="button"
-        className="v2-info-sheet__backdrop"
-        aria-label={t("cycle.discoverCloseAria")}
-        onClick={onClose}
-      />
-      <div
-        ref={panelRef}
-        id="v2-cycle-discover-sheet"
-        className="v2-info-sheet__panel v2-cycle-discover-sheet__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        style={
-          dragY > 0
-            ? { transform: `translateY(${dragY}px)`, transition: "none" }
-            : undefined
-        }
-        onPointerMove={onPointerMove}
-        onPointerUp={(e) => endDrag(e.clientY)}
-        onPointerCancel={() => {
-          dragStartY.current = null;
-          dragMoved.current = false;
-          dragFromGrab.current = false;
-          setDragY(0);
-        }}
-      >
-        <div
-          className="v2-cycle-discover-sheet__grab"
-          data-sheet-drag
-          role="button"
-          tabIndex={0}
+    <V2SheetPortal>
+      <div className="v2-info-sheet v2-cycle-discover-sheet" role="presentation">
+        <button
+          type="button"
+          className="v2-info-sheet__backdrop"
           aria-label={t("cycle.discoverCloseAria")}
-          onPointerDown={(e) => beginDrag(e, true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onClose();
-            }
+          onClick={onClose}
+        />
+        <div
+          ref={panelRef}
+          id="v2-cycle-discover-sheet"
+          className="v2-info-sheet__panel v2-cycle-discover-sheet__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          style={
+            dragY > 0
+              ? { transform: `translateY(${dragY}px)`, transition: "none" }
+              : undefined
+          }
+          onPointerMove={onPointerMove}
+          onPointerUp={(e) => endDrag(e.clientY)}
+          onPointerCancel={() => {
+            dragStartY.current = null;
+            dragMoved.current = false;
+            dragFromGrab.current = false;
+            setDragY(0);
           }}
         >
-          <span className="v2-cycle-discover-hint__handle" aria-hidden />
-        </div>
-
-        <div
-          className="v2-cycle-discover-sheet__head"
-          data-sheet-drag
-          onPointerDown={(e) => beginDrag(e, false)}
-        >
-          <span className="v2-cycle-discover-sheet__head-icon" aria-hidden>
-            <CycleDiscoverIcon size={30} />
-          </span>
-          <div className="v2-cycle-discover-sheet__head-copy">
-            <p className="v2-cycle-discover-sheet__eyebrow">
-              {t("cycle.discoverEyebrow")}
-            </p>
-            <h2 id={titleId} className="v2-cycle-discover-sheet__title">
-              {t("cycle.discoverTitle")}
-            </h2>
-          </div>
-          <button
-            type="button"
-            className="v2-cycle-discover-sheet__collapse"
+          <div
+            className="v2-cycle-discover-sheet__grab"
+            data-sheet-drag
+            role="button"
+            tabIndex={0}
             aria-label={t("cycle.discoverCloseAria")}
-            onClick={onClose}
+            onPointerDown={(e) => beginDrag(e, true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClose();
+              }
+            }}
           >
-            <Chevron direction="down" />
-          </button>
-        </div>
-
-        <p className="v2-cycle-discover-sheet__body">{t("cycle.discoverBody")}</p>
-
-        <div className="v2-cycle-discover-sheet__toggle-card">
-          <div className="v2-cycle-discover-sheet__toggle-copy">
-            <p className="v2-cycle-discover-sheet__toggle-title">
-              {t("cycle.discoverToggleLabel")}
-            </p>
-            <p className="v2-cycle-discover-sheet__toggle-status">
-              {enabled
-                ? t("cycle.discoverToggleOn")
-                : t("cycle.discoverToggleOff")}
-            </p>
+            <span className="v2-cycle-discover-hint__handle" aria-hidden />
           </div>
-          <V2SettingsToggle
-            checked={enabled}
-            onChange={() => setEnabled(!enabled)}
-            ariaLabel={t("cycle.discoverToggleLabel")}
-          />
-        </div>
 
-        <section
-          className="v2-cycle-discover-sheet__why"
-          aria-labelledby={`${titleId}-why`}
-        >
-          <h3
-            id={`${titleId}-why`}
-            className="v2-cycle-discover-sheet__why-title"
+          <div
+            className="v2-cycle-discover-sheet__head"
+            data-sheet-drag
+            onPointerDown={(e) => beginDrag(e, false)}
           >
-            {t("cycle.discoverWhyTitle")}
-          </h3>
-          <p className="v2-cycle-discover-sheet__why-body">
-            {t("cycle.discoverWhyBody")}
-          </p>
-        </section>
+            <span className="v2-cycle-discover-sheet__head-icon" aria-hidden>
+              <CycleDiscoverIcon size={30} />
+            </span>
+            <div className="v2-cycle-discover-sheet__head-copy">
+              <p className="v2-cycle-discover-sheet__eyebrow">
+                {t("cycle.discoverEyebrow")}
+              </p>
+              <h2 id={titleId} className="v2-cycle-discover-sheet__title">
+                {t("cycle.discoverTitle")}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="v2-cycle-discover-sheet__collapse"
+              aria-label={t("cycle.discoverCloseAria")}
+              onClick={onClose}
+            >
+              <Chevron direction="down" />
+            </button>
+          </div>
 
-        <section
-          className="v2-cycle-discover-sheet__how"
-          aria-labelledby={`${titleId}-how`}
-        >
-          <h3
-            id={`${titleId}-how`}
-            className="v2-cycle-discover-sheet__how-title"
-          >
-            {t("cycle.discoverHowTitle")}
-          </h3>
-          <ol className="v2-cycle-discover-sheet__how-list">
-            <HowStep
-              n={1}
-              before={t("cycle.discoverHow1Before")}
-              em={t("cycle.discoverHow1Em")}
-              after={t("cycle.discoverHow1After")}
-            />
-            <HowStep
-              n={2}
-              before={t("cycle.discoverHow2Before")}
-              em={t("cycle.discoverHow2Em")}
-              after={t("cycle.discoverHow2After")}
-            />
-            <HowStep
-              n={3}
-              before={t("cycle.discoverHow3Before")}
-              em={t("cycle.discoverHow3Em")}
-              after={t("cycle.discoverHow3After")}
-            />
-          </ol>
-        </section>
+          <div className="v2-cycle-discover-sheet__scroll">
+            <p className="v2-cycle-discover-sheet__body">
+              {t("cycle.discoverBody")}
+            </p>
 
-        <div className="v2-cycle-discover-sheet__actions">
-          {enabled ? (
-            <>
-              <button
-                type="button"
-                className="btn-ghost v2-cycle-discover-sheet__cta-no"
-                onClick={() => {
-                  onDisable();
-                }}
+            <div className="v2-cycle-discover-sheet__toggle-card">
+              <div className="v2-cycle-discover-sheet__toggle-copy">
+                <p className="v2-cycle-discover-sheet__toggle-title">
+                  {t("cycle.discoverToggleLabel")}
+                </p>
+                <p className="v2-cycle-discover-sheet__toggle-status">
+                  {enabled
+                    ? t("cycle.discoverToggleOn")
+                    : t("cycle.discoverToggleOff")}
+                </p>
+              </div>
+              <V2SettingsToggle
+                checked={enabled}
+                onChange={() => setEnabled(!enabled)}
+                ariaLabel={t("cycle.discoverToggleLabel")}
+              />
+            </div>
+
+            <section
+              className="v2-cycle-discover-sheet__why"
+              aria-labelledby={`${titleId}-why`}
+            >
+              <h3
+                id={`${titleId}-why`}
+                className="v2-cycle-discover-sheet__why-title"
               >
-                {t("cycle.discoverDisable")}
-              </button>
-              <button
-                type="button"
-                className="btn-primary v2-cycle-discover-sheet__cta-yes"
-                onClick={onClose}
+                {t("cycle.discoverWhyTitle")}
+              </h3>
+              <p className="v2-cycle-discover-sheet__why-body">
+                {t("cycle.discoverWhyBody")}
+              </p>
+            </section>
+
+            <section
+              className="v2-cycle-discover-sheet__how"
+              aria-labelledby={`${titleId}-how`}
+            >
+              <h3
+                id={`${titleId}-how`}
+                className="v2-cycle-discover-sheet__how-title"
               >
-                {t("cycle.discoverDone")}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="btn-ghost v2-cycle-discover-sheet__cta-no"
-                onClick={onNotNow}
-              >
-                {t("cycle.discoverNotNow")}
-              </button>
-              <button
-                type="button"
-                className="btn-primary v2-cycle-discover-sheet__cta-yes"
-                onClick={() => {
-                  onEnable();
-                  onClose();
-                }}
-              >
-                {t("cycle.discoverEnable")}
-              </button>
-            </>
-          )}
+                {t("cycle.discoverHowTitle")}
+              </h3>
+              <ol className="v2-cycle-discover-sheet__how-list">
+                <HowStep
+                  n={1}
+                  before={t("cycle.discoverHow1Before")}
+                  em={t("cycle.discoverHow1Em")}
+                  after={t("cycle.discoverHow1After")}
+                />
+                <HowStep
+                  n={2}
+                  before={t("cycle.discoverHow2Before")}
+                  em={t("cycle.discoverHow2Em")}
+                  after={t("cycle.discoverHow2After")}
+                />
+                <HowStep
+                  n={3}
+                  before={t("cycle.discoverHow3Before")}
+                  em={t("cycle.discoverHow3Em")}
+                  after={t("cycle.discoverHow3After")}
+                />
+              </ol>
+            </section>
+          </div>
+
+          <div className="v2-cycle-discover-sheet__foot">
+            <div className="v2-cycle-discover-sheet__actions">
+              {enabled ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-ghost v2-cycle-discover-sheet__cta-no"
+                    onClick={() => {
+                      onDisable();
+                    }}
+                  >
+                    {t("cycle.discoverDisable")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary v2-cycle-discover-sheet__cta-yes"
+                    onClick={onClose}
+                  >
+                    {t("cycle.discoverDone")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn-ghost v2-cycle-discover-sheet__cta-no"
+                    onClick={onNotNow}
+                  >
+                    {t("cycle.discoverNotNow")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary v2-cycle-discover-sheet__cta-yes"
+                    onClick={() => {
+                      onEnable();
+                      onClose();
+                    }}
+                  >
+                    {t("cycle.discoverEnable")}
+                  </button>
+                </>
+              )}
+            </div>
+            {footer}
+          </div>
         </div>
-
-        {footer}
       </div>
-    </div>
+    </V2SheetPortal>
   );
 }

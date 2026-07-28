@@ -27,7 +27,7 @@ export default function RegisterV2Client() {
       }}
       aria-busy="true"
     >
-      Even door…
+      Bezig…
     </div>
   );
 }

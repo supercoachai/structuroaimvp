@@ -63,7 +63,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Open a window",
     },
     microSteps: {
-      nl: ["Raam kiezen", "Openzetten", "Even frisse lucht nemen"],
+      nl: ["Raam kiezen", "Openzetten", "Frisse lucht nemen"],
       en: ["Pick a window", "Open it", "Take a breath of fresh air"],
     },
   },
@@ -111,7 +111,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Put your phone on charge",
     },
     microSteps: {
-      nl: ["Lader zoeken", "Telefoon aansluiten", "Telefoon even wegleggen"],
+      nl: ["Lader zoeken", "Telefoon aansluiten", "Telefoon wegleggen"],
       en: ["Find the charger", "Plug the phone in", "Set the phone aside"],
     },
   },
@@ -123,7 +123,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Make a cup of tea",
     },
     microSteps: {
-      nl: ["Water koken of zetten", "Thee erbij", "Even laten trekken"],
+      nl: ["Water koken of zetten", "Thee erbij", "Laten trekken"],
       en: ["Boil or heat water", "Add tea", "Let it steep briefly"],
     },
   },
@@ -351,7 +351,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Name your feeling in one word",
     },
     microSteps: {
-      nl: ["Even stilstaan", "Eén woord kiezen", "Opschrijven of hardop zeggen"],
+      nl: ["Stilstaan", "Eén woord kiezen", "Opschrijven of hardop zeggen"],
       en: ["Pause briefly", "Pick one word", "Write or say it out loud"],
     },
   },
@@ -359,7 +359,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
     id: "text-im-ok",
     energy: "low",
     title: {
-      nl: "Kort: ik ben oké sturen",
+      nl: "Kort: ik ben in orde sturen",
       en: "Send a short \"I am okay\"",
     },
     microSteps: {
@@ -399,7 +399,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Give yourself one compliment",
     },
     microSteps: {
-      nl: ["Iets noemen dat oké ging", "Hardop of opschrijven", "Door"],
+      nl: ["Iets noemen dat goed ging", "Hardop of opschrijven", "Door"],
       en: ["Name one okay thing", "Say or write it", "Move on"],
     },
   },
@@ -435,7 +435,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Light a candle or lamp",
     },
     microSteps: {
-      nl: ["Kaars of lamp kiezen", "Aansteken of aandoen", "Even kijken"],
+      nl: ["Kaars of lamp kiezen", "Aansteken of aandoen", "Kijken"],
       en: ["Pick candle or lamp", "Light or switch on", "Take a look"],
     },
   },
@@ -471,7 +471,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
       en: "Stand up once",
     },
     microSteps: {
-      nl: ["Stoel loslaten", "Opstaan", "Even blijven staan"],
+      nl: ["Stoel loslaten", "Opstaan", "Blijven staan"],
       en: ["Leave the chair", "Stand up", "Stay standing briefly"],
     },
   },
@@ -491,11 +491,11 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
     id: "pet-or-plant",
     energy: "low",
     title: {
-      nl: "Huisdier of plant even checken",
+      nl: "Huisdier of plant controleren",
       en: "Check on a pet or plant",
     },
     microSteps: {
-      nl: ["Naartoe lopen", "Even kijken of aaien", "Terug"],
+      nl: ["Naartoe lopen", "Kijken of aaien", "Terug"],
       en: ["Walk over", "Look or pet briefly", "Return"],
     },
   },
@@ -851,7 +851,7 @@ export const V2_THING_BANK: readonly V2ThingBankItem[] = [
     id: "budget-look",
     energy: "enough",
     title: {
-      nl: "Saldo even checken",
+      nl: "Saldo controleren",
       en: "Check your balance briefly",
     },
     microSteps: {

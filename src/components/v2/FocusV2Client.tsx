@@ -48,6 +48,7 @@ import {
   saveV2Dump,
   v2DumpAtMax,
 } from "./v2Dump";
+import V2HoldToConfirmButton from "./V2HoldToConfirmButton";
 
 type Bucket = {
   key: string;
@@ -298,7 +299,7 @@ export default function FocusV2Client() {
       : 1;
   const ringDashOffset = RING_C * (1 - ratio);
   const timerActive = running || paused;
-  /** Tijdblind: geen MM:SS tijdens sessie én tijdens open-ended "Nog even bezig". */
+  /** Tijdblind: geen MM:SS tijdens sessie én tijdens open-ended "Nog bezig". */
   const hideClock = (timerActive || extended) && !finished;
   const preStart = !bucket && !finished && !extended;
   const showSessionDock = (timerActive || extended) && !finished;
@@ -789,13 +790,13 @@ export default function FocusV2Client() {
         {showSessionDock ? (
           <div className="v2-focus-dock__stack">
             {extended ? (
-              <button
-                type="button"
-                onClick={handleDone}
+              <V2HoldToConfirmButton
+                label={t("v2.focusDone")}
+                holdHint={t("v2.focusDoneHoldHint")}
+                tapHint={t("v2.focusDoneTapHint")}
+                onConfirm={handleDone}
                 className="btn-primary w-full"
-              >
-                {t("v2.focusDone")}
-              </button>
+              />
             ) : (
               <button
                 type="button"
@@ -834,13 +835,13 @@ export default function FocusV2Client() {
 
         {showFinishDock ? (
           <div className="v2-focus-dock__stack">
-            <button
-              type="button"
-              onClick={handleDone}
+            <V2HoldToConfirmButton
+              label={t("v2.focusDone")}
+              holdHint={t("v2.focusDoneHoldHint")}
+              tapHint={t("v2.focusDoneTapHint")}
+              onConfirm={handleDone}
               className="btn-primary w-full"
-            >
-              {t("v2.focusDone")}
-            </button>
+            />
             <button type="button" onClick={handleStillBusy} className="v2-link">
               {t("v2.focusStillBusy")}
             </button>

@@ -82,7 +82,7 @@ export function FrisseStartOverlay() {
             Ja, frisse start
           </button>
           <button type="button" className="v2-textlink" style={v2Styles.skipLink} onClick={dismiss}>
-            Nee, gewoon verder
+            Nee, liever doorgaan
           </button>
         </div>
       </div>

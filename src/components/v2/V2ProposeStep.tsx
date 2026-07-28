@@ -22,6 +22,7 @@ import V2CycleInfoSheet, {
 } from "./V2CycleInfoSheet";
 import { trackV2OnboardingCycle } from "./v2OnboardingFunnel";
 import { patchV2Settings } from "./v2Settings";
+import { V2SheetPortal } from "./v2SheetPortal";
 import { v2Styles } from "./theme";
 import { v2EnergyOrbColor } from "./v2EnergyMeta";
 import { v2EnrichThingProposals } from "./v2Things";
@@ -253,12 +254,14 @@ export default function V2ProposeStep({
       ) : null}
 
       {showDiscover ? (
-        <div className="v2-propose-step__discover">
-          <V2CycleDiscoverHint
-            optedIn={state.cyclusOptIn}
-            onOpen={() => setDiscoverOpen(true)}
-          />
-        </div>
+        <V2SheetPortal>
+          <div className="v2-propose-step__discover">
+            <V2CycleDiscoverHint
+              optedIn={state.cyclusOptIn}
+              onOpen={() => setDiscoverOpen(true)}
+            />
+          </div>
+        </V2SheetPortal>
       ) : null}
 
       {resolvedCycle ? (

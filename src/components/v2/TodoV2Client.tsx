@@ -988,7 +988,7 @@ function TaskForm({
                   className="btn-ghost w-full"
                 >
                   {suggestBusy
-                    ? "Even denken..."
+                    ? "Bezig met nadenken..."
                     : "Opsplitsen in stappen?"}
                 </button>
                 {suggestError ? (

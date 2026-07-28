@@ -113,7 +113,7 @@ export default function ShutdownV2Client() {
     phase === "review"
       ? "Wat is af vandaag"
       : phase === "sentiment"
-        ? "Even checken"
+        ? "Checken"
         : "Nog iets loslaten?";
 
   return (

@@ -45,7 +45,7 @@ export const V2_LEARN_HINT_COPY: Record<
   },
   snooze: {
     label: "Waarom snoozen?",
-    body: "Snoozen is geen opgeven. Je zet iets even op pauze zodat je lijst niet schreeuwt terwijl je ergens anders bent.",
+    body: "Snoozen is geen opgeven. Je zet iets tijdelijk op pauze zodat je lijst niet schreeuwt terwijl je ergens anders bent.",
   },
   focus: {
     label: "Waarom tijdblind?",

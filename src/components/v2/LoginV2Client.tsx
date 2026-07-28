@@ -74,7 +74,7 @@ export default function LoginV2Client() {
     try {
       const supabase = createClient();
       if (!supabase) {
-        setError("Inloggen is even niet beschikbaar. Probeer het later opnieuw.");
+        setError("Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw.");
         setBusy(false);
         return;
       }
@@ -108,7 +108,7 @@ export default function LoginV2Client() {
     try {
       const supabase = createClient();
       if (!supabase) {
-        setError("Inloggen is even niet beschikbaar. Probeer het later opnieuw.");
+        setError("Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw.");
         setBusy(false);
         return;
       }
@@ -156,7 +156,7 @@ export default function LoginV2Client() {
               onClick={() => void continueWithGoogle()}
               disabled={busy}
             >
-              {busy && !emailOpen ? "Even geduld…" : "Doorgaan met Google"}
+              {busy && !emailOpen ? "Een ogenblik…" : "Doorgaan met Google"}
             </button>
 
             {!emailOpen ? (
@@ -212,7 +212,7 @@ export default function LoginV2Client() {
                   className="btn-primary w-full"
                   disabled={busy || !captchaReady}
                 >
-                  {busy ? "Even geduld…" : "Inloggen"}
+                  {busy ? "Een ogenblik…" : "Inloggen"}
                 </button>
               </form>
             )}

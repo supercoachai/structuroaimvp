@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { useI18n } from "@/lib/i18n";
+
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
 import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { createV2SpeechSession, isV2SpeechAvailable } from "./v2Voice";
 import {
-  addV2DumpItem,
+  addV2DumpItems,
   clearV2DumpDraft,
   clearV2DumpPendingId,
   isV2DumpAged,
@@ -23,6 +25,7 @@ import {
   v2DumpSoftWarn,
   type V2DumpItem,
 } from "./v2Dump";
+import { prepareDumpItems } from "./v2DumpSplit";
 import { trackV2EveningDumpAdded } from "./v2Analytics";
 import { emptyDraft, loadV2Tasks, saveV2Tasks } from "./v2Tasks";
 
@@ -40,6 +43,7 @@ function newestFirst(a: V2DumpItem, b: V2DumpItem): number {
 }
 
 export default function DumpV2Client() {
+  const { t, locale } = useI18n();
   const searchParams = useSearchParams();
   const captureOnMount = searchParams.get("capture") === "1";
 
@@ -50,6 +54,7 @@ export default function DumpV2Client() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [voiceRecording, setVoiceRecording] = useState(false);
   const [voiceProcessing, setVoiceProcessing] = useState(false);
+  const [voiceLive, setVoiceLive] = useState("");
   const [voiceFallback, setVoiceFallback] = useState(false);
   const [voiceFallbackText, setVoiceFallbackText] = useState("");
   const speechRef = useRef<ReturnType<typeof createV2SpeechSession> | null>(null);
@@ -121,23 +126,51 @@ export default function DumpV2Client() {
       if (v2DumpAtMax(items)) {
         showToast({
           kind: "added",
-          text: "De lijst is vol (max. 15). Kies eerst iets om ruimte te maken.",
+          text: t("v2.dumpToastFull"),
         });
         return false;
       }
-      const prevIds = new Set(items.map((i) => i.id));
-      const next = addV2DumpItem(trimmed, items);
-      const added = next.find((i) => !prevIds.has(i.id));
-      if (!added) return false;
-      persist(next);
+
+      const pieces = prepareDumpItems(trimmed);
+      if (pieces.length === 0) {
+        showToast({
+          kind: "added",
+          text: t("v2.dumpToastOnlyFillers"),
+        });
+        return false;
+      }
+
+      const result = addV2DumpItems(pieces, items);
+      if (result.added === 0) {
+        showToast({
+          kind: "added",
+          text: t("v2.dumpToastFull"),
+        });
+        return false;
+      }
+
+      persist(result.items);
       if (isV2EveningLocal()) {
-        trackV2EveningDumpAdded({ source: "dump", contentLength: trimmed.length });
+        trackV2EveningDumpAdded({
+          source: "dump",
+          contentLength: trimmed.length,
+        });
       }
       showSavedHint();
-      showToast({ kind: "added", text: "Gedachte vastgelegd." });
+
+      let toastText = t("v2.dumpToastOne");
+      if (result.added > 1 && result.truncated === 0) {
+        toastText = t("v2.dumpToastMany", { n: String(result.added) });
+      } else if (result.truncated > 0) {
+        toastText = t("v2.dumpToastPartial", {
+          n: String(result.added),
+          m: String(result.attempted),
+        });
+      }
+      showToast({ kind: "added", text: toastText });
       return true;
     },
-    [items, persist, showSavedHint, showToast],
+    [items, persist, showSavedHint, showToast, t],
   );
 
   const flushDraft = useCallback(() => {
@@ -161,9 +194,9 @@ export default function DumpV2Client() {
       seed.title = item.content;
       saveV2Tasks([...tasks, seed]);
       persist(nextItems);
-      showToast({ kind: "task", text: "Staat op je takenlijst." });
+      showToast({ kind: "task", text: t("v2.dumpToastTask") });
     },
-    [persist, showToast],
+    [persist, showToast, t],
   );
 
   const handleTask = (item: V2DumpItem) => {
@@ -192,27 +225,51 @@ export default function DumpV2Client() {
 
   const stopVoiceRecording = useCallback(() => {
     speechRef.current?.stop();
-    speechRef.current = null;
-    setVoiceRecording(false);
-    setVoiceProcessing(true);
   }, []);
 
   const startVoiceRecording = useCallback(() => {
-    if (voiceRecording || captureBlocked) return;
+    if (voiceRecording || voiceProcessing || captureBlocked) return;
     setVoiceFallback(false);
     setVoiceFallbackText("");
+    setVoiceLive("");
 
     const session = createV2SpeechSession(
       (text) => {
-        setVoiceProcessing(false);
-        addVoiceDump(text);
+        speechRef.current = null;
+        setVoiceRecording(false);
+        setVoiceLive("");
+        setVoiceProcessing(true);
+        // Defer so "Even ordenen…" paints before sync split/save.
+        window.setTimeout(() => {
+          addVoiceDump(text);
+          setVoiceProcessing(false);
+        }, 40);
       },
       (msg) => {
+        speechRef.current = null;
+        setVoiceRecording(false);
         setVoiceProcessing(false);
+        setVoiceLive("");
         setVoiceFallback(true);
         if (msg.length > 0) {
           showToast({ kind: "added", text: msg });
         }
+      },
+      {
+        locale,
+        messages: {
+          nothingHeard: t("v2.dumpVoiceNothingHeard"),
+          speechStopped: t("v2.dumpVoiceSpeechStopped"),
+          recognitionFailed: t("v2.dumpVoiceFailed"),
+          micFailed: t("v2.dumpVoiceMicFailed"),
+        },
+        onPartial: (text) => {
+          setVoiceLive(text);
+        },
+        onWillFlush: () => {
+          setVoiceRecording(false);
+          setVoiceProcessing(true);
+        },
       },
     );
 
@@ -225,7 +282,15 @@ export default function DumpV2Client() {
     speechRef.current = session;
     setVoiceRecording(true);
     session.start();
-  }, [addVoiceDump, captureBlocked, showToast, voiceRecording]);
+  }, [
+    addVoiceDump,
+    captureBlocked,
+    locale,
+    showToast,
+    t,
+    voiceProcessing,
+    voiceRecording,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -282,7 +347,7 @@ export default function DumpV2Client() {
               }}
               placeholder="Wat zit er in je hoofd?"
               className="v2-dump__field"
-              disabled={captureBlocked}
+              disabled={captureBlocked || voiceRecording || voiceProcessing}
               autoComplete="off"
               rows={4}
               /* Browser herstelt soms een inline height na resize → hydration mismatch. */
@@ -299,7 +364,7 @@ export default function DumpV2Client() {
                 </p>
               ) : (
                 <p className="v2-dump__hint">
-                  Typ en bewaar. Later: maak taak of verwijderen.
+                  Typ en bewaar. Later kun je er een taak van maken, of verwijderen.
                 </p>
               )}
               {speechOk ? (
@@ -308,7 +373,9 @@ export default function DumpV2Client() {
                   onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
                   disabled={captureBlocked || voiceProcessing}
                   className="v2-dump__mic"
-                  aria-label={voiceRecording ? "Stop opname" : "Spreek in"}
+                  aria-label={
+                    voiceRecording ? t("v2.dumpVoiceMicStop") : t("v2.dumpVoiceMicStart")
+                  }
                   aria-pressed={voiceRecording}
                 >
                   <MicIcon />
@@ -317,7 +384,10 @@ export default function DumpV2Client() {
             </div>
 
             {voiceRecording ? (
-              <div className="mt-4 flex flex-col items-center gap-3 py-2">
+              <div
+                className="mt-4 flex flex-col items-center gap-2 py-2 text-center"
+                aria-live="polite"
+              >
                 <div
                   className="v2-voice-blob flex h-20 w-20 items-center justify-center rounded-full"
                   style={{
@@ -326,15 +396,34 @@ export default function DumpV2Client() {
                   }}
                   aria-hidden
                 />
-                <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-                  Luisteren...
+                <p
+                  className="text-[15px] font-medium leading-snug"
+                  style={{ color: "var(--text)" }}
+                >
+                  {t("v2.dumpVoiceListeningTitle")}
                 </p>
+                <p className="max-w-[22rem] text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
+                  {t("v2.dumpVoiceListeningHint")}
+                </p>
+                {voiceLive.trim().length > 0 ? (
+                  <p
+                    className="mt-1 max-w-[22rem] text-[13px] leading-snug"
+                    style={{ color: "var(--accent)" }}
+                    aria-label={t("v2.dumpVoiceLiveAria")}
+                  >
+                    {voiceLive}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
             {voiceProcessing ? (
-              <p className="mt-2 text-[14px]" style={{ color: "var(--accent)" }} aria-live="polite">
-                Verwerken...
+              <p
+                className="mt-3 text-center text-[14px]"
+                style={{ color: "var(--accent)" }}
+                aria-live="polite"
+              >
+                {t("v2.dumpVoiceProcessing")}
               </p>
             ) : null}
 
@@ -342,14 +431,14 @@ export default function DumpV2Client() {
               <div className="mt-3 flex flex-col gap-2">
                 <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
                   {speechOk
-                    ? "Spreek af, tik stop, typ kort wat je zei."
-                    : "Spraak niet beschikbaar in deze browser. Typ kort wat je zei."}
+                    ? t("v2.dumpVoiceFallbackHint")
+                    : t("v2.dumpVoiceFallbackUnavailable")}
                 </p>
                 <input
                   type="text"
                   value={voiceFallbackText}
                   onChange={(e) => setVoiceFallbackText(e.target.value)}
-                  placeholder="Wat wilde je vastleggen?"
+                  placeholder={t("v2.dumpVoiceFallbackPh")}
                   className="v2-field min-h-[44px] w-full"
                   style={{ border: "1px solid var(--border)" }}
                   autoComplete="off"
@@ -365,7 +454,7 @@ export default function DumpV2Client() {
                   disabled={captureBlocked || voiceFallbackText.trim().length === 0}
                   className="btn-ghost w-full"
                 >
-                  Opslaan
+                  {t("v2.dumpVoiceFallbackSave")}
                 </button>
               </div>
             ) : null}
@@ -432,7 +521,7 @@ export default function DumpV2Client() {
             aria-live="polite"
           >
             <span className="flex-1">
-              {toast.kind === "undo" ? "Gedachte verwijderd." : toast.text}
+              {toast.kind === "undo" ? t("v2.dumpToastDeleted") : toast.text}
             </span>
             {toast.kind === "undo" ? (
               <button

@@ -2,6 +2,8 @@
 
 import { useEffect, useId, type ReactNode } from "react";
 
+import { V2SheetPortal } from "./v2SheetPortal";
+
 export type V2InfoSheetIconKind =
   | "meaning"
   | "why"
@@ -190,48 +192,50 @@ export default function V2InfoSheet({
   if (!open) return null;
 
   return (
-    <div className="v2-info-sheet" role="presentation">
-      <button
-        type="button"
-        className="v2-info-sheet__backdrop"
-        aria-label={closeAria}
-        onClick={onClose}
-      />
-      <div
-        id={panelId}
-        className="v2-info-sheet__panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-      >
-        <p className="v2-info-sheet__eyebrow">{eyebrow}</p>
-        <h2 id={titleId} className="v2-info-sheet__title">
-          {title}
-        </h2>
+    <V2SheetPortal>
+      <div className="v2-info-sheet" role="presentation">
+        <button
+          type="button"
+          className="v2-info-sheet__backdrop"
+          aria-label={closeAria}
+          onClick={onClose}
+        />
+        <div
+          id={panelId}
+          className="v2-info-sheet__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+        >
+          <p className="v2-info-sheet__eyebrow">{eyebrow}</p>
+          <h2 id={titleId} className="v2-info-sheet__title">
+            {title}
+          </h2>
 
-        {children}
+          {children}
 
-        <ul className="v2-info-sheet__rows">
-          {rows.map((row) => (
-            <li key={row.key} className="v2-info-sheet__row">
-              <span
-                className={`v2-info-sheet__row-icon v2-info-sheet__row-icon--${tone}`}
-                aria-hidden
-              >
-                <SheetIcon kind={row.icon} />
-              </span>
-              <div className="v2-info-sheet__row-copy">
-                <strong>{row.title}</strong>
-                <p>{row.body}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+          <ul className="v2-info-sheet__rows">
+            {rows.map((row) => (
+              <li key={row.key} className="v2-info-sheet__row">
+                <span
+                  className={`v2-info-sheet__row-icon v2-info-sheet__row-icon--${tone}`}
+                  aria-hidden
+                >
+                  <SheetIcon kind={row.icon} />
+                </span>
+                <div className="v2-info-sheet__row-copy">
+                  <strong>{row.title}</strong>
+                  <p>{row.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
 
-        <button type="button" className="btn-primary w-full" onClick={onClose}>
-          {gotItLabel}
-        </button>
+          <button type="button" className="btn-primary w-full" onClick={onClose}>
+            {gotItLabel}
+          </button>
+        </div>
       </div>
-    </div>
+    </V2SheetPortal>
   );
 }

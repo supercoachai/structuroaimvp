@@ -46,4 +46,4 @@ export function dismissDay1SkipHook(): void {
 }
 
 export const DAY1_SKIP_HOOK_LINE =
-  "Gisteren koos je rust. Nog steeds oké.";
+  "Gisteren koos je rust. Nog steeds prima.";

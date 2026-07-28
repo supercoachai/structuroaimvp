@@ -31,6 +31,8 @@ export function triggerHaptic(
 export const HAPTIC_PATTERNS = {
   /** Lichte tap voor bottom-nav / menu-wissel. */
   NAV_TAP: 12,
+  /** Zeer korte tick tijdens hold-to-confirm (start / mid). */
+  HOLD_TICK: 10,
   MICROSTEP_DONE: 20,
   TASK_DONE: [100, 40, 100] as number[],
   DAY_DONE: [80, 50, 80] as number[],

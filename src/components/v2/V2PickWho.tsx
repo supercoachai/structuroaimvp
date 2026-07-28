@@ -63,7 +63,7 @@ export default function V2PickWho({
 
       {onSkip ? (
         <button type="button" className="v2-link" style={{ marginTop: 4 }} onClick={onSkip}>
-          Overslaan. Vandaag hoeft er niks.
+          Overslaan. Vandaag hoeft er niets.
         </button>
       ) : null}
     </>

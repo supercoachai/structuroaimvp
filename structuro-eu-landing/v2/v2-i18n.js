@@ -123,7 +123,7 @@
             {
               icon: "plan",
               title: "Aan of uit",
-              body: "Aan = fase stil naast je energie, als inzicht. Uit = gewoon je dagstart. Nooit sturing.",
+              body: "Aan = fase stil naast je energie, als inzicht. Uit = alleen je dagstart. Nooit sturing.",
             },
             {
               icon: "private",
@@ -139,7 +139,7 @@
             {
               icon: "brain",
               title: "Hoofd leegmaken",
-              body: "Losse gedachten hoeven niet meteen taken te zijn. Dump ze eerst, zonder ordenen.",
+              body: "Losse gedachten hoeven niet meteen taken te zijn. Typ of spreek ze in, zonder ordenen.",
             },
             {
               icon: "plan",
@@ -173,13 +173,14 @@
       feat5_eyebrow: "Dump",
       feat5_h2: "Brein legen. Later kiezen.",
       feat5_p:
-        "Zet losse gedachten kwijt zonder ze meteen te ordenen. Later maak je er een taak van, of je verwijdert ze. Geen minimum, geen schuld.",
+        "Leg losse gedachten vast, typ of spreek, zonder ze meteen te ordenen. Later maak je er een taak van, of je verwijdert ze. Geen minimum, geen schuld.",
       phone_dump_eyebrow: "Extern geheugen",
       phone_dump_title: "Dump",
-      phone_dump_lead: "Leg vast wat in je hoofd zit. Structuur hoeft niet.",
+      phone_dump_lead: "Typ of spreek wat in je hoofd zit. Structuur hoeft niet.",
       phone_dump_ph: "Wat zit er in je hoofd?",
       phone_dump_typed: "Dat ene abonnement nog opzeggen",
-      phone_dump_hint: "Typ en bewaar. Later: maak taak of verwijderen.",
+      phone_dump_hint: "Typ of spreek. Later: maak taak of verwijderen.",
+      phone_dump_listen: "Luisteren...",
       phone_dump_save: "Bewaren",
       phone_dump_foot:
         "Dump vrij. Maximaal 15. Maak er later een taak van, of verwijder.",
@@ -196,8 +197,8 @@
       phone_feasible_high: "Drie dingen passen vandaag.",
       phone_suggest: "Structuro stelt voor:",
       phone_suggest_title: "Dit stelt Structuro voor.",
-      phone_task1: "Aan dat ene project beginnen",
-      phone_task2: "Dat ene abonnement opzeggen",
+      phone_task1: "Project starten",
+      phone_task2: "Abonnement opzeggen",
       phone_task3: "Inbox opruimen",
       phone_confirm: "Dit is goed",
       phone_edit: "Zelf aanpassen",
@@ -233,19 +234,21 @@
       phone_focus_suggest_title: "Opsplitsen in kleine stappen?",
       phone_focus_suggest_lead: "Klein beginnen maakt starten makkelijker.",
       phone_focus_suggest_cta: "Ja, voorstellen",
-      phone_focus_suggest_busy: "Even denken…",
+      phone_focus_suggest_busy: "Bezig met nadenken…",
       phone_focus_suggest_skip: "Niet nu",
       phone_focus_pause: "Pauze",
       phone_focus_resume: "Verder",
       phone_focus_extend: "Iets langer",
       phone_focus_finish: "Afronden",
       phone_focus_done_cta: "Ik ben klaar",
-      phone_focus_still: "Nog even bezig",
+      phone_focus_still: "Nog bezig",
       cycle_discover_eyebrow: "Eenmalig instellen",
       cycle_discover_hint: "Je cyclus meenemen?",
       cycle_discover_title: "Je cyclus meenemen?",
       cycle_discover_body:
         "Optioneel. Structuro toont je fase stil naast je energie: inzicht en een zachte reminder. Nooit sturing.",
+      cycle_discover_toggle: "Cyclus meenemen",
+      cycle_discover_toggle_off: "Uit · voorstellen alleen op energie",
       cycle_discover_why_title: "Waarom dit uitmaakt",
       cycle_discover_why:
         "Dezelfde taak kan in je lage dagen zwaarder voelen. Structuro toont die context; jij blijft kiezen.",
@@ -258,7 +261,7 @@
         "ADHD is niet dat je niet weet wat je moet doen. Het is dat je niet kan starten. Eén taak voor me neerleggen, geen lijst van twintig, en ik begin.",
       quote1_role: "app developer",
       quote2:
-        "Alles voelt even urgent en ik schat de tijd verkeerd in. Drie taken per dag. Meer krijg ik toch niet gedaan, maar nu voelt het haalbaar.",
+        "Alles voelt urgent en ik schat de tijd verkeerd in. Drie taken per dag. Meer krijg ik toch niet gedaan, maar nu voelt het haalbaar.",
       quote2_role: "zelfstandig professional",
       quote3:
         "Ik zit vast in mijn hoofd en kan er niet uit. De dagstart vraagt niet wat ik allemaal moet. Alleen wat de eerste stap is vandaag.",
@@ -281,10 +284,10 @@
         "Klassieke planners gaan uit van overzicht en discipline. Structuro gaat uit van executie: één eerste stap, aangepast aan je energie. Minder systeem, meer beginnen.",
       faq_day_q: "Werkt dit ook als ik niet elke dag iets doe?",
       faq_day_a:
-        "Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint gewoon opnieuw.",
+        "Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint opnieuw.",
       faq_refund_q: "Hoe werken proefperiode en geld-terug-garantie?",
       faq_refund_a:
-        "Je start met 3 dagen gratis, zonder verplichting. Daarna betaal je €12,99 per maand. Niet goed binnen 14 dagen? Je krijgt je geld terug, zonder gedoe.",
+        "Je start met 3 dagen gratis, zonder verplichting. Daarna betaal je €12,99 per maand. Niet goed binnen 14 dagen? Je krijgt je geld terug, zonder rompslomp.",
       faq_privacy_q: "Hoe gaan jullie om met mijn gegevens?",
       faq_privacy_a:
         "Je gegevens blijven van jou, opgeslagen binnen de EU. We verkopen niets door en je kunt alles op elk moment verwijderen.",
@@ -445,7 +448,7 @@
             {
               icon: "brain",
               title: "Clear your head",
-              body: "Loose thoughts do not have to be tasks yet. Dump them first, without sorting.",
+              body: "Loose thoughts do not have to be tasks yet. Type or speak them in, without sorting.",
             },
             {
               icon: "plan",
@@ -479,13 +482,14 @@
       feat5_eyebrow: "Dump",
       feat5_h2: "Empty your head. Choose later.",
       feat5_p:
-        "Park loose thoughts without sorting them first. Later turn one into a task, or delete it. No minimum, no guilt.",
+        "Capture loose thoughts by typing or speaking, without organizing them right away. Later turn one into a task, or delete it. No minimum, no guilt.",
       phone_dump_eyebrow: "External memory",
       phone_dump_title: "Dump",
-      phone_dump_lead: "Capture what is in your head. Structure can wait.",
+      phone_dump_lead: "Type or speak what is on your mind. Structure can wait.",
       phone_dump_ph: "What is on your mind?",
       phone_dump_typed: "Still need to cancel that subscription",
-      phone_dump_hint: "Type and save. Later: make a task or delete.",
+      phone_dump_hint: "Type or speak. Later: make a task or delete.",
+      phone_dump_listen: "Listening...",
       phone_dump_save: "Save",
       phone_dump_foot:
         "Dump freely. Max 15. Later make a task, or delete.",
@@ -502,9 +506,9 @@
       phone_feasible_high: "Three things fit today.",
       phone_suggest: "Structuro suggests:",
       phone_suggest_title: "Structuro suggests this.",
-      phone_task1: "Start that one project",
-      phone_task2: "Cancel that one subscription",
-      phone_task3: "Clear the inbox",
+      phone_task1: "Start project",
+      phone_task2: "Cancel subscription",
+      phone_task3: "Clear inbox",
       phone_confirm: "This looks good",
       phone_edit: "Choose myself",
       phone_home_eyebrow: "Today",
@@ -552,6 +556,8 @@
       cycle_discover_title: "Include your cycle?",
       cycle_discover_body:
         "Optional. Structuro shows your phase quietly next to energy: insight and a soft reminder. Never steering.",
+      cycle_discover_toggle: "Include cycle",
+      cycle_discover_toggle_off: "Off · suggestions from energy only",
       cycle_discover_why_title: "Why this matters",
       cycle_discover_why:
         "The same task can feel heavier on low days. Structuro shows that context; you keep choosing.",

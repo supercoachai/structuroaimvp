@@ -4,12 +4,14 @@ import {
   V2_DUMP_MAX,
   V2_DUMP_SOFT_WARN,
   addV2DumpItem,
+  addV2DumpItems,
   v2DumpAtMax,
   v2DumpCount,
   v2DumpLatestItem,
   v2DumpSoftWarn,
   type V2DumpItem,
 } from "./v2Dump";
+import { prepareDumpItems } from "./v2DumpSplit";
 
 function item(partial: Partial<V2DumpItem> & { content: string }): V2DumpItem {
   return {
@@ -78,5 +80,20 @@ describe("v2Dump limits", () => {
     });
     expect(v2DumpLatestItem([older, newer])?.id).toBe("new");
     expect(v2DumpLatestItem([])).toBeNull();
+  });
+
+  it("adds multiple split items and truncates at max", () => {
+    const existing = Array.from({ length: 13 }, (_, i) =>
+      item({ id: `e-${i}`, content: `bestond ${i}` }),
+    );
+    const pieces = prepareDumpItems("was en auto en boodschappen en tuin");
+    expect(pieces).toHaveLength(4);
+
+    const result = addV2DumpItems(pieces, existing);
+    expect(result.added).toBe(2);
+    expect(result.truncated).toBe(2);
+    expect(result.attempted).toBe(4);
+    expect(v2DumpCount(result.items)).toBe(V2_DUMP_MAX);
+    expect(result.items.map((i) => i.content).slice(-2)).toEqual(["was", "auto"]);
   });
 });

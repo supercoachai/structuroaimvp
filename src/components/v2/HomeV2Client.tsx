@@ -346,7 +346,7 @@ export default function HomeV2Client() {
             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
             style={{ color: "var(--accent)" }}
           >
-            Even een zacht zetje
+            Een zacht zetje
           </p>
           <p className="mt-1 text-[15px] font-medium" style={{ color: "var(--text)" }}>
             Je deed dit voor: &ldquo;{homePrompt.why}&rdquo;
@@ -583,7 +583,7 @@ export default function HomeV2Client() {
             style={{ color: "var(--text-muted)" }}
             aria-busy="true"
           >
-            Even laden.
+            Laden…
           </div>
         ) : state.todayDone ? (
           <section
@@ -764,7 +764,7 @@ export default function HomeV2Client() {
         ) : (
           <section className="v2-card v2-fade p-6 text-center">
             <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              Nog niks gekozen, en dat is prima.
+              Nog niets gekozen, en dat is prima.
             </h2>
             <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
               Begin je dag rustig. Structuro stelt voor, jij bevestigt.

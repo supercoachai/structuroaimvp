@@ -188,6 +188,46 @@ export function addV2DumpItem(content: string, items: V2DumpItem[]): V2DumpItem[
   return [...items, next];
 }
 
+export type AddV2DumpItemsResult = {
+  items: V2DumpItem[];
+  /** How many items were actually stored. */
+  added: number;
+  /** Non-empty candidates that did not fit under V2_DUMP_MAX. */
+  truncated: number;
+  /** Non-empty candidates after split (added + truncated). */
+  attempted: number;
+};
+
+/** Add multiple dump entries; stops at V2_DUMP_MAX without overflowing. */
+export function addV2DumpItems(
+  contents: string[],
+  items: V2DumpItem[],
+): AddV2DumpItemsResult {
+  let next = items;
+  let added = 0;
+  let truncated = 0;
+  let attempted = 0;
+
+  for (const raw of contents) {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) continue;
+    attempted += 1;
+    if (v2DumpAtMax(next)) {
+      truncated += 1;
+      continue;
+    }
+    const before = v2DumpCount(next);
+    next = addV2DumpItem(trimmed, next);
+    if (v2DumpCount(next) > before) {
+      added += 1;
+    } else {
+      truncated += 1;
+    }
+  }
+
+  return { items: next, added, truncated, attempted };
+}
+
 export function updateV2DumpItem(
   id: string,
   patch: Partial<Pick<V2DumpItem, "content" | "disposition" | "lastTriagedAt">>,

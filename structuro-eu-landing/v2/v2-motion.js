@@ -128,8 +128,14 @@
     });
     syncEnergyTitle(root);
     if (root.getAttribute("data-demo") === "cycle") {
-      var sheet = root.querySelector(".cycle-sheet--discover");
-      if (sheet) sheet.setAttribute("aria-hidden", state === "sheet" ? "false" : "true");
+      var sheet = root.querySelector(".phone-cycle-sheet");
+      var hint = root.querySelector(".phone-cycle-hint");
+      if (sheet) {
+        sheet.setAttribute("aria-hidden", state === "optin" ? "false" : "true");
+      }
+      if (hint) {
+        hint.setAttribute("aria-hidden", state === "off" ? "false" : "true");
+      }
     }
   }
 
@@ -163,29 +169,17 @@
   }
 
   function playEnergyDemo(root) {
-    /* idle → energie kiezen → voorstellen verschijnen (merged zoals app). */
-    var sequence = [
-      { energy: "low", state: "idle" },
-      { energy: "low", state: "pick" },
-      { energy: "ok", state: "propose" },
-      { energy: "high", state: "propose" },
-      { energy: "low", state: "propose" },
-    ];
-    var i = 1; /* pick + low als eerste paint met 1 voorstel */
+    /* Alleen Laag → Genoeg → Hoog, eindeloos (geen lege/idle tussenstap). */
+    var sequence = ["low", "ok", "high"];
+    var i = 0;
     root.setAttribute("data-energy", "low");
-    setDemoState(root, "pick");
+    setDemoState(root, "propose");
     function tick() {
       if (!root.classList.contains("is-playing")) return;
       i = (i + 1) % sequence.length;
-      root.setAttribute("data-energy", sequence[i].energy);
-      setDemoState(root, sequence[i].state);
-      var wait =
-        sequence[i].state === "idle"
-          ? 1500
-          : sequence[i].state === "pick"
-            ? 1600
-            : 2000;
-      root._timer = setTimeout(tick, wait);
+      root.setAttribute("data-energy", sequence[i]);
+      setDemoState(root, "propose");
+      root._timer = setTimeout(tick, 2000);
     }
     root._timer = setTimeout(tick, 1800);
   }
@@ -195,10 +189,39 @@
     setDemoState(root, "t3");
   }
 
+  function clearFocusDemoTaps(root) {
+    root.classList.remove("is-focus-extended");
+    root.querySelectorAll(".focus-demo-tap").forEach(function (el) {
+      el.classList.remove("focus-demo-tap");
+    });
+  }
+
+  /** Korte tap/pulse op het bedieningselement vóór de state-change. */
+  function pulseFocusTap(root, tapKey, thenFn) {
+    clearFocusDemoTaps(root);
+    var el = tapKey
+      ? root.querySelector('[data-focus-tap="' + tapKey + '"]')
+      : null;
+    if (!el) {
+      thenFn();
+      return;
+    }
+    /* Force reflow zodat herhaalde taps de animatie opnieuw starten. */
+    void el.offsetWidth;
+    el.classList.add("focus-demo-tap");
+    root._tapTimer = setTimeout(function () {
+      root._tapTimer = null;
+      if (!root.classList.contains("is-playing")) return;
+      el.classList.remove("focus-demo-tap");
+      thenFn();
+    }, 620);
+  }
+
   function playFocusDemo(root) {
-    /* ready → run → pause → run → done (checkmark), zoals huidige focus-flow */
-    var sequence = ["ready", "run", "pause", "run", "done"];
-    var i = 0;
+    /*
+     * Narratief met zichtbare taps:
+     * Start → micro-check → Pauze → Verder → Iets langer → Afronden → Ik ben klaar
+     */
     var firstMicro = root.querySelector('[data-focus-micro="1"]');
     var firstChk = firstMicro && firstMicro.querySelector(".focus-micro-chk");
     var firstLbl = firstMicro && firstMicro.querySelector("span:last-child");
@@ -220,30 +243,78 @@
       }
       if (firstLbl) firstLbl.classList.add("is-done");
     }
+    var steps = [
+      {
+        tap: "start",
+        after: function () {
+          resetMicro();
+          root.classList.remove("is-focus-extended");
+          setDemoState(root, "run");
+        },
+        hold: 1100,
+      },
+      {
+        tap: "micro",
+        after: function () {
+          markMicroDone();
+        },
+        hold: 1000,
+      },
+      {
+        tap: "pause-resume",
+        after: function () {
+          setDemoState(root, "pause");
+        },
+        hold: 1400,
+      },
+      {
+        tap: "pause-resume",
+        after: function () {
+          setDemoState(root, "run");
+        },
+        hold: 1100,
+      },
+      {
+        tap: "extend",
+        after: function () {
+          root.classList.add("is-focus-extended");
+        },
+        hold: 1200,
+      },
+      {
+        tap: "finish",
+        after: function () {
+          root.classList.remove("is-focus-extended");
+          setDemoState(root, "done");
+        },
+        hold: 1600,
+      },
+      {
+        tap: "done",
+        after: function () {
+          resetMicro();
+          root.classList.remove("is-focus-extended");
+          setDemoState(root, "ready");
+        },
+        hold: 1400,
+      },
+    ];
+    var i = 0;
+    clearFocusDemoTaps(root);
     setDemoState(root, "ready");
     resetMicro();
-    function tick() {
+
+    function runStep() {
       if (!root.classList.contains("is-playing")) return;
-      i = (i + 1) % sequence.length;
-      var state = sequence[i];
-      setDemoState(root, state);
-      if (state === "ready" || state === "done") resetMicro();
-      if (state === "run") {
-        resetMicro();
-        root._microTimer = setTimeout(function () {
-          if (!root.classList.contains("is-playing")) return;
-          if (root.getAttribute("data-state") === "run") markMicroDone();
-        }, 900);
-      }
-      var wait =
-        state === "run" || state === "pause"
-          ? 2200
-          : state === "done"
-            ? 2000
-            : 1600;
-      root._timer = setTimeout(tick, wait);
+      var step = steps[i];
+      i = (i + 1) % steps.length;
+      pulseFocusTap(root, step.tap, function () {
+        if (!root.classList.contains("is-playing")) return;
+        step.after();
+        root._timer = setTimeout(runStep, step.hold);
+      });
     }
-    root._timer = setTimeout(tick, 1800);
+    root._timer = setTimeout(runStep, 1400);
   }
 
   function playCycleDemo(root) {
@@ -262,20 +333,75 @@
     root._timer = setTimeout(tick, 1600);
   }
 
-  function playDumpDemo(root) {
-    /* Leeg → typen → bewaard met Maak taak / Verwijderen */
-    var sequence = ["idle", "typed", "saved"];
-    var waits = { idle: 1600, typed: 1800, saved: 2600 };
-    var i = 0;
-    setDemoState(root, "idle");
-    function tick() {
-      if (!root.classList.contains("is-playing")) return;
-      i = (i + 1) % sequence.length;
-      var state = sequence[i];
-      setDemoState(root, state);
-      root._timer = setTimeout(tick, waits[state] || 2000);
+  function clearDumpDemoTaps(root) {
+    root.querySelectorAll(".dump-demo-tap").forEach(function (el) {
+      el.classList.remove("dump-demo-tap");
+    });
+  }
+
+  /** Tap/pulse op dump-mic (zelfde ritme als focus-demo). */
+  function pulseDumpTap(root, tapKey, thenFn) {
+    clearDumpDemoTaps(root);
+    var el = tapKey
+      ? root.querySelector('[data-dump-tap="' + tapKey + '"]')
+      : null;
+    if (!el) {
+      thenFn();
+      return;
     }
-    root._timer = setTimeout(tick, 1400);
+    void el.offsetWidth;
+    el.classList.add("dump-demo-tap");
+    root._tapTimer = setTimeout(function () {
+      root._tapTimer = null;
+      if (!root.classList.contains("is-playing")) return;
+      el.classList.remove("dump-demo-tap");
+      thenFn();
+    }, 620);
+  }
+
+  function playDumpDemo(root) {
+    /*
+     * Voice-dump zoals DumpV2Client: mic tikken → Luisteren → direct bewaard
+     * (spraak commit zonder Bewaren). Mic blijft altijd zichtbaar.
+     */
+    var steps = [
+      {
+        tap: "mic",
+        after: function () {
+          setDemoState(root, "speaking");
+        },
+        hold: 2000,
+      },
+      {
+        tap: null,
+        after: function () {
+          setDemoState(root, "saved");
+        },
+        hold: 2600,
+      },
+      {
+        tap: null,
+        after: function () {
+          setDemoState(root, "idle");
+        },
+        hold: 1500,
+      },
+    ];
+    var i = 0;
+    clearDumpDemoTaps(root);
+    setDemoState(root, "idle");
+
+    function runStep() {
+      if (!root.classList.contains("is-playing")) return;
+      var step = steps[i];
+      i = (i + 1) % steps.length;
+      pulseDumpTap(root, step.tap, function () {
+        if (!root.classList.contains("is-playing")) return;
+        step.after();
+        root._timer = setTimeout(runStep, step.hold);
+      });
+    }
+    root._timer = setTimeout(runStep, 1400);
   }
 
   var PLAYERS = {
@@ -297,6 +423,10 @@
       clearTimeout(root._microTimer);
       root._microTimer = null;
     }
+    if (root._tapTimer) {
+      clearTimeout(root._tapTimer);
+      root._tapTimer = null;
+    }
     var fallback = root.getAttribute("data-demo-default") || "pick";
     setDemoState(root, fallback);
     if (root.getAttribute("data-demo") === "energy") {
@@ -307,9 +437,11 @@
       setDemoState(root, fallback || "off");
     }
     if (root.getAttribute("data-demo") === "dump") {
+      clearDumpDemoTaps(root);
       setDemoState(root, fallback || "idle");
     }
     if (root.getAttribute("data-demo") === "focus") {
+      clearFocusDemoTaps(root);
       var firstMicro = root.querySelector('[data-focus-micro="1"]');
       var firstChk = firstMicro && firstMicro.querySelector(".focus-micro-chk");
       var firstLbl = firstMicro && firstMicro.querySelector("span:last-child");

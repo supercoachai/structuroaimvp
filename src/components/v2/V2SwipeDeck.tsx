@@ -121,7 +121,7 @@ export default function V2SwipeDeck({
         <h1 style={v2Styles.title}>Alle kaarten gehad.</h1>
         <p style={v2Styles.body}>
           {kept.length === 0
-            ? "Niks gekozen, ook prima."
+            ? "Niets gekozen, ook prima."
             : kept.length === 1
               ? "Dit ding staat klaar."
               : `${kept.length} dingen staan klaar.`}
@@ -159,7 +159,7 @@ export default function V2SwipeDeck({
             Iets anders
           </button>
           <button type="button" className="v2-link" onClick={onSkipAll}>
-            Niks kiezen, ook goed
+            Niets kiezen, ook goed
           </button>
         </div>
       </>
@@ -208,7 +208,7 @@ export default function V2SwipeDeck({
           Iets anders
         </button>
         <button type="button" className="v2-link" onClick={onSkipAll}>
-          Niks kiezen, ook goed
+          Niets kiezen, ook goed
         </button>
       </div>
     </>
