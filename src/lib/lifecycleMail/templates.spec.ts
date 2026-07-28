@@ -15,6 +15,7 @@ const base: LifecycleCandidate = {
   created_at: "2026-07-15T10:00:00.000Z",
   signup_source: null,
   subscription_status: "none",
+  subscription_current_period_end: null,
   last_dagstart_date: null,
   unsubscribe_lifecycle: false,
   is_test: false,
