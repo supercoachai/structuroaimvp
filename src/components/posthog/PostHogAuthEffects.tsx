@@ -17,6 +17,7 @@ import { getFirstTouchSetOnceForPostHog } from "@/lib/posthog/firstTouchAttribut
 import {
   clearIdentityStitchOnLogout,
   linkAnonymousDistinctToUser,
+  aliasAnonymousFromMetadataIfNeeded,
 } from "@/lib/posthog/identityStitch";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
 
@@ -99,6 +100,19 @@ export function PostHogAuthEffects() {
             /* ignore */
           }
           return;
+        }
+
+        // Cross-device magic link: lees posthog_anon_id uit user_metadata
+        // meteen bij eerste session apply (SIGNED_IN / INITIAL_SESSION /
+        // getSession), vóór andere writes. Latere updateUser({ data })
+        // merge't meestal, maar sommige configs overschrijven metadata.
+        try {
+          aliasAnonymousFromMetadataIfNeeded(
+            user.id,
+            user.user_metadata as Record<string, unknown> | null | undefined
+          );
+        } catch {
+          /* ignore */
         }
 
         // Funnel-event vóór identify: signup_completed vuurt zo nog met de

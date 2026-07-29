@@ -103,3 +103,66 @@ export function clearIdentityStitchOnLogout(): void {
   removeStorage(IDENTIFIED_USER_STORAGE_KEY);
   removeStorage(ANON_DISTINCT_STORAGE_KEY);
 }
+
+/**
+ * Geeft de opgeslagen anonieme distinct_id terug voor meesturen met magic link.
+ * Alleen zinvol als nog niet geïdentificeerd; anders null.
+ */
+export function getAnonymousDistinctIdForMagicLink(): string | null {
+  if (typeof window === "undefined") return null;
+  if (readStorage(IDENTIFIED_USER_STORAGE_KEY)) return null;
+  try {
+    const id = posthog.get_distinct_id?.();
+    if (!id || typeof id !== "string" || id.length < 8) return null;
+    // Geen uuid-shaped user-id (al geïdentificeerd via vorige sessie)
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+function pendingAnonMetaKey(userId: string) {
+  return `structuro_ph_pending_anon_${userId}`;
+}
+
+/**
+ * Na cross-device magic link login: als er een posthog_anon_id in de
+ * user_metadata zit (of eerder in localStorage is gesnapshot) én die
+ * verschilt van de huidige distinct_id én we nog niet eerder aliased hebben,
+ * stuur dan alias() om de personen te mergen.
+ *
+ * Snapshot meteen bij eerste session apply: latere updateUser({ data })
+ * merge't meestal, maar kan op sommige configs metadata overschrijven.
+ */
+export function aliasAnonymousFromMetadataIfNeeded(
+  userId: string,
+  userMetadata: Record<string, unknown> | null | undefined
+): void {
+  const fromMeta = userMetadata?.posthog_anon_id;
+  if (typeof fromMeta === "string" && fromMeta.length >= 8) {
+    writeStorage(pendingAnonMetaKey(userId), fromMeta);
+  }
+
+  const anonId =
+    (typeof fromMeta === "string" && fromMeta.length >= 8
+      ? fromMeta
+      : null) ?? readStorage(pendingAnonMetaKey(userId));
+  if (!anonId || anonId.length < 8) return;
+
+  try {
+    const current = posthog.get_distinct_id?.();
+    // Als de huidige distinct_id al de userId is (zelfde browser), is alias overbodig.
+    if (current === userId) return;
+    // Als de anonId dezelfde is als de huidige (nooit cross-device), is identify genoeg.
+    if (current === anonId) return;
+
+    const aliasedKey = `structuro_ph_aliased_${userId}`;
+    if (readStorage(aliasedKey) === anonId) return;
+
+    posthog.alias(anonId);
+    writeStorage(aliasedKey, anonId);
+    removeStorage(pendingAnonMetaKey(userId));
+  } catch {
+    /* ignore */
+  }
+}

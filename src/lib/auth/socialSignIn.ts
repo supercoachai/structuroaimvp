@@ -3,6 +3,7 @@ import type { Provider, SupabaseClient } from "@supabase/supabase-js";
 import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
 import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import type { OAuthProviderId } from "@/lib/auth/authProviders";
+import { getAnonymousDistinctIdForMagicLink } from "@/lib/posthog/identityStitch";
 
 /** Supabase gebruikt `azure` voor Microsoft (Outlook, Hotmail, live.nl). */
 export function toSupabaseOAuthProvider(provider: OAuthProviderId): Provider {
@@ -60,12 +61,15 @@ export async function sendLoginMagicLink(
   if (!normalized) {
     throw new Error("invalid_email");
   }
+  const anonId = getAnonymousDistinctIdForMagicLink();
   const { error } = await supabase.auth.signInWithOtp({
     email: normalized,
     options: {
       ...(captchaToken ? { captchaToken } : {}),
       shouldCreateUser: false,
       emailRedirectTo: buildAuthCallbackUrl(nextPath),
+      // Bewaar anonieme PostHog-ID zodat cross-device login de personen kan mergen.
+      ...(anonId ? { data: { posthog_anon_id: anonId } } : {}),
     },
   });
   if (error) throw error;

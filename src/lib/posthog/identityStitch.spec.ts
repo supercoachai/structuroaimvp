@@ -35,6 +35,7 @@ installLocalStorageMock();
 import {
   ANON_DISTINCT_STORAGE_KEY,
   IDENTIFIED_USER_STORAGE_KEY,
+  aliasAnonymousFromMetadataIfNeeded,
   clearIdentityStitchOnLogout,
   linkAnonymousDistinctToUser,
   persistAnonymousDistinctIdForStitch,
@@ -97,5 +98,31 @@ describe("identityStitch", () => {
     clearIdentityStitchOnLogout();
     expect(localStorage.getItem(IDENTIFIED_USER_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ANON_DISTINCT_STORAGE_KEY)).toBeNull();
+  });
+
+  it("aliasAnonymousFromMetadataIfNeeded snapshots anon id voor latere wipe", () => {
+    getDistinctId.mockReturnValue("other-device-anon-999");
+    aliasAnonymousFromMetadataIfNeeded("user-1", {
+      posthog_anon_id: "anon-from-meta-12345",
+    });
+    expect(alias).toHaveBeenCalledWith("anon-from-meta-12345");
+    expect(localStorage.getItem("structuro_ph_aliased_user-1")).toBe(
+      "anon-from-meta-12345"
+    );
+
+    alias.mockClear();
+    // Metadata weg, maar al gealiased → geen tweede alias.
+    aliasAnonymousFromMetadataIfNeeded("user-1", {});
+    expect(alias).not.toHaveBeenCalled();
+  });
+
+  it("aliasAnonymousFromMetadataIfNeeded gebruikt snapshot als metadata leeg is", () => {
+    getDistinctId.mockReturnValue("other-device-anon-999");
+    localStorage.setItem(
+      "structuro_ph_pending_anon_user-2",
+      "pending-anon-88888"
+    );
+    aliasAnonymousFromMetadataIfNeeded("user-2", null);
+    expect(alias).toHaveBeenCalledWith("pending-anon-88888");
   });
 });
