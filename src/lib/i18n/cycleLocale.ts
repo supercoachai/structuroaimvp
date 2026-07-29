@@ -194,6 +194,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     discoverDone: "Klaar",
     discoverEyebrow: "Eenmalig instellen",
     discoverTitle: "Je cyclus meenemen?",
+    discoverSetupTitle: "Even instellen",
     discoverBody:
       "Optioneel. Structuro toont je fase stil naast je energie: inzicht en een zachte reminder. Nooit in plaats van wat jij aangeeft, en nooit minder of meer taken voor jou kiezen.",
     discoverToggleLabel: "Cyclus meenemen",
@@ -411,6 +412,7 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     discoverDone: "Done",
     discoverEyebrow: "Set once",
     discoverTitle: "Include your cycle?",
+    discoverSetupTitle: "Quick setup",
     discoverBody:
       "Optional. Structuro shows your phase quietly next to your energy: insight and a soft reminder. Never instead of what you choose, and never fewer or more tasks chosen for you.",
     discoverToggleLabel: "Include cycle",

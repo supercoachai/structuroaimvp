@@ -17,5 +17,12 @@ export function mapAuthCaptchaError(message: string, t: (key: string) => string)
   ) {
     return t("login.errCaptcha");
   }
+  if (
+    lower.includes("invalid_input") ||
+    lower.includes("invalid login") ||
+    lower === "invalid_credentials"
+  ) {
+    return t("registrerenPage.errGeneric");
+  }
   return message;
 }

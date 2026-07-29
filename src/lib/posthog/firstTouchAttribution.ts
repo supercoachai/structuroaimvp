@@ -228,9 +228,9 @@ export function captureFirstTouchAttribution(): void {
     const fromOrganicPath =
       path === "/start" ||
       path.startsWith("/start/") ||
-      // Legacy/preview hits op /v2/onboarding blijven organisch (geen TikTok).
-      path === "/v2/onboarding" ||
-      path.startsWith("/v2/onboarding/")
+      // Legacy/preview hits op /onboarding blijven organisch (geen TikTok).
+      path === "/onboarding" ||
+      path.startsWith("/onboarding/")
         ? "structuro_eu"
         : "";
     const isJasperPath = isJasperLandingPath(window.location.pathname);

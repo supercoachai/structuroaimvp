@@ -13,18 +13,18 @@ export const metadata: Metadata = {
 type V2Surface = { href: string; title: string; desc: string };
 
 const SURFACES: V2Surface[] = [
-  { href: "/v2/onboarding", title: "Onboarding", desc: "De nieuwe, rustige eerste reis." },
-  { href: "/v2/home", title: "Home", desc: "Je ene ding van vandaag, met afronden." },
-  { href: "/v2/dagstart", title: "Dagstart", desc: "Energie kiezen en een ding pakken." },
-  { href: "/v2/dump", title: "Dump", desc: "Extern geheugen. Loslaten zonder te vergeten." },
-  { href: "/v2/todo", title: "Takenlijst", desc: "Eén lijst, prikkelarm." },
-  { href: "/v2/focus", title: "Focus", desc: "Een ding, rustige timer." },
-  { href: "/v2/shutdown", title: "Dagafsluiting", desc: "De lus dichtdoen. Leeg mag ook." },
-  { href: "/v2/settings", title: "Instellingen", desc: "Reminders, tour, data. Alles opt-in." },
-  { href: "/v2/install", title: "Installeren", desc: "Beginscherm-hint voor mobiel." },
-  { href: "/v2/abonnement", title: "Abonnement", desc: "Paywall in v2-stijl." },
+  { href: "/onboarding", title: "Onboarding", desc: "De nieuwe, rustige eerste reis." },
+  { href: "/", title: "Home", desc: "Je ene ding van vandaag, met afronden." },
+  { href: "/dagstart", title: "Dagstart", desc: "Energie kiezen en een ding pakken." },
+  { href: "/dump", title: "Dump", desc: "Extern geheugen. Loslaten zonder te vergeten." },
+  { href: "/todo", title: "Takenlijst", desc: "Eén lijst, prikkelarm." },
+  { href: "/focus", title: "Focus", desc: "Een ding, rustige timer." },
+  { href: "/shutdown", title: "Dagafsluiting", desc: "De lus dichtdoen. Leeg mag ook." },
+  { href: "/settings", title: "Instellingen", desc: "Reminders, tour, data. Alles opt-in." },
+  { href: "/welkom/install", title: "Installeren", desc: "Beginscherm-hint voor mobiel." },
+  { href: "/abonnement", title: "Abonnement", desc: "Paywall in v2-stijl." },
   { href: "/v2/jasper", title: "Jasper-landing", desc: "Variant voor podcastluisteraars." },
-  { href: "/v2/login", title: "Inloggen", desc: "Google of e-mail. Echte auth naar /v2/home." },
+  { href: "/login", title: "Inloggen", desc: "Google of e-mail. Echte auth naar /." },
 ];
 
 export default function V2EntryPage() {
@@ -39,10 +39,10 @@ export default function V2EntryPage() {
           Alleen voor team/testaccounts. Publiek wordt hier weggeleid.
         </p>
         <div style={v2Styles.actions}>
-          <Link href="/v2/onboarding" className="btn-primary">
+          <Link href="/onboarding" className="btn-primary">
             Start de reis
           </Link>
-          <Link href="/v2/home" className="btn-ghost">
+          <Link href="/" className="btn-ghost">
             Toon volledige app
           </Link>
         </div>

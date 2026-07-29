@@ -1,10 +1,8 @@
-"use client";
+import LegalV2Client from "@/components/v2/LegalV2Client";
 
-import LegalStaticPage from "@/components/LegalStaticPage";
-
-export default function PrivacyPage() {
+export default function V2PrivacyPage() {
   return (
-    <LegalStaticPage
+    <LegalV2Client
       titleKey="legal.privacyTitle"
       updatedKey="legal.privacyUpdated"
       bodyKey="legal.privacyBody"

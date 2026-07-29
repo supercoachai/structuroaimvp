@@ -10,6 +10,9 @@
   --rp-line: rgba(26, 26, 27, 0.1);
   --rp-accent-soft: rgba(45, 90, 86, 0.12);
   --rp-on-ink: #f5f2ea;
+  /* Primaire CTA = app-brede groen-teal (v2 --cta), niet ink-navy. */
+  --rp-cta: #2a6b64;
+  --rp-cta-hover: #245a54;
 
   position: fixed;
   inset: 0;
@@ -160,20 +163,20 @@
   min-height: 62px;
   border: none;
   border-radius: 16px;
-  background: var(--rp-ink);
+  background: var(--rp-cta);
   color: var(--rp-on-ink);
   font-family: inherit;
   font-size: 19px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 24px -10px rgba(42, 107, 100, 0.45);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
 .retention-paywall .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #2c3753;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 14px 28px -10px rgba(26, 35, 64, 0.55);
+  background: var(--rp-cta-hover);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 14px 28px -10px rgba(42, 107, 100, 0.5);
 }
 
 .retention-paywall .btn-primary:active:not(:disabled) {
@@ -524,9 +527,9 @@
 .retention-paywall .done-state .btn-primary {
   margin-top: 28px;
   max-width: 280px;
-  background: var(--rp-ink);
+  background: var(--rp-cta);
   color: var(--rp-on-ink);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 24px -10px rgba(42, 107, 100, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {

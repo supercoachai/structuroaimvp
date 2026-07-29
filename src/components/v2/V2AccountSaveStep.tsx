@@ -24,9 +24,11 @@ import { createClient } from "@/lib/supabase/client";
 
 import { v2Styles } from "./theme";
 import {
+  consumeV2PostAccountNamePending,
   markV2PostAccountNamePending,
   V2_POST_ACCOUNT_NAME_PATH,
 } from "./v2PostAccountName";
+import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
 import {
   trackV2AccountSaveClicked,
   trackV2AccountSaveShown,
@@ -85,6 +87,7 @@ export default function V2AccountSaveStep({
       markV2PostAccountNamePending();
       await startOAuthSignIn(supabase, "google", V2_POST_ACCOUNT_NAME_PATH);
     } catch (err) {
+      consumeV2PostAccountNamePending();
       setError(
         isProviderNotEnabledError(err)
           ? t("v2.accountSaveGoogleUnavailable")
@@ -126,6 +129,9 @@ export default function V2AccountSaveStep({
         setBusy(false);
         return;
       }
+      // Vlag vóór finalize: concurrent V2ClaimOnAuth / remount ziet post-account flow.
+      markV2PostAccountNamePending();
+
       const result = await signUpWithEmailPassword(supabase, {
         email: emailTrimmed,
         password,
@@ -136,21 +142,40 @@ export default function V2AccountSaveStep({
       });
 
       if (result.needsEmailConfirmation) {
+        // Geen sessie: pending-vlag mag fresh-start niet naar name sturen.
+        consumeV2PostAccountNamePending();
         setError(t("v2.accountSaveConfirmEmail"));
         resetCaptcha();
         setBusy(false);
         return;
       }
 
-      await supabase.auth.getSession();
-      await finalizeNewAccountSession(
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        consumeV2PostAccountNamePending();
+        setError(t("v2.accountSaveGenericError"));
+        resetCaptcha();
+        setBusy(false);
+        return;
+      }
+
+      // Vers account: de "nieuwe update"-welkomsheet is niet voor hen bedoeld.
+      markV2ShellWelcomeSeen(result.userId);
+
+      // UI eerst vooruit (naamstap); migrate/analytics mogen niet de funnel resetten.
+      onAccountCreated();
+
+      void finalizeNewAccountSession(
         result.userId,
         result.email ?? emailTrimmed,
-        { homePath: "/v2/abonnement" },
-      );
-      markV2PostAccountNamePending();
-      onAccountCreated();
+        { homePath: "/abonnement" },
+      ).catch(() => {
+        /* best-effort; naamstap + V2ClaimOnAuth kunnen retryen */
+      });
     } catch (err) {
+      consumeV2PostAccountNamePending();
       const raw =
         err instanceof Error ? err.message : t("registrerenPage.errGeneric");
       if (raw.toLowerCase().includes("already registered")) {

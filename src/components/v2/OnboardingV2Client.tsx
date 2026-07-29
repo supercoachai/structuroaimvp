@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
-import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
+import { V2FlowStickyChrome, V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
   v2FlowLayoutForOnboardingPhase,
   v2FlowWrapStyle,
@@ -45,6 +45,12 @@ import {
   prefillNameFromUserMetadata,
   shouldShowV2PostAccountNamePrompt,
 } from "./v2PostAccountName";
+import {
+  clearV2OnboardingUiPhase,
+  peekV2OnboardingUiPhase,
+  persistV2OnboardingUiPhase,
+  shouldSkipFreshStartEnergyReset,
+} from "./v2OnboardingPhaseGate";
 import V2ProposeStep from "./V2ProposeStep";
 import V2AdjustStep from "./V2AdjustStep";
 import V2DoneStep from "./V2DoneStep";
@@ -95,6 +101,8 @@ export default function OnboardingV2Client() {
   const nameEntryHandled = useRef(false);
   /** Voorkomt dat frisse-start-reset een snelle energieklik wist. */
   const userPickedEnergy = useRef(false);
+  const energyRef = useRef(state.energy);
+  energyRef.current = state.energy;
 
   const resetToEnergy = useCallback(
     (opts?: { clearPersistedEnergy?: boolean }) => {
@@ -117,35 +125,90 @@ export default function OnboardingV2Client() {
             data: { user },
           } = await supabase.auth.getUser();
           if (user?.id) {
+            // Claim vóór navigatie: anders bounce middleware terug naar /onboarding
+            // en wist fresh-start de suggest-stap opnieuw in (energie nog in geheugen).
+            const current = energyRef.current;
+            const energy =
+              current === "low"
+                ? "low"
+                : current === "high"
+                  ? "high"
+                  : "medium";
+            let claimed = false;
+            try {
+              const res = await fetch(
+                "/api/profile/claim-anonymous-onboarding",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  credentials: "same-origin",
+                  body: JSON.stringify({ energy }),
+                },
+              );
+              claimed = res.ok;
+              if (!claimed) {
+                const retry = await fetch(
+                  "/api/profile/claim-anonymous-onboarding",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "same-origin",
+                    body: JSON.stringify({ energy }),
+                  },
+                );
+                claimed = retry.ok;
+              }
+            } catch {
+              claimed = false;
+            }
+
             const { data: profile } = await supabase
               .from("profiles")
-              .select("signup_source")
+              .select("signup_source, onboarding_completed")
               .eq("id", user.id)
               .maybeSingle();
+            const alreadyOnboarded = profile?.onboarding_completed === true;
+            if (!claimed && !alreadyOnboarded) {
+              // Blijf op naamstap i.p.v. navigatie die middleware terugbounce’t.
+              persistV2OnboardingUiPhase("name");
+              setPhase("name");
+              return;
+            }
+
             const source =
               typeof profile?.signup_source === "string"
                 ? profile.signup_source
                 : null;
+            clearV2OnboardingUiPhase();
             // Jasper / café: app-trial zonder kaart → home. Anders checkout-gate.
             if (isEventSignupSource(source)) {
-              go("/v2/home", { todayDone: false });
+              go("/", { todayDone: false });
               return;
             }
-            go("/v2/abonnement", { todayDone: false });
+            go("/abonnement", { todayDone: false });
             return;
           }
         }
       } catch {
         /* anon pad */
       }
-      go("/v2/home", { todayDone: false });
+      clearV2OnboardingUiPhase();
+      go("/", { todayDone: false });
     })();
   }, [go]);
 
   const enterNamePhase = useCallback(
     async (opts?: { fromAccountSave?: boolean }) => {
       dismissAccountSavePrompt();
-      consumeV2PostAccountNamePending();
+      nameEntryHandled.current = true;
+      freshStartHandled.current = true;
+      // Commit UI vóór awaits: anders wist een remount/resetToEnergy de suggest-stap terug
+      // terwijl getUser/profile nog loopt (lange load na e-mail-signup).
+      persistV2OnboardingUiPhase("name");
+      setHistory([]);
+      setPhase("name");
+      setNameError(null);
+      trackV2NameStepShown();
 
       let profilePreferred: string | null = null;
       let profileDisplay: string | null = null;
@@ -180,6 +243,8 @@ export default function OnboardingV2Client() {
         /* best-effort prefill */
       }
 
+      consumeV2PostAccountNamePending();
+
       if (
         !shouldShowV2PostAccountNamePrompt({
           profilePreferredName: profilePreferred,
@@ -192,10 +257,6 @@ export default function OnboardingV2Client() {
       }
 
       setNamePrefill(metaPrefill);
-      setNameError(null);
-      setHistory([]);
-      setPhase("name");
-      trackV2NameStepShown();
       if (opts?.fromAccountSave) return;
     },
     [goHomeAfterOnboarding],
@@ -207,8 +268,9 @@ export default function OnboardingV2Client() {
     replayHandled.current = true;
     freshStartHandled.current = true;
     userPickedEnergy.current = false;
+    clearV2OnboardingUiPhase();
     resetToEnergy({ clearPersistedEnergy: true });
-    router.replace("/v2/onboarding", { scroll: false });
+    router.replace("/onboarding", { scroll: false });
   }, [resetToEnergy, router, searchParams]);
 
   // Post-auth naamstap (OAuth return of e-mail-signup redirect).
@@ -216,11 +278,12 @@ export default function OnboardingV2Client() {
     if (nameEntryHandled.current) return;
     const fromQuery = searchParams.get("name") === "1";
     const fromFlag = peekV2PostAccountNamePending();
-    if (!fromQuery && !fromFlag) return;
+    const savedPhase = peekV2OnboardingUiPhase();
+    if (!fromQuery && !fromFlag && savedPhase !== "name") return;
     nameEntryHandled.current = true;
     freshStartHandled.current = true;
     if (fromQuery) {
-      router.replace("/v2/onboarding", { scroll: false });
+      router.replace("/onboarding", { scroll: false });
     }
     void enterNamePhase();
   }, [enterNamePhase, router, searchParams]);
@@ -231,8 +294,17 @@ export default function OnboardingV2Client() {
     if (!ready) return;
     if (freshStartHandled.current) return;
     if (userPickedEnergy.current) return;
-    if (searchParams.get("name") === "1" || peekV2PostAccountNamePending()) {
+    if (searchParams.get("name") === "1" || shouldSkipFreshStartEnergyReset()) {
       freshStartHandled.current = true;
+      const saved = peekV2OnboardingUiPhase();
+      if (saved === "account" || saved === "name") {
+        setPhase(saved);
+      } else if (
+        searchParams.get("name") === "1" ||
+        peekV2PostAccountNamePending()
+      ) {
+        setPhase("name");
+      }
       return;
     }
     freshStartHandled.current = true;
@@ -339,6 +411,7 @@ export default function OnboardingV2Client() {
       cycleOptIn: state.cyclusOptIn,
     });
     if (shouldShowPostOnboardingAccountSave()) {
+      persistV2OnboardingUiPhase("account");
       goTo("account");
       return;
     }
@@ -421,11 +494,13 @@ export default function OnboardingV2Client() {
   if (phase === "name") {
     return (
       <V2Page>
-        <V2Header
-          exitHref="/v2/home"
-          exitLabel={t("v2.flowStop")}
-          brandMode="flow"
-        />
+        <V2FlowStickyChrome>
+          <V2Header
+            exitHref="/"
+            exitLabel={t("v2.flowStop")}
+            brandMode="flow"
+          />
+        </V2FlowStickyChrome>
         <div style={v2Styles.flowShell}>
           <div style={v2FlowWrapStyle("welcome")}>
             <section style={v2Styles.card} aria-live="polite">
@@ -446,14 +521,16 @@ export default function OnboardingV2Client() {
 
   return (
     <V2Page>
-      <V2Header
-        exitHref="https://www.structuro.eu"
-        exitLabel={t("v2.flowStop")}
-        onBack={canGoBack ? goBack : undefined}
-        trailing={langTrailing}
-        brandMode="flow"
-      />
-      <V2ProgressDots step={stepNumber} total={TOTAL_STEPS} showLabel={false} />
+      <V2FlowStickyChrome>
+        <V2Header
+          exitHref="https://www.structuro.eu"
+          exitLabel={t("v2.flowStop")}
+          onBack={canGoBack ? goBack : undefined}
+          trailing={langTrailing}
+          brandMode="flow"
+        />
+        <V2ProgressDots step={stepNumber} total={TOTAL_STEPS} showLabel={false} />
+      </V2FlowStickyChrome>
 
       <div style={v2Styles.flowShell}>
         <div style={v2FlowWrapStyle(flowLayout)}>

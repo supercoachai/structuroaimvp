@@ -14,10 +14,12 @@
   /* Mobiel: afstand tot onderkant visual viewport (o.a. virtueel toetsenbord). Gezet door VisualViewportBridge. */
   --keyboard-inset-bottom: 0px;
 
-  --background: #f9fafb;
+  /* Canonieke app-surface (cream). First paint + splash vóór .v2-root. */
+  --surface: #FDFBF4;
+  --background: #FDFBF4;
   --foreground: #111827;
 
-  /* Legacy structuro tokens (routes buiten st-shell); bg aligned met --st-bg */
+  /* Legacy structuro tokens (routes buiten st-shell); shell-chrome, niet splash */
   --structuro-bg: #F0F2F8;
   --st-shell-outer: #f3f4f6;
   --structuro-white: #ffffff;
@@ -594,6 +596,8 @@ html {
   min-height: 100dvh;
   margin: 0;
   padding: 0;
+  /* Eerste paint vóór body/CSS-vars: cream, nooit v1-grijs. */
+  background-color: #FDFBF4;
 }
 
 /*
@@ -604,7 +608,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--st-font);
-  background-color: var(--st-bg, var(--structuro-bg));
+  /* First paint = cream (nooit v1-grijs #F0F2F8 flash bij refresh). */
+  background-color: var(--surface, #FDFBF4);
   color: var(--st-ink, var(--structuro-text));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

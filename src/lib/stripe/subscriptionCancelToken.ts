@@ -65,5 +65,5 @@ export function subscriptionCancelPageUrl(userId: string): string | null {
   const token = signSubscriptionCancelToken(userId);
   if (!token) return null;
   const origin = getAppOrigin();
-  return `${origin}/v2/stop-abonnement?token=${encodeURIComponent(token)}`;
+  return `${origin}/stop-abonnement?token=${encodeURIComponent(token)}`;
 }

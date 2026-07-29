@@ -1,21 +1,22 @@
-/** Zichtbare placeholder i.p.v. leeg wit scherm tijdens shell- of route-laden. */
+/**
+ * Zichtbare placeholder i.p.v. leeg/oud-grijs scherm tijdens shell- of route-laden.
+ * Altijd cream + Structuro-logo; geen skeleton-tekst of "laden"-copy.
+ */
+import StructuroLogoLoading, {
+  STRUCTURO_CREAM,
+} from "@/components/structuro/StructuroLogoLoading";
+
 export default function AppShellSuspenseFallback() {
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col bg-[var(--st-bg)] px-5 pb-6 pt-6"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
+      className="flex min-h-[100dvh] w-full flex-1 flex-col"
+      style={{ backgroundColor: `var(--surface, ${STRUCTURO_CREAM})` }}
     >
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 animate-pulse">
-        <div className="space-y-2">
-          <div className="h-7 w-36 rounded-xl bg-gray-200/90" />
-          <div className="h-4 w-52 rounded-lg bg-gray-100" />
-        </div>
-        <div className="h-24 rounded-3xl bg-gray-100/90" />
-        <div className="h-32 rounded-3xl bg-gray-100/80" />
-      </div>
-      <span className="sr-only">Laden…</span>
+      <StructuroLogoLoading
+        fullScreen={false}
+        className="flex-1 bg-transparent"
+        size={72}
+      />
     </div>
   );
 }

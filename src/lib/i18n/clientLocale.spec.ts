@@ -13,8 +13,8 @@ import {
 describe("isV2AppPath", () => {
   it("matches /v2 and nested routes", () => {
     expect(isV2AppPath("/v2")).toBe(true);
-    expect(isV2AppPath("/v2/onboarding")).toBe(true);
-    expect(isV2AppPath("/v2/dagstart")).toBe(true);
+    expect(isV2AppPath("/onboarding")).toBe(true);
+    expect(isV2AppPath("/dagstart")).toBe(true);
     expect(isV2AppPath("/start")).toBe(false);
   });
 });
@@ -59,8 +59,8 @@ describe("resolveInitialLocale", () => {
   }
 
   it("uses ?lang= over everything", () => {
-    stubWindow("/v2/onboarding", "?lang=en", "nl-NL");
-    expect(resolveInitialLocale("/v2/onboarding", "?lang=en")).toBe("en");
+    stubWindow("/onboarding", "?lang=en", "nl-NL");
+    expect(resolveInitialLocale("/onboarding", "?lang=en")).toBe("en");
   });
 
   it("keeps NL default for organic EU acquisition", () => {
@@ -71,13 +71,13 @@ describe("resolveInitialLocale", () => {
   });
 
   it("uses browser English on first /v2 visit without storage", () => {
-    stubWindow("/v2/onboarding", "", "en-US");
-    expect(resolveInitialLocale("/v2/onboarding", "")).toBe("en");
+    stubWindow("/onboarding", "", "en-US");
+    expect(resolveInitialLocale("/onboarding", "")).toBe("en");
   });
 
   it("keeps NL on /v2 when browser is Dutch", () => {
-    stubWindow("/v2/dagstart", "", "nl-NL");
-    expect(resolveInitialLocale("/v2/dagstart", "")).toBe("nl");
+    stubWindow("/dagstart", "", "nl-NL");
+    expect(resolveInitialLocale("/dagstart", "")).toBe("nl");
   });
 
   it("respects stored locale over browser on /v2", () => {
@@ -87,8 +87,8 @@ describe("resolveInitialLocale", () => {
   });
 
   it("respects legacy landing locale", () => {
-    const store = stubWindow("/v2/home", "", "en-US");
+    const store = stubWindow("/", "", "en-US");
     store.set(STRUCTURO_LANG_LEGACY_STORAGE_KEY, "nl");
-    expect(resolveInitialLocale("/v2/home", "")).toBe("nl");
+    expect(resolveInitialLocale("/", "")).toBe("nl");
   });
 });

@@ -39,6 +39,9 @@ const V2_ANON_KEYS = [
   "v2_tasks",
   "v2_settings",
   "v2_adaptive",
+  "v2_tasks_remote_map",
+  "v2_dump_remote_map",
+  "v2_sync_user",
 ] as const;
 
 const migratedKey = (userId: string) => `structuro_v2_migrated_${userId}`;
@@ -159,7 +162,7 @@ function mapRepeat(repeat: V2Repeat): Pick<
   }
 }
 
-function v2TaskToInsert(task: V2Task): Omit<Task, "id"> {
+export function v2TaskToInsert(task: V2Task): Omit<Task, "id"> {
   const repeatFields = mapRepeat(task.repeat);
   return {
     title: task.title,
@@ -311,10 +314,29 @@ async function applyPreferredName(name: string): Promise<void> {
 }
 
 /**
+ * Meerdere triggers (completeSignUpSession, V2ClaimOnAuth, login, TaskContext)
+ * kunnen tegelijk claimen; parallelle runs zien elkaars id-map niet en uploaden
+ * taken dubbel. Eén lopende run per gebruiker; latere aanroepen delen die.
+ */
+const inflightMigrations = new Map<string, Promise<V2MigrateResult>>();
+
+/**
  * Upload V2 localStorage naar Supabase. Wis lokale keys alleen bij succes.
  * Cyclus (v2_settings periodestart/lengte) wordt niet gesynchroniseerd.
  */
-export async function migrateV2LocalDataToSupabase(
+export function migrateV2LocalDataToSupabase(
+  userId: string
+): Promise<V2MigrateResult> {
+  const existing = inflightMigrations.get(userId);
+  if (existing) return existing;
+  const run = doMigrateV2LocalData(userId).finally(() => {
+    inflightMigrations.delete(userId);
+  });
+  inflightMigrations.set(userId, run);
+  return run;
+}
+
+async function doMigrateV2LocalData(
   userId: string
 ): Promise<V2MigrateResult> {
   const empty: V2MigrateResult = { migrated: false, taskCount: 0, dumpCount: 0 };
@@ -437,7 +459,14 @@ export async function migrateV2LocalDataToSupabase(
       }
     })();
 
-  await persistClaimViaApi(energy, preferredName);
+  let claimed = await persistClaimViaApi(energy, preferredName);
+  if (!claimed) {
+    claimed = await persistClaimViaApi(energy, preferredName);
+  }
+  if (!claimed) {
+    // Zonder claim bounce middleware terug naar /onboarding (suggest-reset).
+    return { migrated: false, taskCount, dumpCount };
+  }
   setDagstartCookieOnClient();
   await applyPreferredName(preferredName);
 

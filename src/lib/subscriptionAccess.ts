@@ -1,6 +1,5 @@
 import { hasActiveAppTrialOverride } from "./appTrialOverride";
 import { hasLaunchGraceAccess } from "./launchGrace";
-import { hasFreeTrial } from "./freeTrialAccess";
 import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
 import { isInternalTeamAccount } from "./internalTeamAccount";
 
@@ -34,11 +33,12 @@ export function profileHasAppAccess(row: {
 }
 
 /**
- * Toegangscheck voor de paywall-gate: betalend abonnement, gratis proeftijd
- * (3 dagen na aanmaken account), of launch-grace (bestaande testers t/m 30 juni).
+ * Toegangscheck voor de paywall-gate: betalend abonnement (of Stripe-trial),
+ * event-signup trial (QR), app-trial override, intern teamaccount of
+ * launch-grace (bestaande testers t/m 30 juni).
  *
- * v1 blijft ongehinderd (free trial). V2 card-trial zit achter surface=v2
- * checkout zolang STRUCTURO_V2_PUBLIC de shell gated houdt.
+ * Geen gratis proeftijd zonder checkout meer: de trial start pas ná Stripe
+ * Checkout (status trialing). freeTrialAccess blijft alleen voor messaging.
  */
 export function profileHasAppAccessOrGrace(row: {
   email?: string | null | undefined;
@@ -58,8 +58,6 @@ export function profileHasAppAccessOrGrace(row: {
   if (profileHasAppAccess(row)) return true;
   // Event-QR (bijv. café): 14 dagen app-toegang zonder Stripe bij signup
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;
-  // Gratis proeftijd: eerste 3 dagen na aanmaken account
-  if (hasFreeTrial(row.created_at)) return true;
   // Launch-grace: bestaande testers gratis t/m 30 juni 2026
   return hasLaunchGraceAccess({
     created_at: row.created_at,

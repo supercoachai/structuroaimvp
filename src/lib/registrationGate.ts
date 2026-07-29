@@ -1,5 +1,4 @@
 import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
-import { hasFreeTrial } from "@/lib/freeTrialAccess";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import {
   isRegistrationCheckoutEnabled,
@@ -29,9 +28,9 @@ type ProfileSubscriptionRow = {
 };
 
 /**
- * Productie: onboarding pas na Stripe-checkout met betaalmethode,
- * tenzij de gebruiker nog binnen de gratis proeftijd zit (3 dagen na signup).
- * Na afloop van die proeftijd geldt de bestaande paywall op /abonnement.
+ * Productie: onboarding pas na Stripe-checkout met betaalmethode.
+ * Geen gratis proeftijd zonder kaart meer: de trial start pas ná checkout.
+ * Event-signups (café/QR) houden hun app-trial zonder Stripe.
  * Development: altijd uit (lokaal testen zonder betaling).
  */
 export function requiresPaidSubscriptionBeforeOnboarding(
@@ -45,8 +44,6 @@ export function requiresPaidSubscriptionBeforeOnboarding(
   // Café / event-QR: geen Stripe-checkout vóór onboarding
   if (isEventSignupSource(row.signup_source)) return false;
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return false;
-  // Gratis proeftijd: eerste 3 dagen na aanmaken account — geen betaling nodig
-  if (hasFreeTrial(row.created_at)) return false;
   return !profileHasAppAccess({
     subscription_status: row.subscription_status,
     subscription_current_period_end: row.subscription_current_period_end,

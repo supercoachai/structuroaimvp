@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { V2Eyebrow, V2Header, V2Page } from "@/components/v2/V2Chrome";
 import V2LanguageToggle from "@/components/v2/V2LanguageToggle";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { v2Styles } from "@/components/v2/theme";
 import { useClientMounted } from "@/hooks/useClientMounted";
 import { markCheckoutStarted } from "@/lib/checkoutReturnStorage";
@@ -359,9 +360,7 @@ function RegistrerenPlanInner() {
     return (
       <V2Page>
         <V2Header brandMode="flow" trailing={<V2LanguageToggle />} />
-        <p style={{ ...v2Styles.body, textAlign: "center", marginTop: 48 }}>
-          {t("registrerenPage.loading")}
-        </p>
+        <StructuroLogoLoading fullScreen={false} className="min-h-[40vh]" size={72} />
       </V2Page>
     );
   }
@@ -534,9 +533,7 @@ export default function RegistrerenPlanClient() {
     <Suspense
       fallback={
         <V2Page>
-          <p style={{ ...v2Styles.body, textAlign: "center", marginTop: 48 }}>
-            …
-          </p>
+          <StructuroLogoLoading fullScreen={false} className="min-h-[40vh]" size={72} />
         </V2Page>
       }
     >

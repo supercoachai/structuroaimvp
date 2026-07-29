@@ -6,23 +6,29 @@ import { resolveAcquisitionLocale } from "@/lib/acquisition/acquisitionLocale";
 import { LP_ORGANIC_DEFAULT_CAMPAIGN_ID, resolveLpVariant } from "@/lib/tiktok/lpConfig";
 import { localizeLpVariant } from "@/lib/tiktok/lpLocalized";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<StartSearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
   const headerStore = await headers();
   const locale = resolveAcquisitionLocale({
+    langParam: params.lang ?? params.locale ?? null,
     acceptLanguage: headerStore.get("accept-language"),
   });
   if (locale === "en") {
     return {
-      title: "Structuro | Recognize yourself? Start 3 days free",
+      title: "Structuro | Recognize yourself? Start 7 days free",
       description:
-        "No long to-do lists. One doable step per day. Try Structuro free for 3 days.",
+        "No long to-do lists. One doable step per day. Try Structuro free for 7 days.",
       robots: { index: false, follow: false },
     };
   }
   return {
-    title: "Structuro | Herken je jezelf? Start 3 dagen gratis",
+    title: "Structuro | Herken je jezelf? Start 7 dagen gratis",
     description:
-      "Geen lange to-do's. Eén haalbare stap per dag. Probeer Structuro 3 dagen gratis.",
+      "Geen lange to-do's. Eén haalbare stap per dag. Probeer Structuro 7 dagen gratis.",
     robots: { index: false, follow: false },
   };
 }

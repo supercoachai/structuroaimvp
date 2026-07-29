@@ -71,19 +71,21 @@ const paidProfile = {
     assert.equal(requiresPaidSubscriptionBeforeOnboarding(stripeTrialProfile), false);
     assert.equal(preOnboardingPath(stripeTrialProfile), "/onboarding");
 
-    const trialProfile = {
+    // Geen gratis proeftijd zonder kaart meer: vers account zonder checkout
+    // gaat eerst naar het plan/checkout-scherm.
+    const freshProfile = {
       ...unpaidProfile,
       created_at: new Date().toISOString(),
     };
-    assert.equal(requiresPaidSubscriptionBeforeOnboarding(trialProfile), false);
-    assert.equal(preOnboardingPath(trialProfile), "/onboarding");
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(freshProfile), true);
+    assert.equal(preOnboardingPath(freshProfile), "/registreren/plan");
 
-    const expiredTrialProfile = {
+    const olderUnpaidProfile = {
       ...unpaidProfile,
       created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     };
-    assert.equal(requiresPaidSubscriptionBeforeOnboarding(expiredTrialProfile), true);
-    assert.equal(preOnboardingPath(expiredTrialProfile), "/registreren/plan");
+    assert.equal(requiresPaidSubscriptionBeforeOnboarding(olderUnpaidProfile), true);
+    assert.equal(preOnboardingPath(olderUnpaidProfile), "/registreren/plan");
   });
 }
 

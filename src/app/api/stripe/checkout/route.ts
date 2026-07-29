@@ -53,9 +53,9 @@ async function postCheckout(request: Request) {
 
   const useV2Return = body.surface === "v2" && isV2PublicEnabled();
   const successPath = useV2Return
-    ? "/v2/abonnement?from=stripe"
+    ? "/abonnement?from=stripe"
     : "/abonnement?from=stripe";
-  const cancelPath = useV2Return ? "/v2/abonnement" : "/abonnement";
+  const cancelPath = useV2Return ? "/abonnement" : "/abonnement";
 
   const supabase = await createClient();
   const {

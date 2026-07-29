@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import WelkomSuccessScreen from "@/components/welkom/WelkomSuccessScreen";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { createOnboardingWelcomeTask } from "@/lib/onboardingWelcomeTask";
@@ -234,11 +235,7 @@ function WelkomPageInner() {
   }
 
   if (phase === "loading" || phase === "resuming") {
-    return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-2 bg-[var(--st-bg)] px-6 text-center text-sm text-slate-500">
-        <p>{phase === "resuming" ? t("welkomPage.resuming") : t("registrerenPage.loading")}</p>
-      </div>
-    );
+    return <StructuroLogoLoading />;
   }
 
   if (phase === "pending_payment") {
@@ -283,13 +280,7 @@ function WelkomPageInner() {
 
 export default function WelkomPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-sm text-slate-500">
-          …
-        </div>
-      }
-    >
+    <Suspense fallback={<StructuroLogoLoading />}>
       <WelkomPageInner />
     </Suspense>
   );

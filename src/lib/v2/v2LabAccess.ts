@@ -50,10 +50,12 @@ export function isV2LabPath(pathname: string): boolean {
 }
 
 /**
- * One-click cancel moet blijven werken tijdens lockdown (mail-CTA met token).
+ * One-click cancel moet blijven werken (mail-CTA met token).
  */
 export function isV2LockdownExemptPath(pathname: string): boolean {
   return (
+    pathname === "/stop-abonnement" ||
+    pathname.startsWith("/stop-abonnement/") ||
     pathname === "/v2/stop-abonnement" ||
     pathname.startsWith("/v2/stop-abonnement/")
   );
@@ -137,20 +139,20 @@ export function resolveV2LockdownBouncePath(
   return "/";
 }
 
-/** Live-shell home: v2 als publiek, anders v1-root. */
+/** Live-shell home (canonieke URL na cutover). */
 export function resolveLiveHomePath(): string {
-  return isV2PublicEnabled() ? "/v2/home" : "/";
+  return "/";
 }
 
 export function resolveLiveHomePathClient(): string {
-  return isV2PublicEnabledClient() ? "/v2/home" : "/";
+  return "/";
 }
 
-/** Paywall-pad: v2 als publiek, anders v1. */
+/** Paywall-pad (canonieke URL na cutover). */
 export function resolveLivePaywallPath(): string {
-  return isV2PublicEnabled() ? "/v2/abonnement" : "/abonnement";
+  return "/abonnement";
 }
 
 export function resolveLivePaywallPathClient(): string {
-  return isV2PublicEnabledClient() ? "/v2/abonnement" : "/abonnement";
+  return "/abonnement";
 }

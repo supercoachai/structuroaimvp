@@ -19,6 +19,7 @@ import {
   captureJasperSignupSource,
 } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 
 type JasperLandingClientProps = {
   /** Query-string snapshot; gebruikt als React-key zodat re-render bij utm-change. */
@@ -352,11 +353,8 @@ function JasperLandingInner({ queryKey }: JasperLandingClientProps) {
 
 function JasperLandingFallback() {
   return (
-    <div
-      className="flex min-h-[100dvh] items-center justify-center"
-      style={{ backgroundColor: COLOR_BODY, color: COLOR_TEXT_SOFT }}
-    >
-      <p className="text-sm">Laden</p>
+    <div style={{ backgroundColor: COLOR_BODY }} className="min-h-[100dvh]">
+      <StructuroLogoLoading className="bg-transparent" />
     </div>
   );
 }

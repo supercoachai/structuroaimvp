@@ -15,6 +15,7 @@ import {
   startOAuthSignIn,
 } from "@/lib/auth/socialSignIn";
 import { RegistrerenShell } from "@/components/registreren/RegistrerenShell";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { useI18n } from "@/lib/i18n";
 import { resolveLiveHomePathClient } from "@/lib/v2/v2LabAccess";
 
@@ -124,11 +125,7 @@ export default function WachtwoordAanmakenPage() {
   };
 
   if (checking) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
-        {t("passwordCreatePostOnboarding.checking")}
-      </div>
-    );
+    return <StructuroLogoLoading />;
   }
 
   if (!hasSession) {

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Cookieless step-events voor /v2/onboarding drop-off.
+ * Cookieless step-events voor /onboarding drop-off.
  * Geen analyticsConsent-gate: zelfde patroon als activatie-funnel (P0 meting).
  */
 

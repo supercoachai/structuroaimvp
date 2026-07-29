@@ -42,6 +42,9 @@ export const ANALYTICS_EVENTS = {
   trial_precharge_mailed: "trial_precharge_mailed",
   trial_cancelled_one_click: "trial_cancelled_one_click",
   trial_converted: "trial_converted",
+  /** Bestaande klant ziet eenmalige v2-shell welkom-sheet. */
+  v2_shell_welcome_shown: "v2_shell_welcome_shown",
+  v2_shell_welcome_dismissed: "v2_shell_welcome_dismissed",
 } as const;
 
 export type AnalyticsEventName =

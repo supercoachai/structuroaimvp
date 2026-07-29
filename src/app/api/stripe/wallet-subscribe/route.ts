@@ -15,6 +15,11 @@ import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isStripeInvalidCouponError } from "@/lib/stripe/invalidCouponError";
 import { captureServerException } from "@/lib/posthog/server";
+import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
+import {
+  V2_CARD_TRIAL_DAYS,
+  isV2CardTrialCohort,
+} from "@/lib/stripe/v2CardTrial";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -68,7 +73,9 @@ async function postWalletSubscribe(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("stripe_customer_id, stripe_subscription_id, signup_source")
+    .select(
+      "stripe_customer_id, stripe_subscription_id, signup_source, created_at, subscription_status, checkout_bonus_trial_days"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -90,10 +97,21 @@ async function postWalletSubscribe(request: Request) {
   const jasperFlagged = isJasperSignupSource(signupSource);
   const jasperCoupon = jasperFlagged ? getJasperStripeCouponId() : null;
 
+  // Zelfde trial-regels als /api/stripe/checkout (v2 card-cohort = 7 dagen).
+  const status =
+    (profile?.subscription_status as string | null)?.toLowerCase() ?? "none";
+  const freshV2CardTrial =
+    isV2CardTrialCohort(profile?.created_at as string | null) &&
+    (status === "none" || status === "");
+  const trialDays = freshV2CardTrial
+    ? Math.max(V2_CARD_TRIAL_DAYS, readCheckoutBonusTrialDays(profile))
+    : readCheckoutBonusTrialDays(profile);
+
   const subscriptionMetadata: Record<string, string> = {
     supabase_user_id: user.id,
   };
   if (jasperFlagged) subscriptionMetadata.jasper_offer = "1";
+  if (freshV2CardTrial) subscriptionMetadata.v2_card_trial = "1";
 
   const createSubscription = (withCoupon: boolean) =>
     stripe.subscriptions.create({
@@ -101,6 +119,14 @@ async function postWalletSubscribe(request: Request) {
       items: [{ price: STRIPE_PRICE_ID_MONTHLY }],
       default_payment_method: paymentMethodId,
       metadata: subscriptionMetadata,
+      ...(trialDays > 0
+        ? {
+            trial_period_days: trialDays,
+            trial_settings: {
+              end_behavior: { missing_payment_method: "cancel" },
+            },
+          }
+        : {}),
       ...(withCoupon && jasperCoupon
         ? { discounts: [{ coupon: jasperCoupon }] }
         : {}),

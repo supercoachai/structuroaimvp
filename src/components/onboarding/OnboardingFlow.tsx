@@ -18,6 +18,7 @@ import {
   hasJasperAttributionOnClient,
 } from "@/lib/posthog/signupAttribution";
 import { resolveCompletedLocalOnboardingDestination } from "@/lib/auth/anonymousOnboardingEntry";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import OnboardingFlowContent from "./OnboardingFlowContent";
 
 function ObLanguageToggle({
@@ -101,27 +102,26 @@ export default function OnboardingFlow() {
 
   if (!clientReady || waitingForSession) {
     return (
-      <div className="st-story-bg relative flex min-h-screen items-center justify-center pt-[max(0px,env(safe-area-inset-top))] text-[var(--story-text-muted)]">
+      <div className="st-story-bg relative min-h-screen pt-[max(0px,env(safe-area-inset-top))]">
         <ObLanguageToggle
           locale={locale}
           setLocale={setLocale}
           label={t("settings.languageTitle")}
         />
-        <div className="animate-pulse text-base">{t("onboarding.loading")}</div>
+        <StructuroLogoLoading className="min-h-screen bg-transparent" />
       </div>
     );
   }
 
   if (showLoginRedirect) {
     return (
-      <div className="st-story-bg relative flex min-h-screen flex-col items-center justify-center gap-3 px-6 pt-[max(3.5rem,env(safe-area-inset-top))] text-center text-[var(--story-text-muted)]">
+      <div className="st-story-bg relative min-h-screen pt-[max(3.5rem,env(safe-area-inset-top))]">
         <ObLanguageToggle
           locale={locale}
           setLocale={setLocale}
           label={t("settings.languageTitle")}
         />
-        <div className="animate-pulse text-base">{t("onboarding.redirectLogin")}</div>
-        <p className="text-sm text-slate-400">{t("onboarding.noSession")}</p>
+        <StructuroLogoLoading className="min-h-screen bg-transparent" />
       </div>
     );
   }

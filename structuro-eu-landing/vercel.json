@@ -41,6 +41,16 @@
       "permanent": true
     },
     {
+      "source": "/v2",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/v2/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/waitlist",
       "destination": "https://www.structuro.ai/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=waitlist_legacy",
       "permanent": false
@@ -72,10 +82,6 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/v2",
-      "destination": "/v2/index.html"
-    },
     {
       "source": "/cyclus",
       "destination": "/cyclus/index.html"

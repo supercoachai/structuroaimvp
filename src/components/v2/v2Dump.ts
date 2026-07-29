@@ -86,6 +86,11 @@ export function saveV2Dump(items: V2DumpItem[]): void {
   } catch {
     // Privémodus kan storage blokkeren.
   }
+  // Write-through naar Supabase voor ingelogde gebruikers (dynamic import
+  // vermijdt een statische importcyclus; guests zijn een no-op).
+  void import("@/lib/v2/v2SupabaseSync")
+    .then((m) => m.queueV2DumpPush())
+    .catch(() => {});
 }
 
 export function loadV2DumpDraft(): string {

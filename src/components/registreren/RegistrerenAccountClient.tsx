@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AccountSignUpOptions } from "@/components/auth/AccountSignUpOptions";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { buildLoginHref } from "@/lib/auth/authPagePaths";
 import { PREFERRED_NAME_COOKIE } from "@/lib/auth/preferredNameCookie";
 import { hasStructuroLocalModeCookieOnClient } from "@/lib/localOnboardingCookie";
@@ -301,7 +302,7 @@ export default function RegistrerenAccountClient({
     <Suspense
       fallback={
         <RegistrerenShell visual="story" showLocaleToggle={false} compactBrand>
-          <p className="text-center text-sm text-[var(--story-text-muted)]">…</p>
+          <StructuroLogoLoading fullScreen={false} className="min-h-[30vh]" size={72} />
         </RegistrerenShell>
       }
     >

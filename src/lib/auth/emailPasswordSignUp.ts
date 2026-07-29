@@ -37,6 +37,7 @@ export async function signUpWithEmailPassword(
       fullName: params.fullName.trim(),
       signupSource: resolvedSource,
       signupCampaign: params.signupCampaign,
+      devPassword: params.password,
     });
     if (devResult.kind !== "session") {
       throw new Error("signup_session_failed");

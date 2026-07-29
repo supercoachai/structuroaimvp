@@ -1,4 +1,4 @@
-/** Routes zonder sidebar/header/dagstart-shell (login, onboarding, marketing). */
+/** Routes zonder sidebar/header/dagstart-shell (login, onboarding, marketing, live v2-shell). */
 export function isBarePagePath(pathname: string | null): boolean {
   if (!pathname) return true;
   const barePrefixes = [
@@ -11,6 +11,13 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/onboarding',
     '/onboardingpro',
     '/v2',
+    '/dump',
+    '/stop-abonnement',
+    '/dagstart',
+    '/todo',
+    '/focus',
+    '/shutdown',
+    '/settings',
     '/consent',
     '/welkom',
     '/abonnement',
@@ -24,6 +31,8 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/terms',
     '/activiteit',
   ];
+  // Live home is ook bare (v2-shell), niet v1 AppLayout.
+  if (pathname === '/') return true;
   return barePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 

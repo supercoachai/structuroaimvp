@@ -13,6 +13,7 @@ import {
 } from "@/components/navigation/mainAppNav";
 import { HAPTIC_PATTERNS, triggerHaptic } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
+import { hasStructuroLocalModeCookieOnClient } from "@/lib/localOnboardingCookie";
 import { performClientLogout } from "@/lib/logoutClient";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 
@@ -60,7 +61,7 @@ export function V2Page({ children }: { children: ReactNode }) {
 /** Merkregel: logo + wordmark, in de website-huisstijl. */
 function V2Brand() {
   return (
-    <Link href="/v2" style={v2Styles.wordmark}>
+    <Link href="/" style={v2Styles.wordmark}>
       <span style={v2Styles.brandRow}>
         <Image
           src={V2_LOGO_SRC}
@@ -107,13 +108,21 @@ function V2ExitLink({
 }
 
 /**
+ * Sticky bovenkant voor flow-pagina's (header + optioneel progress).
+ * Blijft plakken in de V2Page-scroll; safe-area via .v2-flow-sticky.
+ */
+export function V2FlowStickyChrome({ children }: { children: ReactNode }) {
+  return <div className="v2-flow-sticky">{children}</div>;
+}
+
+/**
  * Flow-header: Stoppen (of Terug) | STRUCTURO | trailing (bijv. taalvlaggen).
  * brandMode="flow" = uppercase tracked text, geen logo/badge.
  * Zonder terug: exit links. Met terug: Terug links, exit rechts (tenzij trailing).
  */
 export function V2Header({
   exitHref,
-  exitLabel = "Stoppen",
+  exitLabel,
   onBack,
   trailing,
   brandMode = "default",
@@ -127,14 +136,17 @@ export function V2Header({
   /** "flow" = design-phone woordmerk gecentreerd. */
   brandMode?: "default" | "flow";
 }) {
+  const { t } = useI18n();
+  const resolvedExitLabel = exitLabel ?? t("v2.flowStop");
+
   if (brandMode === "flow") {
     const left = onBack ? (
       <button type="button" className="v2-flow-header__side" onClick={onBack}>
-        {"< Terug"}
+        {t("v2.chromeBackLink")}
       </button>
     ) : exitHref ? (
       <V2ExitLink href={exitHref} className="v2-flow-header__side">
-        {exitLabel}
+        {resolvedExitLabel}
       </V2ExitLink>
     ) : (
       <span className="v2-flow-header__side" aria-hidden="true" />
@@ -147,7 +159,7 @@ export function V2Header({
         href={exitHref}
         className="v2-flow-header__side v2-flow-header__exit"
       >
-        {exitLabel}
+        {resolvedExitLabel}
       </V2ExitLink>
     ) : (
       <span className="v2-flow-header__side" aria-hidden="true" />
@@ -171,7 +183,7 @@ export function V2Header({
           className="v2-textlink"
           style={{ ...v2Styles.textlink, opacity: 0.42 }}
         >
-          {exitLabel}
+          {resolvedExitLabel}
         </V2ExitLink>
       ) : (
         <span aria-hidden="true" />
@@ -202,10 +214,11 @@ function pulseNavHaptic() {
 /**
  * v2 bottom-nav als compacte frosted island: semi-transparant cream + blur,
  * strakke icon-spacing, sage soft-pill op actief.
- * "Afsluiten" opent het shutdown-ritueel op /v2/shutdown.
+ * "Afsluiten" opent het shutdown-ritueel op /shutdown.
  */
 function V2BottomNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   const tabs: {
     id: string;
@@ -214,20 +227,24 @@ function V2BottomNav() {
     Icon: (props: { className?: string }) => ReactNode;
     onClick?: () => void;
   }[] = [
-    { id: "home", href: "/v2/home", label: "Start", Icon: IconSun },
-    { id: "dump", href: "/v2/dump", label: "Dump", Icon: IconDump },
-    { id: "taken", href: "/v2/todo", label: "Taken", Icon: IconTasks },
-    { id: "focus", href: "/v2/focus", label: "Focus", Icon: IconTarget },
+    { id: "home", href: "/", label: t("v2.chromeNavStart"), Icon: IconSun },
+    { id: "dump", href: "/dump", label: t("v2.chromeNavDump"), Icon: IconDump },
+    { id: "taken", href: "/todo", label: t("v2.chromeNavTasks"), Icon: IconTasks },
+    { id: "focus", href: "/focus", label: t("v2.chromeNavFocus"), Icon: IconTarget },
     {
       id: "shutdown",
-      href: "/v2/shutdown",
-      label: "Afsluiten",
+      href: "/shutdown",
+      label: t("v2.chromeNavShutdown"),
       Icon: IconShutdown,
     },
   ];
 
   return (
-    <nav className="v2-app-nav" style={v2Styles.appNav} aria-label="v2 navigatie">
+    <nav
+      className="v2-app-nav"
+      style={v2Styles.appNav}
+      aria-label={t("v2.chromeNavAria")}
+    >
       <div className="v2-app-nav__island" style={v2Styles.appNavIsland}>
         {tabs.map((tab) => {
           const active = tab.href ? isActiveTab(pathname, tab.href) : false;
@@ -315,8 +332,11 @@ export function V2AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useI18n();
-  const onSettings = isActiveTab(pathname, "/v2/settings");
-  // Guest: geen Uitloggen (RSD/verwarring). Pas na mount; SSR = geen hint.
+  const onSettings = isActiveTab(pathname, "/settings");
+  /**
+   * Guest: geen Uitloggen (RSD/verwarring). Pas na mount.
+   * Hint + local-mode + getSession: cookie-only/legacy sessies misten eerder de knop.
+   */
   const [showLogout, setShowLogout] = useState(false);
   const headerPad = {
     paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))",
@@ -325,11 +345,40 @@ export function V2AppShell({
   } as const;
 
   useEffect(() => {
-    setShowLogout(hasSupabaseAuthHintOnClient());
+    let cancelled = false;
+    const syncLogoutVisibility = () => {
+      if (cancelled) return;
+      setShowLogout(
+        hasSupabaseAuthHintOnClient() || hasStructuroLocalModeCookieOnClient()
+      );
+    };
+    syncLogoutVisibility();
+
+    void (async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (session?.user) {
+          setShowLogout(true);
+          return;
+        }
+        syncLogoutVisibility();
+      } catch {
+        syncLogoutVisibility();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleLogout = () => {
-    void performClientLogout(router, { loginPath: "/v2/login" });
+    void performClientLogout(router, { loginPath: "/login" });
   };
 
   return (
@@ -338,8 +387,8 @@ export function V2AppShell({
       <div style={v2Styles.appPage}>
         {chrome === "flow" ? (
           <header className="v2-flow-header" style={headerPad}>
-            <Link href="/v2/home" className="v2-flow-header__side">
-              {"< Home"}
+            <Link href="/" className="v2-flow-header__side">
+              {t("v2.chromeHomeLink")}
             </Link>
             <p className="v2-flow-header__brand">Structuro</p>
             <span className="v2-flow-header__side" aria-hidden="true" />
@@ -351,7 +400,7 @@ export function V2AppShell({
               ...headerPad,
             }}
           >
-            <Link href="/v2" style={v2Styles.appShellBrand}>
+            <Link href="/" style={v2Styles.appShellBrand}>
               <Image
                 src={V2_LOGO_SRC}
                 alt=""
@@ -365,16 +414,16 @@ export function V2AppShell({
             <div style={v2Styles.appHeaderActions}>
               {onSettings ? (
                 <Link
-                  href="/v2/home"
+                  href="/"
                   className="v2-headerlink"
                   style={v2Styles.appHeaderLink}
-                  aria-label="Terug"
+                  aria-label={t("v2.chromeBackAria")}
                 >
-                  <span>{"< Terug"}</span>
+                  <span>{t("v2.chromeBackLink")}</span>
                 </Link>
               ) : (
                 <Link
-                  href="/v2/settings"
+                  href="/settings"
                   className="v2-headerlink v2-headerlink--icon"
                   style={v2Styles.appHeaderLink}
                   aria-label={t("layout.settings")}
@@ -399,15 +448,15 @@ export function V2AppShell({
               {showLogout ? (
                 <button
                   type="button"
-                  className="v2-headerlink v2-headerlink--icon"
+                  className="v2-headerlink"
                   style={v2Styles.appHeaderLink}
                   onClick={handleLogout}
                   aria-label={t("layout.logout")}
                   title={t("layout.logout")}
                 >
                   <svg
-                    width="20"
-                    height="20"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -444,18 +493,15 @@ export function V2AppShell({
 
 /**
  * Eerlijke voortgang: "stap x van y". Nooit een blokkerende timer.
- * Toont altijd dat stoppen kan zonder verlies (geruststellende toon).
  */
 export function V2Progress({
   step,
   total,
-  showReassurance = true,
 }: {
   step: number;
   total: number;
-  /** Standaard bij de balk; dagstart zet dit uit en toont V2Reassurance onder het vak. */
-  showReassurance?: boolean;
 }) {
+  const { t } = useI18n();
   const pct = Math.round((step / total) * 100);
   return (
     <>
@@ -468,13 +514,7 @@ export function V2Progress({
         </div>
       </div>
       <p style={v2Styles.progressLabel}>
-        Stap {step} van {total}
-        {showReassurance ? (
-          <span style={v2Styles.progressHint}>
-            {" "}
-            Stoppen kan altijd, er gaat niets verloren.
-          </span>
-        ) : null}
+        {t("v2.chromeProgressStep", { step: String(step), total: String(total) })}
       </p>
     </>
   );
@@ -482,9 +522,14 @@ export function V2Progress({
 
 /** Geruststellende regel onder het witte vak (niet in de voortgangsbalk). */
 export function V2Reassurance({
-  children = "Stoppen kan altijd, er gaat niets verloren.",
+  children,
 }: {
   children?: ReactNode;
 }) {
-  return <p style={v2Styles.reassuranceBelow}>{children}</p>;
+  const { t } = useI18n();
+  return (
+    <p style={v2Styles.reassuranceBelow}>
+      {children ?? t("v2.chromeReassurance")}
+    </p>
+  );
 }

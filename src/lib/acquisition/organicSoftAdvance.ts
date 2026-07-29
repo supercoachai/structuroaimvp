@@ -2,8 +2,7 @@
  * Soft-advance vanaf /start: EU-landing CTA's schrijven attributie en gaan
  * door naar onboarding zonder tweede klik op de leesbare bridge.
  *
- * Destinations: herkende organische campaigns → v1 `/onboarding`.
- * (v2 soft-advance cutover is teruggedraaid; acquisitie blijft v1.)
+ * Destinations: herkende organische campaigns → canonieke `/onboarding` (v2 UI).
  * Kale /start zonder herkende campaign blijft leesbaar (geen soft-advance).
  * TikTok /tiktok blijft leesbaar (aparte channel-gate in de client).
  */

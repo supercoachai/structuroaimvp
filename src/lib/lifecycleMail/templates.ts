@@ -9,15 +9,15 @@ import type {
 } from "./types";
 
 function lifecycleCtaHome(): string {
-  return isV2PublicEnabled() ? "/v2/home" : "/";
+  return isV2PublicEnabled() ? "/" : "/";
 }
 
 function lifecycleCtaDagstart(): string {
-  return isV2PublicEnabled() ? "/v2/dagstart" : "/?dagstart=open";
+  return isV2PublicEnabled() ? "/dagstart" : "/?dagstart=open";
 }
 
 function lifecycleCtaPaywall(): string {
-  return isV2PublicEnabled() ? "/v2/abonnement" : "/abonnement";
+  return isV2PublicEnabled() ? "/abonnement" : "/abonnement";
 }
 
 /** Placeholder-namen die we niet in de aanhef willen (onboarding-fallback e.d.). */

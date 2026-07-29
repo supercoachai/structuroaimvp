@@ -13,19 +13,15 @@ import {
   shouldSoftAdvanceOrganicLanding,
   softAdvanceHref,
 } from "@/lib/acquisition/organicSoftAdvance";
-import {
-  enterAnonymousOnboarding,
-  shouldResetAnonymousOnboardingFromClient,
-} from "@/lib/auth/anonymousOnboardingEntry";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 import { syncLocaleStorage } from "@/lib/i18n/clientLocale";
-import { useI18n } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n/types";
 import { applySignupAttributionFromSearchParams } from "@/lib/posthog/signupAttribution";
 import { trackAcquisitionCtaClicked } from "@/lib/posthog/acquisitionAnalyticsClient";
 import { type LpResolvedVariant } from "@/lib/tiktok/lpConfig";
 
 import { TikTokHeroLayout } from "@/components/tiktok/TikTokLandingHeroes";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 
 type AcquisitionBridgeClientProps = {
   channel: BridgeChannel;
@@ -41,6 +37,10 @@ function bridgeSignupHrefForSearchParams(searchParams: URLSearchParams): string 
   return organicSoftAdvanceTarget(searchParams);
 }
 
+function SoftAdvanceLoading() {
+  return <StructuroLogoLoading className="st-story-bg" />;
+}
+
 function AcquisitionBridgeInner({
   channel,
   variant,
@@ -51,6 +51,10 @@ function AcquisitionBridgeInner({
   const landingPath = bridgePathForChannel(channel);
   const signupHref = bridgeSignupHrefForSearchParams(searchParams);
   const presentation = getBridgePresentation(channel, locale);
+  const softAdvance =
+    channel === "organic" &&
+    shouldSoftAdvanceOrganicLanding(searchParams) &&
+    !hasSupabaseAuthHintOnClient();
 
   useEffect(() => {
     syncLocaleStorage(locale);
@@ -62,26 +66,19 @@ function AcquisitionBridgeInner({
 
   // Dunne bridge: EU-landing CTA's landen op /start, schrijven attributie, en gaan door.
   // Geen tweede cta_clicked: die is al op structuro.eu afgevuurd.
+  // Geen v1 TikTok-hero flash: alleen een rustige loader tijdens soft-advance.
   useEffect(() => {
-    if (channel !== "organic") return;
-    if (!shouldSoftAdvanceOrganicLanding(searchParams)) return;
-    if (hasSupabaseAuthHintOnClient()) return;
+    if (!softAdvance) return;
 
     applySignupAttributionFromSearchParams(searchParams);
-
-    // V1 anonieme local-mode alleen voor v1-/onboarding. V2 heeft eigen guest-storage.
-    if (!signupHref.startsWith("/v2")) {
-      const reset = shouldResetAnonymousOnboardingFromClient();
-      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
-    }
 
     const target = softAdvanceHref(signupHref, searchParams);
     const timer = window.setTimeout(() => {
       window.location.assign(target);
-    }, 700);
+    }, 400);
 
     return () => window.clearTimeout(timer);
-  }, [channel, searchParams, signupHref]);
+  }, [searchParams, signupHref, softAdvance]);
 
   function handleCtaClick(event: MouseEvent<HTMLAnchorElement>) {
     trackAcquisitionCtaClicked({
@@ -100,13 +97,11 @@ function AcquisitionBridgeInner({
     }
 
     event.preventDefault();
-
-    // V1 anonieme local-mode alleen voor v1-/onboarding. V2 heeft eigen guest-storage.
-    if (!signupHref.startsWith("/v2")) {
-      const reset = shouldResetAnonymousOnboardingFromClient();
-      enterAnonymousOnboarding(reset ? { reset: true } : undefined);
-    }
     window.location.assign(softAdvanceHref(signupHref, searchParams));
+  }
+
+  if (softAdvance) {
+    return <SoftAdvanceLoading />;
   }
 
   return (
@@ -126,12 +121,7 @@ function AcquisitionBridgeInner({
 }
 
 function AcquisitionBridgeFallback() {
-  const { t } = useI18n();
-  return (
-    <div className="st-story-bg flex min-h-[100dvh] items-center justify-center text-[var(--story-text-muted)]">
-      {t("common.loading")}
-    </div>
-  );
+  return <StructuroLogoLoading className="st-story-bg" />;
 }
 
 export function AcquisitionBridgeClient(props: AcquisitionBridgeClientProps) {

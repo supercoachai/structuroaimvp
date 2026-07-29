@@ -3,31 +3,18 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
+
 /**
- * /v2/register is geen stap meer in het kritieke pad.
+ * /registreren is geen stap meer in het kritieke pad.
  * Direct door naar welkom → energy → klaar.
  */
 export default function RegisterV2Client() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/v2/onboarding");
+    router.replace("/onboarding");
   }, [router]);
 
-  return (
-    <div
-      className="v2-fade"
-      style={{
-        minHeight: "40vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "var(--text-muted)",
-        fontSize: 14,
-      }}
-      aria-busy="true"
-    >
-      Bezig…
-    </div>
-  );
+  return <StructuroLogoLoading fullScreen={false} className="v2-fade min-h-[40vh] bg-transparent" />;
 }

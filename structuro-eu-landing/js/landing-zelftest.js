@@ -3,45 +3,81 @@
 
   var REASONS = [
     {
-      tag: 'EXECUTIEF',
-      title: 'Taakinitiatie',
-      short: 'Ik weet w\u00e1t ik moet doen, ik begin alleen niet.',
-      body: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
+      tag: { nl: 'EXECUTIEF', en: 'EXECUTIVE' },
+      title: { nl: 'Taakinitiatie', en: 'Task initiation' },
+      short: {
+        nl: 'Ik weet w\u00e1t ik moet doen, ik begin alleen niet.',
+        en: 'I know what I need to do. I just don\'t start.',
+      },
+      body: {
+        nl: 'Weten wat je moet doen is niet hetzelfde als beginnen. Structuro maakt de eerste stap zo klein dat je brein geen weerstand hoeft te overwinnen.',
+        en: 'Knowing what to do is not the same as starting. Structuro makes the first step small enough that your brain doesn\'t have to fight resistance.',
+      },
       contentId: 'zelftest_taakinitiatie',
     },
     {
-      tag: 'COGNITIEF',
-      title: 'Werkgeheugen-overload',
-      short: 'Mijn hoofd zit vol, en een lange lijst maakt het erger.',
-      body: 'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te d\u00f3\u00e9n in plaats van te onthouden.',
+      tag: { nl: 'COGNITIEF', en: 'COGNITIVE' },
+      title: { nl: 'Werkgeheugen-overload', en: 'Working memory overload' },
+      short: {
+        nl: 'Mijn hoofd zit vol, en een lange lijst maakt het erger.',
+        en: 'My head is full, and a long list makes it worse.',
+      },
+      body: {
+        nl: 'Een lange to-do lijst vreet werkgeheugen. Structuro toont maximaal drie taken, zodat je hoofd ruimte houdt om te d\u00f3\u00e9n in plaats van te onthouden.',
+        en: 'A long to-do list eats working memory. Structuro shows at most three tasks, so your head has room to do instead of remember.',
+      },
       contentId: 'zelftest_werkgeheugen',
     },
     {
-      tag: 'DOPAMINE',
-      title: 'Energie en motivatie',
-      short: 'De ene dag vlieg ik, de andere kom ik niet vooruit.',
-      body: 'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',
+      tag: { nl: 'DOPAMINE', en: 'DOPAMINE' },
+      title: { nl: 'Energie en motivatie', en: 'Energy and motivation' },
+      short: {
+        nl: 'De ene dag vlieg ik, de andere kom ik niet vooruit.',
+        en: 'One day I fly, the next I get nowhere.',
+      },
+      body: {
+        nl: 'ADHD-breinen hebben wisselende dopamine. Daarom start je dagstart met energie, niet met een vaste takenlijst die je overbelast.',
+        en: 'ADHD brains have shifting dopamine. That\'s why day start begins with energy, not a fixed task list that overloads you.',
+      },
       contentId: 'zelftest_energie',
     },
     {
-      tag: 'TIJD',
-      title: 'Tijdblindheid',
-      short: 'Ik voel tijd niet, een dag heeft geen begin of eind.',
-      body: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
+      tag: { nl: 'TIJD', en: 'TIME' },
+      title: { nl: 'Tijdblindheid', en: 'Time blindness' },
+      short: {
+        nl: 'Ik voel tijd niet, een dag heeft geen begin of eind.',
+        en: 'I don\'t feel time. A day has no beginning or end.',
+      },
+      body: {
+        nl: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
+        en: 'If you don\'t have an internal clock, a daily loop with closure helps. Done is done, without guilt over what you didn\'t do.',
+      },
       contentId: 'zelftest_tijdblindheid',
     },
     {
-      tag: 'CYCLUS',
-      title: 'Hormonen en focus',
-      short: 'Sommige weken werkt mijn brein anders.',
-      body: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
+      tag: { nl: 'CYCLUS', en: 'CYCLE' },
+      title: { nl: 'Hormonen en focus', en: 'Hormones and focus' },
+      short: {
+        nl: 'Sommige weken werkt mijn brein anders.',
+        en: 'Some weeks my brain works differently.',
+      },
+      body: {
+        nl: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
+        en: 'Estrogen and progesterone steer dopamine too. Structuro adapts your workload to your cycle phase, without comparing you to yesterday.',
+      },
       contentId: 'zelftest_cyclus',
     },
     {
-      tag: 'RUST',
-      title: 'Burn-out preventie',
-      short: 'Te veel keuzes per dag en ik ben op.',
-      body: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
+      tag: { nl: 'RUST', en: 'REST' },
+      title: { nl: 'Burn-out preventie', en: 'Burnout prevention' },
+      short: {
+        nl: 'Te veel keuzes per dag en ik ben op.',
+        en: 'Too many choices a day and I\'m done.',
+      },
+      body: {
+        nl: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
+        en: 'Chronic overstimulation and guilt drain energy. Fewer choices per day means less decision fatigue and more recovery.',
+      },
       contentId: 'zelftest_keuzestress',
     },
   ];
@@ -52,6 +88,20 @@
         window.posthog.capture(event, props || {}, { send_instantly: true });
       }
     } catch (e) {}
+  }
+
+  function lang() {
+    return (window.currentLang || 'nl') === 'en' ? 'en' : 'nl';
+  }
+
+  function pick(field) {
+    var L = lang();
+    return field[L] || field.nl;
+  }
+
+  function hintLabel(on) {
+    if (!on) return '';
+    return lang() === 'en' ? 'Yes, this is me' : 'Ja, dit ben ik';
   }
 
   var mount = document.getElementById('landingZelftestMount');
@@ -76,7 +126,7 @@
   }
 
   function message(count) {
-    var en = (window.currentLang || 'nl') === 'en';
+    var en = lang() === 'en';
     if (count === 0) {
       return en
         ? {
@@ -142,9 +192,7 @@
   }
 
   function stickyCtaLabel() {
-    var lang = window.currentLang || 'nl';
-    if (lang === 'en') return 'Start Structuro free';
-    return 'Start Structuro gratis';
+    return lang() === 'en' ? 'Start Structuro free' : 'Start Structuro gratis';
   }
 
   function stickyContentId() {
@@ -174,6 +222,20 @@
     }
   }
 
+  function panelHtml(r) {
+    return (
+      '<div class="zt-panel-tag">STRUCTURO \u00b7 ' +
+      pick(r.tag) +
+      '</div>' +
+      '<div class="zt-panel-title">' +
+      pick(r.title) +
+      '</div>' +
+      '<p class="zt-panel-body">' +
+      pick(r.body) +
+      '</p>'
+    );
+  }
+
   function syncRow(k) {
     var row = rowsEl.querySelector('[data-zt-row="' + k + '"]');
     if (!row) return;
@@ -185,9 +247,24 @@
     if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
     if (hint) {
       hint.hidden = !on;
-      hint.textContent = on ? 'Ja, dit ben ik' : '';
+      hint.textContent = hintLabel(on);
     }
     if (panelWrap) panelWrap.classList.toggle('is-open', on);
+  }
+
+  function applyCopy() {
+    if (!rowsEl) return;
+    REASONS.forEach(function (r, k) {
+      var row = rowsEl.querySelector('[data-zt-row="' + k + '"]');
+      if (!row) return;
+      var short = row.querySelector('.zt-row-short');
+      if (short) short.textContent = pick(r.short);
+      var hint = row.querySelector('.zt-row-hint');
+      if (hint && !!picked[k]) hint.textContent = hintLabel(true);
+      var inner = row.querySelector('.zt-row-panel-inner');
+      if (inner) inner.innerHTML = panelHtml(r);
+    });
+    syncSticky();
   }
 
   function toggle(k) {
@@ -269,7 +346,7 @@
 
       var short = document.createElement('span');
       short.className = 'zt-row-short';
-      short.textContent = r.short;
+      short.textContent = pick(r.short);
       btn.appendChild(short);
 
       var hint = document.createElement('span');
@@ -288,16 +365,7 @@
       panel.className = 'zt-row-panel';
       var inner = document.createElement('div');
       inner.className = 'zt-row-panel-inner';
-      inner.innerHTML =
-        '<div class="zt-panel-tag">STRUCTURO \u00b7 ' +
-        r.tag +
-        '</div>' +
-        '<div class="zt-panel-title">' +
-        r.title +
-        '</div>' +
-        '<p class="zt-panel-body">' +
-        r.body +
-        '</p>';
+      inner.innerHTML = panelHtml(r);
       panel.appendChild(inner);
       panelWrap.appendChild(panel);
       row.appendChild(panelWrap);
@@ -312,6 +380,6 @@
   build();
 
   window.refreshZelftestCopy = function () {
-    syncSticky();
+    applyCopy();
   };
 })();

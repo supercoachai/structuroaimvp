@@ -29,12 +29,12 @@ function v2PostAccountPath(
     if (isEventSignupSource(signupSource)) return "/";
     return resolveLivePaywallPathClient();
   }
-  const v2Home = homePath.startsWith("/v2") ? homePath : "/v2/home";
+  const v2Home = homePath.startsWith("/v2") ? homePath : "/";
   // Jasper / café: geen kaart-poort tijdens event-trial.
   if (isEventSignupSource(signupSource)) {
-    return v2Home === "/v2/abonnement" ? "/v2/home" : v2Home;
+    return v2Home === "/abonnement" ? "/" : v2Home;
   }
-  return "/v2/abonnement";
+  return "/abonnement";
 }
 
 /** Na OAuth, e-mail/wachtwoord of passkey: attributie, analytics, redirect-pad. */
@@ -47,7 +47,8 @@ export async function finalizeNewAccountSession(
 
   await persistSignupAttributionToProfile(userId);
   queueSignupCompletedForAnalytics();
-  await trackRegistrationFunnelServer("signup_completed", {
+  // Analytics mag de post-signup UI niet blokkeren (lange load na e-mail-signup).
+  void trackRegistrationFunnelServer("signup_completed", {
     source: getSignupAttributionSource(),
     utm_campaign: getStoredSignupCampaign(),
   });

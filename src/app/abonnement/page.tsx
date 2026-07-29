@@ -1,26 +1,45 @@
-import { Suspense } from "react";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { profileHasAppAccess } from "@/lib/subscriptionAccess";
-import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
-import { resolveRetentionPaywallReason, resolveActiveTrialDaysLeft } from "@/lib/retentionPaywallAccess";
-import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
+
+import AbonnementV2Client, {
+  AbonnementV2StripeSuccess,
+  AbonnementV2StripeSync,
+  V2_ABONNEMENT_DEMO_STATS,
+} from "@/components/v2/AbonnementV2Client";
 import { isJasperSignupSource } from "@/lib/jasper/jasperOffer";
+import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
+import {
+  resolveActiveTrialDaysLeft,
+  resolveRetentionPaywallReason,
+  type RetentionPaywallReason,
+} from "@/lib/retentionPaywallAccess";
+import {
+  emptyRetentionStats,
+  fetchRetentionStatsForUser,
+} from "@/lib/retentionStatsServer";
 import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
-import { PaywallShell } from "@/components/subscription/PaywallShell";
-import { RetentionPaywallStats } from "@/components/subscription/RetentionPaywallStats";
-import { RetentionPaywallStatsFallback } from "@/components/subscription/RetentionPaywallStatsFallback";
-import { AbonnementStripeSync } from "./AbonnementStripeSync";
-import { AbonnementPaywallAnalytics } from "./AbonnementPaywallAnalytics";
+import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
+import {
+  requiresV2CardTrialCheckout,
+  V2_CARD_TRIAL_DAYS,
+} from "@/lib/stripe/v2CardTrial";
+import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = {
-  searchParams: Promise<{ preview?: string; from?: string }>;
+export const metadata: Metadata = {
+  title: "Structuro | Abonnement",
+  description: "Behoud je ritme. Rustige betaalpagina in v2-stijl.",
+  robots: { index: false, follow: false },
 };
 
-export default async function AbonnementPage({ searchParams }: PageProps) {
+type PageProps = {
+  searchParams: Promise<{ preview?: string; from?: string; reason?: string }>;
+};
+
+export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const forcePreview = params.preview === "1";
   const fromStripe = params.from === "stripe";
@@ -30,8 +49,22 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const headerStore = await headers();
+  const userAgent = headerStore.get("user-agent") ?? "";
+  const visibleWallets = getVisibleWalletButtonsFromUserAgent(userAgent);
+
+  // Zonder login: eerlijke login-staat (geen nep-trial of demostats).
   if (!user?.id) {
-    redirect("/login?next=/abonnement");
+    return (
+      <AbonnementV2Client
+        reason="trial_expired"
+        trialDays={V2_ABONNEMENT_DEMO_STATS.trialDays}
+        visibleWallets={visibleWallets}
+        jasperOffer={false}
+        stats={emptyRetentionStats(null)}
+        canCheckout={false}
+      />
+    );
   }
 
   const { data: profile } = await supabase
@@ -59,12 +92,21 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
   const previewMode =
     forcePreview || isProtectedTestAccount(user.email ?? null);
   const hasAccess = row ? profileHasAppAccess(row) : false;
+  const subscriptionConfirmed =
+    hasAccess &&
+    (row?.subscription_status === "trialing" ||
+      row?.subscription_status === "active");
   const resolvedReason = row
     ? resolveRetentionPaywallReason(row)
     : "trial_expired";
 
+  // Terug van Stripe met bevestigde subscription: eenmalige succes-overlay.
+  if (!previewMode && fromStripe && subscriptionConfirmed) {
+    return <AbonnementV2StripeSuccess />;
+  }
+
   if (!previewMode && resolvedReason === null) {
-    redirect("/settings");
+    redirect("/");
   }
 
   const reason = resolvedReason ?? "trial_expired";
@@ -74,36 +116,42 @@ export default async function AbonnementPage({ searchParams }: PageProps) {
       : undefined;
 
   const signupSource = row?.signup_source ?? null;
-  const trialDays = resolveStripeTrialDaysForSignupSource(signupSource);
+  const startCardTrial = row ? requiresV2CardTrialCheckout(row) : false;
+  // Exact de proefduur die dit account kreeg (3 default, 7 Jasper/v2-card, 14 ADHD-café).
+  const trialDays = startCardTrial
+    ? V2_CARD_TRIAL_DAYS
+    : resolveStripeTrialDaysForSignupSource(signupSource);
   const jasperOffer = isJasperSignupSource(signupSource);
 
-  const headerStore = await headers();
-  const userAgent = headerStore.get("user-agent") ?? "";
-  const visibleWallets = getVisibleWalletButtonsFromUserAgent(userAgent);
+  const stats = await fetchRetentionStatsForUser(supabase, user.id, {
+    signupSource,
+  }).catch(() => emptyRetentionStats(signupSource));
+
+  // Stats en kopregel altijd dezelfde trial-lengte (nooit een losse 14).
+  const alignedStats = { ...stats, trialDays };
 
   return (
     <>
-      <AbonnementPaywallAnalytics reason={reason} />
-      <PaywallShell
+      <AbonnementV2Client
         reason={reason}
         trialDays={trialDays}
         trialDaysLeft={trialDaysLeft}
         visibleWallets={visibleWallets}
         jasperOffer={jasperOffer}
-        statsSlot={
-          <Suspense
-            fallback={<RetentionPaywallStatsFallback trialDays={trialDays} />}
-          >
-            <RetentionPaywallStats
-              userId={user.id}
-              signupSource={signupSource}
-            />
-          </Suspense>
-        }
+        stats={alignedStats}
+        canCheckout
+        startCardTrial={startCardTrial}
       />
-      <AbonnementStripeSync
-        redirectAfterStripe={!previewMode && hasAccess && fromStripe}
+      <AbonnementV2StripeSync
+        active={!previewMode && fromStripe && !subscriptionConfirmed}
       />
     </>
   );
+}
+
+function parseReason(raw: string | undefined): RetentionPaywallReason | null {
+  if (raw === "trial_active" || raw === "trial_expired" || raw === "subscription_ended") {
+    return raw;
+  }
+  return null;
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { resolveCurrentPhaseKey } from "@/components/dagstart/design/CyclusButton";
+import { toast } from "@/components/Toast";
 import { useI18n } from "@/lib/i18n";
 import { performClientLogout } from "@/lib/logoutClient";
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
@@ -76,6 +77,7 @@ export default function SettingsV2Client() {
   const [confirmText, setConfirmText] = useState("");
   const [showInstallHint, setShowInstallHint] = useState(false);
   const [openId, setOpenId] = useState<AccordionId | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
 
   useEffect(() => {
     setShowInstallHint(shouldShowPwaInstallHint());
@@ -226,7 +228,33 @@ export default function SettingsV2Client() {
   };
 
   const handleReplayIntro = () => {
-    router.push("/v2/onboarding?replay=1");
+    router.push("/onboarding?replay=1");
+  };
+
+  /** Stripe Billing Portal (best-effort: zonder abonnement een rustige melding). */
+  const handleManageSubscription = async () => {
+    if (portalBusy) return;
+    setPortalBusy(true);
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string };
+      if (res.ok && data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      if (res.status === 404 || res.status === 400) {
+        toast("Geen actief abonnement gevonden.");
+      } else {
+        toast("Abonnement beheren lukt nu even niet. Probeer het later opnieuw.");
+      }
+    } catch {
+      toast("Abonnement beheren lukt nu even niet. Probeer het later opnieuw.");
+    } finally {
+      setPortalBusy(false);
+    }
   };
 
   const handleWipeData = () => {
@@ -242,7 +270,7 @@ export default function SettingsV2Client() {
     } catch {
       // negeren
     }
-    router.push("/v2/onboarding");
+    router.push("/onboarding");
   };
 
   const cancelWipe = () => {
@@ -454,17 +482,25 @@ export default function SettingsV2Client() {
           <V2SettingsAccordion
             id="account"
             title="Account"
-            subtitle="Homescreen · export · uitloggen"
+            subtitle="Homescreen · export · intro"
             icon={<V2SettingsIconAccount />}
             open={openId === "account"}
             onToggle={() => toggle("account")}
           >
             <div className="v2-settings-panel v2-settings-panel--links">
               {showInstallHint ? (
-                <Link href="/v2/install?from=settings" className="v2-settings-link">
+                <Link href="/welkom/install?from=settings" className="v2-settings-link">
                   {t("welkomPage.installTitle")}
                 </Link>
               ) : null}
+              <button
+                type="button"
+                className="v2-settings-link"
+                disabled={portalBusy}
+                onClick={() => void handleManageSubscription()}
+              >
+                {portalBusy ? "Even geduld…" : "Abonnement beheren"}
+              </button>
               <button
                 type="button"
                 className="v2-settings-link"
@@ -479,18 +515,19 @@ export default function SettingsV2Client() {
               >
                 {t("settings.tourCta")}
               </button>
-              <button
-                type="button"
-                className="v2-settings-link"
-                onClick={() =>
-                  void performClientLogout(router, { loginPath: "/v2/login" })
-                }
-              >
-                {t("settings.logout")}
-              </button>
             </div>
           </V2SettingsAccordion>
         </div>
+
+        <button
+          type="button"
+          className="v2-settings-logout"
+          onClick={() =>
+            void performClientLogout(router, { loginPath: "/login" })
+          }
+        >
+          {t("settings.logout")}
+        </button>
 
         <section className="v2-settings-danger" aria-label="Gevaarlijke acties">
           <div className="v2-settings-danger__head">
@@ -545,10 +582,10 @@ export default function SettingsV2Client() {
         </section>
 
         <div className="v2-settings__legal">
-          <Link href="/v2/privacy" className="v2-link">
+          <Link href="/privacy" className="v2-link">
             {t("settings.legalPrivacy")}
           </Link>
-          <Link href="/v2/terms" className="v2-link">
+          <Link href="/terms" className="v2-link">
             {t("settings.legalTerms")}
           </Link>
         </div>

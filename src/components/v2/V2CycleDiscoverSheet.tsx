@@ -317,7 +317,7 @@ export default function V2CycleDiscoverSheet({
     <p className="v2-cycle-discover-sheet__footer">
       {t("cycle.discoverSettingsBefore")}
       <Link
-        href="/v2/settings?section=cyclus"
+        href="/settings?section=cyclus"
         className="v2-cycle-discover-sheet__footer-link"
         onClick={onClose}
       >

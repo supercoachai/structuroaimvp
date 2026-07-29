@@ -8,6 +8,8 @@ type SignUpParams = {
   signupSource?: string | null;
   signupCampaign?: string | null;
   captchaToken?: string;
+  /** Alleen lokaal: bewaar het door de gebruiker gekozen wachtwoord, zodat herinloggen werkt zoals in productie. */
+  devPassword?: string;
 };
 
 export type SignUpResult =
@@ -30,7 +32,7 @@ export async function signUpPasswordlessWithLocalDevFallback(
   const metadata = buildSignupMetadata(params);
 
   if (process.env.NODE_ENV === "development") {
-    const password = `${crypto.randomUUID()}Aa1!`;
+    const password = params.devPassword || `${crypto.randomUUID()}Aa1!`;
     const res = await fetch("/api/dev/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

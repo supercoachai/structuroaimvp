@@ -8,6 +8,7 @@ import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
 
 import V2InstallHint from "./V2InstallHint";
 import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { trackV2PwaInstallSkipped } from "./v2Analytics";
 import { v2FlowWrapStyle, v2Styles } from "./theme";
 
@@ -22,7 +23,7 @@ export default function InstallV2Client() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const continueHref = fromSettings ? "/v2/settings" : "/v2/onboarding";
+  const continueHref = fromSettings ? "/settings" : "/onboarding";
   const continueLabel = fromSettings
     ? t("welkomPage.installContinueSettings")
     : t("welkomPage.installContinueCta");
@@ -33,7 +34,7 @@ export default function InstallV2Client() {
       return;
     }
     if (!shouldShowPwaInstallHint()) {
-      router.replace("/v2/onboarding");
+      router.replace("/onboarding");
       return;
     }
     setReady(true);
@@ -49,16 +50,14 @@ export default function InstallV2Client() {
   if (!ready) {
     return (
       <V2Page>
-        <p style={{ ...v2Styles.body, textAlign: "center", margin: "auto" }}>
-          …
-        </p>
+        <StructuroLogoLoading fullScreen={false} className="min-h-[50vh] bg-transparent" size={72} />
       </V2Page>
     );
   }
 
   return (
     <V2Page>
-      <V2Header exitHref={fromSettings ? "/v2/settings" : "/v2/onboarding"} />
+      <V2Header exitHref={fromSettings ? "/settings" : "/onboarding"} />
 
       <div style={v2Styles.flowShell}>
         <div style={v2FlowWrapStyle("welcome")}>

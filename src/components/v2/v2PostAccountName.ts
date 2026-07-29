@@ -106,4 +106,4 @@ export function prefillNameFromUserMetadata(
   return "";
 }
 
-export const V2_POST_ACCOUNT_NAME_PATH = "/v2/onboarding?name=1";
+export const V2_POST_ACCOUNT_NAME_PATH = "/onboarding?name=1";

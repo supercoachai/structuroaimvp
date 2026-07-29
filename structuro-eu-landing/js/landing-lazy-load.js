@@ -57,7 +57,7 @@
 
   observeSection(
     "#brein-termen",
-    "/js/landing-zelftest.js?v=20260619a",
+    "/js/landing-zelftest.js?v=20260729a",
     "500px 0px"
   );
   observeSection("#loop", "/js/landing-audit.js?v=20260619a", "250px 0px");

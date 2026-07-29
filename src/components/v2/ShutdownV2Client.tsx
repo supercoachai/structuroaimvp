@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useI18n } from "@/lib/i18n";
+
 import { V2AppShell, V2Eyebrow, V2Progress } from "./V2Chrome";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
@@ -48,6 +50,7 @@ function WinRow({ win }: { win: V2ShutdownWin }) {
 }
 
 export default function ShutdownV2Client() {
+  const { t } = useI18n();
   const go = useV2Go();
   const [phase, setPhase] = useState<Phase>("review");
   const [eveningDraft, setEveningDraft] = useState("");
@@ -83,7 +86,7 @@ export default function ShutdownV2Client() {
     if (wins.length >= 1 && shouldOfferReturnPermission()) {
       markReturnPermissionPending();
     }
-    go("/v2/home", { todayDone: true });
+    go("/", { todayDone: true });
   }, [eveningDraft, go, wins.length]);
 
   const goToDump = () => setPhase("dump");
@@ -111,17 +114,17 @@ export default function ShutdownV2Client() {
 
   const title =
     phase === "review"
-      ? "Wat is af vandaag"
+      ? t("v2.shutdownTitleReview")
       : phase === "sentiment"
-        ? "Checken"
-        : "Nog iets loslaten?";
+        ? t("v2.shutdownTitleSentiment")
+        : t("v2.shutdownTitleDump");
 
   return (
     <V2AppShell scroll={false}>
       <div className="v2-shutdown">
         <header className="v2-shutdown__top">
           <div className="v2-info-head">
-            <V2Eyebrow>Dagafsluiting</V2Eyebrow>
+            <V2Eyebrow>{t("v2.shutdownEyebrow")}</V2Eyebrow>
             <V2InfoHint
               infoId="v2_shutdown"
               expanded={infoOpen}
@@ -133,9 +136,7 @@ export default function ShutdownV2Client() {
           </div>
           <h1 className="v2-serif v2-shutdown__title">{title}</h1>
           {phase === "sentiment" ? (
-            <p className="v2-shutdown__lead">
-              Kort merken hoe de dag voelde. Optioneel, geen score.
-            </p>
+            <p className="v2-shutdown__lead">{t("v2.shutdownSentimentLead")}</p>
           ) : null}
           <div className="v2-shutdown__progress">
             <V2Progress step={stepNumber} total={TOTAL} />
@@ -147,14 +148,12 @@ export default function ShutdownV2Client() {
             <section className="v2-shutdown__card v2-fade" aria-live="polite">
               {wins.length === 0 ? (
                 <>
-                  <p className="v2-shutdown__body">
-                    Geen afgevinkte taken vandaag, en dat mag. Een rustige dag telt ook.
-                  </p>
-                  <p className="v2-shutdown__muted">Dit mag morgen. Niets is mislukt.</p>
+                  <p className="v2-shutdown__body">{t("v2.shutdownNoWinsBody")}</p>
+                  <p className="v2-shutdown__muted">{t("v2.shutdownNoWinsMuted")}</p>
                 </>
               ) : singleWin ? (
                 <div className="v2-shutdown__single">
-                  <p className="v2-shutdown__kicker">Eén ding af</p>
+                  <p className="v2-shutdown__kicker">{t("v2.shutdownSingleKicker")}</p>
                   <div className="v2-shutdown-win v2-shutdown-win--hero">
                     <WinCheck size={22} />
                     <span className="v2-shutdown-win__label v2-shutdown-win__label--hero">
@@ -162,17 +161,17 @@ export default function ShutdownV2Client() {
                     </span>
                     <V2TaskBattery energy={v2TaskEnergyToDay(wins[0].energy)} size={18} />
                   </div>
-                  <p className="v2-shutdown__muted">Dat telt. Meer hoeft niet.</p>
+                  <p className="v2-shutdown__muted">{t("v2.shutdownThatCounts")}</p>
                 </div>
               ) : (
                 <>
-                  <p className="v2-shutdown__kicker">Wat je vandaag deed</p>
+                  <p className="v2-shutdown__kicker">{t("v2.shutdownWinsKicker")}</p>
                   <ul className="v2-shutdown-wins">
                     {wins.map((w) => (
                       <WinRow key={w.id} win={w} />
                     ))}
                   </ul>
-                  <p className="v2-shutdown__muted">Dat telt. Meer hoeft niet.</p>
+                  <p className="v2-shutdown__muted">{t("v2.shutdownThatCounts")}</p>
                 </>
               )}
             </section>
@@ -180,25 +179,23 @@ export default function ShutdownV2Client() {
 
           {phase === "sentiment" ? (
             <section className="v2-shutdown__card v2-fade" aria-live="polite">
-              <p className="v2-shutdown__question">Voelde dit rustig?</p>
-              <p className="v2-shutdown__muted">Optioneel. Geen goed of fout antwoord.</p>
+              <p className="v2-shutdown__question">{t("v2.shutdownSentimentQ")}</p>
+              <p className="v2-shutdown__muted">{t("v2.shutdownSentimentHint")}</p>
             </section>
           ) : null}
 
           {phase === "dump" ? (
             <section className="v2-shutdown__card" aria-live="polite">
               <label htmlFor="v2-shutdown-dump" className="v2-shutdown__body">
-                Nog iets uit je hoofd?
+                {t("v2.shutdownDumpLabel")}
               </label>
-              <p className="v2-shutdown__muted">
-                Optioneel. Het komt op je dumplijst, voor morgen of later.
-              </p>
+              <p className="v2-shutdown__muted">{t("v2.shutdownDumpHint")}</p>
               <input
                 id="v2-shutdown-dump"
                 type="text"
                 value={eveningDraft}
                 onChange={(e) => setEveningDraft(e.target.value)}
-                placeholder="Typ wat er nog rondspookt..."
+                placeholder={t("v2.shutdownDumpPh")}
                 className="v2-field mt-3"
                 autoComplete="off"
               />
@@ -210,10 +207,10 @@ export default function ShutdownV2Client() {
           {phase === "review" ? (
             <>
               <button type="button" onClick={goToSentimentOrDump} className="btn-primary w-full">
-                Verder
+                {t("v2.nameContinue")}
               </button>
               <button type="button" onClick={finishShutdown} className="v2-link">
-                Overslaan, dag is rond
+                {t("v2.shutdownSkipReview")}
               </button>
             </>
           ) : null}
@@ -221,13 +218,13 @@ export default function ShutdownV2Client() {
           {phase === "sentiment" ? (
             <>
               <button type="button" onClick={confirmCalm} className="btn-primary w-full">
-                Ja, rustig
+                {t("v2.shutdownCalmYes")}
               </button>
               <button type="button" onClick={confirmNotCalm} className="v2-link">
-                Niet echt
+                {t("v2.shutdownCalmNo")}
               </button>
               <button type="button" onClick={skipSentiment} className="v2-link">
-                Overslaan
+                {t("v2.shutdownSkip")}
               </button>
             </>
           ) : null}
@@ -235,7 +232,9 @@ export default function ShutdownV2Client() {
           {phase === "dump" ? (
             <>
               <button type="button" onClick={finishShutdown} className="btn-primary w-full">
-                {eveningDraft.trim().length > 0 ? "Opslaan en afronden" : "Dag is rond"}
+                {eveningDraft.trim().length > 0
+                  ? t("v2.shutdownSaveFinish")
+                  : t("v2.shutdownDayDone")}
               </button>
               <button
                 type="button"
@@ -245,11 +244,11 @@ export default function ShutdownV2Client() {
                   if (wins.length >= 1 && shouldOfferReturnPermission()) {
                     markReturnPermissionPending();
                   }
-                  go("/v2/home", { todayDone: true });
+                  go("/", { todayDone: true });
                 }}
                 className="v2-link"
               >
-                Naar home zonder dump
+                {t("v2.shutdownHomeNoDump")}
               </button>
             </>
           ) : null}

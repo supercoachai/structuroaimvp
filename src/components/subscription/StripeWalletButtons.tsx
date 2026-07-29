@@ -17,7 +17,13 @@ type StripeWalletButtonsProps = {
   disabled?: boolean;
   onSuccess: () => void;
   onError: (message: string) => void;
+  /** Legacy: volledig fallback-pad (bv. oude paywall). Niet voor “knop verbergen”. */
   onUnavailable: () => void;
+  /**
+   * Na Stripe canMakePayment: alleen écht beschikbare wallets.
+   * Lege array = geen wallet-zone tonen (geen disabled/grijze knoppen).
+   */
+  onReady?: (available: WalletKind[]) => void;
 };
 
 export function StripeWalletButtons({
@@ -26,10 +32,8 @@ export function StripeWalletButtons({
   onSuccess,
   onError,
   onUnavailable,
+  onReady,
 }: StripeWalletButtonsProps) {
-  const showApplePay = visibleWallets.includes("applePay");
-  const showGooglePay = visibleWallets.includes("googlePay");
-
   const paymentRequestsRef = useRef<Record<WalletKind, PaymentRequest | null>>({
     applePay: null,
     googlePay: null,
@@ -39,10 +43,12 @@ export function StripeWalletButtons({
     googlePay: false,
   });
   const readyRef = useRef(false);
-  const callbacksRef = useRef({ onSuccess, onError, onUnavailable });
+  const callbacksRef = useRef({ onSuccess, onError, onUnavailable, onReady });
   const [walletBusy, setWalletBusy] = useState(false);
+  /** null = nog niet gecheckt; daarna alleen écht beschikbare wallets. */
+  const [liveWallets, setLiveWallets] = useState<WalletKind[] | null>(null);
 
-  callbacksRef.current = { onSuccess, onError, onUnavailable };
+  callbacksRef.current = { onSuccess, onError, onUnavailable, onReady };
 
   useEffect(() => {
     walletPaymentHandlers.onPaymentMethod = (ev) => {
@@ -81,12 +87,15 @@ export function StripeWalletButtons({
       paymentRequestsRef.current = result.requests;
       availableRef.current = result.available;
       readyRef.current = true;
+      const available = visibleWallets.filter((kind) => result.available[kind]);
+      setLiveWallets(available);
+      callbacksRef.current.onReady?.(available);
     });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [visibleWallets]);
 
   const waitForReady = useCallback(async (maxMs = 4000) => {
     if (readyRef.current) return true;
@@ -110,7 +119,12 @@ export function StripeWalletButtons({
 
       const pr = paymentRequestsRef.current[kind];
       if (!pr || !availableRef.current[kind]) {
-        onUnavailable();
+        // Knop had niet zichtbaar mogen zijn; verberg i.p.v. grijs/disabled.
+        setLiveWallets((prev) => {
+          const next = (prev ?? []).filter((k) => k !== kind);
+          callbacksRef.current.onReady?.(next);
+          return next;
+        });
         return;
       }
 
@@ -120,7 +134,12 @@ export function StripeWalletButtons({
         const isReady =
           kind === "applePay" ? canPay?.applePay : canPay?.googlePay;
         if (!isReady) {
-          onUnavailable();
+          availableRef.current[kind] = false;
+          setLiveWallets((prev) => {
+            const next = (prev ?? []).filter((k) => k !== kind);
+            callbacksRef.current.onReady?.(next);
+            return next;
+          });
           return;
         }
         await pr.show();
@@ -139,10 +158,14 @@ export function StripeWalletButtons({
     [disabled, onUnavailable, waitForReady, walletBusy]
   );
 
+  if (!liveWallets || liveWallets.length === 0) return null;
+
+  const showApplePay = liveWallets.includes("applePay");
+  const showGooglePay = liveWallets.includes("googlePay");
   if (!showApplePay && !showGooglePay) return null;
 
   const rowClass =
-    visibleWallets.length > 1 ? "wallet-row wallet-row--two" : "wallet-row wallet-row--one";
+    liveWallets.length > 1 ? "wallet-row wallet-row--two" : "wallet-row wallet-row--one";
 
   return (
     <div className={rowClass} aria-label="Wallet-betaling">

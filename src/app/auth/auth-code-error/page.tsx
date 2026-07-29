@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { parseAuthHashFragment } from "@/lib/auth/recoveryHash";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 
 function isPkceVerifierError(
   errorCode: string | null,
@@ -107,11 +108,7 @@ function AuthCodeErrorContent() {
     }, [errorCode, isPkce, t]);
 
   if (!hashChecked || recovering) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
-        {t("common.loading")}
-      </div>
-    );
+    return <StructuroLogoLoading />;
   }
 
   return (
@@ -140,13 +137,7 @@ function AuthCodeErrorContent() {
 
 export default function AuthCodeErrorPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
-          …
-        </div>
-      }
-    >
+    <Suspense fallback={<StructuroLogoLoading />}>
       <AuthCodeErrorContent />
     </Suspense>
   );

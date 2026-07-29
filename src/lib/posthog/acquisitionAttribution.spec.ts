@@ -94,9 +94,9 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.source).toBe("structuro_eu");
   });
 
-  it("/v2/onboarding is organische EU-entry (geen TikTok)", () => {
+  it("/onboarding is organische EU-entry (geen TikTok)", () => {
     const result = resolveAcquisitionAttribution({
-      pathname: "/v2/onboarding",
+      pathname: "/onboarding",
       searchParams: new URLSearchParams(
         "utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=hero_primary"
       ),
@@ -107,9 +107,9 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.utm_campaign).toBe("eu_v2");
   });
 
-  it("kale /v2/onboarding zonder utm krijgt structuro_eu default", () => {
+  it("kale /onboarding zonder utm krijgt structuro_eu default", () => {
     const result = resolveAcquisitionAttribution({
-      pathname: "/v2/onboarding",
+      pathname: "/onboarding",
       searchParams: new URLSearchParams(),
       referrer: null,
     });

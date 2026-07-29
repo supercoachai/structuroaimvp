@@ -22,7 +22,7 @@ export function getBridgePresentation(
 ): BridgePresentation {
   if (locale === "en") {
     return {
-      ctaLabel: "Start 3 days free",
+      ctaLabel: "Start 7 days free",
       footerNote:
         channel === "organic"
           ? "Then \u20AC12.99 per month. Cancel anytime."
@@ -31,7 +31,7 @@ export function getBridgePresentation(
   }
 
   return {
-    ctaLabel: "Start 3 dagen gratis",
+    ctaLabel: "Start 7 dagen gratis",
     footerNote:
       channel === "organic"
         ? "Daarna \u20AC12,99 per maand. Opzegbaar wanneer je wilt."

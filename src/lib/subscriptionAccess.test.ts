@@ -41,7 +41,32 @@ assert.equal(
     created_at: new Date().toISOString(),
     last_dagstart_date: null,
   }),
-  true
+  false,
+  "vers account zonder checkout: geen toegang (trial start pas na Stripe)"
+);
+
+assert.equal(
+  profileHasAppAccessOrGrace({
+    subscription_status: "none",
+    subscription_current_period_end: null,
+    created_at: new Date().toISOString(),
+    last_dagstart_date: null,
+    signup_source: "adhd_cafe",
+  }),
+  true,
+  "event-signup (adhd_cafe): app-trial zonder Stripe blijft werken"
+);
+
+assert.equal(
+  profileHasAppAccessOrGrace({
+    subscription_status: "none",
+    subscription_current_period_end: null,
+    created_at: new Date().toISOString(),
+    last_dagstart_date: null,
+    signup_source: "jasper_podcast",
+  }),
+  true,
+  "event-signup (jasper_podcast): app-trial zonder Stripe blijft werken"
 );
 
 assert.equal(

@@ -65,6 +65,9 @@ const BUCKETS: Bucket[] = [
 
 const EXTEND_SECS = BUCKETS[0].minutes * 60;
 
+/** 3 → 2 → 1 vóór de echte focus-timer, zoals v1. */
+const COUNT_IN_FROM = 3;
+
 const RING_R = 92;
 const RING_C = 2 * Math.PI * RING_R;
 
@@ -113,6 +116,8 @@ export default function FocusV2Client() {
   const [paused, setPaused] = useState(false);
   const [finished, setFinished] = useState(false);
   const [extended, setExtended] = useState(false);
+  /** null = geen aftel; 3/2/1 = pre-start countdown. */
+  const [countIn, setCountIn] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [tasks, setTasks] = useState<V2Task[]>([]);
@@ -129,6 +134,7 @@ export default function FocusV2Client() {
   const customInputRef = useRef<HTMLInputElement | null>(null);
   const parkHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countInRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const things = v2NormalizeThings(state.things);
   const thingLabel =
@@ -186,10 +192,23 @@ export default function FocusV2Client() {
         const openEnded = snap.extended === true;
         setRemaining(openEnded ? 0 : snap.remaining);
         setTotalSecs(openEnded ? 0 : snap.totalSecs > 0 ? snap.totalSecs : b.minutes * 60);
-        setRunning(snap.running && !snap.finished && !snap.extended);
         setPaused(snap.paused);
         setFinished(snap.finished);
         setExtended(snap.extended);
+        // Refresh tijdens 3-2-1: opnieuw aftellen i.p.v. vastzitten zonder dock.
+        const stuckPreRun =
+          !snap.running &&
+          !snap.paused &&
+          !snap.finished &&
+          !snap.extended &&
+          snap.remaining > 0;
+        if (stuckPreRun) {
+          setRunning(false);
+          setCountIn(COUNT_IN_FROM);
+        } else {
+          setCountIn(null);
+          setRunning(snap.running && !snap.finished && !snap.extended);
+        }
         if (snap.finished || snap.extended) {
           saveV2FocusTimer({
             ...snap,
@@ -206,6 +225,8 @@ export default function FocusV2Client() {
   // Persist timer-state.
   useEffect(() => {
     if (!hydrated) return;
+    // Tijdens 3-2-1 nog niet opslaan: voorkomt stuck state na refresh.
+    if (countIn != null) return;
     if (!bucket) {
       clearV2FocusTimer();
       return;
@@ -231,6 +252,7 @@ export default function FocusV2Client() {
     paused,
     finished,
     extended,
+    countIn,
   ]);
 
   useEffect(() => {
@@ -250,13 +272,37 @@ export default function FocusV2Client() {
     };
   }, [running, paused]);
 
+  // 3-2-1 aftel vóór de timer. Soft haptic per tik als de browser het toelaat.
+  useEffect(() => {
+    if (countIn == null) return;
+    try {
+      navigator.vibrate?.(12);
+    } catch {
+      /* ignore */
+    }
+    countInRef.current = setTimeout(() => {
+      setCountIn((prev) => {
+        if (prev == null) return null;
+        if (prev <= 1) {
+          setRunning(true);
+          setPaused(false);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (countInRef.current) clearTimeout(countInRef.current);
+    };
+  }, [countIn]);
+
   const activeTask = useMemo(
     () => findV2TaskByTitle(tasks, thingLabel),
     [tasks, thingLabel],
   );
   const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
   const activeMicroIdx = v2ActiveMicroStepIndex(microSteps);
-  const showMicroList = microSteps.length > 0 && !finished;
+  const showMicroList = microSteps.length > 0 && !finished && countIn == null;
   const showMicroSuggest =
     microSteps.length === 0 &&
     !suggestDismissed &&
@@ -301,8 +347,10 @@ export default function FocusV2Client() {
   const timerActive = running || paused;
   /** Tijdblind: geen MM:SS tijdens sessie én tijdens open-ended "Nog bezig". */
   const hideClock = (timerActive || extended) && !finished;
-  const preStart = !bucket && !finished && !extended;
-  const showSessionDock = (timerActive || extended) && !finished;
+  const preStart = !bucket && !finished && !extended && countIn == null;
+  const countingIn = countIn != null;
+  const focusLive = (running && !paused) || countingIn;
+  const showSessionDock = (timerActive || extended) && !finished && !countingIn;
   const showFinishDock = finished;
 
   const persistTasks = (next: V2Task[]) => {
@@ -400,13 +448,16 @@ export default function FocusV2Client() {
 
   const start = (b: Bucket) => {
     const secs = b.minutes * 60;
+    // Nog niet persistten tijdens aftel; wis oude snapshot zodat refresh schoon is.
+    clearV2FocusTimer();
     setBucket(b);
     setRemaining(secs);
     setTotalSecs(secs);
     setFinished(false);
     setExtended(false);
     setPaused(false);
-    setRunning(true);
+    setRunning(false);
+    setCountIn(COUNT_IN_FROM);
     setSelfEstimateOpen(false);
     setCustomOpen(false);
     setCustomHint(null);
@@ -447,6 +498,7 @@ export default function FocusV2Client() {
     setExtended(true);
     setRunning(false);
     setPaused(false);
+    setCountIn(null);
     setRemaining(0);
     setTotalSecs(0);
   };
@@ -458,7 +510,7 @@ export default function FocusV2Client() {
     recordV2FocusCompleted(thingLabel);
     markV2FirstValue();
     clearV2FocusTimer();
-    go("/v2/home", {
+    go("/", {
       things: remainingThings,
       todayDone: remainingThings.length === 0,
     });
@@ -469,6 +521,7 @@ export default function FocusV2Client() {
     setPaused(false);
     setFinished(false);
     setExtended(false);
+    setCountIn(null);
     setBucket(null);
     setRemaining(0);
     setTotalSecs(0);
@@ -515,7 +568,7 @@ export default function FocusV2Client() {
     >
       <style>{v2ScopedCss}</style>
       <div className="v2-focus-topbar">
-        <button type="button" onClick={() => go("/v2/home")} className="v2-link">
+        <button type="button" onClick={() => go("/")} className="v2-link">
           {t("v2.focusClose")}
         </button>
         {paused ? (
@@ -528,7 +581,9 @@ export default function FocusV2Client() {
       <div className="v2-focus-stage">
         <div className="v2-focus-stage__inner">
           <div className="v2-info-head v2-info-head--center">
-            <p className="v2-focus-kicker">{t("v2.focusNow")}</p>
+            <p className="v2-focus-kicker">
+              {countingIn ? t("v2.focusCountInKicker") : t("v2.focusNow")}
+            </p>
             {preStart ? (
               <V2InfoHint
                 infoId="v2_focus_tijd"
@@ -554,7 +609,23 @@ export default function FocusV2Client() {
             </div>
           ) : (
             <div
-              className={`v2-focus-ring ${extended ? "v2-focus-ring--soft" : ""}`}
+              className={[
+                "v2-focus-ring",
+                extended ? "v2-focus-ring--soft" : "",
+                focusLive ? "v2-focus-ring--live" : "",
+                countingIn ? "v2-focus-ring--countin" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="timer"
+              aria-live={countingIn ? "assertive" : "off"}
+              aria-label={
+                countingIn
+                  ? t("v2.focusCountInAria", { n: String(countIn) })
+                  : focusLive
+                    ? t("v2.focusLiveAria")
+                    : undefined
+              }
             >
               <svg viewBox="0 0 210 210" aria-hidden className="h-full w-full">
                 <circle
@@ -567,6 +638,7 @@ export default function FocusV2Client() {
                 />
                 {bucket && !extended ? (
                   <circle
+                    className="v2-focus-ring__progress"
                     cx="105"
                     cy="105"
                     r={RING_R}
@@ -575,7 +647,7 @@ export default function FocusV2Client() {
                     strokeWidth="10"
                     strokeLinecap="round"
                     strokeDasharray={RING_C}
-                    strokeDashoffset={ringDashOffset}
+                    strokeDashoffset={countingIn ? 0 : ringDashOffset}
                     transform="rotate(-90 105 105)"
                   />
                 ) : extended ? (
@@ -591,7 +663,11 @@ export default function FocusV2Client() {
                 ) : null}
               </svg>
               <div className="v2-focus-ring__center">
-                {extended ? (
+                {countingIn ? (
+                  <div key={countIn} className="v2-focus-ring__countin">
+                    {countIn}
+                  </div>
+                ) : extended ? (
                   <>
                     <div className="v2-focus-ring__ellipsis" aria-hidden>
                       ···

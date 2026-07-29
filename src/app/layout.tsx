@@ -69,16 +69,19 @@ export default function RootLayout({
         <meta
           name="theme-color"
           media="(prefers-color-scheme: light)"
-          content="#F0F2F8"
+          content="#FDFBF4"
         />
         <meta
           name="theme-color"
           media="(prefers-color-scheme: dark)"
-          content="#1C2B4A"
+          content="#1A2340"
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <div className="flex h-dvh min-h-dvh w-full flex-col overflow-hidden bg-[var(--st-bg)]">
+        <div
+          className="flex h-dvh min-h-dvh w-full flex-col overflow-hidden"
+          style={{ backgroundColor: "var(--surface, #FDFBF4)" }}
+        >
           <AppProviders>{children}</AppProviders>
         </div>
       </body>

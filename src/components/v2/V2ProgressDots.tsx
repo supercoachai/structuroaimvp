@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/lib/i18n/I18nContext";
+
 /**
  * Design-phone progress: segmenten (teal fill).
  * Geen dikke voortgangsbalk.
@@ -14,9 +16,14 @@ export default function V2ProgressDots({
   /** Optioneel "Stap x van y"; design-mock toont alleen segmenten. */
   showLabel?: boolean;
 }) {
+  const { t } = useI18n();
   const safeTotal = Math.max(1, total);
   const safeStep = Math.min(Math.max(0, step), safeTotal);
   const filled = Math.max(0, safeStep);
+  const stepLabel = t("v2.chromeProgressStep", {
+    step: String(Math.max(1, filled)),
+    total: String(safeTotal),
+  });
 
   return (
     <div
@@ -25,7 +32,7 @@ export default function V2ProgressDots({
       aria-valuemin={1}
       aria-valuemax={safeTotal}
       aria-valuenow={Math.max(1, filled)}
-      aria-label={`Stap ${Math.max(1, filled)} van ${safeTotal}`}
+      aria-label={stepLabel}
     >
       <div className="v2-progress-dots__row" aria-hidden="true">
         {Array.from({ length: safeTotal }, (_, i) => (
@@ -36,9 +43,7 @@ export default function V2ProgressDots({
         ))}
       </div>
       {showLabel ? (
-        <p className="v2-progress-dots__label">
-          Stap {Math.max(1, filled)} van {safeTotal}
-        </p>
+        <p className="v2-progress-dots__label">{stepLabel}</p>
       ) : null}
     </div>
   );

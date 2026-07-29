@@ -159,6 +159,12 @@ for (const route of APP_ROUTES) {
       (route.kind === "api" ? [200, 401, 404, 405, 503] : [200]);
     assertStatusAllowed(meta, allowed, label);
 
+    if (route.finalPath && meta.finalPath !== route.finalPath) {
+      throw new Error(
+        `${label}: verwacht eindpad ${route.finalPath}, kreeg ${meta.finalPath}`
+      );
+    }
+
     if (meta.status >= 500 && !allowed.includes(meta.status)) {
       throw new Error(`${label}: serverfout HTTP ${meta.status}`);
     }

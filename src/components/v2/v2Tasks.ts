@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Lokaal taakmodel voor /v2/todo. Zelfstandig (localStorage, key v2_tasks),
+ * Lokaal taakmodel voor /todo. Zelfstandig (localStorage, key v2_tasks),
  * geen echte backend. Neemt de v1-taakmechanismen over: deadline, herhaling
  * (dagelijks/werkdagen/wekelijks/elke N dagen), prioriteit, energie-label en
  * microstappen (subtaken). Bewust GEEN minuten-schatting (tijdblindheid).
@@ -80,6 +80,11 @@ export function saveV2Tasks(tasks: V2Task[]): void {
   } catch {
     // Privémodus kan storage blokkeren. Geen blokkade voor de flow.
   }
+  // Write-through naar Supabase voor ingelogde gebruikers (dynamic import
+  // vermijdt een statische importcyclus; guests zijn een no-op).
+  void import("@/lib/v2/v2SupabaseSync")
+    .then((m) => m.queueV2TasksPush())
+    .catch(() => {});
 }
 
 function normalizeTask(raw: unknown): V2Task {

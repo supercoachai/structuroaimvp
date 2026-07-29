@@ -1,7 +1,5 @@
-"use client";
+import HomeV2Client from "@/components/v2/HomeV2Client";
 
-import HomeCalm from '../components/HomeCalm';
-
-export default function Home() {
-  return <HomeCalm />;
+export default function HomePage() {
+  return <HomeV2Client />;
 }

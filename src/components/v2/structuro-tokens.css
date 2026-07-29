@@ -5,8 +5,9 @@
  * (globals.css, --structuro-*, --st-*, structuro-eu-landing) volledig onaangeraakt
  * blijft. De live (niet-v2) app verandert hierdoor niet.
  *
- * Kleurbudget: drie kleuren dragen alles.
+ * Kleurbudget: surface + ink (lees-laag) + accent/cta (actie-laag).
  *   Surface (warm papier) #FDFBF4, Ink (ink-navy) #1A2340, Accent (sage teal) #2D5A56.
+ *   CTA = landing btn-navy: teal-rich #2A6B64 (scheiding actie vs navy tekst).
  * Mode-flip is het hart van F: licht = kiezen/reflecteren, donker = uitvoeren/focussen.
  */
 
@@ -14,6 +15,9 @@
   --surface: #fdfbf4;
   --ink: #1a2340;
   --ink-hover: #2c3753;
+  /* Primary filled CTA = landing .btn-navy (teal-rich, niet ink-navy). */
+  --cta: #2a6b64;
+  --cta-hover: #245a54;
   --accent: #2d5a56;
   --accent-soft: rgba(45, 90, 86, 0.12);
   --accent-ring: rgba(45, 90, 86, 0.28);
@@ -71,7 +75,7 @@
 /*
  * De mode-flip. Strikt binnen v2 gescoped zodat een toevallige data-mode buiten
  * v2 nooit geraakt wordt. Surface wordt navy, tekst off-white, de gevulde knop
- * wordt de off-white (ink) met navy tekst erop. Accent wordt de fellere teal,
+ * wordt off-white (cta) met navy tekst erop. Accent wordt de fellere teal,
  * uitsluitend bedoeld voor de timer-ring en de actieve micro-stap.
  */
 .v2-root[data-mode="focus"],
@@ -83,6 +87,8 @@
   --border: var(--focus-border);
   --ink: #f5f2ea;
   --ink-hover: #ece7da;
+  --cta: #f5f2ea;
+  --cta-hover: #ece7da;
   --text-on-ink: #1a2340;
   --accent: var(--focus-accent);
   --accent-soft: rgba(95, 184, 175, 0.16);
@@ -95,7 +101,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--ink);
+  background: var(--cta);
   color: var(--text-on-ink);
   font-family: var(--font-ui);
   font-weight: 600;
@@ -107,11 +113,11 @@
   border-radius: var(--r-cta);
   cursor: pointer;
   text-decoration: none;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 24px -10px rgba(42, 107, 100, 0.45);
   transition: background 140ms ease;
 }
 .v2-root .btn-primary:hover {
-  background: var(--ink-hover);
+  background: var(--cta-hover);
 }
 .v2-root .btn-primary:focus-visible {
   outline: 3px solid var(--accent-ring);
@@ -297,7 +303,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--ink);
+  background: var(--cta);
   color: var(--text-on-ink);
   font-family: var(--font-ui);
   font-weight: 600;
@@ -309,11 +315,11 @@
   border-radius: var(--r-cta);
   cursor: pointer;
   text-decoration: none;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 10px 24px -10px rgba(26, 35, 64, 0.5);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 24px -10px rgba(42, 107, 100, 0.45);
   transition: background 140ms ease;
 }
 .v2-root .v2-cta:hover {
-  background: var(--ink-hover);
+  background: var(--cta-hover);
 }
 .v2-root .v2-cta:focus-visible {
   outline: 3px solid var(--accent-ring);
@@ -671,8 +677,11 @@
   padding: 8px 4px 2px;
   background: linear-gradient(to top, var(--surface) 55%, transparent);
 }
-/* Island: frosted glass (semi-transparant cream/wit + blur), zachte lift, geen purple glow. */
+/* Island: frosted glass (semi-transparant cream/wit + blur), zachte lift, geen purple glow.
+   Breedte volgt de contentkolom (theme maxWidth 480 + nav px-5), zelfde als home card. */
 .v2-root .v2-app-nav__island {
+  width: 100%;
+  max-width: 480px;
   background: rgba(253, 251, 244, 0.62);
   border-color: rgba(26, 35, 64, 0.08);
   backdrop-filter: blur(18px) saturate(1.15);
@@ -752,7 +761,7 @@
   cursor: pointer;
   padding: 8px 14px;
   border-radius: var(--r-pill);
-  background: var(--ink);
+  background: var(--cta);
   color: var(--text-on-ink);
   font-family: var(--font-ui);
   font-size: 13px;
@@ -761,7 +770,7 @@
   transition: background-color 160ms ease;
 }
 .v2-root .v2-evening-cloud__cta:hover {
-  background: var(--ink-hover);
+  background: var(--cta-hover);
 }
 .v2-root .v2-evening-cloud__cta:focus-visible {
   outline: 3px solid var(--accent-ring);
@@ -1207,6 +1216,64 @@
   gap: 12px;
   margin-top: 4px;
 }
+.v2-root .v2-abonnement__or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.v2-root .v2-abonnement__or::before,
+.v2-root .v2-abonnement__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.v2-root .v2-abonnement__card-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.v2-root .v2-abonnement__card-cta:hover {
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+.v2-root .v2-abonnement__card-cta:focus-visible {
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+.v2-root .v2-abonnement__card-cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.v2-root .v2-abonnement__stripe-trust {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.v2-root .v2-abonnement__charge-when {
+  font-weight: 700;
+}
 .v2-root .v2-abonnement .wallet-row {
   display: flex;
   flex-direction: column;
@@ -1498,6 +1565,27 @@
   font-style: normal;
   font-weight: 500;
   color: var(--accent);
+}
+
+/*
+ * Sticky flow-chrome (header + progress) binnen V2Page-scroll.
+ * Negatieve margin + eigen padding-top: stuck state houdt safe-area
+ * (pageScroll-padding scrollt anders weg).
+ */
+.v2-root .v2-flow-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: calc(-1 * max(1rem, env(safe-area-inset-top, 0px)));
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-bottom: 8px;
+  background-color: var(--surface);
+}
+.v2-root .v2-flow-sticky .v2-progress-dots {
+  margin-top: 0;
 }
 
 /* Flow-header: Stoppen|Terug | STRUCTURO | trailing/exit */
@@ -2308,7 +2396,7 @@
 /*
  * Focus-mode flipt --surface naar navy. De (i)-sheet staat ín die tree en
  * verdween daardoor in de achtergrond. Herstel licht papier + sterkere scrim
- * zodat het sheet weer als overlay leest (Begrepen = navy CTA op cream).
+ * zodat het sheet weer als overlay leest (Begrepen = teal CTA op cream).
  */
 .v2-root [data-mode="focus"] .v2-info-sheet,
 .v2-root[data-mode="focus"] .v2-info-sheet {
@@ -2319,6 +2407,8 @@
   --border: rgba(26, 26, 27, 0.1);
   --ink: #1a2340;
   --ink-hover: #2c3753;
+  --cta: #2a6b64;
+  --cta-hover: #245a54;
   --text-on-ink: #f5f2ea;
   --accent: #2d5a56;
   --accent-soft: rgba(45, 90, 86, 0.12);
@@ -2863,6 +2953,17 @@
 .v2-root .v2-focus-ring--soft {
   border-radius: 999px;
 }
+/* Subtiele adem: laat zien dat focus loopt zonder MM:SS te tonen. */
+.v2-root .v2-focus-ring--live {
+  animation: v2-focus-ring-breathe 2.8s ease-in-out infinite;
+}
+.v2-root .v2-focus-ring--live .v2-focus-ring__progress {
+  filter: drop-shadow(0 0 0 rgba(95, 184, 175, 0));
+  animation: v2-focus-ring-glow 2.8s ease-in-out infinite;
+}
+.v2-root .v2-focus-ring--countin {
+  animation: v2-focus-ring-breathe 1s ease-in-out infinite;
+}
 .v2-root .v2-focus-ring__center {
   position: absolute;
   inset: 0;
@@ -2873,12 +2974,73 @@
   padding: 16px;
   text-align: center;
 }
+.v2-root .v2-focus-ring__countin {
+  font-family: var(--font-serif);
+  font-size: 72px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  animation: v2-focus-countin-pop 0.45s ease-out;
+}
 .v2-root .v2-focus-ring__ellipsis {
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1;
   color: var(--text-muted);
+}
+.v2-root .v2-focus-ring--live .v2-focus-ring__ellipsis {
+  color: var(--accent);
+  animation: v2-focus-ellipsis-pulse 2.8s ease-in-out infinite;
+}
+@keyframes v2-focus-ring-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.028);
+  }
+}
+@keyframes v2-focus-ring-glow {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 0 rgba(95, 184, 175, 0));
+  }
+  50% {
+    stroke-opacity: 0.78;
+    filter: drop-shadow(0 0 10px rgba(95, 184, 175, 0.35));
+  }
+}
+@keyframes v2-focus-ellipsis-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes v2-focus-countin-pop {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v2-root .v2-focus-ring--live,
+  .v2-root .v2-focus-ring--countin,
+  .v2-root .v2-focus-ring--live .v2-focus-ring__progress,
+  .v2-root .v2-focus-ring--live .v2-focus-ring__ellipsis,
+  .v2-root .v2-focus-ring__countin {
+    animation: none;
+  }
 }
 .v2-root .v2-focus-ring__approx {
   font-size: 12px;
@@ -4436,6 +4598,35 @@
   font-size: 11px;
   color: var(--text-muted);
   margin-top: 1px;
+}
+
+/* Uitloggen: altijd zichtbaar, buiten accordion */
+.v2-root .v2-settings-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.v2-root .v2-settings-logout:hover {
+  background: rgba(45, 90, 86, 0.06);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.v2-root .v2-settings-logout:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Danger zone */

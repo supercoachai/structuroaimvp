@@ -11,6 +11,32 @@ export const V2_CARD_TRIAL_CUTOFF_ISO = "2026-07-28T08:00:00.000Z";
 /** Standaard Stripe-trial voor nieuwe v2 card-cohort. */
 export const V2_CARD_TRIAL_DAYS = 7;
 
+const AMSTERDAM_TZ = "Europe/Amsterdam";
+
+/**
+ * Eerste afschrijving na Stripe `trial_period_days` (zelfde offset als checkout:
+ * nu + N × 24u). Gebruikt voor paywall-copy; niet cachen over navigaties heen.
+ */
+export function getV2CardTrialChargeAt(now: Date = new Date()): Date {
+  return new Date(now.getTime() + V2_CARD_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** Leesbare afschrijfdatum/-tijd in Europe/Amsterdam (NL of EN). */
+export function formatV2CardTrialChargeLabel(
+  now: Date = new Date(),
+  locale: "nl" | "en" = "nl"
+): string {
+  const chargeAt = getV2CardTrialChargeAt(now);
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "nl-NL", {
+    timeZone: AMSTERDAM_TZ,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(chargeAt);
+}
+
 export function isV2CardTrialCohort(
   createdAt: string | null | undefined
 ): boolean {

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AbonnementV2Client, {
+  AbonnementV2StripeSuccess,
   AbonnementV2StripeSync,
   V2_ABONNEMENT_DEMO_STATS,
 } from "@/components/v2/AbonnementV2Client";
@@ -91,12 +92,21 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const previewMode =
     forcePreview || isProtectedTestAccount(user.email ?? null);
   const hasAccess = row ? profileHasAppAccess(row) : false;
+  const subscriptionConfirmed =
+    hasAccess &&
+    (row?.subscription_status === "trialing" ||
+      row?.subscription_status === "active");
   const resolvedReason = row
     ? resolveRetentionPaywallReason(row)
     : "trial_expired";
 
+  // Terug van Stripe met bevestigde subscription: eenmalige succes-overlay.
+  if (!previewMode && fromStripe && subscriptionConfirmed) {
+    return <AbonnementV2StripeSuccess />;
+  }
+
   if (!previewMode && resolvedReason === null) {
-    redirect("/v2/home");
+    redirect("/");
   }
 
   const reason = resolvedReason ?? "trial_expired";
@@ -112,16 +122,6 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
     ? V2_CARD_TRIAL_DAYS
     : resolveStripeTrialDaysForSignupSource(signupSource);
   const jasperOffer = isJasperSignupSource(signupSource);
-
-  const chargeAt = new Date(Date.now() + V2_CARD_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  const chargeAtLabel = new Intl.DateTimeFormat("nl-NL", {
-    timeZone: "Europe/Amsterdam",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(chargeAt);
 
   const stats = await fetchRetentionStatsForUser(supabase, user.id, {
     signupSource,
@@ -141,10 +141,9 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
         stats={alignedStats}
         canCheckout
         startCardTrial={startCardTrial}
-        chargeAtLabel={startCardTrial ? chargeAtLabel : null}
       />
       <AbonnementV2StripeSync
-        active={!previewMode && hasAccess && fromStripe}
+        active={!previewMode && fromStripe && !subscriptionConfirmed}
       />
     </>
   );

@@ -29,10 +29,10 @@ export default function V2JasperPage() {
           </p>
         </div>
         <div style={v2Styles.actions}>
-          <Link href="/v2/onboarding" className="v2-cta" style={v2Styles.cta}>
+          <Link href="/onboarding" className="v2-cta" style={v2Styles.cta}>
             Rustig beginnen
           </Link>
-          <Link href="/v2/login" className="v2-textlink" style={v2Styles.textlink}>
+          <Link href="/login" className="v2-textlink" style={v2Styles.textlink}>
             Ik heb al een account
           </Link>
         </div>

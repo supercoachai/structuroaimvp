@@ -34,6 +34,16 @@ export async function performClientLogout(
   clearLocalOnboardingDoneCookieOnClient();
   clearDagstartCookieOnClient();
   clearAllWelcomeDismissedSessionKeys();
+  try {
+    // Taken/dump zijn server-gebackt; lokaal wissen voorkomt dat een
+    // volgende gebruiker op deze browser andermans lijst ziet.
+    const { clearAnonymousV2LocalStorage } = await import(
+      "@/components/v2/V2Context"
+    );
+    clearAnonymousV2LocalStorage();
+  } catch {
+    /* ignore */
+  }
   router.push(options?.loginPath ?? "/login");
   router.refresh();
 }

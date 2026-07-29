@@ -80,10 +80,10 @@ export default function LegalV2Client({ titleKey, updatedKey, bodyKey }: Props) 
         </article>
 
         <nav className="v2-legal__nav" aria-label="Navigatie">
-          <Link href="/v2/settings" className="v2-link">
+          <Link href="/settings" className="v2-link">
             {t("legal.backSettings")}
           </Link>
-          <Link href="/v2/home" className="v2-link">
+          <Link href="/" className="v2-link">
             {t("legal.backHome")}
           </Link>
         </nav>

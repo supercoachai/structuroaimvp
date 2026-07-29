@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
+import { useI18n } from "@/lib/i18n";
 import { setLastAuthMethod } from "@/lib/auth/returningUser";
 import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import {
@@ -22,15 +23,10 @@ import { LoginShell } from "@/components/login/LoginShell";
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
 
-const NEXT_AFTER_LOGIN = "/v2/home";
-
-const CAPTCHA_ERR = "Bevestig dat je geen robot bent en probeer het opnieuw.";
-
-function tCaptcha(key: string): string {
-  return key === "login.errCaptcha" ? CAPTCHA_ERR : key;
-}
+const NEXT_AFTER_LOGIN = "/";
 
 export default function LoginV2Client() {
+  const { t } = useI18n();
   const { resetAllLocalData } = useV2();
   const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -49,6 +45,9 @@ export default function LoginV2Client() {
   useEffect(() => {
     resetCaptcha();
   }, [emailOpen, resetCaptcha]);
+
+  const tCaptcha = (key: string): string =>
+    key === "login.errCaptcha" ? t("v2.loginCaptchaError") : key;
 
   /** Migreer lokale v2-data naar het account; wis pas daarna. */
   const claimLocalThenContinue = async (userId: string): Promise<string> => {
@@ -75,7 +74,7 @@ export default function LoginV2Client() {
     try {
       const supabase = createClient();
       if (!supabase) {
-        setError("Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw.");
+        setError(t("v2.loginUnavailable"));
         setBusy(false);
         return;
       }
@@ -85,10 +84,10 @@ export default function LoginV2Client() {
     } catch (err) {
       setError(
         isProviderNotEnabledError(err)
-          ? "Inloggen met Google is nog niet geconfigureerd."
+          ? t("v2.loginGoogleUnavailable")
           : err instanceof Error
             ? err.message
-            : "Er ging iets mis. Probeer het opnieuw."
+            : t("v2.accountSaveGenericError")
       );
       setBusy(false);
     }
@@ -101,7 +100,7 @@ export default function LoginV2Client() {
 
     const captchaToken = resolveCaptchaToken();
     if (captchaEnabled && !captchaToken) {
-      setError(CAPTCHA_ERR);
+      setError(t("v2.loginCaptchaError"));
       return;
     }
 
@@ -109,7 +108,7 @@ export default function LoginV2Client() {
     try {
       const supabase = createClient();
       if (!supabase) {
-        setError("Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw.");
+        setError(t("v2.loginUnavailable"));
         setBusy(false);
         return;
       }
@@ -133,9 +132,9 @@ export default function LoginV2Client() {
         raw.includes("Invalid login credentials") ||
         raw.includes("Invalid credentials")
       ) {
-        setError("E-mail of wachtwoord klopt niet.");
+        setError(t("v2.loginBadCredentials"));
       } else {
-        setError(mapAuthCaptchaError(raw || "Er ging iets mis. Probeer het opnieuw.", tCaptcha));
+        setError(mapAuthCaptchaError(raw || t("v2.accountSaveGenericError"), tCaptcha));
       }
       resetCaptcha();
       setBusy(false);
@@ -146,7 +145,7 @@ export default function LoginV2Client() {
     <LoginShell error={error}>
       <div className="v2-auth-gate v2-auth-gate--shell v2-fade" aria-live="polite">
         <div className="v2-auth-gate__body">
-          <h1 className="v2-auth-gate__title">Welkom terug.</h1>
+          <h1 className="v2-auth-gate__title">{t("v2.loginTitle")}</h1>
 
           <div className="v2-auth-gate__actions">
             <button
@@ -155,7 +154,9 @@ export default function LoginV2Client() {
               onClick={() => void continueWithGoogle()}
               disabled={busy}
             >
-              {busy && !emailOpen ? "Een ogenblik…" : "Doorgaan met Google"}
+              {busy && !emailOpen
+                ? t("v2.accountSaveBusy")
+                : t("v2.accountSaveGoogle")}
             </button>
 
             {!emailOpen ? (
@@ -167,12 +168,12 @@ export default function LoginV2Client() {
                   setError(null);
                 }}
               >
-                Liever e-mail
+                {t("v2.accountSaveEmail")}
               </button>
             ) : (
               <form className="v2-auth-gate__email" onSubmit={(e) => void signInWithEmail(e)}>
                 <label htmlFor="v2-login-email" style={v2Styles.srOnly}>
-                  E-mail
+                  {t("v2.loginEmailLabel")}
                 </label>
                 <input
                   id="v2-login-email"
@@ -181,12 +182,12 @@ export default function LoginV2Client() {
                   className="v2-field"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="E-mail"
+                  placeholder={t("v2.loginEmailLabel")}
                   autoComplete="email"
                   required
                 />
                 <label htmlFor="v2-login-password" style={v2Styles.srOnly}>
-                  Wachtwoord
+                  {t("v2.loginPasswordLabel")}
                 </label>
                 <input
                   id="v2-login-password"
@@ -194,7 +195,7 @@ export default function LoginV2Client() {
                   className="v2-field"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Wachtwoord"
+                  placeholder={t("v2.loginPasswordLabel")}
                   autoComplete="current-password"
                   required
                   minLength={6}
@@ -211,7 +212,7 @@ export default function LoginV2Client() {
                   className="btn-primary w-full"
                   disabled={busy || !captchaReady}
                 >
-                  {busy ? "Een ogenblik…" : "Inloggen"}
+                  {busy ? t("v2.accountSaveBusy") : t("v2.loginSubmit")}
                 </button>
               </form>
             )}
@@ -219,8 +220,8 @@ export default function LoginV2Client() {
         </div>
 
         <p className="v2-auth-gate__footer">
-          <Link href="/v2/onboarding" className="v2-link">
-            Nog geen account? Begin hier.
+          <Link href="/onboarding" className="v2-link">
+            {t("v2.loginNoAccount")}
           </Link>
         </p>
       </div>

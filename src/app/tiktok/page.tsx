@@ -20,14 +20,14 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: "Structuro | For ADHD brains stuck at the start",
       description:
-        "No long to-do lists. One doable step per day. Try Structuro free for 3 days.",
+        "No long to-do lists. One doable step per day. Try Structuro free for 7 days.",
       robots: { index: false, follow: false },
     };
   }
   return {
     title: "Structuro | Voor ADHD-breinen die vastlopen op starten",
     description:
-      "Geen lange to-do's. Eén haalbare stap per dag. Probeer Structuro 3 dagen gratis.",
+      "Geen lange to-do's. Eén haalbare stap per dag. Probeer Structuro 7 dagen gratis.",
     robots: { index: false, follow: false },
   };
 }

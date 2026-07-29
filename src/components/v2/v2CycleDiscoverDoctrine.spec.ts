@@ -21,6 +21,7 @@ describe("cycle discovery doctrine copy", () => {
     const nl = cycleLocale.nl;
     expect(nl.discoverHintEyebrow.toLowerCase()).toContain("eenmalig");
     expect(nl.discoverTitle).toMatch(/cyclus meenemen/i);
+    expect(nl.discoverSetupTitle).toMatch(/Even instellen/);
     expect(nl.discoverEnable).toMatch(/Ja, meenemen/);
     expect(nl.discoverNotNow).toMatch(/Nee, niet nodig/);
     expect(nl.discoverBody.toLowerCase()).toMatch(/inzicht|reminder/);
@@ -42,6 +43,7 @@ describe("cycle discovery doctrine copy", () => {
     const en = cycleLocale.en;
     expect(en.discoverEnable).toMatch(/Yes, include it/);
     expect(en.discoverNotNow).toMatch(/No, not needed/);
+    expect(en.discoverSetupTitle).toMatch(/Quick setup/);
     expect(en.discoverBody.toLowerCase()).toMatch(/insight|reminder/);
     expect(en.infoSheetPlanTitle).toMatch(/What Structuro does/);
     expect(en.infoSheetPlanBody.toLowerCase()).toMatch(/no steering/);

@@ -5,10 +5,10 @@
    * EU landing analytics (site=eu in PostHog).
    * Primaire conversie: cta_clicked → structuro.ai/start → soft-advance → /onboarding → signup_completed.
    * Organisch EU: /start + utm_source=structuro_eu + utm_campaign=eu_v2 (attributie-label).
-   * Soft-advance: eu_v2* / website* / waitlist_legacy → v1 /onboarding (geen tweede klik).
-   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (v1, leesbare bridge).
+   * Soft-advance: eu_v2* / website* / waitlist_legacy → /onboarding (v2 UI, geen tweede klik).
+   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (leesbare bridge).
    * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
-   * Inloggen: /login (v1), niet /v2/login.
+   * Inloggen: /login.
    */
   /** Sectie-id's voor zichtbaarheid (moet overeenkomen met id="" op index.html). */
   var EU_SECTION_IDS = [
@@ -78,7 +78,7 @@
     } else {
       bridgeParams.set("utm_source", "structuro_eu");
       bridgeParams.set("utm_medium", "organic");
-      // Organisch default campaign-label (attributie); soft-advance blijft v1.
+      // Organisch default campaign-label (attributie); soft-advance → /onboarding.
       var organicCampaign = params.get("utm_campaign") || "eu_v2";
       bridgeParams.set("utm_campaign", organicCampaign);
     }

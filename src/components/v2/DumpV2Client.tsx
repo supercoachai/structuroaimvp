@@ -79,6 +79,13 @@ export default function DumpV2Client() {
     setLoaded(true);
   }, [loaded, persist]);
 
+  // Late Supabase-hydratie (login op nieuw apparaat): lijst verversen.
+  useEffect(() => {
+    const onHydrated = () => setItems(loadV2Dump());
+    window.addEventListener("v2-remote-hydrated", onHydrated);
+    return () => window.removeEventListener("v2-remote-hydrated", onHydrated);
+  }, []);
+
   useEffect(() => {
     setSpeechOk(isV2SpeechAvailable());
   }, []);

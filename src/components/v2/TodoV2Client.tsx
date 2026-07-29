@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { useI18n } from "@/lib/i18n";
+
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
 import V2InfoHint from "./V2InfoHint";
 import V2InfoSheet from "./V2InfoSheet";
@@ -39,6 +41,7 @@ import {
 } from "./v2Tasks";
 
 export default function TodoV2Client() {
+  const { t } = useI18n();
   const { state, ready } = useV2();
   const [tasks, setTasks] = useState<V2Task[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -223,7 +226,7 @@ export default function TodoV2Client() {
     if (!draft || suggestBusy) return;
     const title = draft.title.trim();
     if (title.length === 0) {
-      setSuggestError("Vul eerst een titel in.");
+      setSuggestError(t("v2.todoTitleFirst"));
       return;
     }
     setSuggestBusy(true);
@@ -245,7 +248,7 @@ export default function TodoV2Client() {
         })),
       });
     } catch {
-      setSuggestError("Voorstellen lukten niet. Probeer later opnieuw.");
+      setSuggestError(t("v2.todoSuggestFailed"));
     } finally {
       setSuggestBusy(false);
     }
@@ -277,7 +280,7 @@ export default function TodoV2Client() {
       <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-8 pt-6">
         <header>
           <div className="v2-info-head">
-            <V2Eyebrow>Je lijst</V2Eyebrow>
+            <V2Eyebrow>{t("v2.todoEyebrow")}</V2Eyebrow>
             <V2InfoHint
               infoId="v2_todo"
               expanded={infoOpen}
@@ -288,7 +291,7 @@ export default function TodoV2Client() {
             />
           </div>
           <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
-            Taken
+            {t("v2.todoTitle")}
           </h1>
         </header>
 
@@ -319,8 +322,8 @@ export default function TodoV2Client() {
         {snoozedTasks.length > 0 ? (
           <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
             {snoozedTasks.length === 1
-              ? "Eén taak rust even."
-              : `${snoozedTasks.length} taken rusten even.`}
+              ? t("v2.todoSnoozedOne")
+              : t("v2.todoSnoozedMany", { n: String(snoozedTasks.length) })}
           </p>
         ) : null}
 
@@ -328,7 +331,7 @@ export default function TodoV2Client() {
           <TaskForm key={draft!.id} {...formProps} />
         ) : !formOpen ? (
           <button type="button" onClick={startNew} className="btn-primary w-full">
-            Nieuwe taak
+            {t("v2.todoNew")}
           </button>
         ) : null}
 
@@ -367,9 +370,9 @@ function CompletedTodaySection({
   onToggleOpen: () => void;
   onRestore: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const count = tasks.length;
-  const label =
-    count === 1 ? "Voltooid vandaag (1)" : `Voltooid vandaag (${count})`;
+  const label = t("v2.todoCompletedToday", { n: String(count) });
 
   return (
     <section style={{ marginTop: 8 }}>
@@ -466,9 +469,9 @@ function CompletedTodaySection({
                 onClick={() => onRestore(task.id)}
                 className="v2-link shrink-0"
                 style={{ fontSize: 13, padding: "4px 2px" }}
-                aria-label={`Zet ${task.title} terug op de lijst`}
+                aria-label={t("v2.todoRestoreAria", { title: task.title })}
               >
-                Terugzetten
+                {t("v2.todoRestore")}
               </button>
             </div>
           ))}
@@ -495,6 +498,7 @@ function TaskRow({
   onSnooze: (until: string | typeof V2_SNOOZE_REST) => void;
   children?: ReactNode;
 }) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const deadline = formatDeadline(task.dueDate);
   const repeat = formatRepeat(task);
@@ -516,7 +520,7 @@ function TaskRow({
           type="button"
           onClick={onToggle}
           aria-pressed={false}
-          aria-label="Markeer als klaar"
+          aria-label={t("v2.todoMarkDoneAria")}
           style={{
             width: 24,
             height: 24,
@@ -560,7 +564,7 @@ function TaskRow({
         <button
           type="button"
           onClick={onEdit}
-          aria-label={editing ? "Bewerken sluiten" : "Bewerken"}
+          aria-label={editing ? t("v2.todoEditCloseAria") : t("v2.todoEditAria")}
           aria-pressed={editing}
           style={{
             flexShrink: 0,
@@ -606,13 +610,15 @@ function TaskRow({
                 <p className="text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
                   {task.why ? task.why : null}
                   {task.why && task.outcome ? " · " : null}
-                  {task.outcome ? `Levert op: ${task.outcome}` : null}
+                  {task.outcome
+                    ? t("v2.todoOutcome", { outcome: task.outcome })
+                    : null}
                 </p>
               ) : null}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {deadline ? (
                   <span className="v2-meta" data-overdue={overdue ? "true" : "false"}>
-                    {overdue ? `${deadline} (verlopen)` : deadline}
+                    {overdue ? t("v2.todoOverdue", { deadline }) : deadline}
                   </span>
                 ) : null}
                 {repeat ? <span className="v2-meta">{repeat}</span> : null}
@@ -620,7 +626,10 @@ function TaskRow({
                 {energy ? <span className="v2-meta">{energy}</span> : null}
                 {task.microSteps.length > 0 ? (
                   <span className="v2-meta">
-                    {microDone}/{task.microSteps.length} microstappen
+                    {t("v2.todoMicroCount", {
+                      done: String(microDone),
+                      total: String(task.microSteps.length),
+                    })}
                   </span>
                 ) : null}
               </div>
@@ -645,9 +654,19 @@ function TaskRow({
             </>
           ) : null}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <SnoozeChip label="Vanavond" onClick={() => onSnooze(v2SnoozeUntilEvening())} />
-            <SnoozeChip label="Morgen" onClick={() => onSnooze(v2SnoozeUntilTomorrowMorning())} />
-            <SnoozeChip label="Laat rusten" onClick={() => onSnooze(V2_SNOOZE_REST)} muted />
+            <SnoozeChip
+              label={t("v2.todoSnoozeEvening")}
+              onClick={() => onSnooze(v2SnoozeUntilEvening())}
+            />
+            <SnoozeChip
+              label={t("v2.todoSnoozeTomorrow")}
+              onClick={() => onSnooze(v2SnoozeUntilTomorrowMorning())}
+            />
+            <SnoozeChip
+              label={t("v2.todoSnoozeRest")}
+              onClick={() => onSnooze(V2_SNOOZE_REST)}
+              muted
+            />
           </div>
         </div>
       ) : null}
@@ -727,6 +746,7 @@ function TaskForm({
   /** Inline onder een bestaande rij: iets compactere padding, geen grote titel. */
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const deadlineChoice: "none" | "today" | "tomorrow" | "custom" = !draft.dueDate
@@ -758,25 +778,25 @@ function TaskForm({
           className="v2-serif"
           style={{ fontSize: "var(--fs-title)", margin: 0, padding: 0 }}
         >
-          Nieuwe taak
+          {t("v2.todoNew")}
         </h2>
       ) : null}
 
       <div>
-        <FieldLabel>Wat wil je doen?</FieldLabel>
+        <FieldLabel>{t("v2.todoFormWhat")}</FieldLabel>
         <input
           type="text"
           className="v2-field"
           value={draft.title}
           onChange={(e) => onPatch({ title: e.target.value })}
-          placeholder="Titel van de taak"
+          placeholder={t("v2.todoFormTitlePh")}
           autoComplete="off"
           autoFocus
         />
       </div>
 
       <div>
-        <FieldLabel>Energie die het kost</FieldLabel>
+        <FieldLabel>{t("v2.todoFormEnergy")}</FieldLabel>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {V2_ENERGY_TASK_OPTIONS.map((opt) => (
             <button
@@ -794,41 +814,41 @@ function TaskForm({
 
       {!moreOpen ? (
         <button type="button" className="v2-link self-start" onClick={() => setMoreOpen(true)}>
-          Meer
+          {t("v2.todoFormMore")}
         </button>
       ) : (
         <>
           <div>
-            <FieldLabel>Waarom? (optioneel)</FieldLabel>
+            <FieldLabel>{t("v2.todoFormWhy")}</FieldLabel>
             <input
               type="text"
               className="v2-field"
               value={draft.why ?? ""}
               onChange={(e) => onPatch({ why: e.target.value || null })}
-              placeholder="Bijvoorbeeld: rust in mijn hoofd"
+              placeholder={t("v2.todoFormWhyPh")}
               autoComplete="off"
             />
           </div>
 
           <div>
-            <FieldLabel>Wat levert het op? (optioneel)</FieldLabel>
+            <FieldLabel>{t("v2.todoFormOutcome")}</FieldLabel>
             <input
               type="text"
               className="v2-field"
               value={draft.outcome ?? ""}
               onChange={(e) => onPatch({ outcome: e.target.value || null })}
-              placeholder="Bijvoorbeeld: meer ruimte voor mezelf"
+              placeholder={t("v2.todoFormOutcomePh")}
               autoComplete="off"
             />
           </div>
 
           <div>
-            <FieldLabel>Deadline</FieldLabel>
+            <FieldLabel>{t("v2.todoFormDeadline")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
               {[
-                { id: "none", label: "Geen" },
-                { id: "today", label: "Vandaag" },
-                { id: "tomorrow", label: "Morgen" },
+                { id: "none", label: t("v2.todoFormDeadlineNone") },
+                { id: "today", label: t("v2.todoFormDeadlineToday") },
+                { id: "tomorrow", label: t("v2.todoFormDeadlineTomorrow") },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -855,12 +875,12 @@ function TaskForm({
               className="v2-field"
               value={draft.dueDate ?? ""}
               onChange={(e) => onPatch({ dueDate: e.target.value ? e.target.value : null })}
-              aria-label="Kies een datum"
+              aria-label={t("v2.todoFormPickDateAria")}
             />
           </div>
 
           <div>
-            <FieldLabel>Herhaling</FieldLabel>
+            <FieldLabel>{t("v2.todoFormRepeat")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {V2_REPEAT_OPTIONS.map((opt) => (
                 <button
@@ -877,7 +897,7 @@ function TaskForm({
             {draft.repeat === "interval" ? (
               <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: "var(--fs-small)", color: "var(--text-muted)" }}>
-                  Elke
+                  {t("v2.todoFormEvery")}
                 </span>
                 <input
                   type="number"
@@ -894,17 +914,17 @@ function TaskForm({
                         : 14,
                     });
                   }}
-                  aria-label="Aantal dagen tussen herhalingen"
+                  aria-label={t("v2.todoFormIntervalAria")}
                 />
                 <span style={{ fontSize: "var(--fs-small)", color: "var(--text-muted)" }}>
-                  dagen
+                  {t("v2.todoFormDays")}
                 </span>
               </div>
             ) : null}
           </div>
 
           <div>
-            <FieldLabel>Prioriteit</FieldLabel>
+            <FieldLabel>{t("v2.todoFormPriority")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {V2_PRIORITY_OPTIONS.map((opt) => (
                 <button
@@ -921,12 +941,12 @@ function TaskForm({
           </div>
 
           <div>
-            <FieldLabel>Duur (optioneel, voor focus)</FieldLabel>
+            <FieldLabel>{t("v2.todoFormDuration")}</FieldLabel>
             <p
               className="mb-2 text-[13px]"
               style={{ color: "var(--text-muted)", margin: "0 0 8px" }}
             >
-              Kort, middel of lang. Geen minuten, alleen een zachte hint in focus.
+              {t("v2.todoFormDurationHint")}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {V2_DURATION_BUCKET_OPTIONS.map((opt) => (
@@ -944,12 +964,12 @@ function TaskForm({
           </div>
 
           <div>
-            <FieldLabel>Microstappen</FieldLabel>
+            <FieldLabel>{t("v2.todoFormMicro")}</FieldLabel>
             <p
               className="mb-2 text-[13px]"
               style={{ color: "var(--text-muted)", margin: "0 0 8px" }}
             >
-              Kleine stukjes maken een taak lichter. Alleen toevoegen als het helpt.
+              {t("v2.todoFormMicroHint")}
             </p>
             {draft.microSteps.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
@@ -972,9 +992,9 @@ function TaskForm({
                       onClick={() => onRemoveMicro(m.id)}
                       className="v2-link"
                       style={{ padding: "2px 6px" }}
-                      aria-label={`Verwijder microstap ${m.title}`}
+                      aria-label={t("v2.todoFormMicroRemoveAria", { title: m.title })}
                     >
-                      Verwijder
+                      {t("v2.todoFormMicroRemove")}
                     </button>
                   </div>
                 ))}
@@ -988,8 +1008,8 @@ function TaskForm({
                   className="btn-ghost w-full"
                 >
                   {suggestBusy
-                    ? "Bezig met nadenken..."
-                    : "Opsplitsen in stappen?"}
+                    ? t("v2.todoFormSuggestBusy")
+                    : t("v2.todoFormSuggestCta")}
                 </button>
                 {suggestError ? (
                   <p
@@ -1003,7 +1023,7 @@ function TaskForm({
                     className="mt-2 text-[12px]"
                     style={{ color: "var(--text-muted)", margin: "8px 0 0" }}
                   >
-                    Structuro stelt vier kleine stappen voor. Jij beslist.
+                    {t("v2.todoFormSuggestHint")}
                   </p>
                 )}
               </div>
@@ -1021,17 +1041,17 @@ function TaskForm({
                     onAddMicro();
                   }
                 }}
-                placeholder="Kleine tussenstap toevoegen"
+                placeholder={t("v2.todoFormMicroPh")}
                 autoComplete="off"
               />
               <button type="button" onClick={onAddMicro} className="btn-ghost shrink-0">
-                Toevoegen
+                {t("v2.todoFormAdd")}
               </button>
             </div>
           </div>
 
           <button type="button" className="v2-link self-start" onClick={() => setMoreOpen(false)}>
-            Minder
+            {t("v2.todoFormLess")}
           </button>
         </>
       )}
@@ -1043,15 +1063,15 @@ function TaskForm({
           className="btn-primary w-full"
           disabled={!canSave}
         >
-          {isNew ? "Toevoegen" : "Opslaan"}
+          {isNew ? t("v2.todoFormAdd") : t("v2.todoFormSave")}
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button type="button" onClick={onCancel} className="v2-link">
-            Annuleren
+            {t("v2.todoFormCancel")}
           </button>
           {!isNew ? (
             <button type="button" onClick={onDelete} className="v2-link">
-              Verwijderen
+              {t("v2.todoFormDelete")}
             </button>
           ) : null}
         </div>

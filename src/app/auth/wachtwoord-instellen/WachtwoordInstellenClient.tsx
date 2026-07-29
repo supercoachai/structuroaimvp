@@ -18,6 +18,7 @@ import {
   markPasswordSetupCompletedReliably,
 } from "@/lib/auth/passwordSetupProfile";
 import { useI18n } from "@/lib/i18n";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 
 type Props = {
   serverHasSession: boolean;
@@ -142,11 +143,7 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
   };
 
   if (checking) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--st-bg)] text-slate-600">
-        {t("passwordSetup.checking")}
-      </div>
-    );
+    return <StructuroLogoLoading />;
   }
 
   if (!hasSession) {

@@ -3,8 +3,8 @@
   "short_name": "Structuro",
   "start_url": "/",
   "scope": "/",
-  "background_color": "#1E3A5F",
-  "theme_color": "#1E3A5F",
+  "background_color": "#FDFBF4",
+  "theme_color": "#FDFBF4",
   "display": "standalone",
   "icons": [
     {

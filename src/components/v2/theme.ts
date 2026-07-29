@@ -170,6 +170,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     fontSize: 13,
     color: "var(--text-muted)",
     margin: 0,
+    marginTop: 10,
     textAlign: "left",
   },
   progressHint: {
@@ -299,7 +300,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     minHeight: 56,
     borderRadius: 14,
     border: "none",
-    backgroundColor: "var(--ink)",
+    backgroundColor: "var(--cta)",
     color: "var(--text-on-ink)",
     fontSize: 16,
     fontWeight: 600,
@@ -308,7 +309,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    boxShadow: "0 8px 20px rgba(26, 26, 27, 0.22)",
+    boxShadow: "0 8px 20px rgba(42, 107, 100, 0.28)",
   },
   ctaSecondary: {
     width: "100%",
@@ -722,7 +723,8 @@ export const v2Styles: Record<string, CSSProperties> = {
   },
   /**
    * Wrapper rond de floating island: transparant zodat frosted glass zichtbaar
-   * is, safe-area onder, eiland gecentreerd (niet edge-to-edge).
+   * is, safe-area onder, eiland gecentreerd. Horizontale padding = home px-5
+   * zodat max-width 480px gelijk loopt met de content/card-kolom.
    */
   appNav: {
     flexShrink: 0,
@@ -730,22 +732,23 @@ export const v2Styles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding:
-      "8px max(16px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-right, 0px))",
+      "8px max(20px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-right, 0px))",
     backgroundColor: "transparent",
   },
   /**
-   * Structuro-island: compacte frosted dock (Instagram-achtig).
-   * Maten middenweg: ~44px targets / 22px iconen / 11px labels.
+   * Structuro-island: frosted dock, breedte = contentkolom (max 480px),
+   * zelfde als home card / evening-cloud-slot. Tabs spreiden over de breedte.
+   * Maten: ~44px targets / 22px iconen / 11px labels.
    * Glass-styling in structuro-tokens.css (blur + semi-transparant).
    */
   appNavIsland: {
-    width: "fit-content",
-    maxWidth: "100%",
+    width: "100%",
+    maxWidth: 480,
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 0,
-    padding: "5px 6px",
+    justifyContent: "space-between",
+    gap: 2,
+    padding: "6px 8px",
     borderRadius: 999,
     border: "1px solid rgba(26, 35, 64, 0.08)",
     /* Achtergrond + blur in structuro-tokens.css (focus-mode override). */
@@ -758,8 +761,9 @@ export const v2Styles: Record<string, CSSProperties> = {
     gap: 4,
   },
   appNavItem: {
+    flex: "1 1 0",
     minHeight: 44,
-    minWidth: 44,
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -830,7 +834,7 @@ export const v2ScopedCss = `
   to { opacity: 1; }
 }
 .v2-cta { transition: background-color 160ms ease; }
-.v2-cta:hover { background-color: var(--ink-hover) !important; }
+.v2-cta:hover { background-color: var(--cta-hover) !important; }
 .v2-secondary { transition: border-color 160ms ease, background-color 160ms ease; }
 .v2-secondary:hover { border-color: var(--accent) !important; }
 .v2-stepper-btn { transition: border-color 160ms ease, background-color 160ms ease; }

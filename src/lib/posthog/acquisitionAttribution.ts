@@ -88,10 +88,10 @@ export function resolveAcquisitionAttribution(input: {
   const refDomain = referrerDomain(input.referrer);
 
   const fromTikTokRoute = bridgeChannelFromPath(landing_path) === "tiktok";
-  // Legacy/preview hits op /v2/onboarding blijven organisch (geen TikTok).
+  // Legacy/preview hits op /onboarding blijven organisch (geen TikTok).
   const fromV2OrganicEntry =
-    landing_path === "/v2/onboarding" ||
-    landing_path.startsWith("/v2/onboarding/");
+    landing_path === "/onboarding" ||
+    landing_path.startsWith("/onboarding/");
   const fromOrganicRoute =
     bridgeChannelFromPath(landing_path) === "organic" || fromV2OrganicEntry;
   const fromJasperRoute = isJasperLandingPath(landing_path);

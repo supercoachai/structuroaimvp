@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  STRUCTURO_CREAM,
+} from "@/components/structuro/StructuroLogoLoading";
 
 type LoginSuccessSplashProps = {
   /** Wordt aangeroepen wanneer de animatie klaar is (na fade-out). */
@@ -10,6 +13,10 @@ type LoginSuccessSplashProps = {
 const ENTER_MS = 720;
 const HOLD_MS = 2000;
 const EXIT_MS = 720;
+
+const LOGO_SRC = "/v2/logo-mark.png";
+const LOGO_SIZE = 112;
+const LOGO_HEIGHT = Math.round(LOGO_SIZE * (81 / 112));
 
 /**
  * Intro-animatie na succesvol inloggen.
@@ -22,7 +29,6 @@ const EXIT_MS = 720;
  */
 export default function LoginSuccessSplash({ onDone }: LoginSuccessSplashProps) {
   const [phase, setPhase] = useState<"enter" | "hold" | "exit">("enter");
-  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     const reducedMotion =
@@ -59,7 +65,8 @@ export default function LoginSuccessSplash({ onDone }: LoginSuccessSplashProps) 
       role="status"
       aria-live="polite"
       aria-label="Welkom bij Structuro"
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--st-bg)]"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ backgroundColor: `var(--surface, ${STRUCTURO_CREAM})` }}
     >
       <div
         className="flex items-center justify-center"
@@ -70,20 +77,14 @@ export default function LoginSuccessSplash({ onDone }: LoginSuccessSplashProps) 
           willChange: "transform, opacity",
         }}
       >
-        {logoError ? (
-          <div className="flex h-52 w-52 items-center justify-center rounded-[2.25rem] bg-[var(--st-blue)] shadow-lg sm:h-64 sm:w-64">
-            <span className="text-7xl font-bold text-white sm:text-8xl">S</span>
-          </div>
-        ) : (
-          <img
-            src="/logo-structuro.png"
-            alt=""
-            width={256}
-            height={256}
-            className="h-52 w-52 object-contain drop-shadow-[0_16px_40px_rgba(59,107,247,0.3)] sm:h-64 sm:w-64"
-            onError={() => setLogoError(true)}
-          />
-        )}
+        <img
+          src={LOGO_SRC}
+          alt=""
+          width={LOGO_SIZE}
+          height={LOGO_HEIGHT}
+          className="object-contain"
+          decoding="async"
+        />
       </div>
     </div>
   );

@@ -39,8 +39,8 @@ describe("isV2AppPath / lockdown exempt", () => {
   });
 
   it("exempts one-click cancel during lockdown", () => {
+    expect(isV2LockdownExemptPath("/stop-abonnement")).toBe(true);
     expect(isV2LockdownExemptPath("/v2/stop-abonnement")).toBe(true);
-    expect(isV2LockdownExemptPath("/v2/stop-abonnement/x")).toBe(true);
     expect(isV2LockdownExemptPath("/v2/abonnement")).toBe(false);
   });
 });
@@ -109,8 +109,8 @@ describe("isV2PublicEnabled", () => {
     vi.stubEnv("STRUCTURO_V2_PUBLIC", "1");
     delete process.env.NEXT_PUBLIC_STRUCTURO_V2_PUBLIC;
     expect(isV2PublicEnabled()).toBe(true);
-    expect(resolveLiveHomePath()).toBe("/v2/home");
-    expect(resolveLivePaywallPath()).toBe("/v2/abonnement");
+    expect(resolveLiveHomePath()).toBe("/");
+    expect(resolveLivePaywallPath()).toBe("/abonnement");
   });
 
   it("opens when NEXT_PUBLIC_STRUCTURO_V2_PUBLIC=1 in production", () => {

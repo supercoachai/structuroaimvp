@@ -10,6 +10,7 @@ import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureProductEvent } from "@/lib/posthog/track";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { useV2 } from "./V2Context";
 import { useV2Go } from "./v2nav";
 import { v2EnergyToMicro } from "./v2FocusMicro";
@@ -60,18 +61,23 @@ const V2CycleSetupStep = dynamic(() => import("./V2CycleSetupStep"), {
   loading: () => null,
 });
 
-const ENERGY_LABEL: Record<string, string> = {
-  low: "Energie: laag",
-  enough: "Energie: genoeg",
-  high: "Energie: hoog",
+const V2ShellWelcomeSheet = dynamic(() => import("./V2ShellWelcomeSheet"), {
+  ssr: false,
+  loading: () => null,
+});
+
+const ENERGY_LABEL_KEY: Record<string, string> = {
+  low: "v2.homeEnergyLow",
+  enough: "v2.homeEnergyEnough",
+  high: "v2.homeEnergyHigh",
 };
 
-function greetingWord(): string {
+function greetingKey(): string {
   const h = new Date().getHours();
-  if (h < 6) return "Goedenacht";
-  if (h < 12) return "Goedemorgen";
-  if (h < 18) return "Goedemiddag";
-  return "Goedenavond";
+  if (h < 6) return "v2.homeGreetingNight";
+  if (h < 12) return "v2.homeGreetingMorning";
+  if (h < 18) return "v2.homeGreetingAfternoon";
+  return "v2.homeGreetingEvening";
 }
 
 function trackPromptShown(prompt: V2HomePrompt): void {
@@ -103,7 +109,7 @@ export default function HomeV2Client() {
   const go = useV2Go();
   const { t, locale } = useI18n();
   const { state, ready, update } = useV2();
-  const [greeting, setGreeting] = useState(greetingWord);
+  const [greetingKeyState, setGreetingKeyState] = useState(greetingKey);
   const [homePrompt, setHomePrompt] = useState<V2HomePrompt | null>(null);
   const [promptTracked, setPromptTracked] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -126,8 +132,8 @@ export default function HomeV2Client() {
     !suggestDismissed;
 
   useEffect(() => {
-    setGreeting(greetingWord());
-    const id = window.setInterval(() => setGreeting(greetingWord()), 60_000);
+    setGreetingKeyState(greetingKey());
+    const id = window.setInterval(() => setGreetingKeyState(greetingKey()), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -182,11 +188,13 @@ export default function HomeV2Client() {
   }, [ready, homePrompt, promptTracked]);
 
   const name = state.name.trim();
+  const greeting = t(greetingKeyState);
   const headline = name
     ? `${greeting}, ${name}`
-    : greeting || "Welkom";
+    : greeting || t("v2.homeGreetingFallback");
   const energyMeta = v2EnergyMeta(state.energy);
-  const energyLabel = state.energy ? ENERGY_LABEL[state.energy] : null;
+  const energyLabelKey = state.energy ? ENERGY_LABEL_KEY[state.energy] : null;
+  const energyLabel = energyLabelKey ? t(energyLabelKey) : null;
 
   const toggleMicroStep = (stepId: string) => {
     if (!activeTask) return;
@@ -265,7 +273,7 @@ export default function HomeV2Client() {
     // Journey: geen concrete taak, dus door naar dagstart. Taak: zacht als vandaag-ding.
     if (homePrompt.suggestion.source === "journey") {
       setHomePrompt(null);
-      go("/v2/dagstart?start=energy");
+      go("/dagstart?start=energy");
       return;
     }
     const thing = acceptV2WhySuggestion(homePrompt.suggestion);
@@ -331,7 +339,7 @@ export default function HomeV2Client() {
             type="button"
             className="v2-why-anchor__close"
             onClick={dismissPrompt}
-            aria-label="Sluiten"
+            aria-label={t("v2.focusClose")}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
               <path
@@ -346,14 +354,14 @@ export default function HomeV2Client() {
             className="text-[11px] font-semibold uppercase tracking-[0.16em]"
             style={{ color: "var(--accent)" }}
           >
-            Een zacht zetje
+            {t("v2.homeWhyKicker")}
           </p>
           <p className="mt-1 text-[15px] font-medium" style={{ color: "var(--text)" }}>
-            Je deed dit voor: &ldquo;{homePrompt.why}&rdquo;
+            {t("v2.homeWhyAnchor", { why: homePrompt.why })}
           </p>
           {homePrompt.whyOutcome.length > 0 ? (
             <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Het levert je op: {homePrompt.whyOutcome}
+              {t("v2.homeWhyOutcome", { outcome: homePrompt.whyOutcome })}
             </p>
           ) : null}
         </section>
@@ -391,7 +399,7 @@ export default function HomeV2Client() {
                 className="v2-evening-cloud__later"
                 onClick={dismissPrompt}
               >
-                Of kies zelf
+                {t("v2.homeWhyPickSelf")}
               </button>
             </div>
           </div>
@@ -423,10 +431,10 @@ export default function HomeV2Client() {
               }}
               onClick={openCycleSetup}
             >
-              Ja, zet aan
+              {t("v2.homeCycleYes")}
             </button>
             <button type="button" className="v2-link text-[14px]" onClick={dismissPrompt}>
-              Niet nu
+              {t("v2.focusMicroSuggestSkip")}
             </button>
           </div>
         </section>
@@ -443,11 +451,11 @@ export default function HomeV2Client() {
         case "morning_reminder":
           return (
             <Link
-              href="/v2/dump"
+              href="/dump"
               className="text-[14px] font-medium no-underline"
               style={{ color: "var(--accent)" }}
             >
-              Naar extern geheugen
+              {t("v2.homeToDump")}
             </Link>
           );
         case "day1_skip_hook":
@@ -456,9 +464,9 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart?start=energy")}
+              onClick={() => go("/dagstart?start=energy")}
             >
-              Naar dagstart
+              {t("v2.homeToDayStart")}
             </button>
           );
         case "widget_hint":
@@ -467,9 +475,9 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/dagstart?start=energy")}
+              onClick={() => go("/dagstart?start=energy")}
             >
-              Naar dagstart
+              {t("v2.homeToDayStart")}
             </button>
           );
         case "open_task_reminder":
@@ -478,9 +486,9 @@ export default function HomeV2Client() {
               type="button"
               className="text-[14px] font-medium"
               style={{ color: "var(--accent)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              onClick={() => go("/v2/focus")}
+              onClick={() => go("/focus")}
             >
-              Naar focus
+              {t("v2.homeToFocus")}
             </button>
           );
         default:
@@ -490,10 +498,10 @@ export default function HomeV2Client() {
 
     const dismissLabel =
       homePrompt.kind === "morning_reminder"
-        ? "Niet nu"
+        ? t("v2.focusMicroSuggestSkip")
         : homePrompt.kind === "quote"
-          ? "Niet vandaag"
-          : "Niet vandaag";
+          ? t("v2.homeNotToday")
+          : t("v2.homeNotToday");
 
     const promptBackground =
       homePrompt.kind === "day1_skip_hook"
@@ -530,6 +538,7 @@ export default function HomeV2Client() {
   const promptAtTop = cycleSetupOpen || (!isBottomPrompt && Boolean(homePrompt));
 
   return (
+    <>
     <V2AppShell
       bottomSlot={
         isBottomPrompt && !cycleSetupOpen ? (
@@ -546,7 +555,7 @@ export default function HomeV2Client() {
         {promptAtTop ? renderPrompt() : null}
 
         <header>
-          <V2Eyebrow>Vandaag</V2Eyebrow>
+          <V2Eyebrow>{t("v2.homeEyebrowToday")}</V2Eyebrow>
           <div className="mt-1 flex items-end justify-between gap-2">
             <h1
               className="v2-serif min-w-0 flex-1 whitespace-nowrap"
@@ -571,20 +580,18 @@ export default function HomeV2Client() {
                     size={14}
                   />
                 </span>
-                Energie
+                {t("v2.homeEnergyChip")}
               </span>
             ) : null}
           </div>
         </header>
 
         {!ready ? (
-          <div
-            className="rounded-[20px] p-6 text-center text-sm"
-            style={{ color: "var(--text-muted)" }}
-            aria-busy="true"
-          >
-            Laden…
-          </div>
+          <StructuroLogoLoading
+            fullScreen={false}
+            className="min-h-[40vh] bg-transparent py-10"
+            size={72}
+          />
         ) : state.todayDone ? (
           <section
             className="v2-card v2-fade p-6 text-center"
@@ -600,17 +607,17 @@ export default function HomeV2Client() {
               </svg>
             </div>
             <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              Vandaag is rond.
+              {t("v2.homeDoneTitle")}
             </h2>
             <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Je sloot de lus. Rust met een gerust hart. Morgen begin je opnieuw.
+              {t("v2.homeDoneBody")}
             </p>
             <button
               type="button"
               onClick={() => update({ todayDone: false })}
               className="v2-link mx-auto mt-3 block"
             >
-              Toch nog iets doen
+              {t("v2.homeDoneMore")}
             </button>
           </section>
         ) : hasThings && activeThing ? (
@@ -621,13 +628,16 @@ export default function HomeV2Client() {
                   className="text-[11px] font-semibold uppercase tracking-[0.16em]"
                   style={{ color: "var(--accent)" }}
                 >
-                  Nu aan de beurt
+                  {t("v2.focusNow")}
                 </p>
                 {things.length > 1 ? (
                   <p
                     className="text-[11px] font-medium tabular-nums"
                     style={{ color: "var(--text-muted)" }}
-                    aria-label={`Taak ${(heroIndex % things.length) + 1} van ${things.length}`}
+                    aria-label={t("v2.homeTaskOfAria", {
+                      n: String((heroIndex % things.length) + 1),
+                      m: String(things.length),
+                    })}
                   >
                     {(heroIndex % things.length) + 1}/{things.length}
                   </p>
@@ -655,7 +665,7 @@ export default function HomeV2Client() {
               {microSteps.length > 0 ? (
                 <ul
                   className="v2-home-micro-list"
-                  aria-label="Microstappen"
+                  aria-label={t("v2.focusMicroListAria")}
                 >
                   {microSteps.map((step) => (
                     <li key={step.id}>
@@ -716,11 +726,11 @@ export default function HomeV2Client() {
               <button
                 type="button"
                 onClick={() =>
-                  go(`/v2/focus?thing=${encodeURIComponent(activeThing)}`)
+                  go(`/focus?thing=${encodeURIComponent(activeThing)}`)
                 }
                 className="btn-primary mt-5 w-full"
               >
-                Start focus
+                {t("v2.focusStart")}
               </button>
               {things.length > 1 ? (
                 <button
@@ -730,15 +740,15 @@ export default function HomeV2Client() {
                     setHeroIndex((prev) => (prev + 1) % things.length)
                   }
                 >
-                  Andere taak
+                  {t("v2.homeOtherTask")}
                 </button>
               ) : null}
 
-              <div className="v2-home-loop" aria-label="De lus van vandaag">
-                <p className="v2-home-loop__label">De lus van vandaag</p>
+              <div className="v2-home-loop" aria-label={t("v2.homeLoopLabel")}>
+                <p className="v2-home-loop__label">{t("v2.homeLoopLabel")}</p>
                 <div className="v2-home-loop__actions">
-                  <Link href="/v2/dump" className="v2-home-loop__link">
-                    Brein legen
+                  <Link href="/dump" className="v2-home-loop__link">
+                    {t("v2.homeBrainDump")}
                   </Link>
                   <span className="v2-home-loop__dot" aria-hidden>
                     ·
@@ -746,9 +756,9 @@ export default function HomeV2Client() {
                   <button
                     type="button"
                     className="v2-home-loop__link"
-                    onClick={() => go("/v2/shutdown")}
+                    onClick={() => go("/shutdown")}
                   >
-                    Dag afsluiten
+                    {t("v2.homeCloseDay")}
                   </button>
                 </div>
               </div>
@@ -758,30 +768,32 @@ export default function HomeV2Client() {
               className="mt-auto pt-6 text-center text-[10.5px]"
               style={{ color: "rgba(26,35,64,0.5)" }}
             >
-              Meer hoeft niet vandaag.
+              {t("v2.homeNoMore")}
             </p>
           </>
         ) : (
           <section className="v2-card v2-fade p-6 text-center">
             <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              Nog niets gekozen, en dat is prima.
+              {t("v2.homeEmptyTitle")}
             </h2>
             <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              Begin je dag rustig. Structuro stelt voor, jij bevestigt.
+              {t("v2.homeEmptyBody")}
             </p>
             <button
               type="button"
-              onClick={() => go("/v2/dagstart?start=energy")}
+              onClick={() => go("/dagstart?start=energy")}
               className="btn-primary mx-auto mt-5"
             >
-              Doe je dagstart
+              {t("v2.homeDoDayStart")}
             </button>
-            <Link href="/v2/dump" className="v2-link mx-auto mt-2 block">
-              Brein legen
+            <Link href="/dump" className="v2-link mx-auto mt-2 block">
+              {t("v2.homeBrainDump")}
             </Link>
           </section>
         )}
       </div>
     </V2AppShell>
+    <V2ShellWelcomeSheet />
+    </>
   );
 }

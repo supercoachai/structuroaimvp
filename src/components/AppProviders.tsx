@@ -31,6 +31,9 @@ import { ToastHost } from "@/components/Toast";
 import { PrivacySetupGate } from "@/components/consent/PrivacySetupGate";
 import { shouldUseAppShell } from "@/lib/appShell";
 import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
+import { isV2LiveShellPath } from "@/lib/v2/livePaths";
+import V2LiveShell from "@/components/v2/V2LiveShell";
+import "@/components/v2/structuro-tokens.css";
 
 /** Eenmalig: oude key die focusduur bevatte; duration komt nu alleen uit URL + taak. */
 function RemoveLegacyFocusDurationKey() {
@@ -65,13 +68,20 @@ function ConditionalAppShell({ children }: { children: ReactNode }) {
   if (isWaitlistMarketingPath(pathname)) {
     return <Suspense fallback={<AppShellSuspenseFallback />}>{children}</Suspense>;
   }
-  /** /v2 heeft eigen V2Context + localStorage; TaskProvider is zware sync die niet nodig is. */
+
+  if (isV2LiveShellPath(pathname)) {
+    return (
+      <Suspense fallback={<AppShellSuspenseFallback />}>
+        <V2LiveShell>{children}</V2LiveShell>
+      </Suspense>
+    );
+  }
+
+  /** Paywall/welkom-install: geen TaskProvider. */
   const skipTaskProvider =
     pathname === "/abonnement" ||
     pathname?.startsWith("/abonnement/") ||
-    pathname?.startsWith("/welkom/install") ||
-    pathname === "/v2" ||
-    Boolean(pathname?.startsWith("/v2/"));
+    pathname?.startsWith("/welkom/install");
   const content = shouldUseAppShell(pathname) ? (
     <AppLayout>{children}</AppLayout>
   ) : (

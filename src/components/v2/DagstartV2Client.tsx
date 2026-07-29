@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
+import { V2FlowStickyChrome, V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import {
   v2FlowLayoutForDagstartPhase,
   v2FlowWrapStyle,
@@ -150,8 +150,8 @@ export default function DagstartV2Client() {
     });
   };
 
-  const toHome = () => go("/v2/home");
-  const finishDay = () => go("/v2/home", { todayDone: true });
+  const toHome = () => go("/");
+  const finishDay = () => go("/", { todayDone: true });
 
   // Ook op klaar/confirm: terug naar propose of adjust (niet Stoppen).
   const canGoBack = history.length > 0;
@@ -160,17 +160,19 @@ export default function DagstartV2Client() {
 
   return (
     <V2Page>
-      <V2Header
-        exitHref="/v2/home"
-        exitLabel={t("v2.flowStop")}
-        onBack={canGoBack ? goBack : undefined}
-        brandMode="flow"
-      />
-      <V2ProgressDots
-        step={stepNumberFor(phase)}
-        total={TOTAL_STEPS}
-        showLabel={false}
-      />
+      <V2FlowStickyChrome>
+        <V2Header
+          exitHref="/"
+          exitLabel={t("v2.flowStop")}
+          onBack={canGoBack ? goBack : undefined}
+          brandMode="flow"
+        />
+        <V2ProgressDots
+          step={stepNumberFor(phase)}
+          total={TOTAL_STEPS}
+          showLabel={false}
+        />
+      </V2FlowStickyChrome>
 
       <div style={v2Styles.flowShell}>
         <div style={v2FlowWrapStyle(flowLayout)}>

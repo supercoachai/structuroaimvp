@@ -13,7 +13,11 @@
  * @property {string[]} [needles] substring in HTML (case-insensitive), minstens één match
  * @property {boolean} [verifyChunks] fetch alle script/link chunks uit HTML (vangt 404 JS)
  * @property {string} [method] default GET
+ * @property {string} [finalPath] verwacht eindpad na redirects (asserteert de redirect-target)
  */
+
+/** verify:quick draait tegen `next dev`; dev-only endpoints zijn daar bewust actief. */
+const DEV_ROUTES_ALLOWED = process.env.VERIFY_ALLOW_DEV_ROUTES === "1";
 
 /** @type {AppRoute[]} */
 export const APP_ROUTES = [
@@ -31,27 +35,17 @@ export const APP_ROUTES = [
   { path: "/adhd-cafe", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/welkom", kind: "public", status: [200] },
   { path: "/welkom/install", kind: "public", status: [200] },
-  { path: "/onboarding", kind: "public", status: [200, 307, 308] },
+  { path: "/onboarding", kind: "public", status: [200, 307, 308], needles: ["structuro"] },
   { path: "/onboardingpro", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/dump", kind: "public", status: [200], needles: ["structuro", "dump"] },
+  { path: "/stop-abonnement", kind: "public", status: [200], needles: ["structuro", "stop"] },
 
-  // —— v2 testomgeving (zelfstandig, geen app-shell, geen auth) ——
-  { path: "/v2", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
-  { path: "/v2/login", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/register", kind: "public", status: [200], needles: ["door"] },
-  { path: "/v2/install", kind: "public", status: [200], needles: ["structuro", "beginscherm"] },
-  { path: "/v2/onboarding", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/home", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/dagstart", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/todo", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/dump", kind: "public", status: [200], needles: ["structuro", "dump", "extern geheugen"] },
-  { path: "/v2/focus", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/v2/shutdown", kind: "public", status: [200], needles: ["structuro", "dagafsluiting"] },
-  { path: "/v2/settings", kind: "public", status: [200], needles: ["structuro", "instellingen"] },
-  { path: "/v2/privacy", kind: "public", status: [200], needles: ["privacy"] },
-  { path: "/v2/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
-  { path: "/v2/abonnement", kind: "public", status: [200], needles: ["structuro", "abonnement", "proef"] },
-  { path: "/v2/stop-abonnement", kind: "public", status: [200], needles: ["structuro", "stop"] },
+  // —— Legacy /v2 → canonieke redirects (lab blijft bereikbaar) ——
+  { path: "/v2", kind: "public", status: [200, 302, 307, 308], needles: ["structuro"] },
+  { path: "/v2/jasper", kind: "public", status: [200, 302, 307, 308], needles: ["structuro", "jasper"] },
+  // Redirects worden gevolgd; asserteer eindstatus + eindpad.
+  { path: "/v2/home", kind: "public", status: [200], finalPath: "/" },
+  { path: "/v2/onboarding", kind: "public", status: [200], finalPath: "/onboarding" },
   { path: "/consent", kind: "public", status: [200, 307, 308] },
   { path: "/checkout-success", kind: "public", status: [200] },
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
@@ -81,8 +75,9 @@ export const APP_ROUTES = [
   // —— API (geen 500; 401/404/405 is ok) ——
   { path: "/api/trial/config", kind: "api", status: [200, 401, 404, 405] },
   { path: "/api/stripe/config", kind: "api", status: [200, 401, 404, 405, 503] },
-  { path: "/api/posthog-error-test", kind: "api", status: [404] },
-  { path: "/api/dev/signup", kind: "api", method: "POST", status: [404, 405] },
+  // Productie: hard 404. In dev (verify:quick) zijn deze endpoints bewust actief.
+  { path: "/api/posthog-error-test", kind: "api", status: DEV_ROUTES_ALLOWED ? [200, 404] : [404] },
+  { path: "/api/dev/signup", kind: "api", method: "POST", status: DEV_ROUTES_ALLOWED ? [400, 404, 405] : [404, 405] },
   { path: "/api/cron/expire-trials", kind: "api", status: [200, 401, 405] },
   {
     path: "/api/cron/lifecycle-mail?wave=welcome",
@@ -122,6 +117,12 @@ export const APP_ROUTES = [
     kind: "api",
     method: "POST",
     status: [200, 401, 500, 405],
+  },
+  {
+    path: "/api/stripe/portal",
+    kind: "api",
+    method: "POST",
+    status: [401, 404, 405, 503],
   },
   { path: "/api/v2/import/google", kind: "api", status: [200, 400, 405] },
   {

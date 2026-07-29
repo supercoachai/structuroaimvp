@@ -150,6 +150,17 @@ describe("migrateV2LocalDataToSupabase", () => {
     expect(localStorage.getItem(`structuro_v2_migrated_${USER}`)).toBe("1");
   });
 
+  it("parallelle aanroepen delen één run: geen dubbele uploads", async () => {
+    seedJourney(["Water"]);
+    const [first, second] = await Promise.all([
+      migrateV2LocalDataToSupabase(USER),
+      migrateV2LocalDataToSupabase(USER),
+    ]);
+    expect(first).toBe(second);
+    // Eén thing-taak, precies één keer geüpload ondanks twee triggers.
+    expect(addTaskToSupabase).toHaveBeenCalledTimes(1);
+  });
+
   it("idempotent: tweede claim na succes uploadt niet opnieuw", async () => {
     seedJourney(["Water"]);
     await migrateV2LocalDataToSupabase(USER);
@@ -160,6 +171,18 @@ describe("migrateV2LocalDataToSupabase", () => {
     expect(again.migrated).toBe(false);
     expect(addTaskToSupabase).not.toHaveBeenCalled();
     expect(upsertCheckInToSupabase).not.toHaveBeenCalled();
+  });
+
+  it("claim-API faalt: geen wipe, migrated=false (voorkomt middleware-bounce)", async () => {
+    seedJourney(["Water"]);
+    global.fetch = vi.fn().mockResolvedValue({ ok: false }) as unknown as typeof fetch;
+
+    const result = await migrateV2LocalDataToSupabase(USER);
+
+    expect(result.migrated).toBe(false);
+    expect(localStorage.getItem("v2_journey")).not.toBeNull();
+    expect(localStorage.getItem(`structuro_v2_migrated_${USER}`)).toBeNull();
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("gedeeltelijke taak-fout: geen wipe, geen migrated-flag, retry kan verder", async () => {

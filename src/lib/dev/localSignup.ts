@@ -31,7 +31,7 @@ export async function createLocalDevUser(
   const email = input.email.trim().toLowerCase();
   const fullName = input.fullName.trim();
 
-  if (!email || !fullName) {
+  if (!email) {
     return { ok: false, error: "invalid_input", status: 400 };
   }
   if (input.password.length < 8) {
@@ -43,7 +43,7 @@ export async function createLocalDevUser(
     password: input.password,
     email_confirm: true,
     user_metadata: {
-      full_name: fullName,
+      ...(fullName ? { full_name: fullName } : {}),
       ...(input.signupSource ? { signup_source: input.signupSource } : {}),
       ...(input.signupCampaign
         ? { signup_utm_campaign: input.signupCampaign }

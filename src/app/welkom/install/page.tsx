@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import WelkomInstallHint from "@/components/welkom/WelkomInstallHint";
+import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { useI18n } from "@/lib/i18n";
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
 import "./homescreen-install.css";
@@ -40,11 +41,7 @@ function WelkomInstallPageInner() {
     returnPath ?? (previewInstall ? "/welkom?previewInstall=1" : "/welkom");
 
   if (!ready) {
-    return (
-      <div className="homescreen-install">
-        <p className="loading">…</p>
-      </div>
-    );
+    return <StructuroLogoLoading />;
   }
 
   return (
@@ -99,13 +96,7 @@ function WelkomInstallPageInner() {
 
 export default function WelkomInstallPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="homescreen-install">
-          <p className="loading">…</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<StructuroLogoLoading />}>
       <WelkomInstallPageInner />
     </Suspense>
   );

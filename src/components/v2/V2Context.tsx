@@ -39,6 +39,9 @@ export const V2_ANONYMOUS_STORAGE_KEYS = [
   "v2_tasks",
   "v2_settings",
   "v2_adaptive",
+  "v2_tasks_remote_map",
+  "v2_dump_remote_map",
+  "v2_sync_user",
 ] as const;
 
 /**
@@ -114,7 +117,25 @@ export function V2Provider({ children }: { children: ReactNode }) {
     } catch {
       // Corrupte of geblokkeerde storage negeren we stilletjes.
     }
-    setReady(true);
+    // Ingelogd: taken/dump eerst uit Supabase hydrateren, zodat pagina's
+    // meteen de servergebackte lijst zien (uitloggen, wissen, 2e apparaat).
+    // Guests resolven direct; timeout voorkomt blokkade op traag netwerk.
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { hydrateV2FromSupabase } = await import("@/lib/v2/v2SupabaseSync");
+        await Promise.race([
+          hydrateV2FromSupabase(),
+          new Promise((resolve) => setTimeout(resolve, 4000)),
+        ]);
+      } catch {
+        // Sync is best-effort; lokaal blijft werken.
+      }
+      if (!cancelled) setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const persist = useCallback((next: V2State) => {

@@ -183,7 +183,7 @@ export function AccountSignUpOptions({
       new URLSearchParams(window.location.search).get("from") === "v2" &&
       isV2PublicEnabledClient();
     const path = await finalizeNewAccountSession(userId, userEmail, {
-      homePath: fromV2 ? "/v2/home" : resolveLiveHomePathClient(),
+      homePath: fromV2 ? "/" : resolveLiveHomePathClient(),
     });
     if (onSessionReady) {
       onSessionReady(path);
@@ -227,7 +227,7 @@ export function AccountSignUpOptions({
       await startOAuthSignIn(
         supabase,
         provider,
-        fromV2 ? "/v2/home" : "/onboarding"
+        fromV2 ? "/" : "/onboarding"
       );
     } catch (err) {
       onError?.(

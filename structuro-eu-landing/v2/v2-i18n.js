@@ -25,7 +25,6 @@
       intro_support: "Structuro kiest wat haalbaar is. Jij bevestigt, en begint.",
       hero_binary:
         "Andere apps bewaren je lijst. Structuro helpt je vandaag te starten.",
-      hero_note: "7 dagen proberen. Kaart bij start. Stoppen kan altijd.",
       psych_eyebrow: "Waarom dit werkt",
       psych_h2: "Welke hiervan ben jij?",
       psych_lede:
@@ -326,7 +325,6 @@
       slot_h2: 'Je brein verdient rust.<br>Niet meer <span class="it">systemen</span>.',
       slot_support:
         "Je hoeft het niet elke dag perfect te doen. De app past zich aan jou aan, niet andersom. Beginnen is genoeg.",
-      sticky_note: "7 dagen. Kaart bij start. Stoppen kan altijd.",
       footer_made: "Gemaakt in Nederland",
       footer_privacy: "Privacy policy",
       footer_terms: "Algemene voorwaarden",
@@ -351,7 +349,6 @@
       intro_support: "Structuro picks what is doable. You confirm, and begin.",
       hero_binary:
         "Other apps store your lists. Structuro helps you start today.",
-      hero_note: "7-day trial. Card required to start. Cancel anytime.",
       psych_eyebrow: "Why this works",
       psych_h2: "Which of these is you?",
       psych_lede: "You get exactly the answer that fits each point, and nothing more.",
@@ -651,7 +648,6 @@
       slot_h2: 'Your brain deserves calm.<br>Not more <span class="it">systems</span>.',
       slot_support:
         "You don't have to do it perfectly every day. The app adapts to you, not the other way around. Starting is enough.",
-      sticky_note: "7 days. Card to start. Cancel anytime.",
       footer_made: "Made in the Netherlands",
       footer_privacy: "Privacy policy",
       footer_terms: "Terms",
