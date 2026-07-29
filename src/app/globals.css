@@ -150,6 +150,63 @@
 .login-shell__back:hover {
   color: var(--story-text);
 }
+.login-shell__lang {
+  position: absolute;
+  right: max(0.75rem, env(safe-area-inset-right));
+  top: max(0.75rem, env(safe-area-inset-top));
+  z-index: 20;
+}
+/* V2LanguageToggle buiten .v2-root: story tokens i.p.v. v2-root vars */
+.login-shell .v2-lang {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.login-shell .v2-lang__opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--story-text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.login-shell .v2-lang__opt:hover {
+  background: rgba(26, 35, 64, 0.06);
+  border-color: rgba(26, 35, 64, 0.1);
+}
+.login-shell .v2-lang__opt.is-active {
+  color: var(--story-text);
+  background: rgba(26, 35, 64, 0.08);
+  border-color: rgba(26, 35, 64, 0.12);
+}
+.login-shell .v2-lang__opt:focus-visible {
+  outline: 2px solid var(--story-accent);
+  outline-offset: 2px;
+}
+.login-shell .v2-lang__opt svg {
+  display: block;
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+.login-shell .v2-lang__code {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .login-shell__visual {
   display: none;
 }

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
+import V2LanguageToggle from "@/components/v2/V2LanguageToggle";
 
 type LoginShellProps = {
   children: ReactNode;
@@ -110,6 +111,10 @@ export function LoginShell({ children, error, info }: LoginShellProps) {
       >
         ← {t("registrerenPage.backLink")}
       </button>
+
+      <div className="login-shell__lang">
+        <V2LanguageToggle />
+      </div>
 
       <aside className="login-shell__visual">
         <div className="login-shell__visual-inner">
