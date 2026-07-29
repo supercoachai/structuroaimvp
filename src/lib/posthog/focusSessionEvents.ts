@@ -1,4 +1,4 @@
-import { captureProductEvent } from "./track";
+import { trackClientFunnelEvent } from "./clientFunnelAnalyticsClient";
 import { focusPlannedMinutesBucket } from "./durationBuckets";
 
 export type FocusSessionAnalyticsEnergy = "laag" | "normaal" | "hoog";
@@ -51,9 +51,24 @@ export function focusSessionMetrics(
   };
 }
 
+export function captureFocusSessionStarted(payload: {
+  plannedMinutes: number;
+  taskId: string | null | undefined;
+  energy: "low" | "medium" | "high" | string | null | undefined;
+}) {
+  const analyticsEnergy = focusEnergyToAnalytics(payload.energy);
+  trackClientFunnelEvent("focus_session_started", {
+    task_id: payload.taskId ?? "",
+    energy_level: analyticsEnergy,
+    duration_planned_sec: Math.max(0, Math.round(payload.plannedMinutes * 60)),
+    duration_bucket: focusPlannedMinutesBucket(payload.plannedMinutes),
+    surface: "app",
+  });
+}
+
 export function captureFocusSessionCompleted(payload: FocusSessionOutcomePayload) {
   const analyticsEnergy = focusEnergyToAnalytics(payload.energy);
-  captureProductEvent("focus_session_completed", {
+  trackClientFunnelEvent("focus_session_completed", {
     ...focusSessionMetrics(
       payload.plannedMinutes,
       payload.timeLeftSec,
@@ -62,6 +77,7 @@ export function captureFocusSessionCompleted(payload: FocusSessionOutcomePayload
     ),
     duration_bucket: focusPlannedMinutesBucket(payload.plannedMinutes),
     completed_normally: true,
+    surface: "app",
   });
 }
 
@@ -69,7 +85,7 @@ export function captureFocusSessionEndedEarly(
   payload: FocusSessionOutcomePayload & { reason?: string }
 ) {
   const analyticsEnergy = focusEnergyToAnalytics(payload.energy);
-  captureProductEvent("focus_session_ended_early", {
+  trackClientFunnelEvent("focus_session_ended_early", {
     ...focusSessionMetrics(
       payload.plannedMinutes,
       payload.timeLeftSec,
@@ -78,6 +94,7 @@ export function captureFocusSessionEndedEarly(
     ),
     reason: payload.reason ?? "manual_complete",
     duration_bucket: focusPlannedMinutesBucket(payload.plannedMinutes),
+    surface: "app",
   });
 }
 
@@ -85,7 +102,7 @@ export function captureFocusSessionAbandoned(
   payload: FocusSessionOutcomePayload & { reason: FocusSessionAbandonReason }
 ) {
   const analyticsEnergy = focusEnergyToAnalytics(payload.energy);
-  captureProductEvent("focus_session_abandoned", {
+  trackClientFunnelEvent("focus_session_abandoned", {
     ...focusSessionMetrics(
       payload.plannedMinutes,
       payload.timeLeftSec,
@@ -94,5 +111,6 @@ export function captureFocusSessionAbandoned(
     ),
     reason: payload.reason,
     duration_bucket: focusPlannedMinutesBucket(payload.plannedMinutes),
+    surface: "app",
   });
 }

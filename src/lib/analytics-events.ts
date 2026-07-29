@@ -21,8 +21,6 @@ export const ANALYTICS_EVENTS = {
   dagstart_completed: "dagstart_completed",
   /** Anonieme eerste dagstart (v2), vóór account. */
   dagstart_completed_anon: "dagstart_completed_anon",
-  /** Alias-meetpunt na account (naast signup_completed). */
-  account_created: "account_created",
   new_task_flow_opened: "new_task_flow_opened",
   new_task_flow_step_viewed: "new_task_flow_step_viewed",
   new_task_flow_abandoned: "new_task_flow_abandoned",
@@ -42,9 +40,17 @@ export const ANALYTICS_EVENTS = {
   trial_precharge_mailed: "trial_precharge_mailed",
   trial_cancelled_one_click: "trial_cancelled_one_click",
   trial_converted: "trial_converted",
-  /** Bestaande klant ziet eenmalige v2-shell welkom-sheet. */
-  v2_shell_welcome_shown: "v2_shell_welcome_shown",
-  v2_shell_welcome_dismissed: "v2_shell_welcome_dismissed",
+  /** Login magic link / OTP. */
+  login_magic_link_sent: "login_magic_link_sent",
+  login_magic_link_failed: "login_magic_link_failed",
+  login_otp_verified: "login_otp_verified",
+  /** E-mail bevestigings- of magic-link klik (auth callback). */
+  magic_link_opened: "magic_link_opened",
+  /** Signup wacht op e-mailbevestiging (geen sessie na signUp). */
+  signup_email_confirmation_sent: "signup_email_confirmation_sent",
+  /** Shell welkom-sheet voor bestaande klanten na cutover. */
+  shell_welcome_shown: "shell_welcome_shown",
+  shell_welcome_dismissed: "shell_welcome_dismissed",
 } as const;
 
 export type AnalyticsEventName =

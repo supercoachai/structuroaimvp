@@ -13,6 +13,8 @@ import {
 } from "@/lib/jasper/jasperOffer";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
@@ -47,11 +49,12 @@ async function postCheckout(request: Request) {
     return NextResponse.json({ error: "Expected plan: monthly | yearly" }, { status: 400 });
   }
 
-  const useV2Return = body.surface === "v2" && isV2PublicEnabled();
-  const successPath = useV2Return
+  const useAppReturn =
+    (body.surface === "v2" || body.surface === "app") && isV2PublicEnabled();
+  const successPath = useAppReturn
     ? "/abonnement?from=stripe"
     : "/abonnement?from=stripe";
-  const cancelPath = useV2Return ? "/abonnement" : "/abonnement";
+  const cancelPath = useAppReturn ? "/abonnement" : "/abonnement";
 
   const supabase = await createClient();
   const {
@@ -125,7 +128,7 @@ async function postCheckout(request: Request) {
     metadata: {
       ...(jasperFlagged ? { jasper_offer: "1" } : {}),
       ...(freshV2CardTrial ? { v2_card_trial: "1" } : {}),
-      surface: useV2Return ? "v2" : "v1",
+      surface: useAppReturn ? "app" : "legacy",
     },
     subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
     discounts: jasperDiscount ?? undefined,
@@ -133,6 +136,20 @@ async function postCheckout(request: Request) {
 
   if (!session.url) {
     return NextResponse.json({ error: "No checkout URL" }, { status: 500 });
+  }
+
+  try {
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.checkout_started, {
+      plan,
+      checkout_session_id: session.id,
+      surface: useAppReturn ? "app" : "legacy",
+      card_trial: freshV2CardTrial,
+      trial_days: trialDays,
+      trial_cohort: freshV2CardTrial ? "card_7d" : "legacy",
+      channel: "server",
+    });
+  } catch (phErr) {
+    console.error("[checkout] PostHog capture failed (non-fatal)", phErr);
   }
 
   return NextResponse.json({ url: session.url });

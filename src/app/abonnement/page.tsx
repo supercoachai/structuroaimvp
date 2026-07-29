@@ -36,12 +36,18 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ preview?: string; from?: string; reason?: string }>;
+  searchParams: Promise<{
+    preview?: string;
+    from?: string;
+    reason?: string;
+    card?: string;
+  }>;
 };
 
 export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const forcePreview = params.preview === "1";
+  const forceCardTrialPreview = forcePreview && params.card === "1";
   const fromStripe = params.from === "stripe";
 
   const supabase = await createClient();
@@ -52,6 +58,21 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent") ?? "";
   const visibleWallets = getVisibleWalletButtonsFromUserAgent(userAgent);
+
+  // Design-preview card-trial (zonder login): /abonnement?preview=1&card=1
+  if (forceCardTrialPreview && !user?.id) {
+    return (
+      <AbonnementV2Client
+        reason="trial_expired"
+        trialDays={V2_CARD_TRIAL_DAYS}
+        visibleWallets={visibleWallets}
+        jasperOffer={false}
+        stats={emptyRetentionStats(null)}
+        canCheckout={false}
+        startCardTrial
+      />
+    );
+  }
 
   // Zonder login: eerlijke login-staat (geen nep-trial of demostats).
   if (!user?.id) {
@@ -116,7 +137,8 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
       : undefined;
 
   const signupSource = row?.signup_source ?? null;
-  const startCardTrial = row ? requiresV2CardTrialCheckout(row) : false;
+  const startCardTrial =
+    forceCardTrialPreview || (row ? requiresV2CardTrialCheckout(row) : false);
   // Exact de proefduur die dit account kreeg (3 default, 7 Jasper/v2-card, 14 ADHD-café).
   const trialDays = startCardTrial
     ? V2_CARD_TRIAL_DAYS

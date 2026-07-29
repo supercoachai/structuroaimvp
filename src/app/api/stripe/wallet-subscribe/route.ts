@@ -14,7 +14,8 @@ import {
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isStripeInvalidCouponError } from "@/lib/stripe/invalidCouponError";
-import { captureServerException } from "@/lib/posthog/server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { captureServerEvent, captureServerException } from "@/lib/posthog/server";
 import { resolveV2CardCheckoutTrialDays } from "@/lib/stripe/v2CardTrial";
 import { NextResponse } from "next/server";
 
@@ -170,6 +171,36 @@ async function postWalletSubscribe(request: Request) {
     if (upErr) {
       return NextResponse.json({ error: upErr.message }, { status: 500 });
     }
+  }
+
+  try {
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.checkout_started, {
+      plan: "monthly",
+      surface: "app",
+      method: "wallet",
+      card_trial: freshV2CardTrial,
+      trial_days: trialDays,
+      trial_cohort: freshV2CardTrial ? "card_7d" : "legacy",
+      channel: "server",
+    });
+    await captureServerEvent(user.id, "subscription_started", {
+      plan: "monthly",
+      method: "wallet",
+      channel: "server",
+    });
+    if (refreshed.status === "trialing") {
+      await captureServerEvent(user.id, ANALYTICS_EVENTS.trial_started, {
+        plan: "monthly",
+        trial_days: trialDays,
+        surface: "app",
+        card_trial: freshV2CardTrial,
+        trial_cohort: freshV2CardTrial ? "card_7d" : "legacy",
+        method: "wallet",
+        channel: "server",
+      });
+    }
+  } catch (phErr) {
+    console.error("[wallet-subscribe] PostHog capture failed (non-fatal)", phErr);
   }
 
   return NextResponse.json({

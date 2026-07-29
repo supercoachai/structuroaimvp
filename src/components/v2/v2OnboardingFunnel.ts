@@ -3,6 +3,7 @@
 /**
  * Cookieless step-events voor /onboarding drop-off.
  * Geen analyticsConsent-gate: zelfde patroon als activatie-funnel (P0 meting).
+ * Client + server-backup via trackClientFunnelEvent.
  */
 
 import {
@@ -11,16 +12,15 @@ import {
   trackOnboardingCompleted,
   trackOnboardingStarted,
 } from "@/lib/posthog/activationFunnelAnalyticsClient";
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import {
   getStoredSignupCampaign,
   getStoredSignupSource,
 } from "@/lib/posthog/signupAttribution";
-import { captureActivationFunnelEvent } from "@/lib/posthog/track";
-import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 import type { V2Energy } from "./V2Context";
 
-export type V2OnboardingStep =
+export type OnboardingStep =
   | "energy"
   | "tasks"
   | "done"
@@ -28,7 +28,10 @@ export type V2OnboardingStep =
   | "name"
   | "home";
 
-const STEP_FIRED_PREFIX = "v2_onboarding_step_fired_";
+/** @deprecated gebruik OnboardingStep */
+export type V2OnboardingStep = OnboardingStep;
+
+const STEP_FIRED_PREFIX = "onboarding_step_fired_";
 
 function attribution(): Record<string, unknown> {
   const signup_source = getStoredSignupSource();
@@ -36,12 +39,12 @@ function attribution(): Record<string, unknown> {
     signup_source,
     utm_campaign: getStoredSignupCampaign(),
     is_tiktok: signup_source === "tiktok",
-    funnel: "v2_onboarding",
-    source: "v2",
+    funnel: "onboarding",
+    source: "app",
   };
 }
 
-function oncePerSession(step: V2OnboardingStep): boolean {
+function oncePerSession(step: OnboardingStep): boolean {
   if (typeof window === "undefined") return false;
   try {
     const key = `${STEP_FIRED_PREFIX}${step}`;
@@ -65,14 +68,14 @@ function mapEnergy(energy: V2Energy | null): "low" | "medium" | "high" | null {
  * Daarnaast: bestaande activatie-events waar die mappen (energy/done).
  */
 export function trackV2OnboardingStep(
-  step: V2OnboardingStep,
+  step: OnboardingStep,
   properties?: Record<string, unknown>
 ): void {
   if (typeof window === "undefined") return;
   if (!oncePerSession(step)) return;
 
   const props = { ...attribution(), step, ...properties };
-  captureActivationFunnelEvent("v2_onboarding_step", props);
+  trackClientFunnelEvent("onboarding_step", props);
 
   if (step === "energy") {
     trackOnboardingStarted();
@@ -80,7 +83,7 @@ export function trackV2OnboardingStep(
 }
 
 export function trackV2OnboardingEnergy(energy: V2Energy): void {
-  captureActivationFunnelEvent("v2_onboarding_energy_chosen", {
+  trackClientFunnelEvent("onboarding_energy_chosen", {
     ...attribution(),
     energy_level: energy,
   });
@@ -88,7 +91,7 @@ export function trackV2OnboardingEnergy(energy: V2Energy): void {
   if (mapped) {
     trackActivationFunnelStep("dagstart_energy_chosen", {
       energy_level: mapped,
-      source: "v2",
+      source: "app",
     });
   }
 }
@@ -106,7 +109,7 @@ export function trackV2OnboardingTasks(props: {
 }
 
 export function trackV2OnboardingCycle(props: { optedIn: boolean }): void {
-  captureActivationFunnelEvent("v2_onboarding_cycle_choice", {
+  trackClientFunnelEvent("onboarding_cycle_choice", {
     ...attribution(),
     cycle_opt_in: props.optedIn,
     has_cycle_phase: props.optedIn,
@@ -123,28 +126,29 @@ export function trackV2OnboardingDone(props: {
     thing_count: props.thingCount,
     cycle_opt_in: props.cycleOptIn,
   });
-  trackOnboardingCompleted({ duration_bucket: "v2" });
+  trackOnboardingCompleted({ duration_bucket: "app" });
   const mapped = mapEnergy(props.energy) ?? "medium";
   trackDagstartCompleted({
     energy_level: mapped,
     tasks_selected_count: Math.min(3, Math.max(0, props.thingCount)),
     has_cycle_phase: props.cycleOptIn,
-    source: "v2",
+    source: "app",
     db_persisted: false,
   });
-  captureActivationFunnelEvent(ANALYTICS_EVENTS.dagstart_completed_anon, {
+  trackClientFunnelEvent("dagstart_completed_anon", {
     ...attribution(),
     energy_level: mapped,
     tasks_selected_count: Math.min(3, Math.max(0, props.thingCount)),
     has_cycle_phase: props.cycleOptIn,
-    source: "v2_onboarding",
+    source: "onboarding",
   });
 }
 
 export function trackV2AccountSaveShown(
   surface: "home" | "onboarding",
 ): void {
-  captureActivationFunnelEvent("v2_account_save_shown", {
+  trackV2OnboardingStep("account");
+  trackClientFunnelEvent("account_save_shown", {
     ...attribution(),
     surface,
     after_first_value: surface === "home",
@@ -154,7 +158,7 @@ export function trackV2AccountSaveShown(
 export function trackV2AccountSaveClicked(
   surface: "home" | "onboarding",
 ): void {
-  captureActivationFunnelEvent("v2_account_save_clicked", {
+  trackClientFunnelEvent("account_save_clicked", {
     ...attribution(),
     surface,
     after_first_value: surface === "home",
@@ -163,7 +167,7 @@ export function trackV2AccountSaveClicked(
 
 export function trackV2NameStepShown(): void {
   trackV2OnboardingStep("name");
-  captureActivationFunnelEvent("v2_name_step_shown", {
+  trackClientFunnelEvent("name_step_shown", {
     ...attribution(),
     surface: "onboarding",
   });
@@ -173,7 +177,7 @@ export function trackV2NameStepCompleted(props: {
   skipped: boolean;
   hadPrefill: boolean;
 }): void {
-  captureActivationFunnelEvent("v2_name_step_completed", {
+  trackClientFunnelEvent("name_step_completed", {
     ...attribution(),
     skipped: props.skipped,
     had_prefill: props.hadPrefill,

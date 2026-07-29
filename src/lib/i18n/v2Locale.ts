@@ -276,7 +276,11 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     todoFormCancel: "Annuleren",
     todoFormDelete: "Verwijderen",
     paywallEyebrow: "Proefperiode",
-    paywallTitle: "Zeven dagen. Daarna kies je.",
+    paywallTitleBefore: "Je betaalt pas op ",
+    paywallTitleAccent: "dag zeven.",
+    paywallTitle: "Je betaalt pas op dag zeven.",
+    paywallLead:
+      "En je krijgt een mail voordat dat gebeurt. Opzeggen doe je in de app, met één tik.",
     paywallLeadBefore:
       "Start je vandaag, dan schrijven we op ",
     paywallLeadAfter: " €12,99 af, tenzij je eerder stopt.",
@@ -287,10 +291,26 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallRefundBody:
       "Achteraf toch niet goed? Binnen veertien dagen geld terug.",
     paywallOrCard: "of betaal met kaart",
-    paywallCardCta: "Ga 7 dagen gratis met Structuro verder",
+    paywallPlanMonthly: "Per maand",
+    paywallPlanYearly: "Per jaar",
+    paywallPlanYearlyBonus: "2 maanden gratis",
+    paywallTimelineToday: "Vandaag",
+    paywallTimelineTodaySub: "Alles open, geen limiet",
+    paywallTimelineDay6: "Dag 6",
+    paywallTimelineDay6Sub: "Mail met een knop naar je instellingen",
+    paywallTimelineDay7: "Dag 7",
+    paywallTimelineDay7Sub: "Tenzij je stopt",
+    paywallTimelineFree: "€0",
+    paywallTimelineMonthlyPrice: "€12,99",
+    paywallTimelineYearlyPrice: "€119",
+    paywallAfterMonthly: "Daarna elke maand €12,99 · opzeggen in de app",
+    paywallAfterYearly: "Daarna €119 per jaar · opzeggen in de app",
+    paywallCardCta: "Start 7 dagen gratis",
     paywallCardBusy: "Even geduld…",
     paywallStripeTrust:
-      "Verwerkt via Stripe, wij bewaren je kaartgegevens niet.",
+      "Veilig via Stripe · daarna €12,99 per maand · opzeggen doe je zelf in de app, direct geregeld",
+    paywallStripeTrustYearly:
+      "Veilig via Stripe · daarna €119 per jaar · opzeggen doe je zelf in de app, direct geregeld",
     paywallRemindTrust:
       "Je kunt elk moment stoppen. Wij herinneren je een dag van tevoren.",
   },
@@ -567,7 +587,11 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     todoFormCancel: "Cancel",
     todoFormDelete: "Delete",
     paywallEyebrow: "Trial",
-    paywallTitle: "Seven days. Then you choose.",
+    paywallTitleBefore: "You only pay on ",
+    paywallTitleAccent: "day seven.",
+    paywallTitle: "You only pay on day seven.",
+    paywallLead:
+      "And you get an email before that happens. Cancel in the app, with one tap.",
     paywallLeadBefore: "If you start today, we charge €12.99 on ",
     paywallLeadAfter: ", unless you stop earlier.",
     paywallLeadFallback:
@@ -577,10 +601,26 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallRefundBody:
       "Not a fit after all? Full refund within fourteen days.",
     paywallOrCard: "or pay by card",
-    paywallCardCta: "Continue 7 days free with Structuro",
+    paywallPlanMonthly: "Monthly",
+    paywallPlanYearly: "Yearly",
+    paywallPlanYearlyBonus: "2 months free",
+    paywallTimelineToday: "Today",
+    paywallTimelineTodaySub: "Everything open, no limit",
+    paywallTimelineDay6: "Day 6",
+    paywallTimelineDay6Sub: "Email with a button to your settings",
+    paywallTimelineDay7: "Day 7",
+    paywallTimelineDay7Sub: "Unless you stop",
+    paywallTimelineFree: "€0",
+    paywallTimelineMonthlyPrice: "€12.99",
+    paywallTimelineYearlyPrice: "€119",
+    paywallAfterMonthly: "Then €12.99 every month · cancel in the app",
+    paywallAfterYearly: "Then €119 per year · cancel in the app",
+    paywallCardCta: "Start 7 days free",
     paywallCardBusy: "One moment…",
     paywallStripeTrust:
-      "Processed via Stripe. We do not store your card details.",
+      "Secure via Stripe · then €12.99 per month · cancel yourself in the app, done instantly",
+    paywallStripeTrustYearly:
+      "Secure via Stripe · then €119 per year · cancel yourself in the app, done instantly",
     paywallRemindTrust:
       "You can stop anytime. We remind you a day beforehand.",
   },

@@ -9,8 +9,10 @@ import {
 } from "@/lib/auth/socialSignIn";
 import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 
 type MagicLinkSignInFormProps = {
@@ -132,6 +134,10 @@ export function MagicLinkSignInForm({
                   return;
                 }
                 const user = await verifyLoginEmailOtp(supabase, sentEmail, otp);
+                trackClientFunnelEvent(ANALYTICS_EVENTS.login_otp_verified, {
+                  surface: "login",
+                  method: "otp",
+                });
                 onVerified?.(user);
               } catch (err) {
                 const raw = err instanceof Error ? err.message : t("login.otpInvalid");
@@ -198,9 +204,18 @@ export function MagicLinkSignInForm({
         return;
       }
       await sendLoginMagicLink(supabase, trimmed, nextPath, captchaToken);
+      trackClientFunnelEvent(ANALYTICS_EVENTS.login_magic_link_sent, {
+        surface: "login",
+        has_next: Boolean(nextPath),
+      });
       setSentEmail(trimmed);
       resetCaptcha();
     } catch (err) {
+      trackClientFunnelEvent(ANALYTICS_EVENTS.login_magic_link_failed, {
+        surface: "login",
+        error_kind:
+          err instanceof Error ? err.message.slice(0, 64) : "unknown",
+      });
       const raw = err instanceof Error ? err.message : t("login.sendFailed");
       onError?.(mapMagicLinkLoginError(mapAuthCaptchaError(raw, t), t));
       resetCaptcha();

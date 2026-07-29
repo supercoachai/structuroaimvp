@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 
@@ -15,16 +17,18 @@ import { useI18n } from "@/lib/i18n";
 import type { RetentionPaywallReason } from "@/lib/retentionPaywallAccess";
 import type { RetentionStats } from "@/lib/retentionStats";
 import { DEFAULT_STRIPE_TRIAL_DAYS } from "@/lib/stripe/trialConfig";
-import { formatV2CardTrialChargeLabel } from "@/lib/stripe/v2CardTrial";
+import type { RegisterPlanId } from "@/lib/stripe/registerPlans";
 import { preloadStripeWallet, type WalletKind } from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
-import { captureMarketingEvent } from "@/lib/posthog/track";
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 
 import { V2Eyebrow, V2Header, V2Page } from "./V2Chrome";
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
 import { loadV2Tasks } from "./v2Tasks";
+
+const CARD_TRIAL_LOGO_SRC = "/v2/logo-mark.png";
 
 type DoneMode = "stay" | "stop" | null;
 
@@ -93,14 +97,14 @@ export default function AbonnementV2Client({
   startCardTrial = false,
 }: AbonnementV2ClientProps) {
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { state } = useV2();
   const [busy, setBusy] = useState(false);
   const [walletFallback, setWalletFallback] = useState(false);
   const [doneMode, setDoneMode] = useState<DoneMode>(null);
   const [whyAnchor, setWhyAnchor] = useState<PaywallWhyAnchor | null>(null);
-  const [chargeAtLabel, setChargeAtLabel] = useState<string | null>(null);
   const [liveWallets, setLiveWallets] = useState<WalletKind[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<RegisterPlanId>("monthly");
 
   useEffect(() => {
     preloadStripeWallet();
@@ -112,58 +116,48 @@ export default function AbonnementV2Client({
 
   useEffect(() => {
     if (!startCardTrial || !canCheckout) return;
-    captureMarketingEvent(ANALYTICS_EVENTS.trial_checkout_opened, {
-      surface: "v2",
-      v2_card_trial: true,
-      trial_cohort: "v2_card_7d",
+    trackClientFunnelEvent(ANALYTICS_EVENTS.trial_checkout_opened, {
+      surface: "app",
+      card_trial: true,
+      trial_cohort: "card_7d",
     });
   }, [startCardTrial, canCheckout]);
 
-  // Live trial-einddatum: herbereken bij mount, terugkeer (bfcache) en visibility.
-  useEffect(() => {
-    if (!startCardTrial) return;
-    const refresh = () => {
-      setChargeAtLabel(formatV2CardTrialChargeLabel(new Date(), locale));
-    };
-    refresh();
-    const onPageShow = () => refresh();
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") refresh();
-    };
-    window.addEventListener("pageshow", onPageShow);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("pageshow", onPageShow);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [startCardTrial, locale]);
-
-  const startCheckout = useCallback(async () => {
-    if (!canCheckout) {
-      toast("Log eerst in om te betalen.");
-      router.push("/login?next=/abonnement");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ plan: "monthly", surface: "v2" }),
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        toast(data.error ?? "Kon de betaalpagina niet openen.");
+  const startCheckout = useCallback(
+    async (plan: RegisterPlanId = "monthly") => {
+      if (!canCheckout) {
+        toast("Log eerst in om te betalen.");
+        router.push("/login?next=/abonnement");
         return;
       }
-      window.location.href = data.url;
-    } catch {
-      toast("Kon de betaalpagina niet openen.");
-    } finally {
-      setBusy(false);
-    }
-  }, [canCheckout, router]);
+      trackClientFunnelEvent(ANALYTICS_EVENTS.paywall_checkout_clicked, {
+        surface: "app",
+        plan,
+        card_trial: startCardTrial,
+        trial_cohort: startCardTrial ? "card_7d" : "legacy",
+      });
+      setBusy(true);
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ plan, surface: "app" }),
+        });
+        const data = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok || !data.url) {
+          toast(data.error ?? "Kon de betaalpagina niet openen.");
+          return;
+        }
+        window.location.href = data.url;
+      } catch {
+        toast("Kon de betaalpagina niet openen.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [canCheckout, router, startCardTrial]
+  );
 
   const handleStaySuccess = useCallback(() => {
     setDoneMode("stay");
@@ -174,7 +168,8 @@ export default function AbonnementV2Client({
   }, []);
 
   // Zonder sessie: geen nep-trial of demostats. Eerlijke login-staat.
-  if (!canCheckout) {
+  // Card-trial mag wél als preview (CTA blijft disabled zonder sessie).
+  if (!canCheckout && !startCardTrial) {
     return (
       <V2Page>
         <V2Header exitHref="/" exitLabel="Naar home" />
@@ -214,75 +209,143 @@ export default function AbonnementV2Client({
   }
 
   if (startCardTrial) {
-    const showWalletZone = liveWallets.length > 0;
+    const isYearly = selectedPlan === "yearly";
+    const day7Price = isYearly
+      ? t("v2.paywallTimelineYearlyPrice")
+      : t("v2.paywallTimelineMonthlyPrice");
+    const afterLine = isYearly
+      ? t("v2.paywallAfterYearly")
+      : t("v2.paywallAfterMonthly");
+    const trustLine = isYearly
+      ? t("v2.paywallStripeTrustYearly")
+      : t("v2.paywallStripeTrust");
+
     return (
       <V2Page>
-        <Script src="https://js.stripe.com/v3/" strategy="afterInteractive" />
-        <V2Header exitHref="/dagstart" exitLabel="Terug" />
-        <div className="v2-abonnement v2-fade">
-          <V2Eyebrow>{t("v2.paywallEyebrow")}</V2Eyebrow>
-          <h1
-            style={{
-              ...v2Styles.title,
-              fontSize: "var(--fs-display)",
-              marginTop: 8,
-            }}
-          >
-            {t("v2.paywallTitle")}
-          </h1>
-          <p style={{ ...v2Styles.body, marginTop: 16 }}>
-            {chargeAtLabel ? (
-              <>
-                {t("v2.paywallLeadBefore")}
-                <strong className="v2-abonnement__charge-when">
-                  {chargeAtLabel}
-                </strong>
-                {t("v2.paywallLeadAfter")}
-              </>
-            ) : (
-              t("v2.paywallLeadFallback")
-            )}
-          </p>
-          <p style={{ ...v2Styles.body, marginTop: 12 }}>
-            {t("v2.paywallStopBody")}
-          </p>
-          <p style={{ ...v2Styles.body, marginTop: 12 }}>
-            {t("v2.paywallRefundBody")}
-          </p>
-          <section className="v2-abonnement__decision" style={{ marginTop: 28 }}>
-            <StripeWalletButtons
-              visibleWallets={visibleWallets}
-              disabled={busy}
-              onReady={setLiveWallets}
-              onUnavailable={() => {
-                /* Verberg via onReady/live filter; geen grijze knoppen. */
-                setLiveWallets([]);
-              }}
-              onError={(message) => toast(message)}
-              onSuccess={() => {
-                window.location.href = "/";
-              }}
+        <header className="v2-card-trial__header">
+          <Link href="/" className="v2-card-trial__brand">
+            <Image
+              src={CARD_TRIAL_LOGO_SRC}
+              alt=""
+              width={22}
+              height={16}
+              className="v2-card-trial__brand-logo"
+              priority
             />
-            {showWalletZone ? (
-              <p className="v2-abonnement__or" role="separator">
-                {t("v2.paywallOrCard")}
-              </p>
-            ) : null}
+            Structuro
+          </Link>
+          <Link href="/dagstart" className="v2-card-trial__back">
+            Terug
+          </Link>
+        </header>
+
+        <div className="v2-abonnement v2-abonnement--card-trial v2-fade">
+          <p className="v2-card-trial__eyebrow">
+            <span className="v2-card-trial__eyebrow-line" aria-hidden="true" />
+            {t("v2.paywallEyebrow")}
+          </p>
+          <h1 className="v2-card-trial__title">
+            {t("v2.paywallTitleBefore")}
+            <span className="v2-card-trial__title-accent">
+              {t("v2.paywallTitleAccent")}
+            </span>
+          </h1>
+          <p className="v2-card-trial__lead">{t("v2.paywallLead")}</p>
+
+          <div
+            className="v2-card-trial__toggle"
+            role="tablist"
+            aria-label="Abonnementsperiode"
+          >
             <button
               type="button"
-              className="btn-primary w-full v2-abonnement__card-cta"
+              role="tab"
+              aria-selected={!isYearly}
+              className={
+                isYearly
+                  ? "v2-card-trial__toggle-btn"
+                  : "v2-card-trial__toggle-btn v2-card-trial__toggle-btn--active"
+              }
+              onClick={() => setSelectedPlan("monthly")}
+            >
+              {t("v2.paywallPlanMonthly")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isYearly}
+              className={
+                isYearly
+                  ? "v2-card-trial__toggle-btn v2-card-trial__toggle-btn--active"
+                  : "v2-card-trial__toggle-btn"
+              }
+              onClick={() => setSelectedPlan("yearly")}
+            >
+              <span className="v2-card-trial__toggle-label">
+                {t("v2.paywallPlanYearly")}
+              </span>
+              <span className="v2-card-trial__toggle-bonus">
+                {t("v2.paywallPlanYearlyBonus")}
+              </span>
+            </button>
+          </div>
+
+          <ol className="v2-card-trial__timeline" aria-label="Proefperiode">
+            <li className="v2-card-trial__row v2-card-trial__row--now">
+              <span className="v2-card-trial__dot" aria-hidden="true" />
+              <div className="v2-card-trial__row-copy">
+                <span className="v2-card-trial__row-title">
+                  {t("v2.paywallTimelineToday")}
+                </span>
+                <span className="v2-card-trial__row-sub">
+                  {t("v2.paywallTimelineTodaySub")}
+                </span>
+              </div>
+              <span className="v2-card-trial__row-price">
+                {t("v2.paywallTimelineFree")}
+              </span>
+            </li>
+            <li className="v2-card-trial__row">
+              <span className="v2-card-trial__dot" aria-hidden="true" />
+              <div className="v2-card-trial__row-copy">
+                <span className="v2-card-trial__row-title">
+                  {t("v2.paywallTimelineDay6")}
+                </span>
+                <span className="v2-card-trial__row-sub">
+                  {t("v2.paywallTimelineDay6Sub")}
+                </span>
+              </div>
+              <span className="v2-card-trial__row-price">
+                {t("v2.paywallTimelineFree")}
+              </span>
+            </li>
+            <li className="v2-card-trial__row">
+              <span className="v2-card-trial__dot" aria-hidden="true" />
+              <div className="v2-card-trial__row-copy">
+                <span className="v2-card-trial__row-title">
+                  {t("v2.paywallTimelineDay7")}
+                </span>
+                <span className="v2-card-trial__row-sub">
+                  {t("v2.paywallTimelineDay7Sub")}
+                </span>
+              </div>
+              <span className="v2-card-trial__row-price">{day7Price}</span>
+            </li>
+          </ol>
+
+          <p className="v2-card-trial__after">{afterLine}</p>
+
+          <section className="v2-card-trial__cta-block">
+            <button
+              type="button"
+              className="btn-primary w-full v2-card-trial__cta"
               disabled={busy}
-              onClick={() => void startCheckout()}
+              onClick={() => void startCheckout(selectedPlan)}
             >
               {busy ? t("v2.paywallCardBusy") : t("v2.paywallCardCta")}
             </button>
-            <p className="v2-abonnement__stripe-trust">
-              {t("v2.paywallStripeTrust")}
-            </p>
+            <p className="v2-card-trial__trust">{trustLine}</p>
           </section>
-          <p className="v2-abonnement__trust" style={{ marginTop: 16 }}>
-            {t("v2.paywallRemindTrust")}
-          </p>
         </div>
       </V2Page>
     );

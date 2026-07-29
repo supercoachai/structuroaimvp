@@ -20,7 +20,9 @@ export function isAcquisitionMarketingPath(pathname: string | null | undefined):
   if (pathname === "/tiktok" || pathname.startsWith("/tiktok/")) return true;
   if (pathname === "/start" || pathname.startsWith("/start/")) return true;
   if (pathname === "/jasper" || pathname.startsWith("/jasper/")) return true;
-  // Organic EU productiepad tot cutover: /v2/*
+  // Canonieke organic landing na v2→root cutover
+  if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) return true;
+  // Legacy organic EU pad: /v2/*
   if (pathname === "/v2" || pathname.startsWith("/v2/")) return true;
   return false;
 }
@@ -31,8 +33,11 @@ export function isCookielessAnalyticsPath(
 ): boolean {
   if (!pathname) return false;
   if (isAcquisitionMarketingPath(pathname)) return true;
-  if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) return true;
   if (pathname === "/welkom" || pathname.startsWith("/welkom/")) return true;
+  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) return true;
+  // Paywall/trial: conversie meten zonder consent-race
+  if (pathname === "/abonnement" || pathname.startsWith("/abonnement/")) return true;
+  if (pathname === "/login" || pathname.startsWith("/login/")) return true;
   return false;
 }
 

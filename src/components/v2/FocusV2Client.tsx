@@ -5,6 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { useI18n } from "@/lib/i18n";
+import {
+  captureFocusSessionAbandoned,
+  captureFocusSessionCompleted,
+  captureFocusSessionEndedEarly,
+  captureFocusSessionStarted,
+} from "@/lib/posthog/focusSessionEvents";
 import { captureProductEvent } from "@/lib/posthog/track";
 
 import { v2ScopedCss } from "./theme";
@@ -135,6 +141,17 @@ export default function FocusV2Client() {
   const parkHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countInRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Voorkomt dubbele focus_session_* events in één timer-run. */
+  const focusStartedRef = useRef(false);
+  const focusEndedRef = useRef(false);
+  const focusLiveRef = useRef({
+    running: false,
+    finished: false,
+    remaining: 0,
+    plannedMinutes: 0,
+    thingLabel: "",
+    energy: null as string | null,
+  });
 
   const things = v2NormalizeThings(state.things);
   const thingLabel =
@@ -256,6 +273,59 @@ export default function FocusV2Client() {
   ]);
 
   useEffect(() => {
+    focusLiveRef.current = {
+      running,
+      finished,
+      remaining,
+      plannedMinutes: bucket?.minutes ?? 0,
+      thingLabel,
+      energy: (state.energy as string | null) ?? null,
+    };
+  }, [running, finished, remaining, bucket, thingLabel, state.energy]);
+
+  // Start-event zodra de echte timer loopt (na 3-2-1).
+  useEffect(() => {
+    if (!running || !bucket || focusStartedRef.current) return;
+    focusStartedRef.current = true;
+    focusEndedRef.current = false;
+    captureFocusSessionStarted({
+      plannedMinutes: bucket.minutes,
+      taskId: thingLabel,
+      energy: state.energy,
+    });
+  }, [running, bucket, thingLabel, state.energy]);
+
+  // Natuurlijk klaar.
+  useEffect(() => {
+    if (!finished || !bucket || focusEndedRef.current) return;
+    if (!focusStartedRef.current) return;
+    focusEndedRef.current = true;
+    captureFocusSessionCompleted({
+      plannedMinutes: bucket.minutes,
+      timeLeftSec: 0,
+      taskId: thingLabel,
+      energy: state.energy,
+    });
+  }, [finished, bucket, thingLabel, state.energy]);
+
+  // Navigatie weg tijdens lopende sessie.
+  useEffect(() => {
+    return () => {
+      const live = focusLiveRef.current;
+      if (!focusStartedRef.current || focusEndedRef.current) return;
+      if (!live.running || live.finished) return;
+      focusEndedRef.current = true;
+      captureFocusSessionAbandoned({
+        plannedMinutes: live.plannedMinutes,
+        timeLeftSec: live.remaining,
+        taskId: live.thingLabel,
+        energy: live.energy,
+        reason: "navigation",
+      });
+    };
+  }, []);
+
+  useEffect(() => {
     if (!running || paused) return;
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
@@ -318,7 +388,7 @@ export default function FocusV2Client() {
     if (!showMicroSuggest || suggestShownRef.current) return;
     suggestShownRef.current = true;
     captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_shown, {
-      source: "focus_v2",
+      source: "focus",
     });
   }, [showMicroSuggest]);
 
@@ -410,7 +480,7 @@ export default function FocusV2Client() {
         persistTasks([...tasks, seed]);
       }
       captureProductEvent(ANALYTICS_EVENTS.microsteps_suggest_accepted, {
-        source: "focus_v2",
+        source: "focus",
         step_count: nextSteps.length,
       });
     } catch {
@@ -436,7 +506,7 @@ export default function FocusV2Client() {
     }
     saveV2Dump(addV2DumpItem(trimmed, items));
     setParkDraft("");
-    captureProductEvent("parked_thought_added", { source: "focus_v2" });
+    captureProductEvent("parked_thought_added", { source: "focus" });
     showParkHint(t("v2.focusParkSaved"));
   };
 
@@ -450,6 +520,8 @@ export default function FocusV2Client() {
     const secs = b.minutes * 60;
     // Nog niet persistten tijdens aftel; wis oude snapshot zodat refresh schoon is.
     clearV2FocusTimer();
+    focusStartedRef.current = false;
+    focusEndedRef.current = false;
     setBucket(b);
     setRemaining(secs);
     setTotalSecs(secs);
@@ -504,6 +576,21 @@ export default function FocusV2Client() {
   };
 
   const handleDone = () => {
+    if (
+      focusStartedRef.current &&
+      !focusEndedRef.current &&
+      bucket &&
+      !finished
+    ) {
+      focusEndedRef.current = true;
+      captureFocusSessionEndedEarly({
+        plannedMinutes: bucket.minutes,
+        timeLeftSec: remaining,
+        taskId: thingLabel,
+        energy: state.energy,
+        reason: extended ? "open_ended_done" : "manual_complete",
+      });
+    }
     const nextTasks = completeV2TaskByTitle(tasks, thingLabel);
     persistTasks(nextTasks);
     const remainingThings = removeV2ThingFromList(things, thingLabel);
@@ -517,6 +604,17 @@ export default function FocusV2Client() {
   };
 
   const reset = () => {
+    if (focusStartedRef.current && !focusEndedRef.current && bucket) {
+      focusEndedRef.current = true;
+      captureFocusSessionAbandoned({
+        plannedMinutes: bucket.minutes,
+        timeLeftSec: remaining,
+        taskId: thingLabel,
+        energy: state.energy,
+        reason: "user_cancelled",
+      });
+    }
+    focusStartedRef.current = false;
     setRunning(false);
     setPaused(false);
     setFinished(false);

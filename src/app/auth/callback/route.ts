@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { parseStAttrFromRequest } from "@/lib/posthog/firstTouchAttribution";
 import {
   JASPER_SIGNUP_SOURCE,
@@ -171,6 +173,17 @@ export async function GET(request: Request) {
     if (!error) {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
+      if (user?.id) {
+        void captureServerEvent(user.id, ANALYTICS_EVENTS.magic_link_opened, {
+          channel: "server",
+          auth_flow: "callback_code",
+          is_new_account:
+            Boolean(user.created_at) &&
+            Date.now() - new Date(user.created_at).getTime() < 30 * 60 * 1000,
+        }).catch(() => {
+          /* best-effort */
+        });
+      }
       if (user?.id && user.created_at) {
         const createdMs = new Date(user.created_at).getTime();
         const ageMs = Date.now() - createdMs;

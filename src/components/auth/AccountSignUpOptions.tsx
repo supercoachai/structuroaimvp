@@ -17,10 +17,12 @@ import {
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import {
   getResolvedSignupSourceForProfile,
   getSignupAttributionSource,
@@ -281,6 +283,10 @@ export function AccountSignUpOptions({
       });
 
       if (result.needsEmailConfirmation) {
+        trackClientFunnelEvent(ANALYTICS_EVENTS.signup_email_confirmation_sent, {
+          surface: "registreren",
+          method: "email_password",
+        });
         setEmailConfirmPending(emailTrimmed);
         resetCaptcha();
         return;

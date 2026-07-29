@@ -14,12 +14,14 @@ import {
   isProviderNotEnabledError,
   startOAuthSignIn,
 } from "@/lib/auth/socialSignIn";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { useI18n } from "@/lib/i18n";
 import {
   getResolvedSignupSourceForProfile,
   getStoredSignupCampaign,
   queueSignupCompletedForAnalytics,
 } from "@/lib/posthog/signupAttribution";
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { createClient } from "@/lib/supabase/client";
 
 import { v2Styles } from "./theme";
@@ -144,6 +146,10 @@ export default function V2AccountSaveStep({
       if (result.needsEmailConfirmation) {
         // Geen sessie: pending-vlag mag fresh-start niet naar name sturen.
         consumeV2PostAccountNamePending();
+        trackClientFunnelEvent(ANALYTICS_EVENTS.signup_email_confirmation_sent, {
+          surface: "account_save",
+          method: "email_password",
+        });
         setError(t("v2.accountSaveConfirmEmail"));
         resetCaptcha();
         setBusy(false);

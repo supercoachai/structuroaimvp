@@ -39,8 +39,8 @@ export default function V2ShellWelcomeSheet() {
 
       setUserId(user.id);
       setOpen(true);
-      captureProductEvent(ANALYTICS_EVENTS.v2_shell_welcome_shown, {
-        surface: "v2_home",
+      captureProductEvent(ANALYTICS_EVENTS.shell_welcome_shown, {
+        surface: "home",
       });
     };
 
@@ -53,8 +53,8 @@ export default function V2ShellWelcomeSheet() {
   const onClose = useCallback(() => {
     if (userId) {
       markV2ShellWelcomeSeen(userId);
-      captureProductEvent(ANALYTICS_EVENTS.v2_shell_welcome_dismissed, {
-        surface: "v2_home",
+      captureProductEvent(ANALYTICS_EVENTS.shell_welcome_dismissed, {
+        surface: "home",
       });
     }
     setOpen(false);

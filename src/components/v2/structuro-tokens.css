@@ -1436,6 +1436,281 @@
   font-weight: 500;
 }
 
+/* Card-trial paywall: mobiel 1:1; desktop = topbalk + gecentreerde content. */
+.v2-root .v2-abonnement--card-trial {
+  max-width: 420px;
+  gap: 0;
+  padding: 4px 24px 32px;
+}
+.v2-root .v2-card-trial__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 16px;
+  padding: 4px 24px 0;
+  min-height: 36px;
+  box-sizing: border-box;
+}
+.v2-root .v2-card-trial__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  line-height: 1;
+}
+.v2-root .v2-card-trial__brand-logo {
+  display: block;
+  width: 22px;
+  height: auto;
+  flex-shrink: 0;
+}
+.v2-root .v2-card-trial__back {
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  opacity: 0.72;
+}
+.v2-root .v2-card-trial__back:hover {
+  opacity: 1;
+  color: var(--text);
+}
+.v2-root .v2-card-trial__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v2-root .v2-card-trial__eyebrow-line {
+  display: block;
+  width: 18px;
+  height: 1.5px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.v2-root .v2-card-trial__title {
+  margin: 14px 0 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.85rem, 6.2vw, 2.35rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text);
+}
+.v2-root .v2-card-trial__title-accent {
+  color: var(--accent);
+}
+.v2-root .v2-card-trial__lead {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+.v2-root .v2-card-trial__toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 28px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(26, 26, 27, 0.06);
+}
+.v2-root .v2-card-trial__toggle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.v2-root .v2-card-trial__toggle-btn--active {
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(26, 35, 64, 0.06), 0 4px 14px rgba(26, 35, 64, 0.08);
+}
+.v2-root .v2-card-trial__toggle-label {
+  display: block;
+}
+.v2-root .v2-card-trial__toggle-bonus {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+.v2-root .v2-card-trial__timeline {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+}
+.v2-root .v2-card-trial__row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.v2-root .v2-card-trial__row:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+.v2-root .v2-card-trial__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  box-sizing: border-box;
+}
+.v2-root .v2-card-trial__row--now .v2-card-trial__dot {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.v2-root .v2-card-trial__row-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.v2-root .v2-card-trial__row-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+.v2-root .v2-card-trial__row-sub {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.v2-root .v2-card-trial__row-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.25;
+  white-space: nowrap;
+  padding-top: 1px;
+}
+.v2-root .v2-card-trial__after {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--accent);
+}
+.v2-root .v2-card-trial__cta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
+.v2-root .v2-card-trial__cta {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 28px !important;
+  background: var(--accent) !important;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+.v2-root .v2-card-trial__cta:hover:not(:disabled) {
+  background: #24504c !important;
+}
+.v2-root .v2-card-trial__trust {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  max-width: 36ch;
+}
+
+@media (min-width: 768px) {
+  /* Topbalk vast over de volle breedte. */
+  .v2-root .v2-card-trial__header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    max-width: none;
+    margin: 0;
+    padding: 20px 40px;
+    min-height: 64px;
+    background: var(--surface);
+  }
+  .v2-root .v2-card-trial__brand {
+    font-size: 17px;
+  }
+  .v2-root .v2-card-trial__back {
+    font-size: 15px;
+  }
+
+  /* Contentkolom: iets breder, verticaal gecentreerd onder de balk. */
+  .v2-root .v2-abonnement--card-trial {
+    max-width: 460px;
+    padding: 24px 32px 56px;
+  }
+  .v2-root .v2-card-trial__title {
+    font-size: 2.6rem;
+    max-width: 14ch;
+  }
+  .v2-root .v2-card-trial__lead {
+    font-size: 16px;
+    max-width: 40ch;
+    line-height: 1.55;
+  }
+  .v2-root .v2-card-trial__toggle {
+    margin-top: 32px;
+  }
+  .v2-root .v2-card-trial__timeline {
+    margin-top: 32px;
+  }
+  .v2-root .v2-card-trial__cta-block {
+    margin-top: 32px;
+  }
+  .v2-root .v2-card-trial__trust {
+    max-width: 42ch;
+  }
+}
+
+@media (min-width: 1100px) {
+  .v2-root .v2-card-trial__header {
+    padding: 22px 56px;
+  }
+  .v2-root .v2-abonnement--card-trial {
+    max-width: 480px;
+  }
+  .v2-root .v2-card-trial__title {
+    font-size: 2.75rem;
+  }
+}
+
 /* Zelf-swipen: v1-deck feel in Variant F (swipe + klik). */
 .v2-root .v2-swipe-deck {
   position: relative;

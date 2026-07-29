@@ -151,9 +151,13 @@ async function postStripeWebhook(request: Request) {
                   )
                 )
               : null,
-            surface: session.metadata?.surface ?? null,
-            v2_card_trial: isCardTrial,
-            trial_cohort: isCardTrial ? "v2_card_7d" : "legacy",
+            surface:
+              session.metadata?.surface === "v2" ||
+              session.metadata?.surface === "app"
+                ? "app"
+                : session.metadata?.surface ?? null,
+            card_trial: isCardTrial,
+            trial_cohort: isCardTrial ? "card_7d" : "legacy",
           });
         }
         break;
@@ -236,13 +240,13 @@ async function postStripeWebhook(request: Request) {
           typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
         if (!customerId) break;
         let periodEndIso: string | undefined;
-        let trialCohort: "v2_card_7d" | "legacy" = "legacy";
+        let trialCohort: "card_7d" | "legacy" = "legacy";
         const subRef = invoice.subscription;
         const subId = typeof subRef === "string" ? subRef : subRef?.id;
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId);
           periodEndIso = new Date(subscriptionCurrentPeriodEndUnix(sub) * 1000).toISOString();
-          if (sub.metadata?.v2_card_trial === "1") trialCohort = "v2_card_7d";
+          if (sub.metadata?.v2_card_trial === "1") trialCohort = "card_7d";
         }
         await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
           subscription_status: "active",
@@ -264,7 +268,7 @@ async function postStripeWebhook(request: Request) {
               currency: invoice.currency ?? "eur",
               billing_reason: invoice.billing_reason ?? null,
               trial_cohort: trialCohort,
-              v2_card_trial: trialCohort === "v2_card_7d",
+              card_trial: trialCohort === "card_7d",
             });
           }
           const to = paidRow?.email?.trim() || invoice.customer_email?.trim();

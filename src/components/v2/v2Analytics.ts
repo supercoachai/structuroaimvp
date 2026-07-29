@@ -1,5 +1,6 @@
 "use client";
 
+import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { captureAnonymousEvent } from "@/lib/posthog/track";
 
 import { isV2EveningLocal } from "./v2Dump";
@@ -7,14 +8,38 @@ import { patchV2Settings, readV2Settings } from "./v2Settings";
 import { todayYmd } from "./v2Tasks";
 import type { V2Energy } from "./V2Context";
 
-const SESSION_FIRED_KEY = "v2_analytics_session_fired";
-const DAY2_FIRED_PREFIX = "v2_day2_return_fired_";
+const SESSION_FIRED_KEY = "app_analytics_session_fired";
+const DAY2_FIRED_PREFIX = "day2_return_fired_";
 
-function trackV2(event: string, properties?: Record<string, unknown>): void {
+/**
+ * P0 retentie/activatie: altijd cookieless (geen settings-opt-in).
+ * Server-backup via client-funnel API.
+ */
+function trackAppActivation(
+  event:
+    | "app_session_start"
+    | "day2_return"
+    | "daily_dagstart_complete"
+    | "shutdown_completed"
+    | "frisse_start_accepted"
+    | "pwa_install_shown"
+    | "pwa_install_prompt_available"
+    | "pwa_install_prompt_clicked"
+    | "pwa_install_prompt_result"
+    | "pwa_install_skipped",
+  properties?: Record<string, unknown>
+): void {
   if (typeof window === "undefined") return;
-  // Opt-in: settings-toggle moet aan staan (doctrine: geen stille tracking).
+  trackClientFunnelEvent(event, { ...properties, surface: "app" });
+}
+
+/**
+ * Fine-grained UI prompts: alleen bij expliciete analytics-toestemming in settings.
+ */
+function trackOptIn(event: string, properties?: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
   if (!readV2Settings().analyticsConsent) return;
-  captureAnonymousEvent(event, { ...properties, surface: "v2" });
+  captureAnonymousEvent(event, { ...properties, surface: "app" });
 }
 
 function calendarDaysBetween(earlierYmd: string, laterYmd: string): number {
@@ -41,7 +66,7 @@ function daysSinceLastVisit(): number | null {
   return (Date.now() - prev) / (1000 * 60 * 60 * 24);
 }
 
-/** Eén keer per browsersessie bij openen van v2. */
+/** Eén keer per browsersessie bij openen van de app. */
 export function trackV2SessionStart(): void {
   if (typeof window === "undefined") return;
   try {
@@ -56,7 +81,7 @@ export function trackV2SessionStart(): void {
   const daysSinceFirst = calendarDaysBetween(firstOpenYmd, today);
   const visitGap = daysSinceLastVisit();
 
-  trackV2("v2_session_start", {
+  trackAppActivation("app_session_start", {
     date: today,
     days_since_first_open: daysSinceFirst,
     days_since_last_visit:
@@ -71,7 +96,7 @@ export function trackV2SessionStart(): void {
     } catch {
       // negeren
     }
-    trackV2("v2_day2_return", {
+    trackAppActivation("day2_return", {
       date: today,
       days_since_first_open: daysSinceFirst,
       days_since_last_visit:
@@ -85,7 +110,7 @@ export function trackV2DagstartComplete(props: {
   thingCount: number;
   hasWhy: boolean;
 }): void {
-  trackV2("v2_dagstart_complete", {
+  trackAppActivation("daily_dagstart_complete", {
     energy_level: props.energy,
     thing_count: props.thingCount,
     has_why: props.hasWhy,
@@ -96,7 +121,7 @@ export function trackV2ShutdownCompleted(props: {
   winCount: number;
   dumpAdded: boolean;
 }): void {
-  trackV2("v2_shutdown_completed", {
+  trackAppActivation("shutdown_completed", {
     win_count: props.winCount,
     dump_added: props.dumpAdded,
     is_evening: isV2EveningLocal(),
@@ -106,7 +131,7 @@ export function trackV2ShutdownCompleted(props: {
 export function trackV2FrisseStartAccepted(props: {
   daysSinceLastVisit: number | null;
 }): void {
-  trackV2("v2_frisse_start_accepted", {
+  trackAppActivation("frisse_start_accepted", {
     days_since_last_visit:
       props.daysSinceLastVisit === null
         ? null
@@ -118,7 +143,7 @@ export function trackV2EveningDumpAdded(props: {
   source: "dump" | "shutdown";
   contentLength: number;
 }): void {
-  trackV2("v2_evening_dump_added", {
+  trackOptIn("evening_dump_added", {
     source: props.source,
     content_length: props.contentLength,
     hour_local: new Date().getHours(),
@@ -128,142 +153,142 @@ export function trackV2EveningDumpAdded(props: {
 export function trackV2WhySuggestionShown(props: {
   source: "task" | "journey";
 }): void {
-  trackV2("v2_why_suggestion_shown", { source: props.source });
+  trackOptIn("why_suggestion_shown", { source: props.source });
 }
 
 export function trackV2WhySuggestionAccepted(props: {
   source: "task" | "journey";
 }): void {
-  trackV2("v2_why_suggestion_accepted", { source: props.source });
+  trackOptIn("why_suggestion_accepted", { source: props.source });
 }
 
 export function trackV2EnergyShortcutShown(props: { energy: V2Energy }): void {
-  trackV2("v2_energy_shortcut_shown", { energy_level: props.energy });
+  trackOptIn("energy_shortcut_shown", { energy_level: props.energy });
 }
 
 export function trackV2EnergyShortcutAccepted(props: { energy: V2Energy }): void {
-  trackV2("v2_energy_shortcut_accepted", { energy_level: props.energy });
+  trackOptIn("energy_shortcut_accepted", { energy_level: props.energy });
 }
 
 export function trackV2EnergyShortcutSkipped(): void {
-  trackV2("v2_energy_shortcut_skipped", {});
+  trackOptIn("energy_shortcut_skipped", {});
 }
 
 export function trackV2CycleHintShown(props: { kind: "active_only" | "phase" }): void {
-  trackV2("v2_cycle_hint_shown", { hint_kind: props.kind });
+  trackOptIn("cycle_hint_shown", { hint_kind: props.kind });
 }
 
 export function trackV2ReturnReminderOptIn(props: {
   variant: "notification" | "widget_hint";
 }): void {
-  trackV2("v2_return_reminder_opt_in", { variant: props.variant });
+  trackOptIn("return_reminder_opt_in", { variant: props.variant });
 }
 
 export function trackV2ReturnReminderShown(props: {
   channel: "notification" | "widget_hint";
 }): void {
-  trackV2("v2_return_reminder_shown", { channel: props.channel });
+  trackOptIn("return_reminder_shown", { channel: props.channel });
 }
 
 export function trackV2ReturnReminderDismissed(props: {
   channel: "notification" | "widget_hint";
 }): void {
-  trackV2("v2_return_reminder_dismissed", { channel: props.channel });
+  trackOptIn("return_reminder_dismissed", { channel: props.channel });
 }
 
 export function trackV2SkipDay1HookShown(): void {
-  trackV2("v2_skip_day1_hook_shown", {});
+  trackOptIn("skip_day1_hook_shown", {});
 }
 
 export function trackV2ShutdownNudgeShown(): void {
-  trackV2("v2_shutdown_nudge_shown", {});
+  trackOptIn("shutdown_nudge_shown", {});
 }
 
 export function trackV2ReturnPermissionShown(_props: Record<string, never>): void {
-  trackV2("v2_return_permission_prompt_shown", {});
+  trackOptIn("return_permission_prompt_shown", {});
 }
 
 export function trackV2ReturnPermissionAccepted(props: {
   variant: "notification" | "widget_hint";
 }): void {
-  trackV2("v2_return_permission_prompt_accepted", { variant: props.variant });
+  trackOptIn("return_permission_prompt_accepted", { variant: props.variant });
 }
 
 export function trackV2ReturnPermissionDismissed(_props: Record<string, never>): void {
-  trackV2("v2_return_permission_prompt_dismissed", {});
+  trackOptIn("return_permission_prompt_dismissed", {});
 }
 
 export function trackV2HomePromptPriority(props: { prompt_kind: string }): void {
-  trackV2("v2_home_prompt_priority", { prompt_kind: props.prompt_kind });
+  trackOptIn("home_prompt_priority", { prompt_kind: props.prompt_kind });
 }
 
 export function trackV2ShutdownSentiment(props: {
   sentiment: "calm_yes" | "calm_no" | "skipped";
 }): void {
-  trackV2("v2_shutdown_sentiment", { sentiment: props.sentiment });
+  trackOptIn("shutdown_sentiment", { sentiment: props.sentiment });
 }
 
 export function trackV2ReminderCadenceChanged(props: {
   cadence: "none" | "morning" | "evening" | "both";
 }): void {
-  trackV2("v2_reminder_cadence_changed", { cadence: props.cadence });
+  trackOptIn("reminder_cadence_changed", { cadence: props.cadence });
 }
 
 export function trackV2OpenTaskReminderOptIn(_props: Record<string, never>): void {
-  trackV2("v2_open_task_reminder_opt_in", {});
+  trackOptIn("open_task_reminder_opt_in", {});
 }
 
 export function trackV2OpenTaskReminderShown(props: { channel: "home" | "notification" }): void {
-  trackV2("v2_open_task_reminder_shown", { channel: props.channel });
+  trackOptIn("open_task_reminder_shown", { channel: props.channel });
 }
 
 export function trackV2OpenTaskReminderDismissed(props: { channel: "home" | "notification" }): void {
-  trackV2("v2_open_task_reminder_dismissed", { channel: props.channel });
+  trackOptIn("open_task_reminder_dismissed", { channel: props.channel });
 }
 
 export function trackV2QuoteOptIn(_props: Record<string, never>): void {
-  trackV2("v2_quote_opt_in", {});
+  trackOptIn("quote_opt_in", {});
 }
 
 export function trackV2QuoteShown(props: { surface: "home" | "notification" }): void {
-  trackV2("v2_quote_shown", { surface: props.surface });
+  trackOptIn("quote_shown", { surface: props.surface });
 }
 
 export function trackV2QuoteDismissed(_props: Record<string, never>): void {
-  trackV2("v2_quote_dismissed", {});
+  trackOptIn("quote_dismissed", {});
 }
 
 export function trackV2NotificationFired(props: {
   kind: "morning" | "evening" | "open_task" | "shutdown";
 }): void {
-  trackV2("v2_notification_fired", { kind: props.kind });
+  trackOptIn("notification_fired", { kind: props.kind });
 }
 
 export function trackV2NotificationMutedToday(_props: Record<string, never>): void {
-  trackV2("v2_notification_muted_today", {});
+  trackOptIn("notification_muted_today", {});
 }
 
 export function trackV2PwaInstallShown(platformHint: string): void {
-  trackV2("v2_pwa_install_shown", { platform_hint: platformHint });
+  trackAppActivation("pwa_install_shown", { platform_hint: platformHint });
 }
 
 export function trackV2PwaInstallPromptAvailable(): void {
-  trackV2("v2_pwa_install_prompt_available", { platform_hint: "android" });
+  trackAppActivation("pwa_install_prompt_available", { platform_hint: "android" });
 }
 
 export function trackV2PwaInstallPromptClicked(): void {
-  trackV2("v2_pwa_install_prompt_clicked", { platform_hint: "android" });
+  trackAppActivation("pwa_install_prompt_clicked", { platform_hint: "android" });
 }
 
 export function trackV2PwaInstallPromptResult(
   outcome: "accepted" | "dismissed" | "unavailable",
 ): void {
-  trackV2("v2_pwa_install_prompt_result", {
+  trackAppActivation("pwa_install_prompt_result", {
     platform_hint: "android",
     outcome,
   });
 }
 
 export function trackV2PwaInstallSkipped(): void {
-  trackV2("v2_pwa_install_skipped", {});
+  trackAppActivation("pwa_install_skipped", {});
 }
