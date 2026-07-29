@@ -35,11 +35,12 @@ describe("lifecycleMail segments", () => {
     vi.useRealTimers();
   });
 
-  it("P0 waves zijn hello+nudge / s1+S5 / s2+S4", () => {
+  it("P0 waves zijn hello+nudge / s1+S5 / s2+S3+S4", () => {
     expect(templatesForWaveP0("welcome")).toEqual(["s0_hello", "s0_welcome"]);
     expect(templatesForWaveP0("morning")).toEqual(["s1_day2", "s5_paywall"]);
     expect(templatesForWaveP0("evening")).toEqual([
       "s2_still",
+      "s3_value",
       "s4_pre_paywall",
     ]);
   });
@@ -113,13 +114,55 @@ describe("lifecycleMail segments", () => {
     ).toEqual([]);
   });
 
-  it("Stripe trialing: S4 alleen op laatste volle dag (period_end)", () => {
-    vi.setSystemTime(new Date("2026-07-21T12:00:00.000Z"));
+  it("Stripe 7d card-trial: S1 op ~dag 1 (daysLeft 6)", () => {
+    vi.setSystemTime(new Date("2026-07-22T12:00:00.000Z"));
     expect(
       eligibleTemplatesForCandidate(
         candidate({
           subscription_status: "trialing",
-          subscription_current_period_end: "2026-07-22T10:00:00.000Z",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
+          checkin_count: 1,
+          last_checkin_date: "2026-07-21",
+        })
+      )
+    ).toEqual(["s1_day2"]);
+  });
+
+  it("Stripe 7d card-trial: S2 bij stilte mid-trial (daysLeft 4)", () => {
+    vi.setSystemTime(new Date("2026-07-24T12:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
+          checkin_count: 2,
+          last_checkin_date: "2026-07-21",
+        })
+      )
+    ).toEqual(["s2_still"]);
+  });
+
+  it("Stripe 7d card-trial: S3 bij ritme vóór pre-charge (daysLeft 2)", () => {
+    vi.setSystemTime(new Date("2026-07-26T12:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
+          checkin_count: 3,
+          last_checkin_date: "2026-07-26",
+        })
+      )
+    ).toEqual(["s3_value"]);
+  });
+
+  it("Stripe 7d card-trial: S4 alleen op laatste volle dag (period_end)", () => {
+    vi.setSystemTime(new Date("2026-07-27T12:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
           checkin_count: 3,
         })
       )
@@ -128,8 +171,23 @@ describe("lifecycleMail segments", () => {
       eligibleTemplatesForCandidate(
         candidate({
           subscription_status: "trialing",
-          subscription_current_period_end: "2026-07-25T10:00:00.000Z",
+          subscription_current_period_end: "2026-07-30T10:00:00.000Z",
           checkin_count: 3,
+        })
+      )
+    ).not.toContain("s4_pre_paywall");
+  });
+
+  it("Stripe trialing: geen mid-trial mails zonder ritme/stilte", () => {
+    vi.setSystemTime(new Date("2026-07-24T12:00:00.000Z"));
+    // daysLeft 4, maar recent checkin → geen S2
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
+          checkin_count: 1,
+          last_checkin_date: "2026-07-24",
         })
       )
     ).toEqual([]);

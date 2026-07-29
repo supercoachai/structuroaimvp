@@ -6,6 +6,7 @@ import { captureServerEvent } from "@/lib/posthog/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 import {
+  isLifecycleV2AudienceCandidate,
   lifecycleMailSendsEnabled,
   lifecycleMailTestAllowlist,
   resolveLifecycleMailAudience,
@@ -41,6 +42,13 @@ function audienceAllowsCandidate(
 ): boolean {
   if (audience === "off") return false;
   if (audience === "test") return isTestAudienceCandidate(c);
+  if (audience === "v2") {
+    return (
+      !c.is_test &&
+      !isProtectedTestAccount(c.email) &&
+      isLifecycleV2AudienceCandidate(c)
+    );
+  }
   return !c.is_test && !isProtectedTestAccount(c.email);
 }
 
@@ -145,7 +153,7 @@ export async function sendLifecycleTemplateToUser(opts: {
       return {
         ...base,
         status: "skipped",
-        note: "audience=all geblokkeerd zonder LIFECYCLE_MAIL_ALLOW_V1=true",
+        note: "audience=all geblokkeerd zonder LIFECYCLE_MAIL_ALLOW_V1=true. Gebruik audience=v2 voor card-trial live.",
       };
     }
   }

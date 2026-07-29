@@ -88,6 +88,38 @@ describe("lifecycleMail templates", () => {
     );
     expect(mail.text).toContain("Alleen vandaag");
     expect(mail.text).toContain("geen lijst die groeit");
+    expect(mail.text).toContain("3 dagen");
+    expect(mail.text).toContain("Geen creditcard nodig");
+  });
+
+  it("S0 hello voor card-cohort: 7 dagen, geen creditcard-claim", () => {
+    const mail = renderLifecycleMail(
+      "s0_hello",
+      { ...base, created_at: "2026-07-29T10:00:00.000Z" },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.text).toContain("7 dagen");
+    expect(mail.text).not.toContain("Geen creditcard nodig");
+    expect(mail.text).toContain("Opzeggen doe je later");
+  });
+
+  it("S4 card-trialing belooft stop vóór afschrijving", () => {
+    const mail = renderLifecycleMail(
+      "s4_pre_paywall",
+      {
+        ...base,
+        subscription_status: "trialing",
+        subscription_current_period_end: "2026-08-05T10:00:00.000Z",
+        checkin_count: 4,
+      },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x",
+      new Date("2026-08-04T12:00:00.000Z"),
+      { cancelUrl: "https://www.structuro.ai/stop-abonnement?token=abc" }
+    );
+    expect(mail.html).toContain("Stop abonnement");
+    expect(mail.html).toContain("eerste afschrijving");
+    expect(mail.html).not.toContain("Geen automatische charge");
+    expect(mail.ctaPath).toContain("/stop-abonnement");
   });
 
   it("S4 gebruikt checkins en trust-subline", () => {

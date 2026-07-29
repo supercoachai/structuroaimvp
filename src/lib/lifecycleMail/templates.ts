@@ -1,7 +1,10 @@
 import { getAppOrigin } from "@/lib/appUrl";
-import { resolveStripeTrialDaysForSignupSource } from "@/lib/stripe/trialConfig";
 import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 
+import {
+  isStripeCardTrialing,
+  resolveLifecycleTrialDays,
+} from "./trialLength";
 import type {
   LifecycleCandidate,
   LifecycleRenderedMail,
@@ -266,14 +269,19 @@ export function renderLifecycleMail(
 ): LifecycleRenderedMail {
   const name = resolveGreetingName(candidate);
   const hi = greetingLine(candidate);
-  const trialDays = resolveStripeTrialDaysForSignupSource(candidate.signup_source);
+  const trialDays = resolveLifecycleTrialDays(candidate);
+  const cardTrialing = isStripeCardTrialing(candidate);
   const cohort = amsterdamYmd(now);
   const n = Math.max(0, candidate.checkin_count);
   const paras = (...lines: Array<string | null>) =>
     lines.filter((line): line is string => Boolean(line && line.trim()));
 
   switch (templateId) {
-    case "s0_hello":
+    case "s0_hello": {
+      const noCardLine =
+        trialDays >= 7
+          ? "Open de app en begin met één ding. Opzeggen doe je later in één tik, als je wilt."
+          : "Open de app en begin met één ding. Geen creditcard nodig deze dagen.";
       return buildMail({
         templateId,
         cohortKey: `hello:${candidate.user_id}`,
@@ -283,12 +291,13 @@ export function renderLifecycleMail(
           hi,
           "Welkom bij Structuro.",
           `Je hebt ${trialDays} dagen om rustig te proberen. Geen planning voor de hele week, geen lijst die groeit. Alleen vandaag.`,
-          "Open de app en begin met één ding. Geen creditcard nodig deze dagen."
+          noCardLine
         ),
         ctaLabel: "Naar dagstart",
         ctaPath: lifecycleCtaDagstart(),
         unsubscribeUrl,
       });
+    }
 
     case "s0_welcome":
       return buildMail({
@@ -342,12 +351,17 @@ export function renderLifecycleMail(
           name,
           `Je deed ${n} keer iets terwijl het druk was`
         ),
-        preview: "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen.",
+        preview:
+          trialDays >= 7
+            ? "Over een paar dagen vraagt de app of je wilt doorgaan."
+            : "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen.",
         paragraphs: paras(
           hi,
           `De afgelopen dagen startte je ${n} keer je dag in Structuro.`,
           `Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`,
-          "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt."
+          trialDays >= 7
+            ? "Over een paar dagen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt, en stoppen kan in één tik."
+            : "Morgen vraagt de app of je wilt doorgaan. Geen verrassingen: je ziet het bedrag vóór je betaalt."
         ),
         ctaLabel: "Naar Structuro",
         ctaPath: lifecycleCtaHome(),
@@ -365,11 +379,12 @@ export function renderLifecycleMail(
           /* keep paywall fallback */
         }
       }
+      const cardCharge = cardTrialing || Boolean(cancelUrl);
       return buildMail({
         templateId,
         cohortKey: `prepaywall:${cohort}`,
         subject: personalizedSubject(name, "Morgen kies je of je door wilt"),
-        preview: cancelUrl
+        preview: cardCharge
           ? "Je proefperiode loopt morgen af. Stoppen kan met één klik."
           : "Je proefperiode loopt morgen af.",
         paragraphs: paras(
@@ -378,13 +393,13 @@ export function renderLifecycleMail(
           n > 0
             ? `Je opende Structuro deze dagen ${n} keer. Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`
             : "De afgelopen dagen kon je rustig wennen aan hoe Structuro werkt.",
-          cancelUrl
+          cardCharge
             ? "Wil je stoppen vóór de eerste afschrijving? Gebruik de knop hieronder. Geen formulier, geen nagesprek."
             : "Daarna kun je kiezen: door met Structuro, of stoppen."
         ),
-        ctaLabel: cancelUrl ? "Stop abonnement" : "Kies of je doorgaat",
-        ctaPath,
-        ctaSubline: cancelUrl
+        ctaLabel: cardCharge ? "Stop abonnement" : "Kies of je doorgaat",
+        ctaPath: cardCharge && !cancelUrl ? "/stop-abonnement" : ctaPath,
+        ctaSubline: cardCharge
           ? "Eén klik. Je houdt toegang tot het einde van je proefperiode."
           : "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
         unsubscribeUrl,

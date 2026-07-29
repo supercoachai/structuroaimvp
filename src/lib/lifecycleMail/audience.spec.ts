@@ -21,6 +21,11 @@ describe("lifecycleMail audience", () => {
     expect(resolveLifecycleMailAudience()).toBe("off");
   });
 
+  it("accepteert audience=v2", () => {
+    process.env.LIFECYCLE_MAIL_AUDIENCE = "v2";
+    expect(resolveLifecycleMailAudience()).toBe("v2");
+  });
+
   it("sends disabled by default", () => {
     delete process.env.LIFECYCLE_MAIL_ENABLED;
     expect(lifecycleMailSendsEnabled()).toBe(false);

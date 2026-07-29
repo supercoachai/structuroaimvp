@@ -6,6 +6,7 @@ import { captureServerEvent } from "@/lib/posthog/server";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 
 import {
+  isLifecycleV2AudienceCandidate,
   lifecycleMailSendsEnabled,
   lifecycleMailTestAllowlist,
   resolveLifecycleMailAudience,
@@ -56,6 +57,14 @@ function filterByAudience(
   if (audience === "off") return [];
   if (audience === "test") {
     return candidates.filter(isTestAudienceCandidate);
+  }
+  if (audience === "v2") {
+    return candidates.filter(
+      (c) =>
+        !c.is_test &&
+        !isProtectedTestAccount(c.email) &&
+        isLifecycleV2AudienceCandidate(c)
+    );
   }
   // all: echte gebruikers, geen testaccounts
   return candidates.filter(
@@ -151,7 +160,8 @@ export async function runLifecycleBatch(
     };
   }
 
-  // Live naar alle echte users vereist dubbele opt-in.
+  // Live naar alle echte users (incl. legacy) vereist dubbele opt-in.
+  // audience=v2 is de veilige live-modus voor card-trial + events.
   if (audience === "all" && enabled && !opts.dryRun) {
     if (process.env.LIFECYCLE_MAIL_ALLOW_V1 !== "true") {
       return {
@@ -162,7 +172,7 @@ export async function runLifecycleBatch(
         sent: 0,
         skipped: 0,
         failed: 0,
-        note: "audience=all geblokkeerd zonder LIFECYCLE_MAIL_ALLOW_V1=true. V1 blijft onaangeraakt.",
+        note: "audience=all geblokkeerd zonder LIFECYCLE_MAIL_ALLOW_V1=true. Gebruik audience=v2 voor card-trial live.",
       };
     }
   }
