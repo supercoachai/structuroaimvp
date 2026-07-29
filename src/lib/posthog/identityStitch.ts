@@ -72,7 +72,7 @@ export function linkAnonymousDistinctToUser(
     const hasSetOnce =
       Boolean(setOnceProperties) && Object.keys(setOnceProperties!).length > 0;
 
-    // Al geïdentificeerd als deze user: alleen person props bijwerken (bijv. e-mail na consent).
+    // Al geïdentificeerd als deze user: alleen person props bijwerken (bijv. $email).
     if (alreadyIdentified && alreadyCurrent) {
       if (!hasPersonProps && !hasSetOnce) return;
       if (hasSetOnce) {

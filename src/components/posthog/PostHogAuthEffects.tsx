@@ -121,9 +121,21 @@ export function PostHogAuthEffects() {
         tryCaptureSignup(user);
 
         try {
+          // $email is functionele identity voor ingelogde users (niet marketing).
+          // Altijd zetten als session email beschikbaar is, ongeacht cookie consent.
           const personProps: Record<string, unknown> = {};
-          if (consent === "granted" && user.email) {
-            personProps.email = user.email;
+          if (user.email) {
+            personProps.$email = user.email;
+          }
+          const meta = user.user_metadata as Record<string, unknown> | null | undefined;
+          const rawName =
+            (typeof meta?.full_name === "string" && meta.full_name) ||
+            (typeof meta?.name === "string" && meta.name) ||
+            (typeof meta?.given_name === "string" && meta.given_name) ||
+            "";
+          const trimmedName = rawName.trim();
+          if (trimmedName) {
+            personProps.$name = trimmedName;
           }
           linkAnonymousDistinctToUser(
             user.id,

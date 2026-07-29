@@ -72,13 +72,13 @@ describe("identityStitch", () => {
     expect(alias).not.toHaveBeenCalled();
   });
 
-  it("mag identify herhalen om person props te zetten na consent", () => {
+  it("mag identify herhalen om person props te zetten ($email)", () => {
     getDistinctId.mockReturnValue("user-1");
     localStorage.setItem(IDENTIFIED_USER_STORAGE_KEY, "user-1");
-    linkAnonymousDistinctToUser("user-1", { email: "a@b.nl" });
+    linkAnonymousDistinctToUser("user-1", { $email: "a@b.nl" });
     expect(alias).not.toHaveBeenCalled();
     expect(identify).toHaveBeenCalledTimes(1);
-    expect(identify).toHaveBeenCalledWith("user-1", { email: "a@b.nl" });
+    expect(identify).toHaveBeenCalledWith("user-1", { $email: "a@b.nl" });
   });
 
   it("persistAnonymousDistinctIdForStitch stopt na identify", () => {
