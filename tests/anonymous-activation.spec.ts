@@ -16,25 +16,6 @@ const COMPLETED_KEY = "structuro_onboarding_completed_local";
 const VERSION_KEY = "structuro_onboarding_version_local";
 const LOCAL_MODE_COOKIE = "structuro_local_mode";
 
-function ctaLink(page: Page) {
-  // Organic /start CTA → v1 onboarding (geen v2-lekkage).
-  return page.locator('a[href="/onboarding"]').first();
-}
-
-/**
- * Klik de CTA pas nadat de client-component gehydrateerd is. Zonder die wachttijd
- * vuurt Playwright de klik op de nog niet-interactieve anchor, waardoor de
- * onClick-handler (cookie + assign) niet draait en de anchor-default naar /login
- * leidt. We wachten daarom op load + een hydratiebuffer.
- */
-async function clickCtaWhenHydrated(page: Page) {
-  const cta = ctaLink(page);
-  await expect(cta).toBeVisible({ timeout: 15_000 });
-  await page.waitForLoadState("load").catch(() => {});
-  await page.waitForTimeout(2500);
-  await cta.click();
-}
-
 async function seedProgress(page: Page) {
   await page.evaluate(
     ({ tasksKey, nameKey, completedKey, versionKey }) => {
@@ -82,35 +63,30 @@ test.describe("Anonieme activatie-funnel", () => {
     await context.clearCookies();
   });
 
-  test("(a) /start laadt en de hoofd-CTA is zichtbaar en klikbaar", async ({
-    page,
-  }) => {
+  test("(a) /start redirect naar /onboarding", async ({ page }) => {
     await page.goto("/start", { waitUntil: "domcontentloaded" });
-    const cta = ctaLink(page);
-    await expect(cta).toBeVisible({ timeout: 15_000 });
-    await expect(cta).toBeEnabled();
+    await page.waitForURL(/\/onboarding(\/|\?|$)/, {
+      timeout: 20_000,
+      waitUntil: "domcontentloaded",
+    });
+    expect(page.url()).toMatch(/\/onboarding/);
+    expect(page.url()).not.toMatch(/\/start(\?|$)/);
   });
 
-  test("(b) organic CTA landt op /onboarding met local-mode cookie", async ({
+  test("(b) /start met UTM landt op /onboarding met local-mode cookie", async ({
     page,
     context,
   }) => {
-    await page.goto("/start", { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => {
-      try {
-        localStorage.clear();
-      } catch {
-        /* ignore */
-      }
-    });
-
-    await clickCtaWhenHydrated(page);
-
+    await page.goto(
+      "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=e2e",
+      { waitUntil: "domcontentloaded" }
+    );
     await page.waitForURL(/\/onboarding(\/|\?|$)/, {
       timeout: 20_000,
-      waitUntil: "commit",
+      waitUntil: "domcontentloaded",
     });
     expect(page.url()).toMatch(/\/onboarding/);
+    expect(page.url()).toMatch(/utm_source=structuro_eu/);
     expect(page.url()).not.toMatch(/\/v2\//);
 
     const cookies = await context.cookies();
@@ -118,42 +94,19 @@ test.describe("Anonieme activatie-funnel", () => {
     expect(localMode?.value).toBe("1");
   });
 
-  test("(c) her-klik organic CTA blijft naar /onboarding zonder data-wipe", async ({
+  test("(c) her-bezoek /start behoudt localStorage na redirect", async ({
     page,
   }) => {
-    await page.goto("/start", { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => {
-      try {
-        localStorage.clear();
-      } catch {
-        /* ignore */
-      }
-    });
-    await clickCtaWhenHydrated(page);
-    await page.waitForURL(/\/onboarding(\/|\?|$)/, {
-      timeout: 20_000,
-      waitUntil: "commit",
-    });
-
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" });
     await seedProgress(page);
 
-    await page.goto("/start", { waitUntil: "domcontentloaded" });
-    await page.route("**/onboarding**", async (route) => {
-      if (route.request().resourceType() === "document") {
-        await route.fulfill({
-          status: 200,
-          contentType: "text/html",
-          body: "<!doctype html><html><head><title>stub</title></head><body>stub</body></html>",
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await clickCtaWhenHydrated(page);
+    await page.goto(
+      "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=website",
+      { waitUntil: "domcontentloaded" }
+    );
     await page.waitForURL(/\/onboarding(\/|\?|$)/, {
       timeout: 20_000,
-      waitUntil: "commit",
+      waitUntil: "domcontentloaded",
     });
 
     const after = await page.evaluate(

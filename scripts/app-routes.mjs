@@ -26,9 +26,10 @@ export const APP_ROUTES = [
   { path: "/registreren", kind: "public", status: [200], needles: ["registr"] },
   { path: "/registreren/plan", kind: "public", status: [200] },
   { path: "/tiktok", kind: "public", status: [200], needles: ["structuro"] },
-  { path: "/start", kind: "public", status: [200], needles: ["structuro"] },
-  // Next streamt page-level redirect() soms als RSC NEXT_REDIRECT met HTTP 200.
-  { path: "/en/start", kind: "public", status: [200, 307, 308], needles: ["start", "lang=en", "NEXT_REDIRECT"] },
+  // Page-level redirect() (behoudt UTM's + zet lang=en); next.config zou query kwijtraken.
+  { path: "/en/start", kind: "public", status: [200, 307, 308], needles: ["onboarding", "lang=en", "NEXT_REDIRECT"] },
+  // Legacy /start → /onboarding (query behouden); geen leesbare bridge meer.
+  { path: "/start", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
   { path: "/en/tiktok", kind: "public", status: [200, 307, 308], needles: ["tiktok", "lang=en", "NEXT_REDIRECT"] },
   { path: "/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
   { path: "/abonnement", kind: "public", status: [200, 307, 308] },

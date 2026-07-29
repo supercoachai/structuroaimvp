@@ -30,9 +30,9 @@ describe("bridgePaths", () => {
     expect(organic).not.toContain("tiktok");
   });
 
-  it("organische start URL gebruikt /start", () => {
+  it("organische start URL gebruikt /onboarding", () => {
     const url = buildOrganicStartUrl({ contentId: "hero", campaign: "weten", hero: "A" });
-    expect(url).toContain("/start?");
+    expect(url).toContain("/onboarding?");
     expect(url).toContain("utm_source=structuro_eu");
   });
 

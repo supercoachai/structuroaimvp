@@ -46,21 +46,29 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     /**
-     * Legacy waitlist-URL's zijn organisch verkeer. Doorsturen naar de acquisitie-bridge
-     * /start met structuro_eu-attributie zodat de funnel cta_clicked -> /start ->
+     * Legacy waitlist-URL's zijn organisch verkeer. Doorsturen naar /onboarding
+     * met structuro_eu-attributie zodat de funnel cta_clicked -> /onboarding ->
      * signup_completed intact blijft. Nooit naar /tiktok (paid social) redirecten.
      * De /wachtlijst en /inschrijven paden zonder-trailing-slash landen op de
      * bestaande Next-pages (die zelf redirecten met eventuele source-param).
      */
     const LEGACY_WAITLIST_TARGET =
-      "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy";
+      "/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy";
     return [
-      // Engelse bio-links: echte HTTP-redirect (query params blijven behouden).
+      // Organische acquisitie-bridge verwijderd: /start → direct onboarding
+      // (query string blijft behouden, o.a. utm_* en lang).
       {
-        source: "/en/start",
-        destination: "/start?lang=en",
+        source: "/start",
+        destination: "/onboarding",
         permanent: false,
       },
+      {
+        source: "/start/:path*",
+        destination: "/onboarding",
+        permanent: false,
+      },
+      // Engelse bio-links: page-level redirect (/en/start → /onboarding) behoudt
+      // UTM's; next.config-destination met ?lang=en zou request-query overschrijven.
       {
         source: "/en/tiktok",
         destination: "/tiktok?lang=en",

@@ -8,7 +8,6 @@ import {
   getCalendarDateAmsterdam,
 } from "../dagstartCookie";
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
-import { isDagstartNodig } from "../checkDagstart";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
 import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
 import {
@@ -49,6 +48,11 @@ import {
   resolveV2LockdownBouncePath,
 } from "../v2/v2LabAccess";
 import { mapLegacyV2PathToLive, isV2LiveShellPath } from "../v2/livePaths";
+import {
+  isDagstartGateExemptPath,
+  isV2AppShellDagstartPath,
+  shouldRedirectToDagstart,
+} from "../dagstart/dagstartGate";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -285,6 +289,76 @@ async function gateV2InternalOnlyRoute(
 }
 
 /**
+ * Soft dagstart-gate voor publieke v2 shell-routes (`/`, `/todo`, …).
+ * Uitgelogd: doorlaten (welkom op `/`). Ingelogd + vandaag geen dagstart: `/dagstart`.
+ * Onboarding incompleet: niet stelen naar dagstart.
+ */
+async function softGateV2AuthenticatedDagstart(
+  request: NextRequest,
+  event?: NextFetchEvent
+): Promise<NextResponse> {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.next({ request });
+  }
+  // Geen auth-cookie: skip Supabase-roundtrip (welkom voor uitgelogde `/`).
+  if (!hasSupabaseAuthCookie(request)) {
+    return NextResponse.next({ request });
+  }
+
+  const { supabase, supabaseResponse } = createMiddlewareSupabase(request);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return supabaseResponse;
+  }
+
+  const { data: prof, error: profError } = await supabase
+    .from("profiles")
+    .select(
+      "onboarding_completed, onboarding_version, last_dagstart_date, last_seen_at"
+    )
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profError || !prof) {
+    return supabaseResponse;
+  }
+
+  if (
+    shouldTouchLastSeen(
+      prof.last_seen_at != null ? String(prof.last_seen_at) : null
+    )
+  ) {
+    const touch = touchProfileLastSeenAt(supabase, user.id);
+    if (event?.waitUntil) event.waitUntil(touch);
+    else void touch;
+  }
+
+  const onboardingDone = isProfileOnboardingUpToDate(
+    prof.onboarding_completed,
+    prof.onboarding_version as number | null | undefined
+  );
+  // Tijdens onboarding geen harde dagstart-bounce.
+  if (!onboardingDone) {
+    return supabaseResponse;
+  }
+
+  const last =
+    prof.last_dagstart_date != null
+      ? String(prof.last_dagstart_date).slice(0, 10)
+      : null;
+
+  return applyDagstartDbGate(
+    request,
+    supabaseResponse,
+    request.nextUrl.pathname,
+    last
+  );
+}
+
+/**
  * Lichte gate voor beschermde v2-app-routes. Onafhankelijk van
  * STRUCTURO_MIDDLEWARE_PAYWALL: nieuwe card-cohort moet trialing/active hebben.
  */
@@ -313,18 +387,10 @@ async function gateProtectedV2Route(
     return NextResponse.redirect(url, 302);
   }
 
-  if (
-    isProtectedTestAccount(user.email ?? null) ||
-    isInternalTeamAccount(user.email ?? null) ||
-    process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1"
-  ) {
-    return supabaseResponse;
-  }
-
   const { data: prof } = await supabase
     .from("profiles")
     .select(
-      "subscription_status, subscription_current_period_end, created_at, last_dagstart_date, signup_source, app_trial_override_until, last_seen_at"
+      "onboarding_completed, onboarding_version, subscription_status, subscription_current_period_end, created_at, last_dagstart_date, signup_source, app_trial_override_until, last_seen_at"
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -339,42 +405,62 @@ async function gateProtectedV2Route(
     else void touch;
   }
 
-  const createdAt = prof?.created_at != null ? String(prof.created_at) : null;
-  // Alleen hard gate voor nieuwe card-cohort; legacy v2-users houden free-trial.
-  if (!isV2CardTrialCohort(createdAt)) {
-    return supabaseResponse;
+  const lastDagstart =
+    prof?.last_dagstart_date != null
+      ? String(prof.last_dagstart_date).slice(0, 10)
+      : null;
+  const onboardingDone = isProfileOnboardingUpToDate(
+    prof?.onboarding_completed,
+    prof?.onboarding_version as number | null | undefined
+  );
+
+  const skipPaidGate =
+    isProtectedTestAccount(user.email ?? null) ||
+    isInternalTeamAccount(user.email ?? null) ||
+    process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1";
+
+  if (!skipPaidGate) {
+    const createdAt = prof?.created_at != null ? String(prof.created_at) : null;
+    // Alleen hard gate voor nieuwe card-cohort; legacy v2-users houden free-trial.
+    if (isV2CardTrialCohort(createdAt)) {
+      const ok = profileHasAppAccessOrGrace({
+        email: user.email ?? null,
+        subscription_status:
+          typeof prof?.subscription_status === "string"
+            ? prof.subscription_status
+            : null,
+        subscription_current_period_end:
+          typeof prof?.subscription_current_period_end === "string"
+            ? prof.subscription_current_period_end
+            : prof?.subscription_current_period_end != null
+              ? String(prof.subscription_current_period_end)
+              : null,
+        created_at: createdAt,
+        last_dagstart_date: lastDagstart,
+        signup_source:
+          typeof prof?.signup_source === "string" ? prof.signup_source : null,
+        app_trial_override_until:
+          prof?.app_trial_override_until != null
+            ? String(prof.app_trial_override_until)
+            : null,
+      });
+
+      if (!ok) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/abonnement";
+        url.search = "";
+        return NextResponse.redirect(url, 302);
+      }
+    }
   }
 
-  const ok = profileHasAppAccessOrGrace({
-    email: user.email ?? null,
-    subscription_status:
-      typeof prof?.subscription_status === "string"
-        ? prof.subscription_status
-        : null,
-    subscription_current_period_end:
-      typeof prof?.subscription_current_period_end === "string"
-        ? prof.subscription_current_period_end
-        : prof?.subscription_current_period_end != null
-          ? String(prof.subscription_current_period_end)
-          : null,
-    created_at: createdAt,
-    last_dagstart_date:
-      prof?.last_dagstart_date != null
-        ? String(prof.last_dagstart_date).slice(0, 10)
-        : null,
-    signup_source:
-      typeof prof?.signup_source === "string" ? prof.signup_source : null,
-    app_trial_override_until:
-      prof?.app_trial_override_until != null
-        ? String(prof.app_trial_override_until)
-        : null,
-  });
-
-  if (!ok) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/abonnement";
-    url.search = "";
-    return NextResponse.redirect(url, 302);
+  if (onboardingDone) {
+    return applyDagstartDbGate(
+      request,
+      supabaseResponse,
+      request.nextUrl.pathname,
+      lastDagstart
+    );
   }
 
   return supabaseResponse;
@@ -418,14 +504,24 @@ export async function updateSession(
       return NextResponse.next({ request });
     }
     if (isPublicV2Path(pathname)) {
+      if (isV2AppShellDagstartPath(pathname)) {
+        return softGateV2AuthenticatedDagstart(request, event);
+      }
       return NextResponse.next({ request });
     }
     return gateProtectedV2Route(request, event);
   }
 
-  // Canonieke shell: publieke paden direct door; card-trial gate voor de rest.
+  // Canonieke shell: publieke paden door (met soft dagstart voor app-shell);
+  // card-trial gate voor de rest.
   if (isV2LiveShellPath(pathname) && !pathname.startsWith("/v2")) {
-    if (isPublicV2Path(pathname) || isV2LockdownExemptPath(pathname)) {
+    if (isV2LockdownExemptPath(pathname)) {
+      return NextResponse.next({ request });
+    }
+    if (isPublicV2Path(pathname)) {
+      if (isV2AppShellDagstartPath(pathname)) {
+        return softGateV2AuthenticatedDagstart(request, event);
+      }
       return NextResponse.next({ request });
     }
     return gateProtectedV2Route(request, event);
@@ -829,29 +925,18 @@ export async function updateSession(
   return applyDagstartCookieGuard(request, supabaseResponse, pathname);
 }
 
-/** Bron: profiles.last_dagstart_date (Amsterdam-kalenderdag). Cookie wordt gesynchroniseerd als DB vandaag al klaar is. */
+/**
+ * Bron: profiles.last_dagstart_date (Amsterdam-kalenderdag).
+ * Cookie wordt gesynchroniseerd als DB vandaag al klaar is.
+ * Ontbreekt vandaag: hard redirect naar `/dagstart` (echte v2-pagina, geen lus).
+ */
 function applyDagstartDbGate(
   request: NextRequest,
   response: NextResponse,
   pathname: string,
   lastDagstartDate: string | null
 ): NextResponse {
-  const needsDagstartPath =
-    !pathname.startsWith("/dagstart") &&
-    !pathname.startsWith("/login") &&
-    !pathname.startsWith("/registreren") &&
-    !pathname.startsWith("/welkom") &&
-    !pathname.startsWith("/auth") &&
-    !pathname.startsWith("/onboarding") &&
-    !pathname.startsWith("/consent") &&
-    !pathname.startsWith("/abonnement") &&
-    !pathname.startsWith("/abonnement") &&
-    !pathname.startsWith("/stop-abonnement") &&
-    !pathname.startsWith("/privacy") &&
-    !pathname.startsWith("/terms") &&
-    !pathname.startsWith("/api");
-
-  if (!needsDagstartPath) {
+  if (isDagstartGateExemptPath(pathname)) {
     return response;
   }
 
@@ -873,23 +958,27 @@ function applyDagstartDbGate(
     return response;
   }
 
-  if (!isDagstartNodig(dbYmd)) {
+  if (!shouldRedirectToDagstart(dbYmd)) {
     return response;
   }
 
-  // DB zegt: vandaag geen dagstart. Wis een eventuele stale cookie zodat AppLayout
-  // op de eerstvolgende client-render `isDagstartDoneTodayClient() === false` ziet en
-  // de DagstartOverlay opent. Geen redirect: dat zou met de legacy /dagstart-redirect
-  // (regel 199-203) een lus maken. De cookie is hiermee strikt afgeleid van de DB.
+  const url = request.nextUrl.clone();
+  url.pathname = "/dagstart";
+  url.search = "";
+  const redirect = NextResponse.redirect(url, 302);
+  // Auth-cookies van supabaseResponse meenemen zodat sessie niet verloren gaat.
+  response.cookies.getAll().forEach((c) => {
+    redirect.cookies.set(c.name, c.value);
+  });
   const stale = request.cookies.get(STRUCTURO_DAGSTART_COOKIE)?.value;
   if (stale) {
-    response.cookies.set(STRUCTURO_DAGSTART_COOKIE, "", {
+    redirect.cookies.set(STRUCTURO_DAGSTART_COOKIE, "", {
       path: "/",
       maxAge: 0,
       sameSite: "lax",
     });
   }
-  return response;
+  return redirect;
 }
 
 /**

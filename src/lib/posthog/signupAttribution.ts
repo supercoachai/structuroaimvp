@@ -356,6 +356,7 @@ export function isAcquisitionSignupContext(): boolean {
     if (!ref) return false;
     if (/structuro\.eu/i.test(ref)) return true;
     if (/\/start(?:\?|$|\/)/i.test(ref)) return true;
+    if (/\/onboarding(?:\?|$|\/)/i.test(ref)) return true;
   } catch {
     /* ignore */
   }
@@ -363,7 +364,7 @@ export function isAcquisitionSignupContext(): boolean {
   return false;
 }
 
-/** structuro.eu → /start → /registreren: Story Layer styling, geen proefdagen-copy. */
+/** structuro.eu → /onboarding → /registreren: Story Layer styling, geen proefdagen-copy. */
 export function isOrganicEuSignupContext(): boolean {
   if (typeof window === "undefined") return false;
 

@@ -1,10 +1,10 @@
 /**
- * Soft-advance vanaf /start: EU-landing CTA's schrijven attributie en gaan
- * door naar onboarding zonder tweede klik op de leesbare bridge.
+ * Soft-advance helpers (legacy /start-pad).
  *
- * Destinations: herkende organische campaigns → canonieke `/onboarding` (v2 UI).
- * Kale /start zonder herkende campaign blijft leesbaar (geen soft-advance).
- * TikTok /tiktok blijft leesbaar (aparte channel-gate in de client).
+ * Organische EU-CTA's gaan nu direct naar `/onboarding` (landing + next.config
+ * redirect van `/start`). Deze helpers blijven beschikbaar voor residual
+ * soft-advance in AcquisitionBridgeClient als `/start` ooit nog client-side
+ * landt. TikTok `/tiktok` blijft leesbaar (aparte channel-gate).
  */
 
 export type OrganicSoftAdvanceTarget = "/onboarding";
@@ -39,14 +39,30 @@ export function organicSoftAdvanceTarget(
   return "/onboarding";
 }
 
-/** Soft-advance behoudt lang; attributie zit al in storage/cookie vanaf /start. */
+/**
+ * Soft-advance behoudt lang + first-touch UTM's zodat attributie niet
+ * alleen op sessionStorage leunt (nieuwe tab / cookie-loss).
+ */
 export function softAdvanceHref(
   signupHref: string,
   searchParams: URLSearchParams
 ): string {
-  const lang = searchParams.get("lang") || searchParams.get("locale");
-  if (!lang || (lang !== "en" && lang !== "nl")) return signupHref;
   const next = new URL(signupHref, "https://www.structuro.ai");
-  next.searchParams.set("lang", lang);
-  return `${next.pathname}?${next.searchParams.toString()}`;
+  const lang = searchParams.get("lang") || searchParams.get("locale");
+  if (lang === "en" || lang === "nl") {
+    next.searchParams.set("lang", lang);
+  }
+  for (const key of [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "source",
+    "_ph_did",
+  ]) {
+    const value = searchParams.get(key);
+    if (value) next.searchParams.set(key, value);
+  }
+  const qs = next.searchParams.toString();
+  return qs ? `${next.pathname}?${qs}` : next.pathname;
 }

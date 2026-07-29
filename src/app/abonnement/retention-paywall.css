@@ -25,7 +25,44 @@
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/*
+ * V2Page/shell: header full-bleed, contentkolom gecentreerd.
+ * !important nodig t.o.v. v2ScopedCss (.v2-shell max-width: 560px).
+ */
+.retention-paywall .v2-page {
+  flex: 1 1 auto;
+  min-height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.retention-paywall .v2-shell {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Specifiek genoeg om .v2-root .v2-abonnement (tokens) te winnen op margin. */
+.retention-paywall .v2-shell > .v2-abonnement {
+  width: 100%;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  flex: 0 1 auto;
+}
+
+@media (min-width: 768px) {
+  .retention-paywall .v2-shell > .v2-abonnement {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
 }
 
 .retention-paywall *,

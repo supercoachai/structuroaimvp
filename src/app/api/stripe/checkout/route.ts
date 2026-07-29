@@ -6,11 +6,7 @@ import {
   STRIPE_PRICE_ID_YEARLY,
 } from "@/lib/stripe/registerPlans";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/createSubscriptionCheckoutSession";
-import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
-import {
-  V2_CARD_TRIAL_DAYS,
-  isV2CardTrialCohort,
-} from "@/lib/stripe/v2CardTrial";
+import { resolveV2CardCheckoutTrialDays } from "@/lib/stripe/v2CardTrial";
 import {
   getJasperSubscriptionDiscount,
   isJasperSignupSource,
@@ -93,7 +89,9 @@ async function postCheckout(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("signup_source, checkout_bonus_trial_days, created_at, subscription_status")
+    .select(
+      "signup_source, checkout_bonus_trial_days, created_at, subscription_status, subscription_current_period_end"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -105,15 +103,16 @@ async function postCheckout(request: Request) {
   const jasperFlagged = isJasperSignupSource(signupSource);
 
   // V2 card-cohort: eerste checkout krijgt 7 dagen Stripe-trial + PM.
-  // Herinschrijving na expiry / legacy: alleen bonus-dagen (meestal 0).
-  const status = (profile?.subscription_status as string | null)?.toLowerCase() ?? "none";
-  const freshV2CardTrial =
-    useV2Return &&
-    isV2CardTrialCohort(profile?.created_at as string | null) &&
-    (status === "none" || status === "");
-  const trialDays = freshV2CardTrial
-    ? Math.max(V2_CARD_TRIAL_DAYS, readCheckoutBonusTrialDays(profile))
-    : readCheckoutBonusTrialDays(profile);
+  // Niet afhankelijk van isV2PublicEnabled (paywall op /abonnement werkt sowieso).
+  // Status trial_expired telt mee (expire_trials vóór kaart-checkout).
+  const { trialDays, freshV2CardTrial } = resolveV2CardCheckoutTrialDays({
+    created_at: (profile?.created_at as string | null) ?? null,
+    subscription_status: (profile?.subscription_status as string | null) ?? null,
+    subscription_current_period_end:
+      (profile?.subscription_current_period_end as string | null) ?? null,
+    signup_source: signupSource,
+    checkout_bonus_trial_days: profile?.checkout_bonus_trial_days,
+  });
 
   const session = await createSubscriptionCheckoutSession({
     stripe,

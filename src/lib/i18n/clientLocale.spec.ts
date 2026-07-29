@@ -68,6 +68,10 @@ describe("resolveInitialLocale", () => {
     expect(
       resolveInitialLocale("/start", "?utm_source=structuro_eu")
     ).toBe("nl");
+    stubWindow("/onboarding", "?utm_source=structuro_eu", "en-US");
+    expect(
+      resolveInitialLocale("/onboarding", "?utm_source=structuro_eu")
+    ).toBe("nl");
   });
 
   it("uses browser English on first /v2 visit without storage", () => {

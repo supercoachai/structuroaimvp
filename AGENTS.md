@@ -47,12 +47,12 @@ Structuro MVP: Next.js 15 (App Router) + React 19 + TypeScript, met Supabase (au
 - **Geen em-dashes** (`—`) in user-facing strings. Zie `.cursor/rules/no-em-dashes.mdc`.
 - **Beschermd testaccount:** nooit data-wipes / db-resets die dat account raken. Zie `.cursor/rules/protected-test-account.mdc` en `src/lib/protectedTestAccount.ts`.
 - **Geen data/notities in git:** analyses, rapporten en werknotities horen in Obsidian, niet in de repo. Zie `.cursor/rules/no-data-in-git.mdc`.
-- **Attributie-routing:** organisch verkeer naar `/start`, TikTok-verkeer naar `/tiktok`, nooit hardcoded TikTok-URL's op organische CTA's. Zie `.cursor/rules/structuro-context.mdc`.
+- **Attributie-routing:** organisch verkeer naar `/onboarding` (legacy `/start` redirect), TikTok-verkeer naar `/tiktok`, nooit hardcoded TikTok-URL's op organische CTA's. Zie `.cursor/rules/structuro-context.mdc`.
 
 ## Prioriteit (juni 2026)
 
 1. Activatie P0: signup tot dagstart (frictie weg, magic link, compact onboarding).
-2. Acquisitie P1: `/start` (organic) en `/tiktok` (social).
+2. Acquisitie P1: `/onboarding` (organic) en `/tiktok` (social).
 3. Geen paid TikTok tot activatie structureel >25%.
 
 ## Waar dingen staan

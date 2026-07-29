@@ -64,18 +64,29 @@ describe("organicSoftAdvanceTarget", () => {
 });
 
 describe("softAdvanceHref", () => {
-  it("preserves nl/en lang on the target", () => {
+  it("preserves nl/en lang and first-touch UTMs on the target", () => {
     expect(
-      softAdvanceHref("/onboarding", params("utm_campaign=website&lang=nl"))
-    ).toBe("/onboarding?lang=nl");
+      softAdvanceHref(
+        "/onboarding",
+        params(
+          "utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=nav&lang=nl"
+        )
+      )
+    ).toBe(
+      "/onboarding?lang=nl&utm_source=structuro_eu&utm_medium=organic&utm_campaign=website&utm_content=nav"
+    );
     expect(
       softAdvanceHref("/onboarding", params("utm_campaign=eu_v2&lang=en"))
-    ).toBe("/onboarding?lang=en");
+    ).toBe("/onboarding?lang=en&utm_campaign=eu_v2");
   });
 
-  it("leaves href alone without lang", () => {
+  it("preserves UTMs without lang", () => {
     expect(
       softAdvanceHref("/onboarding", params("utm_campaign=website"))
-    ).toBe("/onboarding");
+    ).toBe("/onboarding?utm_campaign=website");
+  });
+
+  it("leaves href alone without lang or utms", () => {
+    expect(softAdvanceHref("/onboarding", params(""))).toBe("/onboarding");
   });
 });

@@ -133,10 +133,10 @@ export const LP_DEFAULT_CAMPAIGN_ID: LpCampaignId = "cyclus";
  */
 export const LP_TIKTOK_PROMOTE_DEFAULT_CAMPAIGN_ID: LpCampaignId = "herkende";
 
-/** Standaard campagne voor organische bridge (/start, structuro.eu). */
+/** Standaard campagne voor organische entry (/onboarding, structuro.eu). */
 export const LP_ORGANIC_DEFAULT_CAMPAIGN_ID: LpCampaignId = "weten";
 
-/** Standaard hero op /start: warme lichte entree (layout A). Donker via ?hero=C. */
+/** Standaard hero op legacy /start: warme lichte entree (layout A). Donker via ?hero=C. */
 export const LP_ORGANIC_DEFAULT_HERO: LpHeroId = "A";
 
 export const LP_RITUAL_STEPS = [
@@ -432,5 +432,5 @@ export function buildOrganicStartUrl(opts: {
   });
   if (opts.campaign) params.set("campaign", opts.campaign);
   if (opts.hero) params.set("hero", opts.hero);
-  return `https://www.structuro.ai/start?${params.toString()}`;
+  return `https://www.structuro.ai/onboarding?${params.toString()}`;
 }

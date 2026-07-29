@@ -3,11 +3,10 @@
 
   /**
    * EU landing analytics (site=eu in PostHog).
-   * Primaire conversie: cta_clicked → structuro.ai/start → soft-advance → /onboarding → signup_completed.
-   * Organisch EU: /start + utm_source=structuro_eu + utm_campaign=eu_v2 (attributie-label).
-   * Soft-advance: eu_v2* / website* / waitlist_legacy → /onboarding (v2 UI, geen tweede klik).
+   * Primaire conversie: cta_clicked → structuro.ai/onboarding → signup_completed.
+   * Organisch EU: /onboarding + utm_source=structuro_eu + utm_campaign=eu_v2 (attributie-label).
    * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (leesbare bridge).
-   * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/start (zie vercel.json).
+   * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/onboarding (zie vercel.json).
    * Inloggen: /login.
    */
   /** Sectie-id's voor zichtbaarheid (moet overeenkomen met id="" op index.html). */
@@ -59,8 +58,8 @@
   function structuroSignupBridgeUrl(contentId) {
     var params = new URLSearchParams(window.location.search || "");
     var isTikTok = isTikTokAcquisitionTraffic(params);
-    // Organisch EU → /start (attributie-bridge). TikTok → /tiktok (v1).
-    var bridgePath = isTikTok ? "/tiktok" : "/start";
+    // Organisch EU → /onboarding. TikTok → /tiktok (leesbare bridge).
+    var bridgePath = isTikTok ? "/tiktok" : "/onboarding";
     var bridgeParams = new URLSearchParams({
       utm_content: contentId || "cta",
     });
@@ -78,7 +77,7 @@
     } else {
       bridgeParams.set("utm_source", "structuro_eu");
       bridgeParams.set("utm_medium", "organic");
-      // Organisch default campaign-label (attributie); soft-advance → /onboarding.
+      // Organisch default campaign-label (attributie).
       var organicCampaign = params.get("utm_campaign") || "eu_v2";
       bridgeParams.set("utm_campaign", organicCampaign);
     }

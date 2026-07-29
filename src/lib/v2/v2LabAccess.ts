@@ -115,7 +115,7 @@ export function mapV2PathToV1(pathname: string): string {
 
 /**
  * Bounce-doel wanneer v2 gelockt is.
- * Anon: `/`, `/start`, `/login` of `/abonnement` naar gelang pad.
+ * Anon: `/`, `/onboarding`, `/login` of `/abonnement` naar gelang pad.
  * Ingelogd: v1-equivalent.
  */
 export function resolveV2LockdownBouncePath(
@@ -131,7 +131,7 @@ export function resolveV2LockdownBouncePath(
     return "/login";
   }
   if (pathname === "/v2/onboarding" || pathname.startsWith("/v2/onboarding/")) {
-    return "/start";
+    return "/onboarding";
   }
   if (pathname === "/v2/abonnement" || pathname.startsWith("/v2/abonnement/")) {
     return "/abonnement";

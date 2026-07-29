@@ -4,7 +4,7 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/** Engelse bio-link: /en/start → /start met lang=en (behoud UTM-params). */
+/** Engelse bio-link: /en/start → /onboarding met lang=en (behoud UTM-params). */
 export default async function EnStartRedirect({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = new URLSearchParams();
@@ -13,5 +13,5 @@ export default async function EnStartRedirect({ searchParams }: PageProps) {
   }
   query.set("lang", "en");
   const qs = query.toString();
-  redirect(qs ? `/start?${qs}` : "/start?lang=en");
+  redirect(qs ? `/onboarding?${qs}` : "/onboarding?lang=en");
 }

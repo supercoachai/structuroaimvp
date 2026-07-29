@@ -64,9 +64,9 @@ function AcquisitionBridgeInner({
     applySignupAttributionFromSearchParams(searchParams);
   }, [searchParams]);
 
-  // Dunne bridge: EU-landing CTA's landen op /start, schrijven attributie, en gaan door.
+  // Dunne bridge (legacy): als /start client-side landt, schrijf attributie en ga door.
+  // Nieuwe EU-CTA's gaan direct naar /onboarding; next.config redirect ook /start.
   // Geen tweede cta_clicked: die is al op structuro.eu afgevuurd.
-  // Geen v1 TikTok-hero flash: alleen een rustige loader tijdens soft-advance.
   useEffect(() => {
     if (!softAdvance) return;
 

@@ -192,7 +192,7 @@ export default function AbonnementV2Client({
               className="btn-primary w-full"
               onClick={() =>
                 router.push(
-                  "/start?utm_source=structuro_eu&utm_medium=organic&utm_campaign=v2_abonnement"
+                  "/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=v2_abonnement"
                 )
               }
             >
@@ -269,7 +269,7 @@ export default function AbonnementV2Client({
             ) : null}
             <button
               type="button"
-              className="v2-abonnement__card-cta"
+              className="btn-primary w-full v2-abonnement__card-cta"
               disabled={busy}
               onClick={() => void startCheckout()}
             >
@@ -329,13 +329,9 @@ export default function AbonnementV2Client({
 
   const doneTitle =
     doneMode === "stop" ? "Helemaal goed." : "Alles blijft staan.";
-  const stopText =
-    reason === "subscription_ended"
-      ? "Je toegang is gestopt. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
-      : "Je toegang loopt nog tot vanavond. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug.";
   const doneText =
     doneMode === "stop"
-      ? stopText
+      ? "Je kunt deze pagina sluiten, of terug naar www.structuro.eu. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
       : `Je ${stats.daysActive} dagen, je ${stats.tasksCompleted} taken, je ${stats.openTasks} openstaande taken: allemaal nog van jou. Ga zo door.`;
 
   return (
@@ -521,10 +517,10 @@ export default function AbonnementV2Client({
                   router.replace("/dagstart?start=energy");
                   return;
                 }
-                setDoneMode(null);
+                window.location.href = "https://www.structuro.eu";
               }}
             >
-              Open Structuro
+              {doneMode === "stop" ? "Naar structuro.eu" : "Open Structuro"}
             </button>
           </div>
         </div>

@@ -105,7 +105,7 @@ describe("lpConfig", () => {
       campaign: "weten",
       hero: "A",
     });
-    expect(url).toContain("/start?");
+    expect(url).toContain("/onboarding?");
     expect(url).not.toContain("/tiktok");
     expect(url).toContain("utm_source=structuro_eu");
   });

@@ -211,6 +211,7 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     shutdownDayDone: "Dag is rond",
     shutdownHomeNoDump: "Naar home zonder dump",
     loginTitle: "Welkom terug.",
+    loginWelcomeTitle: "Welkom bij Structuro",
     loginCaptchaError: "Bevestig dat je geen robot bent en probeer het opnieuw.",
     loginUnavailable:
       "Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
@@ -286,7 +287,7 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallRefundBody:
       "Achteraf toch niet goed? Binnen veertien dagen geld terug.",
     paywallOrCard: "of betaal met kaart",
-    paywallCardCta: "Betaal met kaart · 7 dagen, daarna €12,99/mnd",
+    paywallCardCta: "Ga 7 dagen gratis met Structuro verder",
     paywallCardBusy: "Even geduld…",
     paywallStripeTrust:
       "Verwerkt via Stripe, wij bewaren je kaartgegevens niet.",
@@ -501,6 +502,7 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     shutdownDayDone: "The day is done",
     shutdownHomeNoDump: "To home without a dump",
     loginTitle: "Welcome back.",
+    loginWelcomeTitle: "Welcome to Structuro",
     loginCaptchaError: "Confirm you are not a robot and try again.",
     loginUnavailable:
       "Sign-in is unavailable right now. Try again later.",
@@ -575,7 +577,7 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallRefundBody:
       "Not a fit after all? Full refund within fourteen days.",
     paywallOrCard: "or pay by card",
-    paywallCardCta: "Pay by card · 7 days, then €12.99/mo",
+    paywallCardCta: "Continue 7 days free with Structuro",
     paywallCardBusy: "One moment…",
     paywallStripeTrust:
       "Processed via Stripe. We do not store your card details.",

@@ -83,13 +83,9 @@ export function PaywallInteractive({
 
   const doneTitle =
     doneMode === "stop" ? "Helemaal goed." : "Alles blijft staan.";
-  const stopText =
-    reason === "subscription_ended"
-      ? "Je toegang is gestopt. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
-      : "Je toegang loopt nog tot vanavond. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug.";
   const doneText =
     doneMode === "stop"
-      ? stopText
+      ? "Je kunt deze pagina sluiten, of terug naar www.structuro.eu. Je account en alles erin bewaren we 30 dagen, je bent altijd welkom terug."
       : stats
         ? `Je ${stats.daysActive} dagen, je ${stats.tasksCompleted} taken, je ${stats.openTasks} openstaande taken: allemaal nog van jou. Ga zo door.`
         : "Je voortgang blijft van jou. Ga zo door.";
@@ -180,10 +176,10 @@ export function PaywallInteractive({
               router.replace("/?dagstart=open");
               return;
             }
-            setDoneMode(null);
+            window.location.href = "https://www.structuro.eu";
           }}
         >
-          Open Structuro
+          {doneMode === "stop" ? "Naar structuro.eu" : "Open Structuro"}
         </button>
       </div>
     </>

@@ -46,11 +46,13 @@ export async function createSubscriptionCheckoutSession(
     };
   }
 
-  const trialLabel =
+  // custom_text.submit verschijnt naast de Stripe-knop; de knoplabel zelf
+  // ("Betalen en abonneren") en knopkleur komen uit Stripe Dashboard branding.
+  const submitHelper =
     trialDays === 1
-      ? "1 dag gratis"
+      ? "Ga 1 dag gratis met Structuro verder. Daarna €12,99 per maand tenzij je stopt. We mailen je een dag van tevoren met een stopknop."
       : trialDays > 0
-        ? `${trialDays} dagen gratis`
+        ? `Ga ${trialDays} dagen gratis met Structuro verder. Daarna €12,99 per maand tenzij je stopt. We mailen je een dag van tevoren met een stopknop.`
         : null;
 
   const buildParams = (
@@ -75,11 +77,11 @@ export async function createSubscriptionCheckoutSession(
       ...input.metadata,
     },
     subscription_data: subscriptionData,
-    ...(trialLabel
+    ...(submitHelper
       ? {
           custom_text: {
             submit: {
-              message: `${trialLabel}, daarna €12,99 per maand tenzij je stopt. We mailen je een dag van tevoren met een stopknop.`,
+              message: submitHelper,
             },
           },
         }

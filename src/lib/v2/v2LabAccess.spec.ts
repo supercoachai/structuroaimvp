@@ -57,7 +57,9 @@ describe("mapV2PathToV1 / bounce", () => {
   });
 
   it("bounces anon to start/login/abonnement/root", () => {
-    expect(resolveV2LockdownBouncePath("/v2/onboarding", false)).toBe("/start");
+    expect(resolveV2LockdownBouncePath("/v2/onboarding", false)).toBe(
+      "/onboarding"
+    );
     expect(resolveV2LockdownBouncePath("/v2/login", false)).toBe("/login");
     expect(resolveV2LockdownBouncePath("/v2/abonnement", false)).toBe(
       "/abonnement"

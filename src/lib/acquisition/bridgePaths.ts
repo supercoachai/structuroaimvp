@@ -12,7 +12,10 @@ import {
 export type BridgeChannel = "tiktok" | "organic";
 
 export const TIKTOK_BRIDGE_PATH = "/tiktok";
+/** Legacy leesbare bridge; next.config redirect naar ORGANIC_ENTRY_PATH. */
 export const ORGANIC_BRIDGE_PATH = "/start";
+/** Canonieke organische entry (EU-landing CTA's, legacy /start-redirect). */
+export const ORGANIC_ENTRY_PATH = "/onboarding";
 
 export const TIKTOK_SIGNUP_SOURCE = "tiktok";
 export const ORGANIC_SIGNUP_SOURCE = "structuro_eu";
@@ -67,7 +70,7 @@ export function bridgePathForChannel(channel: BridgeChannel): string {
   return channel === "tiktok" ? TIKTOK_BRIDGE_PATH : ORGANIC_BRIDGE_PATH;
 }
 
-/** EU-organisch verkeer hoort nooit op /tiktok; redirect naar /start met dezelfde query. */
+/** EU-organisch verkeer hoort nooit op /tiktok; redirect naar /onboarding met dezelfde query. */
 export function shouldRedirectTikTokRouteToOrganic(
   searchParams?: URLSearchParams | null
 ): boolean {
@@ -79,7 +82,7 @@ export function buildOrganicBridgePathWithQuery(
   searchParams?: URLSearchParams | null
 ): string {
   const params = new URLSearchParams(searchParams?.toString() ?? "");
-  return `${ORGANIC_BRIDGE_PATH}${params.toString() ? `?${params.toString()}` : ""}`;
+  return `${ORGANIC_ENTRY_PATH}${params.toString() ? `?${params.toString()}` : ""}`;
 }
 
 /** Registratie-URL met channel-specifieke attributie; behoudt utm_campaign uit de bridge-URL. */

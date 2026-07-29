@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-const ORGANIC_START = "/start";
+const ORGANIC_ENTRY = "/onboarding";
 const ORGANIC_SOURCE = "structuro_eu";
 const LEGACY_CONTENT = "waitlist_legacy";
 
@@ -15,8 +15,8 @@ type PageProps = {
 
 /**
  * Legacy URL. Wachtlijst is uitgefaseerd. Route organisch verkeer altijd naar
- * de acquisitie-bridge (/start) met structuro_eu-attributie, zodat de funnel
- * cta_clicked -> /start -> signup_completed intact blijft. Waitlist is per
+ * /onboarding met structuro_eu-attributie, zodat de funnel
+ * cta_clicked -> /onboarding -> signup_completed intact blijft. Waitlist is per
  * definitie geen TikTok-verkeer; nooit naar /tiktok redirecten.
  */
 export default async function WachtlijstRedirectPage({ searchParams }: PageProps) {
@@ -38,5 +38,5 @@ export default async function WachtlijstRedirectPage({ searchParams }: PageProps
   const legacyContent = sanitize(typeof sp.source === "string" ? sp.source : undefined);
   params.set("utm_content", legacyContent || LEGACY_CONTENT);
 
-  redirect(`${ORGANIC_START}?${params.toString()}`);
+  redirect(`${ORGANIC_ENTRY}?${params.toString()}`);
 }

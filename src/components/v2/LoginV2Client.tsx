@@ -25,7 +25,14 @@ import { v2Styles } from "./theme";
 
 const NEXT_AFTER_LOGIN = "/";
 
-export default function LoginV2Client() {
+type LoginV2ClientProps = {
+  /** Root-entry: "Welkom bij Structuro"; standaard login: "Welkom terug." */
+  variant?: "login" | "welcome";
+};
+
+export default function LoginV2Client({
+  variant = "login",
+}: LoginV2ClientProps) {
   const { t } = useI18n();
   const { resetAllLocalData } = useV2();
   const [emailOpen, setEmailOpen] = useState(false);
@@ -145,7 +152,9 @@ export default function LoginV2Client() {
     <LoginShell error={error}>
       <div className="v2-auth-gate v2-auth-gate--shell v2-fade" aria-live="polite">
         <div className="v2-auth-gate__body">
-          <h1 className="v2-auth-gate__title">{t("v2.loginTitle")}</h1>
+          <h1 className="v2-auth-gate__title">
+            {t(variant === "welcome" ? "v2.loginWelcomeTitle" : "v2.loginTitle")}
+          </h1>
 
           <div className="v2-auth-gate__actions">
             <button

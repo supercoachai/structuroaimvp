@@ -26,12 +26,14 @@ function urlLocaleFromParams(params: URLSearchParams): Locale | null {
   return isLocale(fromUrl) ? fromUrl : null;
 }
 
-/** Organic EU-bridge: /start, /registreren of /tiktok met structuro_eu-attributie. */
+/** Organic EU-entry: /onboarding, /start (legacy), /registreren of /tiktok met structuro_eu. */
 export function isOrganicEuAcquisitionUrl(
   pathname: string,
   params: URLSearchParams
 ): boolean {
-  if (!/^\/(start|registreren|tiktok)(\/|$)/.test(pathname)) return false;
+  if (!/^\/(onboarding|start|registreren|tiktok)(\/|$)/.test(pathname)) {
+    return false;
+  }
   const utm = params.get("utm_source") || "";
   const legacy = params.get("source") || "";
   if (utm === "tiktok" || legacy === "tiktok") return false;
@@ -165,5 +167,5 @@ export function getLocaleBootstrapScript(): string {
     .map((p) => `p==="${p}"||p.indexOf("${p}/")===0`)
     .join("||");
   const isV2Expr = `p==="/"||${shellChecks}||p==="/v2"||p.indexOf("/v2/")===0`;
-  return `(function(){try{var p=window.location.pathname;var q=new URLSearchParams(window.location.search||"");var lang=q.get("lang")||q.get("locale");var utm=q.get("utm_source")||"";var src=q.get("source")||"";var isAcq=/^\\/(start|registreren|tiktok|en\\/start|en\\/tiktok)(\\/|$)/.test(p);var isReg=/^\\/registreren(\\/|$)/.test(p);var isEu=(isAcq&&(utm==="structuro_eu"||src==="structuro_eu")&&utm!=="tiktok"&&src!=="tiktok")||isReg;var isV2=${isV2Expr};var navLang=(navigator.language||"").toLowerCase();var prefersEn=navLang.indexOf("en")===0;var locale="nl";if(lang==="en"||lang==="nl"){locale=lang;}else if(isAcq&&prefersEn){locale="en";}else if(isEu){var landing=localStorage.getItem(${legacyKey});locale=landing==="en"||landing==="nl"?landing:"nl";}else{var stored=localStorage.getItem(${localeKey});if(stored==="en"||stored==="nl")locale=stored;else{var leg=localStorage.getItem(${legacyKey});if(leg==="en"||leg==="nl")locale=leg;else if(isV2&&prefersEn)locale="en";}}document.documentElement.lang=locale;if(isAcq||isV2||lang==="en"||lang==="nl"){localStorage.setItem(${localeKey},locale);localStorage.setItem(${legacyKey},locale);}}catch(e){}})();`;
+  return `(function(){try{var p=window.location.pathname;var q=new URLSearchParams(window.location.search||"");var lang=q.get("lang")||q.get("locale");var utm=q.get("utm_source")||"";var src=q.get("source")||"";var isAcq=/^\\/(onboarding|start|registreren|tiktok|en\\/start|en\\/tiktok)(\\/|$)/.test(p);var isReg=/^\\/registreren(\\/|$)/.test(p);var isEu=(isAcq&&(utm==="structuro_eu"||src==="structuro_eu")&&utm!=="tiktok"&&src!=="tiktok")||isReg;var isV2=${isV2Expr};var navLang=(navigator.language||"").toLowerCase();var prefersEn=navLang.indexOf("en")===0;var locale="nl";if(lang==="en"||lang==="nl"){locale=lang;}else if(isAcq&&prefersEn){locale="en";}else if(isEu){var landing=localStorage.getItem(${legacyKey});locale=landing==="en"||landing==="nl"?landing:"nl";}else{var stored=localStorage.getItem(${localeKey});if(stored==="en"||stored==="nl")locale=stored;else{var leg=localStorage.getItem(${legacyKey});if(leg==="en"||leg==="nl")locale=leg;else if(isV2&&prefersEn)locale="en";}}document.documentElement.lang=locale;if(isAcq||isV2||lang==="en"||lang==="nl"){localStorage.setItem(${localeKey},locale);localStorage.setItem(${legacyKey},locale);}}catch(e){}})();`;
 }

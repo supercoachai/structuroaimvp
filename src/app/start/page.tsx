@@ -1,81 +1,22 @@
-import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { AcquisitionBridgeClient } from "@/components/acquisition/AcquisitionBridgeClient";
-import { resolveAcquisitionLocale } from "@/lib/acquisition/acquisitionLocale";
-import { LP_ORGANIC_DEFAULT_CAMPAIGN_ID, resolveLpVariant } from "@/lib/tiktok/lpConfig";
-import { localizeLpVariant } from "@/lib/tiktok/lpLocalized";
+type StartSearchParams = Record<string, string | string[] | undefined>;
 
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<StartSearchParams>;
-}): Promise<Metadata> {
-  const params = await searchParams;
-  const headerStore = await headers();
-  const locale = resolveAcquisitionLocale({
-    langParam: params.lang ?? params.locale ?? null,
-    acceptLanguage: headerStore.get("accept-language"),
-  });
-  if (locale === "en") {
-    return {
-      title: "Structuro | Recognize yourself? Start 7 days free",
-      description:
-        "No long to-do lists. One doable step per day. Try Structuro free for 7 days.",
-      robots: { index: false, follow: false },
-    };
-  }
-  return {
-    title: "Structuro | Herken je jezelf? Start 7 dagen gratis",
-    description:
-      "Geen lange to-do's. Eén haalbare stap per dag. Probeer Structuro 7 dagen gratis.",
-    robots: { index: false, follow: false },
-  };
-}
-
-type StartSearchParams = {
-  campaign?: string;
-  hero?: string;
-  utm_content?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  lang?: string;
-  locale?: string;
-};
-
+/**
+ * Legacy acquisitie-bridge. Leesbare UI is uitgefaseerd: altijd door naar
+ * /onboarding met behoud van query (utm_*, lang, _ph_did, …).
+ * next.config.ts doet hetzelfde als HTTP-redirect; deze page is backstop.
+ */
 export default async function OrganicStartPage({
   searchParams,
 }: {
   searchParams: Promise<StartSearchParams>;
 }) {
   const params = await searchParams;
-  const headerStore = await headers();
-  const locale = resolveAcquisitionLocale({
-    langParam: params.lang ?? params.locale ?? null,
-    acceptLanguage: headerStore.get("accept-language"),
-  });
-  const variant = localizeLpVariant(
-    resolveLpVariant({
-      campaign: params.campaign ?? LP_ORGANIC_DEFAULT_CAMPAIGN_ID,
-      utmContent: params.utm_content ?? null,
-      utmCampaign: params.utm_campaign ?? null,
-      hero: params.hero ?? null,
-    }),
-    locale
-  );
-
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value) query.set(key, value);
+    if (typeof value === "string" && value) query.set(key, value);
   }
-
-  return (
-    <AcquisitionBridgeClient
-      channel="organic"
-      variant={variant}
-      queryKey={query.toString()}
-      locale={locale}
-    />
-  );
+  const qs = query.toString();
+  redirect(qs ? `/onboarding?${qs}` : "/onboarding");
 }

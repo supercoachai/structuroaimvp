@@ -20,9 +20,21 @@ import { recordV2EnergyForToday } from "./v2Adaptive";
 import V2ProgressDots from "./V2ProgressDots";
 import { trackV2DagstartComplete } from "./v2Analytics";
 import { useI18n } from "@/lib/i18n";
+import { setDagstartCookieOnClient } from "@/lib/dagstartCookie";
+import { createClient } from "@/lib/supabase/client";
+import {
+  updateProfileAfterDagstartComplete,
+  type DagstartEnergy,
+} from "@/lib/supabase/profileDagstartDb";
 import V2ProposeStep from "./V2ProposeStep";
 import V2AdjustStep from "./V2AdjustStep";
 import V2DoneStep from "./V2DoneStep";
+
+function mapV2EnergyToProfile(energy: V2Energy | null): DagstartEnergy {
+  if (energy === "low") return "low";
+  if (energy === "high") return "high";
+  return "medium";
+}
 
 /**
  * Dagelijkse dagstart (terugkerend / met account):
@@ -103,7 +115,7 @@ export default function DagstartV2Client() {
     });
   }, []);
 
-  const finishThings = (nextThings: string[]) => {
+  const finishThings = async (nextThings: string[]) => {
     const normalized = v2NormalizeThings(nextThings);
     const nextEnergy = energy ?? state.energy;
     update({
@@ -117,6 +129,22 @@ export default function DagstartV2Client() {
       thingCount: normalized.length,
       hasWhy: state.why.trim().length > 0,
     });
+    // Middleware gate leest profiles.last_dagstart_date; zonder write → redirect-lus.
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.id) {
+        await updateProfileAfterDagstartComplete(
+          user.id,
+          mapV2EnergyToProfile(nextEnergy)
+        );
+        setDagstartCookieOnClient();
+      }
+    } catch (err) {
+      console.warn("v2 dagstart profile update:", err);
+    }
     goTo("done");
   };
 

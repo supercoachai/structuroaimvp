@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-const ORGANIC_START = "/start";
+const ORGANIC_ENTRY = "/onboarding";
 const ORGANIC_SOURCE = "structuro_eu";
 const LEGACY_CONTENT = "waitlist_legacy";
 
@@ -14,8 +14,8 @@ type PageProps = {
 };
 
 /**
- * Legacy URL. Doorsturen naar de acquisitie-bridge /start met
- * structuro_eu-attributie. Zie ook /wachtlijst voor de gedeelde doctrine.
+ * Legacy URL. Doorsturen naar /onboarding met structuro_eu-attributie.
+ * Zie ook /wachtlijst voor de gedeelde doctrine.
  */
 export default async function InschrijvenRedirectPage({ searchParams }: PageProps) {
   const sp = await searchParams;
@@ -36,5 +36,5 @@ export default async function InschrijvenRedirectPage({ searchParams }: PageProp
   const legacyContent = sanitize(typeof sp.source === "string" ? sp.source : undefined);
   params.set("utm_content", legacyContent || LEGACY_CONTENT);
 
-  redirect(`${ORGANIC_START}?${params.toString()}`);
+  redirect(`${ORGANIC_ENTRY}?${params.toString()}`);
 }

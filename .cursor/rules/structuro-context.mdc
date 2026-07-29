@@ -12,15 +12,16 @@ Voor strategie, metrics en doctrine: lees Obsidian (zie `obsidian-structuro-stat
 ## Prioriteit juni 2026
 
 1. **Activatie P0:** signup → dagstart (lekt nu; compact onboarding, magic link, frictie weg)
-2. **Acquisitie P1:** `/start` (organic) en `/tiktok` (social), nooit direct naar `/registreren` vanaf marketing
+2. **Acquisitie P1:** `/onboarding` (organic) en `/tiktok` (social), nooit direct naar `/registreren` vanaf marketing
 3. **Geen paid TikTok** tot activatie structureel >25%
 
 ## Attributie-routing (kritiek)
 
-- **Organisch EU-verkeer** (structuro.eu, referrals, pers): altijd `/start` met `utm_source=structuro_eu`. Nooit `/tiktok`.
+- **Organisch EU-verkeer** (structuro.eu, referrals, pers): altijd `/onboarding` met `utm_source=structuro_eu`. Nooit `/tiktok`.
 - **TikTok-verkeer**: alleen via `/tiktok` met `utm_source=tiktok` (of `ttclid`). Nooit hardcoded TikTok-URL's op organische CTAs.
-- `/tiktok` met `utm_source=structuro_eu` redirect naar `/start` (legacy links).
-- Waitlist is uitgefaseerd sinds juni 2026; meet `cta_clicked → /start → signup_completed`, niet `waitlist_signup_*`.
+- `/tiktok` met `utm_source=structuro_eu` redirect naar `/onboarding` (legacy links).
+- Legacy `/start` redirect naar `/onboarding` (query behouden); geen leesbare bridge meer.
+- Waitlist is uitgefaseerd sinds juni 2026; meet `cta_clicked → /onboarding → signup_completed`, niet `waitlist_signup_*`.
 
 ## UX bij wijzigingen
 

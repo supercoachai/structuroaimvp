@@ -192,6 +192,9 @@ export default function TodoV2Client() {
       title,
       why: draft.why?.trim() ? draft.why.trim() : null,
       outcome: draft.outcome?.trim() ? draft.outcome.trim() : null,
+      microSteps: draft.microSteps
+        .map((m) => ({ ...m, title: m.title.trim() }))
+        .filter((m) => m.title.length > 0),
     };
     const exists = tasks.some((t) => t.id === clean.id);
     persist(exists ? tasks.map((t) => (t.id === clean.id ? clean : t)) : [...tasks, clean]);
@@ -221,6 +224,14 @@ export default function TodoV2Client() {
   const removeMicro = (id: string) =>
     draft &&
     patchDraft({ microSteps: draft.microSteps.filter((m) => m.id !== id) });
+
+  const updateMicro = (id: string, title: string) =>
+    draft &&
+    patchDraft({
+      microSteps: draft.microSteps.map((m) =>
+        m.id === id ? { ...m, title } : m,
+      ),
+    });
 
   const suggestMicroSteps = async () => {
     if (!draft || suggestBusy) return;
@@ -267,6 +278,7 @@ export default function TodoV2Client() {
         onMicroDraft: setMicroDraft,
         onAddMicro: addMicro,
         onRemoveMicro: removeMicro,
+        onUpdateMicro: updateMicro,
         onSuggestMicro: () => void suggestMicroSteps(),
         onPatch: patchDraft,
         onSave: saveDraft,
@@ -723,6 +735,7 @@ function TaskForm({
   onMicroDraft,
   onAddMicro,
   onRemoveMicro,
+  onUpdateMicro,
   onSuggestMicro,
   onPatch,
   onSave,
@@ -738,6 +751,7 @@ function TaskForm({
   onMicroDraft: (v: string) => void;
   onAddMicro: () => void;
   onRemoveMicro: (id: string) => void;
+  onUpdateMicro: (id: string, title: string) => void;
   onSuggestMicro?: () => void;
   onPatch: (patch: Partial<V2Task>) => void;
   onSave: () => void;
@@ -818,30 +832,6 @@ function TaskForm({
         </button>
       ) : (
         <>
-          <div>
-            <FieldLabel>{t("v2.todoFormWhy")}</FieldLabel>
-            <input
-              type="text"
-              className="v2-field"
-              value={draft.why ?? ""}
-              onChange={(e) => onPatch({ why: e.target.value || null })}
-              placeholder={t("v2.todoFormWhyPh")}
-              autoComplete="off"
-            />
-          </div>
-
-          <div>
-            <FieldLabel>{t("v2.todoFormOutcome")}</FieldLabel>
-            <input
-              type="text"
-              className="v2-field"
-              value={draft.outcome ?? ""}
-              onChange={(e) => onPatch({ outcome: e.target.value || null })}
-              placeholder={t("v2.todoFormOutcomePh")}
-              autoComplete="off"
-            />
-          </div>
-
           <div>
             <FieldLabel>{t("v2.todoFormDeadline")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
@@ -964,34 +954,52 @@ function TaskForm({
           </div>
 
           <div>
-            <FieldLabel>{t("v2.todoFormMicro")}</FieldLabel>
             <p
-              className="mb-2 text-[13px]"
+              style={{
+                fontSize: "var(--fs-body)",
+                fontWeight: 600,
+                color: "var(--text)",
+                margin: "0 0 6px",
+              }}
+            >
+              {t("v2.todoFormMicro")}
+            </p>
+            <p
+              className="mb-2 text-[12px]"
               style={{ color: "var(--text-muted)", margin: "0 0 8px" }}
             >
               {t("v2.todoFormMicroHint")}
             </p>
             {draft.microSteps.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
                 {draft.microSteps.map((m) => (
                   <div
                     key={m.id}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 10,
-                      padding: "10px 12px",
-                      borderRadius: "var(--r-md)",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
+                      gap: 8,
                     }}
                   >
-                    <span style={{ flex: 1, fontSize: 14, color: "var(--text)" }}>{m.title}</span>
+                    <input
+                      type="text"
+                      className="v2-field"
+                      style={{
+                        flex: 1,
+                        minHeight: 40,
+                        padding: "8px 12px",
+                        fontSize: "var(--fs-small)",
+                      }}
+                      value={m.title}
+                      onChange={(e) => onUpdateMicro(m.id, e.target.value)}
+                      aria-label={m.title || t("v2.todoFormMicroPh")}
+                      autoComplete="off"
+                    />
                     <button
                       type="button"
                       onClick={() => onRemoveMicro(m.id)}
-                      className="v2-link"
-                      style={{ padding: "2px 6px" }}
+                      className="v2-link shrink-0"
+                      style={{ padding: "4px 6px", fontSize: "var(--fs-micro)" }}
                       aria-label={t("v2.todoFormMicroRemoveAria", { title: m.title })}
                     >
                       {t("v2.todoFormMicroRemove")}
@@ -1000,12 +1008,17 @@ function TaskForm({
                 ))}
               </div>
             ) : onSuggestMicro ? (
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 10 }}>
                 <button
                   type="button"
                   onClick={onSuggestMicro}
                   disabled={suggestBusy || draft.title.trim().length === 0}
                   className="btn-ghost w-full"
+                  style={{
+                    minHeight: 40,
+                    padding: "8px 14px",
+                    fontSize: "var(--fs-small)",
+                  }}
                 >
                   {suggestBusy
                     ? t("v2.todoFormSuggestBusy")
@@ -1014,25 +1027,29 @@ function TaskForm({
                 {suggestError ? (
                   <p
                     className="mt-2 text-[12px]"
-                    style={{ color: "var(--text-muted)", margin: "8px 0 0" }}
+                    style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
                   >
                     {suggestError}
                   </p>
                 ) : (
                   <p
                     className="mt-2 text-[12px]"
-                    style={{ color: "var(--text-muted)", margin: "8px 0 0" }}
+                    style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
                   >
                     {t("v2.todoFormSuggestHint")}
                   </p>
                 )}
               </div>
             ) : null}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input
                 type="text"
                 className="v2-field"
-                style={{ minHeight: 48 }}
+                style={{
+                  minHeight: 40,
+                  padding: "8px 12px",
+                  fontSize: "var(--fs-small)",
+                }}
                 value={microDraft}
                 onChange={(e) => onMicroDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -1044,7 +1061,16 @@ function TaskForm({
                 placeholder={t("v2.todoFormMicroPh")}
                 autoComplete="off"
               />
-              <button type="button" onClick={onAddMicro} className="btn-ghost shrink-0">
+              <button
+                type="button"
+                onClick={onAddMicro}
+                className="btn-ghost shrink-0"
+                style={{
+                  minHeight: 40,
+                  padding: "8px 14px",
+                  fontSize: "var(--fs-small)",
+                }}
+              >
                 {t("v2.todoFormAdd")}
               </button>
             </div>
