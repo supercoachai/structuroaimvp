@@ -1,4 +1,5 @@
 import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import {
   isRegistrationCheckoutEnabled,
@@ -41,8 +42,9 @@ export function requiresPaidSubscriptionBeforeOnboarding(
   if (!isCheckoutGateActive(options)) return false;
   if (isProtectedTestAccount(row.email ?? null)) return false;
   if (!row.profileRowReadOk) return true;
-  // Café / event-QR: geen Stripe-checkout vóór onboarding
+  // Café / event-QR / gift-comp: geen Stripe-checkout vóór onboarding
   if (isEventSignupSource(row.signup_source)) return false;
+  if (isGiftCompSignupSource(row.signup_source)) return false;
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return false;
   return !profileHasAppAccess({
     subscription_status: row.subscription_status,

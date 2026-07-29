@@ -9,6 +9,7 @@ import {
 } from "@/lib/posthog/signupAttribution";
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 import {
   isV2PublicEnabledClient,
@@ -21,17 +22,23 @@ type FinalizeNewAccountOptions = {
   homePath?: string;
 };
 
+function skipsPaidCheckout(signupSource: string | null | undefined): boolean {
+  return (
+    isEventSignupSource(signupSource) || isGiftCompSignupSource(signupSource)
+  );
+}
+
 function v2PostAccountPath(
   homePath: string,
   signupSource: string | null | undefined
 ): string {
   if (!isV2PublicEnabledClient()) {
-    if (isEventSignupSource(signupSource)) return "/";
+    if (skipsPaidCheckout(signupSource)) return "/";
     return resolveLivePaywallPathClient();
   }
   const v2Home = homePath.startsWith("/v2") ? homePath : "/";
-  // Jasper / café: geen kaart-poort tijdens event-trial.
-  if (isEventSignupSource(signupSource)) {
+  // Jasper / café / gift: geen kaart-poort.
+  if (skipsPaidCheckout(signupSource)) {
     return v2Home === "/abonnement" ? "/" : v2Home;
   }
   return "/abonnement";

@@ -68,7 +68,7 @@ describe("v2CardTrial", () => {
     ).toBe(false);
   });
 
-  it("Jasper en café-QR: geen kaart-checkout tijdens event-trial", () => {
+  it("Jasper, café-QR en gift_comp: geen kaart-checkout", () => {
     expect(
       requiresV2CardTrialCheckout({
         created_at: "2026-07-28T12:00:00.000Z",
@@ -83,6 +83,14 @@ describe("v2CardTrial", () => {
         last_dagstart_date: "2026-07-28",
         subscription_status: "none",
         signup_source: "adhd_cafe",
+      })
+    ).toBe(false);
+    expect(
+      requiresV2CardTrialCheckout({
+        created_at: "2026-07-28T12:00:00.000Z",
+        last_dagstart_date: "2026-07-28",
+        subscription_status: "none",
+        signup_source: "gift_comp",
       })
     ).toBe(false);
   });

@@ -3,7 +3,12 @@
  * Founder/team e-mailadressen die geen consument-trial volgen.
  */
 
-const INTERNAL_TEAM_EMAILS = new Set(["info@structuro.eu"]);
+const INTERNAL_TEAM_EMAILS = new Set([
+  "info@structuro.eu",
+  // Permanent gratis (gift): nooit paywall / card-trial checkout.
+  "info@ellezorg.com",
+  "elle.zorg@gmail.com",
+]);
 
 function normalizeEmailList(raw: string | undefined): Set<string> {
   const out = new Set<string>();

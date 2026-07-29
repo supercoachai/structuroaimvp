@@ -16,8 +16,9 @@ import {
 } from "./v2PostAccountName";
 import { peekV2OnboardingUiPhase } from "./v2OnboardingPhaseGate";
 import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
-import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
 /**
  * Na OAuth/login: migreer V2 localStorage → Supabase vóór wipe.
@@ -90,7 +91,7 @@ export default function V2ClaimOnAuth() {
             ? profile.signup_source
             : null;
         window.location.assign(
-          isEventSignupSource(source)
+          isEventSignupSource(source) || isGiftCompSignupSource(source)
             ? resolveLoggedInInstallContinuePath()
             : "/abonnement",
         );

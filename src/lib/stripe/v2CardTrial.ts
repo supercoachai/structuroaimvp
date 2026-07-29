@@ -4,6 +4,7 @@
  * Oudere accounts houden de bestaande free-trial logica.
  * Event-kanalen (jasper_podcast, adhd_cafe): géén kaart verplicht tijdens app-trial.
  */
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
 import { readCheckoutBonusTrialDays } from "@/lib/stripe/checkoutBonusTrialDays";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
@@ -78,6 +79,8 @@ export function isFreshV2CardTrialCheckout(row: {
   if (!isV2CardTrialCohort(row.created_at)) return false;
   // Jasper / café-QR: 7d (of 14d) app-trial zonder kaart.
   if (isEventSignupSource(row.signup_source)) return false;
+  // Handmatig gift/comp: nooit card-checkout.
+  if (isGiftCompSignupSource(row.signup_source)) return false;
   if (hasStripeTrialOrPaidAccess(row)) return false;
   return true;
 }

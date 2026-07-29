@@ -7,6 +7,7 @@ import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { useI18n } from "@/lib/i18n";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 import { createClient } from "@/lib/supabase/client";
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
 import { V2FlowStickyChrome, V2Header, V2Page, V2Reassurance } from "./V2Chrome";
@@ -183,7 +184,7 @@ export default function OnboardingV2Client() {
             clearV2OnboardingUiPhase();
             // Jasper / café / gift zonder kaart: install (mobiel) of home.
             // Card-cohort: checkout-gate; install komt na Stripe of via home-gate.
-            if (isEventSignupSource(source)) {
+            if (isEventSignupSource(source) || isGiftCompSignupSource(source)) {
               go(resolveLoggedInInstallContinuePath(), { todayDone: false });
               return;
             }
