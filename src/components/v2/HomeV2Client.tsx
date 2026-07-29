@@ -48,6 +48,7 @@ import { patchV2Settings } from "./v2Settings";
 import { getV2EnergyForToday } from "./v2Adaptive";
 import { V2_BATTERY_MUTED, v2EnergyMeta, v2TaskEnergyToDay } from "./v2EnergyMeta";
 import V2TaskBattery from "./V2TaskBattery";
+import V2InstallGate from "./V2InstallGate";
 import {
   findV2TaskByTitle,
   saveV2Tasks,
@@ -538,6 +539,7 @@ export default function HomeV2Client() {
   const promptAtTop = cycleSetupOpen || (!isBottomPrompt && Boolean(homePrompt));
 
   return (
+    <V2InstallGate>
     <>
     <V2AppShell
       bottomSlot={
@@ -795,5 +797,6 @@ export default function HomeV2Client() {
     </V2AppShell>
     <V2ShellWelcomeSheet />
     </>
+    </V2InstallGate>
   );
 }

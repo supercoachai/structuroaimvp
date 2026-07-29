@@ -4,13 +4,34 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useI18n } from "@/lib/i18n";
-import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
+import {
+  markPwaInstallHintDismissed,
+  shouldShowPwaInstallHint,
+} from "@/lib/pwaInstallHint";
 
 import V2InstallHint from "./V2InstallHint";
 import { V2Header, V2Page, V2Reassurance } from "./V2Chrome";
 import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { trackV2PwaInstallSkipped } from "./v2Analytics";
 import { v2FlowWrapStyle, v2Styles } from "./theme";
+
+type InstallFrom = "settings" | "consent" | "app" | null;
+
+/** from=app|checkout|stripe → terug naar home na install. */
+function resolveInstallFrom(
+  raw: string | null | undefined,
+): InstallFrom {
+  if (raw === "settings" || raw === "consent") return raw;
+  if (raw === "app" || raw === "checkout" || raw === "stripe") return "app";
+  return null;
+}
+
+function continueHrefFor(from: InstallFrom): string {
+  if (from === "settings") return "/settings";
+  if (from === "consent") return "/consent";
+  if (from === "app") return "/";
+  return "/onboarding";
+}
 
 export default function InstallV2Client() {
   const { t } = useI18n();
@@ -19,17 +40,28 @@ export default function InstallV2Client() {
   const previewInstall =
     process.env.NODE_ENV === "development" &&
     searchParams?.get("previewInstall") === "1";
-  const fromSettings = searchParams?.get("from") === "settings";
+  const from = resolveInstallFrom(searchParams?.get("from"));
+  const explicitReturn = from !== null;
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const continueHref = fromSettings ? "/settings" : "/onboarding";
-  const continueLabel = fromSettings
-    ? t("welkomPage.installContinueSettings")
-    : t("welkomPage.installContinueCta");
+  const continueHref = continueHrefFor(from);
+  const continueLabel =
+    from === "settings"
+      ? t("welkomPage.installContinueSettings")
+      : from === "consent"
+        ? t("welkomPage.installContinueConsent")
+        : from === "app"
+          ? t("welkomPage.installContinueHome")
+          : t("welkomPage.installContinueCta");
 
   useEffect(() => {
-    if (previewInstall || fromSettings) {
+    if (previewInstall || explicitReturn) {
+      // Settings/consent: altijd tonen. App/checkout: alleen als hint nog relevant.
+      if (from === "app" && !previewInstall && !shouldShowPwaInstallHint()) {
+        router.replace("/");
+        return;
+      }
       setReady(true);
       return;
     }
@@ -38,11 +70,12 @@ export default function InstallV2Client() {
       return;
     }
     setReady(true);
-  }, [previewInstall, fromSettings, router]);
+  }, [previewInstall, explicitReturn, from, router]);
 
   const continueToNext = () => {
     if (busy) return;
     setBusy(true);
+    markPwaInstallHintDismissed();
     trackV2PwaInstallSkipped();
     router.push(continueHref);
   };
@@ -57,7 +90,7 @@ export default function InstallV2Client() {
 
   return (
     <V2Page>
-      <V2Header exitHref={fromSettings ? "/settings" : "/onboarding"} />
+      <V2Header exitHref={continueHref} />
 
       <div style={v2Styles.flowShell}>
         <div style={v2FlowWrapStyle("welcome")}>

@@ -19,6 +19,7 @@ import { formatV2CardTrialChargeLabel } from "@/lib/stripe/v2CardTrial";
 import { preloadStripeWallet, type WalletKind } from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
 import { captureMarketingEvent } from "@/lib/posthog/track";
+import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 
 import { V2Eyebrow, V2Header, V2Page } from "./V2Chrome";
 import { useV2 } from "./V2Context";
@@ -574,12 +575,17 @@ const V2_STRIPE_SUCCESS_SEEN_KEY = "v2_stripe_success_seen";
 
 /**
  * Bevestigde checkout (trialing/active) via /abonnement?from=stripe:
- * eenmalige rustige succes-overlay in v2-stijl. Bij een herhaald bezoek
- * (zelfde sessie) gaan we direct door naar home.
+ * eenmalige rustige succes-overlay in v2-stijl. Daarna: PWA-install op
+ * mobiel (als nog niet gezien/dismissed), anders home.
+ * Bij een herhaald bezoek (zelfde sessie) slaan we de overlay over.
  */
 export function AbonnementV2StripeSuccess() {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
+
+  const continueAfterCheckout = useCallback(() => {
+    router.replace(resolveLoggedInInstallContinuePath());
+  }, [router]);
 
   useEffect(() => {
     let alreadySeen = false;
@@ -590,7 +596,7 @@ export function AbonnementV2StripeSuccess() {
       /* privémodus: gewoon tonen */
     }
     if (alreadySeen) {
-      router.replace("/");
+      continueAfterCheckout();
       return;
     }
     try {
@@ -599,7 +605,7 @@ export function AbonnementV2StripeSuccess() {
       /* negeren */
     }
     setVisible(true);
-  }, [router]);
+  }, [continueAfterCheckout]);
 
   if (!visible) return null;
 
@@ -626,7 +632,7 @@ export function AbonnementV2StripeSuccess() {
           <button
             type="button"
             className="btn-primary w-full"
-            onClick={() => router.replace("/")}
+            onClick={continueAfterCheckout}
           >
             Naar je dag
           </button>

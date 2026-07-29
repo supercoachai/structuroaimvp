@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { persistPreferredDisplayName } from "@/lib/accountDisplayName";
 import { useI18n } from "@/lib/i18n";
+import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 import { createClient } from "@/lib/supabase/client";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
@@ -180,9 +181,10 @@ export default function OnboardingV2Client() {
                 ? profile.signup_source
                 : null;
             clearV2OnboardingUiPhase();
-            // Jasper / café: app-trial zonder kaart → home. Anders checkout-gate.
+            // Jasper / café / gift zonder kaart: install (mobiel) of home.
+            // Card-cohort: checkout-gate; install komt na Stripe of via home-gate.
             if (isEventSignupSource(source)) {
-              go("/", { todayDone: false });
+              go(resolveLoggedInInstallContinuePath(), { todayDone: false });
               return;
             }
             go("/abonnement", { todayDone: false });

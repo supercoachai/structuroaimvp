@@ -17,6 +17,7 @@ import {
 import { peekV2OnboardingUiPhase } from "./v2OnboardingPhaseGate";
 import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 
 /**
  * Na OAuth/login: migreer V2 localStorage → Supabase vóór wipe.
@@ -89,7 +90,9 @@ export default function V2ClaimOnAuth() {
             ? profile.signup_source
             : null;
         window.location.assign(
-          isEventSignupSource(source) ? "/" : "/abonnement",
+          isEventSignupSource(source)
+            ? resolveLoggedInInstallContinuePath()
+            : "/abonnement",
         );
       } catch (err) {
         console.warn("[V2ClaimOnAuth] migrate failed", err);
