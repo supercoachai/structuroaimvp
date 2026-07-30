@@ -86,7 +86,7 @@ async function runOnboarding(
 
   // Guest: soft account-save (Google / e-mail) na eerste onboarding.
   const accountSave = page.getByRole("button", {
-    name: /Doorgaan met Google|Continue with Google/i,
+    name: /Bewaar met Google|Save with Google/i,
   });
   const accountVisible = await accountSave
     .isVisible({ timeout: 8_000 })

@@ -165,7 +165,7 @@ export default function LoginV2Client({
             >
               {busy && !emailOpen
                 ? t("v2.accountSaveBusy")
-                : t("v2.accountSaveGoogle")}
+                : t("v2.loginGoogle")}
             </button>
 
             {!emailOpen ? (

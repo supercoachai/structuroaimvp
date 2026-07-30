@@ -9,6 +9,8 @@ export const CLIENT_FUNNEL_EVENTS = [
   "onboarding_cycle_choice",
   "account_save_shown",
   "account_save_clicked",
+  "account_save_oauth_started",
+  "account_save_returned",
   "name_step_shown",
   "name_step_completed",
   "dagstart_completed_anon",

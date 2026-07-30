@@ -39,13 +39,16 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     cycleModeOff: "Zonder",
     cycleModeOn: "Cyclus",
     cycleDiscoverAria: "Cyclusontdekking",
-    accountSaveTitle: "Bewaar je voortgang.",
-    accountSaveSub: "Ga voelen hoe het is om meer rust te krijgen.",
-    accountSaveGoogle: "Doorgaan met Google",
+    accountSaveTitle: "Je dagstart is klaar. Bewaar ‘m.",
+    accountSaveSub:
+      "Zodat je zelf kunt ervaren hoe het is om een app te gebruiken die wél voor je brein is gebouwd.",
+    accountSaveGoogle: "Bewaar met Google",
+    accountSaveGoogleHint: "Je kiest je Google-account. We vragen alleen e-mail.",
     accountSaveMoreOptions: "Meer opties",
     accountSaveEmail: "Liever e-mail",
-    accountSaveEmailSubmit: "Account maken",
+    accountSaveEmailSubmit: "Bewaar met e-mail",
     accountSaveBusy: "Een ogenblik…",
+    loginGoogle: "Doorgaan met Google",
     accountSaveUnavailable:
       "Registreren is tijdelijk niet beschikbaar. Probeer het later opnieuw.",
     accountSaveGoogleUnavailable:
@@ -351,13 +354,16 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     cycleModeOff: "Without",
     cycleModeOn: "Cycle",
     cycleDiscoverAria: "Cycle discovery",
-    accountSaveTitle: "Save your progress.",
-    accountSaveSub: "Feel what it’s like to get more calm.",
-    accountSaveGoogle: "Continue with Google",
+    accountSaveTitle: "Your day start is ready. Save it.",
+    accountSaveSub:
+      "So you can experience what it’s like to use an app built for your brain.",
+    accountSaveGoogle: "Save with Google",
+    accountSaveGoogleHint: "You’ll pick your Google account. We only ask for email.",
     accountSaveMoreOptions: "More options",
     accountSaveEmail: "Prefer email",
-    accountSaveEmailSubmit: "Create account",
+    accountSaveEmailSubmit: "Save with email",
     accountSaveBusy: "One moment…",
+    loginGoogle: "Continue with Google",
     accountSaveUnavailable:
       "Sign-up is unavailable right now. Try again later.",
     accountSaveGoogleUnavailable:

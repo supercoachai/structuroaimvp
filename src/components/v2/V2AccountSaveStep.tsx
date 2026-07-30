@@ -33,8 +33,14 @@ import {
 import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
 import {
   trackV2AccountSaveClicked,
+  trackV2AccountSaveOauthStarted,
+  trackV2AccountSaveReturned,
   trackV2AccountSaveShown,
 } from "./v2OnboardingFunnel";
+import {
+  consumeAccountSaveOauthPending,
+  markAccountSaveOauthPending,
+} from "./v2AccountSaveOauth";
 
 /** Zelfde mark als V2Chrome (~9KB). */
 const V2_LOGO_SRC = "/v2/logo-mark.png";
@@ -65,6 +71,9 @@ export default function V2AccountSaveStep({
   } = useAuthCaptcha();
 
   useEffect(() => {
+    if (consumeAccountSaveOauthPending()) {
+      trackV2AccountSaveReturned("onboarding");
+    }
     trackV2AccountSaveShown("onboarding");
   }, []);
 
@@ -77,9 +86,12 @@ export default function V2AccountSaveStep({
     setError(null);
     setBusy(true);
     trackV2AccountSaveClicked("onboarding");
+    trackV2AccountSaveOauthStarted("onboarding");
+    markAccountSaveOauthPending();
     try {
       const supabase = createClient();
       if (!supabase) {
+        consumeAccountSaveOauthPending();
         setError(t("v2.accountSaveUnavailable"));
         setBusy(false);
         return;
@@ -89,6 +101,7 @@ export default function V2AccountSaveStep({
       markV2PostAccountNamePending();
       await startOAuthSignIn(supabase, "google", V2_POST_ACCOUNT_NAME_PATH);
     } catch (err) {
+      consumeAccountSaveOauthPending();
       consumeV2PostAccountNamePending();
       setError(
         isProviderNotEnabledError(err)
@@ -214,16 +227,19 @@ export default function V2AccountSaveStep({
         </div>
 
         <div className="v2-auth-gate__actions">
-          <button
-            type="button"
-            className="btn-primary w-full"
-            onClick={() => void continueWithGoogle()}
-            disabled={busy}
-          >
-            {busy && !emailOpen
-              ? t("v2.accountSaveBusy")
-              : t("v2.accountSaveGoogle")}
-          </button>
+          <div className="v2-auth-gate__primary">
+            <button
+              type="button"
+              className="btn-primary w-full"
+              onClick={() => void continueWithGoogle()}
+              disabled={busy}
+            >
+              {busy && !emailOpen
+                ? t("v2.accountSaveBusy")
+                : t("v2.accountSaveGoogle")}
+            </button>
+            <p className="v2-auth-gate__hint">{t("v2.accountSaveGoogleHint")}</p>
+          </div>
 
           <details
             className="v2-auth-gate__more"

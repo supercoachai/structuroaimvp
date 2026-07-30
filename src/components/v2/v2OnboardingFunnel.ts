@@ -19,6 +19,7 @@ import {
 } from "@/lib/posthog/signupAttribution";
 
 import type { V2Energy } from "./V2Context";
+import { clearAccountSaveOauthPending } from "./v2AccountSaveOauth";
 
 export type OnboardingStep =
   | "energy"
@@ -165,7 +166,29 @@ export function trackV2AccountSaveClicked(
   });
 }
 
+export function trackV2AccountSaveOauthStarted(
+  surface: "home" | "onboarding",
+): void {
+  trackClientFunnelEvent("account_save_oauth_started", {
+    ...attribution(),
+    surface,
+    provider: "google",
+    after_first_value: surface === "home",
+  });
+}
+
+export function trackV2AccountSaveReturned(
+  surface: "home" | "onboarding",
+): void {
+  trackClientFunnelEvent("account_save_returned", {
+    ...attribution(),
+    surface,
+    after_first_value: surface === "home",
+  });
+}
+
 export function trackV2NameStepShown(): void {
+  clearAccountSaveOauthPending();
   trackV2OnboardingStep("name");
   trackClientFunnelEvent("name_step_shown", {
     ...attribution(),
