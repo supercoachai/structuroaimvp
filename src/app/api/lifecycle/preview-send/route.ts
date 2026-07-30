@@ -21,6 +21,8 @@ const PREVIEW_TEMPLATES: LifecycleTemplateId[] = [
   "s4_pre_paywall",
   "s5_paywall",
   "s6_winback",
+  "s_winback_never_started",
+  "s_winback_warm",
 ];
 
 function assertAuthorized(request: Request): boolean {

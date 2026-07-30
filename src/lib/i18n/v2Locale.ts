@@ -283,14 +283,14 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallTitleAccent: "dag zeven.",
     paywallTitle: "Je betaalt pas op dag zeven.",
     paywallLead:
-      "En je krijgt een mail voordat dat gebeurt. Opzeggen doe je in de app, met één tik.",
+      "En je krijgt een mail voordat dat gebeurt, met een stop-knop. Of via Instellingen → Abonnement beheren.",
     paywallLeadBefore:
       "Start je vandaag, dan schrijven we op ",
     paywallLeadAfter: " €12,99 af, tenzij je eerder stopt.",
     paywallLeadFallback:
       "Start je vandaag, dan schrijven we na zeven dagen €12,99 af, tenzij je eerder stopt.",
     paywallStopBody:
-      "Stoppen is één knop. We mailen je een dag van tevoren met die knop erin. Je hoeft niets te onthouden en niets op te zoeken. Geen gesprek, geen reden opgeven.",
+      "Stoppen is één knop in de mail. We sturen die vóór de afschrijving. Of via Instellingen → Abonnement beheren. Geen gesprek, geen reden opgeven.",
     paywallRefundBody:
       "Achteraf toch niet goed? Binnen veertien dagen geld terug.",
     paywallOrCard: "of betaal met kaart",
@@ -300,22 +300,24 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallTimelineToday: "Vandaag",
     paywallTimelineTodaySub: "Alles open, geen limiet",
     paywallTimelineDay6: "Dag 6",
-    paywallTimelineDay6Sub: "Mail met een knop naar je instellingen",
+    paywallTimelineDay6Sub: "Mail met stop-knop (één klik)",
     paywallTimelineDay7: "Dag 7",
     paywallTimelineDay7Sub: "Tenzij je stopt",
     paywallTimelineFree: "€0",
     paywallTimelineMonthlyPrice: "€12,99",
     paywallTimelineYearlyPrice: "€119",
-    paywallAfterMonthly: "Daarna elke maand €12,99 · opzeggen in de app",
-    paywallAfterYearly: "Daarna €119 per jaar · opzeggen in de app",
+    paywallAfterMonthly: "Daarna elke maand €12,99 · stoppen via mail of Instellingen",
+    paywallAfterYearly: "Daarna €119 per jaar · stoppen via mail of Instellingen",
     paywallCardCta: "Start 7 dagen gratis",
     paywallCardBusy: "Even geduld…",
     paywallStripeTrust:
-      "Veilig via Stripe · daarna €12,99 per maand · opzeggen doe je zelf in de app, direct geregeld",
+      "Veilig via Stripe · daarna €12,99 per maand · we mailen je vóór de afschrijving",
     paywallStripeTrustYearly:
-      "Veilig via Stripe · daarna €119 per jaar · opzeggen doe je zelf in de app, direct geregeld",
+      "Veilig via Stripe · daarna €119 per jaar · we mailen je vóór de afschrijving",
     paywallRemindTrust:
       "Je kunt elk moment stoppen. Wij herinneren je een dag van tevoren.",
+    paywallRetentionTrust:
+      "Maandelijks opzegbaar via Instellingen → Abonnement beheren. 14 dagen geld terug na je eerste betaling.",
   },
   en: {
     languageAria: "Language",
@@ -597,13 +599,13 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallTitleAccent: "day seven.",
     paywallTitle: "You only pay on day seven.",
     paywallLead:
-      "And you get an email before that happens. Cancel in the app, with one tap.",
+      "And you get an email before that happens, with a stop button. Or via Settings → Manage subscription.",
     paywallLeadBefore: "If you start today, we charge €12.99 on ",
     paywallLeadAfter: ", unless you stop earlier.",
     paywallLeadFallback:
       "If you start today, we charge €12.99 after seven days, unless you stop earlier.",
     paywallStopBody:
-      "Stopping is one button. We email you a day beforehand with that button in it. Nothing to remember, nothing to look up. No conversation, no reason needed.",
+      "Stopping is one button in the email. We send it before the charge. Or via Settings → Manage subscription. No conversation, no reason needed.",
     paywallRefundBody:
       "Not a fit after all? Full refund within fourteen days.",
     paywallOrCard: "or pay by card",
@@ -613,21 +615,23 @@ export const v2Locale: Record<Locale, Record<string, string>> = {
     paywallTimelineToday: "Today",
     paywallTimelineTodaySub: "Everything open, no limit",
     paywallTimelineDay6: "Day 6",
-    paywallTimelineDay6Sub: "Email with a button to your settings",
+    paywallTimelineDay6Sub: "Email with stop button (one click)",
     paywallTimelineDay7: "Day 7",
     paywallTimelineDay7Sub: "Unless you stop",
     paywallTimelineFree: "€0",
     paywallTimelineMonthlyPrice: "€12.99",
     paywallTimelineYearlyPrice: "€119",
-    paywallAfterMonthly: "Then €12.99 every month · cancel in the app",
-    paywallAfterYearly: "Then €119 per year · cancel in the app",
+    paywallAfterMonthly: "Then €12.99 every month · stop via email or Settings",
+    paywallAfterYearly: "Then €119 per year · stop via email or Settings",
     paywallCardCta: "Start 7 days free",
     paywallCardBusy: "One moment…",
     paywallStripeTrust:
-      "Secure via Stripe · then €12.99 per month · cancel yourself in the app, done instantly",
+      "Secure via Stripe · then €12.99 per month · we email you before the charge",
     paywallStripeTrustYearly:
-      "Secure via Stripe · then €119 per year · cancel yourself in the app, done instantly",
+      "Secure via Stripe · then €119 per year · we email you before the charge",
     paywallRemindTrust:
       "You can stop anytime. We remind you a day beforehand.",
+    paywallRetentionTrust:
+      "Cancel monthly via Settings → Manage subscription. 14-day money-back after your first payment.",
   },
 };

@@ -7,7 +7,11 @@ export type LifecycleTemplateId =
   | "s3_value"
   | "s4_pre_paywall"
   | "s5_paywall"
-  | "s6_winback";
+  | "s6_winback"
+  /** One-shot soft: expired, 0 checkins (“je maakte ooit een account”). */
+  | "s_winback_never_started"
+  /** One-shot WARM: expired, precies 1 checkin. */
+  | "s_winback_warm";
 
 export type LifecycleWave = "welcome" | "morning" | "evening";
 

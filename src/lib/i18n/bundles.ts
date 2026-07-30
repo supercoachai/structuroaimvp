@@ -458,7 +458,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       planPriceLine: "€12,99 per maand · maandelijks opzegbaar",
       planTrust: "Veilig betalen via iDEAL, creditcard, Apple Pay of Google Pay.",
       planTrialFootnote:
-        "We slaan je betaalmethode op voor de maandelijkse incasso. Opzegbaar wanneer je wilt in Instellingen.",
+        "Opzeggen via Instellingen → Abonnement beheren, of via de stop-knop in onze mail vóór de afschrijving. 14 dagen geld terug na je eerste betaling.",
       planYearlyReveal: "Liever jaarlijks?",
       planYearlyCta: "€119/jaar, bijna 3 maanden gratis",
       planCtaTrial: "Ik blijf, behoud mijn systeem",
@@ -1074,7 +1074,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       planPriceLine: "€12.99 per month · cancel anytime",
       planTrust: "Secure payment via iDEAL, card, Apple Pay or Google Pay.",
       planTrialFootnote:
-        "We save your payment method for the monthly charge. Cancel anytime in Settings.",
+        "Cancel via Settings → Manage subscription, or the stop button in our email before the charge. 14-day money-back after your first payment.",
       planYearlyReveal: "Prefer yearly?",
       planYearlyCta: "€119/year, almost 3 months free",
       planCtaTrial: "I'll stay, keep my system",

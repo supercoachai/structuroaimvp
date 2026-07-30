@@ -363,11 +363,11 @@
     }
   },
   "assets": {
-    "favicon": "/uploads/logo-structuro-favicon.png",
+    "favicon": "/uploads/logo-structuro-favicon-96.png",
     "appleTouchIcon": "/uploads/logo-structuro-apple.png",
     "logo": "/uploads/logo-structuro.png",
     "logoNav": "/uploads/logo-structuro-nav.webp",
-    "ogImage": "https://www.structuro.eu/uploads/logo-structuro.png"
+    "ogImage": "https://www.structuro.eu/uploads/structuro-icon.png"
   },
   "cssVariables": {
     "root": {

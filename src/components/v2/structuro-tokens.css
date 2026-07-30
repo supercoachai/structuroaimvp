@@ -1665,6 +1665,10 @@
   color: var(--text-muted);
   max-width: 36ch;
 }
+.v2-root .v2-card-trial__trust--secondary {
+  margin-top: 6px;
+  max-width: 40ch;
+}
 
 @media (min-width: 768px) {
   /* Topbalk vast over de volle breedte. */

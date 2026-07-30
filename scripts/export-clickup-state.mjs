@@ -106,7 +106,9 @@ function parseMarkdownTableRows(section) {
 }
 
 function extractSnapshotTable(stateBody) {
-  const sec = extractSection(stateBody, "📊 Snapshot metrics");
+  const sec =
+    extractSection(stateBody, "📊 Snapshot metrics") ||
+    extractSection(stateBody, "Snapshot[^\\n]*");
   return parseMarkdownTable(sec);
 }
 

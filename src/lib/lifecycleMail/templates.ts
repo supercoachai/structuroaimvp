@@ -441,6 +441,42 @@ export function renderLifecycleMail(
         unsubscribeUrl,
       });
 
+    case "s_winback_never_started":
+      return buildMail({
+        templateId,
+        cohortKey: `winback-never:${candidate.user_id}`,
+        subject: personalizedSubject(name, "Je maakte ooit een account"),
+        preview: "Je account staat nog klaar. Eén ding is genoeg.",
+        paragraphs: paras(
+          hi,
+          "Je maakte ooit een Structuro-account. Daarna bleef het stil.",
+          "Dat is normaal. Beginnen is het zware deel, niet iets om je schuldig over te voelen.",
+          "Als je wilt: open de app en kies vandaag één ding. Geen inhalen, geen lijst van wat je miste."
+        ),
+        ctaLabel: "Open Structuro",
+        ctaPath: lifecycleCtaHome(),
+        ctaSubline: "Geen interesse? Dan hoort je niets meer over dit account.",
+        unsubscribeUrl,
+      });
+
+    case "s_winback_warm":
+      return buildMail({
+        templateId,
+        cohortKey: `winback-warm:${candidate.user_id}`,
+        subject: personalizedSubject(name, "Je begon met één dagstart"),
+        preview: "Je deed één dagstart. Daarna stopte het. Dat is normaal.",
+        paragraphs: paras(
+          hi,
+          "Je maakte een Structuro-account en deed één dagstart. Daarna stopte het.",
+          "Dat is normaal. Beginnen is het zware deel, niet iets om je schuldig over te voelen.",
+          "Als je wilt opnieuw proberen: open de app en kies vandaag opnieuw één ding."
+        ),
+        ctaLabel: "Open Structuro",
+        ctaPath: lifecycleCtaHome(),
+        ctaSubline: "Geen interesse? Dan hoort je niets meer over dit account.",
+        unsubscribeUrl,
+      });
+
     default: {
       const _exhaustive: never = templateId;
       throw new Error(`Onbekende template: ${_exhaustive}`);

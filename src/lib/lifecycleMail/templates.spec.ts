@@ -150,6 +150,32 @@ describe("lifecycleMail templates", () => {
     expect(mail.html).not.toContain("—");
   });
 
+  it("soft never-started winback noemt account zonder checkin-schuld", () => {
+    const mail = renderLifecycleMail(
+      "s_winback_never_started",
+      { ...base, checkin_count: 0 },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.cohortKey).toBe("winback-never:u1");
+    expect(mail.subject).toContain("je maakte ooit een account");
+    expect(mail.text).toContain("Je maakte ooit een Structuro-account");
+    expect(mail.text).toContain("Beginnen is het zware deel");
+    expect(mail.html).not.toContain("—");
+    expect(mail.text).not.toContain("—");
+  });
+
+  it("WARM winback noemt één dagstart", () => {
+    const mail = renderLifecycleMail(
+      "s_winback_warm",
+      { ...base, checkin_count: 1 },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.cohortKey).toBe("winback-warm:u1");
+    expect(mail.subject).toContain("je begon met één dagstart");
+    expect(mail.text).toContain("één dagstart");
+    expect(mail.html).not.toContain("—");
+  });
+
   it("gebruikt logo-header, sans body, teksthandtekening zonder foto", () => {
     const mail = renderLifecycleMail(
       "s4_pre_paywall",

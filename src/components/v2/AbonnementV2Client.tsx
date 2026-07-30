@@ -345,6 +345,9 @@ export default function AbonnementV2Client({
               {busy ? t("v2.paywallCardBusy") : t("v2.paywallCardCta")}
             </button>
             <p className="v2-card-trial__trust">{trustLine}</p>
+            <p className="v2-card-trial__trust v2-card-trial__trust--secondary">
+              {t("v2.paywallRefundBody")}
+            </p>
           </section>
         </div>
       </V2Page>
@@ -552,6 +555,8 @@ export default function AbonnementV2Client({
 
         <p className="v2-abonnement__trust">
           Veilig betalen via iDEAL, creditcard, Apple Pay of Google Pay.
+          <br />
+          {t("v2.paywallRetentionTrust")}
           <br />
           Je gegevens en lijsten blijven van jou.
         </p>

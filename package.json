@@ -37,6 +37,7 @@
     "posthog:launch-dashboard": "node scripts/setup-posthog-launch-dashboard.mjs",
     "posthog:eu-dashboard": "node scripts/setup-posthog-eu-dashboard.mjs",
     "posthog:merge-split-persons": "node --env-file=.env.local scripts/merge-split-posthog-persons.mjs",
+    "lifecycle:winback-dry-run": "npx --yes tsx --env-file=.env.local scripts/lifecycle/winback-oneshot.ts",
     "export:clickup-state": "node scripts/export-clickup-state.mjs",
     "verify:supabase-passkeys": "node scripts/verify-supabase-passkey-config.mjs",
     "sync:obsidian-graph-hubs": "node scripts/sync-obsidian-graph-hubs.mjs",

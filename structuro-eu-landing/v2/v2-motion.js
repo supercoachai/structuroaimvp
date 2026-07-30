@@ -239,11 +239,12 @@
   }
 
   function playHomeDemo(root) {
-    /* Static hero: één rustige taak, geen auto-rotate. Batterij = genoeg (2 segmenten). */
+    /* Statische hero-mockup: geen auto-play, geen klikbare elementen. */
     var titleEl = root.querySelector("[data-home-title]");
     var countEl = root.querySelector("[data-home-count]");
     var key = "phone_task2";
     root._userPaused = false;
+    clearAllDemoTimers(root);
     root.setAttribute("data-energy", "ok");
     setDemoState(root, "t2");
     if (countEl) countEl.textContent = "1/1";
@@ -252,6 +253,40 @@
       titleEl.textContent = dict[key] || titleEl.textContent;
       titleEl.setAttribute("data-i18n", key);
     }
+    resetHomeMicros(root);
+  }
+
+  function homeMicroParts(li) {
+    if (!li) return { chk: null, label: null };
+    var chk = li.querySelector(".home-micro-chk");
+    var label = null;
+    var spans = li.querySelectorAll("span");
+    if (spans.length > 1) label = spans[spans.length - 1];
+    return { chk: chk, label: label };
+  }
+
+  function setHomeMicroDone(li, done) {
+    var parts = homeMicroParts(li);
+    if (!parts.chk) return;
+    if (done) {
+      parts.chk.classList.add("is-done");
+      parts.chk.textContent = "✓";
+      if (parts.label) parts.label.classList.add("is-done");
+    } else {
+      parts.chk.classList.remove("is-done");
+      parts.chk.textContent = "";
+      if (parts.label) parts.label.classList.remove("is-done");
+    }
+  }
+
+  function resetHomeMicros(root) {
+    var items = root.querySelectorAll(".home-micro li");
+    items.forEach(function (li, idx) {
+      li.classList.remove("is-home-tap");
+      setHomeMicroDone(li, idx === 0);
+    });
+    var focusBtn = root.querySelector(".home-focus-btn");
+    if (focusBtn) focusBtn.classList.remove("is-home-tap");
   }
 
   function playEnergyDemo(root) {
@@ -625,6 +660,9 @@
       }
       if (firstLbl) firstLbl.classList.remove("is-done");
     }
+    if (root.getAttribute("data-demo") === "home") {
+      resetHomeMicros(root);
+    }
   }
 
   function initDemos() {
@@ -633,6 +671,10 @@
     if (reduce) {
       demos.forEach(function (d) {
         bindEnergyPills(d);
+        if (d.getAttribute("data-demo") === "home") {
+          d.setAttribute("data-energy", "ok");
+          resetHomeMicros(d);
+        }
         setDemoState(d, d.getAttribute("data-demo-default") || "pick");
       });
       return;

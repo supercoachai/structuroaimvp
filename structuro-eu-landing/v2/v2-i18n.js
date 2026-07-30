@@ -17,6 +17,8 @@
       nav_faq: "FAQ",
       nav_login: "Inloggen",
       nav_cta: "Start 7 dagen gratis",
+      hero_cta: "Begin met één stap",
+      cta_reassure: "Klaar in ~30 seconden.",
       lang_label: "Taal",
       menu: "Menu",
       hero_eyebrow: "Voor ADHD-breinen die niet beginnen",
@@ -25,6 +27,9 @@
       intro_support: "Structuro kiest wat haalbaar is. Jij bevestigt, en begint.",
       hero_binary:
         "Andere apps bewaren je lijst. Structuro helpt je vandaag te starten.",
+      founder_teaser_text:
+        "Elke planner ging uit van een brein dat ik niet heb. Dus bouwde ik iets voor het brein dat je al hebt.",
+      founder_teaser_link: "Lees het verhaal",
       psych_eyebrow: "Waarom dit werkt",
       psych_h2: "Welke hiervan ben jij?",
       psych_lede:
@@ -292,7 +297,7 @@
       price_feat1: "Geen lijst die groeit terwijl jij stilstaat",
       price_feat2: "Een eerste stap klein genoeg om echt te beginnen",
       price_feat3: "Je dag past zich aan hoe vol je batterij vandaag is",
-      price_note_before: "14 dagen niet goed, geld terug. Liever jaarlijks?",
+      price_note_before: "14 dagen geld terug. Liever jaarlijks?",
       price_yearly: "€119 per jaar",
       faq_eyebrow: "Vragen die je waarschijnlijk hebt",
       faq_h2: "Eerlijke antwoorden.",
@@ -302,9 +307,9 @@
       faq_day_q: "Werkt dit ook als ik niet elke dag iets doe?",
       faq_day_a:
         "Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint opnieuw.",
-      faq_refund_q: "Hoe werken proefperiode en geld-terug-garantie?",
+      faq_refund_q: "Hoe werkt de 7 dagen gratis?",
       faq_refund_a:
-        "Je start met 7 dagen Stripe-trial. Bij start geef je een betaalmethode op; de eerste 7 dagen betaal je niets. Daarna €12,99 per maand, tenzij je stopt. Niet goed binnen 14 dagen na de eerste betaling? Geld terug, zonder rompslomp.",
+        "Je probeert eerst de dagstart, nog zonder account.<br><br>Daarna maak je een account en start je 7 dagen gratis. Daarvoor geef je een betaalmethode op, maar die week betaal je niets.<br><br>Vóór we iets afschrijven mailen we je, met een stop-knop (één klik). Stoppen kan ook via Instellingen → Abonnement beheren.<br><br>Niet tevreden binnen 14 dagen na je eerste betaling? Geld terug, zonder rompslomp.",
       faq_privacy_q: "Hoe gaan jullie om met mijn gegevens?",
       faq_privacy_a:
         "Je gegevens blijven van jou, opgeslagen binnen de EU. We verkopen niets door en je kunt alles op elk moment verwijderen.",
@@ -341,6 +346,8 @@
       nav_faq: "FAQ",
       nav_login: "Log in",
       nav_cta: "Start 7 days free",
+      hero_cta: "Start with one step",
+      cta_reassure: "Ready in ~30 seconds.",
       lang_label: "Language",
       menu: "Menu",
       hero_eyebrow: "For ADHD brains that don't start",
@@ -349,6 +356,9 @@
       intro_support: "Structuro picks what is doable. You confirm, and begin.",
       hero_binary:
         "Other apps store your lists. Structuro helps you start today.",
+      founder_teaser_text:
+        "Every planner assumed a brain I don't have. So I built something for the brain you already have.",
+      founder_teaser_link: "Read the story",
       psych_eyebrow: "Why this works",
       psych_h2: "Which of these is you?",
       psych_lede: "You get exactly the answer that fits each point, and nothing more.",
@@ -625,9 +635,9 @@
       faq_day_q: "Does this work if I don't do something every day?",
       faq_day_a:
         "Yes. No streaks, badges, or overdue alerts. Skipping a day isn't failure. Tomorrow simply starts again.",
-      faq_refund_q: "How do the trial and money-back guarantee work?",
+      faq_refund_q: "How does the 7-day free trial work?",
       faq_refund_a:
-        "You start with a 7-day Stripe trial. A payment method is required to start; you pay nothing for the first 7 days. Then €12.99 per month unless you cancel. Not a fit within 14 days after the first charge? Money back, no hassle.",
+        "You try the day start first, still without an account.<br><br>Then you create an account and start 7 days free. A payment method is required, but you pay nothing that week.<br><br>Before we charge you, we email you with a stop button (one click). You can also stop via Settings → Manage subscription.<br><br>Not happy within 14 days after your first payment? Money back, no hassle.",
       faq_privacy_q: "How do you handle my data?",
       faq_privacy_a:
         "Your data stays yours, stored in the EU. We don't sell it, and you can delete everything anytime.",
