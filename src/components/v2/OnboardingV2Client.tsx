@@ -207,22 +207,43 @@ export default function OnboardingV2Client() {
       nameEntryHandled.current = true;
       freshStartHandled.current = true;
 
-      // Auth eerst: de naamstap mag nooit zichtbaar/getrackt worden zonder
-      // echte sessie (bv. Google afgebroken + terug-navigatie met stale
-      // sessionStorage-vlag). Pas ná deze check committen we UI/tracking.
-      let hasUser = false;
+      // Auth-gate eerst, snel en lokaal: de naamstap mag nooit
+      // zichtbaar/getrackt worden zonder sessie (bv. Google afgebroken +
+      // terug-navigatie met stale sessionStorage-vlag). getSession() leest
+      // uit lokale opslag (geen netwerk-JWT-verify) en beslist meteen of we
+      // bouncen, zodat de happy path geen extra flash/vertraging krijgt.
+      const supabase = createClient();
+      let hasSession = false;
+      try {
+        if (supabase) {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          hasSession = Boolean(session?.user?.id);
+        }
+      } catch {
+        /* geen sessie / netwerkfout: behandel als guest, geen naamstap */
+      }
+
+      if (!hasSession) {
+        bounceGuestFromNamePhase();
+        setHistory([]);
+        setPhase("account");
+        return;
+      }
+
+      // Sessie staat vast; ná de gate mag getUser() (netwerk-JWT-verify)
+      // voor verse metadata bij het ophalen van de prefill-naam.
       let profilePreferred: string | null = null;
       let profileDisplay: string | null = null;
       let metaPrefill = "";
 
       try {
-        const supabase = createClient();
         if (supabase) {
           const {
             data: { user },
           } = await supabase.auth.getUser();
           if (user?.id) {
-            hasUser = true;
             metaPrefill = prefillNameFromUserMetadata(
               user.user_metadata as Record<string, unknown> | undefined,
             );
@@ -242,14 +263,7 @@ export default function OnboardingV2Client() {
           }
         }
       } catch {
-        /* geen sessie / netwerkfout: behandel als guest, geen naamstap */
-      }
-
-      if (!hasUser) {
-        bounceGuestFromNamePhase();
-        setHistory([]);
-        setPhase("account");
-        return;
+        /* best-effort prefill: sessie stond al vast via getSession */
       }
 
       persistV2OnboardingUiPhase("name");
