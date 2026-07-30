@@ -48,6 +48,7 @@ import {
   shouldShowV2PostAccountNamePrompt,
 } from "./v2PostAccountName";
 import {
+  bounceGuestFromNamePhase,
   clearV2OnboardingUiPhase,
   peekV2OnboardingUiPhase,
   persistV2OnboardingUiPhase,
@@ -205,14 +206,11 @@ export default function OnboardingV2Client() {
       dismissAccountSavePrompt();
       nameEntryHandled.current = true;
       freshStartHandled.current = true;
-      // Commit UI vóór awaits: anders wist een remount/resetToEnergy de suggest-stap terug
-      // terwijl getUser/profile nog loopt (lange load na e-mail-signup).
-      persistV2OnboardingUiPhase("name");
-      setHistory([]);
-      setPhase("name");
-      setNameError(null);
-      trackV2NameStepShown();
 
+      // Auth eerst: de naamstap mag nooit zichtbaar/getrackt worden zonder
+      // echte sessie (bv. Google afgebroken + terug-navigatie met stale
+      // sessionStorage-vlag). Pas ná deze check committen we UI/tracking.
+      let hasUser = false;
       let profilePreferred: string | null = null;
       let profileDisplay: string | null = null;
       let metaPrefill = "";
@@ -224,6 +222,7 @@ export default function OnboardingV2Client() {
             data: { user },
           } = await supabase.auth.getUser();
           if (user?.id) {
+            hasUser = true;
             metaPrefill = prefillNameFromUserMetadata(
               user.user_metadata as Record<string, unknown> | undefined,
             );
@@ -243,8 +242,21 @@ export default function OnboardingV2Client() {
           }
         }
       } catch {
-        /* best-effort prefill */
+        /* geen sessie / netwerkfout: behandel als guest, geen naamstap */
       }
+
+      if (!hasUser) {
+        bounceGuestFromNamePhase();
+        setHistory([]);
+        setPhase("account");
+        return;
+      }
+
+      persistV2OnboardingUiPhase("name");
+      setHistory([]);
+      setPhase("name");
+      setNameError(null);
+      trackV2NameStepShown();
 
       consumeV2PostAccountNamePending();
 
@@ -300,14 +312,13 @@ export default function OnboardingV2Client() {
     if (searchParams.get("name") === "1" || shouldSkipFreshStartEnergyReset()) {
       freshStartHandled.current = true;
       const saved = peekV2OnboardingUiPhase();
-      if (saved === "account" || saved === "name") {
-        setPhase(saved);
-      } else if (
-        searchParams.get("name") === "1" ||
-        peekV2PostAccountNamePending()
-      ) {
-        setPhase("name");
+      if (saved === "account") {
+        setPhase("account");
       }
+      // Bewust NIET direct naar "name" bij saved === "name", ?name=1 of een
+      // losse pending-vlag: de auth-gated enterNamePhase-effect hieronder
+      // bepaalt eerst of er een echte sessie is, anders blijft dit "energy"
+      // (onschuldig) tot die check klaar is.
       return;
     }
     freshStartHandled.current = true;

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  bounceGuestFromNamePhase,
   clearV2OnboardingUiPhase,
   peekV2OnboardingUiPhase,
   persistV2OnboardingUiPhase,
@@ -9,6 +10,7 @@ import {
 } from "./v2OnboardingPhaseGate";
 import {
   markV2PostAccountNamePending,
+  peekV2PostAccountNamePending,
   V2_POST_ACCOUNT_NAME_FLAG,
 } from "./v2PostAccountName";
 
@@ -53,5 +55,17 @@ describe("v2OnboardingPhaseGate", () => {
     markV2PostAccountNamePending();
     expect(sessionStorage.getItem(V2_POST_ACCOUNT_NAME_FLAG)).toBe("1");
     expect(shouldSkipFreshStartEnergyReset()).toBe(true);
+  });
+
+  it("stuurt een guest zonder sessie van de naamstap terug naar account", () => {
+    // Simuleert een afgebroken Google-login: naam-pending vlag staat nog,
+    // maar er is nooit een sessie tot stand gekomen.
+    markV2PostAccountNamePending();
+    persistV2OnboardingUiPhase("name");
+
+    bounceGuestFromNamePhase();
+
+    expect(peekV2PostAccountNamePending()).toBe(false);
+    expect(peekV2OnboardingUiPhase()).toBe("account");
   });
 });

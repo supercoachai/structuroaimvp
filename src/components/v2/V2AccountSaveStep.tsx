@@ -10,10 +10,7 @@ import { finalizeNewAccountSession } from "@/lib/auth/completeSignUpSession";
 import { signUpWithEmailPassword } from "@/lib/auth/emailPasswordSignUp";
 import { setLastAuthMethod } from "@/lib/auth/returningUser";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
-import {
-  isProviderNotEnabledError,
-  startOAuthSignIn,
-} from "@/lib/auth/socialSignIn";
+import { isProviderNotEnabledError } from "@/lib/auth/socialSignIn";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -39,7 +36,7 @@ import {
 } from "./v2OnboardingFunnel";
 import {
   consumeAccountSaveOauthPending,
-  markAccountSaveOauthPending,
+  startGoogleAccountSaveOauth,
 } from "./v2AccountSaveOauth";
 
 /** Zelfde mark als V2Chrome (~9KB). */
@@ -87,22 +84,21 @@ export default function V2AccountSaveStep({
     setBusy(true);
     trackV2AccountSaveClicked("onboarding");
     trackV2AccountSaveOauthStarted("onboarding");
-    markAccountSaveOauthPending();
     try {
       const supabase = createClient();
       if (!supabase) {
-        consumeAccountSaveOauthPending();
         setError(t("v2.accountSaveUnavailable"));
         setBusy(false);
         return;
       }
       setLastAuthMethod("google");
       queueSignupCompletedForAnalytics();
-      markV2PostAccountNamePending();
-      await startOAuthSignIn(supabase, "google", V2_POST_ACCOUNT_NAME_PATH);
+      // Geen post-account-naam-pending hier: die vlag mag pas na een
+      // succesvolle terugkeer (?name=1) gezet zijn. Zo laat een afgebroken
+      // Google-login + terug-navigatie de naamstap niet zonder sessie zien.
+      await startGoogleAccountSaveOauth(supabase, V2_POST_ACCOUNT_NAME_PATH);
     } catch (err) {
       consumeAccountSaveOauthPending();
-      consumeV2PostAccountNamePending();
       setError(
         isProviderNotEnabledError(err)
           ? t("v2.accountSaveGoogleUnavailable")

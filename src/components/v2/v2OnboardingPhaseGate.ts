@@ -6,6 +6,7 @@
  */
 
 import {
+  consumeV2PostAccountNamePending,
   peekV2PostAccountNamePending,
 } from "./v2PostAccountName";
 
@@ -47,4 +48,15 @@ export function shouldSkipFreshStartEnergyReset(): boolean {
   if (typeof window === "undefined") return false;
   if (peekV2OnboardingUiPhase()) return true;
   return peekV2PostAccountNamePending();
+}
+
+/**
+ * Terug van een afgebroken Google-login (of een stale naam-pending vlag
+ * zonder sessie): wis de naam-pending state en zet de onboarding-UI-fase
+ * terug naar de account-gate. Zo kan een guest zonder echte auth nooit op
+ * de naamstap blijven staan.
+ */
+export function bounceGuestFromNamePhase(): void {
+  consumeV2PostAccountNamePending();
+  persistV2OnboardingUiPhase("account");
 }
