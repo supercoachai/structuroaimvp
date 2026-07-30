@@ -132,8 +132,15 @@ async function postSuggestMicroSteps(request: Request) {
 
   let peekQuota;
   try {
-    peekQuota = await peekMicroStepsAiQuota(supabase);
-  } catch {
+    peekQuota = await peekMicroStepsAiQuota(user.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown";
+    if (message === "service_role_unavailable") {
+      return NextResponse.json(
+        { ok: false, error: "service_role_unavailable" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { ok: false, error: "quota_check_failed" },
       { status: 500 }
@@ -162,7 +169,7 @@ async function postSuggestMicroSteps(request: Request) {
 
     let quota = peekQuota;
     try {
-      quota = await consumeMicroStepsAiQuota(supabase);
+      quota = await consumeMicroStepsAiQuota(user.id);
     } catch {
       console.error("suggest-micro-steps: quota consume after success failed");
     }
