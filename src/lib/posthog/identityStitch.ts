@@ -1,5 +1,10 @@
 import posthog from "posthog-js";
 
+import {
+  clearAnonDistinctIdCookie,
+  writeAnonDistinctIdCookie,
+} from "@/lib/posthog/anonDistinctCookie";
+
 /** Bewaart anonieme distinct_id voor cross-sessie context (alleen vóór identify). */
 export const ANON_DISTINCT_STORAGE_KEY = "structuro_ph_anon_did";
 
@@ -46,6 +51,8 @@ export function persistAnonymousDistinctIdForStitch(): void {
     if (!id || typeof id !== "string") return;
     if (id.length < 8) return;
     writeStorage(ANON_DISTINCT_STORAGE_KEY, id);
+    // Server-side alias na OAuth/magic link leest deze cookie in /auth/callback.
+    writeAnonDistinctIdCookie(id);
   } catch {
     /* ignore */
   }
@@ -93,6 +100,7 @@ export function linkAnonymousDistinctToUser(
 
     writeStorage(IDENTIFIED_USER_STORAGE_KEY, userId);
     removeStorage(ANON_DISTINCT_STORAGE_KEY);
+    clearAnonDistinctIdCookie();
   } catch {
     /* ignore */
   }
@@ -102,6 +110,7 @@ export function linkAnonymousDistinctToUser(
 export function clearIdentityStitchOnLogout(): void {
   removeStorage(IDENTIFIED_USER_STORAGE_KEY);
   removeStorage(ANON_DISTINCT_STORAGE_KEY);
+  clearAnonDistinctIdCookie();
 }
 
 /**
@@ -112,9 +121,10 @@ export function getAnonymousDistinctIdForMagicLink(): string | null {
   if (typeof window === "undefined") return null;
   if (readStorage(IDENTIFIED_USER_STORAGE_KEY)) return null;
   try {
+    const stored = readStorage(ANON_DISTINCT_STORAGE_KEY);
+    if (stored && stored.length >= 8) return stored;
     const id = posthog.get_distinct_id?.();
     if (!id || typeof id !== "string" || id.length < 8) return null;
-    // Geen uuid-shaped user-id (al geïdentificeerd via vorige sessie)
     return id;
   } catch {
     return null;

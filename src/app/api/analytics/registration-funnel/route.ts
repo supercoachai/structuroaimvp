@@ -2,9 +2,16 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import {
+  readAnonDistinctIdFromCookieHeader,
+} from "@/lib/posthog/anonDistinctCookie";
+import {
   captureRegistrationFunnelServer,
   type RegistrationFunnelEvent,
 } from "@/lib/posthog/registrationFunnelAnalytics";
+import {
+  aliasAnonymousDistinctToUserServer,
+  resolveAnonDistinctIdForAlias,
+} from "@/lib/posthog/serverAlias";
 import { captureServerException } from "@/lib/posthog/server";
 import { extractRequestClientContext } from "@/lib/posthog/serverEventContext";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
@@ -74,6 +81,19 @@ async function postRegistrationFunnel(request: Request) {
   }
 
   try {
+    const anonId = resolveAnonDistinctIdForAlias({
+      userId: user.id,
+      fromMetadata: (user.user_metadata as Record<string, unknown> | null)
+        ?.posthog_anon_id,
+      fromCookie: readAnonDistinctIdFromCookieHeader(
+        request.headers.get("cookie")
+      ),
+      fromBody: typeof b.visitor_id === "string" ? b.visitor_id : null,
+    });
+    if (anonId) {
+      await aliasAnonymousDistinctToUserServer(user.id, anonId);
+    }
+
     await captureRegistrationFunnelServer(
       user.id,
       event,

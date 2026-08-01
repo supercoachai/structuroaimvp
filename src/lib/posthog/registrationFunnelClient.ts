@@ -1,4 +1,5 @@
 import type { RegisterPlanId } from "@/lib/stripe/registerPlans";
+import { resolveAnalyticsVisitorId } from "@/lib/posthog/analyticsVisitorId";
 
 type ClientFunnelEvent = "signup_completed" | "registreren_plan_viewed";
 
@@ -18,11 +19,21 @@ export async function trackRegistrationFunnelServer(
   }
 ): Promise<void> {
   try {
+    let visitorId: string | undefined;
+    try {
+      visitorId = resolveAnalyticsVisitorId();
+    } catch {
+      visitorId = undefined;
+    }
     await fetch("/api/analytics/registration-funnel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ event, ...properties }),
+      body: JSON.stringify({
+        event,
+        ...properties,
+        ...(visitorId ? { visitor_id: visitorId } : {}),
+      }),
     });
   } catch {
     /* ignore */

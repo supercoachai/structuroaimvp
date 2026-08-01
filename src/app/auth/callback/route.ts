@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import {
+  readAnonDistinctIdFromCookieHeader,
+  readAnonDistinctIdFromNextPath,
+  ST_PH_DID_COOKIE,
+  stripAnonDistinctIdFromPath,
+} from "@/lib/posthog/anonDistinctCookie";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
+import {
+  aliasAnonymousDistinctToUserServer,
+  resolveAnonDistinctIdForAlias,
+} from "@/lib/posthog/serverAlias";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { parseStAttrFromRequest } from "@/lib/posthog/firstTouchAttribution";
 import {
@@ -165,7 +175,8 @@ export async function GET(request: Request) {
 
   if (code) {
     const forwardedHost = request.headers.get("x-forwarded-host");
-    const target = buildTrustedRedirectUrl(origin, forwardedHost, next);
+    const redirectNext = stripAnonDistinctIdFromPath(next);
+    const target = buildTrustedRedirectUrl(origin, forwardedHost, redirectNext);
     const response = NextResponse.redirect(target);
     const supabase = await createRouteHandlerSupabaseClient(response);
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -174,6 +185,25 @@ export async function GET(request: Request) {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (user?.id) {
+        // Server-side alias vóór signup-events: client identify werkt niet
+        // betrouwbaar bij cookieless/auto-deny, waardoor funnels bij signup breken.
+        const anonId = resolveAnonDistinctIdForAlias({
+          userId: user.id,
+          fromMetadata: (user.user_metadata as Record<string, unknown> | null)
+            ?.posthog_anon_id,
+          fromCookie: readAnonDistinctIdFromCookieHeader(
+            request.headers.get("cookie")
+          ),
+          fromNextPath: readAnonDistinctIdFromNextPath(next),
+        });
+        if (anonId) {
+          await aliasAnonymousDistinctToUserServer(user.id, anonId);
+          response.cookies.set(ST_PH_DID_COOKIE, "", {
+            path: "/",
+            maxAge: 0,
+          });
+        }
+
         void captureServerEvent(user.id, ANALYTICS_EVENTS.magic_link_opened, {
           channel: "server",
           auth_flow: "callback_code",

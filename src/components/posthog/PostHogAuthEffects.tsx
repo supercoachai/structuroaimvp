@@ -115,9 +115,9 @@ export function PostHogAuthEffects() {
           /* ignore */
         }
 
-        // Funnel-event vóór identify: signup_completed vuurt zo nog met de
-        // anonieme distinct_id en sluit aan op acquisitie-events. identify()
-        // merget die daarna in user.id (zonder herhaald alias()).
+        // Client signup_completed (best-effort). Autoritatieve merge is
+        // server-side alias in /auth/callback + registration-funnel: client
+        // identify() vuurt vrijwel niet bij cookieless/auto-deny.
         tryCaptureSignup(user);
 
         try {

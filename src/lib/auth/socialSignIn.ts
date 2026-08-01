@@ -3,6 +3,10 @@ import type { Provider, SupabaseClient } from "@supabase/supabase-js";
 import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
 import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import type { OAuthProviderId } from "@/lib/auth/authProviders";
+import {
+  appendAnonDistinctIdToPath,
+  writeAnonDistinctIdCookie,
+} from "@/lib/posthog/anonDistinctCookie";
 import { getAnonymousDistinctIdForMagicLink } from "@/lib/posthog/identityStitch";
 
 /** Supabase gebruikt `azure` voor Microsoft (Outlook, Hotmail, live.nl). */
@@ -36,10 +40,15 @@ export async function startOAuthSignIn(
   provider: OAuthProviderId,
   nextPath = "/onboarding"
 ): Promise<void> {
+  const anonId = getAnonymousDistinctIdForMagicLink();
+  if (anonId) writeAnonDistinctIdCookie(anonId);
+  // OAuth kan user_metadata niet vooraf zetten; plak anon-id op next zodat
+  // /auth/callback server-side kan aliassen (cookieless identify werkt niet).
+  const nextWithAnon = appendAnonDistinctIdToPath(nextPath, anonId);
   const { error } = await supabase.auth.signInWithOAuth({
     provider: toSupabaseOAuthProvider(provider),
     options: {
-      redirectTo: buildAuthCallbackUrl(nextPath),
+      redirectTo: buildAuthCallbackUrl(nextWithAnon),
       skipBrowserRedirect: false,
     },
   });
@@ -62,12 +71,14 @@ export async function sendLoginMagicLink(
     throw new Error("invalid_email");
   }
   const anonId = getAnonymousDistinctIdForMagicLink();
+  if (anonId) writeAnonDistinctIdCookie(anonId);
+  const nextWithAnon = appendAnonDistinctIdToPath(nextPath, anonId);
   const { error } = await supabase.auth.signInWithOtp({
     email: normalized,
     options: {
       ...(captchaToken ? { captchaToken } : {}),
       shouldCreateUser: false,
-      emailRedirectTo: buildAuthCallbackUrl(nextPath),
+      emailRedirectTo: buildAuthCallbackUrl(nextWithAnon),
       // Bewaar anonieme PostHog-ID zodat cross-device login de personen kan mergen.
       ...(anonId ? { data: { posthog_anon_id: anonId } } : {}),
     },

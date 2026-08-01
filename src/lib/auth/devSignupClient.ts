@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
+import {
+  appendAnonDistinctIdToPath,
+  writeAnonDistinctIdCookie,
+} from "@/lib/posthog/anonDistinctCookie";
+import { getAnonymousDistinctIdForMagicLink } from "@/lib/posthog/identityStitch";
 
 type SignUpParams = {
   email: string;
@@ -17,10 +22,13 @@ export type SignUpResult =
   | { kind: "magic_link_sent" };
 
 function buildSignupMetadata(params: SignUpParams): Record<string, string> {
+  const anonId = getAnonymousDistinctIdForMagicLink();
+  if (anonId) writeAnonDistinctIdCookie(anonId);
   return {
     full_name: params.fullName,
     ...(params.signupSource ? { signup_source: params.signupSource } : {}),
     ...(params.signupCampaign ? { signup_utm_campaign: params.signupCampaign } : {}),
+    ...(anonId ? { posthog_anon_id: anonId } : {}),
   };
 }
 
@@ -69,12 +77,15 @@ export async function signUpPasswordlessWithLocalDevFallback(
     return { kind: "session", user };
   }
 
+  const anonId = metadata.posthog_anon_id ?? null;
   const { error } = await supabase.auth.signInWithOtp({
     email: params.email,
     options: {
       ...(params.captchaToken ? { captchaToken: params.captchaToken } : {}),
       shouldCreateUser: true,
-      emailRedirectTo: buildAuthCallbackUrl(),
+      emailRedirectTo: buildAuthCallbackUrl(
+        appendAnonDistinctIdToPath("/onboarding", anonId)
+      ),
       data: metadata,
     },
   });

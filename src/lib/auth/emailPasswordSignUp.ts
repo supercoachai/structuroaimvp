@@ -4,6 +4,8 @@ import { buildAuthCallbackUrl } from "@/lib/auth/buildAuthCallbackUrl";
 import { signUpPasswordlessWithLocalDevFallback } from "@/lib/auth/devSignupClient";
 import { normalizeSignupEmail } from "@/lib/auth/signupEmail";
 import { markPasswordSetupCompletedReliably } from "@/lib/auth/passwordSetupProfile";
+import { writeAnonDistinctIdCookie } from "@/lib/posthog/anonDistinctCookie";
+import { getAnonymousDistinctIdForMagicLink } from "@/lib/posthog/identityStitch";
 import { getResolvedSignupSourceForProfile } from "@/lib/posthog/signupAttribution";
 
 export type EmailPasswordSignUpParams = {
@@ -55,6 +57,8 @@ export async function signUpWithEmailPassword(
 
   const resolvedSource =
     getResolvedSignupSourceForProfile() ?? params.signupSource ?? null;
+  const anonId = getAnonymousDistinctIdForMagicLink();
+  if (anonId) writeAnonDistinctIdCookie(anonId);
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -65,6 +69,7 @@ export async function signUpWithEmailPassword(
         full_name: params.fullName.trim(),
         ...(resolvedSource ? { signup_source: resolvedSource } : {}),
         ...(params.signupCampaign ? { signup_utm_campaign: params.signupCampaign } : {}),
+        ...(anonId ? { posthog_anon_id: anonId } : {}),
       },
       emailRedirectTo: buildAuthCallbackUrl("/onboarding"),
     },
