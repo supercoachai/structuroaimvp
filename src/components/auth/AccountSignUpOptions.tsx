@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import {
+  getComingSoonOAuthProviders,
   getEnabledOAuthProviders,
   oauthProviderLabelKey,
   type OAuthProviderId,
@@ -15,6 +16,7 @@ import {
   verifySignupEmailOtp,
 } from "@/lib/auth/socialSignIn";
 import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
+import { OAuthProviderIcon } from "@/components/auth/OAuthProviderIcon";
 import { PasskeySignInButton } from "@/components/auth/PasskeySignInButton";
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
@@ -41,6 +43,12 @@ type AccountSignUpOptionsProps = {
   visual?: SignUpVisual;
   disabled?: boolean;
   showPasskey?: boolean;
+  /**
+   * TikTok-stijl: alle social knoppen outlined met icoon, plus grijze "binnenkort".
+   * Standaard aan voor dezelfde clean look als /login.
+   */
+  equalStyle?: boolean;
+  showComingSoon?: boolean;
   /** Vooraf gevraagde aanspreeknaam (bijv. op /registreren). Wordt gebruikt voor alle methodes. */
   nameValue?: string;
   /** Verberg het interne naam-veld in de e-mail-fallback (naam is al elders gevraagd). */
@@ -52,14 +60,29 @@ type AccountSignUpOptionsProps = {
   onSessionReady?: (path: string) => void;
 };
 
-function OrDivider({ label, visual }: { label: string; visual: SignUpVisual }) {
+function OrDivider({
+  label,
+  visual,
+  quiet = false,
+}: {
+  label: string;
+  visual: SignUpVisual;
+  /** Login-stijl: lowercase "of", geen uppercase tracking. */
+  quiet?: boolean;
+}) {
   return (
     <div className="flex items-center gap-3">
       <div
         className="h-px flex-1 bg-[var(--story-border,var(--st-line))]"
         aria-hidden
       />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--story-text-muted,var(--st-muted-2))]">
+      <span
+        className={
+          quiet
+            ? "text-sm text-[var(--story-text-muted,var(--st-muted-2))]"
+            : "text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--story-text-muted,var(--st-muted-2))]"
+        }
+      >
         {label}
       </span>
       <div
@@ -70,20 +93,21 @@ function OrDivider({ label, visual }: { label: string; visual: SignUpVisual }) {
   );
 }
 
-/** Google = enige gevulde primary; overige OAuth (indien ooit aan) blijft secundair. */
+/** Google = enige gevulde primary; equalStyle = alle outlined (login-look). */
 function oauthButtonClass(
   visual: SignUpVisual,
   provider: OAuthProviderId,
-  primary: boolean
+  primary: boolean,
+  equalStyle = false,
 ): string {
   const base =
-    "flex w-full items-center justify-center gap-2.5 rounded-xl px-6 py-[15px] text-base font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60";
+    "relative flex w-full items-center justify-center gap-2.5 rounded-xl px-6 py-[15px] text-base font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60";
 
-  if (provider === "apple") {
+  if (provider === "apple" && !equalStyle) {
     return `${base} border border-transparent bg-[#1A1A1B] text-white hover:bg-[#2E2E30]`;
   }
 
-  if (primary) {
+  if (primary && !equalStyle) {
     if (visual === "story") {
       return `${base} border-none bg-[var(--story-cta)] text-white shadow-[0_8px_20px_rgba(26,35,64,0.22)] hover:bg-[var(--story-cta-hover)]`;
     }
@@ -95,6 +119,20 @@ function oauthButtonClass(
   }
 
   return `${base} border border-[var(--st-line)] bg-white text-[var(--st-ink)] hover:bg-[var(--st-surface-2)]`;
+}
+
+function oauthComingSoonClass(visual: SignUpVisual): string {
+  if (visual === "story") {
+    return "relative flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-dashed border-[var(--story-border)] bg-[rgba(26,35,64,0.03)] px-6 py-[15px] text-base font-semibold text-[var(--story-text-muted)] opacity-70";
+  }
+  return "relative flex w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-dashed border-[var(--st-line)] bg-[var(--st-surface-2,#f1f5f9)] px-6 py-[15px] text-base font-semibold text-[var(--st-muted-2,#94a3b8)] opacity-70";
+}
+
+function outlinedEmailBtnClass(visual: SignUpVisual): string {
+  if (visual === "story") {
+    return "relative flex w-full items-center justify-center rounded-xl border border-[var(--story-border)] bg-white px-6 py-[15px] text-base font-semibold text-[var(--story-text)] shadow-sm transition-all duration-200 hover:border-[var(--story-accent)] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60";
+  }
+  return "relative flex w-full items-center justify-center rounded-xl border border-[var(--st-line)] bg-white px-6 py-[15px] text-base font-semibold text-[var(--st-ink)] transition-all duration-200 hover:bg-[var(--st-surface-2)] disabled:cursor-not-allowed disabled:opacity-60";
 }
 
 function fieldClass(visual: SignUpVisual): string {
@@ -128,6 +166,8 @@ export function AccountSignUpOptions({
   visual = "work",
   disabled,
   showPasskey = true,
+  equalStyle = true,
+  showComingSoon = true,
   nameValue,
   hideNameField = false,
   onSignUpStarted,
@@ -136,9 +176,13 @@ export function AccountSignUpOptions({
 }: AccountSignUpOptionsProps) {
   const { t } = useI18n();
   const enabled = getEnabledOAuthProviders();
-  const primaryProvider: OAuthProviderId | undefined = enabled.includes("google")
-    ? "google"
-    : enabled[0];
+  const comingSoonProviders = showComingSoon ? getComingSoonOAuthProviders() : [];
+  const primaryProvider: OAuthProviderId | undefined =
+    !equalStyle && enabled.includes("google")
+      ? "google"
+      : !equalStyle
+        ? enabled[0]
+        : undefined;
   const providers =
     enabled.length > 0 && primaryProvider
       ? [primaryProvider, ...enabled.filter((p) => p !== primaryProvider)]
@@ -384,7 +428,7 @@ export function AccountSignUpOptions({
 
   return (
     <div className="space-y-5">
-      {providers.length > 0 ? (
+      {providers.length > 0 || comingSoonProviders.length > 0 ? (
         <div className="space-y-3">
           {providers.map((provider) => (
             <button
@@ -395,12 +439,41 @@ export function AccountSignUpOptions({
               className={oauthButtonClass(
                 visual,
                 provider,
-                provider === primaryProvider
+                provider === primaryProvider,
+                equalStyle,
               )}
             >
-              {busyOAuth === provider
-                ? t("login.busy")
-                : t(oauthProviderLabelKey(provider))}
+              <span className="absolute left-5 top-1/2 -translate-y-1/2">
+                <OAuthProviderIcon
+                  provider={provider}
+                  className={
+                    provider === "apple" && !equalStyle
+                      ? "h-5 w-5 shrink-0 text-white"
+                      : "h-5 w-5 shrink-0"
+                  }
+                />
+              </span>
+              <span>
+                {busyOAuth === provider
+                  ? t("login.busy")
+                  : t(oauthProviderLabelKey(provider))}
+              </span>
+            </button>
+          ))}
+          {comingSoonProviders.map((provider) => (
+            <button
+              key={provider}
+              type="button"
+              disabled
+              aria-disabled="true"
+              className={oauthComingSoonClass(visual)}
+            >
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 opacity-60">
+                <OAuthProviderIcon provider={provider} />
+              </span>
+              <span>
+                {t(oauthProviderLabelKey(provider))} ({t("oauth.comingSoon")})
+              </span>
             </button>
           ))}
         </div>
@@ -408,18 +481,28 @@ export function AccountSignUpOptions({
         <p className="text-center text-sm text-red-600">{t("oauth.noneEnabled")}</p>
       )}
 
+      <OrDivider
+        label={equalStyle ? t("v2.loginOr") : t("login.orDivider")}
+        visual={visual}
+        quiet={equalStyle}
+      />
+
       {!emailOpen ? (
         <button
           type="button"
           disabled={disabled || emailBusy || busyOAuth !== null}
           onClick={() => setEmailOpen(true)}
-          className={emailTextLinkClass(visual)}
+          className={
+            equalStyle ? outlinedEmailBtnClass(visual) : emailTextLinkClass(visual)
+          }
         >
           {t("signup.emailFallbackToggle")}
         </button>
       ) : (
         <div className="space-y-3 text-left">
-          <p className={labelClass(visual)}>{t("signup.emailFallbackHelp")}</p>
+          {!equalStyle ? (
+            <p className={labelClass(visual)}>{t("signup.emailFallbackHelp")}</p>
+          ) : null}
           {!nameFieldHidden ? (
             <div className="space-y-1">
               <label htmlFor="signup-name" className={labelClass(visual)}>

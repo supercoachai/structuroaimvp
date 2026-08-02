@@ -305,11 +305,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     oauth: {
       googleCta: "Doorgaan met Google",
+      facebookCta: "Doorgaan met Facebook",
       microsoftCta: "Doorgaan met Microsoft",
       appleCta: "Doorgaan met Apple",
       comingSoon: "Binnenkort",
       noneEnabled:
-        "Inloggen met Google of Microsoft is nog niet geconfigureerd. Neem contact op met support.",
+        "Inloggen met Google of Facebook is nog niet geconfigureerd. Neem contact op met support.",
     },
     signup: {
       emailFallbackToggle: "Liever e-mail",
@@ -920,11 +921,12 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     },
     oauth: {
       googleCta: "Continue with Google",
+      facebookCta: "Continue with Facebook",
       microsoftCta: "Continue with Microsoft",
       appleCta: "Continue with Apple",
       comingSoon: "Coming soon",
       noneEnabled:
-        "Google or Microsoft sign-in is not configured yet. Contact support.",
+        "Google or Facebook sign-in is not configured yet. Contact support.",
     },
     signup: {
       emailFallbackToggle: "Prefer email",

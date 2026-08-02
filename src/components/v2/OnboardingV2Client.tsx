@@ -54,32 +54,41 @@ import {
   persistV2OnboardingUiPhase,
   shouldSkipFreshStartEnergyReset,
 } from "./v2OnboardingPhaseGate";
+import {
+  buildOnboardingThingsWithCompanions,
+  persistOnboardingOwnTask,
+} from "./v2OnboardingOwnTask";
 import V2ProposeStep from "./V2ProposeStep";
+import V2OwnTaskStep, { type V2OwnTaskConfirmPayload } from "./V2OwnTaskStep";
 import V2AdjustStep from "./V2AdjustStep";
 import V2DoneStep from "./V2DoneStep";
 import V2AccountSaveStep from "./V2AccountSaveStep";
 import V2NameStep from "./V2NameStep";
 
 /**
- * Eerste reis + replay: energy+voorstellen → klaar → (guest) account → naam → home.
- * Geen welkom-intro. Soft cyclus-discovery alleen voor guests; accounts in settings.
- * Naam alleen ná account-aanmaak. Escape: zelf aanpassen. Progress: 2 segmenten.
+ * Eerste reis: energy → eigen taak (+ AI micros) → klaar → (guest) account → naam → home.
+ * Escape: bank-adjust. Progress: 2 segmenten.
  *
  * INITIAL_PHASE is altijd "energy" (SSR = client, geen hydration-mismatch).
  */
-type Phase = "energy" | "adjust" | "done" | "account" | "name";
+type Phase = "energy" | "ownTask" | "adjust" | "done" | "account" | "name";
 
-const TOTAL_STEPS = 2;
+/** Standalone phone: 5 segmenten (energy → ownTask → done → account → name). */
+const TOTAL_STEPS = 5;
 
 function stepNumberFor(phase: Phase): number {
   switch (phase) {
     case "energy":
-    case "adjust":
       return 1;
-    case "done":
-    case "account":
-    case "name":
+    case "ownTask":
+    case "adjust":
       return 2;
+    case "done":
+      return 3;
+    case "account":
+      return 4;
+    case "name":
+      return 5;
   }
 }
 
@@ -94,6 +103,8 @@ export default function OnboardingV2Client() {
   const [phase, setPhase] = useState<Phase>(INITIAL_PHASE);
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
+  const [primaryTaskTitle, setPrimaryTaskTitle] = useState<string | null>(null);
+  const [primaryMicroSteps, setPrimaryMicroSteps] = useState<string[]>([]);
   // Auth-hint alleen na mount; false is SSR-veilig (discovery zit niet in first paint).
   const [showCycleDiscover, setShowCycleDiscover] = useState(false);
   const [namePrefill, setNamePrefill] = useState("");
@@ -110,6 +121,8 @@ export default function OnboardingV2Client() {
   const resetToEnergy = useCallback(
     (opts?: { clearPersistedEnergy?: boolean }) => {
       setSelectedThings([]);
+      setPrimaryTaskTitle(null);
+      setPrimaryMicroSteps([]);
       // Geen standaard wipe van journey-energy: anders verdwijnt de home-chip
       // als je onboarding opent en weer weggaat. Alleen bij expliciete replay.
       if (opts?.clearPersistedEnergy) update({ energy: null });
@@ -366,6 +379,7 @@ export default function OnboardingV2Client() {
 
   useEffect(() => {
     if (phase === "energy") trackV2OnboardingStep("energy");
+    if (phase === "ownTask") trackV2OnboardingStep("ownTask");
   }, [phase]);
 
   const goTo = useCallback(
@@ -400,26 +414,62 @@ export default function OnboardingV2Client() {
     trackV2OnboardingEnergy(energy);
   };
 
-  const finishThings = (nextThings: string[], adjusted: boolean) => {
+  const finishThings = (
+    nextThings: string[],
+    adjusted: boolean,
+    meta?: {
+      primaryTitle?: string | null;
+      microSteps?: string[];
+      usedWelcome?: boolean;
+      usedAi?: boolean;
+    },
+  ) => {
     const normalized = v2NormalizeThings(nextThings);
     update({ things: normalized, todayDone: false });
+    setPrimaryTaskTitle(meta?.primaryTitle?.trim() || null);
+    setPrimaryMicroSteps(meta?.microSteps ?? []);
+    const companionCount = Math.max(
+      0,
+      normalized.length - (meta?.primaryTitle?.trim() ? 1 : 0),
+    );
     trackV2OnboardingTasks({
       energy: state.energy,
       thingCount: normalized.length,
       adjusted,
+      usedWelcome: meta?.usedWelcome,
+      usedAi: meta?.usedAi,
+      companionCount,
     });
     goTo("done");
   };
 
-  const confirmProposals = () => {
-    const picks = selectedThings.length > 0 ? selectedThings : proposals;
-    finishThings(picks, false);
+  const openOwnTask = () => {
+    goTo("ownTask");
   };
 
   const openAdjust = () => {
     const picks = selectedThings.length > 0 ? selectedThings : proposals;
     setSelectedThings(picks);
     goTo("adjust");
+  };
+
+  const confirmOwnTask = (payload: V2OwnTaskConfirmPayload) => {
+    persistOnboardingOwnTask({
+      title: payload.title,
+      microStepTitles: payload.microStepTitles,
+      energy: state.energy,
+    });
+    const nextThings = buildOnboardingThingsWithCompanions(
+      payload.title,
+      state.energy,
+      locale,
+    );
+    finishThings(nextThings, false, {
+      primaryTitle: payload.title,
+      microSteps: payload.microStepTitles,
+      usedWelcome: payload.usedWelcome,
+      usedAi: payload.usedAi,
+    });
   };
 
   const toggleAdjust = (title: string) => {
@@ -492,10 +542,17 @@ export default function OnboardingV2Client() {
     goHomeAfterOnboarding();
   };
 
-  const flowLayout = v2FlowLayoutForOnboardingPhase(phase);
+  // Energy: welcome-wrap vult hoogte; V2ProposeStep centreert content en pin’t CTA onderaan.
+  // Own-task: choices (opties bovenaan).
+  const flowLayout =
+    phase === "ownTask"
+      ? "choices"
+      : v2FlowLayoutForOnboardingPhase(phase);
   // Cyclus-hint onderaan op energy: geen dubbele "Stoppen kan altijd" onderaan.
   // Done: bewust geen reassurance.
   const showReassurance = phase === "energy" && !showCycleDiscover;
+  const ownTaskPhone = phase === "ownTask";
+  const energyPhone = phase === "energy";
   const langTrailing =
     phase === "energy" ? (
       <V2LanguageToggle
@@ -506,9 +563,17 @@ export default function OnboardingV2Client() {
     ) : undefined;
 
   if (phase === "account") {
+    // Bewijskaart: de dagstart-taken (niet de microstappen van één taak).
+    const previewTasks =
+      things.length > 0
+        ? things
+        : primaryTaskTitle
+          ? [primaryTaskTitle]
+          : [];
     return (
       <V2Page>
         <V2AccountSaveStep
+          previewSteps={previewTasks}
           onAccountCreated={() => {
             nameEntryHandled.current = true;
             freshStartHandled.current = true;
@@ -526,7 +591,8 @@ export default function OnboardingV2Client() {
           <V2Header
             exitHref="/"
             exitLabel={t("v2.flowStop")}
-            brandMode="flow"
+            brandMode="none"
+            backPlain
           />
         </V2FlowStickyChrome>
         <div style={v2Styles.flowShell}>
@@ -555,27 +621,57 @@ export default function OnboardingV2Client() {
           exitLabel={t("v2.flowStop")}
           onBack={canGoBack ? goBack : undefined}
           trailing={langTrailing}
-          brandMode="flow"
+          brandMode="none"
+          backPlain
         />
         <V2ProgressDots step={stepNumber} total={TOTAL_STEPS} showLabel={false} />
       </V2FlowStickyChrome>
 
       <div style={v2Styles.flowShell}>
-        <div style={v2FlowWrapStyle(flowLayout)}>
+        <div
+          style={
+            energyPhone
+              ? {
+                  ...v2FlowWrapStyle("welcome"),
+                  /* Vullen, niet als blok centreren: body/footer doen de layout. */
+                  justifyContent: "flex-start",
+                }
+              : v2FlowWrapStyle(flowLayout)
+          }
+        >
           <section
-            style={phase === "energy" ? v2Styles.cardEnergy : v2Styles.card}
+            style={
+              energyPhone || ownTaskPhone ? v2Styles.cardEnergy : v2Styles.card
+            }
+            className={
+              ownTaskPhone
+                ? "v2-own-task-shell"
+                : energyPhone
+                  ? "v2-energy-shell"
+                  : undefined
+            }
             aria-live="polite"
           >
             {phase === "energy" ? (
               <V2ProposeStep
                 energy={state.energy}
-                proposals={
-                  selectedThings.length > 0 ? selectedThings : proposals
-                }
+                proposals={[]}
+                showProposals={false}
+                showOwnTasksHint={false}
+                showAdjust={false}
+                confirmLabel={t("v2.ownTaskEnergyContinue")}
                 onPickEnergy={pickEnergy}
-                onConfirm={confirmProposals}
+                onConfirm={openOwnTask}
                 onAdjust={openAdjust}
                 showCycleDiscover={showCycleDiscover}
+              />
+            ) : null}
+
+            {phase === "ownTask" ? (
+              <V2OwnTaskStep
+                energy={state.energy}
+                onConfirm={confirmOwnTask}
+                onAdjust={openAdjust}
               />
             ) : null}
 
@@ -585,7 +681,12 @@ export default function OnboardingV2Client() {
                 selected={selectedThings}
                 maxSlots={maxSlots}
                 onToggle={toggleAdjust}
-                onConfirm={() => finishThings(selectedThings, true)}
+                onConfirm={() =>
+                  finishThings(selectedThings, true, {
+                    primaryTitle: selectedThings[0] ?? null,
+                    microSteps: [],
+                  })
+                }
                 onSkip={() => finishThings([], true)}
               />
             ) : null}
@@ -593,6 +694,20 @@ export default function OnboardingV2Client() {
             {phase === "done" ? (
               <V2DoneStep
                 things={things}
+                primaryTitle={primaryTaskTitle}
+                microSteps={primaryMicroSteps}
+                companionsLead={
+                  primaryTaskTitle && things.length > 1
+                    ? state.energy === "enough"
+                      ? t("v2.ownTaskCompanionsLeadEnough")
+                      : t("v2.ownTaskCompanionsLeadHigh")
+                    : null
+                }
+                companionsNote={
+                  primaryTaskTitle && things.length > 1
+                    ? t("v2.ownTaskCompanionsNote")
+                    : null
+                }
                 onContinue={finish}
                 continueLabel={t("v2.flowToDay")}
               />

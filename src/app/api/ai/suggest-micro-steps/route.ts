@@ -11,6 +11,7 @@ import {
   peekMicroStepsAiQuota,
 } from "@/lib/ai/microStepsRateLimit";
 import { consumeAnonymousMicroStepsQuota } from "@/lib/ai/anonymousMicroStepsRateLimit";
+import { consumeAnonymousGlobalMicroStepsCap } from "@/lib/ai/anonymousGlobalMicroStepsCap";
 import { getClientIp } from "@/lib/wachtlijst/rateLimit";
 import { matchMicroStepTemplate } from "@/lib/ai/microStepTemplates";
 import { suggestMicroSteps } from "@/lib/ai/suggestMicroSteps";
@@ -79,26 +80,17 @@ async function postSuggestMicroSteps(request: Request) {
 
   const locale = body.locale === "en" ? "en" : "nl";
 
-  const template = matchMicroStepTemplate(title, locale);
-  if (template) {
-    return NextResponse.json({
-      ok: true,
-      steps: template.steps,
-      source: "template",
-      remaining: null,
-      limit: null,
-    });
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Anonieme onboarding-gebruiker: AI-microstappen mogen geprobeerd worden vóór
-  // account-aanmaak. Strikte best-effort IP-limiet i.p.v. de per-user DB-quota.
+  // Anonieme callers: rate-limit EERST (ook template-hits). Voorkomt dat bots
+  // het endpoint leeghameren; echte users hebben genoeg aan 2/min en 3/uur.
+  let anonQuota: ReturnType<typeof consumeAnonymousMicroStepsQuota> | null =
+    null;
   if (!user) {
-    const anonQuota = consumeAnonymousMicroStepsQuota(getClientIp(request));
+    anonQuota = consumeAnonymousMicroStepsQuota(getClientIp(request));
     if (!anonQuota.allowed) {
       return NextResponse.json(
         {
@@ -106,8 +98,58 @@ async function postSuggestMicroSteps(request: Request) {
           error: "rate_limited",
           limit: anonQuota.limit,
           remaining: anonQuota.remaining,
+          reason: anonQuota.reason,
         },
-        { status: 429 }
+        {
+          status: 429,
+          headers: { "Retry-After": anonQuota.reason === "burst" ? "60" : "3600" },
+        },
+      );
+    }
+  }
+
+  const template = matchMicroStepTemplate(title, locale);
+  if (template) {
+    return NextResponse.json({
+      ok: true,
+      steps: template.steps,
+      source: "template",
+      remaining: anonQuota?.remaining ?? null,
+      limit: anonQuota?.limit ?? null,
+    });
+  }
+
+  if (!user) {
+    // Globale noodrem (UTC-dag, hele app): alleen echte AI, niet templates.
+    let globalCap;
+    try {
+      globalCap = await consumeAnonymousGlobalMicroStepsCap();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown";
+      if (message === "service_role_unavailable") {
+        return NextResponse.json(
+          { ok: false, error: "service_role_unavailable" },
+          { status: 503 },
+        );
+      }
+      return NextResponse.json(
+        { ok: false, error: "global_cap_check_failed" },
+        { status: 500 },
+      );
+    }
+
+    if (!globalCap.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "global_cap_reached",
+          limit: globalCap.limit,
+          remaining: 0,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": "3600" },
+        },
       );
     }
 
@@ -122,8 +164,10 @@ async function postSuggestMicroSteps(request: Request) {
         ok: true,
         steps: result.steps,
         source: result.source,
-        remaining: anonQuota.remaining,
-        limit: anonQuota.limit,
+        remaining: Math.min(anonQuota?.remaining ?? 0, globalCap.remaining),
+        limit: anonQuota?.limit ?? 0,
+        global_remaining: globalCap.remaining,
+        global_limit: globalCap.limit,
       });
     } catch (error) {
       return suggestionErrorResponse(error);

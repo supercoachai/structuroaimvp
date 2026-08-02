@@ -13,6 +13,7 @@ import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
+import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
 import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { NextResponse } from "next/server";
@@ -139,6 +140,7 @@ async function postCreateSession(request: Request) {
 
   const planId = planFromStripePriceId(priceId);
   try {
+    await markCheckoutStartedAt(userId);
     await captureRegistrationFunnelServer(userId, "checkout_started", {
       plan_id: planId,
       price_id: priceId,

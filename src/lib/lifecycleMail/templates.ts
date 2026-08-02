@@ -315,6 +315,50 @@ export function renderLifecycleMail(
         unsubscribeUrl,
       });
 
+    case "s0_checkout_resume": {
+      const progressLine =
+        n >= 1
+          ? "Je deed je eerste dagstart. Mooi begin. Je account staat klaar; de laatste stap is je 7-daagse proef starten."
+          : "Je account staat klaar. De laatste stap is je 7-daagse proef starten.";
+      return buildMail({
+        templateId,
+        cohortKey: `checkout-resume:${candidate.user_id}`,
+        subject: personalizedSubject(name, "Zo werkt je 7-daagse proef"),
+        preview: "7 dagen proberen. Daarna kies je zelf.",
+        paragraphs: paras(
+          hi,
+          progressLine,
+          "Je kaart start alleen de proef. Vandaag gebeurt er geen afschrijving.",
+          "De proef duurt 7 dagen. Twee dagen van tevoren krijg je eerst een mail. Geen verrassingen.",
+          "Opzeggen kan altijd in één tik, vanuit je account.",
+          "Wat je al deed is bewaard en staat klaar."
+        ),
+        ctaLabel: "Start mijn 7-daagse proef",
+        ctaPath: lifecycleCtaPaywall(),
+        ctaSubline:
+          "Werkte iets niet, of heb je een vraag? Reply. Een echt persoon (ik) leest deze mails.",
+        unsubscribeUrl,
+      });
+    }
+
+    case "s0_checkout_help":
+      return buildMail({
+        templateId,
+        cohortKey: `checkout-help:${candidate.user_id}`,
+        subject: personalizedSubject(name, "Geen haast. Je proef staat nog klaar."),
+        preview: "Geen druk. Je proef wacht rustig.",
+        paragraphs: paras(
+          hi,
+          "Geen enkele druk. Ik check alleen even of dit niet tussen wal en schip is beland. Dat overkomt ons allemaal.",
+          "Vandaag gebeurt er geen afschrijving. Vóór iets van je rekening gaat, krijg je altijd eerst een mail.",
+          "Als de prijs, de kaartstap of de timing je tegenhoudt: reply en vertel het me. Ik hoor het graag."
+        ),
+        ctaLabel: "Start mijn 7-daagse proef",
+        ctaPath: lifecycleCtaPaywall(),
+        ctaSubline: "Opzeggen kan later in één tik, wanneer je wilt.",
+        unsubscribeUrl,
+      });
+
     case "s1_day2":
       return buildMail({
         templateId,
@@ -327,21 +371,29 @@ export function renderLifecycleMail(
         unsubscribeUrl,
       });
 
-    case "s2_still":
+    case "s2_still": {
+      const progressLine =
+        n === 1
+          ? "Je deed één dagstart. Dat is een echt begin."
+          : n > 1
+            ? `Je deed ${n} dagstarts. Dat is een echt begin.`
+            : "Je account staat nog klaar. Geen inhalen nodig.";
       return buildMail({
         templateId,
         cohortKey: `still:${candidate.user_id}`,
-        subject: personalizedSubject(name, "Stil. Geen achterstand."),
-        preview: "Structuro houdt geen lijst bij van wat je miste.",
+        subject: personalizedSubject(name, "Je Structuro staat er nog precies zo bij."),
+        preview: "Weer oppakken is makkelijk. Eén klein ding is genoeg.",
         paragraphs: paras(
           hi,
-          "Structuro houdt geen lijst bij van wat je miste.",
-          "Als je wilt, kies je vandaag opnieuw één ding."
+          progressLine,
+          "Wil je er vandaag nog eentje doen? Kost een paar minuten, en alles staat nog klaar.",
+          "Als het druk was, is dat helemaal oké. Dit staat hier klaar voor wanneer je zover bent."
         ),
-        ctaLabel: "Kies vandaag één ding",
+        ctaLabel: "Open Structuro",
         ctaPath: lifecycleCtaHome(),
         unsubscribeUrl,
       });
+    }
 
     case "s3_value":
       return buildMail({
@@ -380,27 +432,46 @@ export function renderLifecycleMail(
         }
       }
       const cardCharge = cardTrialing || Boolean(cancelUrl);
+      const chargeAt = candidate.subscription_current_period_end
+        ? new Date(candidate.subscription_current_period_end)
+        : null;
+      const chargeDateLabel =
+        chargeAt && !Number.isNaN(chargeAt.getTime())
+          ? new Intl.DateTimeFormat("nl-NL", {
+              timeZone: "Europe/Amsterdam",
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            }).format(chargeAt)
+          : null;
       return buildMail({
         templateId,
         cohortKey: `prepaywall:${cohort}`,
-        subject: personalizedSubject(name, "Morgen kies je of je door wilt"),
+        subject: personalizedSubject(
+          name,
+          chargeDateLabel
+            ? `Je proef eindigt op ${chargeDateLabel}. Dit gebeurt er dan.`
+            : "Morgen kies je of je door wilt"
+        ),
         preview: cardCharge
-          ? "Je proefperiode loopt morgen af. Stoppen kan met één klik."
-          : "Je proefperiode loopt morgen af.",
+          ? "Opzeggen kan in één klik vóór de afschrijving. Geen verrassingen."
+          : "Je proefperiode loopt bijna af.",
         paragraphs: paras(
           hi,
-          "Je proefperiode loopt morgen af.",
+          cardCharge && chargeDateLabel
+            ? `Je 7-daagse proef eindigt op ${chargeDateLabel}. Op die dag wordt je kaart belast voor €12,99 voor je eerste maand, en daarna €12,99 per maand.`
+            : "Je proefperiode loopt bijna af.",
           n > 0
-            ? `Je opende Structuro deze dagen ${n} keer. Dat zijn ${n} momenten dat iets uit je hoofd naar gedaan ging.`
-            : "De afgelopen dagen kon je rustig wennen aan hoe Structuro werkt.",
+            ? `Deze week deed je ${n} dagstart${n === 1 ? "" : "s"}.`
+            : null,
           cardCharge
-            ? "Wil je stoppen vóór de eerste afschrijving? Gebruik de knop hieronder. Geen formulier, geen nagesprek."
+            ? "Is Structuro niets voor jou? Dan kun je vóór die datum met één klik opzeggen en word je niet belast. Geen formulier, geen nagesprek."
             : "Daarna kun je kiezen: door met Structuro, of stoppen."
         ),
         ctaLabel: cardCharge ? "Stop abonnement" : "Kies of je doorgaat",
         ctaPath: cardCharge && !cancelUrl ? "/stop-abonnement" : ctaPath,
         ctaSubline: cardCharge
-          ? "Eén klik. Je houdt toegang tot het einde van je proefperiode."
+          ? "Eén klik. Je houdt toegang tot het einde van je proefperiode. Vragen? Reply."
           : "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
         unsubscribeUrl,
       });

@@ -86,18 +86,6 @@ export default function V2AdjustStep({
         <button type="button" className="v2-link" onClick={onSkip}>
           {t("v2.adjustSkip")}
         </button>
-        <p
-          style={{
-            ...v2Styles.body,
-            fontSize: 13,
-            marginTop: 4,
-            marginBottom: 0,
-            textAlign: "center",
-            opacity: 0.85,
-          }}
-        >
-          {t("v2.proposeOwnTasksHint")}
-        </p>
       </div>
     </>
   );

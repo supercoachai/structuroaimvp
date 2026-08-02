@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   consumeAccountSaveOauthPending,
+  startAccountSaveOauth,
   startGoogleAccountSaveOauth,
   V2_ACCOUNT_SAVE_OAUTH_PENDING_KEY,
 } from "./v2AccountSaveOauth";
@@ -68,6 +69,21 @@ describe("v2AccountSaveOauth", () => {
     await expect(
       startGoogleAccountSaveOauth(supabase, "/onboarding?name=1"),
     ).rejects.toThrow("boom");
+    expect(peekV2PostAccountNamePending()).toBe(false);
+  });
+
+  it("start Facebook OAuth met dezelfde pending-scheiding", async () => {
+    const signInWithOAuth = vi.fn().mockResolvedValue({ error: null });
+    const supabase = { auth: { signInWithOAuth } } as unknown as Parameters<
+      typeof startAccountSaveOauth
+    >[0];
+
+    await startAccountSaveOauth(supabase, "facebook", "/onboarding?name=1");
+
+    expect(signInWithOAuth).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "facebook" }),
+    );
+    expect(sessionStorage.getItem(V2_ACCOUNT_SAVE_OAUTH_PENDING_KEY)).toBe("1");
     expect(peekV2PostAccountNamePending()).toBe(false);
   });
 });

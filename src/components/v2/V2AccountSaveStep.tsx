@@ -1,16 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
+import { OAuthProviderIcon } from "@/components/auth/OAuthProviderIcon";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 import { mapAuthCaptchaError } from "@/lib/auth/captcha";
 import { finalizeNewAccountSession } from "@/lib/auth/completeSignUpSession";
 import { signUpWithEmailPassword } from "@/lib/auth/emailPasswordSignUp";
+import {
+  isSignupEmailFormatValid,
+  normalizeSignupEmail,
+} from "@/lib/auth/signupEmail";
 import { setLastAuthMethod } from "@/lib/auth/returningUser";
-import { isSignupEmailFormatValid, normalizeSignupEmail } from "@/lib/auth/signupEmail";
-import { isProviderNotEnabledError } from "@/lib/auth/socialSignIn";
+import {
+  isProviderNotEnabledError,
+  startOAuthSignIn,
+} from "@/lib/auth/socialSignIn";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -23,11 +31,9 @@ import { createClient } from "@/lib/supabase/client";
 
 import { v2Styles } from "./theme";
 import {
-  consumeV2PostAccountNamePending,
-  markV2PostAccountNamePending,
-  V2_POST_ACCOUNT_NAME_PATH,
-} from "./v2PostAccountName";
-import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
+  consumeAccountSaveOauthPending,
+  markAccountSaveOauthPending,
+} from "./v2AccountSaveOauth";
 import {
   trackV2AccountSaveClicked,
   trackV2AccountSaveOauthStarted,
@@ -35,24 +41,40 @@ import {
   trackV2AccountSaveShown,
 } from "./v2OnboardingFunnel";
 import {
-  consumeAccountSaveOauthPending,
-  startGoogleAccountSaveOauth,
-} from "./v2AccountSaveOauth";
+  consumeV2PostAccountNamePending,
+  markV2PostAccountNamePending,
+  V2_POST_ACCOUNT_NAME_PATH,
+} from "./v2PostAccountName";
+import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
 
-/** Zelfde mark als V2Chrome (~9KB). */
-const V2_LOGO_SRC = "/v2/logo-mark.png";
+const ACCOUNT_SAVE_LOGO = "/v2/logo-mark.png";
+
+const FALLBACK_PREVIEW_NL = [
+  "Abonnement opzeggen",
+  "Een mail beantwoorden",
+  "Training of bewegingssessie",
+];
+
+const FALLBACK_PREVIEW_EN = [
+  "Cancel a subscription",
+  "Reply to an email",
+  "Training or a short workout",
+];
 
 /**
- * Soft account-scherm na eerste onboarding (guest): Google-first zoals login-story,
- * e-mail achter Meer opties. Geen “Niet nu”: zonder account geen app-toegang.
+ * Account-wall B: bewijskaart van de dagstart + bewaren onderaan.
+ * Layout volgt de standalone AccountB-mock.
  */
 export default function V2AccountSaveStep({
   onAccountCreated,
+  previewSteps,
 }: {
   /** E-mail-signup met sessie: blijf in SPA en ga naar naamstap. */
   onAccountCreated: () => void;
+  /** Tot 3 dagstart-taken in de bewijskaart. */
+  previewSteps?: string[];
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,6 +89,12 @@ export default function V2AccountSaveStep({
     captchaReady,
   } = useAuthCaptcha();
 
+  const steps = useMemo(() => {
+    const cleaned = (previewSteps ?? []).map((s) => s.trim()).filter(Boolean);
+    if (cleaned.length > 0) return cleaned.slice(0, 3);
+    return locale === "en" ? FALLBACK_PREVIEW_EN : FALLBACK_PREVIEW_NL;
+  }, [previewSteps, locale]);
+
   useEffect(() => {
     if (consumeAccountSaveOauthPending()) {
       trackV2AccountSaveReturned("onboarding");
@@ -78,12 +106,14 @@ export default function V2AccountSaveStep({
     resetCaptcha();
   }, [emailOpen, resetCaptcha]);
 
-  const continueWithGoogle = async () => {
+  const startGoogle = async () => {
     if (busy) return;
     setError(null);
     setBusy(true);
     trackV2AccountSaveClicked("onboarding");
     trackV2AccountSaveOauthStarted("onboarding");
+    markAccountSaveOauthPending();
+    queueSignupCompletedForAnalytics();
     try {
       const supabase = createClient();
       if (!supabase) {
@@ -92,11 +122,7 @@ export default function V2AccountSaveStep({
         return;
       }
       setLastAuthMethod("google");
-      queueSignupCompletedForAnalytics();
-      // Geen post-account-naam-pending hier: die vlag mag pas na een
-      // succesvolle terugkeer (?name=1) gezet zijn. Zo laat een afgebroken
-      // Google-login + terug-navigatie de naamstap niet zonder sessie zien.
-      await startGoogleAccountSaveOauth(supabase, V2_POST_ACCOUNT_NAME_PATH);
+      await startOAuthSignIn(supabase, "google", V2_POST_ACCOUNT_NAME_PATH);
     } catch (err) {
       consumeAccountSaveOauthPending();
       setError(
@@ -140,7 +166,6 @@ export default function V2AccountSaveStep({
         setBusy(false);
         return;
       }
-      // Vlag vóór finalize: concurrent V2ClaimOnAuth / remount ziet post-account flow.
       markV2PostAccountNamePending();
 
       const result = await signUpWithEmailPassword(supabase, {
@@ -153,7 +178,6 @@ export default function V2AccountSaveStep({
       });
 
       if (result.needsEmailConfirmation) {
-        // Geen sessie: pending-vlag mag fresh-start niet naar name sturen.
         consumeV2PostAccountNamePending();
         trackClientFunnelEvent(ANALYTICS_EVENTS.signup_email_confirmation_sent, {
           surface: "account_save",
@@ -176,10 +200,7 @@ export default function V2AccountSaveStep({
         return;
       }
 
-      // Vers account: de "nieuwe update"-welkomsheet is niet voor hen bedoeld.
       markV2ShellWelcomeSeen(result.userId);
-
-      // UI eerst vooruit (naamstap); migrate/analytics mogen niet de funnel resetten.
       onAccountCreated();
 
       void finalizeNewAccountSession(
@@ -187,7 +208,7 @@ export default function V2AccountSaveStep({
         result.email ?? emailTrimmed,
         { homePath: "/abonnement" },
       ).catch(() => {
-        /* best-effort; naamstap + V2ClaimOnAuth kunnen retryen */
+        /* best-effort */
       });
     } catch (err) {
       consumeV2PostAccountNamePending();
@@ -204,123 +225,161 @@ export default function V2AccountSaveStep({
   };
 
   return (
-    <div className="v2-auth-gate v2-fade" aria-live="polite">
-      <div className="v2-auth-gate__brand v2-auth-gate__brand--logo">
-        <Image
-          src={V2_LOGO_SRC}
-          alt={t("v2.accountSaveLogoAria")}
-          width={36}
-          height={26}
-          className="v2-auth-gate__logo"
-          priority
-        />
+    <div className="v2-account-wall v2-fade" aria-live="polite">
+      <header className="v2-account-wall__top">
+        <div className="v2-account-wall__brand">
+          <Image
+            src={ACCOUNT_SAVE_LOGO}
+            alt=""
+            width={22}
+            height={22}
+            className="v2-account-wall__brand-logo"
+            priority
+          />
+          <span className="v2-account-wall__brand-name">Structuro</span>
+        </div>
+      </header>
+
+      <div className="v2-account-wall__mid">
+        <div className="v2-account-wall__proof">
+          <div className="v2-account-wall__card">
+            <div className="v2-account-wall__card-head">
+              <span className="v2-account-wall__card-kicker">
+                {t("v2.accountSaveCardKicker")}
+              </span>
+              <span className="v2-account-wall__card-meta">
+                {t("v2.accountSaveCardMeta", { count: String(steps.length) })}
+              </span>
+            </div>
+            <ul className="v2-account-wall__steps">
+              {steps.map((step) => (
+                <li key={step} className="v2-account-wall__step">
+                  <span className="v2-account-wall__check" aria-hidden />
+                  <span className="v2-account-wall__step-lbl">{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="v2-account-wall__card-fade" aria-hidden />
+        </div>
+
+        <h1 className="v2-account-wall__title">
+          {t("v2.accountSaveTitleBefore")}
+          <b>{t("v2.accountSaveTitleEm")}</b>
+          {t("v2.accountSaveTitleAfter")}
+        </h1>
+        <p className="v2-account-wall__sub">{t("v2.accountSaveSub")}</p>
       </div>
 
-      <div className="v2-auth-gate__body">
-        <div className="v2-auth-gate__copy">
-          <h1 className="v2-auth-gate__title">{t("v2.accountSaveTitle")}</h1>
-          <p className="v2-auth-gate__sub">{t("v2.accountSaveSub")}</p>
-        </div>
+      <div className="v2-account-wall__bottom">
+        <button
+          type="button"
+          className="v2-account-wall__btn"
+          onClick={() => void startGoogle()}
+          disabled={busy}
+        >
+          <OAuthProviderIcon provider="google" className="h-[19px] w-[19px]" />
+          {t("v2.accountSaveGoogle")}
+        </button>
 
-        <div className="v2-auth-gate__actions">
-          <div className="v2-auth-gate__primary">
-            <button
-              type="button"
-              className="btn-primary w-full"
-              onClick={() => void continueWithGoogle()}
-              disabled={busy}
-            >
-              {busy && !emailOpen
-                ? t("v2.accountSaveBusy")
-                : t("v2.accountSaveGoogle")}
-            </button>
-            <p className="v2-auth-gate__hint">{t("v2.accountSaveGoogleHint")}</p>
+        <div className="v2-account-wall__soon" aria-hidden="true">
+          <div className="v2-account-wall__soon-chip">
+            <span className="v2-account-wall__soon-icon">
+              <OAuthProviderIcon provider="azure" className="h-[15px] w-[15px]" />
+            </span>
+            <span>{t("v2.accountSaveSoonOutlook")}</span>
+            <span className="v2-account-wall__soon-tag">
+              {t("oauth.comingSoon").toLowerCase()}
+            </span>
           </div>
-
-          <details
-            className="v2-auth-gate__more"
-            open={emailOpen}
-            onToggle={(e) => {
-              const nextOpen = (e.currentTarget as HTMLDetailsElement).open;
-              setEmailOpen(nextOpen);
-              if (nextOpen) setError(null);
-            }}
-          >
-            <summary className="v2-auth-gate__more-summary">
-              {t("v2.accountSaveMoreOptions")}
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden
-                className="v2-auth-gate__more-chevron"
-              >
-                <path
-                  d="M3 4.5L6 7.5L9 4.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </summary>
-
-            <form
-              className="v2-auth-gate__email"
-              onSubmit={(e) => void signUpWithEmail(e)}
-            >
-              <label htmlFor="v2-save-email" style={v2Styles.srOnly}>
-                {t("registrerenPage.emailLabel")}
-              </label>
-              <input
-                id="v2-save-email"
-                type="email"
-                inputMode="email"
-                className="v2-field"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t("registrerenPage.emailPh")}
-                autoComplete="email"
-                required
+          <div className="v2-account-wall__soon-chip">
+            <span className="v2-account-wall__soon-icon">
+              <OAuthProviderIcon
+                provider="facebook"
+                className="h-[15px] w-[15px]"
               />
-              <label htmlFor="v2-save-password" style={v2Styles.srOnly}>
-                Wachtwoord
-              </label>
-              <input
-                id="v2-save-password"
-                type="password"
-                className="v2-field"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t("registrerenPage.passwordPh")}
-                autoComplete="new-password"
-                required
-                minLength={8}
-              />
-              <AuthCaptcha
-                ref={captchaRef}
-                onVerify={setCaptchaToken}
-                onExpire={() => setCaptchaToken(null)}
-                onError={() => setCaptchaToken(null)}
-                className="flex justify-center"
-              />
-              <button
-                type="submit"
-                className="btn-primary w-full"
-                disabled={busy || !captchaReady}
-              >
-                {busy ? t("v2.accountSaveBusy") : t("v2.accountSaveEmailSubmit")}
-              </button>
-            </form>
-          </details>
-
-          {error ? (
-            <p className="v2-auth-gate__error" role="alert">
-              {error}
-            </p>
-          ) : null}
+            </span>
+            <span>{t("v2.accountSaveSoonFacebook")}</span>
+            <span className="v2-account-wall__soon-tag">
+              {t("oauth.comingSoon").toLowerCase()}
+            </span>
+          </div>
         </div>
+
+        {!emailOpen ? (
+          <button
+            type="button"
+            className="v2-account-wall__email-link"
+            onClick={() => {
+              setEmailOpen(true);
+              setError(null);
+            }}
+            disabled={busy}
+          >
+            {t("v2.accountSaveEmail")}
+          </button>
+        ) : (
+          <form
+            className="v2-account-wall__email"
+            onSubmit={(e) => void signUpWithEmail(e)}
+          >
+            <label htmlFor="v2-save-email" style={v2Styles.srOnly}>
+              {t("registrerenPage.emailLabel")}
+            </label>
+            <input
+              id="v2-save-email"
+              type="email"
+              inputMode="email"
+              className="v2-field"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("registrerenPage.emailPh")}
+              autoComplete="email"
+              required
+            />
+            <label htmlFor="v2-save-password" style={v2Styles.srOnly}>
+              Wachtwoord
+            </label>
+            <input
+              id="v2-save-password"
+              type="password"
+              className="v2-field"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t("registrerenPage.passwordPh")}
+              autoComplete="new-password"
+              required
+              minLength={8}
+            />
+            <AuthCaptcha
+              ref={captchaRef}
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+              className="flex justify-center"
+            />
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={busy || !captchaReady}
+            >
+              {busy ? t("v2.accountSaveBusy") : t("v2.accountSaveEmailSubmit")}
+            </button>
+          </form>
+        )}
+
+        {error ? (
+          <p className="v2-account-wall__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <p className="v2-account-wall__legal">
+          {t("v2.accountSaveLegalBefore")}{" "}
+          <Link href="/terms">{t("v2.accountSaveLegalTerms")}</Link>{" "}
+          {t("v2.accountSaveLegalAnd")}{" "}
+          <Link href="/privacy">{t("v2.accountSaveLegalPrivacy")}</Link>.
+        </p>
       </div>
     </div>
   );

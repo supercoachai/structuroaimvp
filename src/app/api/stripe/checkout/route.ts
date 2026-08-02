@@ -14,6 +14,7 @@ import {
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
@@ -139,6 +140,7 @@ async function postCheckout(request: Request) {
   }
 
   try {
+    await markCheckoutStartedAt(user.id);
     await captureServerEvent(user.id, ANALYTICS_EVENTS.checkout_started, {
       plan,
       checkout_session_id: session.id,

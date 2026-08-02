@@ -124,14 +124,16 @@ export function LoginShell({ children, error, info }: LoginShellProps) {
                 S
               </div>
             ) : (
-              <img
-                src="/logo-structuro.png"
-                alt=""
-                width={56}
-                height={56}
-                className="login-shell__logo"
-                onError={() => setLogoError(true)}
-              />
+              <span className="login-shell__logo-wrap">
+                <img
+                  src="/logo-structuro.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="login-shell__logo"
+                  onError={() => setLogoError(true)}
+                />
+              </span>
             )}
             <p className="login-shell__tagline">{t("login.visualTagline")}</p>
           </div>
@@ -159,18 +161,23 @@ export function LoginShell({ children, error, info }: LoginShellProps) {
         <div className="login-shell__form-inner">
           <div className="login-shell__mobile-brand">
             {logoError ? (
-              <div className="login-shell__logo-fallback login-shell__logo-fallback--sm" aria-hidden>
+              <div
+                className="login-shell__logo-fallback login-shell__logo-fallback--sm"
+                aria-hidden
+              >
                 S
               </div>
             ) : (
-              <img
-                src="/logo-structuro.png"
-                alt=""
-                width={44}
-                height={44}
-                className="login-shell__logo login-shell__logo--sm"
-                onError={() => setLogoError(true)}
-              />
+              <span className="login-shell__logo-wrap login-shell__logo-wrap--sm">
+                <img
+                  src="/logo-structuro.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="login-shell__logo login-shell__logo--sm"
+                  onError={() => setLogoError(true)}
+                />
+              </span>
             )}
           </div>
 

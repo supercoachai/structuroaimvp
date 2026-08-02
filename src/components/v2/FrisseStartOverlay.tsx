@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
+import { isFrisseStartEligiblePath } from "@/lib/v2/livePaths";
 
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
@@ -17,14 +20,19 @@ import {
 } from "./v2Visit";
 
 export function FrisseStartOverlay() {
+  const pathname = usePathname();
   const { update } = useV2();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!isFrisseStartEligiblePath(pathname)) {
+      setVisible(false);
+      return;
+    }
     if (shouldShowFrisseStart()) {
       setVisible(true);
     }
-  }, []);
+  }, [pathname]);
 
   const dismiss = useCallback(() => {
     recordV2Visit();

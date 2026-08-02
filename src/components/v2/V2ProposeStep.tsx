@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 
 import { useV2, V2_ENERGY_OPTIONS, type V2Energy } from "./V2Context";
 import {
+  ensureV2CyclePeriodStart,
   useV2CycleChip,
   type V2CycleChipInfo,
 } from "./V2CycleChip";
@@ -44,6 +45,9 @@ export default function V2ProposeStep({
   showCycleDiscover = false,
   confirmLabel,
   adjustLabel,
+  showProposals = true,
+  showOwnTasksHint = true,
+  showAdjust = true,
 }: {
   energy: V2Energy | null;
   proposals: string[];
@@ -58,6 +62,10 @@ export default function V2ProposeStep({
   showCycleDiscover?: boolean;
   confirmLabel?: string;
   adjustLabel?: string;
+  /** false: alleen energie + CTA (onboarding eigen-taak pad). */
+  showProposals?: boolean;
+  showOwnTasksHint?: boolean;
+  showAdjust?: boolean;
 }) {
   const { t } = useI18n();
   const { state, update } = useV2();
@@ -66,7 +74,8 @@ export default function V2ProposeStep({
   const [discoverHidden, setDiscoverHidden] = useState(false);
   const cycleFromContext = useV2CycleChip();
   const resolvedCycle = cycleInfo !== undefined ? cycleInfo : cycleFromContext;
-  const canConfirm = energy != null && proposals.length > 0;
+  const canConfirm =
+    energy != null && (showProposals ? proposals.length > 0 : true);
   const orbColor = v2EnergyOrbColor(energy);
   const hasCycle = resolvedCycle != null;
   const energyHint = energy ? t(`v2.energyHint${energy === "low" ? "Low" : energy === "high" ? "High" : "Enough"}`) : null;
@@ -76,7 +85,9 @@ export default function V2ProposeStep({
 
   const resolvedTitle =
     title ??
-    (energy ? t("v2.proposeSuggests") : t("v2.proposeHowEnergy"));
+    (energy && showProposals
+      ? t("v2.proposeSuggests")
+      : t("v2.proposeHowEnergy"));
   const resolvedConfirm = confirmLabel ?? t("v2.proposeConfirm");
   const resolvedAdjust = adjustLabel ?? t("v2.proposeAdjust");
 
@@ -96,9 +107,12 @@ export default function V2ProposeStep({
     if (on === state.cyclusOptIn) return;
     if (!on) {
       setPhaseSheetOpen(false);
+    } else {
+      // Zelfde als settings: zonder periodestart geen ring/fase. Defaults tot Klaar.
+      ensureV2CyclePeriodStart();
     }
     // Elke bewuste keuze (aan of uit) = niet later opnieuw op home vragen.
-    // Geen stille "vandaag = dag 1": setup-velden in de sheet slaan de echte start op.
+    // Setup-velden in de sheet overschrijven de tijdelijke start bij Klaar.
     patchV2Settings({ cycleOptInPromptDismissed: true });
     update({ cyclusOptIn: on });
     trackV2OnboardingCycle({ optedIn: on });
@@ -123,6 +137,8 @@ export default function V2ProposeStep({
       update({ cyclusOptIn: true });
       trackV2OnboardingCycle({ optedIn: true });
     }
+    // Zorg dat ring/fase meteen de bevestigde data tonen (event + opt-in).
+    ensureV2CyclePeriodStart();
   };
 
   const dismissDiscover = () => {
@@ -132,127 +148,135 @@ export default function V2ProposeStep({
     trackV2OnboardingCycle({ optedIn: false });
   };
 
+  const hasProposalList = showProposals && proposalRows.length > 0;
+
   return (
     <div
-      className={`v2-propose-step${showDiscover ? " v2-propose-step--discover" : ""}`}
+      className={`v2-propose-step${showDiscover ? " v2-propose-step--discover" : ""}${
+        hasProposalList ? " v2-propose-step--proposals" : ""
+      }`}
       style={wrapStyle}
     >
-      <div
-        className={`v2-energy-step__orb v2-energy-step__orb--flat${
-          hasCycle ? " v2-energy-step__orb--cycle" : ""
-        }`}
-        style={
-          {
-            marginBottom: hasCycle ? 10 : 16,
-            ["--v2-orb" as string]: orbColor,
-          } as CSSProperties
-        }
-        aria-hidden
-      >
-        {hasCycle ? (
-          <div className="v2-energy-step__cycle-ring">
-            <CycleRing
-              day={resolvedCycle.day}
-              cycleLength={resolvedCycle.cycleLength}
-              menstruationDuration={resolvedCycle.menstruationDuration}
-              size={118}
-              stroke={3.5}
-              showIndicator={false}
-              emphasizeActive
-              colors={V2_ORB_PHASE_COLORS}
+      <div className="v2-propose-step__body">
+        <div
+          className={`v2-energy-step__orb v2-energy-step__orb--flat${
+            hasCycle ? " v2-energy-step__orb--cycle" : ""
+          }`}
+          style={
+            {
+              marginBottom: hasCycle ? 10 : 16,
+              ["--v2-orb" as string]: orbColor,
+            } as CSSProperties
+          }
+          aria-hidden
+        >
+          {hasCycle ? (
+            <div className="v2-energy-step__cycle-ring">
+              <CycleRing
+                day={resolvedCycle.day}
+                cycleLength={resolvedCycle.cycleLength}
+                menstruationDuration={resolvedCycle.menstruationDuration}
+                size={118}
+                stroke={3.5}
+                showIndicator={false}
+                emphasizeActive
+                colors={V2_ORB_PHASE_COLORS}
+              />
+            </div>
+          ) : null}
+          <span className="v2-energy-step__core" />
+        </div>
+
+        {hasCycle && phaseLabel ? (
+          <div className="v2-propose-cycle-label">
+            <span
+              className="v2-propose-cycle-label__text"
+              style={{ color: phaseAccent }}
+            >
+              {t("cycle.proposeDayPhase", {
+                day: String(resolvedCycle.day),
+                phase: phaseLabel,
+              })}
+            </span>
+            <V2CyclePhaseInfoButton
+              open={phaseSheetOpen}
+              onToggle={() => setPhaseSheetOpen((o) => !o)}
             />
           </div>
         ) : null}
-        <span className="v2-energy-step__core" />
-      </div>
 
-      {hasCycle && phaseLabel ? (
-        <div className="v2-propose-cycle-label">
-          <span
-            className="v2-propose-cycle-label__text"
-            style={{ color: phaseAccent }}
-          >
-            {t("cycle.proposeDayPhase", {
-              day: String(resolvedCycle.day),
-              phase: phaseLabel,
-            })}
-          </span>
-          <V2CyclePhaseInfoButton
-            open={phaseSheetOpen}
-            onToggle={() => setPhaseSheetOpen((o) => !o)}
-          />
-        </div>
-      ) : null}
+        <h1 className="v2-propose-step__title">{resolvedTitle}</h1>
 
-      <h1 className="v2-propose-step__title">{resolvedTitle}</h1>
+        {!energy ? (
+          <p className="v2-propose-step__tap-hint">{t("v2.proposeTapHint")}</p>
+        ) : null}
 
-      {!energy ? (
-        <p className="v2-propose-step__tap-hint">{t("v2.proposeTapHint")}</p>
-      ) : null}
-
-      <div className="v2-propose-pills" role="group" aria-label={t("v2.proposeEnergyAria")}>
-        {V2_ENERGY_OPTIONS.map((opt) => {
-          const active = energy === opt.value;
-          const labelKey =
-            opt.value === "low"
-              ? "v2.energyLow"
-              : opt.value === "high"
-                ? "v2.energyHigh"
-                : "v2.energyEnough";
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              className="v2-propose-pill"
-              aria-pressed={active}
-              onClick={() => onPickEnergy(opt.value)}
-            >
-              {t(labelKey)}
-            </button>
-          );
-        })}
-      </div>
-
-      {energy && energyHint ? (
-        <p
-          style={{
-            ...v2Styles.body,
-            fontSize: 12,
-            marginTop: 10,
-            marginBottom: 0,
-            textAlign: "center",
-          }}
+        <div
+          className="v2-propose-pills"
+          role="group"
+          aria-label={t("v2.proposeEnergyAria")}
         >
-          {energyHint}
-        </p>
-      ) : null}
+          {V2_ENERGY_OPTIONS.map((opt) => {
+            const active = energy === opt.value;
+            const labelKey =
+              opt.value === "low"
+                ? "v2.energyLow"
+                : opt.value === "high"
+                  ? "v2.energyHigh"
+                  : "v2.energyEnough";
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className="v2-propose-pill"
+                aria-pressed={active}
+                onClick={() => onPickEnergy(opt.value)}
+              >
+                {t(labelKey)}
+              </button>
+            );
+          })}
+        </div>
+
+        {energy && energyHint ? (
+          <p className="v2-propose-step__hint">{energyHint}</p>
+        ) : null}
+
+        {hasProposalList ? (
+          <>
+            <div className="v2-propose-divider" aria-hidden />
+            <div style={{ width: "100%" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {proposalRows.map((row, index) => (
+                  <div
+                    key={row.title}
+                    className="v2-propose-task"
+                    aria-label={row.title}
+                  >
+                    <span className="v2-propose-task__mark" aria-hidden>
+                      {index + 1}
+                    </span>
+                    <V2TaskBattery energy={row.energy} size={18} />
+                    <span className="v2-propose-task__lbl">{row.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
 
       {energy ? (
-        <>
-          <div className="v2-propose-divider" aria-hidden />
-          <div style={{ width: "100%" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {proposalRows.map((row, index) => (
-                <div key={row.title} className="v2-propose-task" aria-label={row.title}>
-                  <span className="v2-propose-task__mark" aria-hidden>
-                    {index + 1}
-                  </span>
-                  <V2TaskBattery energy={row.energy} size={18} />
-                  <span className="v2-propose-task__lbl">{row.title}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ ...v2Styles.softActions, marginTop: 16, width: "100%" }}>
-            <button
-              type="button"
-              className="btn-primary w-full"
-              disabled={!canConfirm}
-              onClick={onConfirm}
-            >
-              {resolvedConfirm}
-            </button>
+        <div className="v2-propose-step__footer">
+          <button
+            type="button"
+            className="btn-primary w-full"
+            disabled={!canConfirm}
+            onClick={onConfirm}
+          >
+            {resolvedConfirm}
+          </button>
+          {showAdjust ? (
             <button
               type="button"
               className="v2-link"
@@ -261,20 +285,13 @@ export default function V2ProposeStep({
             >
               {resolvedAdjust}
             </button>
-            <p
-              style={{
-                ...v2Styles.body,
-                fontSize: 13,
-                marginTop: 4,
-                marginBottom: 0,
-                textAlign: "center",
-                opacity: 0.85,
-              }}
-            >
+          ) : null}
+          {showOwnTasksHint ? (
+            <p className="v2-propose-step__own-hint">
               {t("v2.proposeOwnTasksHint")}
             </p>
-          </div>
-        </>
+          ) : null}
+        </div>
       ) : null}
 
       {showDiscover ? (
@@ -316,5 +333,8 @@ const wrapStyle: CSSProperties = {
   flexDirection: "column",
   alignItems: "center",
   width: "100%",
+  flex: 1,
+  minHeight: 0,
+  height: "100%",
   gap: 0,
 };

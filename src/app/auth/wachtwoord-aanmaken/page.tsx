@@ -5,15 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isSamePasswordError, markPasswordSetupCompletedReliably } from "@/lib/auth/passwordSetupProfile";
-import {
-  getEnabledOAuthProviders,
-  oauthProviderLabelKey,
-  type OAuthProviderId,
-} from "@/lib/auth/authProviders";
-import {
-  isProviderNotEnabledError,
-  startOAuthSignIn,
-} from "@/lib/auth/socialSignIn";
+import { OAuthSignInButtons } from "@/components/auth/OAuthSignInButtons";
 import { RegistrerenShell } from "@/components/registreren/RegistrerenShell";
 import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { useI18n } from "@/lib/i18n";
@@ -24,11 +16,9 @@ const MIN_PASSWORD_LENGTH = 8;
 export default function WachtwoordAanmakenPage() {
   const { t } = useI18n();
   const router = useRouter();
-  const providers = getEnabledOAuthProviders();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
-  const [busyOAuth, setBusyOAuth] = useState<OAuthProviderId | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -49,28 +39,6 @@ export default function WachtwoordAanmakenPage() {
       cancelled = true;
     };
   }, []);
-
-  const handleOAuth = async (provider: OAuthProviderId) => {
-    if (busy || busyOAuth) return;
-    setError(null);
-    setBusyOAuth(provider);
-    try {
-      const supabase = createClient();
-      // Reeds ingelogde gebruiker koppelt zo Google als inlogmethode. De
-      // OAuth-callback markeert daarna password_setup_completed, dus de
-      // middleware stuurt ze niet terug naar dit scherm.
-      await startOAuthSignIn(supabase, provider, "/");
-    } catch (err) {
-      setError(
-        isProviderNotEnabledError(err)
-          ? t("oauth.noneEnabled")
-          : err instanceof Error
-            ? err.message
-            : t("passwordCreatePostOnboarding.errUnknown")
-      );
-      setBusyOAuth(null);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,28 +129,19 @@ export default function WachtwoordAanmakenPage() {
       </div>
 
       <div className="mx-auto w-full space-y-4">
-        {providers.length > 0 ? (
-          <div className="space-y-3">
-            {providers.map((provider) => (
-              <button
-                key={provider}
-                type="button"
-                disabled={busy || busyOAuth !== null}
-                onClick={() => void handleOAuth(provider)}
-                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--story-border)] bg-white px-6 py-[15px] text-base font-semibold text-[var(--story-text)] shadow-sm transition-all duration-200 hover:border-[var(--story-accent)] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {busyOAuth === provider
-                  ? t("login.busy")
-                  : t(oauthProviderLabelKey(provider))}
-              </button>
-            ))}
-          </div>
-        ) : null}
+        <OAuthSignInButtons
+          visual="story"
+          equalStyle
+          disabled={busy}
+          nextPath="/"
+          showComingSoon
+          onError={setError}
+        />
 
         {!emailOpen ? (
           <button
             type="button"
-            disabled={busy || busyOAuth !== null}
+            disabled={busy}
             onClick={() => setEmailOpen(true)}
             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--story-border)] bg-transparent px-6 py-3 text-sm font-semibold text-[var(--story-text)] transition-colors hover:border-[var(--story-accent)] hover:text-[var(--story-accent)] disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -228,7 +187,7 @@ export default function WachtwoordAanmakenPage() {
             </div>
             <button
               type="submit"
-              disabled={busy || busyOAuth !== null}
+              disabled={busy}
               className="flex w-full items-center justify-center rounded-xl border-none bg-[var(--story-cta)] px-6 py-[15px] text-base font-semibold text-white shadow-[0_8px_20px_rgba(26,26,27,0.22)] transition-all duration-200 hover:bg-[var(--story-cta-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy

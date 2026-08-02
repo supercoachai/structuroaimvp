@@ -15,6 +15,8 @@ export const maxDuration = 60;
 const PREVIEW_TEMPLATES: LifecycleTemplateId[] = [
   "s0_hello",
   "s0_welcome",
+  "s0_checkout_resume",
+  "s0_checkout_help",
   "s1_day2",
   "s2_still",
   "s3_value",
@@ -47,6 +49,7 @@ function previewCandidate(): LifecycleCandidate {
     unsubscribe_lifecycle: false,
     is_test: true,
     app_trial_override_until: null,
+    checkout_started_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
     checkin_count: 3,
     last_checkin_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
       .toISOString()

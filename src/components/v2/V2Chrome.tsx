@@ -116,9 +116,10 @@ export function V2FlowStickyChrome({ children }: { children: ReactNode }) {
 }
 
 /**
- * Flow-header: Stoppen (of Terug) | STRUCTURO | trailing (bijv. taalvlaggen).
- * brandMode="flow" = uppercase tracked text, geen logo/badge.
- * Zonder terug: exit links. Met terug: Terug links, exit rechts (tenzij trailing).
+ * Flow-header: Stoppen (of Terug) | merk | trailing.
+ * brandMode="flow" = uppercase tracked text.
+ * brandMode="mark" = logo + Structuro.
+ * brandMode="none" = geen merk in het midden (minder ruis in onboarding).
  */
 export function V2Header({
   exitHref,
@@ -126,23 +127,27 @@ export function V2Header({
   onBack,
   trailing,
   brandMode = "default",
+  backPlain = false,
 }: {
   exitHref?: string;
   exitLabel?: string;
-  /** Toont "< Terug" links wanneer er een vorige stap is. */
+  /** Toont Terug links wanneer er een vorige stap is. */
   onBack?: () => void;
   /** Rechtsboven in flow-header (bijv. NL/EN-vlaggen op energy). */
   trailing?: ReactNode;
-  /** "flow" = design-phone woordmerk gecentreerd. */
-  brandMode?: "default" | "flow";
+  /** "flow" = uppercase woordmerk; "mark" = logo + Structuro; "none" = leeg midden. */
+  brandMode?: "default" | "flow" | "mark" | "none";
+  /** "Terug" zonder "<" (standalone phone). */
+  backPlain?: boolean;
 }) {
   const { t } = useI18n();
   const resolvedExitLabel = exitLabel ?? t("v2.flowStop");
+  const backLabel = backPlain ? t("v2.chromeBackPlain") : t("v2.chromeBackLink");
 
-  if (brandMode === "flow") {
+  if (brandMode === "flow" || brandMode === "mark" || brandMode === "none") {
     const left = onBack ? (
       <button type="button" className="v2-flow-header__side" onClick={onBack}>
-        {t("v2.chromeBackLink")}
+        {backLabel}
       </button>
     ) : exitHref ? (
       <V2ExitLink href={exitHref} className="v2-flow-header__side">
@@ -165,10 +170,37 @@ export function V2Header({
       <span className="v2-flow-header__side" aria-hidden="true" />
     );
 
-    return (
-      <header className="v2-flow-header">
-        {left}
+    const brand =
+      brandMode === "none" ? (
+        <span className="v2-flow-header__brand v2-flow-header__brand--empty" aria-hidden="true" />
+      ) : brandMode === "mark" ? (
+        <div className="v2-flow-header__mark">
+          <Image
+            src={V2_LOGO_SRC}
+            alt=""
+            width={22}
+            height={22}
+            className="v2-flow-header__mark-logo"
+            priority
+          />
+          <span className="v2-flow-header__mark-name">Structuro</span>
+        </div>
+      ) : (
         <p className="v2-flow-header__brand">Structuro</p>
+      );
+
+    return (
+      <header
+        className={
+          brandMode === "mark"
+            ? "v2-flow-header v2-flow-header--mark"
+            : brandMode === "none"
+              ? "v2-flow-header v2-flow-header--bare"
+              : "v2-flow-header"
+        }
+      >
+        {left}
+        {brand}
         {right}
       </header>
     );

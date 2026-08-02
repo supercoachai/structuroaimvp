@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isFrisseStartEligiblePath,
   isV2LiveShellPath,
   mapLegacyV2PathToLive,
   livePaths,
@@ -29,5 +30,17 @@ describe("isV2LiveShellPath", () => {
     expect(isV2LiveShellPath("/")).toBe(true);
     expect(isV2LiveShellPath(livePaths.todo)).toBe(true);
     expect(isV2LiveShellPath("/tiktok")).toBe(false);
+  });
+});
+
+describe("isFrisseStartEligiblePath", () => {
+  it("alleen product-oppervlakken, niet login/onboarding", () => {
+    expect(isFrisseStartEligiblePath("/")).toBe(true);
+    expect(isFrisseStartEligiblePath("/todo")).toBe(true);
+    expect(isFrisseStartEligiblePath("/dagstart")).toBe(true);
+    expect(isFrisseStartEligiblePath("/login")).toBe(false);
+    expect(isFrisseStartEligiblePath("/onboarding")).toBe(false);
+    expect(isFrisseStartEligiblePath("/registreren")).toBe(false);
+    expect(isFrisseStartEligiblePath("/abonnement")).toBe(false);
   });
 });

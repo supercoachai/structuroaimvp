@@ -79,6 +79,9 @@ export async function fetchMicroStepSuggestions(
     limit?: number;
   };
 
+  if (res.status === 429 && data.error === "global_cap_reached") {
+    throw new Error("global_cap_reached");
+  }
   if (res.status === 429 || data.error === "rate_limited") {
     throw new Error("rate_limited");
   }

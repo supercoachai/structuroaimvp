@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
+import { OAuthProviderIcon } from "@/components/auth/OAuthProviderIcon";
 import { useAuthCaptcha } from "@/hooks/useAuthCaptcha";
 import { useI18n } from "@/lib/i18n";
 import { setLastAuthMethod } from "@/lib/auth/returningUser";
@@ -69,12 +70,11 @@ export default function LoginV2Client({
         console.warn("[LoginV2] migrate failed", err);
       }
     }
-    // Geen lokale data om te bewaren: wis eventuele lege/rest-state voor privacy.
     resetAllLocalData();
     return NEXT_AFTER_LOGIN;
   };
 
-  const continueWithGoogle = async () => {
+  const startGoogle = async () => {
     if (busy) return;
     setError(null);
     setBusy(true);
@@ -85,7 +85,6 @@ export default function LoginV2Client({
         setBusy(false);
         return;
       }
-      // Niet wissen vóór OAuth-return: V2ClaimOnAuth migreert na terugkomst.
       setLastAuthMethod("google");
       await startOAuthSignIn(supabase, "google", NEXT_AFTER_LOGIN);
     } catch (err) {
@@ -94,7 +93,7 @@ export default function LoginV2Client({
           ? t("v2.loginGoogleUnavailable")
           : err instanceof Error
             ? err.message
-            : t("v2.accountSaveGenericError")
+            : t("v2.accountSaveGenericError"),
       );
       setBusy(false);
     }
@@ -141,96 +140,132 @@ export default function LoginV2Client({
       ) {
         setError(t("v2.loginBadCredentials"));
       } else {
-        setError(mapAuthCaptchaError(raw || t("v2.accountSaveGenericError"), tCaptcha));
+        setError(
+          mapAuthCaptchaError(raw || t("v2.accountSaveGenericError"), tCaptcha),
+        );
       }
       resetCaptcha();
       setBusy(false);
     }
   };
 
+  const titleKey =
+    variant === "welcome" ? "v2.loginWelcomeTitle" : "v2.loginTitle";
+  const subKey = variant === "welcome" ? "v2.loginWelcomeSub" : "v2.loginSub";
+
   return (
     <LoginShell error={error}>
-      <div className="v2-auth-gate v2-auth-gate--shell v2-fade" aria-live="polite">
-        <div className="v2-auth-gate__body">
-          <h1 className="v2-auth-gate__title">
-            {t(variant === "welcome" ? "v2.loginWelcomeTitle" : "v2.loginTitle")}
-          </h1>
-
-          <div className="v2-auth-gate__actions">
-            <button
-              type="button"
-              className="btn-primary w-full"
-              onClick={() => void continueWithGoogle()}
-              disabled={busy}
-            >
-              {busy && !emailOpen
-                ? t("v2.accountSaveBusy")
-                : t("v2.loginGoogle")}
-            </button>
-
-            {!emailOpen ? (
-              <button
-                type="button"
-                className="v2-link"
-                onClick={() => {
-                  setEmailOpen(true);
-                  setError(null);
-                }}
-              >
-                {t("v2.accountSaveEmail")}
-              </button>
-            ) : (
-              <form className="v2-auth-gate__email" onSubmit={(e) => void signInWithEmail(e)}>
-                <label htmlFor="v2-login-email" style={v2Styles.srOnly}>
-                  {t("v2.loginEmailLabel")}
-                </label>
-                <input
-                  id="v2-login-email"
-                  type="email"
-                  inputMode="email"
-                  className="v2-field"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("v2.loginEmailLabel")}
-                  autoComplete="email"
-                  required
-                />
-                <label htmlFor="v2-login-password" style={v2Styles.srOnly}>
-                  {t("v2.loginPasswordLabel")}
-                </label>
-                <input
-                  id="v2-login-password"
-                  type="password"
-                  className="v2-field"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t("v2.loginPasswordLabel")}
-                  autoComplete="current-password"
-                  required
-                  minLength={6}
-                />
-                <AuthCaptcha
-                  ref={captchaRef}
-                  onVerify={setCaptchaToken}
-                  onExpire={() => setCaptchaToken(null)}
-                  onError={() => setCaptchaToken(null)}
-                  className="flex justify-center"
-                />
-                <button
-                  type="submit"
-                  className="btn-primary w-full"
-                  disabled={busy || !captchaReady}
-                >
-                  {busy ? t("v2.accountSaveBusy") : t("v2.loginSubmit")}
-                </button>
-              </form>
-            )}
-          </div>
+      <div className="v2-login-gate v2-fade" aria-live="polite">
+        <div className="v2-login-gate__copy">
+          <h1 className="v2-login-gate__title">{t(titleKey)}</h1>
+          <p className="v2-login-gate__sub">{t(subKey)}</p>
         </div>
 
-        <p className="v2-auth-gate__footer">
-          <Link href="/onboarding" className="v2-link">
-            {t("v2.loginNoAccount")}
+        <div className="v2-login-gate__actions">
+          <button
+            type="button"
+            className="v2-account-wall__btn"
+            onClick={() => void startGoogle()}
+            disabled={busy}
+          >
+            <OAuthProviderIcon provider="google" className="h-[19px] w-[19px]" />
+            {t("oauth.googleCta")}
+          </button>
+
+          <div className="v2-account-wall__soon" aria-hidden="true">
+            <div className="v2-account-wall__soon-chip">
+              <span className="v2-account-wall__soon-icon">
+                <OAuthProviderIcon
+                  provider="azure"
+                  className="h-[15px] w-[15px]"
+                />
+              </span>
+              <span>{t("v2.accountSaveSoonOutlook")}</span>
+              <span className="v2-account-wall__soon-tag">
+                {t("oauth.comingSoon").toLowerCase()}
+              </span>
+            </div>
+            <div className="v2-account-wall__soon-chip">
+              <span className="v2-account-wall__soon-icon">
+                <OAuthProviderIcon
+                  provider="facebook"
+                  className="h-[15px] w-[15px]"
+                />
+              </span>
+              <span>{t("v2.accountSaveSoonFacebook")}</span>
+              <span className="v2-account-wall__soon-tag">
+                {t("oauth.comingSoon").toLowerCase()}
+              </span>
+            </div>
+          </div>
+
+          {!emailOpen ? (
+            <button
+              type="button"
+              className="v2-account-wall__email-link"
+              onClick={() => {
+                setEmailOpen(true);
+                setError(null);
+              }}
+              disabled={busy}
+            >
+              {t("v2.accountSaveEmail")}
+            </button>
+          ) : (
+            <form
+              className="v2-account-wall__email"
+              onSubmit={(e) => void signInWithEmail(e)}
+            >
+              <label htmlFor="v2-login-email" style={v2Styles.srOnly}>
+                {t("v2.loginEmailLabel")}
+              </label>
+              <input
+                id="v2-login-email"
+                type="email"
+                inputMode="email"
+                className="v2-field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("v2.loginEmailLabel")}
+                autoComplete="email"
+                required
+              />
+              <label htmlFor="v2-login-password" style={v2Styles.srOnly}>
+                {t("v2.loginPasswordLabel")}
+              </label>
+              <input
+                id="v2-login-password"
+                type="password"
+                className="v2-field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t("v2.loginPasswordLabel")}
+                autoComplete="current-password"
+                required
+                minLength={6}
+              />
+              <AuthCaptcha
+                ref={captchaRef}
+                onVerify={setCaptchaToken}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+                className="flex justify-center"
+              />
+              <button
+                type="submit"
+                className="btn-primary w-full"
+                disabled={busy || !captchaReady}
+              >
+                {busy ? t("v2.accountSaveBusy") : t("v2.loginSubmit")}
+              </button>
+            </form>
+          )}
+        </div>
+
+        <p className="v2-login-gate__footer">
+          {t("v2.loginNoAccountBefore")}{" "}
+          <Link href="/onboarding" className="v2-login-gate__footer-link">
+            {t("v2.loginNoAccountLink")}
           </Link>
         </p>
       </div>

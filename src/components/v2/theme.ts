@@ -8,11 +8,12 @@ export type V2FlowLayout = "welcome" | "choices";
 
 export function v2FlowLayoutForOnboardingPhase(phase: string): V2FlowLayout {
   switch (phase) {
-    case "energy":
     case "done":
     case "account":
     case "name":
+    case "energy":
       return "welcome";
+    case "ownTask":
     case "adjust":
     default:
       return "choices";
@@ -194,7 +195,7 @@ export const v2Styles: Record<string, CSSProperties> = {
     flexDirection: "column",
     gap: 14,
   },
-  /** Energiestap: geen witte kaart, content op cream met iets meer ademruimte. */
+  /** Energiestap: geen witte kaart; vult flowShell zodat body/footer kunnen centreren/pinnen. */
   cardEnergy: {
     backgroundColor: "transparent",
     border: "none",
@@ -202,6 +203,8 @@ export const v2Styles: Record<string, CSSProperties> = {
     padding: "16px 8px 12px",
     display: "flex",
     flexDirection: "column",
+    flex: 1,
+    minHeight: 0,
     gap: 16,
     boxShadow: "none",
   },

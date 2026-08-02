@@ -2,6 +2,10 @@
 export type LifecycleTemplateId =
   | "s0_hello"
   | "s0_welcome"
+  /** Checkout abandon: T+2–4u, kaart-angst wegnemen. */
+  | "s0_checkout_resume"
+  /** Checkout abandon: T+48–72u, zachte hulp. */
+  | "s0_checkout_help"
   | "s1_day2"
   | "s2_still"
   | "s3_value"
@@ -27,6 +31,8 @@ export type LifecycleCandidate = {
   unsubscribe_lifecycle: boolean;
   is_test: boolean;
   app_trial_override_until: string | null;
+  /** Eerste keer card-/abonnement-stap bereikt (null = nooit). */
+  checkout_started_at: string | null;
   checkin_count: number;
   last_checkin_date: string | null;
 };

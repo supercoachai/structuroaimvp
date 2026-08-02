@@ -60,6 +60,7 @@ function toCandidate(row: Row): LifecycleCandidate {
     unsubscribe_lifecycle: Boolean(row.unsubscribe_lifecycle),
     is_test: Boolean(row.is_test),
     app_trial_override_until: row.app_trial_override_until,
+    checkout_started_at: null,
     checkin_count: Number(row.checkin_count ?? 0),
     last_checkin_date: row.last_checkin_date,
   };

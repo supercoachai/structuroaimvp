@@ -4,6 +4,7 @@ const LAST_AUTH_METHOD_KEY = "structuro_last_auth_method";
 /** Laatst gebruikte inlogmethode (geen PII): bepaalt het primaire pad bij terugkeer. */
 export type LastAuthMethod =
   | "google"
+  | "facebook"
   | "azure"
   | "apple"
   | "magic"
@@ -12,6 +13,7 @@ export type LastAuthMethod =
 
 const VALID_METHODS: ReadonlySet<string> = new Set<LastAuthMethod>([
   "google",
+  "facebook",
   "azure",
   "apple",
   "magic",

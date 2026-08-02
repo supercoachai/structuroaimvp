@@ -121,6 +121,12 @@ export default function AbonnementV2Client({
       card_trial: true,
       trial_cohort: "card_7d",
     });
+    void fetch("/api/lifecycle/mark-checkout-intent", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {
+      /* best-effort */
+    });
   }, [startCardTrial, canCheckout]);
 
   const startCheckout = useCallback(
@@ -216,9 +222,6 @@ export default function AbonnementV2Client({
     const afterLine = isYearly
       ? t("v2.paywallAfterYearly")
       : t("v2.paywallAfterMonthly");
-    const trustLine = isYearly
-      ? t("v2.paywallStripeTrustYearly")
-      : t("v2.paywallStripeTrust");
 
     return (
       <V2Page>
@@ -239,7 +242,7 @@ export default function AbonnementV2Client({
           </Link>
         </header>
 
-        <div className="v2-abonnement v2-abonnement--card-trial v2-fade">
+        <div className="v2-abonnement v2-abonnement--card-trial v2-abonnement--card-trial-docked v2-fade">
           <p className="v2-card-trial__eyebrow">
             <span className="v2-card-trial__eyebrow-line" aria-hidden="true" />
             {t("v2.paywallEyebrow")}
@@ -334,22 +337,21 @@ export default function AbonnementV2Client({
           </ol>
 
           <p className="v2-card-trial__after">{afterLine}</p>
-
-          <section className="v2-card-trial__cta-block">
-            <button
-              type="button"
-              className="btn-primary w-full v2-card-trial__cta"
-              disabled={busy}
-              onClick={() => void startCheckout(selectedPlan)}
-            >
-              {busy ? t("v2.paywallCardBusy") : t("v2.paywallCardCta")}
-            </button>
-            <p className="v2-card-trial__trust">{trustLine}</p>
-            <p className="v2-card-trial__trust v2-card-trial__trust--secondary">
-              {t("v2.paywallRefundBody")}
-            </p>
-          </section>
         </div>
+
+        <section className="v2-card-trial__cta-dock">
+          <button
+            type="button"
+            className="btn-primary w-full v2-card-trial__cta"
+            disabled={busy}
+            onClick={() => void startCheckout(selectedPlan)}
+          >
+            {busy ? t("v2.paywallCardBusy") : t("v2.paywallCardCta")}
+          </button>
+          <p className="v2-card-trial__trust v2-card-trial__trust--secondary">
+            {t("v2.paywallRefundBody")}
+          </p>
+        </section>
       </V2Page>
     );
   }

@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { OAuthProviderId } from "@/lib/auth/authProviders";
 import { startOAuthSignIn } from "@/lib/auth/socialSignIn";
 
-/** Session flag: Google OAuth gestart vanaf account-save, nog geen succesvolle return. */
+/** Session flag: OAuth gestart vanaf account-save, nog geen succesvolle return. */
 
 export const V2_ACCOUNT_SAVE_OAUTH_PENDING_KEY = "v2_account_save_oauth_pending";
 
@@ -34,16 +35,25 @@ export function clearAccountSaveOauthPending(): void {
 }
 
 /**
- * Start Google OAuth vanaf de account-save-stap. Zet bewust GEEN
+ * Start social OAuth vanaf de account-save-stap. Zet bewust GEEN
  * post-account-naam-pending: die komt bij een succesvolle terugkeer via
  * `V2_POST_ACCOUNT_NAME_PATH` (`?name=1`). Zonder die scheiding blijft de
- * naamstap-vlag hangen in sessionStorage als iemand Google afbreekt en
+ * naamstap-vlag hangen in sessionStorage als iemand OAuth afbreekt en
  * terug-navigeert, waardoor de naamstap zonder sessie zichtbaar wordt.
  */
+export async function startAccountSaveOauth(
+  supabase: SupabaseClient,
+  provider: OAuthProviderId,
+  redirectPath: string,
+): Promise<void> {
+  markAccountSaveOauthPending();
+  await startOAuthSignIn(supabase, provider, redirectPath);
+}
+
+/** @deprecated Gebruik startAccountSaveOauth(..., "google", ...) */
 export async function startGoogleAccountSaveOauth(
   supabase: SupabaseClient,
   redirectPath: string,
 ): Promise<void> {
-  markAccountSaveOauthPending();
-  await startOAuthSignIn(supabase, "google", redirectPath);
+  await startAccountSaveOauth(supabase, "google", redirectPath);
 }

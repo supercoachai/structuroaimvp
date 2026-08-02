@@ -20,6 +20,7 @@ const base: LifecycleCandidate = {
   unsubscribe_lifecycle: false,
   is_test: false,
   app_trial_override_until: null,
+  checkout_started_at: null,
   checkin_count: 0,
   last_checkin_date: null,
 };
@@ -37,6 +38,21 @@ describe("lifecycleMail templates", () => {
     expect(mail.html).toContain("Naar dagstart");
     expect(mail.html).toContain("Welkom bij Structuro");
     expect(mail.text).toContain("Naar dagstart");
+    expect(mail.html).not.toContain("—");
+  });
+
+  it("S0 checkout resume: geruststelling + CTA abonnement", () => {
+    const mail = renderLifecycleMail(
+      "s0_checkout_resume",
+      { ...base, checkin_count: 1, last_checkin_date: "2026-07-15" },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.subject).toMatch(/7-daagse proef$/i);
+    expect(mail.subject.toLowerCase()).not.toMatch(/belast\s*$/);
+    expect(mail.html.toLowerCase()).not.toContain("belast");
+    expect(mail.ctaPath).toBe("/abonnement");
+    expect(mail.html).toContain("7-daagse proef");
+    expect(mail.html).toContain("dagstart");
     expect(mail.html).not.toContain("—");
   });
 
@@ -103,7 +119,7 @@ describe("lifecycleMail templates", () => {
     expect(mail.text).toContain("Opzeggen doe je later");
   });
 
-  it("S4 card-trialing belooft stop vóór afschrijving", () => {
+  it("S4 card-trialing noemt bedrag, datum en stop-CTA", () => {
     const mail = renderLifecycleMail(
       "s4_pre_paywall",
       {
@@ -117,19 +133,21 @@ describe("lifecycleMail templates", () => {
       { cancelUrl: "https://www.structuro.ai/stop-abonnement?token=abc" }
     );
     expect(mail.html).toContain("Stop abonnement");
-    expect(mail.html).toContain("eerste afschrijving");
+    expect(mail.html).toContain("€12,99");
+    expect(mail.html).toContain("één klik opzeggen");
     expect(mail.html).not.toContain("Geen automatische charge");
     expect(mail.ctaPath).toContain("/stop-abonnement");
+    expect(mail.subject).toMatch(/eindigt op/i);
   });
 
-  it("S4 gebruikt checkins en trust-subline", () => {
+  it("S4 zonder card-trial: kies-CTA en trust-subline", () => {
     const mail = renderLifecycleMail(
       "s4_pre_paywall",
       { ...base, checkin_count: 5 },
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
     expect(mail.html).toContain("Kies of je doorgaat");
-    expect(mail.html).toContain("5 keer");
+    expect(mail.html).toContain("5 dagstarts");
     expect(mail.html).toContain("Geen automatische charge");
     expect(mail.text).toContain("Geen automatische charge");
   });
@@ -226,6 +244,6 @@ describe("lifecycleMail templates", () => {
     expect(mail.text).not.toContain("Hoi,");
     expect(mail.text).not.toContain("Hoi Gebruiker");
     expect(mail.subject).toBe("Morgen kies je of je door wilt");
-    expect(mail.text.startsWith("Je proefperiode")).toBe(true);
+    expect(mail.text).toContain("Je proefperiode loopt bijna af");
   });
 });

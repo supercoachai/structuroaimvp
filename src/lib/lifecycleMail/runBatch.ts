@@ -79,7 +79,7 @@ async function loadCandidates(): Promise<LifecycleCandidate[]> {
   const { data, error } = await supabase
     .from("lifecycle_candidates_v1")
     .select(
-      "user_id, email, preferred_name, created_at, signup_source, subscription_status, subscription_current_period_end, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkin_count, last_checkin_date"
+      "user_id, email, preferred_name, created_at, signup_source, subscription_status, subscription_current_period_end, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkout_started_at, checkin_count, last_checkin_date"
     )
     .limit(2000);
 

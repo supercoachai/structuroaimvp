@@ -98,6 +98,18 @@ export const APP_ROUTES = [
     status: [200, 401, 405],
   },
   {
+    path: "/api/lifecycle/mark-checkout-intent",
+    kind: "api",
+    method: "POST",
+    status: [200, 401, 405],
+  },
+  {
+    path: "/api/lifecycle/send-template",
+    kind: "api",
+    method: "POST",
+    status: [200, 401, 405],
+  },
+  {
     path: "/api/lifecycle/preview-send",
     kind: "api",
     status: [200, 401, 405],

@@ -193,7 +193,8 @@ export default function DagstartV2Client() {
           exitHref="/"
           exitLabel={t("v2.flowStop")}
           onBack={canGoBack ? goBack : undefined}
-          brandMode="flow"
+          brandMode="mark"
+          backPlain
         />
         <V2ProgressDots
           step={stepNumberFor(phase)}
@@ -203,9 +204,19 @@ export default function DagstartV2Client() {
       </V2FlowStickyChrome>
 
       <div style={v2Styles.flowShell}>
-        <div style={v2FlowWrapStyle(flowLayout)}>
+        <div
+          style={
+            phase === "energy"
+              ? {
+                  ...v2FlowWrapStyle("welcome"),
+                  justifyContent: "flex-start",
+                }
+              : v2FlowWrapStyle(flowLayout)
+          }
+        >
           <section
             style={phase === "energy" ? v2Styles.cardEnergy : v2Styles.card}
+            className={phase === "energy" ? "v2-energy-shell" : undefined}
             aria-live="polite"
           >
             {phase === "energy" ? (

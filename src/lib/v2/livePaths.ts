@@ -63,6 +63,30 @@ export function isV2LiveShellPath(pathname: string | null | undefined): boolean 
 }
 
 /**
+ * Frisse-start overlay alleen op product-oppervlakken waar de zachte reset
+ * zichtbaar is. Niet op login/onboarding/auth: knoppen voelen daar als no-op.
+ */
+const FRISSE_START_PATHS = [
+  livePaths.home,
+  livePaths.dagstart,
+  livePaths.todo,
+  livePaths.focus,
+  livePaths.dump,
+  livePaths.shutdown,
+  livePaths.settings,
+] as const;
+
+export function isFrisseStartEligiblePath(
+  pathname: string | null | undefined,
+): boolean {
+  if (!pathname) return false;
+  if (pathname === "/") return true;
+  return FRISSE_START_PATHS.some(
+    (p) => p !== "/" && (pathname === p || pathname.startsWith(`${p}/`)),
+  );
+}
+
+/**
  * Legacy `/v2/...` → canoniek pad. Lab-index en jasper blijven onder /v2.
  * Onbekende /v2-subpaden → home.
  */

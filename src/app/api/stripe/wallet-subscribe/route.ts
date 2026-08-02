@@ -15,6 +15,7 @@ import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isStripeInvalidCouponError } from "@/lib/stripe/invalidCouponError";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
 import { captureServerEvent, captureServerException } from "@/lib/posthog/server";
 import { resolveV2CardCheckoutTrialDays } from "@/lib/stripe/v2CardTrial";
 import { NextResponse } from "next/server";
@@ -174,6 +175,7 @@ async function postWalletSubscribe(request: Request) {
   }
 
   try {
+    await markCheckoutStartedAt(user.id);
     await captureServerEvent(user.id, ANALYTICS_EVENTS.checkout_started, {
       plan: "monthly",
       surface: "app",

@@ -1,11 +1,6 @@
-import {
-  freeTrialDaysLeft,
-  freeTrialExpired,
-  hasFreeTrial,
-} from "@/lib/freeTrialAccess";
+import { freeTrialExpired } from "@/lib/freeTrialAccess";
 import { hasActiveAppTrialOverride } from "@/lib/appTrialOverride";
 import {
-  eventSignupTrialDaysLeft,
   eventSignupTrialExpired,
   hasEventSignupAppTrial,
 } from "@/lib/eventSignupTrialAccess";
@@ -33,29 +28,6 @@ function daysSinceCheckin(ymd: string | null, now: Date): number | null {
   return Math.round((today - then) / (1000 * 60 * 60 * 24));
 }
 
-function trialDaysLeft(c: LifecycleCandidate, now: Date): number {
-  if (hasActiveAppTrialOverride(c.app_trial_override_until)) {
-    const end = new Date(c.app_trial_override_until!).getTime();
-    const msLeft = end - now.getTime();
-    if (msLeft <= 0) return 0;
-    return Math.ceil(msLeft / (24 * 60 * 60 * 1000));
-  }
-  if (hasEventSignupAppTrial(c.created_at, c.signup_source)) {
-    return eventSignupTrialDaysLeft(c.created_at, c.signup_source);
-  }
-  if (hasFreeTrial(c.created_at)) {
-    return freeTrialDaysLeft(c.created_at);
-  }
-  return 0;
-}
-
-function trialIsActive(c: LifecycleCandidate, now: Date): boolean {
-  if (PAID_STATUSES.has(c.subscription_status ?? "")) return false;
-  if (hasActiveAppTrialOverride(c.app_trial_override_until)) return true;
-  if (hasEventSignupAppTrial(c.created_at, c.signup_source)) return true;
-  return hasFreeTrial(c.created_at);
-}
-
 function trialIsExpired(c: LifecycleCandidate): boolean {
   if (c.subscription_status === "trial_expired") return true;
   if (PAID_STATUSES.has(c.subscription_status ?? "")) return false;
@@ -80,14 +52,31 @@ function stripeTrialDaysLeft(c: LifecycleCandidate, now: Date): number {
   return Math.ceil((end - now.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+/** Lokale uur in Europe/Amsterdam (0–23). */
+export function amsterdamHour(now: Date): number {
+  const hourStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour: "numeric",
+    hourCycle: "h23",
+  }).format(now);
+  const hour = Number(hourStr);
+  return Number.isFinite(hour) ? hour : now.getUTCHours();
+}
+
+/** Geen checkout-recover 's nachts (22:00–07:59 Amsterdam). */
+export function isCheckoutRecoverSendWindow(now: Date): boolean {
+  const hour = amsterdamHour(now);
+  return hour >= 8 && hour < 22;
+}
+
 /**
  * 7-daagse Stripe card-trial drip (status trialing + period_end).
  *
  * daysLeft ≈ kalenderdag vóór charge:
  *   6/5 → ~dag 1 soft return (S1, morning)
- *   4   → stilte-mail als idle (S2, evening)
- *   2   → waarde-mail als er checkins zijn (S3, evening)
- *   1   → pre-charge met stopknop (S4, evening)  ← paywall-belofte
+ *   ≥3 + stil ≥2d → habit nudge (S2, evening)
+ *   3   → waarde-mail als er checkins zijn (S3, evening)
+ *   2/1 → pre-charge met stopknop (S4, evening)  ← ~2 dagen vóór charge
  */
 function eligibleForStripeCardTrial(
   c: LifecycleCandidate,
@@ -105,9 +94,9 @@ function eligibleForStripeCardTrial(
     out.push("s1_day2");
   }
 
-  // Mid-trial: alleen als stil (≥2 dagen geen checkin, wél ooit begonnen)
+  // Mid-trial stilte vóór pre-charge-venster (één keer via cohortKey)
   if (
-    daysLeft === 4 &&
+    daysLeft >= 3 &&
     checkins >= 1 &&
     sinceCheckin !== null &&
     sinceCheckin >= 2
@@ -115,14 +104,41 @@ function eligibleForStripeCardTrial(
     out.push("s2_still");
   }
 
-  // Twee dagen vóór charge: waarde als er ritme is
-  if (daysLeft === 2 && checkins >= 2) {
+  // Drie dagen vóór charge: waarde als er ritme is
+  if (daysLeft === 3 && checkins >= 2) {
     out.push("s3_value");
   }
 
-  // Dag 6 / laatste volle dag: altijd de stopmail
-  if (daysLeft === 1) {
+  // ~2 dagen vóór charge (+ dag-1 vangnet)
+  if (daysLeft === 2 || daysLeft === 1) {
     out.push("s4_pre_paywall");
+  }
+
+  return out;
+}
+
+/**
+ * Checkout abandon: account + ≥1 checkin + checkout-intent, nog geen trial.
+ * Mail 1: T+2–48u. Mail 2: T+48–96u. Geen nacht-sends.
+ */
+function eligibleCheckoutAbandon(
+  c: LifecycleCandidate,
+  now: Date
+): LifecycleTemplateId[] {
+  const status = (c.subscription_status ?? "").toLowerCase();
+  if (status === "trialing" || status === "active") return [];
+  if (!c.checkout_started_at) return [];
+  if ((c.checkin_count ?? 0) < 1) return [];
+  if (!isCheckoutRecoverSendWindow(now)) return [];
+
+  const hours = hoursSince(c.checkout_started_at, now);
+  const out: LifecycleTemplateId[] = [];
+
+  if (hours >= 2 && hours < 48) {
+    out.push("s0_checkout_resume");
+  }
+  if (hours >= 48 && hours < 96) {
+    out.push("s0_checkout_help");
   }
 
   return out;
@@ -150,10 +166,7 @@ export function eligibleTemplatesForCandidate(
   const out: LifecycleTemplateId[] = [];
   const hours = hoursSince(c.created_at, now);
   const checkins = c.checkin_count ?? 0;
-  const active = trialIsActive(c, now);
   const expired = trialIsExpired(c);
-  const daysLeft = trialDaysLeft(c, now);
-  const sinceCheckin = daysSinceCheckin(c.last_checkin_date, now);
   const signupDay = daysSinceSignup(c, now);
   const trialLen = resolveLifecycleTrialDays(c);
 
@@ -167,34 +180,10 @@ export function eligibleTemplatesForCandidate(
     out.push("s0_welcome");
   }
 
-  // S1: trial dag 2 (signupDay === 1), wel eerdere checkin, niet gisteren
-  if (
-    active &&
-    signupDay === 1 &&
-    checkins >= 1 &&
-    (sinceCheckin === null || sinceCheckin >= 1)
-  ) {
-    out.push("s1_day2");
-  }
+  // Checkout abandon recover (alleen zonder Stripe-trial)
+  out.push(...eligibleCheckoutAbandon(c, now));
 
-  // S2: trial actief, 48u+ stil, wel ooit checkin
-  if (active && checkins >= 1 && sinceCheckin !== null && sinceCheckin >= 2) {
-    out.push("s2_still");
-  }
-
-  // S3: late trial + genoeg ritme (werkt voor 3d én langere event-trials)
-  if (
-    active &&
-    checkins >= 3 &&
-    (signupDay >= Math.max(1, trialLen - 2) || daysLeft <= 2)
-  ) {
-    out.push("s3_value");
-  }
-
-  // S4: laatste volle dag (1 dag over)
-  if (active && daysLeft === 1) {
-    out.push("s4_pre_paywall");
-  }
+  // S1–S4: alleen via Stripe card-trial tak hierboven (trialing + period_end).
 
   // S5: trial expired, geen abo
   if (expired && !PAID_STATUSES.has(c.subscription_status ?? "")) {
@@ -215,7 +204,12 @@ export function eligibleTemplatesForCandidate(
 export function templatesForWave(wave: LifecycleWave): LifecycleTemplateId[] {
   switch (wave) {
     case "welcome":
-      return ["s0_hello", "s0_welcome"];
+      return [
+        "s0_hello",
+        "s0_welcome",
+        "s0_checkout_resume",
+        "s0_checkout_help",
+      ];
     case "morning":
       return ["s1_day2", "s5_paywall", "s6_winback"];
     case "evening":
@@ -228,13 +222,18 @@ export function templatesForWave(wave: LifecycleWave): LifecycleTemplateId[] {
 }
 
 /**
- * P0: hello/nudge + dag2/stil/waarde + pre-charge/paywall.
+ * P0: hello/nudge/checkout-recover + dag2/stil/waarde + pre-charge/paywall.
  * S3 zit in P0 zodat de 7-daagse card-trial waarde-mail ook zonder &full=1 gaat.
  */
 export function templatesForWaveP0(wave: LifecycleWave): LifecycleTemplateId[] {
   switch (wave) {
     case "welcome":
-      return ["s0_hello", "s0_welcome"];
+      return [
+        "s0_hello",
+        "s0_welcome",
+        "s0_checkout_resume",
+        "s0_checkout_help",
+      ];
     case "morning":
       return ["s1_day2", "s5_paywall"];
     case "evening":

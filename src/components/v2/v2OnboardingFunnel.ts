@@ -23,6 +23,7 @@ import { clearAccountSaveOauthPending } from "./v2AccountSaveOauth";
 
 export type OnboardingStep =
   | "energy"
+  | "ownTask"
   | "tasks"
   | "done"
   | "account"
@@ -101,11 +102,17 @@ export function trackV2OnboardingTasks(props: {
   energy: V2Energy | null;
   thingCount: number;
   adjusted: boolean;
+  usedWelcome?: boolean;
+  usedAi?: boolean;
+  companionCount?: number;
 }): void {
   trackV2OnboardingStep("tasks", {
     energy_level: props.energy,
     thing_count: props.thingCount,
     adjusted: props.adjusted,
+    used_welcome: props.usedWelcome === true,
+    used_ai: props.usedAi === true,
+    companion_count: props.companionCount ?? 0,
   });
 }
 
