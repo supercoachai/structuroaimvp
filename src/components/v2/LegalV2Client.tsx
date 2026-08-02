@@ -7,7 +7,7 @@ import { useI18n } from "@/lib/i18n";
 
 import { V2AppShell } from "./V2Chrome";
 import { V2LocaleButtons } from "./V2SettingsUi";
-import { patchV2Settings, readV2Settings } from "./v2Settings";
+import { patchV2Settings } from "./v2Settings";
 
 type Props = {
   titleKey: string;
@@ -50,9 +50,10 @@ export default function LegalV2Client({ titleKey, updatedKey, bodyKey }: Props) 
   const { t, locale, setLocale } = useI18n();
   const paragraphs = t(bodyKey).split("\n\n").filter(Boolean);
 
+  // Volg de actieve sitetaal; overschrijf die niet met een stale v2_settings-default (nl).
   useEffect(() => {
-    setLocale(readV2Settings().locale);
-  }, [setLocale]);
+    patchV2Settings({ locale });
+  }, [locale]);
 
   return (
     <V2AppShell>
@@ -79,7 +80,7 @@ export default function LegalV2Client({ titleKey, updatedKey, bodyKey }: Props) 
           {paragraphs.map((p, i) => renderLegalBlock(p, i))}
         </article>
 
-        <nav className="v2-legal__nav" aria-label="Navigatie">
+        <nav className="v2-legal__nav" aria-label={locale === "en" ? "Navigation" : "Navigatie"}>
           <Link href="/settings" className="v2-link">
             {t("legal.backSettings")}
           </Link>

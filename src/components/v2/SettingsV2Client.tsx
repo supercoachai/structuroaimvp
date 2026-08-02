@@ -103,9 +103,13 @@ export default function SettingsV2Client() {
 
   useEffect(() => {
     const stored = readV2Settings();
-    setSettings(stored);
-    setLocale(stored.locale);
-  }, [setLocale]);
+    // Sitetaal wint: voorkom dat stale v2_settings.locale (vaak nl) EN overschrijft.
+    const next = { ...stored, locale };
+    setSettings(next);
+    if (stored.locale !== locale) {
+      writeV2Settings(next);
+    }
+  }, [locale]);
 
   const wipeWord = locale === "en" ? "DELETE" : "WISSEN";
 

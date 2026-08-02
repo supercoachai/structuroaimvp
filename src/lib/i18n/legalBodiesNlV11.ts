@@ -1,8 +1,8 @@
 /**
- * Juridische teksten versie 1.1 (bron: docs/legal/*.md).
+ * Juridische teksten: privacy v1.2 (TikTok), terms v1.1.
  * Wordt gebruikt door legalLocale en structuro-eu-landing build script.
  *
- * Opmaak voor LegalStaticPage:
+ * Opmaak voor LegalV2Client / EU HTML:
  * - "1. Titel" op een regel → vet hoofdstuk
  * - "@Label@ tekst" → vet label, normale tekst erachter
  */
@@ -24,7 +24,9 @@ Structuro is een dienst van Structuro AI, eenmanszaak gevestigd te Machinekamerp
 
 @Notificaties@ web-push-eindpunten en encryptiesleutels per browser of apparaat (alleen wanneer jij notificaties aanzet), en log-records van verstuurde reminders zodat we niet dubbel sturen.
 
-@Technische gegevens@ cookies en lokale opslag voor sessiebeheer, taalvoorkeur, en je analytics-keuze (zie hoofdstuk 6). Beperkte logs van fouten en serverbelasting bij onze infrastructuurpartner Supabase, voor zover noodzakelijk voor beveiliging en beschikbaarheid.
+@Technische gegevens@ cookies en lokale opslag voor sessiebeheer, taalvoorkeur, en je analytics-keuze (zie hoofdstuk 7). Beperkte logs van fouten en serverbelasting bij onze infrastructuurpartner Supabase, voor zover noodzakelijk voor beveiliging en beschikbaarheid.
+
+@TikTok-attributie@ als je via TikTok (of een TikTok-advertentie) naar Structuro komt, kunnen in de URL parameters staan zoals ttclid en UTM-tags (utm_source, utm_medium, utm_campaign, utm_content). Wij lezen die parameters om te weten welk kanaal je heeft gebracht. Zie hoofdstuk 5.
 
 3. Bijzondere persoonsgegevens
 
@@ -44,9 +46,23 @@ Wij verwerken persoonsgegevens alleen met een geldige rechtsgrond onder de AVG: 
 
 @Productanalyse (PostHog)@ alleen met jouw toestemming via cookiebanner en toggle in Instellingen. Zonder toestemming meten wij alleen anoniem en cookieless.
 
+@TikTok-attributie@ gerechtvaardigd belang en/of jouw analytics-toestemming: om te meten of TikTok-verkeer tot gebruik of aanmelding leidt. Zie hoofdstuk 5.
+
 @Foutopsporing en beveiliging@ technische foutmeldingen, rate-limits en auditlogs: nodig om de dienst veilig en beschikbaar te houden. Wij registreren daarbij geen inhoud van taken, geparkeerde gedachten of cyclus-tracking.
 
-5. Verwerkers
+5. TikTok-gerelateerde gegevens
+
+Structuro heeft landingspagina's en campagnes die verkeer vanaf TikTok ontvangen (bijvoorbeeld via structuro.ai/tiktok). Als je vanaf TikTok of een TikTok-advertentie doorklikt, kunnen de volgende gegevens bij ons terechtkomen:
+
+@Click- en campagnedata@ parameters in de URL zoals ttclid (TikTok click ID) en UTM-tags. Die gebruiken wij om het bezoek aan TikTok als bron te koppelen in onze eigen productanalyse (PostHog).
+
+@Wat wij niet doen zonder aparte toestemming@ wij plaatsen geen TikTok Pixel op onze sites als standaard tracking, en wij delen jouw accountgegevens, taken, geparkeerde gedachten of cyclusgegevens niet met TikTok. Wordt later een TikTok-pixel of Events API gebruikt voor advertentiemeting, dan gebeurt dat alleen met jouw voorafgaande toestemming via de cookiebanner, en vermelden wij dat hier expliciet.
+
+@Bewaring@ TikTok-attributieparameters volgen de bewaartermijn van productanalyse (maximaal 12 maanden in PostHog), tenzij jij je analytics-toestemming intrekt of je account verwijdert.
+
+TikTok zelf kan als platform eigen gegevens verwerken wanneer jij de TikTok-app of -website gebruikt; dat valt onder het privacybeleid van TikTok, niet onder dit beleid.
+
+6. Verwerkers
 
 Wij gebruiken onderstaande partijen die gegevens namens ons verwerken. Met al deze partijen hebben wij een verwerkersovereenkomst.
 
@@ -56,7 +72,7 @@ Wij gebruiken onderstaande partijen die gegevens namens ons verwerken. Met al de
 
 @Stripe Payments Europe, Limited@ Ierland. Betalingen, abonnementen en facturatie (bewaring conform fiscale bewaarplicht).
 
-@PostHog Inc.@ Verenigde Staten, dataregio EU. Productanalyse en foutopsporing zoals in hoofdstuk 4 en 6. Gecertificeerd onder het EU-US Data Privacy Framework.
+@PostHog Inc.@ Verenigde Staten, dataregio EU. Productanalyse en foutopsporing zoals in hoofdstuk 4 en 7, inclusief optionele TikTok-attributieparameters. Gecertificeerd onder het EU-US Data Privacy Framework.
 
 @Resend (Resend.com Inc.)@ Verenigde Staten. Transactionele e-mails; ontvangt alleen het e-mailadres en de inhoud van die e-mail.
 
@@ -66,7 +82,7 @@ Wij gebruiken onderstaande partijen die gegevens namens ons verwerken. Met al de
 
 Doorgifte naar landen buiten de EU gebeurt op basis van het EU-US Data Privacy Framework of modelcontractbepalingen (SCCs). Een actuele sub-verwerkerlijst is opvraagbaar via info@structuro.eu.
 
-6. Cookies en lokale opslag
+7. Cookies en lokale opslag
 
 Wij plaatsen geen tracking-cookies zonder jouw toestemming. De volgende opslag gebruiken wij wel altijd, omdat de dienst zonder deze niet werkt:
 
@@ -78,7 +94,9 @@ Stripe plaatst tijdens de betaalflow eigen cookies voor fraudepreventie en sessi
 
 Met jouw toestemming kan PostHog cookies en localStorage gebruiken om je sessie te herkennen en gebeurtenissen aan je account te koppelen. Zonder toestemming gebruiken wij cookieless modus: anonieme telling zonder persoonlijke koppeling. Je keuze stel je in via de cookiebanner bij je eerste bezoek, of later via Instellingen, toggle Anonieme productanalyse.
 
-7. Bewaartermijnen
+TikTok-attributieparameters (zoals ttclid) komen uit de URL bij aankomst; die zijn geen cookies die wij zelf zetten. Eventuele cookies van TikTok in de TikTok-app vallen onder TikTok.
+
+8. Bewaartermijnen
 
 @Account- en planningsgegevens@ bewaard zolang je account actief is.
 
@@ -92,7 +110,7 @@ Met jouw toestemming kan PostHog cookies en localStorage gebruiken om je sessie 
 
 @Productanalyse (PostHog)@ analytics-gebeurtenissen worden maximaal 12 maanden bewaard en daarna automatisch verwijderd.
 
-8. Jouw rechten
+9. Jouw rechten
 
 Je hebt het recht om jouw gegevens in te zien, te laten corrigeren, te laten verwijderen, te laten beperken, over te dragen (dataportabiliteit), of bezwaar te maken tegen verwerking. Voor de meeste rechten kun je terecht in de app:
 
@@ -106,11 +124,11 @@ Toestemming intrekken voor cyclus-tracking: Instellingen, sectie 'Cyclus', toggl
 
 Voor inzage-, correctie- of dataportabiliteitsverzoeken, en voor andere verzoeken die niet rechtstreeks in de app kunnen, mail info@structuro.eu. Wij reageren binnen 30 dagen. Je hebt ook het recht om een klacht in te dienen bij de Autoriteit Persoonsgegevens, via https://www.autoriteitpersoonsgegevens.nl/nl/zelf-doen/privacyrechten/klacht-indienen-bij-de-ap.
 
-9. Beveiliging en datalekken
+10. Beveiliging en datalekken
 
 Wij gebruiken TLS, row-level security in de database, gescheiden service-role-sleutels, en rate-limiting op gevoelige endpoints. Bij een datalek dat een risico voor jou oplevert melden wij dit binnen 72 uur bij de Autoriteit Persoonsgegevens en, waar van toepassing, ook aan jou.
 
-10. Wijzigingen
+11. Wijzigingen
 
 Dit beleid kan wijzigen. De geldige versie staat altijd op deze pagina. Belangrijke wijzigingen kondigen wij in de app aan.`;
 
@@ -132,7 +150,9 @@ Structuro is a service of Structuro AI, a sole proprietorship registered at Mach
 
 @Notifications@ web push endpoints and encryption keys per browser or device (only when you enable notifications), and log records of sent reminders so we do not send duplicates.
 
-@Technical data@ cookies and local storage for session handling, language preference, and your analytics choice (see chapter 6). Limited error and load logs at our infrastructure partner Supabase, only as needed for security and availability.
+@Technical data@ cookies and local storage for session handling, language preference, and your analytics choice (see chapter 7). Limited error and load logs at our infrastructure partner Supabase, only as needed for security and availability.
+
+@TikTok attribution@ if you arrive at Structuro via TikTok (or a TikTok ad), the URL may include parameters such as ttclid and UTM tags (utm_source, utm_medium, utm_campaign, utm_content). We read those parameters to know which channel brought you. See chapter 5.
 
 3. Special categories of personal data
 
@@ -152,9 +172,23 @@ We process personal data only on a valid lawful basis under the GDPR: performanc
 
 @Product analytics (PostHog)@ only with your consent via the cookie banner and toggle in Settings. Without consent we only measure anonymously and cookieless.
 
+@TikTok attribution@ legitimate interest and/or your analytics consent: to measure whether TikTok traffic leads to use or sign-up. See chapter 5.
+
 @Error tracking and security@ technical error reports, rate limits and audit logs: needed to keep the service secure and available. We do not record the content of your tasks, parked thoughts or cycle tracking.
 
-5. Processors
+5. TikTok-related data
+
+Structuro has landing pages and campaigns that receive traffic from TikTok (for example via structuro.ai/tiktok). If you click through from TikTok or a TikTok ad, the following data may reach us:
+
+@Click and campaign data@ URL parameters such as ttclid (TikTok click ID) and UTM tags. We use these to attribute the visit to TikTok as a source in our own product analytics (PostHog).
+
+@What we do not do without separate consent@ we do not place a TikTok Pixel on our sites as default tracking, and we do not share your account data, tasks, parked thoughts or cycle data with TikTok. If a TikTok Pixel or Events API is later used for ad measurement, that will only happen with your prior consent via the cookie banner, and we will state that explicitly here.
+
+@Retention@ TikTok attribution parameters follow the product analytics retention period (maximum 12 months in PostHog), unless you withdraw analytics consent or delete your account.
+
+TikTok itself may process its own data when you use the TikTok app or website; that is covered by TikTok's privacy policy, not this policy.
+
+6. Processors
 
 We use the parties below to process data on our behalf. We have a Data Processing Agreement with each of them.
 
@@ -164,7 +198,7 @@ We use the parties below to process data on our behalf. We have a Data Processin
 
 @Stripe Payments Europe, Limited@ Ireland. Payments, subscriptions and billing (retention in line with statutory tax requirements).
 
-@PostHog Inc.@ United States, data region EU. Product analytics and error tracking as described in chapters 4 and 6. Certified under the EU-US Data Privacy Framework.
+@PostHog Inc.@ United States, data region EU. Product analytics and error tracking as described in chapters 4 and 7, including optional TikTok attribution parameters. Certified under the EU-US Data Privacy Framework.
 
 @Resend (Resend.com Inc.)@ United States. Transactional emails; receives only the email address and content of that email.
 
@@ -174,7 +208,7 @@ We use the parties below to process data on our behalf. We have a Data Processin
 
 Transfers to countries outside the EU are based on the EU-US Data Privacy Framework or Standard Contractual Clauses (SCCs). An up-to-date sub-processor list is available on request via info@structuro.eu.
 
-6. Cookies and local storage
+7. Cookies and local storage
 
 We place no tracking cookies without your consent. We always use the following storage because the service does not function without it:
 
@@ -186,7 +220,9 @@ Stripe places its own cookies during the payment flow for fraud prevention and s
 
 With your consent, PostHog may use cookies and localStorage to recognise your session and link events to your account. Without consent we use cookieless mode: anonymous counting without personal linkage. You set your choice via the cookie banner on your first visit, or later via Settings, toggle Anonymous product analytics.
 
-7. Retention periods
+TikTok attribution parameters (such as ttclid) come from the URL on arrival; they are not cookies we set ourselves. Any cookies from TikTok inside the TikTok app fall under TikTok.
+
+8. Retention periods
 
 @Account and planning data@ kept while your account is active.
 
@@ -200,7 +236,7 @@ With your consent, PostHog may use cookies and localStorage to recognise your se
 
 @Product analytics (PostHog)@ analytics events are kept for a maximum of 12 months and then automatically deleted.
 
-8. Your rights
+9. Your rights
 
 You have the right to access, rectify, erase, restrict, port (data portability), or object to the processing of your data. For most rights you can use the app:
 
@@ -214,11 +250,11 @@ Withdraw consent for cycle tracking: Settings, Cycle section, turn the toggle of
 
 For access, rectification or data portability requests, and for other requests that cannot be made directly in the app, email info@structuro.eu. We respond within 30 days. You also have the right to lodge a complaint with the Dutch Data Protection Authority (Autoriteit Persoonsgegevens) via https://www.autoriteitpersoonsgegevens.nl/nl/zelf-doen/privacyrechten/klacht-indienen-bij-de-ap.
 
-9. Security and data breaches
+10. Security and data breaches
 
 We use TLS, row-level security in the database, separated service-role keys, and rate limiting on sensitive endpoints. In case of a data breach that creates a risk for you, we report it to the Dutch Data Protection Authority within 72 hours and, where applicable, also to you.
 
-10. Changes
+11. Changes
 
 This policy may change. The current version is always on this page. We announce significant changes in the app.`;
 

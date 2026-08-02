@@ -31,6 +31,21 @@ img{display:block;max-width:100%;height:auto}
 .brand-mark{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;line-height:0}
 .brand-mark img{width:30px;height:30px;border-radius:50%;object-fit:cover}
 
+.legal-header-actions{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:flex-end;
+}
+.legal-lang{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:650;letter-spacing:.04em;
+}
+.legal-lang a{
+  color:var(--v2-text-soft);padding:4px 7px;border-radius:8px;
+  border:1px solid transparent;
+}
+.legal-lang a:hover{color:var(--v2-text)}
+.legal-lang a.is-active{
+  color:var(--v2-teal);border-color:rgba(45,90,86,.22);background:rgba(45,90,86,.07);
+}
 .legal-nav{
   display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;justify-content:flex-end;
   font-size:13.5px;font-weight:500;color:var(--v2-text-soft);

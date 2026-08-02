@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genereer statische privacy-, terms- en cookiepagina's uit src/lib/i18n/legalBodiesNlV11.ts (NL)."""
+"""Genereer statische privacy-, terms- en cookiepagina's (NL + EN) uit legalBodiesNlV11.ts."""
 
 from __future__ import annotations
 
@@ -12,27 +12,28 @@ ROOT = Path(__file__).resolve().parents[2]
 LEGAL_BODIES_TS = ROOT / "src" / "lib" / "i18n" / "legalBodiesNlV11.ts"
 OUT = Path(__file__).resolve().parents[1]
 
+PRIVACY_UPDATED_NL = "Versie 1.2, geldig vanaf 2 augustus 2026."
+PRIVACY_UPDATED_EN = "Version 1.2, effective from 2 August 2026."
+TERMS_UPDATED_NL = "Versie 1.1, geldig vanaf 26 mei 2026."
+TERMS_UPDATED_EN = "Version 1.1, effective from 26 May 2026."
 
-def read_nl_bodies() -> tuple[str, str]:
+
+def read_export(name: str) -> str:
     text = LEGAL_BODIES_TS.read_text(encoding="utf-8")
-    pm = re.search(
-        r"export const privacyBodyNlV11 = `([\s\S]*?)`;",
-        text,
-    )
-    tm = re.search(
-        r"export const termsBodyNlV11 = `([\s\S]*?)`;",
-        text,
-    )
-    if not pm or not tm:
-        raise RuntimeError(
-            "Kon privacyBodyNlV11 of termsBodyNlV11 niet uit legalBodiesNlV11.ts halen."
-        )
-    return pm.group(1), tm.group(1)
+    m = re.search(rf"export const {name} = `([\s\S]*?)`;", text)
+    if not m:
+        raise RuntimeError(f"Kon {name} niet uit legalBodiesNlV11.ts halen.")
+    return m.group(1)
 
 
 def inline_format(text: str) -> str:
-    """Escape HTML, zet **bold** om naar <strong>."""
+    """Escape HTML, zet @Label@ / **bold** om naar <strong>."""
     safe = html.escape(text)
+    safe = re.sub(
+        r"@([^@]+)@\s*",
+        lambda m: f"<strong>{m.group(1)}:</strong> ",
+        safe,
+    )
     return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
 
 
@@ -50,29 +51,40 @@ def ts_to_html_paragraphs(body: str) -> str:
     return "\n".join(chunks)
 
 
-def extract_cookie_section(privacy_body: str) -> str:
-    start = privacy_body.find("6. Cookies en lokale opslag")
-    end = privacy_body.find("7. Bewaartermijnen")
+def extract_cookie_section(privacy_body: str, lang: str) -> str:
+    if lang == "en":
+        start = privacy_body.find("7. Cookies and local storage")
+        end = privacy_body.find("8. Retention periods")
+    else:
+        start = privacy_body.find("7. Cookies en lokale opslag")
+        end = privacy_body.find("8. Bewaartermijnen")
     if start == -1 or end == -1 or end <= start:
-        raise RuntimeError("Kon cookies-sectie niet vinden.")
-    block = privacy_body[start:end].strip()
-    return block
+        raise RuntimeError(f"Kon cookies-sectie niet vinden ({lang}).")
+    return privacy_body[start:end].strip()
 
 
 def wrap_page(
+    *,
+    lang: str,
     title: str,
     updated: str,
     inner_html: str,
     active: str,
     h1: str | None = None,
+    scope_html: str,
+    back_label: str,
+    nav_aria: str,
 ) -> str:
     h1_text = html.escape(h1 or title)
+    prefix = "/en" if lang == "en" else ""
     nav_items = []
-    for href, label, key in (
-        ("/privacy/", "Privacybeleid", "privacy"),
-        ("/terms/", "Algemene voorwaarden", "terms"),
-        ("/cookies/", "Cookies", "cookies"),
-    ):
+    labels = (
+        ("privacy", "Privacy policy" if lang == "en" else "Privacybeleid"),
+        ("terms", "Terms of use" if lang == "en" else "Algemene voorwaarden"),
+        ("cookies", "Cookies" if lang == "en" else "Cookies"),
+    )
+    for key, label in labels:
+        href = f"{prefix}/{key}/"
         if key == active:
             nav_items.append(
                 f'<span class="is-active" aria-current="page">{html.escape(label)}</span>'
@@ -81,13 +93,39 @@ def wrap_page(
             nav_items.append(f'<a href="{href}">{html.escape(label)}</a>')
     nav_join = "\n      ".join(nav_items)
 
+    nl_href = f"/{active}/"
+    en_href = f"/en/{active}/"
+    nl_active = ' aria-current="page" class="is-active"' if lang == "nl" else ""
+    en_active = ' aria-current="page" class="is-active"' if lang == "en" else ""
+    lang_switch = (
+        '<nav class="legal-lang" aria-label="Language">'
+        f'<a href="{nl_href}"{nl_active}>NL</a>'
+        f'<a href="{en_href}"{en_active}>EN</a>'
+        "</nav>"
+    )
+
+    canonical = (
+        f"https://www.structuro.eu/en/{active}/"
+        if lang == "en"
+        else f"https://www.structuro.eu/{active}/"
+    )
+    # EU-landing homepage is NL-first; EN legal pages still return to /.
+    home = "/"
+    foot_privacy = f"{prefix}/privacy/"
+    foot_terms = f"{prefix}/terms/"
+    foot_cookies = f"{prefix}/cookies/"
+    made_in = "Made in the Netherlands" if lang == "en" else "Gemaakt in Nederland"
+    eyebrow = "Legal" if lang == "en" else "Juridisch"
+
     return f"""<!DOCTYPE html>
-<html lang="nl">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{html.escape(title)} · Structuro</title>
-<link rel="canonical" href="https://www.structuro.eu/{active}/"/>
+<link rel="canonical" href="{canonical}"/>
+<link rel="alternate" hreflang="nl" href="https://www.structuro.eu/{active}/"/>
+<link rel="alternate" hreflang="en" href="https://www.structuro.eu/en/{active}/"/>
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
@@ -105,48 +143,51 @@ def wrap_page(
 <body>
 <header class="site-header">
   <div class="wrap nav">
-    <a class="brand" href="/">
+    <a class="brand" href="{home}">
       <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="30" height="30"/></span>
       Structuro
     </a>
-    <nav class="legal-nav" aria-label="Juridisch">
+    <div class="legal-header-actions">
+      {lang_switch}
+      <nav class="legal-nav" aria-label="{html.escape(nav_aria)}">
       {nav_join}
-    </nav>
+      </nav>
+    </div>
   </div>
 </header>
 
 <main class="legal-main">
-  <p class="legal-eyebrow"><i></i><span>Juridisch</span></p>
+  <p class="legal-eyebrow"><i></i><span>{html.escape(eyebrow)}</span></p>
   <h1 class="serif">{h1_text}</h1>
   <p class="legal-meta">{html.escape(updated)}</p>
-  <p class="legal-scope"><strong>Toepassingsgebied.</strong> Deze teksten gelden voor de Structuro-dienst en deze website (structuro.eu), in lijn met het beleid voor de webapp.</p>
+  <p class="legal-scope">{scope_html}</p>
   <article class="legal-prose">
 {inner_html}
   </article>
-  <a class="legal-back" href="/">← Terug naar de landingspagina</a>
+  <a class="legal-back" href="{home}">{html.escape(back_label)}</a>
   <a class="verified-dr-badge" href="https://verifieddr.com/website/structuro-eu" target="_blank" rel="noopener"><img src="https://verifieddr.com/badge/structuro-eu.svg?style=minimal&amp;metric=truedr" alt="Verified DR - Verified Domain Rating for structuro.eu" width="200" height="24" loading="lazy" decoding="async" /></a>
 </main>
 
 <footer class="site-foot">
   <div class="wrap">
     <div class="foot-top">
-      <a class="brand" href="/">
+      <a class="brand" href="{home}">
         <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="28" height="28"/></span>
         Structuro
       </a>
       <nav class="foot-links">
-        <a href="/privacy/">Privacybeleid</a>
-        <a href="/terms/">Algemene voorwaarden</a>
-        <a href="/cookies/">Cookies</a>
+        <a href="{foot_privacy}">{"Privacy policy" if lang == "en" else "Privacybeleid"}</a>
+        <a href="{foot_terms}">{"Terms of use" if lang == "en" else "Algemene voorwaarden"}</a>
+        <a href="{foot_cookies}">Cookies</a>
         <a href="mailto:info@structuro.eu">info@structuro.eu</a>
       </nav>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 Structuro · Gemaakt in Nederland</span>
+      <span>© 2026 Structuro · {html.escape(made_in)}</span>
       <nav>
-        <a href="/privacy/">Privacy</a>
-        <a href="/terms/">Voorwaarden</a>
-        <a href="/cookies/">Cookies</a>
+        <a href="{foot_privacy}">Privacy</a>
+        <a href="{foot_terms}">{"Terms" if lang == "en" else "Voorwaarden"}</a>
+        <a href="{foot_cookies}">Cookies</a>
         <span>KvK: 97938289</span>
       </nav>
     </div>
@@ -157,50 +198,112 @@ def wrap_page(
 """
 
 
+def write_lang_pages(lang: str, privacy_raw: str, terms_raw: str) -> None:
+    privacy_html = ts_to_html_paragraphs(privacy_raw)
+    terms_html = ts_to_html_paragraphs(terms_raw)
+    cookie_block = extract_cookie_section(privacy_raw, lang)
+    cookie_html = ts_to_html_paragraphs(cookie_block)
+
+    if lang == "en":
+        base = OUT / "en"
+        privacy_intro = (
+            '<p>The text below is from the privacy policy section on cookies and local storage. '
+            'The full policy is at <a href="/en/privacy/">structuro.eu/en/privacy</a>.</p>\n'
+        )
+        scope = (
+            "<strong>Scope.</strong> These texts apply to the Structuro service and this website "
+            "(structuro.eu), in line with the policy for the web app."
+        )
+        meta = {
+            "privacy": ("Privacy policy", PRIVACY_UPDATED_EN),
+            "terms": ("Terms of use", TERMS_UPDATED_EN),
+            "cookies": (
+                "Cookie information",
+                f"See chapter 7 of the privacy policy. {PRIVACY_UPDATED_EN}",
+            ),
+        }
+        back = "← Back to the landing page"
+        nav_aria = "Legal"
+    else:
+        base = OUT
+        privacy_intro = (
+            '<p>Onderstaande tekst komt uit het privacybeleid, sectie over cookies en lokale opslag. '
+            'Het volledige beleid staat op <a href="/privacy/">structuro.eu/privacy</a>.</p>\n'
+        )
+        scope = (
+            "<strong>Toepassingsgebied.</strong> Deze teksten gelden voor de Structuro-dienst en deze "
+            "website (structuro.eu), in lijn met het beleid voor de webapp."
+        )
+        meta = {
+            "privacy": ("Privacybeleid", PRIVACY_UPDATED_NL),
+            "terms": ("Algemene voorwaarden", TERMS_UPDATED_NL),
+            "cookies": (
+                "Cookie-informatie",
+                f"Zie hoofdstuk 7 van het privacybeleid. {PRIVACY_UPDATED_NL}",
+            ),
+        }
+        back = "← Terug naar de landingspagina"
+        nav_aria = "Juridisch"
+
+    for folder in ("privacy", "terms", "cookies"):
+        (base / folder).mkdir(parents=True, exist_ok=True)
+
+    (base / "privacy" / "index.html").write_text(
+        wrap_page(
+            lang=lang,
+            title=meta["privacy"][0],
+            updated=meta["privacy"][1],
+            inner_html=privacy_html,
+            active="privacy",
+            scope_html=scope,
+            back_label=back,
+            nav_aria=nav_aria,
+        ),
+        encoding="utf-8",
+    )
+    (base / "terms" / "index.html").write_text(
+        wrap_page(
+            lang=lang,
+            title=meta["terms"][0],
+            updated=meta["terms"][1],
+            inner_html=terms_html,
+            active="terms",
+            scope_html=scope,
+            back_label=back,
+            nav_aria=nav_aria,
+        ),
+        encoding="utf-8",
+    )
+    (base / "cookies" / "index.html").write_text(
+        wrap_page(
+            lang=lang,
+            title=meta["cookies"][0],
+            updated=meta["cookies"][1],
+            inner_html=privacy_intro + cookie_html,
+            active="cookies",
+            scope_html=scope,
+            back_label=back,
+            nav_aria=nav_aria,
+        ),
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     if not LEGAL_BODIES_TS.is_file():
         print(f"Niet gevonden: {LEGAL_BODIES_TS}", file=sys.stderr)
         sys.exit(1)
-    privacy_raw, terms_raw = read_nl_bodies()
-    privacy_html = ts_to_html_paragraphs(privacy_raw)
-    terms_html = ts_to_html_paragraphs(terms_raw)
 
-    cookie_block = extract_cookie_section(privacy_raw)
-    cookie_html = ts_to_html_paragraphs(cookie_block)
+    privacy_nl = read_export("privacyBodyNlV11")
+    terms_nl = read_export("termsBodyNlV11")
+    privacy_en = read_export("privacyBodyEnV11")
+    terms_en = read_export("termsBodyEnV11")
 
-    (OUT / "privacy").mkdir(exist_ok=True)
-    (OUT / "terms").mkdir(exist_ok=True)
-    (OUT / "cookies").mkdir(exist_ok=True)
-
-    (OUT / "privacy" / "index.html").write_text(
-        wrap_page(
-            "Privacybeleid",
-            "Versie 1.1, geldig vanaf 26 mei 2026.",
-            privacy_html,
-            "privacy",
-        ),
-        encoding="utf-8",
+    write_lang_pages("nl", privacy_nl, terms_nl)
+    write_lang_pages("en", privacy_en, terms_en)
+    print(
+        "Geschreven: privacy/, terms/, cookies/ en en/privacy/, en/terms/, en/cookies/"
     )
-    (OUT / "terms" / "index.html").write_text(
-        wrap_page(
-            "Algemene voorwaarden",
-            "Versie 1.1, geldig vanaf 26 mei 2026.",
-            terms_html,
-            "terms",
-        ),
-        encoding="utf-8",
-    )
-    (OUT / "cookies" / "index.html").write_text(
-        wrap_page(
-            "Cookie-informatie",
-            "Zie hoofdstuk 6 van het privacybeleid. Versie 1.1, geldig vanaf 26 mei 2026.",
-            '<p>Onderstaande tekst komt uit het privacybeleid, sectie over cookies en lokale opslag. Het volledige beleid staat op <a href="/privacy/">structuro.eu/privacy</a>.</p>\n'
-            + cookie_html,
-            "cookies",
-        ),
-        encoding="utf-8",
-    )
-    print("Geschreven: privacy/index.html, terms/index.html, cookies/index.html")
 
 
 if __name__ == "__main__":
