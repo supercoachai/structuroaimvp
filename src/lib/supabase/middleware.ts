@@ -538,10 +538,13 @@ export async function updateSession(
    * Als die URL per ongeluk de site root of /login is, stuurde we door naar /login zonder
    * query en ging de code verloren. Dan zie je het inlogscherm met een willekeurig
    * opgeslagen e-mailadres, zonder nieuw-wachtwoord-stap.
+   *
+   * Niet herschrijven voor API-routes: o.a. TikTok OAuth callback gebruikt ook `?code=`.
    */
   const authExchangeCode = request.nextUrl.searchParams.get("code");
   if (
     authExchangeCode &&
+    !pathname.startsWith("/api/") &&
     pathname !== "/auth/callback" &&
     !pathname.startsWith("/auth/callback/") &&
     !isPasswordRecoverySetupPath(pathname)
