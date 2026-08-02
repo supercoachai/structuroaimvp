@@ -108,6 +108,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname.startsWith("/api/checkout/bind-session") ||
     pathname.startsWith("/api/checkout/resume-session") ||
     pathname.startsWith("/api/admin/login") ||
+    pathname.startsWith("/api/admin/tiktok") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/stripe/checkout") ||
     pathname.startsWith("/api/checkout/create-session") ||
@@ -131,6 +132,8 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname.startsWith("/wachtlijst/") ||
     pathname === "/activiteit/admin" ||
     pathname.startsWith("/activiteit/admin/") ||
+    pathname === "/activiteit/tiktok-publish" ||
+    pathname.startsWith("/activiteit/tiktok-publish/") ||
     pathname === "/inschrijven" ||
     pathname.startsWith("/inschrijven/") ||
     pathname === "/registreren" ||
@@ -703,7 +706,8 @@ export async function updateSession(
 
     if (
       shouldTouchLastSeen(profileLastSeenAt) &&
-      !pathname.startsWith("/activiteit/admin")
+      !pathname.startsWith("/activiteit/admin") &&
+      !pathname.startsWith("/activiteit/tiktok-publish")
     ) {
       const touch = touchProfileLastSeenAt(supabase, user.id);
       if (event?.waitUntil) {

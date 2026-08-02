@@ -54,6 +54,7 @@ export const APP_ROUTES = [
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
   { path: "/activiteit/admin", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/activiteit/funnel", kind: "public", status: [200, 307, 308], needles: ["privé-dashboard", "inloggen", "structuro"] },
+  { path: "/activiteit/tiktok-publish", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/inschrijven", kind: "public", status: [200, 307, 308] },
   { path: "/uitleg", kind: "public", status: [200] },
   { path: "/auth/auth-code-error", kind: "public", status: [200] },

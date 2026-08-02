@@ -86,12 +86,20 @@ export default async function ActiviteitAdminPage({
               Wie gebruikte Structuro?
             </h1>
           </div>
-          <Link
-            href="/activiteit/funnel"
-            className="text-sm text-slate-600 underline"
-          >
-            Activatie-funnel
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/activiteit/funnel"
+              className="text-sm text-slate-600 underline"
+            >
+              Activatie-funnel
+            </Link>
+            <Link
+              href="/activiteit/tiktok-publish"
+              className="text-sm text-slate-600 underline"
+            >
+              TikTok publish
+            </Link>
+          </div>
         </div>
         <p className="mb-6 text-sm text-slate-600">
           Datum{" "}
