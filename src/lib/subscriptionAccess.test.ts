@@ -2,7 +2,47 @@ import assert from "node:assert/strict";
 import {
   profileHasAppAccess,
   profileHasAppAccessOrGrace,
+  shouldEnforceAppPaywallGate,
 } from "./subscriptionAccess";
+
+assert.equal(
+  shouldEnforceAppPaywallGate({
+    created_at: "2026-07-14T08:00:00.000Z",
+    signup_source: "jasper_podcast",
+  }),
+  true,
+  "jasper vóór card-cutoff: toch paywall-gate"
+);
+
+assert.equal(
+  shouldEnforceAppPaywallGate({
+    created_at: "2026-07-14T08:00:00.000Z",
+    signup_source: "direct",
+  }),
+  false,
+  "legacy non-jasper vóór cutoff: geen gate"
+);
+
+assert.equal(
+  shouldEnforceAppPaywallGate({
+    created_at: "2026-07-29T08:00:00.000Z",
+    signup_source: null,
+  }),
+  true,
+  "card-cohort: paywall-gate"
+);
+
+assert.equal(
+  profileHasAppAccessOrGrace({
+    subscription_status: "trial_expired",
+    subscription_current_period_end: null,
+    created_at: "2026-07-14T08:00:00.000Z",
+    last_dagstart_date: "2026-08-03",
+    signup_source: "jasper_podcast",
+  }),
+  false,
+  "jasper trial_expired na 7d: geen toegang"
+);
 
 assert.equal(
   profileHasAppAccess({

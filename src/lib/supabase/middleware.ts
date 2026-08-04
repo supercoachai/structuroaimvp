@@ -9,10 +9,10 @@ import {
 } from "../dagstartCookie";
 import { LOCAL_ONBOARDING_DONE_COOKIE } from "../localOnboardingCookie";
 import { isProfileOnboardingUpToDate } from "../onboardingVersion";
-import { profileHasAppAccessOrGrace } from "../subscriptionAccess";
 import {
-  isV2CardTrialCohort,
-} from "../stripe/v2CardTrial";
+  profileHasAppAccessOrGrace,
+  shouldEnforceAppPaywallGate,
+} from "../subscriptionAccess";
 import {
   preOnboardingPath,
   canAccessOnboardingWithoutCheckout,
@@ -79,7 +79,6 @@ function canAccessWithoutActiveSubscription(pathname: string): boolean {
     return true;
   if (pathname === "/login" || pathname.startsWith("/login/")) return true;
   if (pathname === "/registreren" || pathname.startsWith("/registreren/")) return true;
-  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) return true;
   if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) return true;
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return true;
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return true;
@@ -292,8 +291,9 @@ async function gateV2InternalOnlyRoute(
 }
 
 /**
- * Soft dagstart-gate voor publieke v2 shell-routes (`/`, `/todo`, …).
- * Uitgelogd: doorlaten (welkom op `/`). Ingelogd + vandaag geen dagstart: `/dagstart`.
+ * Soft app-gate voor publieke v2 shell-routes (`/`, `/todo`, `/dagstart`, …).
+ * Uitgelogd: doorlaten (welkom op `/`).
+ * Ingelogd: Jasper/card-paywall indien van toepassing; anders soft dagstart.
  * Onboarding incompleet: niet stelen naar dagstart.
  */
 async function softGateV2AuthenticatedDagstart(
@@ -320,7 +320,7 @@ async function softGateV2AuthenticatedDagstart(
   const { data: prof, error: profError } = await supabase
     .from("profiles")
     .select(
-      "onboarding_completed, onboarding_version, last_dagstart_date, last_seen_at"
+      "onboarding_completed, onboarding_version, last_dagstart_date, last_seen_at, subscription_status, subscription_current_period_end, created_at, signup_source, app_trial_override_until"
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -339,12 +339,60 @@ async function softGateV2AuthenticatedDagstart(
     else void touch;
   }
 
+  const skipPaidGate =
+    isProtectedTestAccount(user.email ?? null) ||
+    isInternalTeamAccount(user.email ?? null) ||
+    process.env.STRUCTURO_DEV_SKIP_SUBSCRIPTION === "1";
+
+  if (!skipPaidGate) {
+    const createdAt = prof.created_at != null ? String(prof.created_at) : null;
+    const signupSource =
+      typeof prof.signup_source === "string" ? prof.signup_source : null;
+    if (shouldEnforceAppPaywallGate({ created_at: createdAt, signup_source: signupSource })) {
+      const ok = profileHasAppAccessOrGrace({
+        email: user.email ?? null,
+        subscription_status:
+          typeof prof.subscription_status === "string"
+            ? prof.subscription_status
+            : null,
+        subscription_current_period_end:
+          typeof prof.subscription_current_period_end === "string"
+            ? prof.subscription_current_period_end
+            : prof.subscription_current_period_end != null
+              ? String(prof.subscription_current_period_end)
+              : null,
+        created_at: createdAt,
+        last_dagstart_date:
+          prof.last_dagstart_date != null
+            ? String(prof.last_dagstart_date).slice(0, 10)
+            : null,
+        signup_source: signupSource,
+        app_trial_override_until:
+          prof.app_trial_override_until != null
+            ? String(prof.app_trial_override_until)
+            : null,
+      });
+      if (!ok) {
+        const url = request.nextUrl.clone();
+        url.pathname = resolveLivePaywallPath();
+        url.search = "";
+        return NextResponse.redirect(url, 302);
+      }
+    }
+  }
+
   const onboardingDone = isProfileOnboardingUpToDate(
     prof.onboarding_completed,
     prof.onboarding_version as number | null | undefined
   );
   // Tijdens onboarding geen harde dagstart-bounce.
   if (!onboardingDone) {
+    return supabaseResponse;
+  }
+
+  const pathname = request.nextUrl.pathname;
+  // Op /dagstart zelf geen bounce-lus; paywall hierboven is genoeg.
+  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     return supabaseResponse;
   }
 
@@ -356,14 +404,14 @@ async function softGateV2AuthenticatedDagstart(
   return applyDagstartDbGate(
     request,
     supabaseResponse,
-    request.nextUrl.pathname,
+    pathname,
     last
   );
 }
 
 /**
  * Lichte gate voor beschermde v2-app-routes. Onafhankelijk van
- * STRUCTURO_MIDDLEWARE_PAYWALL: nieuwe card-cohort moet trialing/active hebben.
+ * STRUCTURO_MIDDLEWARE_PAYWALL: card-cohort + Jasper na app-trial.
  */
 async function gateProtectedV2Route(
   request: NextRequest,
@@ -424,8 +472,15 @@ async function gateProtectedV2Route(
 
   if (!skipPaidGate) {
     const createdAt = prof?.created_at != null ? String(prof.created_at) : null;
-    // Alleen hard gate voor nieuwe card-cohort; legacy v2-users houden free-trial.
-    if (isV2CardTrialCohort(createdAt)) {
+    const signupSource =
+      typeof prof?.signup_source === "string" ? prof.signup_source : null;
+    // Card-cohort + Jasper (na 7d via profileHasAppAccessOrGrace).
+    if (
+      shouldEnforceAppPaywallGate({
+        created_at: createdAt,
+        signup_source: signupSource,
+      })
+    ) {
       const ok = profileHasAppAccessOrGrace({
         email: user.email ?? null,
         subscription_status:
@@ -440,8 +495,7 @@ async function gateProtectedV2Route(
               : null,
         created_at: createdAt,
         last_dagstart_date: lastDagstart,
-        signup_source:
-          typeof prof?.signup_source === "string" ? prof.signup_source : null,
+        signup_source: signupSource,
         app_trial_override_until:
           prof?.app_trial_override_until != null
             ? String(prof.app_trial_override_until)
@@ -450,7 +504,7 @@ async function gateProtectedV2Route(
 
       if (!ok) {
         const url = request.nextUrl.clone();
-        url.pathname = "/abonnement";
+        url.pathname = resolveLivePaywallPath();
         url.search = "";
         return NextResponse.redirect(url, 302);
       }
@@ -507,7 +561,11 @@ export async function updateSession(
       return NextResponse.next({ request });
     }
     if (isPublicV2Path(pathname)) {
-      if (isV2AppShellDagstartPath(pathname)) {
+      if (
+        isV2AppShellDagstartPath(pathname) ||
+        pathname === "/dagstart" ||
+        pathname.startsWith("/dagstart/")
+      ) {
         return softGateV2AuthenticatedDagstart(request, event);
       }
       return NextResponse.next({ request });
@@ -515,14 +573,18 @@ export async function updateSession(
     return gateProtectedV2Route(request, event);
   }
 
-  // Canonieke shell: publieke paden door (met soft dagstart voor app-shell);
-  // card-trial gate voor de rest.
+  // Canonieke shell: publieke paden door (met soft dagstart/paywall voor app-shell);
+  // card/Jasper gate voor de rest.
   if (isV2LiveShellPath(pathname) && !pathname.startsWith("/v2")) {
     if (isV2LockdownExemptPath(pathname)) {
       return NextResponse.next({ request });
     }
     if (isPublicV2Path(pathname)) {
-      if (isV2AppShellDagstartPath(pathname)) {
+      if (
+        isV2AppShellDagstartPath(pathname) ||
+        pathname === "/dagstart" ||
+        pathname.startsWith("/dagstart/")
+      ) {
         return softGateV2AuthenticatedDagstart(request, event);
       }
       return NextResponse.next({ request });

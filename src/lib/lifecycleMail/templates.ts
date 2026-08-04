@@ -1,4 +1,5 @@
 import { getAppOrigin } from "@/lib/appUrl";
+import { getJasperOffer, isJasperSignupSource } from "@/lib/jasper/jasperOffer";
 import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 
 import {
@@ -477,24 +478,38 @@ export function renderLifecycleMail(
       });
     }
 
-    case "s5_paywall":
+    case "s5_paywall": {
+      const jasper = isJasperSignupSource(candidate.signup_source);
+      const offer = jasper ? getJasperOffer() : null;
       return buildMail({
         templateId,
         cohortKey: `paywall:${candidate.user_id}`,
-        subject: personalizedSubject(name, "Je proefperiode is klaar"),
-        preview: "Wil je doorgaan? €12,99 per maand. 14 dagen niet-goed-geld-terug.",
+        subject: personalizedSubject(
+          name,
+          jasper
+            ? "Je proef via de podcast is klaar"
+            : "Je proefperiode is klaar"
+        ),
+        preview: jasper
+          ? `Doorgaan voor ${offer!.discountedPrice} per maand, de eerste ${offer!.discountedMonths} maanden.`
+          : "Wil je doorgaan? €12,99 per maand. 14 dagen niet-goed-geld-terug.",
         paragraphs: paras(
           hi,
-          "Je proefperiode is voorbij.",
+          jasper
+            ? "Je 7 dagen gratis via de podcast met Jasper zijn voorbij."
+            : "Je proefperiode is voorbij.",
           "Structuro is er niet om je week te plannen. Het blijft je helpen om vandaag te beginnen, zonder dat je daar eerst over hoeft na te denken.",
-          "€12,99 per maand."
+          jasper
+            ? `Je kunt doorgaan voor ${offer!.discountedPrice} per maand, de eerste ${offer!.discountedMonths} maanden. Daarna ${offer!.regularPrice} per maand.`
+            : "€12,99 per maand."
         ),
-        ctaLabel: "Ja, ik ga door",
+        ctaLabel: jasper ? "Ga door met Structuro" : "Ja, ik ga door",
         ctaPath: lifecycleCtaPaywall(),
         ctaSubline:
           "Opzeggen wanneer je wilt. Niet tevreden binnen 14 dagen? Geld terug, geen vragen.",
         unsubscribeUrl,
       });
+    }
 
     case "s6_winback":
       return buildMail({

@@ -1,9 +1,23 @@
+import { isJasperSignupSource } from "./jasper/jasperOffer";
 import { hasActiveAppTrialOverride } from "./appTrialOverride";
 import { hasLaunchGraceAccess } from "./launchGrace";
 import { hasEventSignupAppTrial } from "./eventSignupTrialAccess";
 import { isInternalTeamAccount } from "./internalTeamAccount";
+import { isV2CardTrialCohort } from "./stripe/v2CardTrial";
 
 /** Toegang tot de app na betaalde launch: actief, of opgezegd maar nog binnen betaalperiode. */
+
+/**
+ * True als middleware de abonnementsgate moet afdwingen voor deze user.
+ * Card-cohort (na cutoff) + Jasper-podcast (na 7d app-trial via profileHasAppAccessOrGrace).
+ */
+export function shouldEnforceAppPaywallGate(row: {
+  created_at?: string | null | undefined;
+  signup_source?: string | null | undefined;
+}): boolean {
+  if (isJasperSignupSource(row.signup_source)) return true;
+  return isV2CardTrialCohort(row.created_at);
+}
 
 export function profileHasAppAccess(row: {
   subscription_status: string | null | undefined;

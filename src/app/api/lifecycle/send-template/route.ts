@@ -22,6 +22,7 @@ export const maxDuration = 60;
 const ALLOWED: LifecycleTemplateId[] = [
   "s0_checkout_resume",
   "s0_checkout_help",
+  "s5_paywall",
 ];
 
 function assertAuthorized(request: Request): boolean {

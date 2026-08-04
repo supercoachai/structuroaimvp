@@ -96,6 +96,22 @@ describe("lifecycleMail templates", () => {
     expect(mail.html).not.toContain("—");
   });
 
+  it("S5 Jasper noemt podcast-proef en 7,99-aanbieding", () => {
+    const mail = renderLifecycleMail(
+      "s5_paywall",
+      { ...base, signup_source: "jasper_podcast", preferred_name: "Mariska" },
+      "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
+    );
+    expect(mail.ctaPath).toBe("/abonnement");
+    expect(mail.subject.toLowerCase()).toContain("podcast");
+    expect(mail.html).toContain("podcast met Jasper");
+    expect(mail.html).toContain("7,99");
+    expect(mail.html).toContain("eerste 3 maanden");
+    expect(mail.html).toContain("12,99");
+    expect(mail.html).toContain("Ga door met Structuro");
+    expect(mail.html).not.toContain("—");
+  });
+
   it("S0 hello noemt alleen-vandaag principe", () => {
     const mail = renderLifecycleMail(
       "s0_hello",
