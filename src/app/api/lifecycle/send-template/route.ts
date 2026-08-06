@@ -14,6 +14,7 @@ import type {
   LifecycleTemplateId,
 } from "@/lib/lifecycleMail/types";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
+import { resolveLifecycleReplyTo } from "@/lib/lifecycleMail/replyTo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,7 +151,7 @@ async function postSendTemplate(request: Request) {
       subject: mail.subject,
       text: mail.text,
       html: mail.html,
-      replyTo: process.env.LIFECYCLE_REPLY_TO?.trim() || undefined,
+      replyTo: resolveLifecycleReplyTo(),
       tags: [
         { name: "lifecycle", value: templateId },
         { name: "wave", value: "manual_force" },

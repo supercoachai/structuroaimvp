@@ -156,7 +156,7 @@ async function main() {
       subject: mail.subject,
       text: mail.text,
       html: mail.html,
-      replyTo: process.env.LIFECYCLE_REPLY_TO?.trim() || undefined,
+      replyTo: process.env.LIFECYCLE_REPLY_TO?.trim() || "info@structuro.eu",
       tags: [
         { name: "lifecycle", value: "s5_paywall" },
         { name: "wave", value: FORCE ? "jasper_manual_force" : "jasper_manual" },

@@ -342,7 +342,7 @@ export function renderLifecycleMail(
         ctaLabel: "Start mijn 7-daagse proef",
         ctaPath: lifecycleCtaPaywall(),
         ctaSubline:
-          "Werkte iets niet, of heb je een vraag? Reply. Een echt persoon (ik) leest deze mails.",
+          "Werkte iets niet, of heb je een vraag? Beantwoord deze mail gerust. Een echt persoon (ik) leest mee.",
         unsubscribeUrl,
       });
     }
@@ -357,7 +357,7 @@ export function renderLifecycleMail(
           hi,
           "Geen enkele druk. Ik check alleen even of dit niet tussen wal en schip is beland. Dat overkomt ons allemaal.",
           "Vandaag gebeurt er geen afschrijving. Vóór iets van je rekening gaat, krijg je altijd eerst een mail.",
-          "Als de prijs, de kaartstap of de timing je tegenhoudt: reply en vertel het me. Ik hoor het graag."
+          "Als de prijs, de kaartstap of de timing je tegenhoudt: beantwoord deze mail en vertel het me. Ik hoor het graag."
         ),
         ctaLabel: "Start mijn 7-daagse proef",
         ctaPath: lifecycleCtaPaywall(),
@@ -477,7 +477,7 @@ export function renderLifecycleMail(
         ctaLabel: cardCharge ? "Stop abonnement" : "Kies of je doorgaat",
         ctaPath: cardCharge && !cancelUrl ? "/stop-abonnement" : ctaPath,
         ctaSubline: cardCharge
-          ? "Eén klik. Je houdt toegang tot het einde van je proefperiode. Vragen? Reply."
+          ? "Eén klik. Je houdt toegang tot het einde van je proefperiode. Vragen? Beantwoord deze mail gerust."
           : "Geen automatische charge zonder dat je zelf een betaalmethode kiest.",
         unsubscribeUrl,
       });

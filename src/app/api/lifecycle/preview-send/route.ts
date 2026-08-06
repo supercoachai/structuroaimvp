@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { isAdminSecretValid } from "@/lib/admin/adminSession";
 import { sendResendEmail } from "@/lib/email/resendClient";
+import { resolveLifecycleReplyTo } from "@/lib/lifecycleMail/replyTo";
 import { renderLifecycleMail } from "@/lib/lifecycleMail/templates";
 import type {
   LifecycleCandidate,
@@ -109,7 +110,7 @@ async function handle(request: Request) {
       subject,
       text: mail.text,
       html: mail.html,
-      replyTo: process.env.LIFECYCLE_REPLY_TO?.trim() || undefined,
+      replyTo: resolveLifecycleReplyTo(),
       tags: [
         { name: "lifecycle", value: templateId },
         { name: "wave", value: "preview" },

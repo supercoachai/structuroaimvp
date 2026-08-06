@@ -18,7 +18,7 @@ export type ResendSendResult =
 export function getResendFromAddress(): string {
   return (
     process.env.RESEND_FROM_EMAIL?.trim() ||
-    "Structuro <noreply@structuro.eu>"
+    "Structuro <info@structuro.eu>"
   );
 }
 

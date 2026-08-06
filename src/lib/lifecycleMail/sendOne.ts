@@ -14,6 +14,7 @@ import {
 } from "./audience";
 import { eligibleTemplatesForCandidate } from "./segments";
 import { renderLifecycleMail } from "./templates";
+import { resolveLifecycleReplyTo } from "./replyTo";
 import { signLifecycleUnsubscribeToken } from "./unsubscribeToken";
 import { subscriptionCancelPageUrl } from "@/lib/stripe/subscriptionCancelToken";
 import type {
@@ -229,7 +230,7 @@ export async function sendLifecycleTemplateToUser(opts: {
     subject: mail.subject,
     text: mail.text,
     html: mail.html,
-    replyTo: process.env.LIFECYCLE_REPLY_TO?.trim() || undefined,
+    replyTo: resolveLifecycleReplyTo(),
     tags: [
       { name: "lifecycle", value: opts.templateId },
       { name: "wave", value: wave },

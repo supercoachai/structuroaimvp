@@ -53,6 +53,8 @@ describe("lifecycleMail templates", () => {
     expect(mail.ctaPath).toBe("/abonnement?start_trial=1");
     expect(mail.html).toContain("7-daagse proef");
     expect(mail.html).toContain("dagstart");
+    expect(mail.html).toContain("Beantwoord deze mail gerust");
+    expect(mail.html.toLowerCase()).not.toContain("noreply");
     expect(mail.html).not.toContain("—");
   });
 
