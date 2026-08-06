@@ -41,14 +41,18 @@ type PageProps = {
     from?: string;
     reason?: string;
     card?: string;
+    start_trial?: string;
   }>;
 };
+
+const START_TRIAL_PATH = "/abonnement?start_trial=1";
 
 export default async function V2AbonnementPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const forcePreview = params.preview === "1";
   const forceCardTrialPreview = forcePreview && params.card === "1";
   const fromStripe = params.from === "stripe";
+  const startTrial = params.start_trial === "1";
 
   const supabase = await createClient();
   const {
@@ -72,6 +76,11 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
         startCardTrial
       />
     );
+  }
+
+  // Lifecycle-mail CTA: eerst inloggen, daarna terug met start_trial voor auto-checkout.
+  if (!user?.id && startTrial) {
+    redirect(`/login?next=${encodeURIComponent(START_TRIAL_PATH)}`);
   }
 
   // Zonder login: eerlijke login-staat (geen nep-trial of demostats).
@@ -163,6 +172,7 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
         stats={alignedStats}
         canCheckout
         startCardTrial={startCardTrial}
+        autoStartTrial={startTrial && !fromStripe && !previewMode}
       />
       <AbonnementV2StripeSync
         active={!previewMode && fromStripe && !subscriptionConfirmed}

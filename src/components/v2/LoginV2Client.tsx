@@ -20,22 +20,25 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 import { LoginShell } from "@/components/login/LoginShell";
+import { sanitizeNextPath } from "@/lib/safeRedirect";
 
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
 
-const NEXT_AFTER_LOGIN = "/";
-
 type LoginV2ClientProps = {
   /** Root-entry: "Welkom bij Structuro"; standaard login: "Welkom terug." */
   variant?: "login" | "welcome";
+  /** Veilige relative path na login (uit `/login?next=`). */
+  nextPath?: string;
 };
 
 export default function LoginV2Client({
   variant = "login",
+  nextPath,
 }: LoginV2ClientProps) {
   const { t } = useI18n();
   const { resetAllLocalData } = useV2();
+  const nextAfterLogin = sanitizeNextPath(nextPath);
   const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,14 +67,14 @@ export default function LoginV2Client({
         const result = await migrateV2LocalDataToSupabase(userId);
         if (result.migrated) {
           resetAllLocalData();
-          return NEXT_AFTER_LOGIN;
+          return nextAfterLogin;
         }
       } catch (err) {
         console.warn("[LoginV2] migrate failed", err);
       }
     }
     resetAllLocalData();
-    return NEXT_AFTER_LOGIN;
+    return nextAfterLogin;
   };
 
   const startGoogle = async () => {
@@ -86,7 +89,7 @@ export default function LoginV2Client({
         return;
       }
       setLastAuthMethod("google");
-      await startOAuthSignIn(supabase, "google", NEXT_AFTER_LOGIN);
+      await startOAuthSignIn(supabase, "google", nextAfterLogin);
     } catch (err) {
       setError(
         isProviderNotEnabledError(err)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
@@ -80,7 +80,16 @@ export type AbonnementV2ClientProps = {
    * Toont "Zeven dagen. Daarna kies je." i.p.v. expired-paywall.
    */
   startCardTrial?: boolean;
+  /**
+   * Lifecycle-mail (`?start_trial=1`): start meteen Stripe-checkout voor
+   * dit ingelogde account (geen losse Stripe-URL in de mail).
+   */
+  autoStartTrial?: boolean;
 };
+
+const START_TRIAL_LOGIN_NEXT = `/login?next=${encodeURIComponent(
+  "/abonnement?start_trial=1"
+)}`;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -95,6 +104,7 @@ export default function AbonnementV2Client({
   stats,
   canCheckout,
   startCardTrial = false,
+  autoStartTrial = false,
 }: AbonnementV2ClientProps) {
   const router = useRouter();
   const { t } = useI18n();
@@ -105,6 +115,7 @@ export default function AbonnementV2Client({
   const [whyAnchor, setWhyAnchor] = useState<PaywallWhyAnchor | null>(null);
   const [liveWallets, setLiveWallets] = useState<WalletKind[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<RegisterPlanId>("monthly");
+  const autoStartTrialRef = useRef(false);
 
   useEffect(() => {
     preloadStripeWallet();
@@ -133,7 +144,9 @@ export default function AbonnementV2Client({
     async (plan: RegisterPlanId = "monthly") => {
       if (!canCheckout) {
         toast("Log eerst in om te betalen.");
-        router.push("/login?next=/abonnement");
+        router.push(
+          autoStartTrial ? START_TRIAL_LOGIN_NEXT : "/login?next=/abonnement"
+        );
         return;
       }
       trackClientFunnelEvent(ANALYTICS_EVENTS.paywall_checkout_clicked, {
@@ -162,8 +175,14 @@ export default function AbonnementV2Client({
         setBusy(false);
       }
     },
-    [canCheckout, router, startCardTrial]
+    [autoStartTrial, canCheckout, router, startCardTrial]
   );
+
+  useEffect(() => {
+    if (!autoStartTrial || !canCheckout || autoStartTrialRef.current) return;
+    autoStartTrialRef.current = true;
+    void startCheckout("monthly");
+  }, [autoStartTrial, canCheckout, startCheckout]);
 
   const handleStaySuccess = useCallback(() => {
     setDoneMode("stay");
@@ -204,7 +223,13 @@ export default function AbonnementV2Client({
               type="button"
               className="v2-link"
               style={{ marginTop: 12 }}
-              onClick={() => router.push("/login?next=/abonnement")}
+              onClick={() =>
+                router.push(
+                  autoStartTrial
+                    ? START_TRIAL_LOGIN_NEXT
+                    : "/login?next=/abonnement"
+                )
+              }
             >
               Log in
             </button>

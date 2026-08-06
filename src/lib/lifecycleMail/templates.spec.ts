@@ -50,7 +50,7 @@ describe("lifecycleMail templates", () => {
     expect(mail.subject).toMatch(/7-daagse proef$/i);
     expect(mail.subject.toLowerCase()).not.toMatch(/belast\s*$/);
     expect(mail.html.toLowerCase()).not.toContain("belast");
-    expect(mail.ctaPath).toBe("/abonnement");
+    expect(mail.ctaPath).toBe("/abonnement?start_trial=1");
     expect(mail.html).toContain("7-daagse proef");
     expect(mail.html).toContain("dagstart");
     expect(mail.html).not.toContain("—");
@@ -86,7 +86,7 @@ describe("lifecycleMail templates", () => {
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/abonnement");
+    expect(mail.ctaPath).toBe("/abonnement?start_trial=1");
     expect(mail.cohortKey).toBe("paywall:u1");
     expect(mail.html).toContain("Ja, ik ga door");
     expect(mail.html).toContain("€12,99 per maand");
@@ -102,7 +102,7 @@ describe("lifecycleMail templates", () => {
       { ...base, signup_source: "jasper_podcast", preferred_name: "Mariska" },
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/abonnement");
+    expect(mail.ctaPath).toBe("/abonnement?start_trial=1");
     expect(mail.subject.toLowerCase()).toContain("podcast");
     expect(mail.html).toContain("podcast met Jasper");
     expect(mail.html).toContain("7,99");

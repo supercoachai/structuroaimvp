@@ -20,8 +20,13 @@ function lifecycleCtaDagstart(): string {
   return isV2PublicEnabled() ? "/dagstart" : "/?dagstart=open";
 }
 
-function lifecycleCtaPaywall(): string {
-  return isV2PublicEnabled() ? "/abonnement" : "/abonnement";
+/**
+ * Paywall-CTA uit lifecycle-mail.
+ * `start_trial=1` triggert op /abonnement auto-checkout naar Stripe voor de
+ * ingelogde user (niet een losse Stripe-URL; account blijft de bron).
+ */
+export function lifecycleCtaPaywall(): string {
+  return "/abonnement?start_trial=1";
 }
 
 /** Placeholder-namen die we niet in de aanhef willen (onboarding-fallback e.d.). */
