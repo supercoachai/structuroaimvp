@@ -23,6 +23,11 @@ const V2ReturnPermissionPrompt = dynamic(
     ),
   { ssr: false },
 );
+const V2PushSoftPrompt = dynamic(
+  () =>
+    import("./V2PushSoftPrompt").then((m) => m.V2PushSoftPrompt),
+  { ssr: false },
+);
 
 export function V2LayoutOverlays() {
   return (
@@ -30,6 +35,7 @@ export function V2LayoutOverlays() {
       <V2ReturnReminderScheduler />
       <FrisseStartOverlay />
       <V2ReturnPermissionPrompt />
+      <V2PushSoftPrompt />
     </>
   );
 }

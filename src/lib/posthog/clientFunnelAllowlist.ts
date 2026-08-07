@@ -39,6 +39,13 @@ export const CLIENT_FUNNEL_EVENTS = [
   "focus_session_completed",
   "focus_session_ended_early",
   "focus_session_abandoned",
+  // web push soft-require (consent + herprompt)
+  "push_opt_in_clicked",
+  "push_opt_in_success",
+  "push_opt_in_denied",
+  "push_opt_in_skipped",
+  "push_needs_homescreen",
+  "push_soft_prompt_shown",
 ] as const;
 
 export type ClientFunnelEventName = (typeof CLIENT_FUNNEL_EVENTS)[number];

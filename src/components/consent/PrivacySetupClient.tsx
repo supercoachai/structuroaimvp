@@ -9,11 +9,15 @@ import { useConsent } from "@/lib/posthog/ConsentContext";
 import { markPrivacySetupCompleted } from "@/lib/privacySetup";
 import { detectPushSupport } from "@/lib/pushNotificationSupport";
 import {
-  registerPushSubscription,
-  unregisterPushSubscription,
-} from "@/utils/pushNotifications";
+  trackPushNeedsHomescreen,
+  trackPushOptInClicked,
+  trackPushOptInDenied,
+  trackPushOptInSkipped,
+  trackPushOptInSuccess,
+} from "@/lib/pushOptInEvents";
+import { markPushSoftPromptDone } from "@/lib/pushSoftPrompt";
+import { registerPushSubscription } from "@/utils/pushNotifications";
 import { toast } from "@/components/Toast";
-import { NotificationsHint } from "@/components/settings/NotificationsHint";
 import { V2Header, V2Page } from "@/components/v2/V2Chrome";
 import {
   V2SettingsRow,
@@ -23,6 +27,8 @@ import {
 import { v2Styles } from "@/components/v2/theme";
 import { resolveLiveHomePathClient } from "@/lib/v2/v2LabAccess";
 
+const INSTALL_FROM_CONSENT = "/welkom/install?from=consent";
+
 export default function PrivacySetupClient() {
   const { t } = useI18n();
   const router = useRouter();
@@ -31,8 +37,7 @@ export default function PrivacySetupClient() {
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission | "unsupported">("default");
   const [needsHomescreen, setNeedsHomescreen] = useState(false);
-  const [notificationBusy, setNotificationBusy] = useState(false);
-  const [finishing, setFinishing] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useLayoutEffect(() => {
     const state = detectPushSupport();
@@ -41,20 +46,61 @@ export default function PrivacySetupClient() {
     setPushChecked(true);
   }, []);
 
-  const notificationsOn = notificationPermission === "granted";
-  const notificationsToggleDisabled = notificationBusy;
+  const finishToHome = () => {
+    if (consent === "unknown") deny();
+    markPrivacySetupCompleted();
+    // Geen dubbele soft-prompt direct na consent (skip of succes).
+    markPushSoftPromptDone();
+    router.replace(resolveLiveHomePathClient());
+  };
 
-  const handleEnableNotifications = async () => {
-    if (notificationBusy) return;
+  const handleSkip = () => {
+    if (busy) return;
+    trackPushOptInSkipped("consent");
+    setBusy(true);
+    finishToHome();
+  };
+
+  const handlePrimary = async () => {
+    if (busy) return;
+
     if (needsHomescreen) {
-      toast.error(t("settings.notificationsNeedsHomescreenToast"));
+      trackPushNeedsHomescreen("consent");
+      router.push(INSTALL_FROM_CONSENT);
       return;
     }
+
     if (notificationPermission === "unsupported") {
       toast.error(t("settings.notificationsUnsupported"));
       return;
     }
-    setNotificationBusy(true);
+
+    if (notificationPermission === "denied") {
+      trackPushOptInDenied("consent");
+      toast.error(t("settings.notificationsDenied"));
+      return;
+    }
+
+    if (notificationPermission === "granted") {
+      setBusy(true);
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id) {
+          const sub = await registerPushSubscription(user.id);
+          if (sub) trackPushOptInSuccess("consent");
+        }
+      } catch {
+        /* subscription refresh best-effort */
+      }
+      finishToHome();
+      return;
+    }
+
+    trackPushOptInClicked("consent");
+    setBusy(true);
     try {
       const supabase = createClient();
       const {
@@ -62,70 +108,46 @@ export default function PrivacySetupClient() {
       } = await supabase.auth.getUser();
       if (!user?.id) {
         toast(t("settings.notificationsNeedLogin"));
+        setBusy(false);
         return;
       }
+
       const sub = await registerPushSubscription(user.id);
       const currentPermission =
         typeof window !== "undefined" && "Notification" in window
           ? Notification.permission
           : "default";
       setNotificationPermission(currentPermission);
-      if (sub) toast.success(t("settings.notificationsEnabled"));
-      else if (currentPermission === "denied") {
-        toast.error(t("settings.notificationsDenied"));
-      } else {
-        toast.error(t("settings.notificationsNoSubscription"));
-      }
-    } catch (err) {
-      toast.error(t("settings.notificationsEnableFail", { detail: String(err) }));
-    } finally {
-      setNotificationBusy(false);
-    }
-  };
 
-  const handleDisableNotifications = async () => {
-    if (notificationBusy) return;
-    setNotificationBusy(true);
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user?.id) {
-        toast(t("settings.notificationsNeedLogin"));
+      if (sub) {
+        trackPushOptInSuccess("consent");
+        toast.success(t("settings.notificationsEnabled"));
+        finishToHome();
         return;
       }
-      await unregisterPushSubscription(user.id);
-      setNotificationPermission("default");
-      toast(t("settings.notificationsDisabled"));
+
+      if (currentPermission === "denied") {
+        trackPushOptInDenied("consent");
+        toast.error(t("settings.notificationsDenied"));
+        setBusy(false);
+        return;
+      }
+
+      toast.error(t("settings.notificationsNoSubscription"));
+      setBusy(false);
     } catch (err) {
-      toast(t("settings.notificationsDisableFail", { detail: String(err) }));
-    } finally {
-      setNotificationBusy(false);
+      toast.error(t("settings.notificationsEnableFail", { detail: String(err) }));
+      setBusy(false);
     }
   };
 
-  const handleNotificationToggle = () => {
-    if (notificationBusy) return;
-    if (needsHomescreen) {
-      toast.error(t("settings.notificationsNeedsHomescreenToast"));
-      return;
-    }
-    if (notificationPermission === "denied") {
-      toast.error(t("settings.notificationsDenied"));
-      return;
-    }
-    if (notificationsOn) void handleDisableNotifications();
-    else void handleEnableNotifications();
-  };
-
-  const handleContinue = () => {
-    if (finishing) return;
-    setFinishing(true);
-    if (consent === "unknown") deny();
-    markPrivacySetupCompleted();
-    router.replace(resolveLiveHomePathClient());
-  };
+  const primaryLabel = !pushChecked
+    ? t("consentSetup.enableBusy")
+    : needsHomescreen
+      ? t("consentSetup.installCta")
+      : notificationPermission === "granted"
+        ? t("consentSetup.continueWhenGrantedCta")
+        : t("consentSetup.enableCta");
 
   return (
     <V2Page>
@@ -141,12 +163,85 @@ export default function PrivacySetupClient() {
           <p style={{ ...v2Styles.body, color: "var(--text)", margin: 0 }}>
             {t("consentSetup.remindersIntro")}
           </p>
+          {needsHomescreen ? (
+            <p
+              style={{
+                ...v2Styles.body,
+                color: "var(--text-muted)",
+                margin: "8px 0 0",
+                fontSize: 14,
+              }}
+            >
+              {t("settings.notificationsNeedsHomescreenHint")}{" "}
+              <Link
+                href={INSTALL_FROM_CONSENT}
+                className="v2-textlink"
+                style={{
+                  color: "var(--accent)",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  textUnderlineOffset: 2,
+                }}
+                onClick={() => trackPushNeedsHomescreen("consent")}
+              >
+                {t("settings.notificationsHomescreenLink")}
+              </Link>
+            </p>
+          ) : null}
+          {notificationPermission === "denied" ? (
+            <p
+              style={{
+                ...v2Styles.body,
+                color: "var(--text-muted)",
+                margin: "8px 0 0",
+                fontSize: 14,
+              }}
+            >
+              {t("settings.notificationsDenied")}
+            </p>
+          ) : null}
         </div>
 
-        <V2SettingsSection title={t("settings.sectionPrivacy")}>
+        <div style={v2Styles.actions}>
+          <button
+            type="button"
+            className="v2-cta"
+            onClick={() => void handlePrimary()}
+            disabled={busy}
+            style={{
+              ...v2Styles.cta,
+              opacity: busy ? 0.6 : 1,
+              cursor: busy ? "not-allowed" : "pointer",
+            }}
+          >
+            {busy ? t("consentSetup.enableBusy") : primaryLabel}
+          </button>
+          <button
+            type="button"
+            className="v2-link"
+            onClick={handleSkip}
+            disabled={busy}
+            style={{
+              background: "none",
+              border: "none",
+              padding: "8px 0",
+              fontSize: 14,
+              color: "var(--text-muted)",
+              cursor: busy ? "not-allowed" : "pointer",
+              textAlign: "center",
+            }}
+          >
+            {t("consentSetup.skipCta")}
+          </button>
+        </div>
+
+        <V2SettingsSection
+          title={`${t("settings.sectionPrivacy")} (${t("consentSetup.analyticsOptional")})`}
+        >
           <V2SettingsRow
             label={t("settings.analyticsTitle")}
             hint={t("settings.analyticsHint")}
+            last
           >
             <V2SettingsToggle
               checked={consent === "granted"}
@@ -157,47 +252,7 @@ export default function PrivacySetupClient() {
               ariaLabel={t("settings.analyticsTitle")}
             />
           </V2SettingsRow>
-
-          <V2SettingsRow
-            label={t("settings.notificationsTitle")}
-            hint={
-              pushChecked ? (
-                <NotificationsHint
-                  permission={notificationPermission}
-                  needsHomescreen={needsHomescreen}
-                  linkClassName="font-semibold underline-offset-2 hover:underline"
-                  linkStyle={{ color: "var(--accent)" }}
-                />
-              ) : (
-                " "
-              )
-            }
-            last
-          >
-            <V2SettingsToggle
-              checked={notificationsOn}
-              onChange={handleNotificationToggle}
-              disabled={notificationsToggleDisabled}
-              ariaLabel={t("settings.notificationsTitle")}
-            />
-          </V2SettingsRow>
         </V2SettingsSection>
-
-        <div style={v2Styles.actions}>
-          <button
-            type="button"
-            className="v2-cta"
-            onClick={handleContinue}
-            disabled={finishing}
-            style={{
-              ...v2Styles.cta,
-              opacity: finishing ? 0.6 : 1,
-              cursor: finishing ? "not-allowed" : "pointer",
-            }}
-          >
-            {finishing ? t("consentSetup.continueBusy") : t("consentSetup.continueCta")}
-          </button>
-        </div>
 
         <p
           style={{

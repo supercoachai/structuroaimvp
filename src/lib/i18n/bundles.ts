@@ -14,15 +14,27 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       moreInfo: "Meer info",
     },
     consentSetup: {
-      title: "Nog één stap",
+      title: "Herinneringen aanzetten",
       subtitle:
-        "Kies wat je deelt, zodat Structuro je kan ondersteunen zonder je privacy te schenden.",
+        "Structuro werkt het best met zachte herinneringen voor dagstart, focus en afronden. Geen schuld, geen streaks.",
       remindersIntro:
-        "Structuro werkt het best als we je op het juiste moment kunnen herinneren aan je dagstart, focus of micro-stappen. Zet meldingen aan als je die steun wilt. Anonieme productanalyse is optioneel en bevat nooit inhoud van je taken.",
+        "Zet meldingen aan op dit apparaat. Dan kunnen we je helpen terugkomen op het moment dat het telt. Anonieme productanalyse is optioneel en bevat nooit inhoud van je taken.",
       notificationsHint:
         "Zet aan om herinneringen te ontvangen op dit apparaat. Je kunt dit later altijd wijzigen in Instellingen.",
+      enableCta: "Herinneringen aanzetten",
+      enableBusy: "Even geduld…",
+      installCta: "Eerst op beginscherm zetten",
+      continueWhenGrantedCta: "Doorgaan",
+      skipCta: "Nu niet",
       continueCta: "Naar mijn dashboard",
       continueBusy: "Even geduld…",
+      analyticsOptional: "Optioneel",
+      softPromptTitle: "Herinneringen aanzetten?",
+      softPromptBody:
+        "Zo kun je zachte pushes krijgen voor dagstart en afronden. Altijd uit te zetten in instellingen.",
+      softPromptAccept: "Ja, graag",
+      softPromptDismiss: "Niet nu",
+      softPromptInstall: "Eerst installeren",
       footer: "Meer details vind je in ons",
     },
     sidebar: {
@@ -631,15 +643,27 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       moreInfo: "Learn more",
     },
     consentSetup: {
-      title: "One more step",
+      title: "Turn on reminders",
       subtitle:
-        "Choose what you share so Structuro can support you without compromising your privacy.",
+        "Structuro works best with gentle reminders for day start, focus, and wrapping up. No shame, no streaks.",
       remindersIntro:
-        "Structuro works best when we can remind you at the right moment about your day start, focus, or micro-steps. Turn on notifications if you want that support. Anonymous product analytics is optional and never includes the content of your tasks.",
+        "Enable notifications on this device so we can help you return when it matters. Anonymous product analytics is optional and never includes the content of your tasks.",
       notificationsHint:
         "Turn on to receive reminders on this device. You can change this later in Settings.",
+      enableCta: "Turn on reminders",
+      enableBusy: "One moment…",
+      installCta: "Add to Home Screen first",
+      continueWhenGrantedCta: "Continue",
+      skipCta: "Not now",
       continueCta: "Go to my dashboard",
       continueBusy: "One moment…",
+      analyticsOptional: "Optional",
+      softPromptTitle: "Turn on reminders?",
+      softPromptBody:
+        "Get gentle pushes for day start and wrap-up. Always changeable in settings.",
+      softPromptAccept: "Yes, please",
+      softPromptDismiss: "Not now",
+      softPromptInstall: "Install first",
       footer: "More details are in our",
     },
     sidebar: {

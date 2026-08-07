@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { createClient } from "@/lib/supabase/client";
+import { detectPushSupport } from "@/lib/pushNotificationSupport";
+import {
+  trackPushNeedsHomescreen,
+  trackPushOptInClicked,
+  trackPushOptInDenied,
+  trackPushOptInSuccess,
+} from "@/lib/pushOptInEvents";
+import { registerPushSubscription } from "@/utils/pushNotifications";
 import {
   trackV2ReturnPermissionAccepted,
   trackV2ReturnPermissionDismissed,
@@ -44,6 +53,34 @@ export function V2ReturnPermissionPrompt() {
       await requestV2NotificationPermission();
       scheduleV2ReturnNotification();
     }
+
+    // Bridge: lokale permission + server web-push (shutdown/daystart).
+    const push = detectPushSupport();
+    if (push.needsHomescreen) {
+      trackPushNeedsHomescreen("return_permission");
+    } else if (push.apisAvailable && push.permission !== "denied") {
+      trackPushOptInClicked("return_permission");
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.id) {
+          const sub = await registerPushSubscription(user.id);
+          if (sub) trackPushOptInSuccess("return_permission");
+          else if (
+            typeof window !== "undefined" &&
+            "Notification" in window &&
+            Notification.permission === "denied"
+          ) {
+            trackPushOptInDenied("return_permission");
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
+
     setVisible(false);
   }, []);
 
