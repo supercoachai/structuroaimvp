@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useI18n } from "@/lib/i18n";
+
+import { AuthMessagePanel } from "@/components/auth/AuthMessagePanel";
 import { parseAuthHashFragment } from "@/lib/auth/recoveryHash";
+import { useI18n } from "@/lib/i18n";
 import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 
 function isPkceVerifierError(
@@ -79,7 +80,6 @@ function AuthCodeErrorContent() {
       if (errorCode === "exchange_failed") {
         return {
           title: t("authError.exchangeTitle"),
-          // Nooit ruwe Supabase/PKCE-tekst tonen aan gebruikers.
           body: t("authError.exchangeBody"),
           primaryHref: "/login?herstel=1",
           primaryLabel: t("authError.ctaReset"),
@@ -112,26 +112,14 @@ function AuthCodeErrorContent() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[var(--st-bg)] px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600">{body}</p>
-        <div className="mt-8 flex flex-col gap-3">
-          <Link
-            href={primaryHref}
-            className="block w-full rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            {primaryLabel}
-          </Link>
-          <Link
-            href={secondaryHref}
-            className="block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            {secondaryLabel}
-          </Link>
-        </div>
-      </div>
-    </div>
+    <AuthMessagePanel
+      title={title}
+      body={body}
+      primaryHref={primaryHref}
+      primaryLabel={primaryLabel}
+      secondaryHref={secondaryHref}
+      secondaryLabel={secondaryLabel}
+    />
   );
 }
 

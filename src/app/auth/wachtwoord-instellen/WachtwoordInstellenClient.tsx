@@ -17,8 +17,11 @@ import {
   isSamePasswordError,
   markPasswordSetupCompletedReliably,
 } from "@/lib/auth/passwordSetupProfile";
+import { AuthMessagePanel } from "@/components/auth/AuthMessagePanel";
+import { LoginShell } from "@/components/login/LoginShell";
 import { useI18n } from "@/lib/i18n";
 import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
+import { v2Styles } from "@/components/v2/theme";
 
 type Props = {
   serverHasSession: boolean;
@@ -122,7 +125,6 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
       const { error: upErr } = await supabase.auth.updateUser({
         password,
       });
-      // same_password = het wachtwoord staat al precies zo. Behandel als succes.
       if (upErr && !isSamePasswordError(upErr)) {
         setError(upErr.message || t("passwordSetup.errSave"));
         return;
@@ -148,91 +150,63 @@ export default function WachtwoordInstellenClient({ serverHasSession }: Props) {
 
   if (!hasSession) {
     return (
-      <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[var(--st-bg)] px-4 py-8">
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">
-            {t("passwordSetup.noSessionTitle")}
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            {t("passwordSetup.noSessionBody")}
-          </p>
-          <Link
-            href="/login?herstel=1"
-            className="mt-6 block w-full rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            {t("passwordSetup.ctaReset")}
-          </Link>
-          <Link
-            href="/login"
-            className="mt-3 block w-full text-center text-sm text-slate-600 underline"
-          >
-            {t("passwordSetup.ctaLogin")}
-          </Link>
-        </div>
-      </div>
+      <AuthMessagePanel
+        title={t("passwordSetup.noSessionTitle")}
+        body={t("passwordSetup.noSessionBody")}
+        primaryHref="/login?herstel=1"
+        primaryLabel={t("passwordSetup.ctaReset")}
+        secondaryHref="/login"
+        secondaryLabel={t("passwordSetup.ctaLogin")}
+      />
     );
   }
 
   return (
-    <div className="flex min-h-[100dvh] w-full max-w-[100vw] flex-col items-center justify-center bg-[var(--st-bg)] px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">
-          {t("passwordSetup.title")}
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          {t("passwordSetup.subtitle")}
-        </p>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label
-              htmlFor="np"
-              className="block text-sm font-medium text-slate-700"
-            >
-              {t("passwordSetup.labelNew")}
-            </label>
-            <input
-              id="np"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              minLength={6}
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="npc"
-              className="block text-sm font-medium text-slate-700"
-            >
-              {t("passwordSetup.labelConfirm")}
-            </label>
-            <input
-              id="npc"
-              type="password"
-              autoComplete="new-password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              minLength={6}
-              required
-            />
-          </div>
-          {error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </div>
-          ) : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+    <LoginShell error={error}>
+      <div className="v2-login-gate v2-fade">
+        <div className="v2-login-gate__copy">
+          <h1 className="v2-login-gate__title">{t("passwordSetup.title")}</h1>
+          <p className="v2-login-gate__sub">{t("passwordSetup.subtitle")}</p>
+        </div>
+        <form onSubmit={handleSubmit} className="v2-login-gate__actions">
+          <label htmlFor="np" style={v2Styles.srOnly}>
+            {t("passwordSetup.labelNew")}
+          </label>
+          <input
+            id="np"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="v2-field"
+            placeholder={t("passwordSetup.labelNew")}
+            minLength={6}
+            required
+          />
+          <label htmlFor="npc" style={v2Styles.srOnly}>
+            {t("passwordSetup.labelConfirm")}
+          </label>
+          <input
+            id="npc"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="v2-field"
+            placeholder={t("passwordSetup.labelConfirm")}
+            minLength={6}
+            required
+          />
+          <button type="submit" disabled={busy} className="btn-primary w-full">
             {busy ? t("passwordSetup.saving") : t("passwordSetup.submit")}
           </button>
+          <div className="v2-login-gate__alt-links">
+            <Link href="/login" className="v2-login-gate__text-link">
+              {t("passwordSetup.ctaLogin")}
+            </Link>
+          </div>
         </form>
       </div>
-    </div>
+    </LoginShell>
   );
 }

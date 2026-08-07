@@ -127,6 +127,12 @@ export const APP_ROUTES = [
     status: [200, 400, 429, 502, 503, 405],
   },
   {
+    path: "/api/auth/send-login-code",
+    kind: "api",
+    method: "POST",
+    status: [200, 400, 429, 502, 503, 405],
+  },
+  {
     path: "/api/auth/complete-password-setup",
     kind: "api",
     method: "POST",

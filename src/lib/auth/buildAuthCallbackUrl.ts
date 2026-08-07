@@ -1,8 +1,14 @@
+import { getAppOrigin } from "@/lib/appUrl";
+
 /** Redirect na OAuth / magic link; altijd via /auth/callback zodat cookies gezet worden. */
-export function buildAuthCallbackUrl(nextPath = "/onboarding"): string {
+export function buildAuthCallbackUrl(
+  nextPath = "/onboarding",
+  origin?: string
+): string {
+  const base = (
+    origin ??
+    (typeof window !== "undefined" ? window.location.origin : getAppOrigin())
+  ).replace(/\/$/, "");
   const next = encodeURIComponent(nextPath);
-  if (typeof window === "undefined") {
-    return `https://www.structuro.ai/auth/callback?next=${next}`;
-  }
-  return `${window.location.origin}/auth/callback?next=${next}`;
+  return `${base}/auth/callback?next=${next}`;
 }

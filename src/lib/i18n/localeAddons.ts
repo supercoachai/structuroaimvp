@@ -202,17 +202,18 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       goodNight: "Welterusten",
     },
     authError: {
-      otpTitle: "Deze link is verlopen",
+      otpTitle: "Deze link werkt hier niet",
       otpBody:
-        "Wachtwoordlinks zijn maar kort geldig. Vraag hieronder een nieuwe aan en open de mail zo snel mogelijk.",
+        "Wachtwoordlinks zijn kort geldig en horen bij de browser waarin je ze aanvroeg. Open de mail opnieuw in diezelfde browser, of vraag hieronder een nieuwe link aan. Gebruik bij voorkeur geen in-app browser van Outlook of Gmail.",
       exchangeTitle: "Inloggen via de link lukte niet",
       exchangeBody:
-        "De code werd al gebruikt of is ongeldig. Vraag zo nodig een nieuwe herstellink aan.",
+        "De code werd al gebruikt, is verlopen, of je opende de link in een andere browser. Vraag zo nodig een nieuwe herstellink aan en open die in dezelfde browser.",
       pkceTitle: "Open de link in dezelfde browser",
       pkceBody:
         "De inloglink hoort bij de browser waarin je hem vroeg. Open je mail opnieuw in die browser, of vraag hier een nieuwe link aan. Tip: geen in-app browser van Gmail of Apple Mail.",
       missingTitle: "Ongeldige of incomplete link",
-      missingBody: "Open de link uit je mail opnieuw, of vraag een nieuw wachtwoord aan.",
+      missingBody:
+        "Open de link uit je mail opnieuw in dezelfde browser waarin je hem aanvroeg, of vraag een nieuw wachtwoord aan.",
       genericTitle: "Er ging iets mis met inloggen",
       genericBody:
         "Probeer opnieuw of vraag een nieuw wachtwoord aan via het inlogscherm.",
@@ -226,9 +227,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       errMismatch: "Wachtwoorden komen niet overeen.",
       errSave: "Opslaan mislukt.",
       errUnknown: "Onbekende fout.",
-      noSessionTitle: "Geen geldige sessie",
+      noSessionTitle: "Open de link in dezelfde browser",
       noSessionBody:
-        "Open eerst de link uit je mail, of vraag een nieuw wachtwoord aan. Oude links werken niet meer.",
+        "De link uit je mail hoort bij de browser waarin je hem aanvroeg. Ga terug naar die browser en open de mail opnieuw, of vraag hieronder een nieuwe link aan. Gebruik bij voorkeur geen in-app browser van Outlook of Gmail.",
       ctaReset: "Nieuw wachtwoord aanvragen",
       ctaLogin: "Naar inloggen",
       title: "Nieuw wachtwoord",
@@ -978,17 +979,18 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       goodNight: "Good night",
     },
     authError: {
-      otpTitle: "This link has expired",
+      otpTitle: "This link does not work here",
       otpBody:
-        "Password links are only valid for a short time. Request a new one below and open the email quickly.",
+        "Password links are short-lived and belong to the browser where you requested them. Open your email again in that same browser, or request a new link below. Prefer a full browser over Outlook or Gmail in-app browsers.",
       exchangeTitle: "Could not sign in with this link",
       exchangeBody:
-        "The code was already used or is invalid. Request a new reset link if needed.",
+        "The code was already used, expired, or you opened the link in a different browser. Request a new reset link and open it in the same browser if needed.",
       pkceTitle: "Open the link in the same browser",
       pkceBody:
         "This sign-in link belongs to the browser where you requested it. Open your email again in that browser, or request a new link here. Tip: avoid Gmail or Apple Mail in-app browsers.",
       missingTitle: "Invalid or incomplete link",
-      missingBody: "Open the link from your email again, or request a new password.",
+      missingBody:
+        "Open the link from your email again in the same browser where you requested it, or request a new password.",
       genericTitle: "Something went wrong signing in",
       genericBody: "Try again or request a new password from the sign-in screen.",
       ctaReset: "Request new password",
@@ -1001,9 +1003,9 @@ export const localeAddons: Record<Locale, Record<string, unknown>> = {
       errMismatch: "Passwords do not match.",
       errSave: "Could not save.",
       errUnknown: "Unknown error.",
-      noSessionTitle: "No valid session",
+      noSessionTitle: "Open the link in the same browser",
       noSessionBody:
-        "Open the link from your email first, or request a new password. Old links no longer work.",
+        "The link in your email belongs to the browser where you requested it. Go back to that browser and open the email again, or request a new link below. Prefer a full browser over Outlook or Gmail in-app browsers.",
       ctaReset: "Request new password",
       ctaLogin: "Go to sign in",
       title: "New password",

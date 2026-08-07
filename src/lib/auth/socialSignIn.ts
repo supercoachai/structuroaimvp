@@ -57,11 +57,10 @@ export async function startOAuthSignIn(
 
 /**
  * Stuurt e-mail OTP (8-cijferige code + optionele link) voor bestaande accounts.
- * Primair pad: code typen in dezelfde browser (geen PKCE). Link blijft backup.
- * Lengte volgt Supabase Auth → Email OTP length (dashboard), nu 8.
+ * Server-route stuurt branded mail via Resend; fallback naar Supabase-default.
  */
 export async function sendLoginMagicLink(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   email: string,
   nextPath = "/onboarding",
   captchaToken?: string
@@ -73,17 +72,26 @@ export async function sendLoginMagicLink(
   const anonId = getAnonymousDistinctIdForMagicLink();
   if (anonId) writeAnonDistinctIdCookie(anonId);
   const nextWithAnon = appendAnonDistinctIdToPath(nextPath, anonId);
-  const { error } = await supabase.auth.signInWithOtp({
-    email: normalized,
-    options: {
+
+  const res = await fetch("/api/auth/send-login-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: normalized,
+      nextPath: nextWithAnon,
       ...(captchaToken ? { captchaToken } : {}),
-      shouldCreateUser: false,
-      emailRedirectTo: buildAuthCallbackUrl(nextWithAnon),
-      // Bewaar anonieme PostHog-ID zodat cross-device login de personen kan mergen.
-      ...(anonId ? { data: { posthog_anon_id: anonId } } : {}),
-    },
+    }),
   });
-  if (error) throw error;
+
+  const data = (await res.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+  } | null;
+
+  if (!res.ok || !data?.ok) {
+    const code = data?.error ?? "send_failed";
+    throw new Error(code);
+  }
 }
 
 /** Verifieer 8-cijferige login-code in dezelfde browser (omzeilt PKCE-redirect). */
