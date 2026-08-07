@@ -9,6 +9,7 @@ import { todayYmd } from "./v2Tasks";
 import type { V2Energy } from "./V2Context";
 
 const SESSION_FIRED_KEY = "app_analytics_session_fired";
+const HOME_SESSION_FIRED_KEY = "home_session_fired";
 const DAY2_FIRED_PREFIX = "day2_return_fired_";
 
 /**
@@ -18,6 +19,7 @@ const DAY2_FIRED_PREFIX = "day2_return_fired_";
 function trackAppActivation(
   event:
     | "app_session_start"
+    | "home_session_start"
     | "day2_return"
     | "daily_dagstart_complete"
     | "shutdown_completed"
@@ -103,6 +105,18 @@ export function trackV2SessionStart(): void {
         visitGap === null ? null : Math.round(visitGap * 10) / 10,
     });
   }
+}
+
+/** Eén keer per browsersessie wanneer de ingelogde home (/) laadt. */
+export function trackV2HomeSessionStart(): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (window.sessionStorage.getItem(HOME_SESSION_FIRED_KEY) === "1") return;
+    window.sessionStorage.setItem(HOME_SESSION_FIRED_KEY, "1");
+  } catch {
+    // sessionStorage geblokkeerd: toch proberen te tracken.
+  }
+  trackAppActivation("home_session_start", { surface: "home" });
 }
 
 export function trackV2DagstartComplete(props: {

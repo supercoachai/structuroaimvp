@@ -27,8 +27,7 @@ export type OnboardingStep =
   | "tasks"
   | "done"
   | "account"
-  | "name"
-  | "home";
+  | "name";
 
 /** @deprecated gebruik OnboardingStep */
 export type V2OnboardingStep = OnboardingStep;

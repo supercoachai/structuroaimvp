@@ -16,6 +16,8 @@ export const CLIENT_FUNNEL_EVENTS = [
   "dagstart_completed_anon",
   // retentie P0 (zonder settings-opt-in)
   "app_session_start",
+  /** Home geladen; geen onboarding_step (voorkomt verwarring in PostHog). */
+  "home_session_start",
   "day2_return",
   "daily_dagstart_complete",
   "shutdown_completed",

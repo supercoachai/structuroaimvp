@@ -21,6 +21,7 @@ import {
 } from "./v2HomePrompt";
 import {
   trackV2HomePromptPriority,
+  trackV2HomeSessionStart,
   trackV2OpenTaskReminderDismissed,
   trackV2OpenTaskReminderShown,
   trackV2QuoteDismissed,
@@ -31,10 +32,7 @@ import {
   trackV2WhySuggestionAccepted,
   trackV2WhySuggestionShown,
 } from "./v2Analytics";
-import {
-  trackV2OnboardingCycle,
-  trackV2OnboardingStep,
-} from "./v2OnboardingFunnel";
+import { trackV2OnboardingCycle } from "./v2OnboardingFunnel";
 import {
   acceptV2WhySuggestion,
   recordWhySuggestionIdleOpen,
@@ -145,7 +143,7 @@ export default function HomeV2Client() {
 
   useEffect(() => {
     if (!ready) return;
-    trackV2OnboardingStep("home");
+    trackV2HomeSessionStart();
   }, [ready]);
 
   // Herstel chip als journey-energy per ongeluk is gewist maar vandaag nog in adaptive staat.
