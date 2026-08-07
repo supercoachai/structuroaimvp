@@ -35,7 +35,7 @@ function trialIsExpired(c: LifecycleCandidate): boolean {
   if (hasEventSignupAppTrial(c.created_at, c.signup_source)) {
     return eventSignupTrialExpired(c.created_at, c.signup_source);
   }
-  return freeTrialExpired(c.created_at);
+  return freeTrialExpired(c.created_at, c.signup_source);
 }
 
 function daysSinceSignup(c: LifecycleCandidate, now: Date): number {

@@ -10,10 +10,11 @@ export const DEFAULT_STRIPE_TRIAL_DAYS = 3;
  * Whitelist: signup_source → trial-dagen (server-side, geen client-trust).
  *
  * BELANGRIJK: de cron expire_trials() gebruikt de SQL-spiegel
- * `profile_has_active_app_trial` in Supabase. Nieuwe bron hier toevoegen =
- * ook een migratie schrijven die die functie bijwerkt (zie
- * supabase/migrations/20260706130000_trial_days_jasper_podcast.sql), anders
- * kapt de cron de trial na de default 3 dagen af.
+ * `profile_has_active_app_trial` en `profile_skips_legacy_app_trial` in Supabase.
+ * Nieuwe bron hier toevoegen = ook een migratie schrijven die die functie bijwerkt
+ * (zie supabase/migrations/20260706130000_trial_days_jasper_podcast.sql en
+ * 20260807160000_v2_card_cohort_skip_legacy_expire_trials.sql), anders kapt de cron
+ * de trial na de default 3 dagen af.
  *
  * Compensatie per account (bugfix): zet profiles.app_trial_override_until via
  * service_role. Die kolom wint in profile_has_active_app_trial en in de app

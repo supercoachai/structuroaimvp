@@ -1,13 +1,33 @@
 /**
- * Gratis proeftijd voor nieuwe gebruikers.
+ * Legacy gratis proeftijd (pre v2 card-cohort).
  *
- * Elke nieuwe registratie krijgt FREE_TRIAL_DAYS dagen gratis toegang,
- * puur berekend op basis van profiles.created_at — geen extra DB-kolom nodig.
+ * V2 card-cohort (na cutoff) heeft geen app-trial zonder Stripe-checkout.
+ * Event-kanalen (jasper_podcast, adhd_cafe) en gift_comp houden hun eigen trial.
  *
  * Na afloop wordt de gebruiker doorgestuurd naar /abonnement (via de middleware paywall).
  */
 
+import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
+import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import { isV2CardTrialCohort } from "@/lib/stripe/v2CardTrial";
+
 export const FREE_TRIAL_DAYS = 3;
+
+export type LegacyFreeTrialRow = {
+  created_at?: string | null;
+  signup_source?: string | null;
+};
+
+/** V2 card-cohort zonder event/gift: geen legacy 3-dagen app-trial. */
+export function skipsLegacyFreeTrial(
+  row: LegacyFreeTrialRow | null | undefined
+): boolean {
+  if (!row?.created_at) return false;
+  if (!isV2CardTrialCohort(row.created_at)) return false;
+  if (isEventSignupSource(row.signup_source)) return false;
+  if (isGiftCompSignupSource(row.signup_source)) return false;
+  return true;
+}
 
 /** Unix-timestamp (ms) waarop de proeftijd afloopt. */
 function trialEndMs(created_at: string): number {
@@ -18,7 +38,11 @@ function trialEndMs(created_at: string): number {
  * True als de gebruiker nog binnen de proeftijd zit.
  * created_at komt uit profiles.created_at (ISO-string).
  */
-export function hasFreeTrial(created_at: string | null | undefined): boolean {
+export function hasFreeTrial(
+  created_at: string | null | undefined,
+  signup_source?: string | null
+): boolean {
+  if (skipsLegacyFreeTrial({ created_at, signup_source })) return false;
   if (!created_at) return false;
   const end = trialEndMs(created_at);
   if (isNaN(end)) return false;
@@ -29,7 +53,11 @@ export function hasFreeTrial(created_at: string | null | undefined): boolean {
  * Aantal volle dagen dat de proeftijd nog loopt (afgerond naar boven, minimaal 1
  * als er nog tijd over is). Geeft 0 terug als de proeftijd verlopen is.
  */
-export function freeTrialDaysLeft(created_at: string | null | undefined): number {
+export function freeTrialDaysLeft(
+  created_at: string | null | undefined,
+  signup_source?: string | null
+): number {
+  if (skipsLegacyFreeTrial({ created_at, signup_source })) return 0;
   if (!created_at) return 0;
   const end = trialEndMs(created_at);
   if (isNaN(end)) return 0;
@@ -42,7 +70,11 @@ export function freeTrialDaysLeft(created_at: string | null | undefined): number
  * True als de proeftijd ooit is gestart (created_at bestaat) maar inmiddels
  * verlopen is. Gebruik dit voor de "trial expired" messaging op /abonnement.
  */
-export function freeTrialExpired(created_at: string | null | undefined): boolean {
+export function freeTrialExpired(
+  created_at: string | null | undefined,
+  signup_source?: string | null
+): boolean {
+  if (skipsLegacyFreeTrial({ created_at, signup_source })) return false;
   if (!created_at) return false;
   const end = trialEndMs(created_at);
   if (isNaN(end)) return false;

@@ -30,7 +30,7 @@ export type RetentionPaywallProfile = {
 function hasOptionalSubscribeAccess(row: RetentionPaywallProfile): boolean {
   if (hasActiveAppTrialOverride(row.app_trial_override_until)) return true;
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) return true;
-  if (hasFreeTrial(row.created_at)) return true;
+  if (hasFreeTrial(row.created_at, row.signup_source)) return true;
   return hasLaunchGraceAccess({
     created_at: row.created_at,
     last_dagstart_date: row.last_dagstart_date ?? null,
@@ -50,8 +50,8 @@ export function resolveActiveTrialDaysLeft(
   if (hasEventSignupAppTrial(row.created_at, row.signup_source)) {
     return eventSignupTrialDaysLeft(row.created_at, row.signup_source);
   }
-  if (hasFreeTrial(row.created_at)) {
-    return freeTrialDaysLeft(row.created_at);
+  if (hasFreeTrial(row.created_at, row.signup_source)) {
+    return freeTrialDaysLeft(row.created_at, row.signup_source);
   }
   return 0;
 }
@@ -98,7 +98,7 @@ export function resolveRetentionPaywallReason(
     return "trial_expired";
   }
 
-  if (freeTrialExpired(row.created_at)) {
+  if (freeTrialExpired(row.created_at, row.signup_source)) {
     return "trial_expired";
   }
 

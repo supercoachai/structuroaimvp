@@ -90,8 +90,8 @@ export function TrialBanner() {
             return;
           }
 
-          if (!hasFreeTrial(createdAt)) return;
-          const left = freeTrialDaysLeft(createdAt);
+          if (!hasFreeTrial(createdAt, signupSource)) return;
+          const left = freeTrialDaysLeft(createdAt, signupSource);
           if (left > 0) {
             setDaysLeft(left);
             setTrialKind("legacy");

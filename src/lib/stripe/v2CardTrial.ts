@@ -66,9 +66,8 @@ export function hasStripeTrialOrPaidAccess(row: {
 
 /**
  * Eerste Stripe-checkout voor v2 card-cohort: komt 7 dagen trial toe.
- * Belangrijk: `trial_expired` telt mee. expire_trials kan `none` →
- * `trial_expired` zetten vóór de kaart-checkout; die users moeten nog
- * steeds €0 vandaag zien, niet meteen €12,99.
+ * `trial_expired` telt nog mee voor backwards compat (oude cron-flips);
+ * nieuwe v2-cohort blijft op `none` tot Stripe checkout (zie expire_trials migratie).
  */
 export function isFreshV2CardTrialCheckout(row: {
   created_at?: string | null;
