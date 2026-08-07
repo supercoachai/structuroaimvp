@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Retrieval crawlers for AI-answer surfaces (GEO)
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://www.structuro.eu/sitemap.xml

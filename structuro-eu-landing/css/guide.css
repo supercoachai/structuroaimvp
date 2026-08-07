@@ -1,0 +1,167 @@
+/* SEO/GEO money-pages (gidsen) op structuro.eu */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--v2-paper);color:var(--v2-text);
+  font-family:var(--v2-sans);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--v2-teal);text-decoration:none}
+a:hover{color:#1F433F}
+img{display:block;max-width:100%;height:auto}
+
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 24px}
+.serif{font-family:var(--v2-serif);font-weight:500;letter-spacing:-0.022em;line-height:1.12}
+
+.site-header{
+  position:sticky;top:0;z-index:80;
+  background:rgba(253,251,244,.92);
+  backdrop-filter:saturate(140%) blur(16px);
+  -webkit-backdrop-filter:saturate(140%) blur(16px);
+  border-bottom:1px solid rgba(26,35,64,.10);
+}
+.site-header .nav{
+  height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.brand{
+  display:inline-flex;align-items:center;gap:10px;
+  color:var(--v2-text);font-weight:600;font-size:17px;letter-spacing:-0.01em;
+}
+.brand:hover{color:var(--v2-text)}
+.brand-mark{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;line-height:0}
+.brand-mark img{width:30px;height:30px;border-radius:50%;object-fit:cover}
+.guide-header-cta{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:9px 14px;border-radius:10px;
+  background:var(--v2-navy);color:#fff!important;font-size:13.5px;font-weight:600;
+  box-shadow:0 2px 8px rgba(26,35,64,.16);
+}
+.guide-header-cta:hover{background:var(--v2-navy-soft);color:#fff!important}
+
+.guide-main{
+  max-width:720px;margin:0 auto;padding:36px 24px 80px;
+}
+.guide-top{
+  display:flex;flex-direction:column;align-items:flex-start;gap:64px;margin:0 0 0;
+}
+.guide-back{
+  display:flex;align-items:center;gap:6px;width:fit-content;margin:0;
+  font-size:14px;font-weight:600;color:var(--v2-text-soft);
+}
+.guide-back:hover{color:var(--v2-teal);text-decoration:underline;text-underline-offset:2px}
+.guide-heading{
+  display:flex;flex-direction:column;align-items:flex-start;gap:14px;width:100%;
+}
+.guide-eyebrow{
+  display:flex;align-items:center;gap:8px;width:fit-content;margin:0;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--v2-teal);
+}
+.guide-eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--v2-teal);flex:none}
+.guide-main h1{
+  margin:0;font-size:clamp(30px,5vw,42px);color:var(--v2-text);
+  text-wrap:balance;
+}
+.guide-answer{
+  margin:20px 0 28px;padding:16px 18px;border-radius:14px;
+  background:rgba(45,90,86,.07);border:1px solid rgba(45,90,86,.16);
+  font-size:15.5px;color:var(--v2-text);line-height:1.55;
+}
+.guide-prose h2{
+  margin:2.2rem 0 .75rem;font-size:1.2rem;font-weight:600;
+  font-family:var(--v2-serif);letter-spacing:-0.015em;color:var(--v2-text);
+}
+.guide-prose h3{
+  margin:1.4rem 0 .5rem;font-size:1rem;font-weight:700;color:var(--v2-text);
+}
+.guide-prose p{
+  margin:0 0 1rem;color:rgba(26,35,64,.82);font-size:15.5px;line-height:1.65;
+}
+.guide-prose ul,.guide-prose ol{
+  margin:0 0 1.1rem;padding-left:1.2rem;color:rgba(26,35,64,.82);font-size:15.5px;
+}
+.guide-prose li{margin:0 0 .45rem;line-height:1.55}
+.guide-prose a{text-decoration:underline;text-underline-offset:2px}
+
+.guide-cta{
+  margin:2.4rem 0 0;padding:22px 20px;border-radius:16px;
+  background:var(--v2-navy);color:var(--v2-on-navy);
+}
+.guide-cta-title{
+  margin:0 0 8px;font-family:var(--v2-serif);font-size:1.35rem;font-weight:500;color:var(--v2-on-navy);
+}
+.guide-cta p{
+  margin:0 0 16px;font-size:14.5px;line-height:1.5;color:var(--v2-on-navy-soft);
+}
+.guide-cta .btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:12px 18px;border-radius:12px;
+  background:#fff;color:var(--v2-navy)!important;font-weight:700;font-size:14.5px;
+}
+.guide-cta .btn:hover{background:var(--v2-cream);color:var(--v2-navy)!important}
+.guide-cta .reassure{
+  margin:10px 0 0;font-size:13px;color:rgba(245,242,234,.55);
+}
+
+.guide-related{
+  margin:2.6rem 0 0;padding-top:1.6rem;border-top:1px solid rgba(26,35,64,.08);
+}
+.guide-related-title{
+  margin:0 0 12px;font-size:1rem;font-weight:700;color:var(--v2-text);
+}
+.guide-related ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.guide-related a{
+  display:block;padding:12px 14px;border-radius:12px;
+  border:1px solid rgba(26,35,64,.10);background:#fff;
+  color:var(--v2-text);font-size:14.5px;font-weight:550;
+}
+.guide-related a:hover{
+  border-color:rgba(45,90,86,.28);background:rgba(45,90,86,.05);color:var(--v2-teal);
+}
+.guide-related a span{
+  display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--v2-text-soft);
+}
+
+.guide-faq{margin:2.4rem 0 0}
+.guide-faq h2{
+  margin:0 0 14px;font-family:var(--v2-serif);font-size:1.25rem;font-weight:500;
+}
+.guide-faq details{
+  border:1px solid rgba(26,35,64,.10);border-radius:12px;background:#fff;
+  padding:12px 14px;margin:0 0 8px;
+}
+.guide-faq summary{
+  cursor:pointer;font-weight:650;font-size:14.5px;color:var(--v2-text);
+}
+.guide-faq details p{
+  margin:10px 0 0;font-size:14.5px;color:rgba(26,35,64,.78);line-height:1.55;
+}
+
+.guide-note{
+  margin:1.6rem 0 0;font-size:13px;color:var(--v2-text-faint);line-height:1.5;
+}
+
+footer.site-foot{
+  border-top:1px solid rgba(26,35,64,.07);padding:40px 0 36px;background:var(--v2-paper);
+}
+.foot-top{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.foot-links{display:flex;gap:22px;flex-wrap:wrap}
+.foot-links a{font-size:13.5px;color:var(--v2-text-soft)}
+.foot-links a:hover{color:var(--v2-text)}
+.foot-bottom{
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:28px;padding-top:20px;
+  border-top:1px solid rgba(26,35,64,.06);font-size:12.5px;color:var(--v2-text-faint);
+}
+.foot-bottom a{color:var(--v2-text-faint)}
+.foot-bottom a:hover{color:var(--v2-text-soft)}
+.foot-bottom nav{display:flex;gap:18px;flex-wrap:wrap}
+.verified-dr-badge{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);
+  white-space:nowrap;border:0;
+}
+
+@media (max-width:720px){
+  .wrap,.guide-main{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+  .site-header .nav{height:auto;min-height:60px;padding:10px 0}
+  .guide-header-cta{padding:8px 12px;font-size:12.5px}
+}

@@ -10,7 +10,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://eu.i.posthog.com https://eu-assets.i.posthog.com; connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://www.structuro.ai; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://eu.i.posthog.com https://eu-assets.i.posthog.com; connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://www.structuro.ai; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     },
@@ -85,6 +85,26 @@
     {
       "source": "/cyclus",
       "destination": "/cyclus/index.html"
+    },
+    {
+      "source": "/waarom-gewoon-beginnen-niet-werkt",
+      "destination": "/waarom-gewoon-beginnen-niet-werkt/index.html"
+    },
+    {
+      "source": "/een-stap-per-dag",
+      "destination": "/een-stap-per-dag/index.html"
+    },
+    {
+      "source": "/waarom-planners-falen",
+      "destination": "/waarom-planners-falen/index.html"
+    },
+    {
+      "source": "/mentale-belasting-dagstart",
+      "destination": "/mentale-belasting-dagstart/index.html"
+    },
+    {
+      "source": "/energie-first",
+      "destination": "/energie-first/index.html"
     },
     {
       "source": "/ph/static/:path(.*)",
