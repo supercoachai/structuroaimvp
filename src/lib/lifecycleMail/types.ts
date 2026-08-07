@@ -35,6 +35,8 @@ export type LifecycleCandidate = {
   checkout_started_at: string | null;
   checkin_count: number;
   last_checkin_date: string | null;
+  /** Middleware-touch; vangnet voor "wel in app, geen check-in/dagstart". */
+  last_seen_at: string | null;
 };
 
 export type LifecycleRenderedMail = {

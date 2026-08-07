@@ -20,8 +20,9 @@ import { recordV2EnergyForToday } from "./v2Adaptive";
 import V2ProgressDots from "./V2ProgressDots";
 import { trackV2DagstartComplete } from "./v2Analytics";
 import { useI18n } from "@/lib/i18n";
-import { setDagstartCookieOnClient } from "@/lib/dagstartCookie";
+import { getCalendarDateAmsterdam, setDagstartCookieOnClient } from "@/lib/dagstartCookie";
 import { createClient } from "@/lib/supabase/client";
+import { upsertCheckInToSupabase } from "@/lib/supabase/checkinsDb";
 import {
   updateProfileAfterDagstartComplete,
   type DagstartEnergy,
@@ -136,10 +137,12 @@ export default function DagstartV2Client() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user?.id) {
-        await updateProfileAfterDagstartComplete(
-          user.id,
-          mapV2EnergyToProfile(nextEnergy)
-        );
+        const profileEnergy = mapV2EnergyToProfile(nextEnergy);
+        await updateProfileAfterDagstartComplete(user.id, profileEnergy);
+        await upsertCheckInToSupabase(user.id, getCalendarDateAmsterdam(), {
+          energy_level: profileEnergy,
+          top3_task_ids: null,
+        });
         setDagstartCookieOnClient();
       }
     } catch (err) {

@@ -39,6 +39,7 @@ type Row = {
   app_trial_override_until: string | null;
   checkin_count: number;
   last_checkin_date: string | null;
+  last_seen_at: string | null;
 };
 
 function requireEnv(name: string): string {
@@ -63,6 +64,7 @@ function toCandidate(row: Row): LifecycleCandidate {
     checkout_started_at: null,
     checkin_count: Number(row.checkin_count ?? 0),
     last_checkin_date: row.last_checkin_date,
+    last_seen_at: row.last_seen_at,
   };
 }
 
@@ -106,7 +108,7 @@ async function main() {
   const { data, error } = await supabase
     .from("lifecycle_candidates_v1")
     .select(
-      "user_id, email, preferred_name, created_at, signup_source, subscription_status, subscription_current_period_end, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkin_count, last_checkin_date"
+      "user_id, email, preferred_name, created_at, signup_source, subscription_status, subscription_current_period_end, last_dagstart_date, unsubscribe_lifecycle, is_test, app_trial_override_until, checkin_count, last_checkin_date, last_seen_at"
     )
     .eq("subscription_status", "trial_expired")
     .gte("created_at", "2026-05-31T22:00:00.000Z")

@@ -23,6 +23,7 @@ const base: LifecycleCandidate = {
   checkout_started_at: null,
   checkin_count: 0,
   last_checkin_date: null,
+  last_seen_at: null,
 };
 
 describe("lifecycleMail templates", () => {

@@ -28,6 +28,26 @@ function daysSinceCheckin(ymd: string | null, now: Date): number | null {
   return Math.round((today - then) / (1000 * 60 * 60 * 24));
 }
 
+/** Laatste activatiedag: max van check-in en dagstart (Amsterdam YMD). */
+export function resolveLastActivationYmd(
+  lastCheckinDate: string | null,
+  lastDagstartDate: string | null
+): string | null {
+  const dates = [lastCheckinDate, lastDagstartDate].filter(
+    (d): d is string => typeof d === "string" && d.length >= 10
+  );
+  if (dates.length === 0) return null;
+  return dates.sort().at(-1) ?? null;
+}
+
+const RECENT_APP_ACTIVITY_HOURS = 48;
+
+function recentlyActiveInApp(lastSeenAt: string | null, now: Date): boolean {
+  if (!lastSeenAt) return false;
+  const hours = hoursSince(lastSeenAt, now);
+  return Number.isFinite(hours) && hours < RECENT_APP_ACTIVITY_HOURS;
+}
+
 function trialIsExpired(c: LifecycleCandidate): boolean {
   if (c.subscription_status === "trial_expired") return true;
   if (PAID_STATUSES.has(c.subscription_status ?? "")) return false;
@@ -87,7 +107,11 @@ function eligibleForStripeCardTrial(
 
   const out: LifecycleTemplateId[] = [];
   const checkins = c.checkin_count ?? 0;
-  const sinceCheckin = daysSinceCheckin(c.last_checkin_date, now);
+  const lastActivation = resolveLastActivationYmd(
+    c.last_checkin_date,
+    c.last_dagstart_date
+  );
+  const sinceActivation = daysSinceCheckin(lastActivation, now);
 
   // ~Dag 1: zachte terugkeer (twee dagen venster voor cron-missers)
   if (daysLeft === 6 || daysLeft === 5) {
@@ -98,8 +122,9 @@ function eligibleForStripeCardTrial(
   if (
     daysLeft >= 3 &&
     checkins >= 1 &&
-    sinceCheckin !== null &&
-    sinceCheckin >= 2
+    sinceActivation !== null &&
+    sinceActivation >= 2 &&
+    !recentlyActiveInApp(c.last_seen_at, now)
   ) {
     out.push("s2_still");
   }

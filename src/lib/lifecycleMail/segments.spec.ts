@@ -24,6 +24,7 @@ function candidate(
     checkout_started_at: null,
     checkin_count: 0,
     last_checkin_date: null,
+    last_seen_at: null,
     ...overrides,
   };
 }
@@ -228,6 +229,36 @@ describe("lifecycleMail segments", () => {
         })
       )
     ).toEqual(["s2_still"]);
+  });
+
+  it("Stripe 7d card-trial: geen S2 als dagstart vandaag (v2 zonder checkin-sync)", () => {
+    vi.setSystemTime(new Date("2026-08-07T14:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-08-14T08:36:28.000Z",
+          checkin_count: 1,
+          last_checkin_date: "2026-08-05",
+          last_dagstart_date: "2026-08-07",
+        })
+      )
+    ).not.toContain("s2_still");
+  });
+
+  it("Stripe 7d card-trial: geen S2 bij recent app-gebruik (<48u)", () => {
+    vi.setSystemTime(new Date("2026-07-24T12:00:00.000Z"));
+    expect(
+      eligibleTemplatesForCandidate(
+        candidate({
+          subscription_status: "trialing",
+          subscription_current_period_end: "2026-07-28T10:00:00.000Z",
+          checkin_count: 2,
+          last_checkin_date: "2026-07-21",
+          last_seen_at: "2026-07-23T18:00:00.000Z",
+        })
+      )
+    ).not.toContain("s2_still");
   });
 
   it("Stripe 7d card-trial: S3 bij ritme vóór pre-charge (daysLeft 3)", () => {
