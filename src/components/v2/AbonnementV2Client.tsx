@@ -18,8 +18,13 @@ import type { RetentionPaywallReason } from "@/lib/retentionPaywallAccess";
 import type { RetentionStats } from "@/lib/retentionStats";
 import { DEFAULT_STRIPE_TRIAL_DAYS } from "@/lib/stripe/trialConfig";
 import type { RegisterPlanId } from "@/lib/stripe/registerPlans";
-import { preloadStripeWallet, type WalletKind } from "@/lib/stripe/walletBootstrap";
+import {
+  deviceHasWalletPay,
+  preloadStripeWallet,
+  type WalletKind,
+} from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
+import { V2_CARD_TRIAL_DAYS } from "@/lib/stripe/v2CardTrial";
 import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 
@@ -118,8 +123,12 @@ export default function AbonnementV2Client({
   const autoStartTrialRef = useRef(false);
 
   useEffect(() => {
-    preloadStripeWallet();
-  }, []);
+    preloadStripeWallet(
+      startCardTrial || autoStartTrial
+        ? { trialDays: V2_CARD_TRIAL_DAYS }
+        : undefined
+    );
+  }, [startCardTrial, autoStartTrial]);
 
   useEffect(() => {
     setWhyAnchor(resolvePaywallWhyAnchor(state.why, state.whyOutcome));
@@ -180,13 +189,33 @@ export default function AbonnementV2Client({
 
   useEffect(() => {
     if (!autoStartTrial || !canCheckout || autoStartTrialRef.current) return;
-    autoStartTrialRef.current = true;
-    void startCheckout("monthly");
-  }, [autoStartTrial, canCheckout, startCheckout]);
+    let cancelled = false;
+    void (async () => {
+      // Apple/Google Pay op hosted Checkout + €0-trial faalt vaak (bank-sheet
+      // zonder knop). Blijf op de paywall als een wallet beschikbaar is.
+      const hasWallet = await deviceHasWalletPay({
+        trialDays: V2_CARD_TRIAL_DAYS,
+      });
+      if (cancelled) return;
+      autoStartTrialRef.current = true;
+      if (hasWallet) {
+        router.replace("/abonnement");
+        return;
+      }
+      void startCheckout("monthly");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [autoStartTrial, canCheckout, router, startCheckout]);
 
   const handleStaySuccess = useCallback(() => {
     setDoneMode("stay");
   }, []);
+
+  const handleCardTrialWalletSuccess = useCallback(() => {
+    router.replace("/?dagstart=open");
+  }, [router]);
 
   const handleStop = useCallback(() => {
     setDoneMode("stop");
@@ -250,6 +279,7 @@ export default function AbonnementV2Client({
 
     return (
       <V2Page>
+        <Script src="https://js.stripe.com/v3/" strategy="afterInteractive" />
         <header className="v2-card-trial__header">
           <Link href="/" className="v2-card-trial__brand">
             <Image
@@ -365,6 +395,23 @@ export default function AbonnementV2Client({
         </div>
 
         <section className="v2-card-trial__cta-dock">
+          {canCheckout ? (
+            <StripeWalletButtons
+              visibleWallets={visibleWallets}
+              disabled={busy}
+              trialDays={V2_CARD_TRIAL_DAYS}
+              plan={selectedPlan}
+              onSuccess={handleCardTrialWalletSuccess}
+              onUnavailable={() => setWalletFallback(true)}
+              onError={(msg) => toast.error(msg, { durationMs: 5000 })}
+            />
+          ) : null}
+          {walletFallback ? (
+            <p className="v2-card-trial__trust v2-card-trial__trust--secondary">
+              {WALLET_UNAVAILABLE_MESSAGE} Gebruik de knop hieronder, of iDEAL /
+              kaart.
+            </p>
+          ) : null}
           <button
             type="button"
             className="btn-primary w-full v2-card-trial__cta"

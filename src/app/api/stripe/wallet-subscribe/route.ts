@@ -5,7 +5,10 @@ import {
   createStripeServerClientFromEnv,
   profileFieldsFromStripeSubscription,
 } from "@/lib/stripe/syncProfileSubscription";
-import { STRIPE_PRICE_ID_MONTHLY } from "@/lib/stripe/registerPlans";
+import {
+  STRIPE_PRICE_ID_MONTHLY,
+  STRIPE_PRICE_ID_YEARLY,
+} from "@/lib/stripe/registerPlans";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import {
   getJasperStripeCouponId,
@@ -32,7 +35,7 @@ async function postWalletSubscribe(request: Request) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
   }
 
-  let body: { paymentMethodId?: string };
+  let body: { paymentMethodId?: string; plan?: string };
   try {
     body = await request.json();
   } catch {
@@ -44,6 +47,10 @@ async function postWalletSubscribe(request: Request) {
   if (!paymentMethodId) {
     return NextResponse.json({ error: "missing_payment_method" }, { status: 400 });
   }
+
+  const plan = body.plan === "yearly" ? "yearly" : "monthly";
+  const priceId =
+    plan === "yearly" ? STRIPE_PRICE_ID_YEARLY : STRIPE_PRICE_ID_MONTHLY;
 
   const supabase = await createClient();
   const {
@@ -114,7 +121,7 @@ async function postWalletSubscribe(request: Request) {
   const createSubscription = (withCoupon: boolean) =>
     stripe.subscriptions.create({
       customer: customerId,
-      items: [{ price: STRIPE_PRICE_ID_MONTHLY }],
+      items: [{ price: priceId }],
       default_payment_method: paymentMethodId,
       metadata: subscriptionMetadata,
       ...(trialDays > 0
@@ -177,7 +184,7 @@ async function postWalletSubscribe(request: Request) {
   try {
     await markCheckoutStartedAt(user.id);
     await captureServerEvent(user.id, ANALYTICS_EVENTS.checkout_started, {
-      plan: "monthly",
+      plan,
       surface: "app",
       method: "wallet",
       card_trial: freshV2CardTrial,
@@ -186,13 +193,13 @@ async function postWalletSubscribe(request: Request) {
       channel: "server",
     });
     await captureServerEvent(user.id, "subscription_started", {
-      plan: "monthly",
+      plan,
       method: "wallet",
       channel: "server",
     });
     if (refreshed.status === "trialing") {
       await captureServerEvent(user.id, ANALYTICS_EVENTS.trial_started, {
-        plan: "monthly",
+        plan,
         trial_days: trialDays,
         surface: "app",
         card_trial: freshV2CardTrial,

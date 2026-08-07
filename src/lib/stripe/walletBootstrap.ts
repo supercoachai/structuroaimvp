@@ -5,10 +5,9 @@ import {
   type Stripe,
 } from "@stripe/stripe-js";
 import { resolveStripePublishableKey } from "@/lib/stripe/stripePublishable";
+import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
 
 export type WalletKind = "applePay" | "googlePay";
-
-import { getVisibleWalletButtonsFromUserAgent } from "@/lib/stripe/walletDevice";
 
 /** Client-side: zelfde regels als server User-Agent detectie. */
 export function getVisibleWalletButtonsForDevice(): WalletKind[] {
@@ -16,24 +15,55 @@ export function getVisibleWalletButtonsForDevice(): WalletKind[] {
   return getVisibleWalletButtonsFromUserAgent(navigator.userAgent);
 }
 
-const AMOUNT_CENTS = 1299;
+/** Na proef / standaard abonnement (Apple Pay weigert vaak €0). */
+const PAID_AMOUNT_CENTS = 1299;
 
-const PAYMENT_REQUEST_BASE = {
-  country: "NL" as const,
-  currency: "eur" as const,
-  total: {
-    label: "Structuro · €12,99/maand",
-    amount: AMOUNT_CENTS,
-  },
-  requestPayerEmail: true,
-  requestPayerName: true,
+export type WalletPaymentRequestOptions = {
+  /**
+   * Card-trial paywall: toon proef-copy. Amount blijft >0 zodat Apple Pay
+   * op iOS een werkende sheet opent (Checkout €0-trial breekt wallets).
+   */
+  trialDays?: number;
+  /** monthly (default) of yearly: sheet-label + bedrag. */
+  plan?: "monthly" | "yearly";
 };
+
+/** Jaarprijs in centen (live Stripe yearly = €119). */
+const YEARLY_AMOUNT_CENTS = 11900;
+
+function paymentRequestBase(opts?: WalletPaymentRequestOptions) {
+  const trialDays =
+    typeof opts?.trialDays === "number" && opts.trialDays > 0
+      ? Math.floor(opts.trialDays)
+      : 0;
+  const yearly = opts?.plan === "yearly";
+  const amount = yearly ? YEARLY_AMOUNT_CENTS : PAID_AMOUNT_CENTS;
+  const afterPrice = yearly ? "€119/jaar" : "€12,99/mnd";
+  const label =
+    trialDays > 0
+      ? `Structuro · ${trialDays}d gratis, daarna ${afterPrice}`
+      : yearly
+        ? "Structuro · €119/jaar"
+        : "Structuro · €12,99/maand";
+  return {
+    country: "NL" as const,
+    currency: "eur" as const,
+    total: {
+      label,
+      // Apple Pay + Payment Request: €0-sheets falen of blijven hangen (NL-bank).
+      // We tonen de abonnementsprijs; wallet-subscribe start wél een trial zonder incasso.
+      amount,
+    },
+    requestPayerEmail: true,
+    requestPayerName: true,
+  };
+}
 
 let publishableKeyPromise: Promise<string | null> | null = null;
 let stripePromise: Promise<Stripe | null> | null = null;
-let walletInitPromise: Promise<WalletInitResult> | null = null;
+const walletInitByKey = new Map<string, Promise<WalletInitResult>>();
 
-/** Wordt per render bijgewerkt; init draait maar één keer per pagina-load. */
+/** Wordt per render bijgewerkt; init draait per config-key. */
 export const walletPaymentHandlers: {
   onPaymentMethod: ((ev: PaymentRequestPaymentMethodEvent) => void) | null;
 } = { onPaymentMethod: null };
@@ -54,20 +84,33 @@ export function getSharedStripe(): Promise<Stripe | null> {
   return stripePromise;
 }
 
+function walletInitKey(opts?: WalletPaymentRequestOptions): string {
+  const trialDays =
+    typeof opts?.trialDays === "number" && opts.trialDays > 0
+      ? Math.floor(opts.trialDays)
+      : 0;
+  const plan = opts?.plan === "yearly" ? "yearly" : "monthly";
+  return trialDays > 0 ? `trial:${trialDays}:${plan}` : `default:${plan}`;
+}
+
 /** Start Stripe.js + domein-check zo vroeg mogelijk (niet-blokkerend). */
-export function preloadStripeWallet(): void {
+export function preloadStripeWallet(opts?: WalletPaymentRequestOptions): void {
   if (typeof window === "undefined") return;
   void getSharedStripe();
-  void ensureWalletPaymentRequests();
+  void ensureWalletPaymentRequests(opts);
   void fetch("/api/stripe/ensure-payment-domain", {
     method: "POST",
     credentials: "include",
   }).catch(() => {});
 }
 
-function createPaymentRequest(stripe: Stripe, kind: WalletKind): PaymentRequest {
+function createPaymentRequest(
+  stripe: Stripe,
+  kind: WalletKind,
+  opts?: WalletPaymentRequestOptions
+): PaymentRequest {
   const pr = stripe.paymentRequest({
-    ...PAYMENT_REQUEST_BASE,
+    ...paymentRequestBase(opts),
     disableWallets:
       kind === "applePay"
         ? ["googlePay", "link", "browserCard"]
@@ -84,7 +127,10 @@ export type WalletInitResult = {
   requests: Record<WalletKind, PaymentRequest | null>;
 };
 
-async function runWalletInit(kinds: WalletKind[]): Promise<WalletInitResult> {
+async function runWalletInit(
+  kinds: WalletKind[],
+  opts?: WalletPaymentRequestOptions
+): Promise<WalletInitResult> {
   const empty: WalletInitResult = {
     available: { applePay: false, googlePay: false },
     requests: { applePay: null, googlePay: null },
@@ -97,7 +143,7 @@ async function runWalletInit(kinds: WalletKind[]): Promise<WalletInitResult> {
 
   const entries = await Promise.all(
     kinds.map(async (kind) => {
-      const pr = createPaymentRequest(stripe, kind);
+      const pr = createPaymentRequest(stripe, kind, opts);
       const canPay = await pr.canMakePayment();
       const ready =
         kind === "applePay"
@@ -115,8 +161,10 @@ async function runWalletInit(kinds: WalletKind[]): Promise<WalletInitResult> {
   return result;
 }
 
-/** Eén gedeelde init per pagina-load; voorkomt dubbele Stripe-setup en UI-flitsen. */
-export function ensureWalletPaymentRequests(): Promise<WalletInitResult> {
+/** Eén gedeelde init per config-key; voorkomt dubbele Stripe-setup en UI-flitsen. */
+export function ensureWalletPaymentRequests(
+  opts?: WalletPaymentRequestOptions
+): Promise<WalletInitResult> {
   const kinds = getVisibleWalletButtonsForDevice();
   if (!kinds.length) {
     return Promise.resolve({
@@ -124,8 +172,19 @@ export function ensureWalletPaymentRequests(): Promise<WalletInitResult> {
       requests: { applePay: null, googlePay: null },
     });
   }
-  if (!walletInitPromise) {
-    walletInitPromise = runWalletInit(kinds);
+  const key = walletInitKey(opts);
+  let pending = walletInitByKey.get(key);
+  if (!pending) {
+    pending = runWalletInit(kinds, opts);
+    walletInitByKey.set(key, pending);
   }
-  return walletInitPromise;
+  return pending;
+}
+
+/** True als Apple Pay of Google Pay op dit device beschikbaar is. */
+export async function deviceHasWalletPay(
+  opts?: WalletPaymentRequestOptions
+): Promise<boolean> {
+  const result = await ensureWalletPaymentRequests(opts);
+  return result.available.applePay || result.available.googlePay;
 }

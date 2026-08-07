@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaymentRequest } from "@stripe/stripe-js";
+import type { RegisterPlanId } from "@/lib/stripe/registerPlans";
 import {
   ensureWalletPaymentRequests,
   walletPaymentHandlers,
@@ -24,6 +25,10 @@ type StripeWalletButtonsProps = {
    * Lege array = geen wallet-zone tonen (geen disabled/grijze knoppen).
    */
   onReady?: (available: WalletKind[]) => void;
+  /** Card-trial: PaymentRequest-label met proefdagen. */
+  trialDays?: number;
+  /** monthly (default) of yearly voor wallet-subscribe. */
+  plan?: RegisterPlanId;
 };
 
 export function StripeWalletButtons({
@@ -33,6 +38,8 @@ export function StripeWalletButtons({
   onError,
   onUnavailable,
   onReady,
+  trialDays,
+  plan = "monthly",
 }: StripeWalletButtonsProps) {
   const paymentRequestsRef = useRef<Record<WalletKind, PaymentRequest | null>>({
     applePay: null,
@@ -43,11 +50,13 @@ export function StripeWalletButtons({
     googlePay: false,
   });
   const readyRef = useRef(false);
+  const planRef = useRef(plan);
   const callbacksRef = useRef({ onSuccess, onError, onUnavailable, onReady });
   const [walletBusy, setWalletBusy] = useState(false);
   /** null = nog niet gecheckt; daarna alleen écht beschikbare wallets. */
   const [liveWallets, setLiveWallets] = useState<WalletKind[] | null>(null);
 
+  planRef.current = plan;
   callbacksRef.current = { onSuccess, onError, onUnavailable, onReady };
 
   useEffect(() => {
@@ -60,7 +69,10 @@ export function StripeWalletButtons({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify({ paymentMethodId: ev.paymentMethod.id }),
+            body: JSON.stringify({
+              paymentMethodId: ev.paymentMethod.id,
+              plan: planRef.current,
+            }),
           });
           const data = (await res.json()) as { ok?: boolean; error?: string };
           if (!res.ok || !data.ok) {
@@ -82,7 +94,12 @@ export function StripeWalletButtons({
     };
 
     let cancelled = false;
-    void ensureWalletPaymentRequests().then((result) => {
+    readyRef.current = false;
+    setLiveWallets(null);
+    void ensureWalletPaymentRequests({
+      ...(trialDays && trialDays > 0 ? { trialDays } : {}),
+      plan,
+    }).then((result) => {
       if (cancelled) return;
       paymentRequestsRef.current = result.requests;
       availableRef.current = result.available;
@@ -95,7 +112,7 @@ export function StripeWalletButtons({
     return () => {
       cancelled = true;
     };
-  }, [visibleWallets]);
+  }, [visibleWallets, trialDays, plan]);
 
   const waitForReady = useCallback(async (maxMs = 4000) => {
     if (readyRef.current) return true;
@@ -119,7 +136,6 @@ export function StripeWalletButtons({
 
       const pr = paymentRequestsRef.current[kind];
       if (!pr || !availableRef.current[kind]) {
-        // Knop had niet zichtbaar mogen zijn; verberg i.p.v. grijs/disabled.
         setLiveWallets((prev) => {
           const next = (prev ?? []).filter((k) => k !== kind);
           callbacksRef.current.onReady?.(next);
@@ -165,7 +181,9 @@ export function StripeWalletButtons({
   if (!showApplePay && !showGooglePay) return null;
 
   const rowClass =
-    liveWallets.length > 1 ? "wallet-row wallet-row--two" : "wallet-row wallet-row--one";
+    liveWallets.length > 1
+      ? "wallet-row wallet-row--two"
+      : "wallet-row wallet-row--one";
 
   return (
     <div className={rowClass} aria-label="Wallet-betaling">

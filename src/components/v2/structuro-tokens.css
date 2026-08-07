@@ -1631,7 +1631,9 @@
   gap: 10px;
 }
 .v2-root .v2-abonnement .apple-pay-btn,
-.v2-root .v2-abonnement .samsung-pay-btn {
+.v2-root .v2-abonnement .samsung-pay-btn,
+.v2-root .v2-card-trial__cta-dock .apple-pay-btn,
+.v2-root .v2-card-trial__cta-dock .samsung-pay-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1644,28 +1646,38 @@
   font-size: 16px;
   font-weight: 600;
 }
-.v2-root .v2-abonnement .apple-pay-btn {
+.v2-root .v2-abonnement .apple-pay-btn,
+.v2-root .v2-card-trial__cta-dock .apple-pay-btn {
   background: #000;
   color: #fff;
 }
-.v2-root .v2-abonnement .samsung-pay-btn {
+.v2-root .v2-abonnement .samsung-pay-btn,
+.v2-root .v2-card-trial__cta-dock .samsung-pay-btn {
   background: #fff;
   color: #1a1a1b;
   border: 1.5px solid var(--border);
 }
-.v2-root .v2-abonnement .samsung-label {
+.v2-root .v2-abonnement .samsung-label,
+.v2-root .v2-card-trial__cta-dock .samsung-label {
   font-weight: 700;
   margin-right: 4px;
   letter-spacing: 0.02em;
 }
-.v2-root .v2-abonnement .apple-pay-mark {
+.v2-root .v2-abonnement .apple-pay-mark,
+.v2-root .v2-card-trial__cta-dock .apple-pay-mark {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
-.v2-root .v2-abonnement .apple-pay-logo {
+.v2-root .v2-abonnement .apple-pay-logo,
+.v2-root .v2-card-trial__cta-dock .apple-pay-logo {
   width: 18px;
   height: 22px;
+}
+.v2-root .v2-card-trial__cta-dock .wallet-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .v2-root .v2-abonnement__wallet-fallback {
   display: flex;
@@ -2030,14 +2042,15 @@
   );
 }
 .v2-root .v2-card-trial__cta-dock .v2-card-trial__cta,
-.v2-root .v2-card-trial__cta-dock .v2-card-trial__trust {
+.v2-root .v2-card-trial__cta-dock .v2-card-trial__trust,
+.v2-root .v2-card-trial__cta-dock .wallet-row {
   width: 100%;
   max-width: 420px;
   margin-left: auto;
   margin-right: auto;
 }
 .v2-root .v2-abonnement--card-trial-docked {
-  padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(200px + env(safe-area-inset-bottom, 0px));
 }
 .v2-root .v2-card-trial__cta {
   width: 100%;
