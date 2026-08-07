@@ -121,8 +121,11 @@ async function postSendLoginCode(request: Request) {
         tags: [{ name: "auth", value: "login_code" }],
       });
 
-      if (!sent.ok || sent.skipped) {
+      if (!sent.ok) {
         throw new Error(sent.error ?? "send_failed");
+      }
+      if (sent.skipped) {
+        throw new Error("send_failed");
       }
     } else {
       await sendSupabaseLoginOtp({
