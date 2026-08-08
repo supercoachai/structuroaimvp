@@ -1,18 +1,14 @@
 User-agent: *
 Allow: /
-Disallow: /cyclus/
 
 # Retrieval crawlers for AI-answer surfaces (GEO)
 User-agent: OAI-SearchBot
 Allow: /
-Disallow: /cyclus/
 
 User-agent: PerplexityBot
 Allow: /
-Disallow: /cyclus/
 
 User-agent: Google-Extended
 Allow: /
-Disallow: /cyclus/
 
 Sitemap: https://www.structuro.eu/sitemap.xml
