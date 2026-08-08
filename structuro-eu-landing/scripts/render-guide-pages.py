@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-08-08"
-CSS_V = "20260808e"
-OG_IMAGE = "https://www.structuro.eu/uploads/structuro-icon.png?v=20260730a"
+CSS_V = "20260808f"
+OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 
 GUIDES = [
     {
@@ -29,8 +29,8 @@ GUIDES = [
 <p>'Gewoon beginnen' klinkt logisch als je al weet wat er moet gebeuren. Voor een brein met executieve frictie is dat advies vaak het probleem zelf. De intentie is er. De startknop niet. Je blijft hangen tussen weten en doen, en dat voelt alsof je faalt terwijl je juist hard nadenkt.</p>
 
 <h2>Wat er gebeurt vóór je begint</h2>
-<p>Je ziet niet 'één mail beantwoorden'. Je ziet de hele keten: openen, nadenken, perfect formuleren, bijlagen, follow-up, mogelijke fouten. Die berg voelt als dreiging. Het zenuwstelsel kiest dan uitstel, scrolling of iets anders dat wél meteen beloont. Dat voelt als luiheid. Het is vaker overprikkeling plus een te grote eerste stap.</p>
-<p>Daarbij speelt tijdblindheid mee: de taak voelt of 'nu' of 'niet-nu'. Zonder een microscopisch kleine ingang blijft hij in 'niet-nu' hangen, ook als de deadline dichterbij komt.</p>
+<p>Je ziet niet 'één mail beantwoorden'. Je ziet de hele keten: openen, nadenken, perfect formuleren, bijlagen, follow-up, mogelijke fouten. Die berg voelt als dreiging. Dan kies je uitstel, scrolling of iets anders dat wél meteen beloont. Dat voelt als luiheid. Het is vaker overprikkeling plus een te grote eerste stap.</p>
+<p>Daarbij speelt tijdsperceptie mee: sommige mensen met ADHD schatten 'nu' versus 'later' minder scherp in (populair 'time blindness' genoemd). Dat is geen totale blindheid, wel een merkbare afwijking. Zonder een microscopisch kleine ingang blijft een taak in 'later' hangen, ook als de deadline dichterbij komt.</p>
 
 <h2>Waarom planners dit niet oplossen</h2>
 <p>Een agenda of to-do-lijst bewaart wat je moet doen. Hij helpt je zelden om de eerste micro-actie te vinden. Meer overzicht kan juist meer verlamming geven: elk item vraagt weer een beslissing. Als je dat herkent, is het probleem niet 'te weinig plannen'. Het is te weinig executie.</p>
@@ -41,7 +41,7 @@ GUIDES = [
 <li><strong>Eén zichtbare stap.</strong> Niet tien. Niet drie. Eén.</li>
 <li><strong>Energie eerst.</strong> Op een lage dag is 'document openen' genoeg als start. Zie <a href="/energie-first/">energie-first werken</a>.</li>
 <li><strong>Geen schuld over gisteren.</strong> Oude lijsten die je aanklagen maken starten zwaarder.</li>
-<li><strong>Korte feedback.</strong> Iets afronden, ook klein, geeft dopamine om door te gaan.</li>
+<li><strong>Korte feedback.</strong> Iets afronden, ook klein, maakt de volgende stap lichter. Dat is geen dopamine-belofte, wel een startbare beloningslus.</li>
 <li><strong>Zichtveld smal houden.</strong> De rest mag bestaan, maar niet tegelijk op je scherm. Methode: <a href="/een-stap-per-dag/">één stap per dag</a>.</li>
 </ul>
 
@@ -52,11 +52,11 @@ GUIDES = [
 <li>Maak die actie kleiner tot hij bijna belachelijk voelt.</li>
 <li>Doe alleen die actie. Stop daarna bewust, of ga door als er energie is.</li>
 </ol>
-<p>Dit is geen motivatiecoach. Het is frictie verlagen tot bewegen weer mogelijk is. Past ook bij een hoge mentale last: zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<p>Dit is geen motivatiecoach. Het is frictie verlagen tot bewegen weer mogelijk is. Kleine, situatie-gekoppelde eerste stappen sluiten aan bij wat onderzoek noemt implementatie-intenties: externe cues in plaats van wilskracht alleen. Structuro maakt daar een rustige, evidence-informed interface van, geen klinisch protocol.</p>
 
 <h2>Veelgemaakte valkuilen</h2>
 <p>Wachten op motivatie. Motivatie komt vaak ná de eerste micro-actie, niet ervoor. Alles eerst uitwerken in notities. Dat voelt als vooruitgang, maar houdt de echte start buiten beeld. Een nieuwe app installeren als vervanging voor beginnen. En tot slot: jezelf straffen met een strengere planner nadat een zachtere aanpak 'mislukte'. Meestal was de aanpak te groot, niet te zacht.</p>
-<p>Herken je die cyclus, dan is de correctie simpel: kleinere ingang, minder zichtbaar tegelijk, en een dagstart die keuzedruk verlaagt voordat je überhaupt een lijst opent.</p>
+<p>Herken je die cyclus, dan is de correctie simpel: kleinere ingang, minder zichtbaar tegelijk, en een dagstart die keuzedruk verlaagt vóór je überhaupt een lijst opent. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
 
 <h2>Hoe Structuro hierin past</h2>
 <p>Structuro is geen planner. Het is een rustige executie-interface: dagstart, max een paar taken zichtbaar, één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen schaamte-score. De belofte is niet 'meer organiseren', maar vandaag wél starten. Gebruik het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet raken. Klein beginnen is hier het punt, geen troostprijs.</p>
@@ -81,11 +81,33 @@ GUIDES = [
                 "Dan was de eerste stap alsnog winst. Kies desnoods een nog kleinere vervolgstap, of stop zonder schuld.",
             ),
         ],
+        "verantwoording_intro": (
+            "Deze gids beschrijft taakinitiatie-frictie als intentie-actiekloof, niet als luiheid. "
+            "Structuro is een evidence-informed ontwerpkeuze, geen klinische behandeling."
+        ),
+        "verantwoording_refs": [
+            (
+                "Faraone et al. (2015). Attention-deficit/hyperactivity disorder. Nature Reviews Disease Primers, 1, 15020.",
+                "https://doi.org/10.1038/nrdp.2015.27",
+            ),
+            (
+                "Willcutt et al. (2005). Validity of the executive function theory of ADHD: a meta-analytic review. Biological Psychiatry, 57(11), 1336–1346.",
+                "https://doi.org/10.1016/j.biopsych.2005.02.005",
+            ),
+            (
+                "Arnsten (2009). The emerging neurobiology of ADHD: the key role of the prefrontal association cortex. The Journal of Pediatrics, 154(5), I–S43.",
+                "https://doi.org/10.1016/j.jpeds.2009.01.018",
+            ),
+            (
+                "Gollwitzer & Sheeran (2006). Implementation intentions and goal achievement: A meta-analysis. Advances in Experimental Social Psychology, 38, 69–119.",
+                "https://doi.org/10.1016/S0065-2601(06)38002-1",
+            ),
+        ],
     },
     {
         "slug": "een-stap-per-dag",
         "eyebrow": "Methode",
-        "title": "Eén stap per dag: met een vol hoofd tóch beginnen",
+        "title": "Eén stap per dag: met vol hoofd tóch beginnen",
         "description": "Met een vol hoofd helpt niet méér plannen, maar één haalbare stap. Zo werkt de één-stap-methode zonder shame, streaks of overvolle lijsten.",
         "answer": (
             "Met een vol hoofd win je niet door meer te organiseren. Je wint door vandaag één stap te kiezen "
@@ -107,7 +129,7 @@ GUIDES = [
 <li>Je vermijdt de schaamte van een onafgemaakte mega-lijst.</li>
 <li>Je hoofd mag de rest 'parkeren' zonder dat die rest verdwijnt.</li>
 </ul>
-<p>Dat is geen minimalisme-hobby. Het is cognitieve ontlasting. Zie ook <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<p>Dat is geen minimalisme-hobby. Het is minder cognitieve belasting: je werkgeheugen hoeft minder tegelijk vast te houden. Zie ook <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
 
 <h2>Hoe je de stap kiest (praktisch)</h2>
 <ol>
@@ -131,9 +153,9 @@ GUIDES = [
 </ul>
 <p>Als de stap nog weerstand geeft, was hij nog te groot. Splits opnieuw. Dat is geen falen. Dat is het mechanisme.</p>
 
-<h2>Als je dag 'misukt'</h2>
+<h2>Als je dag 'mislukt'</h2>
 <p>Dan is er geen streak om te redden. Je hoeft gisteren niet in te halen om vandaag te mogen starten. Noteer desnoods opnieuw één stap die kleiner is dan wat gisteren te groot bleek. Consistentie ontstaat uit herhaalbaar kleine starts, niet uit perfecte weken. Dat is precies waarom deze methode vriendelijker is dan een planner die rode dagen stapelt.</p>
-<p>Gebruik desnoods een zin als anker: 'Vandaag telt één aanraking.' Meer mag. Minder mag niet onder nul: nul is stilstaan zonder nieuwe schuld. Als je merkt dat je toch weer een lange lijst opent 'voor overzicht', sluit hem. Overzicht zonder start vergroot de last. Start eerst, orden later als er energie over is.</p>
+<p>Gebruik desnoods een zin als anker: 'Vandaag telt één aanraking.' Meer mag. Minder mag niet onder nul: nul is stilstaan zonder nieuwe schuld. Taak-opdeling als losse interventie is niet RCT-bewezen; wél is het een evidence-informed onderdeel van gevalideerde organisatie- en CBT-pakketten bij ADHD.</p>
 
 <h2>In Structuro</h2>
 <p>De dagstart helpt je kiezen wat past bij je energie. Daarna zie je niet je hele leven, maar wat nu telt. Structuro is gebouwd als executie-hulp, niet als planner die taken spaart tot je eronder bezwijkt. Eén stap is het productprincipe, geen marketingslogan. De app bewaakt het smalle zichtveld zodat je niet terugvalt in 'alles tegelijk'.</p>
@@ -158,12 +180,34 @@ GUIDES = [
                 "Die mogen bestaan buiten beeld. Ze hoeven vandaag niet mee te kijken terwijl je start.",
             ),
         ],
+        "verantwoording_intro": (
+            "Één stap per dag is een evidence-informed werkwijze: kleinere ingangen passen bij delay discounting "
+            "en organisatie-interventies, niet bij een losse RCT voor 'chunking alleen'."
+        ),
+        "verantwoording_refs": [
+            (
+                "Jackson & MacKillop (2016). ADHD and monetary delay discounting: A meta-analysis. Biological Psychiatry: CNNI, 1(4), 316–325.",
+                "https://doi.org/10.1016/j.bpsc.2016.01.007",
+            ),
+            (
+                "Marx et al. (2021). ADHD and the choice of small immediate over larger delayed rewards. Journal of Attention Disorders, 25(2), 171–187.",
+                "https://doi.org/10.1177/1087054718772138",
+            ),
+            (
+                "Furukawa et al. (2014). Abnormal striatal BOLD responses to reward anticipation and delivery in ADHD. PLOS ONE, 9(2), e89129.",
+                "https://doi.org/10.1371/journal.pone.0089129",
+            ),
+            (
+                "Bikic et al. (2017). Meta-analysis of organizational skills interventions for children and adolescents with ADHD. Clinical Psychology Review, 52, 108–123.",
+                "https://doi.org/10.1016/j.cpr.2016.12.004",
+            ),
+        ],
     },
     {
         "slug": "waarom-planners-falen",
         "eyebrow": "Anti-planner",
-        "title": "Waarom planners falen bij een ADHD-brein (en wat wél helpt)",
-        "description": "Zoek je een Tiimo-alternatief of app zonder streaks? Planners bewaren taken. Executie helpt je starten. Waarom dat verschil ertoe doet voor ADHD-breinen.",
+        "title": "Waarom planners falen bij ADHD",
+        "description": "Zoek je een ADHD-app zonder streaks of schaamte? Planners bewaren taken. Executie helpt je starten. Waarom dat verschil ertoe doet voor ADHD-breinen.",
         "answer": (
             "Planners falen vaak niet omdat jij faalt. Ze optimaliseren voor overzicht, reminders en streaks. "
             "Een ADHD-brein heeft vooral hulp bij starten en afronden zonder schaamte. Wat helpt is een "
@@ -172,24 +216,25 @@ GUIDES = [
         ),
         "h1": "Waarom planners falen bij een ADHD-brein (en wat wél helpt)",
         "body": """
-<p>Misschien zoek je een 'Tiimo-alternatief', een 'rustige planner' of een 'ADHD-app zonder shame'. Die zoektermen wijzen vaak naar hetzelfde pijnpunt: klassieke planners voelen eerst hoopvol, daarna als bewijs dat je weer bent tekortgeschoten. De tool belooft structuur. Jij belooft jezelf dat je 'nu echt' gaat bijhouden. Tot de streak breekt of de kleurenlijst je verlamt.</p>
+<p>Misschien zoek je een 'ADHD-app zonder shame', een 'rustige planner' of iets dat niet voelt als een tweede baas. Die zoektermen wijzen vaak naar hetzelfde pijnpunt: klassieke planners voelen eerst hoopvol, daarna als bewijs dat je weer bent tekortgeschoten. De tool belooft structuur. Jij belooft jezelf dat je 'nu echt' gaat bijhouden. Tot de streak breekt of de kleurenlijst je verlamt.</p>
 
 <h2>Wat een planner wél doet</h2>
 <p>Hij bewaart taken, toont een week, stuurt herinneringen, viert streaks, nodigt uit tot tags en time-blocks. Voor sommige mensen werkt dat precies goed. Voor veel mensen met executieve frictie wordt de tool zelf een tweede baas: je moet het systeem onderhouden voordat je mag beginnen.</p>
 
 <h2>Waarom dat botst</h2>
 <ul>
-<li><strong>Meer zicht = meer last.</strong> Een volle agenda is geen startknop.</li>
+<li><strong>Meer zicht = meer last.</strong> Een volle agenda is geen startknop. Werkgeheugen kan sneller vol raken.</li>
 <li><strong>Streaks straffen stilte.</strong> Eén gemiste dag voelt als falen. Dan open je de app niet meer.</li>
 <li><strong>Perfectie vóór actie.</strong> Kleuren, tags en time-blocks voelen productief, maar stellen de start uit.</li>
 <li><strong>Neurotypische defaults.</strong> Consistente output elke dag is de lat. Jouw capaciteit schommelt.</li>
+<li><strong>Tijd op papier ≠ start in het hoofd.</strong> Planners gaan uit van een stabiel tijdsgevoel. Tijdsperceptie-deficits komen bij ADHD vaker voor, met matige effectgroottes.</li>
 </ul>
 
 <h2>Wat wél helpt: executie, niet plannen</h2>
 <p>Een systeem dat vraagt: hoe is je energie nu, en wat is één haalbare stap? Dat is geen weekoverzicht. Dat is vandaag helpen beginnen. Lees <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>, <a href="/een-stap-per-dag/">één stap per dag</a> en <a href="/energie-first/">energie-first werken</a>.</p>
 <p>De volgorde is anders dan bij planners: eerst starten, dan eventueel ordenen. Niet eerst het perfecte systeem, dan misschien doen.</p>
 
-<h2>Over 'Tiimo-alternatief' en vergelijkbare zoekintent</h2>
+<h2>Over 'alternatief voor planners' en vergelijkbare zoekintent</h2>
 <p>Mensen die dit zoeken willen vaak minder overprikkeling, minder gamification, of meer rust. Soms past een andere planner. Vaak past juist geen planner. Als visuele planning je raakt omdat het mooi is maar je niet in beweging krijgt, zoek je waarschijnlijk een executie-hulp: iets dat de eerste stap voor je uitlicht zonder weektheater.</p>
 
 <h2>Wanneer een planner wél mag blijven</h2>
@@ -205,13 +250,13 @@ GUIDES = [
 <p>Als je vooral herschikt, meer druk voelt, wegblijft na een misser, of geen eerste actie ziet, dan zoek je geen betere planner. Dan zoek je hulp om te beginnen. Dat onderscheid bespaart maanden tool-hopping.</p>
 
 <h2>Structuro positioneert zich expres niet als planner</h2>
-<p>Structuro is een rustige executie-app: dagstart, weinig taken tegelijk, focus, dagafsluiting. Geen streaks. Geen schaamte-score. Geen belofte dat je eindelijk 'georganiseerd' wordt. De belofte is smaller: vandaag weer kunnen beginnen, met minder oordeel. Afspraken mogen in je agenda blijven. Structuro richt zich op wat blijft liggen door startfrictie. Als je een 'Tiimo-alternatief' zoekt omdat gamification of visuele druk je treft, check eerst of je überhaupt nog een planner wilt, of juist hulp om te starten.</p>
+<p>Structuro is een rustige executie-app: dagstart, weinig taken tegelijk, focus, dagafsluiting. Geen streaks. Geen schaamte-score. Geen belofte dat je eindelijk 'georganiseerd' wordt. De belofte is smaller: vandaag weer kunnen beginnen, met minder oordeel. Afspraken mogen in je agenda blijven. Structuro richt zich op wat blijft liggen door startfrictie. Als je een alternatief voor planners zoekt omdat gamification of visuele druk je treft, check eerst of je überhaupt nog een planner wilt, of juist hulp om te starten.</p>
 """,
         "cta_title": "Geen planner. Wel starten.",
         "cta_p": "Probeer Structuro als executie-hulp: één eerste stap, passend bij je energie.",
         "faqs": [
             (
-                "Is Structuro een Tiimo-alternatief?",
+                "Is Structuro een alternatief voor planners?",
                 "Alleen in de zin dat mensen soms hetzelfde pijnpunt hebben. Structuro is geen visuele planner. Het is gebouwd om te starten en af te ronden, niet om je week te stylen.",
             ),
             (
@@ -227,6 +272,28 @@ GUIDES = [
                 "Niet per se. Als plannen je helpt starten, prima. Als plannen je start vervangt, zoek je iets anders: executie.",
             ),
         ],
+        "verantwoording_intro": (
+            "Planners falen voor veel ADHD-breinen door executie-frictie, werkgeheugenbelasting en tijdsperceptie-deficits. "
+            "'Time blindness' is een populaire term, geen DSM-diagnose."
+        ),
+        "verantwoording_refs": [
+            (
+                "Zheng et al. (2022). Time perception deficits in children and adolescents with ADHD: a meta-analysis. Journal of Attention Disorders, 26(2), 267–281.",
+                "https://doi.org/10.1177/1087054720978557",
+            ),
+            (
+                "Marx et al. (2022). Meta-analysis: altered perceptual timing abilities in ADHD. Journal of the American Academy of Child & Adolescent Psychiatry, 61(7), 866–880.",
+                "https://doi.org/10.1016/j.jaac.2021.12.004",
+            ),
+            (
+                "Martinussen et al. (2005). A meta-analysis of working memory impairments in children with ADHD. JAACAP, 44(4), 377–384.",
+                "https://doi.org/10.1097/01.chi.0000153228.72591.95",
+            ),
+            (
+                "Alderson et al. (2013). ADHD and working memory in adults: a meta-analytic review. Neuropsychology, 27(3), 287–302.",
+                "https://doi.org/10.1037/a0032374",
+            ),
+        ],
     },
     {
         "slug": "mentale-belasting-dagstart",
@@ -235,17 +302,17 @@ GUIDES = [
         "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte, rustige dagstart verlaagt keuzedruk en helpt je één stap kiezen zonder ochtendtheater.",
         "answer": (
             "Mentale belasting is de onzichtbare to-do in je hoofd: onthouden, kiezen, bijsturen. "
-            "Die last piekt vaak 's ochtends, nog vóór je iets gedaan hebt. Een korte dagstart verlaagt "
-            "keuzedruk: je checkt je energie, kiest wat haalbaar is, en laat de rest even uit zicht. "
-            "Zo wordt starten weer mogelijk zonder een perfecte ochtendroutine."
+            "Werkgeheugen heeft beperkte capaciteit; bij ADHD raakt dat sneller vol. Een korte dagstart "
+            "vermindert wat je tegelijk vasthoudt: energie checken, één stap kiezen, de rest uit zicht. "
+            "Zo wordt starten weer mogelijk zonder een perfecte ochtendroutine of extra wilskracht."
         ),
         "h1": "Mentale belasting en de dagstart",
         "body": """
 <p>Je kunt uitgerust wakker worden en tóch al moe zijn van je eigen hoofd. Dat is geen drama. Dat is mentale last: open loops, verwachtingen van anderen, onafgeronde gistertaken, en het gevoel dat je eerst moet organiseren voordat je mag beginnen. Hoe langer je die last meeneemt zonder hem te verkleinen, hoe zwaarder 'gewoon starten' voelt.</p>
 
 <h2>Waarom ochtenden zo zwaar voelen</h2>
-<p>Elke keuze kost energie. Welke taak eerst, hoe lang, hoe perfect, wat als het misgaat, wie je teleurstelt. Zonder ritueel opent je brein twintig tabbladen tegelijk. Dan voelt starten onmogelijk, ook als de taken op zich doenlijk zijn. Zie <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
-<p>Mentale last is niet alleen 'te veel werk'. Het is te veel parallel onthouden. Daarom helpt een dagstart die keuzes reduceert harder dan een langere ochtendchecklist.</p>
+<p>Het probleem is zelden 'te weinig wil'. Het is te veel tegelijk onthouden en afwegen. Werkgeheugen heeft beperkte capaciteit. Bij ADHD is dat vaak sneller vol, zeker als je parallel nadenkt over prioriteit, perfectie, deadlines en wat anderen verwachten. Zonder een kort ritueel opent je brein te veel tabbladen tegelijk. Dan voelt starten onmogelijk, ook als de taken op zich doenlijk zijn. Zie <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
+<p>Mentale last is niet alleen 'te veel werk'. Het is te veel parallel vasthouden. Daarom helpt een dagstart die keuzes en zichtbaarheid reduceert harder dan een langere ochtendchecklist. Dit is cognitive load verlagen, geen 'decision fatigue' als bewezen mechanisme.</p>
 
 <h2>Wat een goede dagstart wél is</h2>
 <ul>
@@ -258,7 +325,7 @@ GUIDES = [
 <p>Dat is anders dan een ochtendroutine van twaalf stappen met journaling, cold shower en weekreview. Minder theater. Meer bewegen.</p>
 
 <h2>Wat je uit beeld mag laten</h2>
-<p>Niet alles verdient een plek in je ochtend. Lange-termijnprojecten, 'ooit'-taken en perfectie-eisen mogen wachten tot er capaciteit is. Dat is geen vermijding als je wél één stap zet. Dat is prioriteren op zenuwstelselniveau. Past bij <a href="/energie-first/">energie-first werken</a>.</p>
+<p>Niet alles verdient een plek in je ochtend. Lange-termijnprojecten, 'ooit'-taken en perfectie-eisen mogen wachten tot er capaciteit is. Dat is geen vermijding als je wél één stap zet. Dat is prioriteren op wat vandaag past, niet op een medische uitleg. Past bij <a href="/energie-first/">energie-first werken</a>.</p>
 
 <h2>Signalen dat je last te hoog is</h2>
 <ul>
@@ -267,7 +334,7 @@ GUIDES = [
 <li>Je voelt schuld over gisteren vóór je vandaag mag beginnen.</li>
 <li>Kleine taken voelen even zwaar als grote.</li>
 </ul>
-<p>Die signalen vragen niet om meer discipline. Ze vragen om minder parallelle keuzes en een kortere brug naar de eerste actie.</p>
+<p>Die signalen vragen niet om meer discipline. Ze vragen om minder parallelle keuzes, minder werkgeheugenbelasting, en een kortere brug naar de eerste actie.</p>
 
 <h2>Mini-script voor een zware ochtend</h2>
 <ol>
@@ -277,11 +344,11 @@ GUIDES = [
 <li>Kies één stap die bij die stand past.</li>
 <li>Verberg of negeer de rest tot die stap gebeurd is.</li>
 </ol>
-<p>Dit script is expres saai. Saai wint van theatraal als je hoofd al vol is. Combineer het met anti-planner keuzes als je merkt dat je toch weer een weekoverzicht gaat bouwen vóór je die ene stap doet. Saai is hier een feature: hoe minder beslisdruk in het ritueel, hoe groter de kans dat je überhaupt begint.</p>
-<p>Schrijf het script desnoods op een briefje. Niet om een nieuw systeem te bouwen, maar om 's ochtends niet opnieuw te hoeven ontwerpen hoe je mag starten.</p>
+<p>Dit script is expres saai. Saai wint van theatraal als je hoofd al vol is. Combineer het met anti-planner keuzes als je merkt dat je toch weer een weekoverzicht gaat bouwen vóór je die ene stap doet. Hoe minder je 's ochtends hoeft te ontwerpen, hoe minder cognitieve belasting vóór de start.</p>
+<p>Schrijf het script desnoods op een briefje. Niet om een nieuw systeem te bouwen, maar om 's ochtends niet opnieuw te hoeven bedenken hoe je mag starten.</p>
 
 <h2>Hoe Structuro de last verlaagt</h2>
-<p>De dagstart is de kernlus: energie, keuze, beginnen. Daarna focus. Aan het eind van de dag mag het leeg: afronden zonder schuld. Structuro is geen planner die mentale last opslaat als een oneindige lijst. Het is een prikkelarme interface om vandaag weer beweegbaar te maken, ook als je hoofd al vol begon. De winst zit in minder zichtbaar tegelijk, niet in meer features.</p>
+<p>De dagstart is de kernlus: energie, keuze, beginnen. Daarna focus. Aan het eind van de dag mag het leeg: afronden zonder schuld. Structuro is geen planner die mentale last opslaat als een oneindige lijst. Het is een prikkelarme, evidence-informed interface om vandaag weer beweegbaar te maken, ook als je hoofd al vol begon. De winst zit in minder zichtbaar tegelijk, niet in meer features.</p>
 """,
         "cta_title": "Begin met een rustige dagstart",
         "cta_p": "Geen perfecte ochtendroutine. Wel een korte check en één haalbare stap.",
@@ -303,6 +370,28 @@ GUIDES = [
                 "Soms. Vaak verhoogt die juist de lat vóór je mag starten. Korter is meestal vriendelijker bij een vol hoofd.",
             ),
         ],
+        "verantwoording_intro": (
+            "Mentale belasting wordt hier verklaard via cognitive load en werkgeheugen, niet via decision fatigue "
+            "of medische claims. Structuro is een evidence-informed ontwerpkeuze."
+        ),
+        "verantwoording_refs": [
+            (
+                "Sweller (1988). Cognitive load during problem solving: effects on learning. Cognitive Science, 12(2), 257–285.",
+                "https://doi.org/10.1016/0273-2307(88)90023-7",
+            ),
+            (
+                "Martinussen et al. (2005). A meta-analysis of working memory impairments in children with ADHD. JAACAP, 44(4), 377–384.",
+                "https://doi.org/10.1097/01.chi.0000153228.72591.95",
+            ),
+            (
+                "Alderson et al. (2013). ADHD and working memory in adults: a meta-analytic review. Neuropsychology, 27(3), 287–302.",
+                "https://doi.org/10.1037/a0032374",
+            ),
+            (
+                "Coogan & McGowan (2017). A systematic review of circadian function, chronotype and chronotherapy in ADHD. ADHD Attention Deficit and Hyperactivity Disorders, 9, 129–147.",
+                "https://doi.org/10.1007/s12402-016-0214-5",
+            ),
+        ],
     },
     {
         "slug": "energie-first",
@@ -317,7 +406,7 @@ GUIDES = [
         ),
         "h1": "Energie-first werken in plaats van moeten",
         "body": """
-<p>'Moeten' negeert je batterij. Het zet een vaste lat, ook als je hoofd vol is of je lijf traag. Energie-first draait die volgorde om: eerst voelen wat er is, dan kiezen wat past. Dat klinkt soft. In de praktijk is het vaak de enige manier om consistent genoeg te bewegen zonder wekelijkse crash.</p>
+<p>'Moeten' negeert je batterij. Het zet een vaste lat, ook als je hoofd vol is of je lijf traag. Energie-first draait die volgorde om: eerst voelen wat er is, dan kiezen wat past. Dat klinkt soft. In de praktijk is het vaak de enige manier om consistent genoeg te bewegen zonder wekelijkse crash. Het mechanisme sluit aan bij state-regulation en arousal-variatie bij ADHD; plannen op energie is een theoretisch gemotiveerde ontwerpkeuze, geen klinisch bewezen protocol.</p>
 
 <h2>Drie standen, simpel gehouden</h2>
 <ul>
@@ -372,6 +461,28 @@ GUIDES = [
                 "Nee. Een eerlijke check in drie standen is genoeg. Geen wearables of diagnoses nodig.",
             ),
         ],
+        "verantwoording_intro": (
+            "Energie-first sluit aan bij state-regulation en het inverted-U-model voor prefrontale functie. "
+            "Directe RCT-evidence voor 'plan op energie i.p.v. klok' ontbreekt; dit is een evidence-informed ontwerpkeuze."
+        ),
+        "verantwoording_refs": [
+            (
+                "Sergeant (2005). Modeling ADHD: a critical appraisal of the cognitive-energetic model. Biological Psychiatry, 57(11), 1248–1255.",
+                "https://doi.org/10.1016/j.biopsych.2005.03.024",
+            ),
+            (
+                "Arnsten (2011). Catecholamine influences on dorsolateral prefrontal cortical networks. Biological Psychiatry, 69(12), e89–e99.",
+                "https://doi.org/10.1016/j.biopsych.2011.01.027",
+            ),
+            (
+                "Coogan & McGowan (2017). A systematic review of circadian function, chronotype and chronotherapy in ADHD. ADHD Attention Deficit and Hyperactivity Disorders, 9, 129–147.",
+                "https://doi.org/10.1007/s12402-016-0214-5",
+            ),
+            (
+                "Frontiers in Psychiatry (2023). Arousal dysregulation and executive dysfunction in ADHD. DOI: 10.3389/fpsyt.2023.1336040.",
+                "https://doi.org/10.3389/fpsyt.2023.1336040",
+            ),
+        ],
     },
 ]
 
@@ -406,6 +517,26 @@ def faq_html(faqs: list[tuple[str, str]]) -> str:
     return "\n".join(
         f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in faqs
     )
+
+
+def verantwoording_html(g: dict) -> str:
+    refs = g.get("verantwoording_refs") or []
+    if not refs:
+        return ""
+    intro = g.get("verantwoording_intro", "")
+    items = "\n".join(
+        f'      <li><a href="{esc(url)}" rel="noopener noreferrer">{esc(cite)}</a></li>'
+        for cite, url in refs
+    )
+    return f"""  <section class="guide-verantwoording" aria-label="Wetenschappelijke verantwoording">
+    <details>
+      <summary>Verantwoording</summary>
+      <p>{esc(intro)}</p>
+      <ul>
+{items}
+      </ul>
+    </details>
+  </section>"""
 
 
 def faq_schema(faqs: list[tuple[str, str]]) -> str:
@@ -472,7 +603,7 @@ def breadcrumb_schema(g: dict) -> str:
                     "@type": "ListItem",
                     "position": 2,
                     "name": "Gidsen",
-                    "item": "https://www.structuro.eu/waarom-gewoon-beginnen-niet-werkt/",
+                    "item": "https://www.structuro.eu/gidsen/",
                 },
                 {
                     "@type": "ListItem",
@@ -518,11 +649,12 @@ def render(g: dict) -> str:
 <meta property="og:url" content="https://www.structuro.eu/{slug}/"/>
 <meta property="og:image" content="{OG_IMAGE}"/>
 <meta property="og:image:width" content="1200"/>
-<meta property="og:image:height" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
 <meta property="og:type" content="article"/>
 <meta property="article:published_time" content="{PUBLISHED}"/>
 <meta property="article:modified_time" content="{MODIFIED}"/>
-<meta name="twitter:card" content="summary"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="{esc(title)}"/>
 <meta name="twitter:description" content="{esc(g["description"])}"/>
 <meta name="twitter:image" content="{OG_IMAGE}"/>
@@ -590,6 +722,8 @@ def render(g: dict) -> str:
     </ul>
   </nav>
 
+{verantwoording_html(g)}
+
   <p class="guide-note">Structuro is een prikkelarme executie-app, geen medisch advies en geen planner. Geen diagnose of behandeling.</p>
 </main>
 
@@ -601,7 +735,7 @@ def render(g: dict) -> str:
         Structuro
       </a>
       <div class="foot-links">
-        <a href="/waarom-gewoon-beginnen-niet-werkt/">Gidsen</a>
+        <a href="/gidsen/">Gidsen</a>
         <a href="/#prijs">Prijs</a>
         <a href="/#faq">FAQ</a>
         <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=footer_login">Inloggen</a>
@@ -626,12 +760,12 @@ def render(g: dict) -> str:
 def write_sitemap() -> None:
     urls = [
         ("https://www.structuro.eu/", "1.0"),
+        ("https://www.structuro.eu/gidsen/", "0.85"),
         ("https://www.structuro.eu/waarom-gewoon-beginnen-niet-werkt/", "0.9"),
         ("https://www.structuro.eu/een-stap-per-dag/", "0.8"),
         ("https://www.structuro.eu/waarom-planners-falen/", "0.8"),
         ("https://www.structuro.eu/mentale-belasting-dagstart/", "0.8"),
         ("https://www.structuro.eu/energie-first/", "0.8"),
-        ("https://www.structuro.eu/llms.txt", "0.3"),
     ]
     items = []
     for loc, prio in urls:

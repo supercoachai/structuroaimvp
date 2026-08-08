@@ -318,7 +318,7 @@
         "Eerst ervaar je de dagstart anoniem. Daarna maak je een account en start je 7 dagen trial. Bij laag energie krijg je één eerste stap. Bij meer energie maximaal drie.",
       faq_cycle_q: "Hoe komen cyclus en ADHD samen?",
       faq_cycle_a:
-        'Sommige weken voelt je brein anders. Structuro houdt optioneel rekening met je cyclusfase: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Meer lezen? <a href="/cyclus/">Bekijk de cyclus-pagina</a>.',
+        "Sommige weken voelt je energie anders. In Structuro kun je optioneel je cyclusfase meenemen als stille context naast je energie: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Geen diagnose, geen sturing.",
       story_eyebrow: "Het verhaal achter Structuro",
       story_h2:
         "Trots op mijn brein, maar soms gevloerd door één simpel mailtje.",
@@ -646,7 +646,7 @@
         "First you try the day start anonymously. Then you create an account and start a 7-day trial. On low energy you get one first step. With more energy, up to three.",
       faq_cycle_q: "How do cycle and ADHD meet?",
       faq_cycle_a:
-        'Some weeks your brain feels different. Structuro can optionally factor in your cycle phase: gentler suggestions in heavier weeks, no pressure to do more. You turn it on yourself. Want more? <a href="/cyclus/">Read the cycle page</a>.',
+        "Some weeks your energy feels different. In Structuro you can optionally include your cycle phase as quiet context next to your energy: gentler suggestions in heavier weeks, no pressure to do more. You turn it on yourself. No diagnosis, no steering.",
       story_eyebrow: "The story behind Structuro",
       story_h2:
         "Proud of my brain, but sometimes floored by one simple email.",

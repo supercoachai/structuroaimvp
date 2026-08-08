@@ -56,14 +56,14 @@
     },
     {
       tag: { nl: 'CYCLUS', en: 'CYCLE' },
-      title: { nl: 'Hormonen en focus', en: 'Hormones and focus' },
+      title: { nl: 'Energie over de maand', en: 'Energy across the month' },
       short: {
         nl: 'Sommige weken werkt mijn brein anders.',
         en: 'Some weeks my brain works differently.',
       },
       body: {
-        nl: 'Oestrogeen en progesteron sturen dopamine mee. Structuro past je workload aan op je cyclusfase, zonder je te vergelijken met gisteren.',
-        en: 'Estrogen and progesterone steer dopamine too. Structuro adapts your workload to your cycle phase, without comparing you to yesterday.',
+        nl: 'Sommige weken voelt starten zwaarder. In Structuro kun je optioneel je cyclusfase meenemen als stille context naast je energie, zonder je te vergelijken met gisteren.',
+        en: 'Some weeks starting feels heavier. In Structuro you can optionally include your cycle phase as quiet context next to your energy, without comparing you to yesterday.',
       },
       contentId: 'zelftest_cyclus',
     },

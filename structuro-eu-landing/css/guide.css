@@ -136,6 +136,25 @@ img{display:block;max-width:100%;height:auto}
   margin:10px 0 0;font-size:14.5px;color:rgba(26,35,64,.78);line-height:1.55;
 }
 
+.guide-verantwoording{margin:2rem 0 0}
+.guide-verantwoording details{
+  border:1px solid rgba(26,35,64,.10);border-radius:12px;background:#fff;
+  padding:12px 14px;
+}
+.guide-verantwoording summary{
+  cursor:pointer;font-weight:650;font-size:14.5px;color:var(--v2-text);
+}
+.guide-verantwoording p{
+  margin:10px 0 0;font-size:14px;color:rgba(26,35,64,.78);line-height:1.55;
+}
+.guide-verantwoording ul{
+  margin:10px 0 0;padding-left:18px;
+}
+.guide-verantwoording li{
+  margin:0 0 8px;font-size:13.5px;color:rgba(26,35,64,.78);line-height:1.5;
+}
+.guide-verantwoording a{color:var(--v2-teal);word-break:break-word}
+
 .guide-note{
   margin:1.6rem 0 0;font-size:13px;color:var(--v2-text-faint);line-height:1.5;
 }

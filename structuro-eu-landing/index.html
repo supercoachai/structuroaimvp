@@ -8,10 +8,13 @@
 <link rel="canonical" href="https://www.structuro.eu/"/>
 <meta property="og:title" content="Structuro, rust voor je ADHD-brein"/>
 <meta property="og:description" content="Structuro begint bij lage energie met één eerste stap. Jij bevestigt, en begint."/>
-<meta property="og:image" content="https://www.structuro.eu/uploads/structuro-icon.png?v=20260730a"/>
+<meta property="og:image" content="https://www.structuro.eu/uploads/og-share.png?v=20260808a"/>
 <meta property="og:image:width" content="1200"/>
-<meta property="og:image:height" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
 <meta property="og:url" content="https://www.structuro.eu/"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://www.structuro.eu/uploads/og-share.png?v=20260808a"/>
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
@@ -23,19 +26,76 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
 <script defer src="/js/analytics.js?v=20260730g"></script>
-<script defer src="/v2/v2-i18n.js?v=20260730f"></script>
+<script defer src="/v2/v2-i18n.js?v=20260808a"></script>
 <script defer src="/v2/v2-motion.js?v=20260730i"></script>
-<script defer src="/js/landing-zelftest.js?v=20260729a"></script>
+<script defer src="/js/landing-zelftest.js?v=20260808a"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/v2/v2-tokens.css?v=20260730b">
 <link rel="stylesheet" href="/v2/v2-landing.css?v=20260730j">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.structuro.eu/#organization",
+      "name": "Structuro",
+      "url": "https://www.structuro.eu/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.structuro.eu/uploads/logo-structuro-mark.png"
+      },
+      "email": "info@structuro.eu",
+      "sameAs": [
+        "https://www.instagram.com/structuro.ai/",
+        "https://www.tiktok.com/@structuro.ai",
+        "https://www.linkedin.com/company/structuro"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.structuro.eu/#website",
+      "url": "https://www.structuro.eu/",
+      "name": "Structuro",
+      "publisher": { "@id": "https://www.structuro.eu/#organization" },
+      "inLanguage": "nl-NL"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://www.structuro.eu/#app",
+      "name": "Structuro",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "url": "https://www.structuro.ai/",
+      "description": "Rustige executie-app voor ADHD-breinen: dagstart op energie, één eerste stap, geen streaks of shame.",
+      "publisher": { "@id": "https://www.structuro.eu/#organization" },
+      "offers": [
+        {
+          "@type": "Offer",
+          "price": "12.99",
+          "priceCurrency": "EUR",
+          "category": "subscription",
+          "description": "Maandelijks abonnement"
+        },
+        {
+          "@type": "Offer",
+          "price": "119.00",
+          "priceCurrency": "EUR",
+          "category": "subscription",
+          "description": "Jaarabonnement"
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
 <header class="site-header" id="siteHeader">
 <div class="wrap nav">
-<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="30" height="30"></span>Structuro</a>
+<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="30" height="30"></span>Structuro</a>
 <nav class="nav-links">
 <a href="#brein-termen" data-i18n="nav_why">Herkenning</a>
 <a href="#dagstart" data-i18n="nav_how">Dagstart</a>
@@ -467,7 +527,7 @@
 <details class="faq-item" data-faq-id="refund"><summary><span data-i18n="faq_refund_q">Hoe werkt de 7 dagen gratis?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_refund_a">Je probeert eerst de dagstart, nog zonder account.<br><br>Daarna maak je een account en start je 7 dagen gratis. Daarvoor geef je een betaalmethode op, maar die week betaal je niets.<br><br>Vóór we iets afschrijven mailen we je, met een stop-knop (één klik). Stoppen kan ook via Instellingen → Abonnement beheren.<br><br>Niet tevreden binnen 14 dagen na je eerste betaling? Geld terug, zonder rompslomp.</p></details>
 <details class="faq-item" data-faq-id="privacy"><summary><span data-i18n="faq_privacy_q">Hoe gaan jullie om met mijn gegevens?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_privacy_a">Je gegevens blijven van jou, opgeslagen binnen de EU. We verkopen niets door en je kunt alles op elk moment verwijderen.</p></details>
 <details class="faq-item" data-faq-id="eerste-keer"><summary><span data-i18n="faq_first_q">Wat zie ik als ik de eerste keer inlog?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_first_a">Eén vraag: hoe is je energie? Daarna stelt Structuro maximaal drie dingen voor. Jij bevestigt, en je dag is begonnen. Geen setup, geen lege lijsten.</p></details>
-<details class="faq-item" id="faq-cyclus" data-faq-id="cyclus"><summary><span data-i18n="faq_cycle_q">Hoe komen cyclus en ADHD samen?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_cycle_a">Sommige weken voelt je brein anders. Structuro houdt optioneel rekening met je cyclusfase: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Meer lezen? <a href="/cyclus/">Bekijk de cyclus-pagina</a>.</p></details>
+<details class="faq-item" id="faq-cyclus" data-faq-id="cyclus"><summary><span data-i18n="faq_cycle_q">Hoe komen cyclus en ADHD samen?</span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"></path></svg></summary><p class="fa" data-i18n="faq_cycle_a">Sommige weken voelt je energie anders. In Structuro kun je optioneel je cyclusfase meenemen als stille context naast je energie: zachtere voorstellen in zwaardere weken, geen druk om meer te doen. Je zet het zelf aan in de app. Geen diagnose, geen sturing.</p></details>
 </div>
 </div>
 </section>
@@ -591,12 +651,12 @@
 <footer>
 <div class="wrap">
 <div class="foot-top">
-<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="28" height="28"></span>Structuro</a>
+<a class="brand" href="#top"><span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="28" height="28"></span>Structuro</a>
 <nav class="foot-links">
 <a href="#dagstart" data-i18n="nav_how">Dagstart</a>
 <a href="#prijs" data-i18n="nav_price">Prijs</a>
 <a href="#faq" data-i18n="nav_faq">FAQ</a>
-<a href="/waarom-gewoon-beginnen-niet-werkt/" data-ph-cta="footer_gidsen">Gidsen</a>
+<a href="/gidsen/" data-ph-cta="footer_gidsen">Gidsen</a>
 <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=footer_signin" data-ph-cta="footer_signin" data-i18n="nav_login">Inloggen</a>
 <a href="mailto:info@structuro.eu">info@structuro.eu</a>
 </nav>

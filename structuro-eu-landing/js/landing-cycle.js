@@ -16,20 +16,20 @@
       lightColor: '#FEF2F2',
       gradId: 'grad0',
       glowId: 'segGlow0',
-      nl: { name: 'Menstruatie', days: 'Dag 1–5', sub: 'Lage dopamine, lage energie', str: 'Structuro: minder taken, meer rust' },
-      en: { name: 'Menstrual', days: 'Day 1–5', sub: 'Low dopamine, low energy', str: 'Structuro: fewer tasks, more rest' },
+      nl: { name: 'Menstruatie', days: 'Dag 1–5', sub: 'Lage energie, meer rust', str: 'Structuro: minder taken, meer rust' },
+      en: { name: 'Menstrual', days: 'Day 1–5', sub: 'Low energy, more rest', str: 'Structuro: fewer tasks, more rest' },
       nlInfo: {
         adhd:
-          'Oestrogeen en progesteron zijn op hun laagst. Dopamine-aanmaak daalt mee. Voor iemand met ADHD, die sowieso minder dopamine heeft, is dit vaak de zwaarste week van de cyclus.',
+          'Voor veel mensen voelt deze fase zwaarder: starten kost meer, en kleine taken kunnen groot lijken. Dat zegt niets over karakter. Het zegt iets over capaciteit vandaag.',
         voel:
-          'Taken lijken onmogelijk groot. Emoties zijn moeilijker te reguleren, impulscontrole kan bijna afwezig voelen. Niet omdat je lui bent: je neurochemie zit er vaak gewoon niet in.',
+          'Taken lijken onmogelijk groot. Emoties zijn lastiger te dragen. Niet omdat je lui bent: je batterij is gewoon lager.',
         str: 'Maximaal 1 taak, zo klein mogelijk omschreven. Geen druk op afronding. Structuro telt rust ook als een goede dag.',
       },
       enInfo: {
         adhd:
-          'Estrogen and progesterone are at their lowest. Dopamine production drops with them. For someone with ADHD who already has lower dopamine, this is often the hardest week of the cycle.',
+          'For many people this phase feels heavier: starting costs more, and small tasks can look huge. That is not character. It is capacity today.',
         voel:
-          'Tasks can feel impossibly large. Emotions may be harder to regulate, impulse control nearly absent. Not because you are lazy: your neurochemistry often just is not there.',
+          'Tasks can feel impossibly large. Emotions may be harder to carry. Not because you are lazy: your battery is simply lower.',
         str: 'Maximum 1 task, described as small as possible. No pressure to complete. Structuro counts rest as a good day too.',
       },
     },
@@ -41,18 +41,18 @@
       lightColor: '#F0FDF4',
       gradId: 'grad1',
       glowId: 'segGlow1',
-      nl: { name: 'Folliculair', days: 'Dag 6–13', sub: 'Stijgende oestrogeen, herstellende focus', str: 'Structuro: gewone capaciteit' },
-      en: { name: 'Follicular', days: 'Day 6–13', sub: 'Rising estrogen, focus returns', str: 'Structuro: regular capacity' },
+      nl: { name: 'Folliculair', days: 'Dag 6–13', sub: 'Energie komt terug', str: 'Structuro: gewone capaciteit' },
+      en: { name: 'Follicular', days: 'Day 6–13', sub: 'Energy returns', str: 'Structuro: regular capacity' },
       nlInfo: {
         adhd:
-          'Stijgend oestrogeen trekt dopamine mee omhoog. Werkgeheugen en taakinitiatie verbeteren bij veel mensen merkbaar. Je brein begint weer te “werken”.',
+          'Bij veel mensen komt focus en starten in deze fase makkelijker terug. Wat vorige week zwaar voelde, kan nu weer doenlijk zijn.',
         voel:
           'Meer energie, ideeën kunnen makkelijker komen, taken voelen haalbaarder. Dingen die vorige week zwaar waren, lukken nu vaak gewoon.',
         str: 'Gewone capaciteit, 2 à 3 taken zijn voor veel mensen haalbaar. Goede fase om taken aan te pakken die je al een tijdje uitstelt.',
       },
       enInfo: {
         adhd:
-          'Rising estrogen brings dopamine with it. Working memory and task initiation often improve noticeably. Your brain starts “working” again.',
+          'For many people focus and starting come back more easily in this phase. What felt heavy last week can feel doable again.',
         voel:
           'More energy, ideas may come more easily, tasks can feel more manageable. Things that felt heavy last week often work out now.',
         str: 'Regular capacity, 2 or 3 tasks are manageable for many people. Good phase to tackle things you have been putting off.',
@@ -66,20 +66,20 @@
       lightColor: '#FFFBEB',
       gradId: 'grad2',
       glowId: 'segGlow2',
-      nl: { name: 'Ovulatie', days: 'Dag 14', sub: 'Piek dopamine, hoogste helderheid', str: 'Structuro: ruimte voor zware taken' },
-      en: { name: 'Ovulation', days: 'Day 14', sub: 'Peak dopamine, highest clarity', str: 'Structuro: room for hard tasks' },
+      nl: { name: 'Ovulatie', days: 'Dag 14', sub: 'Vaak meer helderheid', str: 'Structuro: ruimte voor zware taken' },
+      en: { name: 'Ovulation', days: 'Day 14', sub: 'Often more clarity', str: 'Structuro: room for hard tasks' },
       nlInfo: {
         adhd:
-          'Oestrogeen piekt, dopamine en serotonine pieken mee. Executiefuncties zoals focus en starten zijn voor veel mensen op hun sterkst.',
+          'Voor veel mensen voelt starten en focussen rond deze dag het makkelijkst. Gebruik die ruimte als die er is, zonder er een regel van te maken.',
         voel:
-          'Vaak de beste dag van de maand. Taken die normaal wilskracht kosten, kunnen vanzelf gaan. Hoofd voelt helder, energie stabieler dan de rest van de cyclus.',
+          'Vaak een van de helderste dagen. Taken die normaal wilskracht kosten, kunnen soepeler gaan. Energie voelt stabieler.',
         str: 'Ruimte voor de zwaarste taak op je lijst. Plan lastige gesprekken of complexe taken op of rondom deze dag.',
       },
       enInfo: {
         adhd:
-          'Estrogen peaks, and dopamine and serotonin peak with it. Executive functions like focus and getting started are at their strongest for many people.',
+          'For many people starting and focusing feel easiest around this day. Use that room when it is there, without turning it into a rule.',
         voel:
-          'Often the best day of the month. Tasks that normally drain willpower can flow easily. Mind feels clear, energy more stable than the rest of the cycle.',
+          'Often one of the clearest days. Tasks that normally drain willpower can flow more easily. Energy feels more stable.',
         str: 'Room for the hardest task on your list. Schedule difficult conversations or complex work on or around this day.',
       },
     },
@@ -91,18 +91,18 @@
       lightColor: '#F5F3FF',
       gradId: 'grad3',
       glowId: 'segGlow3',
-      nl: { name: 'Luteaal', days: 'Dag 15–28', sub: 'Dalende oestrogeen, brain fog', str: 'Structuro: minder forceren, suggesties op maat' },
-      en: { name: 'Luteal', days: 'Day 15–28', sub: 'Falling estrogen, brain fog', str: 'Structuro: less forcing, tailored suggestions' },
+      nl: { name: 'Luteaal', days: 'Dag 15–28', sub: 'Meer frictie, minder forceren', str: 'Structuro: minder forceren, suggesties op maat' },
+      en: { name: 'Luteal', days: 'Day 15–28', sub: 'More friction, less forcing', str: 'Structuro: less forcing, tailored suggestions' },
       nlInfo: {
         adhd:
-          'Dalende oestrogeen vermindert de dopamine-buffering. PMS en ADHD kunnen elkaar versterken: prikkelbaarheid, rejection sensitivity en brain fog stapelen vaak op.',
+          'In deze fase stapelen prikkels en frictie zich sneller op. Bekende taken kunnen zwaarder voelen. Dat is geen terugval; het is context.',
         voel:
           'Dingen die je normaal aankan, kunnen je nu overweldigen. Bekende taken voelen soms ineens vreemd. Je raakt sneller gefrustreerd, ook over jezelf.',
         str: 'Taken terugschalen naar wat écht haalbaar is. Structuro geeft suggesties die bij deze fase passen. Jezelf forceren werkt bij velen averechts.',
       },
       enInfo: {
         adhd:
-          'Falling estrogen reduces dopamine buffering. PMS and ADHD can amplify each other: irritability, rejection sensitivity and brain fog often stack up.',
+          'In this phase friction and overload stack faster. Familiar tasks can feel heavier. That is not a relapse; it is context.',
         voel:
           'Things you normally handle can overwhelm you now. Familiar tasks may suddenly feel strange. You might get frustrated faster, yourself included.',
         str: "Scale back to what is truly manageable. Structuro gives suggestions suited to this phase. Forcing yourself often backfires.",
