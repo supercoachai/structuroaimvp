@@ -28,6 +28,15 @@ function blurActiveElement() {
   if (el instanceof HTMLElement) el.blur();
 }
 
+export type V2GoOptions = {
+  /**
+   * Hard navigatie (full page load). Nodig na middleware-gates die eerst
+   * redirectten: Next 15.5 soft-nav kan een stale redirect uit prefetch
+   * hergebruiken (vercel/next.js#88937), waardoor knoppen "dood" lijken.
+   */
+  hard?: boolean;
+};
+
 /**
  * Betrouwbare v2-navigatie: past optioneel lokale state aan en navigeert daarna
  * in een volgende frame. Het uitstellen van router.push tot na de state-commit
@@ -39,9 +48,15 @@ export function useV2Go() {
   const { update } = useV2();
 
   return useCallback(
-    (url: string, patch?: Partial<V2State>) => {
+    (url: string, patch?: Partial<V2State>, opts?: V2GoOptions) => {
       if (patch) update(patch);
       blurActiveElement();
+      if (opts?.hard) {
+        if (typeof window !== "undefined") {
+          window.location.assign(url);
+        }
+        return;
+      }
       const push = () => router.push(url);
       if (typeof window !== "undefined" && "requestAnimationFrame" in window) {
         window.requestAnimationFrame(push);

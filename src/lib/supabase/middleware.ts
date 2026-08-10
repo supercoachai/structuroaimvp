@@ -1035,6 +1035,9 @@ function applyDagstartDbGate(
   url.pathname = "/dagstart";
   url.search = "";
   const redirect = NextResponse.redirect(url, 302);
+  // Voorkom dat soft-nav/prefetch deze redirect permanent cached (next#88937):
+  // na afronden van dagstart moet router.push("/") opnieuw middleware evalueren.
+  redirect.headers.set("x-middleware-cache", "no-cache");
   // Auth-cookies van supabaseResponse meenemen zodat sessie niet verloren gaat.
   response.cookies.getAll().forEach((c) => {
     redirect.cookies.set(c.name, c.value);
@@ -1126,8 +1129,13 @@ function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
+    // Signaleer aan AppLayout dat de DagstartOverlay direct opengeklapt moet worden,
+    // zelfs als de cookie zegt "vandaag al klaar". AppLayout maakt de query-param
+    // weer schoon na mount.
     url.searchParams.set("dagstart", "open");
-    return NextResponse.redirect(url, 302);
+    const redirect = NextResponse.redirect(url, 302);
+    redirect.headers.set("x-middleware-cache", "no-cache");
+    return redirect;
   }
 
   if (!isRegistrationCheckoutEnabled()) {

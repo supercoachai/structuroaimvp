@@ -131,6 +131,8 @@ export default function DagstartV2Client() {
       hasWhy: state.why.trim().length > 0,
     });
     // Middleware gate leest profiles.last_dagstart_date; zonder write → redirect-lus.
+    // Cookie direct na profile-write (niet achter check-in): anders blijft de gate
+    // fragiel én kan Stoppen-prefetch een stale redirect cachen (next#88937).
     try {
       const supabase = createClient();
       const {
@@ -139,14 +141,21 @@ export default function DagstartV2Client() {
       if (user?.id) {
         const profileEnergy = mapV2EnergyToProfile(nextEnergy);
         await updateProfileAfterDagstartComplete(user.id, profileEnergy);
-        await upsertCheckInToSupabase(user.id, getCalendarDateAmsterdam(), {
-          energy_level: profileEnergy,
-          top3_task_ids: null,
-        });
+        setDagstartCookieOnClient();
+        try {
+          await upsertCheckInToSupabase(user.id, getCalendarDateAmsterdam(), {
+            energy_level: profileEnergy,
+            top3_task_ids: null,
+          });
+        } catch (checkInErr) {
+          console.warn("v2 dagstart check-in:", checkInErr);
+        }
+      } else {
         setDagstartCookieOnClient();
       }
     } catch (err) {
       console.warn("v2 dagstart profile update:", err);
+      setDagstartCookieOnClient();
     }
     goTo("done");
   };
@@ -181,8 +190,12 @@ export default function DagstartV2Client() {
     });
   };
 
-  const toHome = () => go("/");
-  const finishDay = () => go("/", { todayDone: true });
+  const leaveToHome = (patch?: { todayDone: boolean }) => {
+    setDagstartCookieOnClient();
+    go("/", patch, { hard: true });
+  };
+  const toHome = () => leaveToHome();
+  const finishDay = () => leaveToHome({ todayDone: true });
 
   // Ook op klaar/confirm: terug naar propose of adjust (niet Stoppen).
   const canGoBack = history.length > 0;

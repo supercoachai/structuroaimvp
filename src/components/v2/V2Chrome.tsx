@@ -101,7 +101,7 @@ function V2ExitLink({
     );
   }
   return (
-    <Link href={href} className={className} style={style}>
+    <Link href={href} prefetch={false} className={className} style={style}>
       {children}
     </Link>
   );
