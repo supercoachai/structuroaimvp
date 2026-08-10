@@ -167,6 +167,9 @@ export function supabaseTaskToV2Task(task: Task, localId: string): V2Task {
  * - Gemapte lokale taken die remote weg zijn, verdwijnen lokaal.
  * - Lokale taken zonder mapping blijven staan (worden later gepusht).
  * - Nieuwe remote taken komen erbij met local id `sb-<remoteId>`.
+ * - Open taken met dezelfde titel (trim, case-insensitive) worden
+ *   samengevoegd: voorkomt dat hydratie + journey-seed of DB-dubbels
+ *   dezelfde taak twee keer in /todo tonen (afronden lijkt dan "niks").
  */
 export function mergeRemoteTasksIntoLocal(
   local: V2Task[],
@@ -194,13 +197,65 @@ export function mergeRemoteTasksIntoLocal(
   for (const task of remote) {
     const remoteId = String(task.id);
     if (mappedRemoteIds.has(remoteId)) continue;
+    if (Object.values(nextMap).includes(remoteId)) continue;
     const localId = `sb-${remoteId}`;
     if (result.some((t) => t.id === localId)) continue;
+
+    const titleKey = (task.title ?? "").trim().toLowerCase();
+    if (!task.done && titleKey) {
+      const existing = result.find(
+        (t) => !t.done && t.title.trim().toLowerCase() === titleKey
+      );
+      if (existing) {
+        // Koppel bestaande lokale open taak i.p.v. een tweede rij.
+        if (!nextMap[existing.id]) {
+          nextMap[existing.id] = remoteId;
+        }
+        continue;
+      }
+    }
+
     result.push(supabaseTaskToV2Task(task, localId));
     nextMap[localId] = remoteId;
   }
 
-  return { tasks: pruneStaleCompletedV2Tasks(result), map: nextMap };
+  const collapsed = collapseOpenTasksByTitle(result, nextMap);
+  return { tasks: pruneStaleCompletedV2Tasks(collapsed.tasks), map: collapsed.map };
+}
+
+/** Eén open rij per titel; mapping van gedropte dubbels gaat naar de keeper. */
+export function collapseOpenTasksByTitle(
+  tasks: V2Task[],
+  map: IdMap
+): { tasks: V2Task[]; map: IdMap } {
+  const nextMap: IdMap = { ...map };
+  const seen = new Map<string, string>();
+  const out: V2Task[] = [];
+
+  for (const task of tasks) {
+    if (task.done) {
+      out.push(task);
+      continue;
+    }
+    const key = task.title.trim().toLowerCase();
+    if (!key) {
+      out.push(task);
+      continue;
+    }
+    const keptId = seen.get(key);
+    if (!keptId) {
+      seen.set(key, task.id);
+      out.push(task);
+      continue;
+    }
+    const droppedRemote = nextMap[task.id];
+    if (droppedRemote && !nextMap[keptId]) {
+      nextMap[keptId] = droppedRemote;
+    }
+    delete nextMap[task.id];
+  }
+
+  return { tasks: out, map: nextMap };
 }
 
 function remoteThoughtToDumpItem(thought: ParkedThought, localId: string): V2DumpItem {

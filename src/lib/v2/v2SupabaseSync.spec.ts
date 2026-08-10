@@ -126,6 +126,26 @@ describe("mergeRemoteTasksIntoLocal", () => {
     expect(map["nieuw"]).toBeUndefined();
   });
 
+  it("voorkomt dubbele open rijen met dezelfde titel (seed + remote)", () => {
+    const { tasks, map } = mergeRemoteTasksIntoLocal(
+      [localTask({ id: "seed", title: "💊 ritalin (10 mg)" })],
+      [
+        remoteTask({ id: "r1", title: "💊 ritalin (10 mg)" }),
+        remoteTask({ id: "r2", title: "💊 ritalin (10 mg)" }),
+        remoteTask({ id: "r3", title: "Declaraties doen" }),
+      ],
+      {}
+    );
+    const open = tasks.filter((t) => !t.done);
+    expect(open).toHaveLength(2);
+    expect(open.map((t) => t.title).sort()).toEqual([
+      "Declaraties doen",
+      "💊 ritalin (10 mg)",
+    ]);
+    expect(map.seed).toBe("r1");
+    expect(map["sb-r3"]).toBe("r3");
+  });
+
   it("praagt oude done-taken weg bij hydratie", () => {
     const { tasks } = mergeRemoteTasksIntoLocal(
       [],

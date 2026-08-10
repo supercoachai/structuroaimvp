@@ -39,6 +39,63 @@ import {
   v2SnoozeUntilTomorrowMorning,
   type V2Task,
 } from "./v2Tasks";
+import {
+  collapseOpenTasksByTitle,
+  V2_REMOTE_HYDRATED_EVENT,
+  V2_TASKS_REMOTE_MAP_KEY,
+} from "@/lib/v2/v2SupabaseSync";
+
+function readTasksRemoteMap(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(V2_TASKS_REMOTE_MAP_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object"
+      ? (parsed as Record<string, string>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeTasksRemoteMap(map: Record<string, string>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(V2_TASKS_REMOTE_MAP_KEY, JSON.stringify(map));
+  } catch {
+    /* privémodus */
+  }
+}
+
+/** Zaai journey-titels zonder dubbele open rijen; collapse bestaande dubbels. */
+function prepareTodoTasks(
+  initial: V2Task[],
+  journeyThings: string[],
+): V2Task[] {
+  let tasks = initial;
+  if (journeyThings.length > 0) {
+    const openTitles = new Set(
+      tasks
+        .filter((t) => !t.done)
+        .map((t) => t.title.trim().toLowerCase())
+        .filter(Boolean),
+    );
+    const seeded: V2Task[] = [];
+    for (const title of journeyThings) {
+      const key = title.trim().toLowerCase();
+      if (!key || openTitles.has(key)) continue;
+      const seed = emptyDraft();
+      seed.title = title;
+      seeded.push(seed);
+      openTitles.add(key);
+    }
+    if (seeded.length > 0) tasks = [...tasks, ...seeded];
+  }
+  const collapsed = collapseOpenTasksByTitle(tasks, readTasksRemoteMap());
+  writeTasksRemoteMap(collapsed.map);
+  return collapsed.tasks;
+}
 
 export default function TodoV2Client() {
   const { t } = useI18n();
@@ -55,22 +112,28 @@ export default function TodoV2Client() {
   const [completedOpen, setCompletedOpen] = useState(false);
   const editAnchorRef = useRef<HTMLDivElement | null>(null);
 
-  // Laad uit localStorage. Zaai bij een lege lijst de gekozen dingen van de reis.
+  // Laad uit localStorage. Zaai ontbrekende journey-titels zonder dubbels.
   useEffect(() => {
     if (!ready || loaded) return;
-    let initial = loadV2Tasks();
     const journeyThings = v2NormalizeThings(state.things);
-    if (initial.length === 0 && journeyThings.length > 0) {
-      initial = journeyThings.map((title) => {
-        const seed = emptyDraft();
-        seed.title = title;
-        return seed;
-      });
-      saveV2Tasks(initial);
-    }
-    setTasks(initial);
+    const prepared = prepareTodoTasks(loadV2Tasks(), journeyThings);
+    saveV2Tasks(prepared);
+    setTasks(prepared);
     setLoaded(true);
   }, [ready, loaded, state.things]);
+
+  // Late hydratie (na 4s-timeout): lijst opnieuw uit localStorage, met dedupe.
+  useEffect(() => {
+    if (!loaded) return;
+    const onHydrated = () => {
+      const journeyThings = v2NormalizeThings(state.things);
+      const prepared = prepareTodoTasks(loadV2Tasks(), journeyThings);
+      saveV2Tasks(prepared);
+      setTasks(prepared);
+    };
+    window.addEventListener(V2_REMOTE_HYDRATED_EVENT, onHydrated);
+    return () => window.removeEventListener(V2_REMOTE_HYDRATED_EVENT, onHydrated);
+  }, [loaded, state.things]);
 
   // Dagwisseling terwijl de pagina open blijft: oude voltooide taken weg.
   useEffect(() => {
@@ -129,19 +192,36 @@ export default function TodoV2Client() {
 
   const completeTask = (id: string) => {
     const task = tasks.find((t) => t.id === id);
-    if (!task || task.done) return;
-    setFadingIds((prev) => new Set(prev).add(id));
+    if (!task || task.done || fadingIds.has(id)) return;
+    // Zelfde titel: alle open dubbels laten verdwijnen. Eén blijft als
+    // "voltooid vandaag"; anders blijft er nog een identieke open rij staan.
+    const titleKey = task.title.trim().toLowerCase();
+    const duplicateIds = tasks
+      .filter(
+        (t) =>
+          t.id !== id &&
+          !t.done &&
+          t.title.trim().toLowerCase() === titleKey,
+      )
+      .map((t) => t.id);
+    const fadeIds = [id, ...duplicateIds];
+    setFadingIds((prev) => {
+      const next = new Set(prev);
+      for (const fadeId of fadeIds) next.add(fadeId);
+      return next;
+    });
     window.setTimeout(() => {
       setTasks((prev) => {
-        const next = prev.map((t) =>
-          t.id === id ? markV2TaskCompleted(t) : t,
-        );
+        const drop = new Set(duplicateIds);
+        const next = prev
+          .filter((t) => !drop.has(t.id))
+          .map((t) => (t.id === id ? markV2TaskCompleted(t) : t));
         saveV2Tasks(next);
         return next;
       });
       setFadingIds((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        for (const fadeId of fadeIds) next.delete(fadeId);
         return next;
       });
     }, 300);
@@ -531,22 +611,38 @@ function TaskRow({
         <button
           type="button"
           onClick={onToggle}
-          aria-pressed={false}
+          aria-pressed={Boolean(fading)}
           aria-label={t("v2.todoMarkDoneAria")}
+          disabled={Boolean(fading)}
           style={{
             width: 24,
             height: 24,
             marginTop: 1,
             borderRadius: 999,
             flexShrink: 0,
-            border: "1.5px solid var(--border)",
-            background: "transparent",
-            cursor: "pointer",
+            border: fading
+              ? "1.5px solid var(--accent)"
+              : "1.5px solid var(--border)",
+            background: fading ? "var(--accent)" : "transparent",
+            cursor: fading ? "default" : "pointer",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
+            transition: "background 160ms ease, border-color 160ms ease",
           }}
-        />
+        >
+          {fading ? (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 12l5 5 9-9"
+                stroke="var(--text-on-ink)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : null}
+        </button>
 
         <button
           type="button"
