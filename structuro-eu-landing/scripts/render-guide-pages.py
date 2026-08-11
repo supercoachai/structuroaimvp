@@ -8,14 +8,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
-MODIFIED = "2026-08-08"
-CSS_V = "20260808f"
+MODIFIED = "2026-08-11"
+CSS_V = "20260811a"
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 
 GUIDES = [
     {
         "slug": "waarom-gewoon-beginnen-niet-werkt",
         "eyebrow": "Taakinitiatie",
+        "card_num": "01",
+        "card_label": "TAAKINITIATIE",
+        "read_min": "3 MIN",
         "title": "Waarom 'gewoon beginnen' niet werkt (en wat wel)",
         "description": "Je wilt wel, maar starten lukt niet. Dat is geen luiheid. Zo werkt taakinitiatie bij ADHD-breinen, en wat wél helpt om vandaag één stap te zetten.",
         "answer": (
@@ -107,6 +110,9 @@ GUIDES = [
     {
         "slug": "een-stap-per-dag",
         "eyebrow": "Methode",
+        "card_num": "02",
+        "card_label": "METHODE",
+        "read_min": "3 MIN",
         "title": "Eén stap per dag: met vol hoofd tóch beginnen",
         "description": "Met een vol hoofd helpt niet méér plannen, maar één haalbare stap. Zo werkt de één-stap-methode zonder shame, streaks of overvolle lijsten.",
         "answer": (
@@ -206,6 +212,9 @@ GUIDES = [
     {
         "slug": "waarom-planners-falen",
         "eyebrow": "Anti-planner",
+        "card_num": "03",
+        "card_label": "ANTI-PLANNER",
+        "read_min": "4 MIN",
         "title": "Waarom planners falen bij ADHD",
         "description": "Zoek je een ADHD-app zonder streaks of schaamte? Planners bewaren taken. Executie helpt je starten. Waarom dat verschil ertoe doet voor ADHD-breinen.",
         "answer": (
@@ -298,6 +307,9 @@ GUIDES = [
     {
         "slug": "mentale-belasting-dagstart",
         "eyebrow": "Mentale last",
+        "card_num": "04",
+        "card_label": "MENTALE LAST",
+        "read_min": "3 MIN",
         "title": "Mentale belasting en de dagstart",
         "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte, rustige dagstart verlaagt keuzedruk en helpt je één stap kiezen zonder ochtendtheater.",
         "answer": (
@@ -396,6 +408,9 @@ GUIDES = [
     {
         "slug": "energie-first",
         "eyebrow": "Energie-first",
+        "card_num": "05",
+        "card_label": "ENERGIE-FIRST",
+        "read_min": "3 MIN",
         "title": "Energie-first werken in plaats van moeten",
         "description": "Kies taken rond je energie, niet je energie rond je to-do. Zo werkt energie-first zonder hustle, shame of vaste lat die je elke dag breekt.",
         "answer": (
@@ -506,11 +521,13 @@ def related_html(current: str) -> str:
     for g in GUIDES:
         if g["slug"] == current:
             continue
+        num = g.get("card_num", "")
+        label = g.get("card_label", g["eyebrow"].upper())
         items.append(
             f'<li><a href="/{g["slug"]}/">{esc(g["h1"])}'
-            f'<span>{esc(g["eyebrow"])}</span></a></li>'
+            f"<span>{esc(num)} · {esc(label)}</span></a></li>"
         )
-    return "\n".join(items)
+    return "\n      ".join(items)
 
 
 def faq_html(faqs: list[tuple[str, str]]) -> str:
@@ -629,6 +646,9 @@ def render(g: dict) -> str:
         f"?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=guide_nav"
     )
     title = f"{g['title']} · Structuro"
+    card_num = g.get("card_num", "0")
+    card_label = g.get("card_label", g["eyebrow"].upper())
+    read_min = g.get("read_min", "3 MIN")
     return f"""<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -660,8 +680,7 @@ def render(g: dict) -> str:
 <meta name="twitter:image" content="{OG_IMAGE}"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/v2/v2-tokens.css?v=20260730b"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/css/guide.css?v={CSS_V}"/>
 <script type="application/ld+json">
 {article_schema(g)}
@@ -681,21 +700,27 @@ def render(g: dict) -> str:
 </head>
 <body>
 <header class="site-header">
-  <div class="wrap nav">
-    <a class="brand" href="/">
-      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro logo" width="30" height="30"/></span>
+  <div class="shell hbar">
+    <a class="logo" href="/">
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro logo" width="26" height="26"/></span>
       Structuro
     </a>
-    <a class="guide-header-cta" href="{nav_cta}" data-ph-cta="guide_nav" data-signup-bridge="guide_nav">Begin met één stap</a>
+    <nav class="navlinks" aria-label="Hoofdmenu">
+      <a class="is-active" href="/gidsen/">Gidsen</a>
+      <a href="/#prijs">Prijs</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=nav_login">Inloggen</a>
+    </nav>
+    <a class="btn" href="{nav_cta}" data-ph-cta="guide_nav" data-signup-bridge="guide_nav">Begin met één stap</a>
   </div>
 </header>
 
-<main class="guide-main">
+<main class="shell guide-main">
   <div class="guide-top">
-    <a class="guide-back" href="/" data-ph-cta="guide_back">← Terug naar Structuro</a>
+    <a class="guide-back" href="/gidsen/" data-ph-cta="guide_back">← Alle kaarten</a>
     <div class="guide-heading">
-      <p class="guide-eyebrow"><i></i><span>{esc(g["eyebrow"])}</span></p>
-      <h1 class="serif">{esc(g["h1"])}</h1>
+      <div class="kk"><b>{esc(card_num)} · {esc(card_label)}</b><s></s><em>{esc(read_min)}</em></div>
+      <h1>{esc(g["h1"])}</h1>
     </div>
   </div>
   <p class="guide-answer">{esc(g["answer"])}</p>
@@ -704,19 +729,23 @@ def render(g: dict) -> str:
   </article>
 
   <section class="guide-cta" aria-label="Call to action">
-    <p class="guide-cta-title">{esc(g["cta_title"])}</p>
-    <p>{esc(g["cta_p"])}</p>
-    <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Start 7 dagen gratis</a>
-    <p class="reassure">Geen streaks. Geen shame. Klaar in ~30 seconden.</p>
+    <div>
+      <p class="guide-cta-title">{esc(g["cta_title"])}</p>
+      <p>{esc(g["cta_p"])}</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Start 7 dagen gratis</a>
+      <p class="reassure">Geen streaks. Geen shame. Klaar in ~30 seconden.</p>
+    </div>
   </section>
 
   <section class="guide-faq" aria-label="Veelgestelde vragen">
-    <h2 class="serif">Veelgestelde vragen</h2>
+    <h2>Veelgestelde vragen</h2>
     {faq_html(g["faqs"])}
   </section>
 
   <nav class="guide-related" aria-label="Andere gidsen">
-    <p class="guide-related-title">Andere gidsen</p>
+    <p class="guide-related-title">Andere kaarten</p>
     <ul>
       {related_html(slug)}
     </ul>
@@ -727,27 +756,23 @@ def render(g: dict) -> str:
   <p class="guide-note">Structuro is een prikkelarme executie-app, geen medisch advies en geen planner. Geen diagnose of behandeling.</p>
 </main>
 
-<footer class="site-foot">
-  <div class="wrap">
-    <div class="foot-top">
-      <a class="brand" href="/">
-        <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro logo" width="30" height="30"/></span>
-        Structuro
-      </a>
-      <div class="foot-links">
-        <a href="/gidsen/">Gidsen</a>
-        <a href="/#prijs">Prijs</a>
-        <a href="/#faq">FAQ</a>
-        <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=footer_login">Inloggen</a>
-      </div>
+<footer>
+  <div class="shell fbar">
+    <a class="logo" href="/">
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro logo" width="22" height="22"/></span>
+      Structuro
+    </a>
+    <div class="flinks">
+      <a href="/gidsen/">Gidsen</a>
+      <a href="/#prijs">Prijs</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=footer_login">Inloggen</a>
     </div>
-    <div class="foot-bottom">
+    <div class="fsmall">
       <span>© Structuro</span>
-      <nav aria-label="Juridisch">
-        <a href="/privacy/">Privacy</a>
-        <a href="/terms/">Voorwaarden</a>
-        <a href="/cookies/">Cookies</a>
-      </nav>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Voorwaarden</a>
+      <a href="/cookies/">Cookies</a>
     </div>
   </div>
   <a class="verified-dr-badge" href="https://verifieddr.com" target="_blank" rel="noopener">Verified DR</a>
@@ -761,6 +786,7 @@ def write_sitemap() -> None:
     urls = [
         ("https://www.structuro.eu/", "1.0"),
         ("https://www.structuro.eu/gidsen/", "0.85"),
+        ("https://www.structuro.eu/cyclus/", "0.75"),
         ("https://www.structuro.eu/waarom-gewoon-beginnen-niet-werkt/", "0.9"),
         ("https://www.structuro.eu/een-stap-per-dag/", "0.8"),
         ("https://www.structuro.eu/waarom-planners-falen/", "0.8"),
