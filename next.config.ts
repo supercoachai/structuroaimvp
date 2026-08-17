@@ -55,6 +55,17 @@ const nextConfig: NextConfig = {
     const LEGACY_WAITLIST_TARGET =
       "/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=waitlist_legacy&utm_content=waitlist_legacy";
     return [
+      // Legacy v1-hulppagina: nooit meer openen (triggerde AppLayout + v1-dagstart).
+      {
+        source: "/uitleg",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/uitleg/:path*",
+        destination: "/",
+        permanent: true,
+      },
       // Organische acquisitie-bridge verwijderd: /start → direct onboarding
       // (query string blijft behouden, o.a. utm_* en lang).
       {

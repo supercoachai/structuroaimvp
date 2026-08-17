@@ -34,7 +34,7 @@ describe("lifecycleMail templates", () => {
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
     expect(mail.subject).toBe("Sam, welkom bij Structuro");
-    expect(mail.ctaPath).toBe("/?dagstart=open");
+    expect(mail.ctaPath).toBe("/dagstart");
     expect(mail.cohortKey).toBe("hello:u1");
     expect(mail.html).toContain("Naar dagstart");
     expect(mail.html).toContain("Welkom bij Structuro");
@@ -80,7 +80,7 @@ describe("lifecycleMail templates", () => {
       base,
       "https://www.structuro.ai/api/lifecycle/unsubscribe?token=x"
     );
-    expect(mail.ctaPath).toBe("/?dagstart=open");
+    expect(mail.ctaPath).toBe("/dagstart");
   });
 
   it("S5 wijst naar /abonnement met why, prijs en garantie-subline", () => {

@@ -1,34 +1,23 @@
 "use client";
 
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState, startTransition } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ReactNode, useEffect, useLayoutEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
-import BottomTabNav from '../navigation/BottomTabNav';
-import DesktopSidebarNav from '../navigation/DesktopSidebarNav';
-import QuickTaskInput from '@/components/QuickTaskInput';
-import dynamic from 'next/dynamic';
-import { performClientLogout } from '@/lib/logoutClient';
-import { clearDagstartCookieOnClient, isDagstartDoneTodayClient, setDagstartCookieOnClient } from '@/lib/dagstartCookie';
-import { useSidebar } from '@/contexts/SidebarContext';
-import { useI18n } from '@/lib/i18n';
-import AnonymousAccountBanner from '@/components/account/AnonymousAccountBanner';
-import AppShellSuspenseFallback from '@/components/shell/AppShellSuspenseFallback';
-
-const DagstartOverlay = dynamic(
-  () =>
-    import('@/components/DagstartOverlay').then((mod) => ({
-      default: mod.default,
-    })),
-  {
-    ssr: false,
-    loading: () => <AppShellSuspenseFallback />,
-  }
-);
+} from "@heroicons/react/24/outline";
+import BottomTabNav from "../navigation/BottomTabNav";
+import DesktopSidebarNav from "../navigation/DesktopSidebarNav";
+import QuickTaskInput from "@/components/QuickTaskInput";
+import { performClientLogout } from "@/lib/logoutClient";
+import { isDagstartDoneTodayClient } from "@/lib/dagstartCookie";
+import { useSidebar } from "@/contexts/SidebarContext";
+import { useI18n } from "@/lib/i18n";
+import AnonymousAccountBanner from "@/components/account/AnonymousAccountBanner";
+import AppShellSuspenseFallback from "@/components/shell/AppShellSuspenseFallback";
+import { livePaths } from "@/lib/v2/livePaths";
 
 type ShellState =
   | { status: "pending" }
@@ -39,20 +28,22 @@ interface AppLayoutProps {
   hideSidebar?: boolean;
 }
 
+/**
+ * Legacy shell voor rest-routes die nog niet volledig in v2-shell zitten
+ * (bijv. /notificaties). Nooit meer v1-DagstartOverlay: ontbrekende dagstart
+ * bounce altijd naar canonieke `/dagstart`.
+ */
 export default function AppLayout({ children, hideSidebar = false }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dagstartQueryParam = searchParams?.get("dagstart") ?? null;
   const { t } = useI18n();
-  const { sidebarOpen, toggleSidebar, setSidebarOpen } = useSidebar();
+  const { sidebarOpen, toggleSidebar } = useSidebar();
 
-  /** Atomische shell-state: geen frame met lege main (wit scherm). */
   const [shell, setShell] = useState<ShellState>({ status: "pending" });
   const shellReady = shell.status === "ready";
   const dagstartDone = shell.status === "ready" ? shell.dagstartDone : null;
-  const [dagstartPhase, setDagstartPhase] = useState<'energy' | 'tasks' | null>(null);
-  const wasDagstartDoneRef = useRef(true);
 
   useLayoutEffect(() => {
     const next = isDagstartDoneTodayClient();
@@ -62,25 +53,13 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     });
   }, [pathname]);
 
-  /**
-   * ?dagstart=open forceert de DagstartOverlay: vanuit de legacy /dagstart-redirect
-   * (middleware regel 199-209) of vanuit de paywall-done-state. We wissen meteen
-   * de cookie zodat `dagstartDone=false` wordt, en vegen daarna de query-param weg.
-   */
+  /** Legacy `?dagstart=open` → canonieke v2-dagstart. */
   useEffect(() => {
     if (dagstartQueryParam !== "open") return;
-    clearDagstartCookieOnClient();
-    setShell({ status: "ready", dagstartDone: false });
-    const next = pathname ?? "/";
-    router.replace(next);
-  }, [dagstartQueryParam, pathname, router]);
+    router.replace(livePaths.dagstart);
+  }, [dagstartQueryParam, router]);
 
   useEffect(() => {
-    /**
-     * Detecteer dagovergangen (cookie verloopt om middernacht) en externe wijzigingen
-     * in tabs/devices, zonder agressief te pollen. Event listener doet het primaire werk,
-     * de fallback-interval (30s) vangt edge-cases af waar het event niet vuurt.
-     */
     const onUpdate = () => {
       const next = isDagstartDoneTodayClient();
       setShell((prev) => {
@@ -89,66 +68,46 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
       });
     };
     const onFocus = () => onUpdate();
-    window.addEventListener('structuro_tasks_updated', onUpdate);
-    window.addEventListener('focus', onFocus);
+    window.addEventListener("structuro_tasks_updated", onUpdate);
+    window.addEventListener("focus", onFocus);
     const interval = setInterval(onUpdate, 30_000);
     return () => {
-      window.removeEventListener('structuro_tasks_updated', onUpdate);
-      window.removeEventListener('focus', onFocus);
+      window.removeEventListener("structuro_tasks_updated", onUpdate);
+      window.removeEventListener("focus", onFocus);
       clearInterval(interval);
     };
   }, []);
 
-  const isFocusRoute = (pathname ?? '').startsWith('/focus');
-  const isHomeRoute = pathname === '/';
-  const isShutdownRoute = (pathname ?? '').startsWith('/shutdown');
-  /** Instellingen altijd bereikbaar, ook vóór dagstart vandaag. */
-  const isSettingsRoute = (pathname ?? '').startsWith('/settings');
+  const isFocusRoute = (pathname ?? "").startsWith("/focus");
+  const isHomeRoute = pathname === "/";
+  const isShutdownRoute = (pathname ?? "").startsWith("/shutdown");
+  const isSettingsRoute = (pathname ?? "").startsWith("/settings");
   const shouldHideChrome = hideSidebar || isFocusRoute;
-  const dagstartBlocksShell = dagstartDone !== true && !isSettingsRoute;
-  const inDagstartFlow = dagstartBlocksShell;
-  const showSidebar = shellReady && !dagstartBlocksShell;
-  const mainNavLocked = inDagstartFlow;
+  const needsV2Dagstart = shellReady && dagstartDone !== true && !isSettingsRoute;
 
-  /** Bij start dagstart: sidebar ingeklapt zonder localStorage te overschrijven. */
-  useLayoutEffect(() => {
-    if (!shellReady) return;
-    if (wasDagstartDoneRef.current && dagstartDone === false) {
-      setSidebarOpen(false, { persist: false });
-    }
-    wasDagstartDoneRef.current = dagstartDone === true;
-  }, [shellReady, dagstartDone, setSidebarOpen]);
+  /** Geen v1-overlay: stuur altijd naar v2 `/dagstart`. */
+  useEffect(() => {
+    if (!needsV2Dagstart) return;
+    if ((pathname ?? "").startsWith(livePaths.dagstart)) return;
+    router.replace(livePaths.dagstart);
+  }, [needsV2Dagstart, pathname, router]);
 
   const handleLogout = async () => {
     await performClientLogout(router);
-  };
-
-  const handleDagstartComplete = () => {
-    setDagstartCookieOnClient();
-    setDagstartPhase(null);
-    startTransition(() => {
-      setShell({ status: "ready", dagstartDone: true });
-    });
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("structuro_checkin_updated"));
-    }
-    requestAnimationFrame(() => {
-      router.refresh();
-    });
   };
 
   if (shouldHideChrome) {
     return (
       <div
         className={`flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden pb-[var(--keyboard-inset-bottom)] ${
-          isFocusRoute ? 'bg-[var(--structuro-dark)]' : 'bg-[var(--st-bg)]'
+          isFocusRoute ? "bg-[var(--structuro-dark)]" : "bg-[var(--st-bg)]"
         }`}
       >
         <main
           className={
             isFocusRoute
-              ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-              : 'min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar'
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+              : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar"
           }
         >
           {children}
@@ -158,8 +117,8 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
             type="button"
             onClick={handleLogout}
             className="fixed right-5 z-50 rounded-xl bg-[var(--structuro-dark)] p-2.5 text-[var(--structuro-dark-sub)] shadow-lg transition-colors hover:bg-slate-800 hover:text-white bottom-[max(1.25rem,calc(env(safe-area-inset-bottom,0px)+var(--keyboard-inset-bottom,0px)))]"
-            title={t('layout.logout')}
-            aria-label={t('layout.logout')}
+            title={t("layout.logout")}
+            aria-label={t("layout.logout")}
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5" />
           </button>
@@ -168,124 +127,83 @@ export default function AppLayout({ children, hideSidebar = false }: AppLayoutPr
     );
   }
 
-  const showDagstartOverlay = shellReady && dagstartBlocksShell;
-  const showMainContent = shellReady && !dagstartBlocksShell;
-  const hideTopbarLogo = inDagstartFlow && dagstartPhase !== 'tasks';
+  if (!shellReady || needsV2Dagstart) {
+    return <AppShellSuspenseFallback />;
+  }
 
   return (
-    <div
-      className={`flex h-full min-h-0 w-full overflow-hidden text-[var(--st-ink)] md:flex-row ${
-        inDagstartFlow
-          ? 'pb-0 md:pb-[var(--keyboard-inset-bottom)]'
-          : 'pb-[var(--keyboard-inset-bottom)] md:pb-0'
-      } ${
-        inDagstartFlow ? 'bg-[#F1F3F8]' : 'bg-[var(--st-bg)]'
-      }`}
-    >
-      {showSidebar ? <DesktopSidebarNav disabled={mainNavLocked} /> : null}
+    <div className="flex h-full min-h-0 w-full overflow-hidden pb-[var(--keyboard-inset-bottom)] text-[var(--st-ink)] md:flex-row md:pb-0 bg-[var(--st-bg)]">
+      <DesktopSidebarNav />
 
-      <div
-        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
-          inDagstartFlow ? 'bg-[#F1F3F8]' : ''
-        }`}
-      >
-        <header
-          className={`${inDagstartFlow ? 'hidden md:flex' : 'flex'} w-full shrink-0 items-center justify-between gap-3 px-6 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-12 ${
-            inDagstartFlow
-              ? 'border-b border-transparent bg-[#F1F3F8]'
-              : 'border-b border-[var(--st-line)] bg-[var(--st-bg)]'
-          }`}
-        >
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex w-full shrink-0 items-center justify-between gap-3 border-b border-[var(--st-line)] bg-[var(--st-bg)] px-6 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-12">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            {showSidebar ? (
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="hidden shrink-0 items-center justify-start text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink)] md:inline-flex md:h-10 md:w-6"
-                aria-label={t('layout.toggleSidebar')}
-                aria-expanded={sidebarOpen}
-              >
-                <Bars3Icon className="h-6 w-6" strokeWidth={1.75} />
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="hidden shrink-0 items-center justify-start text-[var(--st-muted)] transition-colors hover:text-[var(--st-ink)] md:inline-flex md:h-10 md:w-6"
+              aria-label={t("layout.toggleSidebar")}
+              aria-expanded={sidebarOpen}
+            >
+              <Bars3Icon className="h-6 w-6" strokeWidth={1.75} />
+            </button>
 
             <div className="flex min-w-0 items-center gap-2">
-              {!hideTopbarLogo ? (
-                <img
-                  src="/logo-structuro.png"
-                  alt="Structuro"
-                  className="h-9 w-9 shrink-0 rounded-2xl object-contain"
-                  width={36}
-                  height={36}
-                />
-              ) : null}
-              {!inDagstartFlow ? (
-                <span className="truncate text-lg font-semibold tracking-tight text-[var(--st-ink)]">
-                  Structuro
-                </span>
-              ) : null}
+              <img
+                src="/logo-structuro.png"
+                alt="Structuro"
+                className="h-9 w-9 shrink-0 rounded-2xl object-contain"
+                width={36}
+                height={36}
+              />
+              <span className="truncate text-lg font-semibold tracking-tight text-[var(--st-ink)]">
+                Structuro
+              </span>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            {!dagstartBlocksShell ? (
-              <Link
-                href="/settings"
-                className="inline-flex shrink-0 items-center justify-center rounded-xl p-2.5 text-[var(--st-muted)] transition-colors hover:bg-[var(--st-surface-2)] hover:text-[var(--st-ink)]"
-                aria-label={t('layout.settings')}
-                title={t('layout.settings')}
-              >
-                <Cog6ToothIcon className="h-6 w-6" />
-              </Link>
-            ) : null}
+            <Link
+              href="/settings"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl p-2.5 text-[var(--st-muted)] transition-colors hover:bg-[var(--st-surface-2)] hover:text-[var(--st-ink)]"
+              aria-label={t("layout.settings")}
+              title={t("layout.settings")}
+            >
+              <Cog6ToothIcon className="h-6 w-6" />
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
               className="inline-flex shrink-0 items-center justify-center rounded-xl p-2.5 text-[var(--st-muted)] transition-colors hover:bg-[var(--st-surface-2)] hover:text-[var(--st-ink)]"
-              title={t('layout.logout')}
-              aria-label={t('layout.logout')}
+              title={t("layout.logout")}
+              aria-label={t("layout.logout")}
             >
               <ArrowRightOnRectangleIcon className="h-6 w-6" />
             </button>
           </div>
         </header>
 
-        {showMainContent ? <AnonymousAccountBanner /> : null}
+        <AnonymousAccountBanner />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <main
-            className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden ${
-              inDagstartFlow ? 'max-md:justify-center' : ''
-            }`}
-          >
-            {!shellReady ? (
-              <AppShellSuspenseFallback />
-            ) : showDagstartOverlay ? (
-              <DagstartOverlay
-                onComplete={handleDagstartComplete}
-                onPhaseChange={setDagstartPhase}
-              />
-            ) : showMainContent ? (
-              <div
-                className={
-                  isHomeRoute || isShutdownRoute
-                    ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-                    : `min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar ${
-                        sidebarOpen ? 'md:scroll-pb-0' : ''
-                      }`
-                }
-              >
-                {children}
-              </div>
-            ) : (
-              <AppShellSuspenseFallback />
-            )}
+          <main className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+            <div
+              className={
+                isHomeRoute || isShutdownRoute
+                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                  : `min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-pb-[var(--keyboard-inset-bottom)] no-scrollbar ${
+                      sidebarOpen ? "md:scroll-pb-0" : ""
+                    }`
+              }
+            >
+              {children}
+            </div>
           </main>
 
-          {!mainNavLocked && !isShutdownRoute ? <QuickTaskInput /> : null}
+          {!isShutdownRoute ? <QuickTaskInput /> : null}
         </div>
 
-        {!mainNavLocked ? <BottomTabNav className="md:hidden" /> : null}
+        <BottomTabNav className="md:hidden" />
       </div>
     </div>
   );

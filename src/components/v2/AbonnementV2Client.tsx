@@ -214,7 +214,7 @@ export default function AbonnementV2Client({
   }, []);
 
   const handleCardTrialWalletSuccess = useCallback(() => {
-    router.replace("/?dagstart=open");
+    router.replace("/dagstart");
   }, [router]);
 
   const handleStop = useCallback(() => {

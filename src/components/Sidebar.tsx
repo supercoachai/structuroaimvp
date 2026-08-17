@@ -10,7 +10,6 @@ import {
   BellIcon,
   FireIcon,
   Cog6ToothIcon,
-  InformationCircleIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
@@ -87,13 +86,6 @@ export default function Sidebar({ collapsed = false, onNavigate }: SidebarProps)
         icon: BellIcon,
         description: t('sidebar.nav.remindersDesc'),
         accent: '#8b5cf6',
-      },
-      {
-        name: t('sidebar.nav.explain'),
-        href: '/uitleg',
-        icon: InformationCircleIcon,
-        description: t('sidebar.nav.explainDesc'),
-        accent: '#3b82f6',
       },
     ],
     [t]

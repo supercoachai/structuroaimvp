@@ -529,6 +529,14 @@ export async function updateSession(
 ) {
   const pathname = request.nextUrl.pathname;
 
+  // Legacy v1 /uitleg: permanent dicht (ook als next.config-redirect mist).
+  if (pathname === "/uitleg" || pathname.startsWith("/uitleg/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   // /onboardingpro is een zelfstandige testpagina: altijd direct serveren,
   // ongeacht sessie. Zonder deze early return matcht pathname.startsWith("/onboarding")
   // deze route en wordt een ingelogde gebruiker naar de app/dagstart gebounced.
@@ -623,13 +631,8 @@ export async function updateSession(
   }
 
   if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    // Signaleer aan AppLayout dat de DagstartOverlay direct opengeklapt moet worden,
-    // zelfs als de cookie zegt "vandaag al klaar". AppLayout maakt de query-param
-    // weer schoon na mount.
-    url.searchParams.set("dagstart", "open");
-    return NextResponse.redirect(url, 302);
+    // Canonieke v2-dagstart; geen legacy bounce naar /?dagstart=open (v1-overlay).
+    return NextResponse.next({ request });
   }
 
   if (!isRegistrationCheckoutEnabled()) {
@@ -1126,16 +1129,16 @@ function applyDagstartCookieGuard(
 function legacyCookieOnlyMiddleware(request: NextRequest): NextResponse {
   const pathname = request.nextUrl.pathname;
 
-  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
+  if (pathname === "/uitleg" || pathname.startsWith("/uitleg/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    // Signaleer aan AppLayout dat de DagstartOverlay direct opengeklapt moet worden,
-    // zelfs als de cookie zegt "vandaag al klaar". AppLayout maakt de query-param
-    // weer schoon na mount.
-    url.searchParams.set("dagstart", "open");
-    const redirect = NextResponse.redirect(url, 302);
-    redirect.headers.set("x-middleware-cache", "no-cache");
-    return redirect;
+    url.search = "";
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (pathname === "/dagstart" || pathname.startsWith("/dagstart/")) {
+    // Canonieke v2-dagstart; geen legacy bounce naar /?dagstart=open.
+    return NextResponse.next({ request });
   }
 
   if (!isRegistrationCheckoutEnabled()) {

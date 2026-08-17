@@ -6,6 +6,9 @@ const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString()
 const daysFromNow = (d: number) =>
   new Date(now + d * 24 * 60 * 60 * 1000).toISOString();
 
+/** Pre v2 card-cutoff: legacy 3-dagen free trial (inmiddels altijd verlopen). */
+const LEGACY_CREATED = "2026-07-20T10:00:00.000Z";
+
 assert.equal(
   resolveRetentionPaywallReason({
     subscription_status: "none",
@@ -13,19 +16,19 @@ assert.equal(
     created_at: hoursAgo(1),
     signup_source: "organic",
   }),
-  "trial_active",
-  "nieuwe user in gratis proef: optioneel abonneren, geen retention-copy"
+  "trial_expired",
+  "v2 card-cohort zonder Stripe: paywall, geen legacy gratis proef"
 );
 
 assert.equal(
   resolveRetentionPaywallReason({
     subscription_status: "none",
     subscription_current_period_end: null,
-    created_at: hoursAgo(96),
+    created_at: LEGACY_CREATED,
     signup_source: "organic",
   }),
   "trial_expired",
-  "proef voorbij: retention-paywall"
+  "legacy pre-cutoff na 3 dagen: retention-paywall"
 );
 
 assert.equal(

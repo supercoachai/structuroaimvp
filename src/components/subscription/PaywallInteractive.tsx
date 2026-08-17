@@ -171,9 +171,7 @@ export function PaywallInteractive({
           className="btn-primary"
           onClick={() => {
             if (doneMode === "stay") {
-              // /?dagstart=open laat middleware de bounce overslaan: AppLayout
-              // pikt de query-param op en opent de DagstartOverlay direct.
-              router.replace("/?dagstart=open");
+              router.replace("/dagstart");
               return;
             }
             window.location.href = "https://www.structuro.eu";

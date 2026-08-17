@@ -1,6 +1,5 @@
 import { getAppOrigin } from "@/lib/appUrl";
 import { getJasperOffer, isJasperSignupSource } from "@/lib/jasper/jasperOffer";
-import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 
 import {
   isStripeCardTrialing,
@@ -13,11 +12,11 @@ import type {
 } from "./types";
 
 function lifecycleCtaHome(): string {
-  return isV2PublicEnabled() ? "/" : "/";
+  return "/";
 }
 
 function lifecycleCtaDagstart(): string {
-  return isV2PublicEnabled() ? "/dagstart" : "/?dagstart=open";
+  return "/dagstart";
 }
 
 /**
