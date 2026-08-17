@@ -28,21 +28,36 @@ describe("pushSoftPrompt", () => {
     vi.unstubAllGlobals();
   });
 
-  it("blokkeert consent/auth/install paden", () => {
+  it("blokkeert consent/auth/install/abonnement paden", () => {
     expect(isPushSoftPromptPathBlocked("/consent")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/login")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/welkom/install")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/auth/callback")).toBe(true);
+    expect(isPushSoftPromptPathBlocked("/abonnement")).toBe(true);
+    expect(isPushSoftPromptPathBlocked("/abonnement?start_trial=1")).toBe(true);
+    expect(isPushSoftPromptPathBlocked("/stop-abonnement")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/")).toBe(false);
+    expect(isPushSoftPromptPathBlocked("/dagstart")).toBe(false);
     expect(isPushSoftPromptPathBlocked("/settings")).toBe(false);
   });
 
-  it("toont niet zonder privacy setup of bij granted", () => {
+  it("toont niet zonder privacy setup, app-toegang of bij granted", () => {
     expect(
       shouldShowPushSoftPrompt({
         privacySetupCompleted: false,
         permission: "default",
         pathname: "/",
+        hasAppAccess: true,
+        softPromptDone: false,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldShowPushSoftPrompt({
+        privacySetupCompleted: true,
+        permission: "default",
+        pathname: "/",
+        hasAppAccess: false,
         softPromptDone: false,
       })
     ).toBe(false);
@@ -52,17 +67,29 @@ describe("pushSoftPrompt", () => {
         privacySetupCompleted: true,
         permission: "granted",
         pathname: "/",
+        hasAppAccess: true,
         softPromptDone: false,
       })
     ).toBe(false);
   });
 
-  it("toont één keer bij default permission op home", () => {
+  it("toont één keer bij default permission op home na trial", () => {
     expect(
       shouldShowPushSoftPrompt({
         privacySetupCompleted: true,
         permission: "default",
         pathname: "/",
+        hasAppAccess: true,
+        softPromptDone: false,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldShowPushSoftPrompt({
+        privacySetupCompleted: true,
+        permission: "default",
+        pathname: "/dagstart",
+        hasAppAccess: true,
         softPromptDone: false,
       })
     ).toBe(true);
@@ -72,7 +99,20 @@ describe("pushSoftPrompt", () => {
         privacySetupCompleted: true,
         permission: "default",
         pathname: "/",
+        hasAppAccess: true,
         softPromptDone: true,
+      })
+    ).toBe(false);
+  });
+
+  it("toont niet op /abonnement ook met app-toegang", () => {
+    expect(
+      shouldShowPushSoftPrompt({
+        privacySetupCompleted: true,
+        permission: "default",
+        pathname: "/abonnement",
+        hasAppAccess: true,
+        softPromptDone: false,
       })
     ).toBe(false);
   });
@@ -85,6 +125,7 @@ describe("pushSoftPrompt", () => {
         privacySetupCompleted: true,
         permission: "default",
         pathname: "/",
+        hasAppAccess: true,
       })
     ).toBe(true);
 
@@ -97,6 +138,7 @@ describe("pushSoftPrompt", () => {
         privacySetupCompleted: true,
         permission: "default",
         pathname: "/",
+        hasAppAccess: true,
       })
     ).toBe(false);
   });
@@ -107,6 +149,7 @@ describe("pushSoftPrompt", () => {
         privacySetupCompleted: true,
         permission: "unsupported",
         pathname: "/",
+        hasAppAccess: true,
         softPromptDone: false,
       })
     ).toBe(false);

@@ -1,6 +1,8 @@
 /**
- * Eenmalige soft herprompt voor bestaande users zonder web-push.
- * localStorage per browser; dismiss of accept zet de flag.
+ * Eenmalige soft herprompt voor users mét app-toegang (trial/abonnement)
+ * zonder web-push. localStorage per browser; dismiss of accept zet de flag.
+ *
+ * Nooit op /abonnement: daar is de paywall/trial-CTA de enige job.
  */
 
 export const PUSH_SOFT_PROMPT_DONE_KEY = "push_soft_prompt_done";
@@ -14,6 +16,8 @@ const BLOCKED_PATH_PREFIXES = [
   "/onboarding",
   "/privacy",
   "/terms",
+  "/abonnement",
+  "/stop-abonnement",
 ] as const;
 
 export function isPushSoftPromptDone(): boolean {
@@ -43,15 +47,18 @@ export function isPushSoftPromptPathBlocked(pathname: string): boolean {
 
 /**
  * Mag de eenmalige soft prompt getoond worden?
- * Caller checkt privacy-setup en push-support apart.
+ * Caller checkt privacy-setup, push-support en app-toegang (trial actief) apart.
  */
 export function shouldShowPushSoftPrompt(input: {
   privacySetupCompleted: boolean;
   permission: NotificationPermission | "unsupported";
   pathname: string;
+  /** Alleen ná trial/abonnement (of event-trial met app-toegang). */
+  hasAppAccess: boolean;
   softPromptDone?: boolean;
 }): boolean {
   if (!input.privacySetupCompleted) return false;
+  if (!input.hasAppAccess) return false;
   if (input.softPromptDone ?? isPushSoftPromptDone()) return false;
   if (isPushSoftPromptPathBlocked(input.pathname)) return false;
   if (input.permission === "granted") return false;

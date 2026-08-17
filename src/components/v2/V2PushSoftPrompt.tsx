@@ -8,6 +8,8 @@ import { useI18n } from "@/lib/i18n";
 import { isPrivacySetupCompleted } from "@/lib/privacySetup";
 import { detectPushSupport } from "@/lib/pushNotificationSupport";
 import {
+  isPushSoftPromptDone,
+  isPushSoftPromptPathBlocked,
   markPushSoftPromptDone,
   shouldShowPushSoftPrompt,
 } from "@/lib/pushSoftPrompt";
@@ -19,6 +21,7 @@ import {
   trackPushOptInSuccess,
   trackPushSoftPromptShown,
 } from "@/lib/pushOptInEvents";
+import { profileHasAppAccessOrGrace } from "@/lib/subscriptionAccess";
 import { registerPushSubscription } from "@/utils/pushNotifications";
 
 const INSTALL_FROM_CONSENT = "/welkom/install?from=consent";
@@ -32,19 +35,86 @@ export function V2PushSoftPrompt() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const state = detectPushSupport();
-    if (
-      !shouldShowPushSoftPrompt({
-        privacySetupCompleted: isPrivacySetupCompleted(),
-        permission: state.permission,
-        pathname,
-      })
-    ) {
-      return;
-    }
-    setNeedsHomescreen(state.needsHomescreen);
-    setVisible(true);
-    trackPushSoftPromptShown();
+    let cancelled = false;
+
+    void (async () => {
+      if (isPushSoftPromptPathBlocked(pathname) || isPushSoftPromptDone()) {
+        return;
+      }
+
+      const privacyOk = isPrivacySetupCompleted();
+      if (!privacyOk) return;
+
+      const state = detectPushSupport();
+      if (
+        state.permission === "granted" ||
+        state.permission === "unsupported"
+      ) {
+        return;
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled || !user?.id) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select(
+          "subscription_status, subscription_current_period_end, created_at, last_dagstart_date, signup_source, app_trial_override_until"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (cancelled || !profile) return;
+
+      const hasAppAccess = profileHasAppAccessOrGrace({
+        email: user.email ?? null,
+        subscription_status:
+          typeof profile.subscription_status === "string"
+            ? profile.subscription_status
+            : null,
+        subscription_current_period_end:
+          profile.subscription_current_period_end != null
+            ? String(profile.subscription_current_period_end)
+            : null,
+        created_at:
+          profile.created_at != null ? String(profile.created_at) : null,
+        last_dagstart_date:
+          profile.last_dagstart_date != null
+            ? String(profile.last_dagstart_date).slice(0, 10)
+            : null,
+        signup_source:
+          typeof profile.signup_source === "string"
+            ? profile.signup_source
+            : null,
+        app_trial_override_until:
+          profile.app_trial_override_until != null
+            ? String(profile.app_trial_override_until)
+            : null,
+      });
+
+      if (
+        !shouldShowPushSoftPrompt({
+          privacySetupCompleted: privacyOk,
+          permission: state.permission,
+          pathname,
+          hasAppAccess,
+        })
+      ) {
+        return;
+      }
+
+      if (cancelled) return;
+      setNeedsHomescreen(state.needsHomescreen);
+      setVisible(true);
+      trackPushSoftPromptShown();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pathname]);
 
   const dismiss = useCallback(() => {

@@ -16,9 +16,9 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     consentSetup: {
       title: "Herinneringen aanzetten",
       subtitle:
-        "Structuro werkt het best met zachte herinneringen voor dagstart, focus en afronden. Geen schuld, geen streaks.",
+        "Een ADHD-brein houdt plannen slecht vast als ze uit zicht verdwijnen. Zachte herinneringen geven externe houvast voor dagstart, focus en afronden. Geen schuld, geen streaks.",
       remindersIntro:
-        "Zet meldingen aan op dit apparaat. Dan kunnen we je helpen terugkomen op het moment dat het telt. Anonieme productanalyse is optioneel en bevat nooit inhoud van je taken.",
+        "Zet meldingen aan op dit apparaat. Zo helpt Structuro je terugkomen op het moment dat het telt, juist als je werkgeheugen even vol zit. Anonieme productanalyse is optioneel en bevat nooit inhoud van je taken.",
       notificationsHint:
         "Zet aan om herinneringen te ontvangen op dit apparaat. Je kunt dit later altijd wijzigen in Instellingen.",
       enableCta: "Herinneringen aanzetten",
@@ -31,7 +31,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       analyticsOptional: "Optioneel",
       softPromptTitle: "Herinneringen aanzetten?",
       softPromptBody:
-        "Zo kun je zachte pushes krijgen voor dagstart en afronden. Altijd uit te zetten in instellingen.",
+        "Een ADHD-brein onthoudt plannen slecht als ze niet in zicht zijn. Een zachte push helpt je terug naar dagstart en afronden, zonder schuldgevoel. Altijd uit te zetten in instellingen.",
       softPromptAccept: "Ja, graag",
       softPromptDismiss: "Niet nu",
       softPromptInstall: "Eerst installeren",
@@ -645,9 +645,9 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
     consentSetup: {
       title: "Turn on reminders",
       subtitle:
-        "Structuro works best with gentle reminders for day start, focus, and wrapping up. No shame, no streaks.",
+        "An ADHD brain holds plans poorly when they leave sight. Gentle reminders give external structure for day start, focus, and wrap-up. No shame, no streaks.",
       remindersIntro:
-        "Enable notifications on this device so we can help you return when it matters. Anonymous product analytics is optional and never includes the content of your tasks.",
+        "Enable notifications on this device. Structuro can help you return when it matters, especially when working memory is full. Anonymous product analytics is optional and never includes the content of your tasks.",
       notificationsHint:
         "Turn on to receive reminders on this device. You can change this later in Settings.",
       enableCta: "Turn on reminders",
@@ -660,7 +660,7 @@ export const BUNDLES: Record<Locale, Record<string, unknown>> = {
       analyticsOptional: "Optional",
       softPromptTitle: "Turn on reminders?",
       softPromptBody:
-        "Get gentle pushes for day start and wrap-up. Always changeable in settings.",
+        "An ADHD brain forgets plans when they are out of sight. A gentle push helps you return to day start and wrap-up, without guilt. Always changeable in settings.",
       softPromptAccept: "Yes, please",
       softPromptDismiss: "Not now",
       softPromptInstall: "Install first",
