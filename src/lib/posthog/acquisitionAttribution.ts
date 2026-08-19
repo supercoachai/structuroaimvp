@@ -122,8 +122,7 @@ export function resolveAcquisitionAttribution(input: {
     has_ttclid ||
     isTikTokSourceToken(utm_source) ||
     isTikTokSourceToken(legacySource) ||
-    isTikTokReferrer(input.referrer) ||
-    fromTikTokRoute;
+    isTikTokReferrer(input.referrer);
 
   let source =
     utm_source ||

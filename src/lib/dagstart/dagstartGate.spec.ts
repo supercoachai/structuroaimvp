@@ -37,6 +37,8 @@ describe("isDagstartGateExemptPath", () => {
       "/start",
       "/en/start",
       "/tiktok",
+      "/instagram",
+      "/social/tiktok",
       "/abonnement",
       "/stop-abonnement",
       "/privacy",

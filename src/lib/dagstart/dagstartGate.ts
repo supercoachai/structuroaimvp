@@ -55,6 +55,10 @@ export function isDagstartGateExemptPath(pathname: string): boolean {
   if (pathname === "/en/tiktok" || pathname.startsWith("/en/tiktok/")) {
     return true;
   }
+  if (pathname === "/instagram" || pathname.startsWith("/instagram/")) {
+    return true;
+  }
+  if (pathname === "/social" || pathname.startsWith("/social/")) return true;
   if (pathname === "/wachtlijst" || pathname.startsWith("/wachtlijst/")) {
     return true;
   }

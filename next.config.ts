@@ -78,13 +78,8 @@ const nextConfig: NextConfig = {
         destination: "/onboarding",
         permanent: false,
       },
-      // Engelse bio-links: page-level redirect (/en/start → /onboarding) behoudt
-      // UTM's; next.config-destination met ?lang=en zou request-query overschrijven.
-      {
-        source: "/en/tiktok",
-        destination: "/tiktok?lang=en",
-        permanent: false,
-      },
+      // /en/tiktok is middleware-hop naar /onboarding (query + lang=en). Geen
+      // next.config-destination met ?lang=en: die zou request-query overschrijven.
       // Engelse en hoofdlettervarianten: statische redirect (geen page-equivalent).
       {
         source: "/waitlist",

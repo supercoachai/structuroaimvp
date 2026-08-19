@@ -18,6 +18,7 @@ export const ORGANIC_BRIDGE_PATH = "/start";
 export const ORGANIC_ENTRY_PATH = "/onboarding";
 
 export const TIKTOK_SIGNUP_SOURCE = "tiktok";
+export const INSTAGRAM_SIGNUP_SOURCE = "instagram";
 export const ORGANIC_SIGNUP_SOURCE = "structuro_eu";
 
 export const TIKTOK_DEFAULT_CAMPAIGN = "tiktok_promote";
@@ -36,6 +37,15 @@ export const TIKTOK_BIO_DEFAULT_UTM = {
   utm_medium: ORGANIC_DEFAULT_MEDIUM,
   utm_campaign: "tiktok_bio",
 } as const;
+
+export const INSTAGRAM_BIO_DEFAULT_UTM = {
+  utm_source: INSTAGRAM_SIGNUP_SOURCE,
+  utm_medium: ORGANIC_DEFAULT_MEDIUM,
+  utm_campaign: "ig_bio",
+} as const;
+
+/** Typebare .eu-bio-links (structuro.eu/tiktok en /instagram). */
+export const SOCIAL_VANITY_CONTENT = "eu_vanity";
 
 type SearchParamsLike = {
   get(name: string): string | null;

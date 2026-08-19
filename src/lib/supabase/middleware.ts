@@ -53,6 +53,7 @@ import {
   isV2AppShellDagstartPath,
   shouldRedirectToDagstart,
 } from "../dagstart/dagstartGate";
+import { buildSocialVanityRedirectPath } from "../acquisition/socialVanity";
 
 /**
  * Abonnements-check in middleware. Standaard UIT (geen redirect naar /abonnement).
@@ -143,6 +144,10 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname.startsWith("/adhd-cafe/") ||
     pathname === "/tiktok" ||
     pathname.startsWith("/tiktok/") ||
+    pathname === "/instagram" ||
+    pathname.startsWith("/instagram/") ||
+    pathname === "/social" ||
+    pathname.startsWith("/social/") ||
     pathname === "/start" ||
     pathname.startsWith("/start/") ||
     pathname === "/en/start" ||
@@ -528,6 +533,20 @@ export async function updateSession(
   event?: NextFetchEvent
 ) {
   const pathname = request.nextUrl.pathname;
+
+  // Typebare bio-links (.eu/tiktok, .eu/instagram) en leftover .ai/tiktok:
+  // HTTP 307 naar dezelfde dagstart, bron in utm_source.
+  const vanityTarget = buildSocialVanityRedirectPath(
+    pathname,
+    request.nextUrl.searchParams
+  );
+  if (vanityTarget) {
+    const url = request.nextUrl.clone();
+    const dest = new URL(vanityTarget, request.nextUrl.origin);
+    url.pathname = dest.pathname;
+    url.search = dest.search;
+    return NextResponse.redirect(url, 307);
+  }
 
   // Legacy v1 /uitleg: permanent dicht (ook als next.config-redirect mist).
   if (pathname === "/uitleg" || pathname.startsWith("/uitleg/")) {

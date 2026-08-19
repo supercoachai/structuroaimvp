@@ -37,6 +37,7 @@ export function isOrganicEuAcquisitionUrl(
   const utm = params.get("utm_source") || "";
   const legacy = params.get("source") || "";
   if (utm === "tiktok" || legacy === "tiktok") return false;
+  if (utm === "instagram" || legacy === "instagram") return false;
   if (utm === "structuro_eu" || legacy === "structuro_eu") return true;
   // Kale /registreren = organische acquisitie (zelfde NL-default als structuro.eu-funnel).
   return pathname === "/registreren" || pathname.startsWith("/registreren/");

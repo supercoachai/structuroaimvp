@@ -25,12 +25,15 @@ export const APP_ROUTES = [
   { path: "/login", kind: "public", status: [200], needles: ["structuro"] },
   { path: "/registreren", kind: "public", status: [200], needles: ["registr"] },
   { path: "/registreren/plan", kind: "public", status: [200] },
-  { path: "/tiktok", kind: "public", status: [200], needles: ["structuro"] },
+  { path: "/tiktok", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
   // Page-level redirect() (behoudt UTM's + zet lang=en); next.config zou query kwijtraken.
   { path: "/en/start", kind: "public", status: [200, 307, 308], needles: ["onboarding", "lang=en", "NEXT_REDIRECT"] },
   // Legacy /start → /onboarding (query behouden); geen leesbare bridge meer.
   { path: "/start", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
-  { path: "/en/tiktok", kind: "public", status: [200, 307, 308], needles: ["tiktok", "lang=en", "NEXT_REDIRECT"] },
+  { path: "/en/tiktok", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
+  { path: "/social/tiktok", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
+  { path: "/social/instagram", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
+  { path: "/instagram", kind: "public", status: [200, 307, 308], finalPath: "/onboarding" },
   { path: "/jasper", kind: "public", status: [200], needles: ["structuro", "jasper"] },
   { path: "/abonnement", kind: "public", status: [200, 307, 308] },
   { path: "/adhd-cafe", kind: "public", status: [200], needles: ["structuro"] },

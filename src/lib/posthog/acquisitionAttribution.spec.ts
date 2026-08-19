@@ -117,6 +117,30 @@ describe("resolveAcquisitionAttribution", () => {
     expect(result.source).toBe("structuro_eu");
   });
 
+  it("/onboarding met utm_source=tiktok is TikTok, niet structuro_eu", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/onboarding",
+      searchParams: new URLSearchParams(
+        "utm_source=tiktok&utm_medium=organic&utm_campaign=tiktok_bio&utm_content=eu_vanity"
+      ),
+      referrer: null,
+    });
+    expect(result.is_tiktok).toBe(true);
+    expect(result.source).toBe("tiktok");
+  });
+
+  it("/onboarding met utm_source=instagram is Instagram, niet TikTok", () => {
+    const result = resolveAcquisitionAttribution({
+      pathname: "/onboarding",
+      searchParams: new URLSearchParams(
+        "utm_source=instagram&utm_medium=organic&utm_campaign=ig_bio&utm_content=eu_vanity"
+      ),
+      referrer: null,
+    });
+    expect(result.is_tiktok).toBe(false);
+    expect(result.source).toBe("instagram");
+  });
+
   it("direct verkeer blijft direct", () => {
     const result = resolveAcquisitionAttribution({
       pathname: "/registreren",

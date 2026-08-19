@@ -5,8 +5,9 @@
    * EU landing analytics (site=eu in PostHog).
    * Primaire conversie: cta_clicked → structuro.ai/onboarding → signup_completed.
    * Organisch EU: /onboarding + utm_source=structuro_eu + utm_campaign=eu_v2 (attributie-label).
-   * TikTok: alleen bij utm_source=tiktok of ttclid → /tiktok (leesbare bridge).
+   * TikTok: alleen bij utm_source=tiktok of ttclid → /onboarding + utm_source=tiktok.
    * /wachtlijst, /waitlist en /inschrijven redirecten naar structuro.ai/onboarding (zie vercel.json).
+   * Typebare bio-links: /tiktok en /instagram → dezelfde dagstart, andere utm_source.
    * Inloggen: /login.
    */
   /** Sectie-id's voor zichtbaarheid (moet overeenkomen met id="" op index.html). */
@@ -59,8 +60,8 @@
   function structuroSignupBridgeUrl(contentId) {
     var params = new URLSearchParams(window.location.search || "");
     var isTikTok = isTikTokAcquisitionTraffic(params);
-    // Organisch EU → /onboarding. TikTok → /tiktok (leesbare bridge).
-    var bridgePath = isTikTok ? "/tiktok" : "/onboarding";
+    // Organisch EU en TikTok landen beide op /onboarding; bron zit in utm_source.
+    var bridgePath = "/onboarding";
     var bridgeParams = new URLSearchParams({
       utm_content: contentId || "cta",
     });

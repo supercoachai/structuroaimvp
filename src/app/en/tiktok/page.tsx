@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation";
 
+import { buildSocialVanityRedirectPath } from "@/lib/acquisition/socialVanity";
+
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/** Engelse bio-link: /en/tiktok → /tiktok met lang=en (behoud UTM-params). */
+/** Fallback als middleware de hop mist. /en/tiktok → onboarding + lang=en. */
 export default async function EnTikTokRedirect({ searchParams }: PageProps) {
   const params = await searchParams;
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (typeof value === "string") query.set(key, value);
   }
-  query.set("lang", "en");
-  const qs = query.toString();
-  redirect(qs ? `/tiktok?${qs}` : "/tiktok?lang=en");
+  redirect(
+    buildSocialVanityRedirectPath("/en/tiktok", query) ??
+      "/onboarding?utm_source=tiktok&utm_medium=organic&utm_campaign=tiktok_bio&utm_content=eu_vanity&lang=en"
+  );
 }

@@ -25,6 +25,10 @@ function isFailOpenPath(pathname: string): boolean {
     return true
   }
   if (pathname === '/welkom' || pathname.startsWith('/welkom/')) return true
+  if (pathname === '/instagram' || pathname.startsWith('/instagram/')) return true
+  if (pathname === '/tiktok' || pathname.startsWith('/tiktok/')) return true
+  if (pathname === '/en/tiktok' || pathname.startsWith('/en/tiktok/')) return true
+  if (pathname === '/social' || pathname.startsWith('/social/')) return true
   if (pathname === '/wachtlijst' || pathname.startsWith('/wachtlijst/')) return true
   if (pathname === '/inschrijven' || pathname.startsWith('/inschrijven/')) return true
   if (pathname === '/privacy' || pathname.startsWith('/privacy/')) return true

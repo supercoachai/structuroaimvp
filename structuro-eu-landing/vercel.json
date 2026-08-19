@@ -115,6 +115,26 @@
       "source": "/wachtlijst/",
       "destination": "https://www.structuro.ai/onboarding?utm_source=structuro_eu&utm_medium=organic&utm_campaign=eu_v2&utm_content=waitlist_legacy",
       "permanent": false
+    },
+    {
+      "source": "/tiktok",
+      "destination": "https://www.structuro.ai/social/tiktok",
+      "permanent": false
+    },
+    {
+      "source": "/tiktok/",
+      "destination": "https://www.structuro.ai/social/tiktok",
+      "permanent": false
+    },
+    {
+      "source": "/instagram",
+      "destination": "https://www.structuro.ai/social/instagram",
+      "permanent": false
+    },
+    {
+      "source": "/instagram/",
+      "destination": "https://www.structuro.ai/social/instagram",
+      "permanent": false
     }
   ],
   "rewrites": [
