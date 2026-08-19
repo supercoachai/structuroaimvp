@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+from extra_guides import EXTRA_GUIDES
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
-MODIFIED = "2026-08-11"
-CSS_V = "20260811a"
+MODIFIED = "2026-08-19"
+CSS_V = "20260819a"
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 
 GUIDES = [
@@ -18,6 +24,10 @@ GUIDES = [
         "eyebrow": "Taakinitiatie",
         "card_num": "01",
         "card_label": "TAAKINITIATIE",
+        "hub_h2": "Waarom 'gewoon beginnen' niet werkt",
+        "hub_teaser": "Je brein ziet de hele keten, niet de eerste klik. Zo maak je de start kleiner dan je ego prettig vindt.",
+        "thumb": "ochtendlicht",
+        "thumb_mod": "",
         "read_min": "3 MIN",
         "title": "Waarom 'gewoon beginnen' niet werkt (en wat wel)",
         "description": "Je wilt wel, maar starten lukt niet. Dat is geen luiheid. Zo werkt taakinitiatie bij ADHD-breinen, en wat wél helpt om vandaag één stap te zetten.",
@@ -112,6 +122,10 @@ GUIDES = [
         "eyebrow": "Methode",
         "card_num": "02",
         "card_label": "METHODE",
+        "hub_h2": "Eén stap per dag",
+        "hub_teaser": "Minder tegelijk zichtbaar, vaker echt starten. Ook met een vol hoofd.",
+        "thumb": "notitieboek",
+        "thumb_mod": "d",
         "read_min": "3 MIN",
         "title": "Eén stap per dag: met vol hoofd tóch beginnen",
         "description": "Met een vol hoofd helpt niet méér plannen, maar één haalbare stap. Zo werkt de één-stap-methode zonder shame, streaks of overvolle lijsten.",
@@ -214,6 +228,10 @@ GUIDES = [
         "eyebrow": "Anti-planner",
         "card_num": "03",
         "card_label": "ANTI-PLANNER",
+        "hub_h2": "Waarom planners falen",
+        "hub_teaser": "Een lijst bewaart taken, hij start ze niet. Executie in plaats van overzicht.",
+        "thumb": "lege agenda",
+        "thumb_mod": "n",
         "read_min": "4 MIN",
         "title": "Waarom planners falen bij ADHD",
         "description": "Zoek je een ADHD-app zonder streaks of schaamte? Planners bewaren taken. Executie helpt je starten. Waarom dat verschil ertoe doet voor ADHD-breinen.",
@@ -309,6 +327,10 @@ GUIDES = [
         "eyebrow": "Mentale last",
         "card_num": "04",
         "card_label": "MENTALE LAST",
+        "hub_h2": "Mentale belasting en de dagstart",
+        "hub_teaser": "Keuzedruk verlagen vóór je überhaupt een lijst opent.",
+        "thumb": "raam, ochtend",
+        "thumb_mod": "d",
         "read_min": "3 MIN",
         "title": "Mentale belasting en de dagstart",
         "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte, rustige dagstart verlaagt keuzedruk en helpt je één stap kiezen zonder ochtendtheater.",
@@ -410,6 +432,10 @@ GUIDES = [
         "eyebrow": "Energie-first",
         "card_num": "05",
         "card_label": "ENERGIE-FIRST",
+        "hub_h2": "Energie-first werken",
+        "hub_teaser": "Eerst batterij, dan taken. Op een lage dag is 'openen' genoeg als start.",
+        "thumb": "rust / avond",
+        "thumb_mod": "",
         "read_min": "3 MIN",
         "title": "Energie-first werken in plaats van moeten",
         "description": "Kies taken rond je energie, niet je energie rond je to-do. Zo werkt energie-first zonder hustle, shame of vaste lat die je elke dag breekt.",
@@ -501,6 +527,8 @@ GUIDES = [
     },
 ]
 
+GUIDES.extend(EXTRA_GUIDES)
+
 
 def esc(s: str) -> str:
     return (
@@ -517,10 +545,20 @@ def word_count_html(html: str) -> int:
 
 
 def related_html(current: str) -> str:
-    items = []
-    for g in GUIDES:
-        if g["slug"] == current:
+    idx = next(i for i, g in enumerate(GUIDES) if g["slug"] == current)
+    n = len(GUIDES)
+    seen = {current}
+    picks = []
+    for offset in (1, -1, 2, -2, 3, -3):
+        g = GUIDES[(idx + offset) % n]
+        if g["slug"] in seen:
             continue
+        seen.add(g["slug"])
+        picks.append(g)
+        if len(picks) == 4:
+            break
+    items = []
+    for g in picks:
         num = g.get("card_num", "")
         label = g.get("card_label", g["eyebrow"].upper())
         items.append(
@@ -572,8 +610,15 @@ def faq_schema(faqs: list[tuple[str, str]]) -> str:
     )
 
 
+def article_dates(g: dict) -> tuple[str, str]:
+    published = g.get("published") or PUBLISHED
+    modified = g.get("modified") or MODIFIED
+    return published, modified
+
+
 def article_schema(g: dict) -> str:
     url = f"https://www.structuro.eu/{g['slug']}/"
+    published, modified = article_dates(g)
     return json.dumps(
         {
             "@context": "https://schema.org",
@@ -581,8 +626,8 @@ def article_schema(g: dict) -> str:
             "headline": g["h1"],
             "description": g["description"],
             "inLanguage": "nl-NL",
-            "datePublished": PUBLISHED,
-            "dateModified": MODIFIED,
+            "datePublished": published,
+            "dateModified": modified,
             "author": {"@type": "Organization", "name": "Structuro", "url": "https://www.structuro.eu/"},
             "publisher": {
                 "@type": "Organization",
@@ -649,6 +694,7 @@ def render(g: dict) -> str:
     card_num = g.get("card_num", "0")
     card_label = g.get("card_label", g["eyebrow"].upper())
     read_min = g.get("read_min", "3 MIN")
+    published, modified = article_dates(g)
     return f"""<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -672,8 +718,8 @@ def render(g: dict) -> str:
 <meta property="og:image:height" content="630"/>
 <meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
 <meta property="og:type" content="article"/>
-<meta property="article:published_time" content="{PUBLISHED}"/>
-<meta property="article:modified_time" content="{MODIFIED}"/>
+<meta property="article:published_time" content="{published}"/>
+<meta property="article:modified_time" content="{modified}"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="{esc(title)}"/>
 <meta name="twitter:description" content="{esc(g["description"])}"/>
@@ -696,7 +742,7 @@ def render(g: dict) -> str:
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
-<script defer src="/js/analytics.js?v=20260730g"></script>
+<script defer src="/js/analytics.js?v=20260819c"></script>
 </head>
 <body>
 <header class="site-header">
@@ -734,8 +780,8 @@ def render(g: dict) -> str:
       <p>{esc(g["cta_p"])}</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Start 7 dagen gratis</a>
-      <p class="reassure">Geen streaks. Geen shame. Klaar in ~30 seconden.</p>
+      <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Begin met één stap</a>
+      <p class="reassure">Geen streaks. Geen shame. Gratis 7 dagen · geen creditcard · klaar in ~2 minuten.</p>
     </div>
   </section>
 
@@ -764,6 +810,7 @@ def render(g: dict) -> str:
     </a>
     <div class="flinks">
       <a href="/gidsen/">Gidsen</a>
+      <a href="/onderzoek/">Onderzoek</a>
       <a href="/#prijs">Prijs</a>
       <a href="/#faq">FAQ</a>
       <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=footer_login">Inloggen</a>
@@ -846,6 +893,260 @@ def write_llms() -> None:
     print("wrote llms.txt")
 
 
+def hub_card_html(g: dict) -> str:
+    h2 = g.get("hub_h2") or g["h1"].split("(")[0].strip()
+    teaser = g.get("hub_teaser") or g["description"]
+    thumb = g.get("thumb") or "rust"
+    mod = g.get("thumb_mod") or ""
+    th_class = "th" + (f" {mod}" if mod else "")
+    num = g.get("card_num", "")
+    label = g.get("card_label", g["eyebrow"].upper())
+    read_min = g.get("read_min", "3 MIN")
+    return f"""    <a class="c" href="/{g["slug"]}/" data-ph-cta="gidsen_card_{num}">
+      <div>
+        <div class="kk"><b>{esc(num)} · {esc(label)}</b><s></s><em>{esc(read_min)}</em></div>
+        <h2>{esc(h2)}</h2>
+        <div class="teaser">{esc(teaser)}</div>
+        <div class="go">Open de kaart →</div>
+      </div>
+      <div class="{th_class}" data-l="{esc(thumb)}"></div>
+    </a>"""
+
+
+def write_hub() -> None:
+    n = len(GUIDES)
+    desc = (
+        f"{n} korte gidsen over starten met een ADHD-brein. "
+        "Geen streaks, geen schaamte, wel een haalbare eerste stap."
+    )
+    has_part = ",\n    ".join(
+        '{"@type": "Article", "name": '
+        + json.dumps(g.get("hub_h2") or g["h1"], ensure_ascii=False)
+        + ', "url": "https://www.structuro.eu/'
+        + g["slug"]
+        + '/"}'
+        for g in GUIDES
+    )
+    cards = "\n\n".join(hub_card_html(g) for g in GUIDES)
+    html = f"""<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gidsen · Structuro</title>
+<meta name="description" content="{esc(desc)}"/>
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large"/>
+<link rel="canonical" href="https://www.structuro.eu/gidsen/"/>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
+<link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260730a"/>
+<meta property="og:site_name" content="Structuro"/>
+<meta property="og:locale" content="nl_NL"/>
+<meta property="og:title" content="Gidsen · Structuro"/>
+<meta property="og:description" content="{esc(desc)}"/>
+<meta property="og:url" content="https://www.structuro.eu/gidsen/"/>
+<meta property="og:image" content="{OG_IMAGE}"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Gidsen · Structuro"/>
+<meta name="twitter:description" content="{esc(desc)}"/>
+<meta name="twitter:image" content="{OG_IMAGE}"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/guide.css?v={CSS_V}"/>
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Gidsen",
+  "description": {json.dumps(desc, ensure_ascii=False)},
+  "url": "https://www.structuro.eu/gidsen/",
+  "isPartOf": {{
+    "@type": "WebSite",
+    "name": "Structuro",
+    "url": "https://www.structuro.eu/"
+  }},
+  "hasPart": [
+    {has_part}
+  ]
+}}
+</script>
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {{"@type": "ListItem", "position": 1, "name": "Structuro", "item": "https://www.structuro.eu/"}},
+    {{"@type": "ListItem", "position": 2, "name": "Gidsen", "item": "https://www.structuro.eu/gidsen/"}}
+  ]
+}}
+</script>
+<script>
+  window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/js/ph-config.js?v=20260724a"></script>
+<script defer src="/js/analytics.js?v=20260819c"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="shell hbar">
+    <a class="logo" href="/">
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="26" height="26"/></span>
+      Structuro
+    </a>
+    <nav class="navlinks" aria-label="Hoofdmenu">
+      <a class="is-active" href="/gidsen/">Gidsen</a>
+      <a href="/#prijs">Prijs</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign=gidsen_hub&utm_content=nav_login">Inloggen</a>
+    </nav>
+    <a class="btn" href="https://www.structuro.ai/onboarding?utm_source=structuro_eu&utm_medium=seo&utm_campaign=gidsen_hub&utm_content=guide_nav" data-ph-cta="guide_nav" data-signup-bridge="guide_nav">Begin met één stap</a>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="hero">
+    <div class="heroText">
+      <div class="eyebrow">Gidsen</div>
+      <h1 class="hero-title">Kies een kaart.</h1>
+      <p class="sub">ADHD-executie, zonder planner-theater.</p>
+      <p class="lede">Je hoeft niet alles te lezen. Elke kaart staat op zichzelf, is in een paar minuten uit en eindigt met één ding dat je vandaag kunt doen.</p>
+      <div class="facts"><span>{n} kaarten</span><span>kies er één</span><span>geen account nodig</span></div>
+    </div>
+    <div class="fan" aria-hidden="true"><i></i><i></i><i></i></div>
+  </section>
+
+  <section class="deck" aria-label="Alle gidsen">
+{cards}
+  </section>
+
+  <section class="cta" aria-label="Call to action">
+    <div>
+      <h2>Geen planner. Wel starten.</h2>
+      <p>Probeer Structuro als executie-hulp: één eerste stap, passend bij je energie.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a class="b" href="https://www.structuro.ai/onboarding?utm_source=structuro_eu&utm_medium=seo&utm_campaign=gidsen_hub&utm_content=guide_cta" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Begin met één stap</a>
+      <div class="q">Geen streaks. Geen shame. Gratis 7 dagen · geen creditcard · klaar in ~2 minuten.</div>
+    </div>
+  </section>
+
+  <p class="disc">Structuro is een prikkelarme executie-app, geen medisch advies en geen planner. Geen diagnose of behandeling.</p>
+</main>
+
+<footer>
+  <div class="shell fbar">
+    <a class="logo" href="/">
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="22" height="22"/></span>
+      Structuro
+    </a>
+    <div class="flinks">
+      <a href="/gidsen/">Gidsen</a>
+      <a href="/onderzoek/">Onderzoek</a>
+      <a href="/toegankelijkheid/">Toegankelijkheid</a>
+      <a href="/#prijs">Prijs</a>
+      <a href="/#faq">FAQ</a>
+      <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign=gidsen_hub&utm_content=footer_login">Inloggen</a>
+    </div>
+    <div class="fsmall">
+      <span>© Structuro</span>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Voorwaarden</a>
+      <a href="/cookies/">Cookies</a>
+    </div>
+  </div>
+  <a class="verified-dr-badge" href="https://verifieddr.com" target="_blank" rel="noopener">Verified DR</a>
+</footer>
+</body>
+</html>
+"""
+    (ROOT / "gidsen" / "index.html").write_text(html, encoding="utf-8")
+    print("wrote gidsen/index.html")
+
+
+def ensure_sitemap() -> None:
+    path = ROOT / "sitemap.xml"
+    text = path.read_text(encoding="utf-8")
+    added = []
+    for g in GUIDES:
+        loc = f"https://www.structuro.eu/{g['slug']}/"
+        if loc in text:
+            continue
+        added.append(
+            f"""  <url>
+    <loc>{loc}</loc>
+    <lastmod>{MODIFIED}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>"""
+        )
+    if not added:
+        return
+    text = text.replace("</urlset>", "\n".join(added) + "\n</urlset>\n")
+    path.write_text(text, encoding="utf-8")
+    print(f"sitemap: +{len(added)} urls")
+
+
+def ensure_llms() -> None:
+    path = ROOT / "llms.txt"
+    text = path.read_text(encoding="utf-8")
+    start = text.index("## Gidsen (SEO / GEO)")
+    end = text.index("## Optional")
+    lines = ["## Gidsen (SEO / GEO)", ""]
+    for g in GUIDES:
+        lines.append(
+            f"- [{g['h1']}](https://www.structuro.eu/{g['slug']}/): {g['answer']}"
+        )
+    lines.append("")
+    path.write_text(text[:start] + "\n".join(lines) + "\n" + text[end:], encoding="utf-8")
+    print("updated llms.txt gidsen")
+
+
+def ensure_vercel_routes() -> None:
+    path = ROOT / "vercel.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    redir_sources = {r["source"] for r in data.get("redirects", [])}
+    rewrite_sources = {r["source"] for r in data.get("rewrites", [])}
+    new_redirs = []
+    new_rewrites = []
+    for g in GUIDES:
+        bare = f"/{g['slug']}"
+        slash = f"/{g['slug']}/"
+        if bare not in redir_sources:
+            new_redirs.append(
+                {"source": bare, "destination": slash, "permanent": True}
+            )
+        if slash not in rewrite_sources:
+            new_rewrites.append(
+                {"source": slash, "destination": f"/{g['slug']}/index.html"}
+            )
+
+    def insert_after(arr: list, after_source: str, items: list) -> None:
+        idx = next(i for i, r in enumerate(arr) if r["source"] == after_source)
+        for j, item in enumerate(items):
+            arr.insert(idx + 1 + j, item)
+
+    changed = False
+    if new_redirs:
+        insert_after(data["redirects"], "/energie-first", new_redirs)
+        changed = True
+    if new_rewrites:
+        insert_after(data["rewrites"], "/energie-first/", new_rewrites)
+        changed = True
+    if changed:
+        path.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        print(f"vercel.json: +{len(new_redirs)} redirects, +{len(new_rewrites)} rewrites")
+
+
 def main() -> None:
     for g in GUIDES:
         aw = len(g["answer"].split())
@@ -858,8 +1159,10 @@ def main() -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(render(g), encoding="utf-8")
         print(f"wrote {out.relative_to(ROOT)} (answer={aw}, body={bw})")
-    write_sitemap()
-    write_llms()
+    write_hub()
+    ensure_sitemap()
+    ensure_llms()
+    ensure_vercel_routes()
 
 
 if __name__ == "__main__":

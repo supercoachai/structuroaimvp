@@ -139,6 +139,8 @@ def wrap_page(
   window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/js/ph-config.js?v=20260724a"></script>
+<script defer src="/js/analytics.js?v=20260819c"></script>
 </head>
 <body>
 <header class="site-header">

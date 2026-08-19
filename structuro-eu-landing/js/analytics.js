@@ -223,8 +223,20 @@
 
   /**
    * GA4: dataLayer-queue tot gtag.js geladen is (zelfde gedrag als Google's snippet).
+   * GA wordt hier niet meer automatisch geladen. PostHog wel.
    */
+  var ANALYTICS_CONSENT_KEY = "structuro_analytics_consent";
+
+  function readAnalyticsConsent() {
+    try {
+      var v = window.localStorage.getItem(ANALYTICS_CONSENT_KEY);
+      if (v === "granted" || v === "denied") return v;
+    } catch (e) {}
+    return "unknown";
+  }
+
   function loadGoogleAnalytics() {
+    if (readAnalyticsConsent() !== "granted") return;
     if (window.__structuroGa4Loaded) return;
     window.__structuroGa4Loaded = true;
 
@@ -484,11 +496,12 @@
 
   function scheduleBootstrap() {
     function runPosthog() {
-      loadPosthog(attachLandingMeasurement);
-    }
-
-    function runGa() {
-      loadGoogleAnalytics();
+      loadPosthog(function () {
+        attachScrollDepthMilestones();
+        attachSectionVisibility();
+        attachFaqToggle();
+        attachPricingViewed();
+      });
     }
 
     if ("requestIdleCallback" in window) {
@@ -499,11 +512,6 @@
         window.setTimeout(runPosthog, 200);
       });
     }
-
-    window.addEventListener("load", function onGaLoad() {
-      window.removeEventListener("load", onGaLoad);
-      window.setTimeout(runGa, 1500);
-    });
   }
 
   function bootstrap() {

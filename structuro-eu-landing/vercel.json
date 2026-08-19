@@ -5,10 +5,22 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://eu.i.posthog.com https://eu-assets.i.posthog.com; connect-src 'self' https://eu.i.posthog.com https://eu.posthog.com https://www.structuro.ai; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'"
@@ -37,18 +49,13 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "structuro.eu" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
       "destination": "https://www.structuro.eu/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/v2",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/v2/",
-      "destination": "/",
       "permanent": true
     },
     {
@@ -82,8 +89,108 @@
       "permanent": true
     },
     {
+      "source": "/adhd-ochtendroutine",
+      "destination": "/adhd-ochtendroutine/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-uitstelgedrag",
+      "destination": "/adhd-uitstelgedrag/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-keuzestress",
+      "destination": "/adhd-keuzestress/",
+      "permanent": true
+    },
+    {
+      "source": "/takenlijst-te-lang-adhd",
+      "destination": "/takenlijst-te-lang-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-focus-zonder-streaks",
+      "destination": "/adhd-focus-zonder-streaks/",
+      "permanent": true
+    },
+    {
+      "source": "/niet-kunnen-beginnen-adhd",
+      "destination": "/niet-kunnen-beginnen-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/taakverlamming-adhd",
+      "destination": "/taakverlamming-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/tijdblindheid-adhd",
+      "destination": "/tijdblindheid-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-planner-die-niet-overvraagt",
+      "destination": "/adhd-planner-die-niet-overvraagt/",
+      "permanent": true
+    },
+    {
+      "source": "/beste-adhd-app-nederland",
+      "destination": "/beste-adhd-app-nederland/",
+      "permanent": true
+    },
+    {
+      "source": "/alternatief-voor-todo-lijst-adhd",
+      "destination": "/alternatief-voor-todo-lijst-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-of-tiimo",
+      "destination": "/structuro-of-tiimo/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-of-structured",
+      "destination": "/structuro-of-structured/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-en-burn-out",
+      "destination": "/adhd-en-burn-out/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-op-het-werk",
+      "destination": "/adhd-op-het-werk/",
+      "permanent": true
+    },
+    {
       "source": "/cyclus",
       "destination": "/cyclus/",
+      "permanent": true
+    },
+    {
+      "source": "/onderzoek",
+      "destination": "/onderzoek/",
+      "permanent": true
+    },
+    {
+      "source": "/verhaal",
+      "destination": "/verhaal/",
+      "permanent": true
+    },
+    {
+      "source": "/toegankelijkheid",
+      "destination": "/toegankelijkheid/",
+      "permanent": true
+    },
+    {
+      "source": "/pers",
+      "destination": "/pers/",
+      "permanent": true
+    },
+    {
+      "source": "/en",
+      "destination": "/en/",
       "permanent": true
     },
     {
@@ -165,6 +272,86 @@
     {
       "source": "/energie-first/",
       "destination": "/energie-first/index.html"
+    },
+    {
+      "source": "/adhd-ochtendroutine/",
+      "destination": "/adhd-ochtendroutine/index.html"
+    },
+    {
+      "source": "/adhd-uitstelgedrag/",
+      "destination": "/adhd-uitstelgedrag/index.html"
+    },
+    {
+      "source": "/adhd-keuzestress/",
+      "destination": "/adhd-keuzestress/index.html"
+    },
+    {
+      "source": "/takenlijst-te-lang-adhd/",
+      "destination": "/takenlijst-te-lang-adhd/index.html"
+    },
+    {
+      "source": "/adhd-focus-zonder-streaks/",
+      "destination": "/adhd-focus-zonder-streaks/index.html"
+    },
+    {
+      "source": "/niet-kunnen-beginnen-adhd/",
+      "destination": "/niet-kunnen-beginnen-adhd/index.html"
+    },
+    {
+      "source": "/taakverlamming-adhd/",
+      "destination": "/taakverlamming-adhd/index.html"
+    },
+    {
+      "source": "/tijdblindheid-adhd/",
+      "destination": "/tijdblindheid-adhd/index.html"
+    },
+    {
+      "source": "/adhd-planner-die-niet-overvraagt/",
+      "destination": "/adhd-planner-die-niet-overvraagt/index.html"
+    },
+    {
+      "source": "/beste-adhd-app-nederland/",
+      "destination": "/beste-adhd-app-nederland/index.html"
+    },
+    {
+      "source": "/alternatief-voor-todo-lijst-adhd/",
+      "destination": "/alternatief-voor-todo-lijst-adhd/index.html"
+    },
+    {
+      "source": "/structuro-of-tiimo/",
+      "destination": "/structuro-of-tiimo/index.html"
+    },
+    {
+      "source": "/structuro-of-structured/",
+      "destination": "/structuro-of-structured/index.html"
+    },
+    {
+      "source": "/adhd-en-burn-out/",
+      "destination": "/adhd-en-burn-out/index.html"
+    },
+    {
+      "source": "/adhd-op-het-werk/",
+      "destination": "/adhd-op-het-werk/index.html"
+    },
+    {
+      "source": "/onderzoek/",
+      "destination": "/onderzoek/index.html"
+    },
+    {
+      "source": "/verhaal/",
+      "destination": "/verhaal/index.html"
+    },
+    {
+      "source": "/toegankelijkheid/",
+      "destination": "/toegankelijkheid/index.html"
+    },
+    {
+      "source": "/pers/",
+      "destination": "/pers/index.html"
+    },
+    {
+      "source": "/en/",
+      "destination": "/en/index.html"
     },
     {
       "source": "/ph/static/:path(.*)",
