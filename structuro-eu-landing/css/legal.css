@@ -120,6 +120,14 @@ img{display:block;max-width:100%;height:auto}
 }
 .legal-back:hover{color:#1F433F}
 
+.site-verify{
+  margin-top:48px;padding-top:18px;
+  border-top:1px solid rgba(26,35,64,.06);
+}
+.site-verify a{display:inline-block;line-height:0;opacity:.65}
+.site-verify a:hover{opacity:1;color:inherit}
+.site-verify img{width:200px;height:24px}
+
 footer.site-foot{
   border-top:1px solid rgba(26,35,64,.07);padding:40px 0 36px;background:var(--v2-paper);
 }
