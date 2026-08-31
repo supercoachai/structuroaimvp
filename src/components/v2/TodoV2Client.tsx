@@ -110,6 +110,7 @@ export default function TodoV2Client() {
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
   const [infoOpen, setInfoOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
+  const [snoozedOpen, setSnoozedOpen] = useState(true);
   const editAnchorRef = useRef<HTMLDivElement | null>(null);
 
   // Laad uit localStorage. Zaai ontbrekende journey-titels zonder dubbels.
@@ -240,6 +241,19 @@ export default function TodoV2Client() {
     persist(tasks.map((t) => (t.id === id ? { ...t, snoozeUntil: until } : t)));
   };
 
+  /** Rustende taak handmatig terug naar de actieve lijst (snooze opheffen). */
+  const wakeTask = (id: string) => {
+    persist(tasks.map((t) => (t.id === id ? { ...t, snoozeUntil: null } : t)));
+  };
+
+  const wakeAllSnoozed = () => {
+    persist(
+      tasks.map((t) =>
+        !t.done && !isV2TaskVisible(t) ? { ...t, snoozeUntil: null } : t,
+      ),
+    );
+  };
+
   const startNew = () => {
     setDraft(emptyDraft());
     setIsNew(true);
@@ -331,12 +345,17 @@ export default function TodoV2Client() {
         energyLevel: draft.energy,
         locale: "nl",
       });
+      // Afgevinkte stappen blijven staan; open stappen worden vervangen.
+      const keepDone = draft.microSteps.filter((m) => m.done);
       patchDraft({
-        microSteps: result.steps.slice(0, 4).map((stepTitle) => ({
-          id: v2Id("ms"),
-          title: stepTitle,
-          done: false,
-        })),
+        microSteps: [
+          ...keepDone,
+          ...result.steps.slice(0, 4).map((stepTitle) => ({
+            id: v2Id("ms"),
+            title: stepTitle,
+            done: false,
+          })),
+        ],
       });
     } catch {
       setSuggestError(t("v2.todoSuggestFailed"));
@@ -412,11 +431,13 @@ export default function TodoV2Client() {
         ) : null}
 
         {snoozedTasks.length > 0 ? (
-          <p className="text-center text-[13px]" style={{ color: "var(--text-muted)" }}>
-            {snoozedTasks.length === 1
-              ? t("v2.todoSnoozedOne")
-              : t("v2.todoSnoozedMany", { n: String(snoozedTasks.length) })}
-          </p>
+          <SnoozedSection
+            tasks={snoozedTasks}
+            open={snoozedOpen}
+            onToggleOpen={() => setSnoozedOpen((v) => !v)}
+            onWake={wakeTask}
+            onWakeAll={wakeAllSnoozed}
+          />
         ) : null}
 
         {formOpen && isNew && formProps ? (
@@ -564,6 +585,139 @@ function CompletedTodaySection({
                 aria-label={t("v2.todoRestoreAria", { title: task.title })}
               >
                 {t("v2.todoRestore")}
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/** Rustende (gesnoozde) taken: standaard open, met één tik weer actief. */
+function SnoozedSection({
+  tasks,
+  open,
+  onToggleOpen,
+  onWake,
+  onWakeAll,
+}: {
+  tasks: V2Task[];
+  open: boolean;
+  onToggleOpen: () => void;
+  onWake: (id: string) => void;
+  onWakeAll: () => void;
+}) {
+  const { t } = useI18n();
+  const label =
+    tasks.length === 1
+      ? t("v2.todoSnoozedOne")
+      : t("v2.todoSnoozedMany", { n: String(tasks.length) });
+
+  return (
+    <section style={{ marginTop: 8 }}>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        aria-expanded={open}
+        className="w-full text-left"
+        style={{
+          background: "none",
+          border: "none",
+          padding: "8px 2px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            letterSpacing: "0.01em",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {open ? t("v2.todoSnoozedHide") : t("v2.todoSnoozedShow")}
+          <span
+            aria-hidden="true"
+            style={{
+              transform: open ? "rotate(180deg)" : "none",
+              transition: "transform 160ms ease",
+            }}
+          >
+            ▾
+          </span>
+        </span>
+      </button>
+
+      {open ? (
+        <div className="flex flex-col gap-2">
+          {tasks.length > 1 ? (
+            <button
+              type="button"
+              onClick={onWakeAll}
+              className="v2-link self-start"
+              style={{ fontSize: 13, padding: "2px 2px 6px" }}
+            >
+              {t("v2.todoSnoozedWakeAll")}
+            </button>
+          ) : null}
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="v2-card"
+              style={{
+                padding: "12px 14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                opacity: 0.92,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  flexShrink: 0,
+                  border: "1.5px dashed var(--text-muted)",
+                  opacity: 0.7,
+                }}
+              />
+              <span
+                className="min-w-0 flex-1"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--text-muted)",
+                }}
+              >
+                {task.title}
+              </span>
+              <button
+                type="button"
+                onClick={() => onWake(task.id)}
+                className="v2-link shrink-0"
+                style={{ fontSize: 13, padding: "4px 2px" }}
+                aria-label={t("v2.todoSnoozedWakeAria", { title: task.title })}
+              >
+                {t("v2.todoSnoozedWake")}
               </button>
             </div>
           ))}
@@ -761,6 +915,16 @@ function TaskRow({
               ) : null}
             </>
           ) : null}
+          {task.microSteps.length === 0 ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="v2-link self-start"
+              style={{ fontSize: 13, padding: "2px 0" }}
+            >
+              {t("v2.todoFormSuggestCta")}
+            </button>
+          ) : null}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             <SnoozeChip
               label={t("v2.todoSnoozeEvening")}
@@ -857,7 +1021,13 @@ function TaskForm({
   compact?: boolean;
 }) {
   const { t } = useI18n();
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(
+    () =>
+      Boolean(draft.dueDate) ||
+      draft.repeat !== "none" ||
+      draft.priority != null ||
+      draft.durationBucket != null,
+  );
 
   const deadlineChoice: "none" | "today" | "tomorrow" | "custom" = !draft.dueDate
     ? "none"
@@ -919,6 +1089,134 @@ function TaskForm({
               {opt.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <p
+          style={{
+            fontSize: "var(--fs-body)",
+            fontWeight: 600,
+            color: "var(--text)",
+            margin: "0 0 6px",
+          }}
+        >
+          {t("v2.todoFormMicro")}
+        </p>
+        <p
+          className="mb-2 text-[12px]"
+          style={{ color: "var(--text-muted)", margin: "0 0 8px" }}
+        >
+          {t("v2.todoFormMicroHint")}
+        </p>
+        {draft.microSteps.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+            {draft.microSteps.map((m) => (
+              <div
+                key={m.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <input
+                  type="text"
+                  className="v2-field"
+                  style={{
+                    flex: 1,
+                    minHeight: 40,
+                    padding: "8px 12px",
+                    fontSize: "var(--fs-small)",
+                  }}
+                  value={m.title}
+                  onChange={(e) => onUpdateMicro(m.id, e.target.value)}
+                  aria-label={m.title || t("v2.todoFormMicroPh")}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => onRemoveMicro(m.id)}
+                  className="v2-link shrink-0"
+                  style={{ padding: "4px 6px", fontSize: "var(--fs-micro)" }}
+                  aria-label={t("v2.todoFormMicroRemoveAria", { title: m.title })}
+                >
+                  {t("v2.todoFormMicroRemove")}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {onSuggestMicro ? (
+          <div style={{ marginBottom: 10 }}>
+            <button
+              type="button"
+              onClick={onSuggestMicro}
+              disabled={suggestBusy || draft.title.trim().length === 0}
+              className="btn-ghost w-full"
+              style={{
+                minHeight: 40,
+                padding: "8px 14px",
+                fontSize: "var(--fs-small)",
+              }}
+            >
+              {suggestBusy
+                ? t("v2.todoFormSuggestBusy")
+                : draft.microSteps.length > 0
+                  ? t("v2.todoFormSuggestAgainCta")
+                  : t("v2.todoFormSuggestCta")}
+            </button>
+            {suggestError ? (
+              <p
+                className="mt-2 text-[12px]"
+                style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
+              >
+                {suggestError}
+              </p>
+            ) : (
+              <p
+                className="mt-2 text-[12px]"
+                style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
+              >
+                {draft.microSteps.length > 0
+                  ? t("v2.todoFormSuggestAgainHint")
+                  : t("v2.todoFormSuggestHint")}
+              </p>
+            )}
+          </div>
+        ) : null}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            type="text"
+            className="v2-field"
+            style={{
+              minHeight: 40,
+              padding: "8px 12px",
+              fontSize: "var(--fs-small)",
+            }}
+            value={microDraft}
+            onChange={(e) => onMicroDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onAddMicro();
+              }
+            }}
+            placeholder={t("v2.todoFormMicroPh")}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={onAddMicro}
+            className="btn-ghost shrink-0"
+            style={{
+              minHeight: 40,
+              padding: "8px 14px",
+              fontSize: "var(--fs-small)",
+            }}
+          >
+            {t("v2.todoFormAdd")}
+          </button>
         </div>
       </div>
 
@@ -1046,129 +1344,6 @@ function TaskForm({
                   {opt.label}
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div>
-            <p
-              style={{
-                fontSize: "var(--fs-body)",
-                fontWeight: 600,
-                color: "var(--text)",
-                margin: "0 0 6px",
-              }}
-            >
-              {t("v2.todoFormMicro")}
-            </p>
-            <p
-              className="mb-2 text-[12px]"
-              style={{ color: "var(--text-muted)", margin: "0 0 8px" }}
-            >
-              {t("v2.todoFormMicroHint")}
-            </p>
-            {draft.microSteps.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
-                {draft.microSteps.map((m) => (
-                  <div
-                    key={m.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <input
-                      type="text"
-                      className="v2-field"
-                      style={{
-                        flex: 1,
-                        minHeight: 40,
-                        padding: "8px 12px",
-                        fontSize: "var(--fs-small)",
-                      }}
-                      value={m.title}
-                      onChange={(e) => onUpdateMicro(m.id, e.target.value)}
-                      aria-label={m.title || t("v2.todoFormMicroPh")}
-                      autoComplete="off"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveMicro(m.id)}
-                      className="v2-link shrink-0"
-                      style={{ padding: "4px 6px", fontSize: "var(--fs-micro)" }}
-                      aria-label={t("v2.todoFormMicroRemoveAria", { title: m.title })}
-                    >
-                      {t("v2.todoFormMicroRemove")}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : onSuggestMicro ? (
-              <div style={{ marginBottom: 10 }}>
-                <button
-                  type="button"
-                  onClick={onSuggestMicro}
-                  disabled={suggestBusy || draft.title.trim().length === 0}
-                  className="btn-ghost w-full"
-                  style={{
-                    minHeight: 40,
-                    padding: "8px 14px",
-                    fontSize: "var(--fs-small)",
-                  }}
-                >
-                  {suggestBusy
-                    ? t("v2.todoFormSuggestBusy")
-                    : t("v2.todoFormSuggestCta")}
-                </button>
-                {suggestError ? (
-                  <p
-                    className="mt-2 text-[12px]"
-                    style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
-                  >
-                    {suggestError}
-                  </p>
-                ) : (
-                  <p
-                    className="mt-2 text-[12px]"
-                    style={{ color: "var(--text-muted)", margin: "6px 0 0" }}
-                  >
-                    {t("v2.todoFormSuggestHint")}
-                  </p>
-                )}
-              </div>
-            ) : null}
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="text"
-                className="v2-field"
-                style={{
-                  minHeight: 40,
-                  padding: "8px 12px",
-                  fontSize: "var(--fs-small)",
-                }}
-                value={microDraft}
-                onChange={(e) => onMicroDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    onAddMicro();
-                  }
-                }}
-                placeholder={t("v2.todoFormMicroPh")}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={onAddMicro}
-                className="btn-ghost shrink-0"
-                style={{
-                  minHeight: 40,
-                  padding: "8px 14px",
-                  fontSize: "var(--fs-small)",
-                }}
-              >
-                {t("v2.todoFormAdd")}
-              </button>
             </div>
           </div>
 

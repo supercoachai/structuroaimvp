@@ -232,9 +232,10 @@ export default function HomeV2Client() {
         done: false,
       }));
       if (activeTask) {
+        const keepDone = activeTask.microSteps.filter((s) => s.done);
         const next = tasks.map((tRow) =>
           tRow.id === activeTask.id
-            ? { ...tRow, microSteps: nextSteps }
+            ? { ...tRow, microSteps: [...keepDone, ...nextSteps] }
             : tRow,
         );
         setTasks(next);
@@ -663,35 +664,50 @@ export default function HomeV2Client() {
               </h2>
 
               {microSteps.length > 0 ? (
-                <ul
-                  className="v2-home-micro-list"
-                  aria-label={t("v2.focusMicroListAria")}
-                >
-                  {microSteps.map((step) => (
-                    <li key={step.id}>
-                      <button
-                        type="button"
-                        onClick={() => toggleMicroStep(step.id)}
-                        className="v2-home-micro"
-                        aria-pressed={step.done}
-                      >
-                        <span
-                          className="v2-home-micro__chk"
-                          aria-hidden
-                          data-done={step.done ? "1" : "0"}
+                <>
+                  <ul
+                    className="v2-home-micro-list"
+                    aria-label={t("v2.focusMicroListAria")}
+                  >
+                    {microSteps.map((step) => (
+                      <li key={step.id}>
+                        <button
+                          type="button"
+                          onClick={() => toggleMicroStep(step.id)}
+                          className="v2-home-micro"
+                          aria-pressed={step.done}
                         >
-                          {step.done ? "✓" : ""}
-                        </span>
-                        <span
-                          className="v2-home-micro__lbl"
-                          data-done={step.done ? "1" : "0"}
-                        >
-                          {step.title}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                          <span
+                            className="v2-home-micro__chk"
+                            aria-hidden
+                            data-done={step.done ? "1" : "0"}
+                          >
+                            {step.done ? "✓" : ""}
+                          </span>
+                          <span
+                            className="v2-home-micro__lbl"
+                            data-done={step.done ? "1" : "0"}
+                          >
+                            {step.title}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => void applySuggestedSteps()}
+                    disabled={suggestBusy}
+                    className="v2-link mt-2 w-full text-center"
+                  >
+                    {suggestBusy
+                      ? t("v2.focusMicroSuggestBusy")
+                      : t("v2.focusMicroSuggestResplit")}
+                  </button>
+                  {suggestError ? (
+                    <p className="v2-home-micro-suggest__err">{suggestError}</p>
+                  ) : null}
+                </>
               ) : showMicroSuggest ? (
                 <section className="v2-home-micro-suggest" aria-live="polite">
                   <p className="v2-home-micro-suggest__title">
@@ -721,7 +737,21 @@ export default function HomeV2Client() {
                     <p className="v2-home-micro-suggest__err">{suggestError}</p>
                   ) : null}
                 </section>
-              ) : null}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSuggestDismissed(false);
+                    void applySuggestedSteps();
+                  }}
+                  disabled={suggestBusy}
+                  className="v2-link mt-2 w-full text-center"
+                >
+                  {suggestBusy
+                    ? t("v2.focusMicroSuggestBusy")
+                    : t("v2.focusMicroSuggestRetry")}
+                </button>
+              )}
 
               <button
                 type="button"

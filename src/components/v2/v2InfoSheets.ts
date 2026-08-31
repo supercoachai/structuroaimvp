@@ -75,7 +75,7 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         key: "plan",
         icon: "meaning",
         title: "Wat je kunt doen",
-        body: "Voeg toe, vink af, of zet iets tijdelijk op pauze. Open een taak om details aan te passen. Klein beginnen mag.",
+        body: "Voeg toe, vink af, of zet iets tijdelijk op pauze. Rustende taken maak je weer actief in de lijst eronder. Open een taak om hem in kleine stappen te splitsen, zelf of met een voorstel.",
       },
       {
         key: "private",
@@ -108,7 +108,7 @@ export const V2_INFO_SHEETS: Record<V2InfoSheetKey, V2InfoSheetCopy> = {
         key: "plan",
         icon: "plan",
         title: "Wanneer gebruiken",
-        body: "Als je ergens anders bent, of nu geen ruimte hebt. Het komt terug wanneer jij wilt.",
+        body: "Als je ergens anders bent, of nu geen ruimte hebt. Onder je lijst staan rustende taken. Tik Weer actief als je verder wilt.",
       },
       {
         key: "private",

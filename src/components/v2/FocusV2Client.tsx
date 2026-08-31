@@ -466,10 +466,11 @@ export default function FocusV2Client() {
         done: false,
       }));
       if (activeTask) {
+        const keepDone = activeTask.microSteps.filter((s) => s.done);
         persistTasks(
           tasks.map((tRow) =>
             tRow.id === activeTask.id
-              ? { ...tRow, microSteps: nextSteps }
+              ? { ...tRow, microSteps: [...keepDone, ...nextSteps] }
               : tRow,
           ),
         );
@@ -870,6 +871,26 @@ export default function FocusV2Client() {
                 <p className="v2-focus-micro-suggest__err">{suggestError}</p>
               ) : null}
             </section>
+          ) : microSteps.length === 0 &&
+            suggestDismissed &&
+            !finished &&
+            !extended &&
+            !running &&
+            !paused &&
+            !bucket ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSuggestDismissed(false);
+                void applySuggestedSteps();
+              }}
+              disabled={suggestBusy}
+              className="v2-link mt-2 w-full text-center"
+            >
+              {suggestBusy
+                ? t("v2.focusMicroSuggestBusy")
+                : t("v2.focusMicroSuggestRetry")}
+            </button>
           ) : null}
         </div>
       </div>

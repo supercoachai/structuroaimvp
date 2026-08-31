@@ -120,12 +120,15 @@ test.describe("V2 focus-einde en snooze", () => {
 
     await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Opsplitsen in kleine stappen?")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Ja, voorstellen" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ja, stel voor" })).toBeVisible();
     await page.getByRole("button", { name: "Niet nu" }).click();
     await expect(page.getByText("Opsplitsen in kleine stappen?")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Toch opsplitsen?" })).toBeVisible();
   });
 
-  test("todo: snooze Vanavond haalt taak uit zichtbare lijst", async ({ page }) => {
+  test("todo: snooze Vanavond haalt taak uit actieve lijst, Weer actief zet terug", async ({
+    page,
+  }) => {
     const title = "E2E snooze taak";
     await seedV2Journey(page, []);
     await seedV2Task(page, title);
@@ -136,9 +139,14 @@ test.describe("V2 focus-einde en snooze", () => {
     await page.getByRole("button", { name: title }).click();
     await page.getByRole("button", { name: "Vanavond" }).click();
 
-    await expect(page.getByText(title)).toHaveCount(0, { timeout: 10_000 });
     await expect(page.getByText(/rust even|rusten even/i)).toBeVisible({
       timeout: 5_000,
     });
+    await expect(page.getByRole("button", { name: "Weer actief" })).toBeVisible();
+    await page.getByRole("button", { name: "Weer actief" }).click();
+
+    await expect(page.getByRole("button", { name: "Weer actief" })).toHaveCount(0);
+    await expect(page.getByText(title)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Markeer als klaar" })).toBeVisible();
   });
 });
