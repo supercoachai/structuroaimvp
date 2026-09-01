@@ -20,11 +20,20 @@ function normalizeTally(raw: unknown, today: string): V2DoneTally | null {
   const row = raw as Record<string, unknown>;
   const total = clampCount(Number(row.total));
   const weekCount = clampCount(Number(row.weekCount));
+  const empty = emptyV2DoneTally(today);
   const weekStart =
     typeof row.weekStart === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.weekStart)
       ? row.weekStart
-      : emptyV2DoneTally(today).weekStart;
-  return { total, weekCount, weekStart };
+      : empty.weekStart;
+  return {
+    total,
+    weekCount,
+    weekStart,
+    monthCount: empty.monthCount,
+    monthStart: empty.monthStart,
+    yearCount: empty.yearCount,
+    yearStart: empty.yearStart,
+  };
 }
 
 function readStoredTally(today: string): V2DoneTally | null {
@@ -67,9 +76,9 @@ export function recordV2FocusSession(today: string = todayYmd()): V2DoneTallyTic
   const stored = readStoredTally(today);
   const before = stored ? rollTallyToWeek(stored, today) : emptyV2DoneTally(today);
   const after: V2DoneTally = {
+    ...before,
     total: before.total + 1,
     weekCount: before.weekCount + 1,
-    weekStart: before.weekStart,
   };
   saveV2FocusTally(after);
   return {

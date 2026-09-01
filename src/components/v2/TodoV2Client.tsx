@@ -135,7 +135,7 @@ export default function TodoV2Client() {
   const [completedOpen, setCompletedOpen] = useState(false);
   const [snoozedOpen, setSnoozedOpen] = useState(true);
   const editAnchorRef = useRef<HTMLDivElement | null>(null);
-  const completeTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const completeTimersRef = useRef<number[]>([]);
   const beginFadeRef = useRef<(() => void) | null>(null);
 
   // Laad uit localStorage. Zaai ontbrekende journey-titels zonder dubbels.
