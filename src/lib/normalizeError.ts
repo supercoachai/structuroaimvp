@@ -17,8 +17,31 @@ export function normalizeError(value: unknown): Error {
   return new Error(String(value));
 }
 
+function errorText(reason: unknown): string {
+  if (reason instanceof Error) {
+    return `${reason.name} ${reason.message} ${reason.stack ?? ""}`;
+  }
+  return String(reason ?? "");
+}
+
+/**
+ * Supabase vernieuwt de sessie op de achtergrond. Na slaapstand of een lang
+ * open tabblad faalt die fetch met TypeError "Failed to fetch". Dat is geen
+ * kapotte pagina; Next.js-dev toont het wél als overlay.
+ */
+export function isSupabaseAuthNetworkError(reason: unknown): boolean {
+  const text = errorText(reason);
+  if (!/Failed to fetch|NetworkError|Load failed|fetch failed/i.test(text)) {
+    return false;
+  }
+  return /GoTrueClient|auth-js|_refreshAccessToken|_autoRefreshTokenTick|_callRefreshToken|_handleRequest/i.test(
+    text,
+  );
+}
+
 /** Webpack/HMR/chunk-fouten na deploy of hot reload. Eén automatische reload helpt. */
 export function isRecoverableChunkError(reason: unknown): boolean {
+  if (isSupabaseAuthNetworkError(reason)) return false;
   if (reason instanceof Event) return true;
   const msg =
     reason instanceof Error

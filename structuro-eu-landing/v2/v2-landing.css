@@ -264,7 +264,7 @@ body.mobile-nav-open{overflow:hidden}
   background:var(--v2-teal);color:#fff;border-color:var(--v2-teal);
   box-shadow:0 0 0 4px rgba(45,90,86,.18);
 }
-.feature-visual{display:flex;justify-content:center;position:relative;overflow:visible}
+.feature-visual{display:flex;justify-content:center;align-items:center;position:relative;overflow:visible;min-width:0}
 .feature-visual::before{
   content:"";position:absolute;width:min(340px,80vw);height:min(340px,80vw);
   background:radial-gradient(circle,rgba(45,90,86,.12),transparent 70%);
@@ -274,7 +274,8 @@ body.mobile-nav-open{overflow:hidden}
 /* phone — titanium frame, zijknoppen, Dynamic Island (v1-niveau) */
 .phone{
   width:290px;max-width:min(290px,72vw);position:relative;z-index:1;border-radius:42px;padding:8px;
-  overflow:visible;
+  overflow:visible;box-sizing:border-box;
+  align-self:center;flex-shrink:0;
   background:linear-gradient(155deg,#3d4148 0%,#17181c 18%,#0a0a0c 50%,#17181c 84%,#2c2f35 100%);
   box-shadow:0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),inset 0 0 0 1.5px rgba(120,128,140,.35),inset 0 1px 0 rgba(255,255,255,.14);
 }

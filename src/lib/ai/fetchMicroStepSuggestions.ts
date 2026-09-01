@@ -10,7 +10,7 @@ export type FetchMicroStepSuggestionsInput = {
 
 export type FetchMicroStepSuggestionsResult = {
   steps: string[];
-  source: "template" | "ai";
+  source: "template" | "ai" | "fallback";
   remaining?: number;
   limit?: number;
 };
@@ -74,7 +74,7 @@ export async function fetchMicroStepSuggestions(
     ok?: boolean;
     error?: string;
     steps?: string[];
-    source?: "template" | "ai";
+    source?: "template" | "ai" | "fallback";
     remaining?: number;
     limit?: number;
   };
@@ -102,7 +102,12 @@ export async function fetchMicroStepSuggestions(
 
   return {
     steps,
-    source: data.source === "template" ? "template" : "ai",
+    source:
+      data.source === "template"
+        ? "template"
+        : data.source === "fallback"
+          ? "fallback"
+          : "ai",
     remaining: data.remaining,
     limit: data.limit,
   };

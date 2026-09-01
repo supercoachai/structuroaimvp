@@ -154,6 +154,51 @@
       "permanent": true
     },
     {
+      "source": "/structuro-of-todoist",
+      "destination": "/structuro-of-todoist/",
+      "permanent": true
+    },
+    {
+      "source": "/en/guides",
+      "destination": "/en/guides/",
+      "permanent": true
+    },
+    {
+      "source": "/en/structuro-vs-tiimo",
+      "destination": "/en/structuro-vs-tiimo/",
+      "permanent": true
+    },
+    {
+      "source": "/en/structuro-vs-structured",
+      "destination": "/en/structuro-vs-structured/",
+      "permanent": true
+    },
+    {
+      "source": "/en/structuro-vs-todoist",
+      "destination": "/en/structuro-vs-todoist/",
+      "permanent": true
+    },
+    {
+      "source": "/en/best-adhd-apps-netherlands",
+      "destination": "/en/best-adhd-apps-netherlands/",
+      "permanent": true
+    },
+    {
+      "source": "/en/privacy",
+      "destination": "/en/privacy/",
+      "permanent": true
+    },
+    {
+      "source": "/en/terms",
+      "destination": "/en/terms/",
+      "permanent": true
+    },
+    {
+      "source": "/en/cookies",
+      "destination": "/en/cookies/",
+      "permanent": true
+    },
+    {
       "source": "/adhd-en-burn-out",
       "destination": "/adhd-en-burn-out/",
       "permanent": true
@@ -186,6 +231,11 @@
     {
       "source": "/pers",
       "destination": "/pers/",
+      "permanent": true
+    },
+    {
+      "source": "/voor-coaches",
+      "destination": "/voor-coaches/",
       "permanent": true
     },
     {
@@ -326,6 +376,10 @@
       "destination": "/structuro-of-structured/index.html"
     },
     {
+      "source": "/structuro-of-todoist/",
+      "destination": "/structuro-of-todoist/index.html"
+    },
+    {
       "source": "/adhd-en-burn-out/",
       "destination": "/adhd-en-burn-out/index.html"
     },
@@ -350,8 +404,44 @@
       "destination": "/pers/index.html"
     },
     {
+      "source": "/voor-coaches/",
+      "destination": "/voor-coaches/index.html"
+    },
+    {
       "source": "/en/",
       "destination": "/en/index.html"
+    },
+    {
+      "source": "/en/guides/",
+      "destination": "/en/guides/index.html"
+    },
+    {
+      "source": "/en/structuro-vs-tiimo/",
+      "destination": "/en/structuro-vs-tiimo/index.html"
+    },
+    {
+      "source": "/en/structuro-vs-structured/",
+      "destination": "/en/structuro-vs-structured/index.html"
+    },
+    {
+      "source": "/en/structuro-vs-todoist/",
+      "destination": "/en/structuro-vs-todoist/index.html"
+    },
+    {
+      "source": "/en/best-adhd-apps-netherlands/",
+      "destination": "/en/best-adhd-apps-netherlands/index.html"
+    },
+    {
+      "source": "/en/privacy/",
+      "destination": "/en/privacy/index.html"
+    },
+    {
+      "source": "/en/terms/",
+      "destination": "/en/terms/index.html"
+    },
+    {
+      "source": "/en/cookies/",
+      "destination": "/en/cookies/index.html"
     },
     {
       "source": "/ph/static/:path(.*)",

@@ -38,6 +38,12 @@ type SpeechRecognitionEventLike = {
   };
 };
 
+export type V2SpeechErrorKind =
+  | "nothing-heard"
+  | "speech-stopped"
+  | "recognition-failed"
+  | "mic-failed";
+
 export type V2SpeechMessages = {
   nothingHeard: string;
   speechStopped: string;
@@ -87,7 +93,7 @@ export type V2SpeechSession = {
  */
 export function createV2SpeechSession(
   onFinal: (text: string) => void,
-  onError: (message: string) => void,
+  onError: (message: string, kind: V2SpeechErrorKind) => void,
   options: V2SpeechSessionOptions = {},
 ): V2SpeechSession | null {
   const Ctor = getSpeechRecognition();
@@ -149,7 +155,10 @@ export function createV2SpeechSession(
       return;
     }
     finishOnce(() =>
-      onError(intentionalStop ? messages.nothingHeard : messages.speechStopped),
+      onError(
+        intentionalStop ? messages.nothingHeard : messages.speechStopped,
+        intentionalStop ? "nothing-heard" : "speech-stopped",
+      ),
     );
   };
 
@@ -237,7 +246,7 @@ export function createV2SpeechSession(
       return;
     }
     clearSilenceTimer();
-    finishOnce(() => onError(messages.recognitionFailed));
+    finishOnce(() => onError(messages.recognitionFailed, "recognition-failed"));
   };
 
   rec.onend = () => {
@@ -274,7 +283,7 @@ export function createV2SpeechSession(
         rec.start();
         scheduleSilenceCheck();
       } catch {
-        finishOnce(() => onError(messages.micFailed));
+        finishOnce(() => onError(messages.micFailed, "mic-failed"));
       }
     },
     stop: () => {

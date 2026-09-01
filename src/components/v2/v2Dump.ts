@@ -5,6 +5,9 @@ import { v2Id } from "./v2Tasks";
 
 export type V2DumpDisposition = "rest" | "today" | null;
 
+/** Hoe het item is vastgelegd. Ontbreekt bij oudere items (toon als tekst). */
+export type V2DumpSource = "voice" | "text";
+
 export type V2DumpItem = {
   id: string;
   content: string;
@@ -14,7 +17,11 @@ export type V2DumpItem = {
   lastTriagedAt?: string;
   /** Herkomst voor testimport, bijv. google-demo. */
   importSource?: "google-demo";
+  /** voice = ingesproken, text = getypt. */
+  source?: V2DumpSource;
 };
+
+export const V2_DUMP_PREVIEW_LIMIT = 2;
 
 export const V2_DUMP_KEY = "v2_dump";
 export const V2_DUMP_DRAFT_KEY = "v2_dump_draft";
@@ -52,6 +59,8 @@ function normalizeItem(raw: unknown): V2DumpItem | null {
     typeof item.lastTriagedAt === "string" ? item.lastTriagedAt : undefined;
   const importSource =
     item.importSource === "google-demo" ? "google-demo" : undefined;
+  const source: V2DumpSource | undefined =
+    item.source === "voice" || item.source === "text" ? item.source : undefined;
   return {
     id: typeof item.id === "string" ? item.id : dumpId(),
     content,
@@ -60,6 +69,7 @@ function normalizeItem(raw: unknown): V2DumpItem | null {
     disposition,
     lastTriagedAt,
     importSource,
+    source,
   };
 }
 
@@ -180,7 +190,11 @@ export function v2DumpActiveCount(items?: V2DumpItem[]): number {
   return list.filter((i) => i.disposition !== "today" && i.disposition !== "rest").length;
 }
 
-export function addV2DumpItem(content: string, items: V2DumpItem[]): V2DumpItem[] {
+export function addV2DumpItem(
+  content: string,
+  items: V2DumpItem[],
+  source: V2DumpSource = "text",
+): V2DumpItem[] {
   const trimmed = content.trim();
   if (trimmed.length === 0) return items;
   if (v2DumpAtMax(items)) return items;
@@ -189,6 +203,7 @@ export function addV2DumpItem(content: string, items: V2DumpItem[]): V2DumpItem[
     content: trimmed,
     createdAt: new Date().toISOString(),
     disposition: null,
+    source,
   };
   return [...items, next];
 }
@@ -207,6 +222,7 @@ export type AddV2DumpItemsResult = {
 export function addV2DumpItems(
   contents: string[],
   items: V2DumpItem[],
+  source: V2DumpSource = "text",
 ): AddV2DumpItemsResult {
   let next = items;
   let added = 0;
@@ -222,7 +238,7 @@ export function addV2DumpItems(
       continue;
     }
     const before = v2DumpCount(next);
-    next = addV2DumpItem(trimmed, next);
+    next = addV2DumpItem(trimmed, next, source);
     if (v2DumpCount(next) > before) {
       added += 1;
     } else {
@@ -231,6 +247,30 @@ export function addV2DumpItems(
   }
 
   return { items: next, added, truncated, attempted };
+}
+
+function newestFirst(a: V2DumpItem, b: V2DumpItem): number {
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
+/** Zichtbare inbox-items, nieuwste eerst (niet al naar vandaag). */
+export function v2DumpVisibleItems(items: V2DumpItem[]): V2DumpItem[] {
+  return items
+    .filter((i) => i.disposition !== "today")
+    .slice()
+    .sort(newestFirst);
+}
+
+/** Laatste N zichtbare items voor het capture-scherm. */
+export function v2DumpPreviewItems(
+  items: V2DumpItem[],
+  limit = V2_DUMP_PREVIEW_LIMIT,
+): V2DumpItem[] {
+  return v2DumpVisibleItems(items).slice(0, limit);
+}
+
+export function isV2DumpVoiceItem(item: V2DumpItem): boolean {
+  return item.source === "voice";
 }
 
 export function updateV2DumpItem(

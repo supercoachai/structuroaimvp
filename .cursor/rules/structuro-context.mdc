@@ -9,11 +9,15 @@ Lees `docs/STRUCTURO_CONTEXT.md` voor productfilosofie, doelgroep, UX-regels en 
 
 Voor strategie, metrics en doctrine: lees Obsidian (zie `obsidian-structuro-state.mdc`).
 
-## Prioriteit juni 2026
+## Prioriteit (1 september 2026)
 
-1. **Activatie P0:** signup → dagstart (lekt nu; compact onboarding, magic link, frictie weg)
-2. **Acquisitie P1:** `/onboarding` (organic) en `/tiktok` (social), nooit direct naar `/registreren` vanaf marketing
-3. **Geen paid TikTok** tot activatie structureel >25%
+Canoniek: Obsidian `03 Groei/Pad naar 50 Warme 500 sep 2026.md`.
+
+1. **P0 Warme 500 (5 dagen):** 50 geïnterviewden persoonlijk 30 dagen cadeau, geen betaalgegevens. Daarna 100 LinkedIn-likers (KvK-post), zelfde VIP. Dag 25: vraag €12,99.
+2. **Rolling 5:** ma + do 5 coaches/psychologen/PMT. Coach permanent gratis. Cliënten 30d cadeau, daarna zelf €12,99. MDR-veilig: geen diagnose/behandeling.
+3. **Lichte social:** 2 video’s/week, zelfde clip IG+TT. Comment STARTEN → DM naar anonieme dagstart. Koud = 7d Stripe-trial + methode ná dagstart. Geen 30d cadeau voor koud verkeer. Geen paid ads.
+
+Warm vs koud is een paywall-split, geen uitzondering op “waarde eerst”: anonieme dagstart blijft altijd gratis.
 
 ## Attributie-routing (kritiek)
 

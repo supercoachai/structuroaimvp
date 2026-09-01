@@ -28,6 +28,8 @@ export type V2Task = {
    * oudere done-taken worden bij load weggepraagd.
    */
   completedDate: string | null;
+  /** ISO-tijdstip waarop is afgevinkt. Voor dagafsluiting-tijd. */
+  completedAt: string | null;
   /** Kalenderdag (YMD) van de deadline, of null. */
   dueDate: string | null;
   repeat: V2Repeat;
@@ -48,6 +50,7 @@ export type V2Task = {
 };
 
 export const V2_TASKS_KEY = "v2_tasks";
+export const V2_TASKS_CHANGED_EVENT = "v2-tasks-changed";
 
 let counter = 0;
 export function v2Id(prefix = "v2t"): string {
@@ -85,6 +88,11 @@ export function saveV2Tasks(tasks: V2Task[]): void {
   void import("@/lib/v2/v2SupabaseSync")
     .then((m) => m.queueV2TasksPush())
     .catch(() => {});
+  try {
+    window.dispatchEvent(new CustomEvent(V2_TASKS_CHANGED_EVENT));
+  } catch {
+    /* negeren */
+  }
 }
 
 function normalizeTask(raw: unknown): V2Task {
@@ -99,6 +107,10 @@ function normalizeTask(raw: unknown): V2Task {
     title: typeof t.title === "string" ? t.title : "",
     done,
     completedDate,
+    completedAt:
+      done && typeof t.completedAt === "string" && t.completedAt.length > 0
+        ? t.completedAt
+        : null,
     dueDate: typeof t.dueDate === "string" ? t.dueDate : null,
     repeat: isRepeat(t.repeat) ? t.repeat : "none",
     repeatIntervalDays:
@@ -152,6 +164,7 @@ export function emptyDraft(): V2Task {
     title: "",
     done: false,
     completedDate: null,
+    completedAt: null,
     dueDate: null,
     repeat: "none",
     repeatIntervalDays: 14,
@@ -363,6 +376,7 @@ export function markV2TaskCompleted(
     ...task,
     done: true,
     completedDate: today,
+    completedAt: new Date().toISOString(),
     microSteps: task.microSteps.map((s) => ({ ...s, done: true })),
   };
 }
@@ -373,6 +387,7 @@ export function restoreV2Task(task: V2Task): V2Task {
     ...task,
     done: false,
     completedDate: null,
+    completedAt: null,
   };
 }
 

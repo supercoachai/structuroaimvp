@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 
 import { LoginShell } from "@/components/login/LoginShell";
 import { sanitizeNextPath } from "@/lib/safeRedirect";
+import { resolvePathForInternalTeam } from "@/lib/internalTeamAccount";
 
 import { useV2 } from "./V2Context";
 import { v2Styles } from "./theme";
@@ -189,7 +190,10 @@ export default function LoginV2Client({
       if (data.user) {
         setLastAuthMethod("password");
         await supabase.auth.getSession();
-        const next = await claimLocalThenContinue(data.user.id);
+        const next = resolvePathForInternalTeam(
+          data.user.email,
+          await claimLocalThenContinue(data.user.id),
+        );
         resetCaptcha();
         window.location.assign(next);
         return;
@@ -271,7 +275,10 @@ export default function LoginV2Client({
       });
       setLastAuthMethod("magic");
       await supabase.auth.getSession();
-      const next = await claimLocalThenContinue(user.id);
+      const next = resolvePathForInternalTeam(
+        user.email,
+        await claimLocalThenContinue(user.id),
+      );
       window.location.assign(next);
     } catch (err) {
       const raw = err instanceof Error ? err.message : t("login.otpInvalid");

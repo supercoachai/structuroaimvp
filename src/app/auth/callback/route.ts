@@ -37,6 +37,10 @@ import {
 } from "@/lib/onboardingVersion";
 import { requiresPaidSubscriptionBeforeOnboarding } from "@/lib/registrationGate";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
+import {
+  isInternalTeamAccount,
+  resolvePathForInternalTeam,
+} from "@/lib/internalTeamAccount";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCalendarDateAmsterdam } from "@/lib/dagstartCookie";
 import {
@@ -125,6 +129,9 @@ async function resolveOAuthRedirectPath(
 ): Promise<string> {
   if (next === "/v2" || next.startsWith("/v2/")) {
     return isV2PublicEnabled() ? next : mapV2PathToV1(next);
+  }
+  if (isInternalTeamAccount(email)) {
+    return resolvePathForInternalTeam(email, next);
   }
   if (next && next !== "/") return next;
   if (isProtectedTestAccount(email)) return "/";

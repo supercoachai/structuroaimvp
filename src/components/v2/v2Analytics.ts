@@ -236,10 +236,22 @@ export function trackV2HomePromptPriority(props: { prompt_kind: string }): void 
   trackOptIn("home_prompt_priority", { prompt_kind: props.prompt_kind });
 }
 
-export function trackV2ShutdownSentiment(props: {
-  sentiment: "calm_yes" | "calm_no" | "skipped";
+export function trackV2LastTaskShutdownStarted(props: {
+  source: "home" | "focus" | "todo";
 }): void {
-  trackOptIn("shutdown_sentiment", { sentiment: props.sentiment });
+  trackOptIn("last_task_shutdown_started", { source: props.source });
+}
+
+export function trackV2ShutdownInviteShown(props: {
+  reason: "all_done" | "evening";
+}): void {
+  trackOptIn("shutdown_invite_shown", { reason: props.reason });
+}
+
+export function trackV2ShutdownInviteDismissed(props: {
+  reason: "all_done" | "evening";
+}): void {
+  trackOptIn("shutdown_invite_dismissed", { reason: props.reason });
 }
 
 export function trackV2ReminderCadenceChanged(props: {

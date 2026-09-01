@@ -18,6 +18,8 @@ import { performClientLogout } from "@/lib/logoutClient";
 import { hasSupabaseAuthHintOnClient } from "@/lib/supabase/authStorage";
 
 import { v2ScopedCss, v2Styles } from "./theme";
+import { v2ShutdownInviteAllowedOnPath } from "./v2ShutdownInvite";
+import V2ShutdownInviteCloud from "./V2ShutdownInviteCloud";
 
 /** 112×81 mark (~9KB) i.p.v. 1024×740 /logo-structuro.png (~502KB). */
 const V2_LOGO_SRC = "/v2/logo-mark.png";
@@ -413,6 +415,13 @@ export function V2AppShell({
     void performClientLogout(router, { loginPath: "/login" });
   };
 
+  const inviteHost = chrome === "app" && v2ShutdownInviteAllowedOnPath(pathname);
+  const bottomContent = inviteHost ? (
+    <V2ShutdownInviteCloud fallback={bottomSlot} />
+  ) : (
+    bottomSlot
+  );
+
   return (
     <>
       <style>{v2ScopedCss}</style>
@@ -511,9 +520,9 @@ export function V2AppShell({
           {children}
         </main>
 
-        {bottomSlot ? (
+        {bottomContent ? (
           <div className="v2-shell-bottom-slot" style={v2Styles.appBottomSlot}>
-            {bottomSlot}
+            {bottomContent}
           </div>
         ) : null}
 

@@ -11,6 +11,7 @@ import {
 } from "@/lib/freeTrialAccess";
 import { hasLaunchGraceAccess } from "@/lib/launchGrace";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
+import { isInternalTeamAccount } from "@/lib/internalTeamAccount";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
 export type RetentionPaywallReason =
@@ -19,6 +20,7 @@ export type RetentionPaywallReason =
   | "subscription_ended";
 
 export type RetentionPaywallProfile = {
+  email?: string | null | undefined;
   subscription_status: string | null | undefined;
   subscription_current_period_end: string | null | undefined;
   created_at: string | null | undefined;
@@ -63,6 +65,8 @@ export function resolveActiveTrialDaysLeft(
 export function resolveRetentionPaywallReason(
   row: RetentionPaywallProfile
 ): RetentionPaywallReason | null {
+  if (isInternalTeamAccount(row.email)) return null;
+
   const status = row.subscription_status;
 
   if (status === "trial_expired") {

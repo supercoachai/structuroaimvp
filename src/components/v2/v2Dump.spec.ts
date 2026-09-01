@@ -1,13 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  V2_DUMP_KEY,
   V2_DUMP_MAX,
   V2_DUMP_SOFT_WARN,
   addV2DumpItem,
   addV2DumpItems,
+  isV2DumpVoiceItem,
+  loadV2Dump,
   v2DumpAtMax,
   v2DumpCount,
   v2DumpLatestItem,
+  v2DumpPreviewItems,
   v2DumpSoftWarn,
   type V2DumpItem,
 } from "./v2Dump";
@@ -95,5 +99,49 @@ describe("v2Dump limits", () => {
     expect(result.attempted).toBe(4);
     expect(v2DumpCount(result.items)).toBe(V2_DUMP_MAX);
     expect(result.items.map((i) => i.content).slice(-2)).toEqual(["was", "auto"]);
+  });
+
+  it("stores voice source on new items", () => {
+    const next = addV2DumpItem("ingesproken", [], "voice");
+    expect(next[0].source).toBe("voice");
+    expect(isV2DumpVoiceItem(next[0])).toBe(true);
+  });
+
+  it("defaults typed source and preview shows newest two", () => {
+    const a = item({
+      id: "a",
+      content: "oud",
+      createdAt: "2026-07-27T09:00:00.000Z",
+    });
+    const b = item({
+      id: "b",
+      content: "mid",
+      createdAt: "2026-07-27T10:00:00.000Z",
+    });
+    const c = item({
+      id: "c",
+      content: "nieuw",
+      createdAt: "2026-07-27T11:00:00.000Z",
+    });
+    const typed = addV2DumpItem("getypt", [a, b, c]);
+    expect(typed[typed.length - 1].source).toBe("text");
+    expect(v2DumpPreviewItems([a, b, c]).map((i) => i.id)).toEqual(["c", "b"]);
+  });
+
+  it("preserves voice source from storage", () => {
+    window.localStorage.setItem(
+      V2_DUMP_KEY,
+      JSON.stringify([
+        {
+          id: "d1",
+          content: "hoi",
+          createdAt: "2026-07-27T10:00:00.000Z",
+          source: "voice",
+        },
+      ]),
+    );
+    const loaded = loadV2Dump();
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].source).toBe("voice");
   });
 });

@@ -17,6 +17,7 @@ import {
 import { peekV2OnboardingUiPhase } from "./v2OnboardingPhaseGate";
 import { markV2ShellWelcomeSeen } from "./v2ShellWelcome";
 import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
+import { isInternalTeamAccount } from "@/lib/internalTeamAccount";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 
@@ -42,7 +43,7 @@ export default function V2ClaimOnAuth() {
     const supabase = createClient();
     if (!supabase) return;
 
-    const runForUser = async (userId: string) => {
+    const runForUser = async (userId: string, email?: string | null) => {
       if (cancelled || ranForUser.current === userId) return;
       if (!hasV2LocalDataToMigrate()) return;
 
@@ -91,9 +92,11 @@ export default function V2ClaimOnAuth() {
             ? profile.signup_source
             : null;
         window.location.assign(
-          isEventSignupSource(source) || isGiftCompSignupSource(source)
-            ? resolveLoggedInInstallContinuePath()
-            : "/abonnement",
+          isInternalTeamAccount(email)
+            ? "/"
+            : isEventSignupSource(source) || isGiftCompSignupSource(source)
+              ? resolveLoggedInInstallContinuePath()
+              : "/abonnement",
         );
       } catch (err) {
         console.warn("[V2ClaimOnAuth] migrate failed", err);
@@ -107,12 +110,12 @@ export default function V2ClaimOnAuth() {
       if (event !== "SIGNED_IN" && event !== "INITIAL_SESSION") return;
       const userId = session?.user?.id;
       if (!userId) return;
-      void runForUser(userId);
+      void runForUser(userId, session.user.email);
     });
 
     void supabase.auth.getSession().then(({ data }) => {
       const userId = data.session?.user?.id;
-      if (userId) void runForUser(userId);
+      if (userId) void runForUser(userId, data.session?.user.email);
     });
 
     return () => {

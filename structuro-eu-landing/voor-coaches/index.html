@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Structuro voor ADHD-coaches | Ondersteuning tussen sessies</title>
+<meta name="description" content="Een rustige executie-interface naast jouw begeleiding: energie eerst, minder tegelijk, één stap die klein genoeg is. Besloten uitnodiging voor ADHD-coaches."/>
+<meta name="robots" content="noindex,follow"/>
+<link rel="canonical" href="https://www.structuro.eu/voor-coaches/"/>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
+<link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260730a"/>
+<meta property="og:site_name" content="Structuro"/>
+<meta property="og:locale" content="nl_NL"/>
+<meta property="og:title" content="Structuro voor ADHD-coaches"/>
+<meta property="og:description" content="Een rustige aanvulling voor de momenten tussen een goed gesprek en daadwerkelijk beginnen."/>
+<meta property="og:url" content="https://www.structuro.eu/voor-coaches/"/>
+<meta property="og:image" content="https://www.structuro.eu/uploads/og-share.png?v=20260808a"/>
+<meta property="og:type" content="website"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--cream:#FDFBF4;--warm:#F3EFE3;--card:#FCFAF3;--white:#fff;--ink:#16233A;--navy:#132339;--teal:#2D5A56;--teal-l:#9DC4BA;--soft:rgba(22,35,58,.80);--faint:rgba(22,35,58,.54);--line:rgba(22,35,58,.11);--serif:"Newsreader",Georgia,serif;--sans:Inter,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6}
+a{color:var(--teal);text-decoration:none}a:hover{color:#1f403d}
+img{display:block;max-width:100%}
+p{color:var(--soft);text-wrap:pretty;max-width:680px}
+.shell{max-width:1080px;margin-inline:auto;padding-inline:40px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--teal)}
+h1{font-family:var(--serif);font-weight:400;font-size:44px;line-height:1.09;letter-spacing:-.028em;text-wrap:pretty;max-width:620px}
+h1 span{display:block}
+h2{font-family:var(--serif);font-weight:400;font-size:31px;line-height:1.15;letter-spacing:-.024em;text-wrap:pretty;max-width:660px}
+h2 small{display:block;font-family:var(--serif);font-size:inherit;color:var(--faint)}
+h3{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.lede{font-size:18px;line-height:1.55;color:var(--soft);max-width:560px}
+.pos{font-size:14.5px;color:var(--faint);max-width:480px}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--teal);color:#fff;font-size:15.5px;font-weight:600;padding:15px 27px;border-radius:999px;border:none;cursor:pointer;font-family:var(--sans)}
+.btn:hover{background:#25514D;color:#fff}
+.btn.ghost{background:transparent;color:var(--teal);border:1px solid rgba(45,90,86,.32);padding:14px 25px}
+.btn.ghost:hover{background:rgba(45,90,86,.05);color:var(--teal)}
+.micro{font-size:13px;color:var(--faint);max-width:560px}
+.sec{padding-top:54px}
+.ctarow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+/* header */
+.hdr{border-bottom:1px solid var(--line);background:var(--cream)}
+.hdr .in{display:flex;align-items:center;gap:26px;padding-block:16px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px;color:var(--ink)}
+.brand img{width:26px;height:26px;border-radius:50%}
+.hdr .mid{margin-left:auto;font-size:14px;font-weight:500;color:var(--faint)}
+.hdr .mid:hover{color:var(--ink)}
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 342px;gap:44px;align-items:center;padding-block:54px 56px}
+.hero .L{display:flex;flex-direction:column;gap:18px}
+.hero .R{display:flex;flex-direction:column;align-items:center;gap:16px}
+.caps{font-size:12.5px;color:var(--faint);text-align:center;max-width:270px;line-height:1.5}
+/* phone: frame 1:1 met de landing (v2-landing.css) */
+.phone{
+  width:272px;position:relative;z-index:1;border-radius:42px;padding:8px;
+  overflow:visible;flex:none;
+  background:linear-gradient(155deg,#3d4148 0%,#17181c 18%,#0a0a0c 50%,#17181c 84%,#2c2f35 100%);
+  box-shadow:0 32px 80px rgba(15,23,42,.22),0 8px 24px rgba(15,23,42,.10),inset 0 0 0 1.5px rgba(120,128,140,.35),inset 0 1px 0 rgba(255,255,255,.14);
+}
+.iphone-side{
+  position:absolute;width:3.5px;border-radius:2px;z-index:0;
+  background:linear-gradient(90deg,#42464e,#1b1d22 60%,#101114);
+}
+.iphone-side--action{left:-3px;top:17%;height:3.2%}
+.iphone-side--volup{left:-3px;top:23%;height:6%}
+.iphone-side--voldown{left:-3px;top:30.5%;height:6%}
+.iphone-side--power{right:-3px;top:24.5%;height:9.5%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114)}
+.iphone-side--camctl{right:-3px;top:38.5%;height:4.2%;background:linear-gradient(270deg,#42464e,#1b1d22 60%,#101114)}
+.iphone-island{
+  position:absolute;top:18px;left:50%;transform:translateX(-50%);
+  width:35%;max-width:100px;height:25px;
+  background:#000;border-radius:999px;z-index:6;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding-right:7px;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.iphone-island-cam{
+  width:11px;height:11px;border-radius:50%;position:relative;flex-shrink:0;
+  background:radial-gradient(circle at 35% 32%,#232c40 0%,#0c0f18 48%,#000 100%);
+  box-shadow:inset 0 0 3px rgba(90,130,255,.4),0 0 0 1.5px rgba(255,255,255,.05);
+}
+.iphone-island-cam::after{
+  content:"";position:absolute;top:2px;left:2.5px;width:3px;height:3px;border-radius:50%;
+  background:radial-gradient(circle,rgba(140,175,255,.85),rgba(140,175,255,0) 80%);
+}
+/* app-scherm: statische replica van de v2 energie-flow (v2-landing.css + v2-tokens.css) */
+.scr{
+  position:relative;background:#FDFBF4;border-radius:34px;overflow:hidden;
+  aspect-ratio:471/1024;
+  padding:52px 18px 16px;display:flex;flex-direction:column;
+}
+.pnav{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:4px;min-height:24px;
+  font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#1A2340;
+}
+.pnav .stop{letter-spacing:0;text-transform:none;font-weight:500;color:rgba(26,35,64,.55);font-size:12px}
+.pprog{display:flex;gap:5px;padding:12px 0 0}
+.pprog i{flex:1;height:3.5px;border-radius:999px;background:rgba(26,35,64,.10)}
+.pprog i.on{background:#2D5A56}
+.pstack{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:0}
+.orb{width:66px;height:66px;border-radius:50%;background:#9A9488;margin:0 auto 12px;flex:none}
+.ptitle{
+  font-size:13.5px;font-weight:600;text-align:center;margin:0;color:#1A2340;
+  line-height:1.2;letter-spacing:-.02em;white-space:nowrap;width:100%;
+}
+.pills{display:flex;gap:8px;width:100%;margin:14px 0 10px}
+.pill{
+  flex:1;text-align:center;padding:11px 0;font-size:12px;font-weight:600;border-radius:999px;
+  background:#fff;border:1.5px solid rgba(26,35,64,.10);color:rgba(26,35,64,.72);
+  box-shadow:0 1px 2px rgba(26,35,64,.04);
+}
+.pill.low{background:#9A9488;border-color:#9A9488;color:#fff;box-shadow:0 8px 18px -10px rgba(154,148,136,.55)}
+.pill.ok{border-color:rgba(45,90,86,.28);color:#2D5A56;background:rgba(45,90,86,.12)}
+.pill.high{border-color:rgba(58,155,122,.32);color:#2F7A5E;background:rgba(58,155,122,.14)}
+.pfeasible{font-size:12px;color:#2D5A56;font-weight:500;text-align:center;margin:2px 0 8px}
+.ptasks{width:100%;display:flex;flex-direction:column}
+.ptask{
+  display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;
+  background:#fff;border:1.5px solid rgba(45,90,86,.35);margin-top:7px;
+}
+.ptask .chk{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(45,90,86,.55);
+  color:#2D5A56;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none;font-style:normal;
+}
+.ptask .bat{display:inline-flex;align-items:center;flex:none;line-height:0}
+.ptask .lbl{font-size:12px;font-weight:500;color:#1A2340;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbtn{
+  display:flex;align-items:center;justify-content:center;width:100%;height:40px;border-radius:14px;
+  background:#2A6B64;color:#fff;font-weight:600;font-size:13px;margin-top:12px;flex:none;
+}
+.pquiet{text-align:center;font-size:12px;font-weight:600;color:rgba(26,35,64,.72);padding-top:10px}
+/* truststrip */
+.trust{border-block:1px solid var(--line);background:rgba(45,90,86,.04)}
+.trust .in{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-block:26px}
+.trust .in>div{display:flex;flex-direction:column;gap:3px}
+.trust b{font-family:var(--serif);font-weight:400;font-size:29px;line-height:1.05;letter-spacing:-.03em;color:var(--teal)}
+.trust span,.trust a{font-size:13.5px;color:var(--faint);line-height:1.4}
+.trust a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(45,90,86,.32)}
+.trust a:hover{color:var(--ink)}
+/* faq */
+.faq{padding-top:20px;max-width:760px}
+.faq>div{padding:18px 0;border-top:1px solid var(--line)}
+.faq h3{margin-bottom:4px;font-size:16.5px}
+.faq p{font-size:15.5px;color:var(--faint);line-height:1.55;max-width:660px}
+/* contrast */
+.spread{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-top:26px}
+.spread>div{padding:28px 30px 30px}
+.spread .yes{background:var(--cream);border-right:1px solid var(--line)}
+.spread .no{background:var(--warm)}
+.spread h2{font-size:24px;margin-bottom:12px;max-width:none}
+.list>div{display:flex;align-items:flex-start;gap:11px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16.5px;font-weight:500;letter-spacing:-.01em}
+.list>div:last-child{border-bottom:none}
+.list i{font-style:normal;flex:none;width:19px;height:19px;border-radius:50%;background:rgba(45,90,86,.10);color:var(--teal);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:3px}
+.list.no>div{color:var(--faint);font-weight:400}
+.list.no i{background:rgba(22,35,58,.06);color:var(--faint)}
+.spreadfoot{padding-top:20px;font-size:16px;max-width:660px}
+/* steps 01-04 */
+.steps{padding-top:22px;max-width:760px}
+.steps>div{display:grid;grid-template-columns:52px 1fr;gap:16px;padding:18px 0;border-top:1px solid var(--line)}
+.steps b{font-family:var(--serif);font-weight:300;font-size:32px;line-height:.95;letter-spacing:-.03em;color:rgba(45,90,86,.42)}
+.steps h3{margin-bottom:3px}
+.steps p{font-size:15px;color:var(--faint);line-height:1.5;max-width:620px}
+/* navy */
+.navyband{background:var(--navy);color:#F5F2EA;padding-block:48px;margin-top:54px}
+.navyband .in{display:flex;flex-direction:column;gap:11px}
+.navyband h2{color:#F5F2EA}
+.navyband p{color:rgba(245,242,234,.76);max-width:640px;font-size:16.5px}
+.navyband .small{font-size:13.5px;color:rgba(245,242,234,.48);max-width:620px}
+.navyband .micro{color:rgba(245,242,234,.5)}
+/* research + spar */
+.col{max-width:660px;display:flex;flex-direction:column;gap:13px}
+.nuance{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14px;color:var(--faint);line-height:1.55;max-width:560px}
+/* bewijs */
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding-top:22px;border-top:1px solid var(--line);margin-top:22px}
+.big3>div{display:flex;flex-direction:column;gap:4px}
+.big3 b{font-family:var(--serif);font-weight:400;font-size:46px;line-height:1;letter-spacing:-.035em;color:var(--teal)}
+.big3 span{font-size:14px;color:var(--faint);line-height:1.45}
+/* persblok in krantstijl (zoals landing 'De pers') */
+.krant{border:1px solid var(--line);border-radius:20px;background:var(--cream);padding:28px 30px 24px;margin-top:26px;max-width:820px}
+.np-mast{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px}
+.np-mast b{font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:-.015em;color:var(--ink)}
+.np-mast span{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.np-kop{font-family:var(--serif);font-size:26px;line-height:1.22;letter-spacing:-.02em;color:var(--ink);margin:18px 0 0;max-width:640px}
+.np-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin-top:16px}
+.np-cols p{font-size:14.5px;color:var(--soft);line-height:1.62;max-width:none}
+.np-cols p:first-child::first-letter{font-family:var(--serif);font-size:38px;float:left;line-height:.85;padding:3px 8px 0 0;color:var(--ink)}
+.np-cols p+p{border-left:1px solid var(--line);padding-left:28px}
+.np-grid{display:grid;grid-template-columns:1fr 1fr;margin-top:22px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.press-cell{display:flex;align-items:center;justify-content:center;min-height:100px;padding:18px}
+.press-cell:nth-child(odd){border-right:1px solid var(--line)}
+.press-cell:nth-child(-n+2){border-bottom:1px solid var(--line)}
+.press-cell:hover{background:rgba(45,90,86,.035)}
+.press-cell img{height:48px;width:auto;max-width:100%;object-fit:contain}
+.press-cell--wide img{height:44px}
+.np-mast--pod{margin-top:32px}
+.press-pods{display:flex;flex-direction:column}
+.press-pod{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.press-pod:last-child{border-bottom:none;padding-bottom:4px}
+.press-pod-art img{width:74px;height:74px;border-radius:12px;object-fit:cover;flex:none}
+.press-pod-name{font-family:var(--serif);font-size:18.5px;letter-spacing:-.015em;color:var(--ink);margin:2px 0 0}
+.press-pod-ep{font-size:13.5px;color:var(--faint);margin:3px 0 0;line-height:1.45}
+.press-pod-plats{display:flex;gap:8px;margin-top:11px}
+.press-pod-plats a{width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center}
+.press-pod-plats a:hover{border-color:rgba(45,90,86,.36)}
+.press-pod-plats svg{display:block}
+/* founder */
+.fband{display:grid;grid-template-columns:330px 1fr;gap:40px;align-items:center;padding-top:44px;border-top:1px solid var(--line);margin-top:54px}
+.fband img{width:100%;height:420px;object-fit:cover;object-position:50% 16%;display:block;border-radius:18px;background:var(--warm)}
+.fband .t{display:flex;flex-direction:column;gap:14px}
+.fband h2{font-size:29px;max-width:560px}
+/* form */
+.formcard{background:var(--cream);border-radius:20px;padding:28px 30px;display:flex;flex-direction:column;gap:16px;max-width:620px;margin-top:8px}
+.formcard h3{font-family:var(--serif);font-weight:400;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld.full{grid-column:1 / -1}
+.fld label{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.fld input,.fld textarea{font-family:var(--sans);font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 13px;width:100%}
+.fld textarea{min-height:82px;resize:vertical;line-height:1.5}
+.fld input:focus,.fld textarea:focus{outline:2px solid rgba(45,90,86,.34);outline-offset:1px;border-color:rgba(45,90,86,.4)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--soft);line-height:1.5}
+.check input{margin-top:3px;accent-color:var(--teal);width:16px;height:16px;flex:none}
+.formcard .btn{align-self:flex-start;background:var(--teal);color:#fff}
+.formcard .micro{color:var(--faint)}
+/* foot */
+.foot{border-top:1px solid var(--line);margin-top:54px}
+.foot .in{display:flex;align-items:center;gap:20px;padding-block:24px 30px;font-size:13.5px;color:var(--faint)}
+.foot .fl{margin-left:auto;display:flex;gap:18px}
+@media(max-width:900px){
+.shell{padding-inline:22px}
+.hdr .in{gap:12px}
+.hdr .mid{display:none}
+.hdr .btn{margin-left:auto;padding:11px 18px;font-size:14px;white-space:nowrap}
+.hero{grid-template-columns:1fr;gap:30px;padding-block:36px 40px}
+.hero .R{align-self:start}
+h1{font-size:34px}h2,h2 small{font-size:26px}
+.spread{grid-template-columns:1fr}
+.spread .yes{border-right:none;border-bottom:1px solid var(--line)}
+.trust .in{grid-template-columns:1fr 1fr;gap:18px}
+.big3,.fgrid{grid-template-columns:1fr;gap:26px}
+.fband{grid-template-columns:1fr;gap:24px}
+.fband img{height:360px}
+.krant{padding:22px 20px 18px}
+.np-cols{grid-template-columns:1fr;gap:12px}
+.np-cols p+p{border-left:none;padding-left:0}
+.press-cell{min-height:84px}
+.press-cell img{height:40px}
+.steps>div{grid-template-columns:40px 1fr;gap:12px}
+.ctarow{flex-direction:column;align-items:stretch}.ctarow .btn{width:100%}
+.formcard{padding:22px 20px}
+}
+</style>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/js/ph-config.js?v=20260724a"></script>
+<script defer src="/js/analytics.js?v=20260819c"></script>
+<script>
+/*
+ * Aanvraagformulier zonder backend: submit opent een voorgevulde mail naar
+ * info@structuro.eu. Outreach-links mogen ?utm_content=coach_slug meegeven;
+ * die slug komt in het onderwerp zodat duidelijk is wie reageert.
+ * TODO(Niels): vervang door een echt formulier-endpoint zodra dat bestaat.
+ */
+(function () {
+  function coachRef() {
+    var params = new URLSearchParams(window.location.search || "");
+    return (params.get("utm_content") || "").replace(/[^\w-]/g, "").slice(0, 60);
+  }
+  function init() {
+    var form = document.getElementById("coach-form");
+    if (!form) return;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var v = function (id) {
+        var el = document.getElementById(id);
+        return el && "value" in el ? String(el.value).trim() : "";
+      };
+      var ref = coachRef();
+      var subject = "Aanvraag Founding Coach Circle" + (ref ? " (" + ref + ")" : "");
+      var body =
+        "Hoi Niels,\n\nIk vraag graag een plek aan in de Founding Coach Circle.\n\n" +
+        "Naam: " + v("f-naam") + "\n" +
+        "Praktijk: " + v("f-praktijk") + "\n" +
+        "Website of Instagram: " + v("f-web") + "\n" +
+        "E-mail: " + v("f-mail") + "\n\n" +
+        "Wat ik herken in de situatie tussen sessies:\n" + v("f-toel") + "\n";
+      window.location.href =
+        "mailto:info@structuro.eu?subject=" + encodeURIComponent(subject) +
+        "&body=" + encodeURIComponent(body);
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+</head>
+<body>
+<!-- outreach-entry: /voor-coaches?utm_source=structuro_eu&utm_medium=coach_outreach&utm_campaign=founding_coaches&utm_content=COACH_NAAM -->
+<!-- TODO(Niels): Braventure en Breda Startup Night staan als tekstclaim (jouw copy).
+     Er is geen logo-asset of bronlink in de repo; lever die aan voor een logo-cel of link. -->
+
+<div class="hdr"><div class="shell in"><a class="brand" href="#top"><img src="/uploads/logo-structuro-mark.webp?v=20260819a" alt="" width="26" height="26"/>Structuro</a><a class="mid" href="#zo-werkt-het">Zo werkt het</a><a class="btn" href="#aanvraag" data-ph-cta="coach_header">Vraag een plek aan</a></div></div>
+
+<div class="shell"><div class="hero" id="top">
+<div class="L">
+<div class="eyebrow">Voor ADHD-coaches</div>
+<h1><span>Een goed gesprek is soms niet het moeilijke deel.</span><span>Beginnen tussen sessies wel.</span></h1>
+<p class="lede">Je cliënt weet vaak al wat de volgende stap is. Structuro ondersteunt het moment daarna: energie eerst, minder tegelijk, en één stap die klein genoeg is om echt te beginnen.</p>
+<p class="pos">Een rustige executie-interface naast jouw begeleiding. Geen planner. Geen behandeling.</p>
+<div class="ctarow"><a class="btn" href="#aanvraag" data-ph-cta="coach_hero">Vraag een plek aan</a><a class="btn ghost" href="https://www.structuro.eu/#dagstart" data-ph-cta="coach_hero_demo">Bekijk de dagstart</a></div>
+<p class="micro">Kosteloos · geen verkoopdoel · vrijblijvend kennismaken</p>
+</div>
+<div class="R">
+<div class="phone" aria-hidden="true">
+  <span class="iphone-side iphone-side--action"></span>
+  <span class="iphone-side iphone-side--volup"></span>
+  <span class="iphone-side iphone-side--voldown"></span>
+  <span class="iphone-side iphone-side--power"></span>
+  <span class="iphone-side iphone-side--camctl"></span>
+  <div class="iphone-island"><span class="iphone-island-cam"></span></div>
+  <div class="scr">
+    <div class="pnav"><span class="stop">Stoppen</span><span>Structuro</span><span></span></div>
+    <div class="pprog"><i class="on"></i><i></i><i></i></div>
+    <div class="pstack">
+      <div class="orb"></div>
+      <p class="ptitle">Dit stelt Structuro voor.</p>
+      <div class="pills"><div class="pill low">Laag</div><div class="pill ok">Genoeg</div><div class="pill high">Hoog</div></div>
+      <p class="pfeasible">Klein en zacht is prima vandaag.</p>
+      <div class="ptasks">
+        <div class="ptask"><i class="chk">1</i><span class="bat"><svg width="18" height="10" viewBox="0 0 28 16" fill="none"><rect x="1" y="2" width="22" height="12" rx="3" stroke="#3CB371" stroke-width="1.5" fill="none"/><rect x="24" y="6" width="3" height="4" rx="1.2" fill="#3CB371"/><rect x="3.5" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="9.7" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/><rect x="15.9" y="4.5" width="4.6" height="7" rx="1.2" fill="#3CB371"/></svg></span><span class="lbl">Abonnement opzeggen</span></div>
+      </div>
+      <div class="pbtn">Dit is goed</div>
+      <div class="pquiet">Zelf aanpassen</div>
+    </div>
+  </div>
+</div>
+<p class="caps">Energie, één taak, één microstap. Geen coachweergave, geen cliëntdata.</p>
+</div>
+</div></div>
+
+<div class="trust"><div class="shell"><div class="in">
+<div><b>50+</b><a href="https://www.structuro.eu/onderzoek/" data-ph-cta="coach_research_interviews">diepte-interviews</a></div>
+<div><b>100+</b><span>mensen met ADHD betrokken bij testen</span></div>
+<div><b>3</b><a href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_trust_press">genoemd in ED, AD en BD</a></div>
+<div><b>1</b><a href="https://open.spotify.com/episode/4iOcmM1oGgfbgMCOJ9KBdF" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_trust_podcast">te gast in Succesvol leven met ADD/ADHD</a></div>
+</div></div></div>
+
+<div class="shell sec"><h2>Wat Structuro ondersteunt.<small>En wat het bewust niet probeert te zijn.</small></h2><div class="spread">
+<div class="yes"><h2>Structuro ondersteunt</h2><div class="list"><div><i>✓</i>Energie als vertrekpunt</div><div><i>✓</i>Minder tegelijk zichtbaar</div><div><i>✓</i>Een taak klein maken</div><div><i>✓</i>Rustig terugkeren zonder schuld</div></div></div>
+<div class="no"><h2>Structuro doet niet</h2><div class="list no"><div><i>–</i>Geen planner of weekoverzicht</div><div><i>–</i>Geen vaste norm voor elke dag</div><div><i>–</i>Geen coachadvies op afstand</div><div><i>–</i>Geen diagnose of behandeling</div></div></div>
+</div>
+<p class="spreadfoot">Structuro helpt met het gat tussen weten wat belangrijk is en daadwerkelijk kunnen beginnen.</p></div>
+
+<div class="shell sec" id="zo-werkt-het"><h2>Zo werkt het.</h2>
+<div class="steps">
+<div><b>01</b><div><h3>Je maakt kennis met Structuro.</h3><p>Je krijgt zelf toegang, zodat je weet wat je eventueel bespreekbaar maakt met een cliënt.</p></div></div>
+<div><b>02</b><div><h3>Je bespreekt het alleen als het past.</h3><p>Geen verplichting, geen druk. Jij bepaalt of en wanneer je het noemt.</p></div></div>
+<div><b>03</b><div><h3>Je cliënt gebruikt Structuro 30 dagen zelfstandig.</h3><p>Zonder betaalverplichting, zonder automatische verlenging zonder keuze.</p></div></div>
+<div><b>04</b><div><h3>Na 30 dagen kiest de cliënt zelf.</h3><p>Stoppen kan zonder uitleg. Doorgaan kan voor €12,99 per maand. De keuze en betaling liggen altijd bij de cliënt, niet bij jou.</p></div></div>
+</div>
+<div class="ctarow" style="padding-top:26px"><a class="btn" href="#aanvraag" data-ph-cta="coach_process">Vraag een plek aan</a><span class="micro">Kosteloos · geen verkoopdoel · vrijblijvend kennismaken</span></div></div>
+
+<div class="navyband"><div class="shell in"><h2>Je krijgt geen inzage. Dat is een keuze.</h2><p>Geen coachportaal. Geen rapportages. Geen automatische meldingen over gemiste dagen. Je cliënt bepaalt zelf wat er in een sessie op tafel komt.</p><p class="small">Structuro is een zelfstandige aanvulling, geen monitoringslaag tussen jou en je cliënt. Gegevens staan binnen de EU en zijn op elk moment te verwijderen.</p></div></div>
+
+<div class="shell sec"><div class="eyebrow">Ontworpen vanuit wat mensen vertelden</div><div class="col" style="padding-top:12px"><h2>Niet elke dag vraagt hetzelfde systeem.</h2>
+<p>In de gesprekken kwamen periodes van overbelasting, routines die wegvallen en dagen waarop energie niet past bij het plan steeds terug. Vrouwen benoemden daarnaast spontaan dat focus en uitvoerbaarheid door de maand heen kunnen verschillen.</p>
+<p>Structuro legt daar geen vast schema overheen. De app begint bij de vraag wat vandaag haalbaar is en helpt vervolgens om de dag kleiner te maken.</p>
+<p class="nuance">Cyclusinformatie is optioneel en persoonlijke context. Geen diagnose. Geen medische sturing. Twijfel je, raadpleeg een arts.</p></div></div>
+
+<div class="shell sec"><h2>Gebouwd met praktijkonderzoek.<small>Getoetst in het echte leven.</small></h2>
+<div class="big3"><div><b>50+</b><span>diepte-interviews</span></div><div><b>100+</b><span>mensen met ADHD betrokken bij testen</span></div><div><b>3</b><span>regionale nieuwsmerken: ED, AD en BD</span></div></div>
+<p class="micro" style="padding-top:8px;max-width:700px">Gebouwd vanuit gesprekken over volle lijsten, uitstel, overbelasting en het verschil tussen weten en doen. Getest en aangescherpt in de praktijk.</p>
+<div class="krant">
+<div class="np-mast"><b>De pers</b><span>Vier titels</span></div>
+<p class="np-kop">&bdquo;Eindhovense ondernemer ontwikkelt ADHD-app voor dagelijkse structuur&rdquo;</p>
+<div class="np-cols">
+<p>Structuro is gebouwd samen met honderd ADHD'ers en vijftig diepte-interviews. Geen lijstjesapp, maar een startpunt: één stap die klein genoeg is om echt te beginnen.</p>
+<p>Structuro kijkt eerst naar energie en stelt daarna maximaal drie dingen voor. Niets bijhouden, geen streaks. Klik op een logo om het artikel te lezen.</p>
+</div>
+<div class="np-grid">
+<a class="press-cell" href="https://www.ed.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_ed" aria-label="Lees het artikel in Eindhovens Dagblad"><img src="/uploads/media/ed.png" alt="Eindhovens Dagblad" width="512" height="512" loading="lazy" decoding="async"/></a>
+<a class="press-cell" href="https://www.ad.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_ad" aria-label="Lees het artikel in Algemeen Dagblad"><img src="/uploads/media/ad.png" alt="Algemeen Dagblad" width="300" height="300" loading="lazy" decoding="async"/></a>
+<a class="press-cell" href="https://www.bd.nl/eindhoven/eindhovense-ondernemer-ontwikkelt-adhd-app-voor-dagelijkse-structuur~a7b99f8a/" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_bd" aria-label="Lees het artikel in Brabants Dagblad"><img src="/uploads/media/bd.png" alt="Brabants Dagblad" width="225" height="225" loading="lazy" decoding="async"/></a>
+<a class="press-cell press-cell--wide" href="https://www.impulsenwoortblind.nl/actueel/nieuws/nieuws-detail/2025/09/26/structuur-en-overzicht-hoe-dan-14-oktober-in-adhd-cafe-nijmegen" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_impuls" aria-label="Lees het bericht bij Impuls en Woortblind"><img src="/uploads/media/impuls-woortblind.png" srcset="/uploads/media/impuls-woortblind.png 768w, /uploads/media/impuls-woortblind-2x.png 1536w" sizes="(min-width:768px) 280px, 46vw" alt="Impuls &amp; Woortblind" width="768" height="181" loading="lazy" decoding="async"/></a>
+</div>
+<div class="np-mast np-mast--pod"><b>Te horen op</b><span>Podcast</span></div>
+<div class="press-pods">
+<article class="press-pod">
+<span class="press-pod-art"><img src="/uploads/podcasts/succesvol-leven.jpg" alt="" width="104" height="104" loading="lazy" decoding="async"/></span>
+<div class="press-pod-copy">
+<p class="press-pod-name">Succesvol leven met ADD/ADHD</p>
+<p class="press-pod-ep">Afl. A114, in beweging komen met een brein dat anders werkt</p>
+<div class="press-pod-plats">
+<a href="https://open.spotify.com/episode/4iOcmM1oGgfbgMCOJ9KBdF" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_podcast" aria-label="Beluister op Spotify"><svg viewBox="0 0 24 24" aria-hidden="true" width="19" height="19"><path fill="#1DB954" d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></a>
+<a href="https://podcasts.apple.com/nl/podcast/a114-niels-van-den-hurk-in-beweging-komen-met-een-brein/id1618740288?i=1000774645535" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_podcast_apple" aria-label="Beluister op Apple Podcasts"><svg viewBox="0 0 24 24" aria-hidden="true" width="19" height="19"><path fill="#9933FF" d="M5.34 0A5.328 5.328 0 000 5.34v13.32A5.328 5.328 0 005.34 24h13.32A5.328 5.328 0 0024 18.66V5.34A5.328 5.328 0 0018.66 0zm6.525 2.568c2.336 0 4.448.902 6.056 2.587 1.224 1.272 1.912 2.619 2.264 4.392.12.59.12 2.2.007 2.864a8.506 8.506 0 01-3.24 5.296c-.608.46-2.096 1.261-2.336 1.261-.088 0-.096-.091-.056-.46.072-.592.144-.715.48-.856.536-.224 1.448-.874 2.008-1.435a7.644 7.644 0 002.008-3.536c.208-.824.184-2.656-.048-3.504-.728-2.696-2.928-4.792-5.624-5.352-.784-.16-2.208-.16-3 0-2.728.56-4.984 2.76-5.672 5.528-.184.752-.184 2.584 0 3.336.456 1.832 1.64 3.512 3.192 4.512.304.2.672.408.824.472.336.144.408.264.472.856.04.36.03.464-.056.464-.056 0-.464-.176-.896-.384l-.04-.03c-2.472-1.216-4.056-3.274-4.632-6.012-.144-.706-.168-2.392-.03-3.04.36-1.74 1.048-3.1 2.192-4.304 1.648-1.737 3.768-2.656 6.128-2.656zm.134 2.81c.409.004.803.04 1.106.106 2.784.62 4.76 3.408 4.376 6.174-.152 1.114-.536 2.03-1.216 2.88-.336.43-1.152 1.15-1.296 1.15-.023 0-.048-.272-.048-.603v-.605l.416-.496c1.568-1.878 1.456-4.502-.256-6.224-.664-.67-1.432-1.064-2.424-1.246-.64-.118-.776-.118-1.448-.008-1.02.167-1.81.562-2.512 1.256-1.72 1.704-1.832 4.342-.264 6.222l.413.496v.608c0 .336-.027.608-.06.608-.03 0-.264-.16-.512-.36l-.034-.011c-.832-.664-1.568-1.842-1.872-2.997-.184-.698-.184-2.024.008-2.72.504-1.878 1.888-3.335 3.808-4.019.41-.145 1.133-.22 1.814-.211zm-.13 2.99c.31 0 .62.06.844.178.488.253.888.745 1.04 1.259.464 1.578-1.208 2.96-2.72 2.254h-.015c-.712-.331-1.096-.956-1.104-1.77 0-.733.408-1.371 1.112-1.745.224-.117.534-.176.844-.176zm-.011 4.728c.988-.004 1.706.349 1.97.97.198.464.124 1.932-.218 4.302-.232 1.656-.36 2.074-.68 2.356-.44.39-1.064.498-1.656.288h-.003c-.716-.257-.87-.605-1.164-2.644-.341-2.37-.416-3.838-.218-4.302.262-.616.974-.966 1.97-.97z"/></svg></a>
+<a href="https://www.deezer.com/search/Succesvol%20leven%20met%20ADD%20ADHD" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_podcast_deezer" aria-label="Beluister op Deezer"><svg viewBox="0 0 24 24" aria-hidden="true" width="19" height="19"><path fill="#A238FF" d="M18.81 4.16v3.03H24V4.16h-5.19zM6.27 8.38v3.027h5.189V8.38h-5.19zm12.54 0v3.027H24V8.38h-5.19zM6.27 12.594v3.027h5.189v-3.027h-5.19zm6.271 0v3.027h5.19v-3.027h-5.19zm6.27 0v3.027H24v-3.027h-5.19zM0 16.81v3.029h5.19v-3.03H0zm6.27 0v3.029h5.189v-3.03h-5.19zm6.271 0v3.029h5.19v-3.03h-5.19zm6.27 0v3.029H24v-3.03h-5.19Z"/></svg></a>
+<a href="https://podimo.com/nl/shows/succesvol-leven-met-add-adhd/episode/6f342bad-1b89-5e67-9082-7dc5001846a8" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_podcast_podimo" aria-label="Beluister op Podimo"><svg viewBox="0 0 28 48" aria-hidden="true" width="12" height="19"><path fill="#794CF8" d="M8.93 48v-10.94c1.57.86 3.28 1.57 6 1.57 6.65 0 12.15-5.36 12.15-13.37s-5.18-13.33-11.43-13.33c-2.79 0-5.22.86-6.9 2.43v-1.89H0V48h8.93zM18.09 25.3c0 3.22-2 5.47-4.86 5.47s-4.86-2.25-4.86-5.47 2-5.47 4.86-5.47 4.86 2.25 4.86 5.47"/></svg></a>
+</div>
+</div>
+</article>
+<article class="press-pod">
+<span class="press-pod-art"><img src="/uploads/podcasts/ongefilterd.jpg" alt="" width="104" height="104" loading="lazy" decoding="async"/></span>
+<div class="press-pod-copy">
+<p class="press-pod-name">Ongefilterd met Niels</p>
+<p class="press-pod-ep">Structuur bouwen voor een brein dat anders werkt</p>
+<div class="press-pod-plats">
+<a href="https://open.spotify.com/episode/4Jui4mdkuWZLqJqJP22r9Y" target="_blank" rel="noopener noreferrer" data-ph-cta="coach_press_ongefilterd" aria-label="Beluister op Spotify"><svg viewBox="0 0 24 24" aria-hidden="true" width="19" height="19"><path fill="#1DB954" d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></a>
+</div>
+</div>
+</article>
+</div>
+</div>
+<p class="micro" style="padding-top:16px;max-width:700px">Structuro is opgebouwd met professionele begeleiding uit het Brabantse startup-ecosysteem, doorliep het Braventure-startupprogramma en werd gepitcht tijdens Breda Startup Night.</p>
+<p class="micro" style="padding-top:10px">Gebruikersonderzoek, geen klinische studie.</p></div>
+
+<div class="shell"><div class="fband"><img src="/uploads/niels-full.jpg" alt="Niels, maker van Structuro"/>
+<div class="t"><div class="eyebrow">Inhoudelijk sparren</div><h2>Weten wat belangrijk is, is niet hetzelfde als erin slagen om te beginnen.</h2><p>Wij bouwen Structuro vanuit eigen ervaring, praktijkonderzoek en dagelijkse gesprekken over waar mensen vastlopen. We horen graag of deze manier van werken past bij jouw begeleiding.</p><p>Zie je een andere vorm van samenwerking voor je, of een manier om mensen met ADHD verder te helpen die hier niet tussen staat? Mail gerust naar <a href="mailto:info@structuro.eu" data-ph-cta="coach_founder_mail">info@structuro.eu</a>. We staan altijd open voor goede initiatieven.</p></div></div></div>
+
+<div class="shell sec"><h2>Veelgestelde vragen.</h2>
+<div class="faq">
+<div><h3>Zie ik wat mijn cliënt doet in de app?</h3><p>Nee. Geen coachportaal, geen rapportages, geen automatische meldingen. Je cliënt bepaalt zelf wat die in een sessie deelt.</p></div>
+<div><h3>Blijft er contact nadat ik meedoe?</h3><p>Elk kwartaal maken we ruimte voor een open sparsessie: waar Structuro aansluit, waar het schuurt, wat cliënten helpt om weer te beginnen. Zonder dat we cliëntgegevens delen.</p></div>
+<div><h3>Wat kost het voor mijn cliënt?</h3><p>Dertig dagen zelfstandig zonder betaalverplichting, zonder automatische verlenging zonder keuze. Daarna kiest de cliënt zelf: stoppen kan zonder uitleg, doorgaan kan voor €12,99 per maand.</p></div>
+<div><h3>Is dit een behandel- of verwijstool?</h3><p>Nee. Structuro is een rustige executie-interface naast jouw begeleiding. Geen planner, geen diagnose of behandeling.</p></div>
+</div></div>
+
+<div class="navyband" id="aanvraag"><div class="shell in"><h2>Vraag een plek aan.</h2><p>Een kleine groep coaches krijgt eerst toegang, zodat we rustig kunnen horen wat wel en niet werkt.</p>
+<form class="formcard" id="coach-form">
+<h3>Aanvraag</h3>
+<div class="fgrid">
+<div class="fld"><label for="f-naam">Naam</label><input id="f-naam" name="naam" type="text" autocomplete="name" required/></div>
+<div class="fld"><label for="f-praktijk">Praktijknaam</label><input id="f-praktijk" name="praktijk" type="text"/></div>
+<div class="fld"><label for="f-web">Website of Instagram</label><input id="f-web" name="website" type="text"/></div>
+<div class="fld"><label for="f-mail">E-mail</label><input id="f-mail" name="email" type="email" autocomplete="email" required/></div>
+<div class="fld full"><label for="f-toel">Wat herken je in de situatie tussen sessies?</label><textarea id="f-toel" name="toelichting"></textarea></div>
+</div>
+<label class="check"><input type="checkbox" name="besloten" required/>Ik begrijp dat dit een besloten pilot is en geen behandel- of verwijstool.</label>
+<button class="btn" type="submit" data-ph-cta="coach_form_submit">Vraag een plek aan</button>
+<p class="micro">Versturen opent je eigen mail naar info@structuro.eu. Kosteloos · geen verkoopdoel · vrijblijvend kennismaken.</p>
+</form></div></div>
+
+<div class="foot"><div class="shell in"><a class="brand" href="#top"><img src="/uploads/logo-structuro-mark.webp?v=20260819a" alt="" width="26" height="26"/>Structuro</a><div class="fl"><a href="/privacy/">Privacy</a><a href="/terms/">Voorwaarden</a><a href="mailto:info@structuro.eu">info@structuro.eu</a></div></div></div>
+
+</body>
+</html>

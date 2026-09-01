@@ -95,7 +95,7 @@ const paidProfile = {
     assert.equal(
       requiresPaidSubscriptionBeforeOnboarding({
         ...unpaidProfile,
-        email: "test@structuro.ai",
+        email: "info@structuro.eu",
       }),
       false
     );

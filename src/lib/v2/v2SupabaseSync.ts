@@ -141,6 +141,7 @@ export function supabaseTaskToV2Task(task: Task, localId: string): V2Task {
     title: task.title ?? "",
     done: task.done === true,
     completedDate: task.done ? ymdOrNull(task.completedAt) : null,
+    completedAt: task.done && typeof task.completedAt === "string" ? task.completedAt : null,
     dueDate: ymdOrNull(task.dueAt),
     repeat,
     repeatIntervalDays,

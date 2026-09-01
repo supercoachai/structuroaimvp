@@ -10,6 +10,7 @@ import V2InfoSheet from "./V2InfoSheet";
 import { V2_INFO_SHEETS } from "./v2InfoSheets";
 import { recordV2Snooze, v2AdaptiveTaskKey } from "./v2Adaptive";
 import { useV2 } from "./V2Context";
+import { useV2Go } from "./v2nav";
 import { v2NormalizeThings } from "./v2Things";
 import { v2TaskEnergyToDay } from "./v2EnergyMeta";
 import V2TaskBattery from "./V2TaskBattery";
@@ -26,6 +27,7 @@ import {
   markV2TaskCompleted,
   priorityLabel,
   pruneStaleCompletedV2Tasks,
+  removeV2ThingFromList,
   restoreV2Task,
   saveV2Tasks,
   todayYmd,
@@ -44,6 +46,20 @@ import {
   V2_REMOTE_HYDRATED_EVENT,
   V2_TASKS_REMOTE_MAP_KEY,
 } from "@/lib/v2/v2SupabaseSync";
+import { v2DoneAckFadeMs } from "./v2DoneAck";
+import V2DoneAckOverlay from "./V2DoneAckOverlay";
+import { takeNextV2DoneQuote } from "./v2DoneQuotes";
+import {
+  loadV2DoneTally,
+  recordV2Done,
+  unrecordV2Done,
+  type V2DoneTallyTick,
+} from "./v2DoneTally";
+import {
+  isLastDagstartThing,
+  v2ShutdownHref,
+} from "./v2LastTaskShutdown";
+import { trackV2LastTaskShutdownStarted } from "./v2Analytics";
 
 function readTasksRemoteMap(): Record<string, string> {
   if (typeof window === "undefined") return {};
@@ -98,8 +114,9 @@ function prepareTodoTasks(
 }
 
 export default function TodoV2Client() {
-  const { t } = useI18n();
-  const { state, ready } = useV2();
+  const { t, locale } = useI18n();
+  const { state, ready, update } = useV2();
+  const go = useV2Go();
   const [tasks, setTasks] = useState<V2Task[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState<V2Task | null>(null);
@@ -108,10 +125,18 @@ export default function TodoV2Client() {
   const [suggestBusy, setSuggestBusy] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [fadingIds, setFadingIds] = useState<Set<string>>(new Set());
+  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
+  const [doneAck, setDoneAck] = useState<{
+    title: string;
+    tick: V2DoneTallyTick;
+    quote: string;
+  } | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [snoozedOpen, setSnoozedOpen] = useState(true);
   const editAnchorRef = useRef<HTMLDivElement | null>(null);
+  const completeTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const beginFadeRef = useRef<(() => void) | null>(null);
 
   // Laad uit localStorage. Zaai ontbrekende journey-titels zonder dubbels.
   useEffect(() => {
@@ -121,6 +146,7 @@ export default function TodoV2Client() {
     saveV2Tasks(prepared);
     setTasks(prepared);
     setLoaded(true);
+    loadV2DoneTally();
   }, [ready, loaded, state.things]);
 
   // Late hydratie (na 4s-timeout): lijst opnieuw uit localStorage, met dedupe.
@@ -165,6 +191,12 @@ export default function TodoV2Client() {
     editAnchorRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [draft?.id, isNew]);
 
+  useEffect(() => {
+    return () => {
+      for (const timer of completeTimersRef.current) clearTimeout(timer);
+    };
+  }, []);
+
   const persist = (next: V2Task[]) => {
     setTasks(next);
     saveV2Tasks(next);
@@ -193,7 +225,20 @@ export default function TodoV2Client() {
 
   const completeTask = (id: string) => {
     const task = tasks.find((t) => t.id === id);
-    if (!task || task.done || fadingIds.has(id)) return;
+    if (!task || task.done || fadingIds.has(id) || completingIds.has(id)) return;
+    if (isLastDagstartThing(state.things, task.title)) {
+      const next = tasks.map((t) => (t.id === id ? markV2TaskCompleted(t) : t));
+      setTasks(next);
+      saveV2Tasks(next);
+      recordV2Done();
+      trackV2LastTaskShutdownStarted({ source: "todo" });
+      go(v2ShutdownHref(), { things: [] }, { hard: true });
+      return;
+    }
+    const remainingThings = removeV2ThingFromList(state.things, task.title);
+    if (remainingThings.length !== state.things.length) {
+      update({ things: remainingThings });
+    }
     // Zelfde titel: alle open dubbels laten verdwijnen. Eén blijft als
     // "voltooid vandaag"; anders blijft er nog een identieke open rij staan.
     const titleKey = task.title.trim().toLowerCase();
@@ -206,30 +251,68 @@ export default function TodoV2Client() {
       )
       .map((t) => t.id);
     const fadeIds = [id, ...duplicateIds];
-    setFadingIds((prev) => {
+    setDoneAck({
+      title: task.title,
+      tick: recordV2Done(),
+      quote: takeNextV2DoneQuote(locale),
+    });
+    setCompletingIds((prev) => {
       const next = new Set(prev);
-      for (const fadeId of fadeIds) next.add(fadeId);
+      next.add(id);
       return next;
     });
-    window.setTimeout(() => {
-      setTasks((prev) => {
-        const drop = new Set(duplicateIds);
-        const next = prev
-          .filter((t) => !drop.has(t.id))
-          .map((t) => (t.id === id ? markV2TaskCompleted(t) : t));
-        saveV2Tasks(next);
-        return next;
-      });
+    const fade = v2DoneAckFadeMs();
+    const startFade = () => {
+      setDoneAck(null);
+      beginFadeRef.current = null;
       setFadingIds((prev) => {
         const next = new Set(prev);
-        for (const fadeId of fadeIds) next.delete(fadeId);
+        for (const fadeId of fadeIds) next.add(fadeId);
         return next;
       });
-    }, 300);
+      const commit = window.setTimeout(() => {
+        setTasks((prev) => {
+          const drop = new Set(duplicateIds);
+          const next = prev
+            .filter((t) => !drop.has(t.id))
+            .map((t) => (t.id === id ? markV2TaskCompleted(t) : t));
+          saveV2Tasks(next);
+          return next;
+        });
+        setCompletedOpen(true);
+        setFadingIds((prev) => {
+          const next = new Set(prev);
+          for (const fadeId of fadeIds) next.delete(fadeId);
+          return next;
+        });
+        setCompletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, fade);
+      completeTimersRef.current.push(commit);
+    };
+    beginFadeRef.current = startFade;
+  };
+
+  const dismissDoneAck = () => {
+    const fade = beginFadeRef.current;
+    if (!fade) {
+      setDoneAck(null);
+      return;
+    }
+    for (const timer of completeTimersRef.current) clearTimeout(timer);
+    completeTimersRef.current = [];
+    fade();
   };
 
   const restoreTask = (id: string) => {
     setTasks((prev) => {
+      const task = prev.find((t) => t.id === id);
+      if (task?.done && isV2TaskCompletedToday(task)) {
+        unrecordV2Done();
+      }
       const next = prev.map((t) => (t.id === id ? restoreV2Task(t) : t));
       saveV2Tasks(next);
       return next;
@@ -387,6 +470,16 @@ export default function TodoV2Client() {
     : null;
 
   return (
+    <>
+      {doneAck ? (
+        <V2DoneAckOverlay
+          title={doneAck.title}
+          tick={doneAck.tick}
+          quote={doneAck.quote}
+          actionLabel={t("v2.doneAckContinue")}
+          onAction={dismissDoneAck}
+        />
+      ) : null}
     <V2AppShell>
       <div className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-8 pt-6">
         <header>
@@ -414,6 +507,7 @@ export default function TodoV2Client() {
                 <div key={task.id} ref={editing ? editAnchorRef : undefined}>
                   <TaskRow
                     task={task}
+                    completing={completingIds.has(task.id)}
                     fading={fadingIds.has(task.id)}
                     editing={editing}
                     onToggle={() => completeTask(task.id)}
@@ -469,6 +563,7 @@ export default function TodoV2Client() {
         panelId="v2-todo-info-sheet"
       />
     </V2AppShell>
+    </>
   );
 }
 
@@ -729,6 +824,7 @@ function SnoozedSection({
 
 function TaskRow({
   task,
+  completing = false,
   fading,
   editing = false,
   onToggle,
@@ -737,6 +833,7 @@ function TaskRow({
   children,
 }: {
   task: V2Task;
+  completing?: boolean;
   fading?: boolean;
   editing?: boolean;
   onToggle: () => void;
@@ -755,6 +852,7 @@ function TaskRow({
   const hasDetails =
     Boolean(deadline || repeat || prio || energy || task.microSteps.length > 0 || task.why || task.outcome);
   const showDetails = !editing && expanded;
+  const markedDone = completing || Boolean(fading);
 
   return (
     <div
@@ -765,27 +863,28 @@ function TaskRow({
         <button
           type="button"
           onClick={onToggle}
-          aria-pressed={Boolean(fading)}
+          aria-pressed={markedDone}
           aria-label={t("v2.todoMarkDoneAria")}
-          disabled={Boolean(fading)}
+          disabled={markedDone}
+          className={markedDone ? "v2-done-ack-check" : undefined}
           style={{
             width: 24,
             height: 24,
             marginTop: 1,
             borderRadius: 999,
             flexShrink: 0,
-            border: fading
+            border: markedDone
               ? "1.5px solid var(--accent)"
               : "1.5px solid var(--border)",
-            background: fading ? "var(--accent)" : "transparent",
-            cursor: fading ? "default" : "pointer",
+            background: markedDone ? "var(--accent)" : "transparent",
+            cursor: markedDone ? "default" : "pointer",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             transition: "background 160ms ease, border-color 160ms ease",
           }}
         >
-          {fading ? (
+          {markedDone ? (
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M5 12l5 5 9-9"

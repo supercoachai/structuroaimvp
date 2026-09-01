@@ -40,6 +40,7 @@ function localTask(overrides: Partial<V2Task> = {}): V2Task {
     title: "Lokale taak",
     done: false,
     completedDate: null,
+    completedAt: null,
     dueDate: null,
     repeat: "none",
     repeatIntervalDays: null,

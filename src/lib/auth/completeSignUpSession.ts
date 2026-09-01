@@ -10,6 +10,7 @@ import {
 import { trackRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelClient";
 import { resolveClientPostSignupPath } from "@/lib/postSignupRouting";
 import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
+import { isInternalTeamAccount } from "@/lib/internalTeamAccount";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
 import {
   isV2PublicEnabledClient,
@@ -30,8 +31,10 @@ function skipsPaidCheckout(signupSource: string | null | undefined): boolean {
 
 function v2PostAccountPath(
   homePath: string,
-  signupSource: string | null | undefined
+  signupSource: string | null | undefined,
+  email: string | null | undefined
 ): string {
+  if (isInternalTeamAccount(email)) return "/";
   if (!isV2PublicEnabledClient()) {
     if (skipsPaidCheckout(signupSource)) return "/";
     return resolveLivePaywallPathClient();
@@ -74,7 +77,7 @@ export async function finalizeNewAccountSession(
   try {
     const v2 = await migrateV2LocalDataToSupabase(userId);
     if (v2.migrated) {
-      return v2PostAccountPath(homePath, attributedSource);
+      return v2PostAccountPath(homePath, attributedSource, email);
     }
   } catch {
     /* best-effort; TaskContext/V2ClaimOnAuth kan retryen */
@@ -84,7 +87,7 @@ export async function finalizeNewAccountSession(
   // dus niet opnieuw starten. Lokale taken migreren mee.
   if (await claimAnonymousOnboardingForAccount(userId)) {
     if (homePath.startsWith("/v2")) {
-      return v2PostAccountPath(homePath, attributedSource);
+      return v2PostAccountPath(homePath, attributedSource, email);
     }
     return homePath;
   }

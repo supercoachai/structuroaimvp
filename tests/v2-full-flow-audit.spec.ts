@@ -115,7 +115,16 @@ async function completeOneFocus(page: Page) {
   await expect(page.getByRole("button", { name: /Ik ben klaar|I('|’)m done|I'm done/i })).toBeVisible({
     timeout: 10_000,
   });
-  await page.getByRole("button", { name: /Ik ben klaar|I('|’)m done|I'm done/i }).click();
+  await page.getByRole("button", { name: /Ik ben klaar|I('|’)m done|I'm done/i }).click({ delay: 1000 });
+  const shutdown = page.getByText(/Dagafsluiting|Day shutdown/);
+  const doneAck = page.getByText(/Af\. Dat telt\.|Done\. That counts\./);
+  await expect(shutdown.or(doneAck)).toBeVisible({ timeout: 8_000 });
+  if (await shutdown.isVisible().catch(() => false)) {
+    await page.getByRole("button", { name: /Terug naar home|Back to home/i }).click();
+    await expect(page).toHaveURL(/\/(\?|$)|\/v2\/home/, { timeout: 15_000 });
+    return;
+  }
+  await page.getByRole("button", { name: /Terug naar dashboard|Back to dashboard/i }).click();
   await expect(page).toHaveURL(/\/v2\/home/, { timeout: 15_000 });
 }
 
@@ -158,7 +167,7 @@ test.describe("V2 full flow audit ×2", () => {
       });
     }
 
-    // Shutdown-nudge is geen home-kaart meer (21:30 notificatie i.p.v. sticky card)
+    // Shutdown-nudge is geen home-kaart meer. Avondwolk komt pas na lege lijst of 21:30.
     const shutdownNudge = page.getByText(/dag is nog open|day is still open/i);
     if (await shutdownNudge.isVisible().catch(() => false)) {
       findings.push({
@@ -171,6 +180,14 @@ test.describe("V2 full flow audit ×2", () => {
         severity: "ok",
         where: "home",
         detail: "Geen shutdown-nudge home-kaart",
+      });
+    }
+    const shutdownInvite = page.getByText(/Wil je de dag rustig dichtdoen/i);
+    if (await shutdownInvite.isVisible().catch(() => false)) {
+      findings.push({
+        severity: "bug",
+        where: "home",
+        detail: "Shutdown-invite te vroeg zichtbaar (lijst nog niet leeg, niet 21:30)",
       });
     }
 

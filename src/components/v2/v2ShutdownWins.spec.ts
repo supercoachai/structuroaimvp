@@ -43,7 +43,7 @@ describe("collectWins", () => {
     ];
 
     expect(collectWins(tasks, today)).toEqual([
-      { id: "a", label: "Eén pagina schrijven", energy: "high" },
+      { id: "a", label: "Eén pagina schrijven", energy: "high", at: "" },
     ]);
   });
 

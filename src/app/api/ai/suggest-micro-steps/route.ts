@@ -212,10 +212,12 @@ async function postSuggestMicroSteps(request: Request) {
     });
 
     let quota = peekQuota;
-    try {
-      quota = await consumeMicroStepsAiQuota(user.id);
-    } catch {
-      console.error("suggest-micro-steps: quota consume after success failed");
+    if (result.source === "ai") {
+      try {
+        quota = await consumeMicroStepsAiQuota(user.id);
+      } catch {
+        console.error("suggest-micro-steps: quota consume after success failed");
+      }
     }
 
     return NextResponse.json({

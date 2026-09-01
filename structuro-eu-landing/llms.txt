@@ -7,6 +7,7 @@ Structuro is een prikkelarme executie-interface: dagstart → focus → dagafslu
 ## Primary
 
 - [Homepage](https://www.structuro.eu/): Merkbelofte en productintroductie
+- [English homepage](https://www.structuro.eu/en/): ADHD execution web app from the Netherlands. Energy first, one step. Not in the App Store.
 - [App onboarding](https://www.structuro.ai/onboarding): Start met een anonieme dagstart
 
 ## Gidsen (SEO / GEO)
@@ -24,6 +25,7 @@ Structuro is een prikkelarme executie-interface: dagstart → focus → dagafslu
 - [Alternatief voor de to-do-lijst bij ADHD](https://www.structuro.eu/alternatief-voor-todo-lijst-adhd/): Een alternatief voor de to-do-lijst bij ADHD is geen langere inbox in een ander jasje. Het is minder tegelijk zichtbaar, één eerste stap, en een plek voor dumps die niet meteen taken worden. De lijst mag bestaan in de lade. Op het scherm hoort alleen wat je nu kunt raken. Anders wint bewaren van beginnen.
 - [Structuro of Tiimo: welke past bij jouw ADHD-klus](https://www.structuro.eu/structuro-of-tiimo/): Tiimo is sterk als je visuele tijd, routines en een dagkaart nodig hebt. Structuro is sterk als je wilt beginnen, maar de eerste stap te groot voelt. Ze lossen een andere klus op. Kies Tiimo bij tijd zien. Kies Structuro bij taakinitiatie. Allebei 'voor ADHD' zeggen zegt weinig. Jouw knelpunt wel.
 - [Structuro of Structured: tijdlijn versus eerste stap](https://www.structuro.eu/structuro-of-structured/): Structured is een dag-tijdlijn: je ziet wat wanneer. Dat helpt als je overzicht in de tijd zoekt. Structuro is starthulp: energie, dan één eerste stap, weinig tegelijk. Als je de tijdlijn vult en toch niet begint, is Structured niet kapot. Dan ontbreekt executie. Kies het gereedschap dat bij dat gat past.
+- [Structuro of Todoist: de lijst versus de start](https://www.structuro.eu/structuro-of-todoist/): Todoist is sterk in vangen, taggen en projecten bewaren. Structuro helpt beginnen: energie eerst, één kleine stap, weinig in beeld. Als de inbox vol is en vandaag leeg, heb je geen betere lijst nodig. Je hebt een dunnere start nodig. Migreren is optioneel. De lade mag blijven.
 - [ADHD en burn-out: als leegte en niet-starten samenkomen](https://www.structuro.eu/adhd-en-burn-out/): ADHD en burn-out kunnen samen voorkomen in hetzelfde lijf: weinig energie, en een start die te groot voelt. Dit is geen diagnose en geen behandelplan. Wat wél past: de lat omlaag, één micro-actie, geen inhaalweek. Energie eerst. Zorg blijft zorg. Een rustige dagstart is hooguit een zachte ingang, geen herstelprogramma.
 - [ADHD op het werk: starten als de dag al vol is](https://www.structuro.eu/adhd-op-het-werk/): ADHD op het werk wringt waar de dag uit andermans prioriteiten bestaat: mail, chat, meetings. Kennis is er, de start niet. Wat helpt is één werktaak vertalen naar een eerste klik, de rest parkeren, en energie meewegen. Geen heroïsche 5-uur-focusmythe. Geen shame. Wel een smaller scherm in een brede werkdag.
 - [ADHD-ochtendroutine: kleiner dan Instagram belooft](https://www.structuro.eu/adhd-ochtendroutine/): Een ochtendroutine bij ADHD faalt vaak omdat hij te lang is. Veel stappen vóór je mag beginnen is een tweede berg. Wat helpt is een korte keten: lichaam, één start, de rest mag wachten. Energie eerst. Geen 5:00-mythe, geen veertien stappen. Als de ochtend al vol is, is één haalbare actie de routine. Meer is theater.
@@ -31,6 +33,16 @@ Structuro is een prikkelarme executie-interface: dagstart → focus → dagafslu
 - [ADHD en keuzestress: als kiezen al de taak is](https://www.structuro.eu/adhd-keuzestress/): Keuzestress bij ADHD is kiezen als extra taak, bovenop de echte taak. Te veel opties vullen het werkgeheugen. Dan bevries je, of je blijft vergelijken. Wat helpt is het zichtveld smal maken: één default, een tijdslimiet op kiezen, daarna de eerste klik. Niet de perfecte optie. De startbare. De rest mag in de lade.
 - [Takenlijst te lang bij ADHD: de lade is niet de dag](https://www.structuro.eu/takenlijst-te-lang-adhd/): Een te lange takenlijst bij ADHD is zelden een tekort aan items. Het is te veel tegelijk in beeld. De lijst mag als lade bestaan. De dag mag bijna niks bevatten: één tot een paar startbare regels, passend bij energie. De rest is niet weg. Hij is alleen niet vandaag. Anders wint bewaren van beginnen, elke ochtend opnieuw.
 - [ADHD-focus zonder streaks: aandacht zonder gehoorzaamheidsspel](https://www.structuro.eu/adhd-focus-zonder-streaks/): Focus bij ADHD wordt vaak verkocht als timers, streaks en deep work. Dat wordt een tweede baas. Wat vaker werkt: een korte, saaiere aandachtspanne, gekoppeld aan één startbare actie, zonder reeks om te beschermen. Stoppen telt. Een gemiste dag is geen falen. Aandacht is geen gehoorzaamheidsspel. Het is een klik, daarna kijken of er nog energie is.
+
+## English (citation pages)
+
+These pages match how English AI search phrases ADHD productivity tools. Structuro is a Netherlands web app, not an App Store listing.
+
+- [How to choose an ADHD productivity app](https://www.structuro.eu/en/best-adhd-apps-netherlands/): Match the tool to the job. Starting, seeing time, or keeping an overview. No fake number 1.
+- [Structuro vs Tiimo](https://www.structuro.eu/en/structuro-vs-tiimo/): Tiimo is visual time and routines. Structuro is the first click when the day already exists in your head.
+- [Structuro vs Structured](https://www.structuro.eu/en/structuro-vs-structured/): Structured is a day timeline. Structuro is execution: energy, then one step.
+- [Structuro vs Todoist](https://www.structuro.eu/en/structuro-vs-todoist/): Todoist captures and organises. Structuro starts. Keep the archive if it already works.
+- [English guides hub](https://www.structuro.eu/en/guides/)
 
 ## Optional
 

@@ -5,15 +5,16 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/lib/i18n";
+import { HAPTIC_PATTERNS, triggerHaptic } from "@/lib/haptics";
 import Battery from "@/components/dagstart/design/Battery";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { captureProductEvent } from "@/lib/posthog/track";
 
-import { V2AppShell, V2Eyebrow } from "./V2Chrome";
+import { V2AppShell } from "./V2Chrome";
 import StructuroLogoLoading from "@/components/structuro/StructuroLogoLoading";
 import { useV2 } from "./V2Context";
 import { useV2Go } from "./v2nav";
-import { v2EnergyToMicro } from "./v2FocusMicro";
+import { v2ActiveMicroStepIndex, v2EnergyToMicro } from "./v2FocusMicro";
 import {
   dismissV2HomePrompt,
   resolveV2HomePrompt,
@@ -22,6 +23,7 @@ import {
 import {
   trackV2HomePromptPriority,
   trackV2HomeSessionStart,
+  trackV2LastTaskShutdownStarted,
   trackV2OpenTaskReminderDismissed,
   trackV2OpenTaskReminderShown,
   trackV2QuoteDismissed,
@@ -44,16 +46,26 @@ import { ensureV2ThingsHaveTasks } from "./v2MicroDefaults";
 import { dismissCycleOptInPrompt } from "./v2CycleOptInPrompt";
 import { patchV2Settings } from "./v2Settings";
 import { getV2EnergyForToday } from "./v2Adaptive";
-import { V2_BATTERY_MUTED, v2EnergyMeta, v2TaskEnergyToDay } from "./v2EnergyMeta";
+import { v2EnergyMeta, v2TaskEnergyToDay } from "./v2EnergyMeta";
+import { estimateFocusDurationBucket } from "./v2FocusDurationEstimate";
+import { formatV2HomeClock, formatV2HomeDateLabel } from "./v2HomeDate";
 import V2TaskBattery from "./V2TaskBattery";
 import V2InstallGate from "./V2InstallGate";
 import {
+  completeV2TaskByTitle,
   findV2TaskByTitle,
   saveV2Tasks,
   v2Id,
   type V2MicroStep,
   type V2Task,
 } from "./v2Tasks";
+import { recordV2Done } from "./v2DoneTally";
+import {
+  clearV2ShutdownInPlace,
+  hasV2ShutdownInPlace,
+  isLastDagstartThing,
+  markV2ShutdownInPlace,
+} from "./v2LastTaskShutdown";
 
 const V2CycleSetupStep = dynamic(() => import("./V2CycleSetupStep"), {
   ssr: false,
@@ -65,11 +77,43 @@ const V2ShellWelcomeSheet = dynamic(() => import("./V2ShellWelcomeSheet"), {
   loading: () => null,
 });
 
-const ENERGY_LABEL_KEY: Record<string, string> = {
+const ShutdownV2Client = dynamic(() => import("./ShutdownV2Client"), {
+  ssr: false,
+  loading: () => null,
+});
+
+const ENERGY_CHIP_KEY: Record<string, string> = {
+  low: "v2.energyLow",
+  enough: "v2.energyEnough",
+  high: "v2.energyHigh",
+};
+
+const ENERGY_ARIA_KEY: Record<string, string> = {
   low: "v2.homeEnergyLow",
   enough: "v2.homeEnergyEnough",
   high: "v2.homeEnergyHigh",
 };
+
+const TASK_ENERGY_KEY: Record<string, string> = {
+  low: "v2.homeTaskEnergyLow",
+  enough: "v2.homeTaskEnergyEnough",
+  high: "v2.homeTaskEnergyHigh",
+};
+
+/** Lege batterij-segmenten zoals in home-richting B. */
+const HOME_BATTERY_MUTED = "#ABB3C5";
+
+const DAYSTART_RAIL = [
+  ["v2.homeEmptyStepEnergy", "v2.homeEmptyStepEnergyHint"],
+  ["v2.homeEmptyStepPick", "v2.homeEmptyStepPickHint"],
+  ["v2.homeEmptyStepStart", "v2.homeEmptyStepStartHint"],
+] as const;
+
+function homeDurationKey(bucket: "short" | "medium" | "long"): string {
+  if (bucket === "medium") return "v2.focusRingMinutesMedium";
+  if (bucket === "long") return "v2.focusRingMinutesLong";
+  return "v2.focusRingMinutesShort";
+}
 
 function greetingKey(): string {
   const h = new Date().getHours();
@@ -109,6 +153,7 @@ export default function HomeV2Client() {
   const { t, locale } = useI18n();
   const { state, ready, update } = useV2();
   const [greetingKeyState, setGreetingKeyState] = useState(greetingKey);
+  const [now, setNow] = useState(() => new Date());
   const [homePrompt, setHomePrompt] = useState<V2HomePrompt | null>(null);
   const [promptTracked, setPromptTracked] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -117,6 +162,7 @@ export default function HomeV2Client() {
   const [suggestBusy, setSuggestBusy] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [suggestDismissed, setSuggestDismissed] = useState(false);
+  const [inPlaceShutdown, setInPlaceShutdown] = useState(false);
   const suggestShownRef = useRef(false);
 
   const things = v2NormalizeThings(state.things);
@@ -125,6 +171,11 @@ export default function HomeV2Client() {
     hasThings ? things[heroIndex % things.length] ?? things[0] : null;
   const activeTask = activeThing ? findV2TaskByTitle(tasks, activeThing) : null;
   const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
+  const activeMicroIdx = v2ActiveMicroStepIndex(microSteps);
+  const allMicrosDone =
+    microSteps.length > 0 && microSteps.every((s) => s.done);
+  const taskCount = things.length;
+  const taskOrdinal = taskCount > 0 ? (heroIndex % taskCount) + 1 : 0;
   const showMicroSuggest =
     Boolean(activeThing) &&
     microSteps.length === 0 &&
@@ -132,7 +183,11 @@ export default function HomeV2Client() {
 
   useEffect(() => {
     setGreetingKeyState(greetingKey());
-    const id = window.setInterval(() => setGreetingKeyState(greetingKey()), 60_000);
+    setNow(new Date());
+    const id = window.setInterval(() => {
+      setGreetingKeyState(greetingKey());
+      setNow(new Date());
+    }, 60_000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -158,6 +213,18 @@ export default function HomeV2Client() {
     setSuggestDismissed(false);
     suggestShownRef.current = false;
   }, [state.things]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (state.todayDone) {
+      setInPlaceShutdown(false);
+      clearV2ShutdownInPlace();
+      return;
+    }
+    if (hasV2ShutdownInPlace() && !hasThings) {
+      setInPlaceShutdown(true);
+    }
+  }, [ready, state.todayDone, hasThings]);
 
   useEffect(() => {
     setSuggestDismissed(false);
@@ -186,17 +253,42 @@ export default function HomeV2Client() {
     setPromptTracked(true);
   }, [ready, homePrompt, promptTracked]);
 
-  const name = state.name.trim();
   const greeting = t(greetingKeyState);
-  const headline = name
-    ? `${greeting}, ${name}`
-    : greeting || t("v2.homeGreetingFallback");
+  const headline = greeting || t("v2.homeGreetingFallback");
+  const dateLabel = formatV2HomeDateLabel(now, locale);
   const energyMeta = v2EnergyMeta(state.energy);
-  const energyLabelKey = state.energy ? ENERGY_LABEL_KEY[state.energy] : null;
-  const energyLabel = energyLabelKey ? t(energyLabelKey) : null;
+  const energyChipKey = state.energy ? ENERGY_CHIP_KEY[state.energy] : null;
+  const energyAriaKey = state.energy ? ENERGY_ARIA_KEY[state.energy] : null;
+  const energyChipLabel = energyChipKey ? t(energyChipKey) : null;
+  const energyAria = energyAriaKey ? t(energyAriaKey) : null;
+  const showEnergyChip = Boolean(
+    hasThings && !state.todayDone && energyMeta && energyChipLabel,
+  );
+  const closedClock = formatV2HomeClock(state.todayDoneAt, locale);
+  const closedLine = closedClock
+    ? t("v2.homeDoneClosedAt", { time: closedClock })
+    : t("v2.homeDoneClosed");
+  const activeDayEnergy = v2TaskEnergyToDay(activeTask?.energy ?? null);
+  const activeEnergyLabel = activeDayEnergy
+    ? t(TASK_ENERGY_KEY[activeDayEnergy])
+    : null;
+  const activeDurationLabel = activeThing
+    ? t(
+        homeDurationKey(
+          estimateFocusDurationBucket({
+            title: activeThing,
+            energy: activeTask?.energy ?? null,
+            taskDurationBucket: activeTask?.durationBucket ?? null,
+          }).durationBucket,
+        ),
+      )
+    : null;
+  const restThings = things.filter((thing) => thing !== activeThing);
 
   const toggleMicroStep = (stepId: string) => {
     if (!activeTask) return;
+    const step = activeTask.microSteps.find((s) => s.id === stepId);
+    const markingDone = step ? !step.done : false;
     const next = tasks.map((t) => {
       if (t.id !== activeTask.id) return t;
       return {
@@ -208,6 +300,27 @@ export default function HomeV2Client() {
     });
     setTasks(next);
     saveV2Tasks(next);
+    if (markingDone) {
+      const nextTask = next.find((t) => t.id === activeTask.id);
+      const lastMicro =
+        nextTask != null &&
+        nextTask.microSteps.length > 0 &&
+        nextTask.microSteps.every((s) => s.done);
+      triggerHaptic(
+        lastMicro ? HAPTIC_PATTERNS.TASK_DONE : HAPTIC_PATTERNS.MICROSTEP_DONE,
+        { respectReducedMotion: true },
+      );
+      if (lastMicro && activeThing && isLastDagstartThing(things, activeThing)) {
+        const completed = completeV2TaskByTitle(next, activeTask.title);
+        setTasks(completed);
+        saveV2Tasks(completed);
+        if (completed !== next) recordV2Done();
+        markV2ShutdownInPlace();
+        trackV2LastTaskShutdownStarted({ source: "home" });
+        update({ things: [] });
+        setInPlaceShutdown(true);
+      }
+    }
   };
 
   const applySuggestedSteps = async () => {
@@ -541,50 +654,49 @@ export default function HomeV2Client() {
     <V2InstallGate>
     <>
     <V2AppShell
+      scroll={!inPlaceShutdown}
       bottomSlot={
-        isBottomPrompt && !cycleSetupOpen ? (
+        isBottomPrompt && !cycleSetupOpen && !inPlaceShutdown ? (
           <div className="v2-evening-cloud-slot">
             {renderPrompt()}
           </div>
         ) : null
       }
     >
-      <div
-        className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 pb-8 pt-6"
-        style={{ minHeight: "100%" }}
-      >
-        {promptAtTop ? renderPrompt() : null}
+      {inPlaceShutdown ? (
+        <ShutdownV2Client
+          embedded
+          onExit={() => setInPlaceShutdown(false)}
+        />
+      ) : (
+      <div className="v2-home">
+        {promptAtTop ? <div className="v2-home__prompt">{renderPrompt()}</div> : null}
 
-        <header>
-          <V2Eyebrow>{t("v2.homeEyebrowToday")}</V2Eyebrow>
-          <div className="mt-1 flex items-end justify-between gap-2">
-            <h1
-              className="v2-serif min-w-0 flex-1 whitespace-nowrap"
-              style={{
-                fontSize: "clamp(1.35rem, 6.5vw, 1.875rem)",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {headline}
-            </h1>
-            {energyMeta && energyLabel ? (
-              <span
-                className="v2-home-chip shrink-0"
-                title={energyLabel}
-                aria-label={energyLabel}
-              >
-                <span className="v2-home-chip__battery" aria-hidden>
-                  <Battery
-                    level={energyMeta.level}
-                    color="currentColor"
-                    mutedColor={V2_BATTERY_MUTED}
-                    size={14}
-                  />
-                </span>
-                {t("v2.homeEnergyChip")}
-              </span>
-            ) : null}
+        <header className="v2-home__head">
+          <div>
+            <p className="v2-home__date">
+              <i aria-hidden />
+              {dateLabel}
+            </p>
+            <h1 className="v2-home__greet">{headline}</h1>
           </div>
+          {ready && showEnergyChip && energyMeta && energyChipLabel ? (
+            <span
+              className="v2-home-chip"
+              title={energyAria ?? energyChipLabel}
+              aria-label={energyAria ?? energyChipLabel}
+            >
+              <span className="v2-home-chip__battery" aria-hidden>
+                <Battery
+                  level={energyMeta.level}
+                  color={energyMeta.color}
+                  mutedColor={HOME_BATTERY_MUTED}
+                  size={24}
+                />
+              </span>
+              {energyChipLabel}
+            </span>
+          ) : null}
         </header>
 
         {!ready ? (
@@ -594,234 +706,264 @@ export default function HomeV2Client() {
             size={72}
           />
         ) : state.todayDone ? (
-          <section
-            className="v2-card v2-fade p-6 text-center"
-            aria-live="polite"
-          >
-            <div
-              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
-              style={{ background: "var(--accent)" }}
-              aria-hidden
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12l5 5 9-9" stroke="var(--text-on-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              {t("v2.homeDoneTitle")}
-            </h2>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              {t("v2.homeDoneBody")}
-            </p>
-            <button
-              type="button"
-              onClick={() => update({ todayDone: false })}
-              className="v2-link mx-auto mt-3 block"
-            >
-              {t("v2.homeDoneMore")}
-            </button>
-          </section>
-        ) : hasThings && activeThing ? (
-          <>
-            <section className="v2-card v2-fade p-5">
-              <div className="flex items-center justify-between gap-3">
-                <p
-                  className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-                  style={{ color: "var(--accent)" }}
+              <div className="v2-home__body">
+                <section className="v2-home-page v2-fade" aria-live="polite">
+                  <span className="v2-home-kicker">{t("v2.homeDoneEyebrow")}</span>
+                  <h2 className="v2-home-page__title">{t("v2.homeDoneTitle")}</h2>
+                  <p className="v2-home-lede">{t("v2.homeDoneBody")}</p>
+                  <div className="v2-home-closed">
+                    <i className="v2-home-closed__stub" aria-hidden />
+                    <i className="v2-home-closed__tick" aria-hidden>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M4.5 12.6l5 5.2L19.5 6.6"
+                          stroke="currentColor"
+                          strokeWidth="2.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </i>
+                    <span>{closedLine}</span>
+                  </div>
+                </section>
+                <button
+                  type="button"
+                  onClick={() => update({ todayDone: false })}
+                  className="v2-home-escape v2-home-escape--teal"
                 >
-                  {t("v2.focusNow")}
-                </p>
-                {things.length > 1 ? (
-                  <p
-                    className="text-[11px] font-medium tabular-nums"
-                    style={{ color: "var(--text-muted)" }}
-                    aria-label={t("v2.homeTaskOfAria", {
-                      n: String((heroIndex % things.length) + 1),
-                      m: String(things.length),
-                    })}
-                  >
-                    {(heroIndex % things.length) + 1}/{things.length}
-                  </p>
-                ) : null}
+                  {t("v2.homeDoneMore")}
+                </button>
+                <p className="v2-home-under">{t("v2.homeDoneTomorrow")}</p>
               </div>
-              <h2
-                className="v2-serif v2-home-hero-title"
-                style={{
-                  fontSize: "1.35rem",
-                  lineHeight: 1.35,
-                  letterSpacing: "-0.015em",
-                  color: "var(--text)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <V2TaskBattery
-                  energy={v2TaskEnergyToDay(activeTask?.energy ?? null)}
-                  size={22}
-                />
-                <span className="min-w-0">{activeThing}</span>
-              </h2>
+            ) : hasThings && activeThing ? (
+              <>
+                <div className="v2-home__body v2-home__body--top">
+                  <section className="v2-home-page v2-fade">
+                    <div className="v2-home-page__top">
+                      <span className="v2-home-kicker">{t("v2.focusNow")}</span>
+                      <span
+                        className="v2-home-count"
+                        aria-label={t("v2.homeTaskOfAria", {
+                          n: String(taskOrdinal),
+                          m: String(taskCount),
+                        })}
+                      >
+                        {t("v2.homeTaskOf", {
+                          n: String(taskOrdinal),
+                          m: String(taskCount),
+                        })}
+                      </span>
+                    </div>
+                    <h2 className="v2-home-page__hero">{activeThing}</h2>
+                    {activeEnergyLabel || activeDurationLabel ? (
+                      <p className="v2-home-meta">
+                        {activeEnergyLabel ? (
+                          <span className="v2-home-meta__lbl">
+                            <V2TaskBattery
+                              energy={activeDayEnergy}
+                              size={24}
+                              mutedColor={HOME_BATTERY_MUTED}
+                            />
+                            {activeEnergyLabel}
+                          </span>
+                        ) : null}
+                        {activeEnergyLabel && activeDurationLabel ? (
+                          <i className="v2-home-meta__sep" aria-hidden />
+                        ) : null}
+                        {activeDurationLabel ? (
+                          <span>{activeDurationLabel}</span>
+                        ) : null}
+                      </p>
+                    ) : null}
 
-              {microSteps.length > 0 ? (
-                <>
-                  <ul
-                    className="v2-home-micro-list"
-                    aria-label={t("v2.focusMicroListAria")}
-                  >
-                    {microSteps.map((step) => (
-                      <li key={step.id}>
+                    {microSteps.length > 0 ? (
+                      <>
+                        <div
+                          className="v2-home-rail v2-home-rail--ruled"
+                          aria-label={t("v2.focusMicroListAria")}
+                        >
+                          <i className="v2-home-rail__line" aria-hidden />
+                          {microSteps.map((step, idx) => {
+                            const isNext = !step.done && idx === activeMicroIdx;
+                            const stepState = step.done
+                              ? "done"
+                              : isNext
+                                ? "next"
+                                : "todo";
+                            return (
+                              <button
+                                key={step.id}
+                                type="button"
+                                onClick={() => toggleMicroStep(step.id)}
+                                className="v2-home-step"
+                                data-state={stepState}
+                                aria-pressed={step.done}
+                              >
+                                <i className="v2-home-step__dot" aria-hidden />
+                                <span className="v2-home-step__txt">{step.title}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {allMicrosDone ? (
+                          <p className="v2-done-ack v2-done-ack--block" role="status">
+                            {t("v2.doneAckLastStep")}
+                          </p>
+                        ) : null}
+                        {suggestError ? (
+                          <p className="v2-home-micro-suggest__err">{suggestError}</p>
+                        ) : null}
+                      </>
+                    ) : showMicroSuggest ? (
+                      <section className="v2-home-micro-suggest" aria-live="polite">
+                        <p className="v2-home-micro-suggest__title">
+                          {t("v2.focusMicroSuggestTitle")}
+                        </p>
+                        <p className="v2-home-micro-suggest__lead">
+                          {t("v2.focusMicroSuggestLead")}
+                        </p>
                         <button
                           type="button"
-                          onClick={() => toggleMicroStep(step.id)}
-                          className="v2-home-micro"
-                          aria-pressed={step.done}
+                          onClick={() => void applySuggestedSteps()}
+                          disabled={suggestBusy}
+                          className="btn-primary w-full"
                         >
-                          <span
-                            className="v2-home-micro__chk"
-                            aria-hidden
-                            data-done={step.done ? "1" : "0"}
-                          >
-                            {step.done ? "✓" : ""}
-                          </span>
-                          <span
-                            className="v2-home-micro__lbl"
-                            data-done={step.done ? "1" : "0"}
-                          >
-                            {step.title}
-                          </span>
+                          {suggestBusy
+                            ? t("v2.focusMicroSuggestBusy")
+                            : t("v2.focusMicroSuggestCta")}
                         </button>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={() => void applySuggestedSteps()}
-                    disabled={suggestBusy}
-                    className="v2-link mt-2 w-full text-center"
-                  >
-                    {suggestBusy
-                      ? t("v2.focusMicroSuggestBusy")
-                      : t("v2.focusMicroSuggestResplit")}
-                  </button>
-                  {suggestError ? (
-                    <p className="v2-home-micro-suggest__err">{suggestError}</p>
-                  ) : null}
-                </>
-              ) : showMicroSuggest ? (
-                <section className="v2-home-micro-suggest" aria-live="polite">
-                  <p className="v2-home-micro-suggest__title">
-                    {t("v2.focusMicroSuggestTitle")}
-                  </p>
-                  <p className="v2-home-micro-suggest__lead">
-                    {t("v2.focusMicroSuggestLead")}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void applySuggestedSteps()}
-                    disabled={suggestBusy}
-                    className="btn-primary w-full"
-                  >
-                    {suggestBusy
-                      ? t("v2.focusMicroSuggestBusy")
-                      : t("v2.focusMicroSuggestCta")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSuggestDismissed(true)}
-                    className="v2-link mt-2 w-full text-center"
-                  >
-                    {t("v2.focusMicroSuggestSkip")}
-                  </button>
-                  {suggestError ? (
-                    <p className="v2-home-micro-suggest__err">{suggestError}</p>
-                  ) : null}
-                </section>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSuggestDismissed(false);
-                    void applySuggestedSteps();
-                  }}
-                  disabled={suggestBusy}
-                  className="v2-link mt-2 w-full text-center"
-                >
-                  {suggestBusy
-                    ? t("v2.focusMicroSuggestBusy")
-                    : t("v2.focusMicroSuggestRetry")}
-                </button>
-              )}
+                        <button
+                          type="button"
+                          onClick={() => setSuggestDismissed(true)}
+                          className="v2-link mt-2 w-full text-center"
+                        >
+                          {t("v2.focusMicroSuggestSkip")}
+                        </button>
+                        {suggestError ? (
+                          <p className="v2-home-micro-suggest__err">{suggestError}</p>
+                        ) : null}
+                      </section>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSuggestDismissed(false);
+                          void applySuggestedSteps();
+                        }}
+                        disabled={suggestBusy}
+                        className="v2-link mt-2 w-full text-center"
+                      >
+                        {suggestBusy
+                          ? t("v2.focusMicroSuggestBusy")
+                          : t("v2.focusMicroSuggestRetry")}
+                      </button>
+                    )}
 
-              <button
-                type="button"
-                onClick={() =>
-                  go(`/focus?thing=${encodeURIComponent(activeThing)}`)
-                }
-                className="btn-primary mt-5 w-full"
-              >
-                {t("v2.focusStart")}
-              </button>
-              {things.length > 1 ? (
-                <button
-                  type="button"
-                  className="v2-link mt-3 w-full text-center text-[14px]"
-                  onClick={() =>
-                    setHeroIndex((prev) => (prev + 1) % things.length)
-                  }
-                >
-                  {t("v2.homeOtherTask")}
-                </button>
-              ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        go(`/focus?thing=${encodeURIComponent(activeThing)}`)
+                      }
+                      className="btn-primary v2-home-primary"
+                    >
+                      {t("v2.focusStart")}
+                    </button>
+                    {things.length > 1 ? (
+                      <button
+                        type="button"
+                        className="v2-home-escape"
+                        onClick={() =>
+                          setHeroIndex((prev) => (prev + 1) % things.length)
+                        }
+                      >
+                        {t("v2.homeOtherTask")}
+                      </button>
+                    ) : null}
+                  </section>
 
-              <div className="v2-home-loop" aria-label={t("v2.homeLoopLabel")}>
-                <p className="v2-home-loop__label">{t("v2.homeLoopLabel")}</p>
-                <div className="v2-home-loop__actions">
-                  <Link href="/dump" className="v2-home-loop__link">
-                    {t("v2.homeBrainDump")}
-                  </Link>
-                  <span className="v2-home-loop__dot" aria-hidden>
-                    ·
-                  </span>
-                  <button
-                    type="button"
-                    className="v2-home-loop__link"
-                    onClick={() => go("/shutdown")}
-                  >
-                    {t("v2.homeCloseDay")}
-                  </button>
+                  {restThings.length > 0 ? (
+                    <div className="v2-home-rest">
+                      <b>{t("v2.homeRestLabel")}</b>
+                      {restThings.map((thing) => {
+                        const restTask = findV2TaskByTitle(tasks, thing);
+                        const restEnergy = v2TaskEnergyToDay(restTask?.energy ?? null);
+                        const stepCount = restTask?.microSteps.length ?? 0;
+                        return (
+                          <button
+                            key={thing}
+                            type="button"
+                            className="v2-home-rest__row"
+                            onClick={() => {
+                              const idx = things.indexOf(thing);
+                              if (idx >= 0) setHeroIndex(idx);
+                            }}
+                          >
+                            <span className="v2-home-rest__rt">
+                              <V2TaskBattery
+                                energy={restEnergy}
+                                size={22}
+                                mutedColor={HOME_BATTERY_MUTED}
+                              />
+                              {thing}
+                            </span>
+                            {stepCount > 0 ? (
+                              <span className="v2-home-rest__count">
+                                {stepCount === 1
+                                  ? t("v2.homeStepsCountOne")
+                                  : t("v2.homeStepsCount", { n: String(stepCount) })}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
+                <p className="v2-home-foot">{t("v2.homeNoMore")}</p>
+              </>
+            ) : (
+              <div className="v2-home__body">
+                <section className="v2-home-page v2-fade">
+                  <span className="v2-home-kicker">{t("v2.homeEmptyEyebrow")}</span>
+                  <h2 className="v2-home-page__title">{t("v2.homeEmptyTitle")}</h2>
+                  <p className="v2-home-lede">{t("v2.homeEmptyBody")}</p>
+                  <div className="v2-home-rail v2-home-rail--plain">
+                    <i className="v2-home-rail__line" aria-hidden />
+                    {DAYSTART_RAIL.map(([titleKey, hintKey], i) => (
+                      <div
+                        key={titleKey}
+                        className={`v2-home-q${i === 0 ? " is-on" : ""}`}
+                      >
+                        <i className="v2-home-q__dot" aria-hidden />
+                        <b>{t(titleKey)}</b>
+                        <span>{t(hintKey)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => go("/dagstart?start=energy")}
+                    className="btn-primary v2-home-primary"
+                  >
+                    {t("v2.homeDoDayStart")}
+                  </button>
+                  <div className="v2-home-also">
+                    <b>{t("v2.homeAlsoPossible")}</b>
+                    <div className="v2-home-also__links">
+                      <button
+                        type="button"
+                        onClick={() => go("/todo")}
+                      >
+                        {t("v2.homeEmptyNotNow")}
+                      </button>
+                    </div>
+                  </div>
+                </section>
               </div>
-            </section>
-
-            <p
-              className="mt-auto pt-6 text-center text-[10.5px]"
-              style={{ color: "rgba(26,35,64,0.5)" }}
-            >
-              {t("v2.homeNoMore")}
-            </p>
-          </>
-        ) : (
-          <section className="v2-card v2-fade p-6 text-center">
-            <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-              {t("v2.homeEmptyTitle")}
-            </h2>
-            <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              {t("v2.homeEmptyBody")}
-            </p>
-            <button
-              type="button"
-              onClick={() => go("/dagstart?start=energy")}
-              className="btn-primary mx-auto mt-5"
-            >
-              {t("v2.homeDoDayStart")}
-            </button>
-            <Link href="/dump" className="v2-link mx-auto mt-2 block">
-              {t("v2.homeBrainDump")}
-            </Link>
-          </section>
-        )}
+            )}
       </div>
+      )}
     </V2AppShell>
     <V2ShellWelcomeSheet />
     </>

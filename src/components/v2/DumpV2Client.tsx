@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useSearchParams } from "next/navigation";
 
+import { triggerHaptic } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
 
 import { V2AppShell, V2Eyebrow } from "./V2Chrome";
@@ -14,7 +21,7 @@ import {
   addV2DumpItems,
   clearV2DumpDraft,
   clearV2DumpPendingId,
-  isV2DumpAged,
+  isV2DumpVoiceItem,
   isV2EveningLocal,
   loadV2Dump,
   loadV2DumpDraft,
@@ -22,25 +29,27 @@ import {
   saveV2Dump,
   saveV2DumpDraft,
   v2DumpAtMax,
-  v2DumpSoftWarn,
+  v2DumpPreviewItems,
+  v2DumpVisibleItems,
   type V2DumpItem,
+  type V2DumpSource,
 } from "./v2Dump";
+import {
+  formatV2DumpClock,
+  resolveV2DumpVoiceCapture,
+  V2_DUMP_HOLD_SILENCE_MS,
+} from "./v2DumpCapture";
+import { promoteDumpItemToTask } from "./v2DumpToTask";
 import { prepareDumpItems } from "./v2DumpSplit";
 import { trackV2EveningDumpAdded } from "./v2Analytics";
-import { emptyDraft, loadV2Tasks, saveV2Tasks } from "./v2Tasks";
+import { loadV2Tasks, saveV2Tasks } from "./v2Tasks";
 
 type Toast =
   | { kind: "added"; text: string }
-  | { kind: "today"; text: string }
   | { kind: "task"; text: string }
-  | { kind: "rest"; text: string }
   | { kind: "undo"; item: V2DumpItem };
 
 const UNDO_MS = 5000;
-
-function newestFirst(a: V2DumpItem, b: V2DumpItem): number {
-  return b.createdAt.localeCompare(a.createdAt);
-}
 
 export default function DumpV2Client() {
   const { t, locale } = useI18n();
@@ -50,20 +59,25 @@ export default function DumpV2Client() {
   const [items, setItems] = useState<V2DumpItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
-  const [savedHint, setSavedHint] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [view, setView] = useState<"capture" | "all">("capture");
   const [toast, setToast] = useState<Toast | null>(null);
-  const [voiceRecording, setVoiceRecording] = useState(false);
-  const [voiceProcessing, setVoiceProcessing] = useState(false);
-  const [voiceLive, setVoiceLive] = useState("");
-  const [voiceFallback, setVoiceFallback] = useState(false);
-  const [voiceFallbackText, setVoiceFallbackText] = useState("");
-  const speechRef = useRef<ReturnType<typeof createV2SpeechSession> | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [recording, setRecording] = useState(false);
+  const [riseFirst, setRiseFirst] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const [speechOk, setSpeechOk] = useState(false);
+
+  const speechRef = useRef<ReturnType<typeof createV2SpeechSession> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const riseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flushingRef = useRef(false);
+  const holdingRef = useRef(false);
+  const finishingRef = useRef(false);
+  const holdStartedAtRef = useRef(0);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   const persist = useCallback((next: V2DumpItem[]) => {
     setItems(next);
@@ -73,13 +87,15 @@ export default function DumpV2Client() {
   useEffect(() => {
     if (loaded) return;
     persist(loadV2Dump());
-    // Legacy disposition-gate opruimen; dump mag weer vrij stapelen.
     clearV2DumpPendingId();
-    setDraft(loadV2DumpDraft());
+    const storedDraft = loadV2DumpDraft();
+    setDraft(storedDraft);
+    if (storedDraft.trim().length > 0 || captureOnMount) {
+      setTypeOpen(true);
+    }
     setLoaded(true);
-  }, [loaded, persist]);
+  }, [captureOnMount, loaded, persist]);
 
-  // Late Supabase-hydratie (login op nieuw apparaat): lijst verversen.
   useEffect(() => {
     const onHydrated = () => setItems(loadV2Dump());
     window.addEventListener("v2-remote-hydrated", onHydrated);
@@ -87,18 +103,15 @@ export default function DumpV2Client() {
   }, []);
 
   useEffect(() => {
-    setSpeechOk(isV2SpeechAvailable());
-  }, []);
-
-  useEffect(() => {
-    if (!loaded || !captureOnMount) return;
+    if (!loaded || !typeOpen) return;
     inputRef.current?.focus();
-  }, [loaded, captureOnMount]);
+  }, [loaded, typeOpen]);
 
   useEffect(() => {
     return () => {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-      if (savedHintTimerRef.current) clearTimeout(savedHintTimerRef.current);
+      if (riseTimerRef.current) clearTimeout(riseTimerRef.current);
+      speechRef.current?.stop();
     };
   }, []);
 
@@ -107,52 +120,37 @@ export default function DumpV2Client() {
     saveV2DumpDraft(draft);
   }, [draft, loaded]);
 
-  const showSavedHint = useCallback(() => {
-    setSavedHint(true);
-    if (savedHintTimerRef.current) clearTimeout(savedHintTimerRef.current);
-    savedHintTimerRef.current = setTimeout(() => setSavedHint(false), 2000);
-  }, []);
-
   const showToast = useCallback((next: Toast) => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setToast(next);
-    if (next.kind === "undo") {
-      undoTimerRef.current = setTimeout(() => setToast(null), UNDO_MS);
-    } else {
-      undoTimerRef.current = setTimeout(() => setToast(null), 3200);
-    }
+    undoTimerRef.current = setTimeout(
+      () => setToast(null),
+      next.kind === "undo" ? UNDO_MS : 3200,
+    );
   }, []);
 
+  const markRise = useCallback(() => {
+    setRiseFirst(true);
+    if (riseTimerRef.current) clearTimeout(riseTimerRef.current);
+    riseTimerRef.current = setTimeout(() => setRiseFirst(false), 420);
+  }, []);
+
+  const visibleItems = v2DumpVisibleItems(items);
+  const previewItems = v2DumpPreviewItems(items);
   const atMax = v2DumpAtMax(items);
   const captureBlocked = atMax;
 
-  const commitDump = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (trimmed.length === 0) return false;
-      if (v2DumpAtMax(items)) {
-        showToast({
-          kind: "added",
-          text: t("v2.dumpToastFull"),
-        });
+  const commitPieces = useCallback(
+    (pieces: string[], source: V2DumpSource, contentLength: number) => {
+      if (pieces.length === 0) return false;
+      if (v2DumpAtMax(itemsRef.current)) {
+        showToast({ kind: "added", text: t("v2.dumpToastFull") });
         return false;
       }
 
-      const pieces = prepareDumpItems(trimmed);
-      if (pieces.length === 0) {
-        showToast({
-          kind: "added",
-          text: t("v2.dumpToastOnlyFillers"),
-        });
-        return false;
-      }
-
-      const result = addV2DumpItems(pieces, items);
+      const result = addV2DumpItems(pieces, itemsRef.current, source);
       if (result.added === 0) {
-        showToast({
-          kind: "added",
-          text: t("v2.dumpToastFull"),
-        });
+        showToast({ kind: "added", text: t("v2.dumpToastFull") });
         return false;
       }
 
@@ -160,24 +158,35 @@ export default function DumpV2Client() {
       if (isV2EveningLocal()) {
         trackV2EveningDumpAdded({
           source: "dump",
-          contentLength: trimmed.length,
+          contentLength,
         });
       }
-      showSavedHint();
+      triggerHaptic(14, { respectReducedMotion: true });
+      markRise();
 
-      let toastText = t("v2.dumpToastOne");
-      if (result.added > 1 && result.truncated === 0) {
-        toastText = t("v2.dumpToastMany", { n: String(result.added) });
-      } else if (result.truncated > 0) {
-        toastText = t("v2.dumpToastPartial", {
-          n: String(result.added),
-          m: String(result.attempted),
+      if (result.truncated > 0) {
+        showToast({
+          kind: "added",
+          text: t("v2.dumpToastPartial", {
+            n: String(result.added),
+            m: String(result.attempted),
+          }),
         });
       }
-      showToast({ kind: "added", text: toastText });
       return true;
     },
-    [items, persist, showSavedHint, showToast, t],
+    [markRise, persist, showToast, t],
+  );
+
+  const commitTyped = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (trimmed.length === 0) return false;
+      const pieces = prepareDumpItems(trimmed);
+      if (pieces.length === 0) return false;
+      return commitPieces(pieces, "text", trimmed.length);
+    },
+    [commitPieces],
   );
 
   const flushDraft = useCallback(() => {
@@ -185,141 +194,225 @@ export default function DumpV2Client() {
     const trimmed = draft.trim();
     if (trimmed.length === 0) return;
     flushingRef.current = true;
-    const ok = commitDump(trimmed);
+    const ok = commitTyped(trimmed);
     if (ok) {
       setDraft("");
       clearV2DumpDraft();
-      inputRef.current?.focus();
+      setTypeOpen(false);
     }
     flushingRef.current = false;
-  }, [commitDump, draft]);
-
-  const createTaskFromDump = useCallback(
-    (item: V2DumpItem, nextItems: V2DumpItem[]) => {
-      const tasks = loadV2Tasks();
-      const seed = emptyDraft();
-      seed.title = item.content;
-      saveV2Tasks([...tasks, seed]);
-      persist(nextItems);
-      showToast({ kind: "task", text: t("v2.dumpToastTask") });
-    },
-    [persist, showToast, t],
-  );
+  }, [commitTyped, draft]);
 
   const handleTask = (item: V2DumpItem) => {
-    createTaskFromDump(item, removeV2DumpItem(item.id, items));
+    const result = promoteDumpItemToTask(
+      item,
+      itemsRef.current,
+      loadV2Tasks(),
+    );
+    persist(result.dumpItems);
+    saveV2Tasks(result.tasks);
+    triggerHaptic(10, { respectReducedMotion: true });
+    showToast({ kind: "task", text: t("v2.dumpToastTask") });
   };
 
   const handleDelete = (item: V2DumpItem) => {
-    persist(removeV2DumpItem(item.id, items));
+    persist(removeV2DumpItem(item.id, itemsRef.current));
     showToast({ kind: "undo", item });
   };
 
   const handleUndo = () => {
     if (!toast || toast.kind !== "undo") return;
-    const restored = [...items, toast.item].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const restored = [...items, toast.item].sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    );
     persist(restored);
     setToast(null);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
-  const addVoiceDump = useCallback(
-    (text: string) => {
-      commitDump(text);
+  const finishVoiceCapture = useCallback(
+    (
+      transcript: string,
+      opts?: { errorMessage?: string; persistError?: boolean },
+    ) => {
+      if (finishingRef.current) return;
+      finishingRef.current = true;
+      const durationMs = Date.now() - holdStartedAtRef.current;
+      const { pieces, reason } = resolveV2DumpVoiceCapture(transcript, durationMs);
+
+      if (pieces.length > 0) {
+        commitPieces(pieces, "voice", (transcript || pieces[0]).length);
+        finishingRef.current = false;
+        return;
+      }
+
+      if (reason === "ignore" && !opts?.persistError) {
+        finishingRef.current = false;
+        return;
+      }
+
+      const errorText =
+        opts?.errorMessage?.trim() ||
+        (reason === "fillers"
+          ? t("v2.dumpToastOnlyFillers")
+          : t("v2.dumpToastNothingHeard"));
+      showToast({ kind: "added", text: errorText });
+      finishingRef.current = false;
     },
-    [commitDump],
+    [commitPieces, showToast, t],
   );
 
-  const stopVoiceRecording = useCallback(() => {
-    speechRef.current?.stop();
-  }, []);
+  const startHold = useCallback(() => {
+    if (holdingRef.current || finishingRef.current || captureBlocked) return;
 
-  const startVoiceRecording = useCallback(() => {
-    if (voiceRecording || voiceProcessing || captureBlocked) return;
-    setVoiceFallback(false);
-    setVoiceFallbackText("");
-    setVoiceLive("");
+    if (!isV2SpeechAvailable()) {
+      showToast({ kind: "added", text: t("v2.dumpToastSpeechUnavailable") });
+      return;
+    }
+
+    holdingRef.current = true;
+    finishingRef.current = false;
+    holdStartedAtRef.current = Date.now();
 
     const session = createV2SpeechSession(
       (text) => {
         speechRef.current = null;
-        setVoiceRecording(false);
-        setVoiceLive("");
-        setVoiceProcessing(true);
-        // Defer so "Even ordenen…" paints before sync split/save.
-        window.setTimeout(() => {
-          addVoiceDump(text);
-          setVoiceProcessing(false);
-        }, 40);
+        setRecording(false);
+        holdingRef.current = false;
+        finishVoiceCapture(text);
       },
-      (msg) => {
+      (message, kind) => {
         speechRef.current = null;
-        setVoiceRecording(false);
-        setVoiceProcessing(false);
-        setVoiceLive("");
-        setVoiceFallback(true);
-        if (msg.length > 0) {
-          showToast({ kind: "added", text: msg });
-        }
+        setRecording(false);
+        holdingRef.current = false;
+        finishVoiceCapture("", {
+          errorMessage: message,
+          persistError: kind === "mic-failed" || kind === "recognition-failed",
+        });
       },
       {
         locale,
+        silenceAfterSpeechMs: V2_DUMP_HOLD_SILENCE_MS,
+        silenceBeforeSpeechMs: V2_DUMP_HOLD_SILENCE_MS,
         messages: {
-          nothingHeard: t("v2.dumpVoiceNothingHeard"),
-          speechStopped: t("v2.dumpVoiceSpeechStopped"),
-          recognitionFailed: t("v2.dumpVoiceFailed"),
-          micFailed: t("v2.dumpVoiceMicFailed"),
-        },
-        onPartial: (text) => {
-          setVoiceLive(text);
-        },
-        onWillFlush: () => {
-          setVoiceRecording(false);
-          setVoiceProcessing(true);
+          nothingHeard: t("v2.dumpToastNothingHeard"),
+          speechStopped: t("v2.dumpToastSpeechFailed"),
+          recognitionFailed: t("v2.dumpToastSpeechFailed"),
+          micFailed: t("v2.dumpToastMicFailed"),
         },
       },
     );
 
     if (!session) {
-      setVoiceProcessing(false);
-      setVoiceFallback(true);
+      holdingRef.current = false;
+      showToast({ kind: "added", text: t("v2.dumpToastSpeechUnavailable") });
       return;
     }
 
+    setRecording(true);
+    if (!draftRef.current.trim()) setTypeOpen(false);
+    triggerHaptic(10, { respectReducedMotion: true });
+
     speechRef.current = session;
-    setVoiceRecording(true);
     session.start();
-  }, [
-    addVoiceDump,
-    captureBlocked,
-    locale,
-    showToast,
-    t,
-    voiceProcessing,
-    voiceRecording,
-  ]);
+  }, [captureBlocked, finishVoiceCapture, locale, showToast, t]);
+
+  const endHold = useCallback(() => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    setRecording(false);
+
+    if (speechRef.current) {
+      speechRef.current.stop();
+      return;
+    }
+
+    finishVoiceCapture("");
+  }, [finishVoiceCapture]);
 
   useEffect(() => {
+    const onUp = () => endHold();
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
-      speechRef.current?.stop();
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
-  }, []);
+  }, [endHold]);
 
-  const visibleItems = items
-    .filter((i) => i.disposition !== "today")
-    .slice()
-    .sort(newestFirst);
-  const softWarn = v2DumpSoftWarn(items);
+  const onMicPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button > 0) return;
+    event.preventDefault();
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // oudere browsers
+    }
+    startHold();
+  };
 
-  const canSave = draft.trim().length > 0 && !captureBlocked;
+  const onMicKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.repeat) return;
+    if (event.key !== " " && event.key !== "Enter") return;
+    event.preventDefault();
+    startHold();
+  };
+
+  const onMicKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== " " && event.key !== "Enter") return;
+    event.preventDefault();
+    endHold();
+  };
+
+  const openType = () => {
+    if (recording) return;
+    setTypeOpen(true);
+  };
+
+  const holdLabel = captureBlocked
+    ? t("v2.dumpHoldFull")
+    : recording
+      ? t("v2.dumpHoldListening")
+      : t("v2.dumpHold");
 
   return (
-    <V2AppShell>
-      <div className="v2-dump">
-        <div className="v2-dump__hero">
-          <header>
+    <V2AppShell scroll={false}>
+      {view === "all" ? (
+        <div className="v2-dump v2-dump--all">
+          <div className="v2-dump__all-head">
+            <button
+              type="button"
+              className="v2-dump__all-back"
+              onClick={() => setView("capture")}
+              aria-label={t("v2.dumpAllBackAria")}
+            >
+              {t("v2.dumpAllBack")}
+            </button>
+            <span className="v2-dump__lhead-label">{t("v2.dumpAllTitle")}</span>
+          </div>
+          {visibleItems.length === 0 ? (
+            <p className="v2-dump__empty">{t("v2.dumpEmpty")}</p>
+          ) : (
+            <div>
+              {visibleItems.map((item) => (
+                <DumpItemRow
+                  key={item.id}
+                  item={item}
+                  wrap
+                  makeTaskLabel={t("v2.dumpMakeTask")}
+                  deleteLabel={t("v2.dumpDelete")}
+                  onTask={() => handleTask(item)}
+                  onDelete={() => handleDelete(item)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className={`v2-dump${recording ? " is-rec" : ""}`}>
+          <div className="v2-dump__top">
             <div className="v2-info-head">
-              <V2Eyebrow>Extern geheugen</V2Eyebrow>
+              <V2Eyebrow>{t("v2.dumpEyebrow")}</V2Eyebrow>
               <V2InfoHint
                 infoId="v2_dump_extern_geheugen"
                 expanded={infoOpen}
@@ -329,220 +422,113 @@ export default function DumpV2Client() {
                 controlsId="v2-dump-info-sheet"
               />
             </div>
-            <h1 className="v2-serif mt-2" style={{ fontSize: "var(--fs-display)" }}>
-              Dump
+          </div>
+
+          <div className="v2-dump__mid">
+            <h1 className="v2-dump__title">
+              {t("v2.dumpTitleBefore")}
+              <b>{t("v2.dumpTitleEm")}</b>
+              {t("v2.dumpTitleAfter")}
             </h1>
-            <p className="v2-dump__lead">
-              Leg vast wat in je hoofd zit. Structuur hoeft niet.
-            </p>
-          </header>
-
-          <section className="v2-dump__card">
-            <label htmlFor="v2-dump-capture" className="sr-only">
-              Nieuwe gedachte
-            </label>
-            <textarea
-              id="v2-dump-capture"
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  flushDraft();
-                }
-              }}
-              placeholder="Wat zit er in je hoofd?"
-              className="v2-dump__field"
-              disabled={captureBlocked || voiceRecording || voiceProcessing}
-              autoComplete="off"
-              rows={4}
-              /* Browser herstelt soms een inline height na resize → hydration mismatch. */
-              suppressHydrationWarning
-            />
-            <div className="v2-dump__meta">
-              {savedHint ? (
-                <p className="v2-dump__hint v2-dump__hint--saved" aria-live="polite">
-                  Bewaard
-                </p>
-              ) : atMax ? (
-                <p className="v2-dump__hint" aria-live="polite">
-                  Lijst vol (max. 15). Maak eerst ruimte.
-                </p>
-              ) : (
-                <p className="v2-dump__hint">
-                  Typ en bewaar. Later kun je er een taak van maken, of verwijderen.
-                </p>
-              )}
-              {speechOk ? (
-                <button
-                  type="button"
-                  onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
-                  disabled={captureBlocked || voiceProcessing}
-                  className="v2-dump__mic"
-                  aria-label={
-                    voiceRecording ? t("v2.dumpVoiceMicStop") : t("v2.dumpVoiceMicStart")
-                  }
-                  aria-pressed={voiceRecording}
-                >
-                  <MicIcon />
-                </button>
-              ) : null}
-            </div>
-
-            {voiceRecording ? (
-              <div
-                className="mt-4 flex flex-col items-center gap-2 py-2 text-center"
-                aria-live="polite"
-              >
-                <div
-                  className="v2-voice-blob flex h-20 w-20 items-center justify-center rounded-full"
-                  style={{
-                    background: "rgba(45, 90, 86, 0.12)",
-                    border: "1px solid var(--border)",
-                  }}
-                  aria-hidden
-                />
-                <p
-                  className="text-[15px] font-medium leading-snug"
-                  style={{ color: "var(--text)" }}
-                >
-                  {t("v2.dumpVoiceListeningTitle")}
-                </p>
-                <p className="max-w-[22rem] text-[13px] leading-snug" style={{ color: "var(--text-muted)" }}>
-                  {t("v2.dumpVoiceListeningHint")}
-                </p>
-                {voiceLive.trim().length > 0 ? (
-                  <p
-                    className="mt-1 max-w-[22rem] text-[13px] leading-snug"
-                    style={{ color: "var(--accent)" }}
-                    aria-label={t("v2.dumpVoiceLiveAria")}
-                  >
-                    {voiceLive}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {voiceProcessing ? (
-              <p
-                className="mt-3 text-center text-[14px]"
-                style={{ color: "var(--accent)" }}
-                aria-live="polite"
-              >
-                {t("v2.dumpVoiceProcessing")}
-              </p>
-            ) : null}
-
-            {voiceFallback ? (
-              <div className="mt-3 flex flex-col gap-2">
-                <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                  {speechOk
-                    ? t("v2.dumpVoiceFallbackHint")
-                    : t("v2.dumpVoiceFallbackUnavailable")}
-                </p>
-                <input
-                  type="text"
-                  value={voiceFallbackText}
-                  onChange={(e) => setVoiceFallbackText(e.target.value)}
-                  placeholder={t("v2.dumpVoiceFallbackPh")}
-                  className="v2-field min-h-[44px] w-full"
-                  style={{ border: "1px solid var(--border)" }}
-                  autoComplete="off"
-                  disabled={captureBlocked}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    addVoiceDump(voiceFallbackText);
-                    setVoiceFallback(false);
-                    setVoiceFallbackText("");
-                  }}
-                  disabled={captureBlocked || voiceFallbackText.trim().length === 0}
-                  className="btn-ghost w-full"
-                >
-                  {t("v2.dumpVoiceFallbackSave")}
-                </button>
-              </div>
-            ) : null}
-          </section>
-
-          <div className="v2-dump__cta-wrap">
             <button
               type="button"
-              className="btn-primary w-full"
-              disabled={!canSave}
-              onClick={() => {
-                flushDraft();
-              }}
+              className="v2-dump__mic"
+              aria-label={recording ? t("v2.dumpMicStopAria") : t("v2.dumpMicAria")}
+              aria-pressed={recording}
+              disabled={captureBlocked}
+              onPointerDown={onMicPointerDown}
+              onContextMenu={(event) => event.preventDefault()}
+              onKeyDown={onMicKeyDown}
+              onKeyUp={onMicKeyUp}
             >
-              Bewaren
+              <MicIcon />
             </button>
-            <p className="v2-dump__footnote">
-              Dump vrij. Maximaal 15. Maak er later een taak van, of verwijder.
+            <p className="v2-dump__hold" aria-live="polite">
+              {holdLabel}
             </p>
-          </div>
-        </div>
-
-        <div className="v2-dump__more">
-          {softWarn ? (
-            <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-              {atMax
-                ? "Lijst vol (max. 15). Kies iets om ruimte te maken."
-                : "De lijst wordt lang. Geen haast, maar een zachte herinnering."}
-            </p>
-          ) : null}
-
-          {visibleItems.length === 0 ? (
-            <section className="v2-card v2-fade p-6 text-center">
-              <h2 className="v2-serif" style={{ fontSize: "var(--fs-title)" }}>
-                Leeg hoofd, of alles al vastgelegd.
-              </h2>
-              <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-                Typ hierboven als er iets binnenkomt. Er is geen minimum.
-              </p>
-            </section>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              {visibleItems.map((item) => (
-                <DumpRow
-                  key={item.id}
-                  item={item}
-                  onTask={() => handleTask(item)}
-                  onDelete={() => handleDelete(item)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {toast ? (
-          <div
-            className="fixed bottom-[calc(6.75rem+env(safe-area-inset-bottom))] left-1/2 z-[130] flex max-w-[min(440px,calc(100vw-2rem))] -translate-x-1/2 items-center gap-3 rounded-[14px] px-4 py-3 text-[14px] shadow-sm"
-            style={{
-              background: "var(--ink)",
-              color: "var(--text-on-ink)",
-              border: "1px solid var(--border)",
-            }}
-            role="status"
-            aria-live="polite"
-          >
-            <span className="flex-1">
-              {toast.kind === "undo" ? t("v2.dumpToastDeleted") : toast.text}
-            </span>
-            {toast.kind === "undo" ? (
+            {!typeOpen ? (
               <button
                 type="button"
-                onClick={handleUndo}
-                className="shrink-0 rounded-[10px] px-3 py-1.5 text-[13px] font-semibold"
-                style={{ background: "rgba(255,255,255,0.15)", color: "var(--text-on-ink)" }}
+                className="v2-dump__typelink"
+                onClick={openType}
+                disabled={recording || captureBlocked}
               >
-                Ongedaan
+                {t("v2.dumpTypeLink")}
               </button>
             ) : null}
+            <div className={`v2-dump__type${typeOpen ? " is-open" : ""}`}>
+              <input
+                id="v2-dump-capture"
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                  if (e.key !== "Enter") return;
+                  e.preventDefault();
+                  flushDraft();
+                }}
+                onBlur={() => {
+                  if (!draft.trim()) setTypeOpen(false);
+                }}
+                placeholder={t("v2.dumpTypePlaceholder")}
+                aria-label={t("v2.dumpTypeAria")}
+                autoComplete="off"
+                tabIndex={typeOpen ? 0 : -1}
+                aria-hidden={!typeOpen}
+                disabled={captureBlocked || recording}
+              />
+            </div>
           </div>
-        ) : null}
-      </div>
+
+          <div className="v2-dump__list">
+            {visibleItems.length === 0 ? (
+              <p className="v2-dump__empty">{t("v2.dumpEmpty")}</p>
+            ) : (
+              <>
+                <div className="v2-dump__lhead">
+                  <span className="v2-dump__lhead-label">{t("v2.dumpListHead")}</span>
+                  <button
+                    type="button"
+                    className="v2-dump__all"
+                    onClick={() => setView("all")}
+                  >
+                    {t("v2.dumpAll", { n: String(visibleItems.length) })}
+                  </button>
+                </div>
+                {previewItems.map((item, index) => (
+                  <DumpItemRow
+                    key={item.id}
+                    item={item}
+                    isNew={riseFirst && index === 0}
+                    makeTaskLabel={t("v2.dumpMakeTask")}
+                    deleteLabel={t("v2.dumpDelete")}
+                    onTask={() => handleTask(item)}
+                    onDelete={() => handleDelete(item)}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {toast ? (
+        <div
+          className="v2-dump__toast"
+          role="status"
+          aria-live="polite"
+        >
+          <span>
+            {toast.kind === "undo" ? t("v2.dumpToastDeleted") : toast.text}
+          </span>
+          {toast.kind === "undo" ? (
+            <button type="button" onClick={handleUndo} className="v2-dump__toast-btn">
+              {t("v2.dumpToastUndo")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <V2InfoSheet
         open={infoOpen}
@@ -558,83 +544,105 @@ export default function DumpV2Client() {
   );
 }
 
-function MicIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
-      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <path d="M12 19v4" />
-    </svg>
-  );
-}
-
-function DumpRow({
+function DumpItemRow({
   item,
+  isNew = false,
+  wrap = false,
+  makeTaskLabel,
+  deleteLabel,
   onTask,
   onDelete,
 }: {
   item: V2DumpItem;
+  isNew?: boolean;
+  wrap?: boolean;
+  makeTaskLabel: string;
+  deleteLabel: string;
   onTask: () => void;
   onDelete: () => void;
 }) {
-  const aged = isV2DumpAged(item);
-  const resting = item.disposition === "rest";
-
+  const voice = isV2DumpVoiceItem(item);
+  const clock = formatV2DumpClock(item.createdAt);
   return (
-    <article
+    <div
       className={[
-        "v2-fade v2-dump__row",
-        aged && !resting ? "v2-dump__row--aged" : "",
-        resting ? "v2-dump__row--resting" : "",
+        "v2-dump__item",
+        isNew ? "is-new" : "",
+        wrap ? "v2-dump__item--wrap" : "",
+        item.disposition === "rest" ? "is-rest" : "",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p
-            className="text-[15px] leading-snug"
-            style={{ color: resting ? "var(--text-muted)" : "var(--text)" }}
-          >
-            {item.content}
-          </p>
-          {aged && !resting ? (
-            <p className="mt-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
-              Al een tijdje
-            </p>
-          ) : null}
-        </div>
+      <span className="v2-dump__item-ic" aria-hidden>
+        {voice ? <SmallMicIcon /> : <PenIcon />}
+      </span>
+      <span className="v2-dump__item-body">
+        <span className="v2-dump__item-t">{item.content}</span>
+        {clock ? <span className="v2-dump__item-at">{clock}</span> : null}
+      </span>
+      <div className="v2-dump__item-acts">
+        <button
+          type="button"
+          className="v2-dump__icon-btn"
+          aria-label={makeTaskLabel}
+          data-dump-act="plus"
+          onClick={onTask}
+        >
+          <PlusIcon />
+        </button>
+        <button
+          type="button"
+          className="v2-dump__icon-btn is-muted"
+          aria-label={deleteLabel}
+          data-dump-act="delete"
+          onClick={onDelete}
+        >
+          <CrossIcon />
+        </button>
       </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <SoftAction label="Maak taak" onClick={onTask} />
-        <SoftAction label="Verwijderen" onClick={onDelete} muted />
-      </div>
-    </article>
+    </div>
   );
 }
 
-function SoftAction({
-  label,
-  onClick,
-  muted = false,
-}: {
-  label: string;
-  onClick: () => void;
-  muted?: boolean;
-}) {
+function MicIcon() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full px-3 py-1.5 text-[13px] font-medium"
-      style={{
-        border: "1px solid var(--border)",
-        background: muted ? "transparent" : "var(--accent-soft)",
-        color: muted ? "var(--text-muted)" : "var(--accent)",
-      }}
-    >
-      {label}
-    </button>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+      <rect x="9" y="3.5" width="6" height="10" rx="3" />
+      <path d="M6 11.5a6 6 0 0012 0M12 17.5V21" />
+    </svg>
+  );
+}
+
+function SmallMicIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <rect x="9" y="3.5" width="6" height="10" rx="3" />
+      <path d="M6 11.5a6 6 0 0012 0M12 17.5V21" />
+    </svg>
+  );
+}
+
+function PenIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M4.5 19.5h4l10-10-4-4-10 10v4zM14.5 5.5l4 4" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }

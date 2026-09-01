@@ -25,6 +25,8 @@ export type V2State = {
   whyOutcome: string;
   /** Shutdown-light: lus van vandaag gesloten. */
   todayDone: boolean;
+  /** ISO-tijdstip waarop todayDone true werd (voor "Dag afgesloten om …"). */
+  todayDoneAt?: string | null;
   /** Of cyclus optioneel is aangezet (vóór eerste energy/dagstart). */
   cyclusOptIn: boolean;
 };
@@ -42,6 +44,8 @@ export const V2_ANONYMOUS_STORAGE_KEYS = [
   "v2_tasks_remote_map",
   "v2_dump_remote_map",
   "v2_sync_user",
+  "v2_shutdown_invite",
+  "v2_shutdown_ack_played",
 ] as const;
 
 /**
@@ -89,6 +93,7 @@ export const v2EmptyState: V2State = {
   why: "",
   whyOutcome: "",
   todayDone: false,
+  todayDoneAt: null,
   cyclusOptIn: false,
 };
 
@@ -151,6 +156,12 @@ export function V2Provider({ children }: { children: ReactNode }) {
     (patch: Partial<V2State>) => {
       setState((prev) => {
         const next = { ...prev, ...patch };
+        if (patch.todayDone === true && !next.todayDoneAt) {
+          next.todayDoneAt = new Date().toISOString();
+        }
+        if (patch.todayDone === false) {
+          next.todayDoneAt = null;
+        }
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         } catch {

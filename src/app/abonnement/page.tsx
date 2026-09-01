@@ -8,6 +8,7 @@ import AbonnementV2Client, {
   V2_ABONNEMENT_DEMO_STATS,
 } from "@/components/v2/AbonnementV2Client";
 import { isJasperSignupSource } from "@/lib/jasper/jasperOffer";
+import { isInternalTeamAccount } from "@/lib/internalTeamAccount";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import {
   resolveActiveTrialDaysLeft,
@@ -59,6 +60,10 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (user?.id && !forcePreview && isInternalTeamAccount(user.email ?? null)) {
+    redirect("/");
+  }
+
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent") ?? "";
   const visibleWallets = getVisibleWalletButtonsFromUserAgent(userAgent);
@@ -107,6 +112,7 @@ export default async function V2AbonnementPage({ searchParams }: PageProps) {
 
   const row = profile
     ? {
+        email: user.email ?? null,
         signup_source: profile.signup_source as string | null,
         created_at: profile.created_at as string | null,
         subscription_status: profile.subscription_status as string | null,

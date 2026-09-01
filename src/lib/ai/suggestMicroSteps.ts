@@ -1,6 +1,10 @@
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import {
+  fallbackMicroStepsFromTitle,
+  isAiGatewayRateLimited,
+} from "@/lib/ai/fallbackMicroSteps";
+import {
   MICRO_STEPS_COMPLETION_LADDER_EN,
   MICRO_STEPS_COMPLETION_LADDER_NL,
   validateMicroStepsCompletion,
@@ -16,7 +20,7 @@ export type SuggestMicroStepsInput = {
 
 export type SuggestMicroStepsResult = {
   steps: string[];
-  source: "template" | "ai";
+  source: "template" | "ai" | "fallback";
   model?: string;
   usage?: {
     inputTokens?: number;
@@ -131,13 +135,25 @@ export function isAiGatewayConfigured(): boolean {
   );
 }
 
+function microStepModelsToTry(): string[] {
+  const primary = resolveMicroStepsModel();
+  const extra = process.env.MICRO_STEPS_AI_FALLBACK_MODEL?.trim();
+  const models = [primary];
+  if (extra && extra !== primary) models.push(extra);
+  if (!models.includes("openai/gpt-4.1-mini") && primary !== "openai/gpt-4.1-mini") {
+    models.push("openai/gpt-4.1-mini");
+  }
+  return models;
+}
+
 async function generateOnce(
   input: SuggestMicroStepsInput,
+  model: string,
   retryReason?: string
 ): Promise<{ steps: string[]; usage?: SuggestMicroStepsResult["usage"] }> {
-  const model = resolveMicroStepsModel();
   const { output, usage } = await generateText({
     model,
+    maxRetries: 0,
     output: Output.object({
       name: "MicroStepsCompletion",
       description:
@@ -162,24 +178,15 @@ async function generateOnce(
   };
 }
 
-export async function suggestMicroSteps(
-  input: SuggestMicroStepsInput
+async function attemptModel(
+  input: SuggestMicroStepsInput,
+  model: string,
 ): Promise<SuggestMicroStepsResult> {
-  const title = input.title.trim();
-  if (!title) {
-    throw new Error("title_required");
-  }
-
-  if (!isAiGatewayConfigured()) {
-    throw new Error("ai_not_configured");
-  }
-
-  const model = resolveMicroStepsModel();
-  let first = await generateOnce(input);
+  let first = await generateOnce(input, model);
   let validationError = validateMicroStepsCompletion(first.steps);
 
   if (validationError) {
-    const retry = await generateOnce(input, validationError);
+    const retry = await generateOnce(input, model, validationError);
     const retryError = validateMicroStepsCompletion(retry.steps);
     if (!retryError) {
       first = retry;
@@ -195,4 +202,36 @@ export async function suggestMicroSteps(
     model,
     usage: first.usage,
   };
+}
+
+export async function suggestMicroSteps(
+  input: SuggestMicroStepsInput
+): Promise<SuggestMicroStepsResult> {
+  const title = input.title.trim();
+  if (!title) {
+    throw new Error("title_required");
+  }
+
+  const locale = input.locale === "en" ? "en" : "nl";
+  const localFallback = (): SuggestMicroStepsResult => ({
+    steps: fallbackMicroStepsFromTitle(title, locale),
+    source: "fallback",
+  });
+
+  if (!isAiGatewayConfigured()) {
+    return localFallback();
+  }
+
+  for (const model of microStepModelsToTry()) {
+    try {
+      return await attemptModel(input, model);
+    } catch (error) {
+      if (isAiGatewayRateLimited(error)) {
+        return localFallback();
+      }
+      console.error("suggest-micro-steps model failed:", model, error);
+    }
+  }
+
+  return localFallback();
 }

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { isRecoverableChunkError } from "@/lib/normalizeError";
+import {
+  isRecoverableChunkError,
+  isSupabaseAuthNetworkError,
+} from "@/lib/normalizeError";
 
 const CHUNK_RELOAD_KEY = "structuro_chunk_reload_at";
 const CHUNK_RELOAD_COOLDOWN_MS = 12_000;
@@ -22,8 +25,21 @@ function tryRecoverFromChunkError(reason: unknown): boolean {
  */
 export function ClientRuntimeGuards() {
   useEffect(() => {
+    const originalConsoleError = console.error.bind(console);
+    console.error = (...args: unknown[]) => {
+      if (args.some((arg) => isSupabaseAuthNetworkError(arg))) {
+        return;
+      }
+      originalConsoleError(...args);
+    };
+
     const onUnhandledRejection = (event: PromiseRejectionEvent) => {
       const reason = event.reason;
+
+      if (isSupabaseAuthNetworkError(reason)) {
+        event.preventDefault();
+        return;
+      }
 
       if (tryRecoverFromChunkError(reason)) {
         event.preventDefault();
@@ -49,6 +65,7 @@ export function ClientRuntimeGuards() {
     window.addEventListener("unhandledrejection", onUnhandledRejection);
     window.addEventListener("error", onWindowError);
     return () => {
+      console.error = originalConsoleError;
       window.removeEventListener("unhandledrejection", onUnhandledRejection);
       window.removeEventListener("error", onWindowError);
     };

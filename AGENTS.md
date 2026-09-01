@@ -49,11 +49,13 @@ Structuro MVP: Next.js 15 (App Router) + React 19 + TypeScript, met Supabase (au
 - **Geen data/notities in git:** analyses, rapporten en werknotities horen in Obsidian, niet in de repo. Zie `.cursor/rules/no-data-in-git.mdc`.
 - **Attributie-routing:** organisch verkeer naar `/onboarding` (legacy `/start` redirect), TikTok-verkeer naar `/tiktok`, nooit hardcoded TikTok-URL's op organische CTA's. Zie `.cursor/rules/structuro-context.mdc`.
 
-## Prioriteit (juni 2026)
+## Prioriteit (1 september 2026)
 
-1. Activatie P0: signup tot dagstart (frictie weg, magic link, compact onboarding).
-2. Acquisitie P1: `/onboarding` (organic) en `/tiktok` (social).
-3. Geen paid TikTok tot activatie structureel >25%.
+Canoniek groeplan in Obsidian: `03 Groei/Pad naar 50 Warme 500 sep 2026.md`.
+
+1. **P0 Warme 500 (5 dagen):** 50 geïnterviewden + daarna 100 LinkedIn-likers. 30 dagen cadeau, geen kaart (`gift_comp` + `app_trial_override_until`). Dag 25: €12,99.
+2. **Rolling 5:** ma + do 5 professionals. Coach permanent gratis. Cliënten 30d cadeau. Geen medische claims.
+3. **Lichte social:** 2 video’s/week, ManyChat STARTEN. Koud verkeer = bestaande 7d card-trial ná anonieme dagstart. Geen paid TikTok.
 
 ## Waar dingen staan
 

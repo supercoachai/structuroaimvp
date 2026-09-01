@@ -58,5 +58,6 @@ export function frisseStartSoftResetToday(): Partial<V2State> {
     things: [],
     energy: null,
     todayDone: false,
+    todayDoneAt: null,
   };
 }

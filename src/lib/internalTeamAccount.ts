@@ -33,3 +33,26 @@ export function isInternalTeamAccount(
   const lower = email.trim().toLowerCase();
   return INTERNAL_TEAM_EMAILS.has(lower) || EXTRA_INTERNAL_EMAILS.has(lower);
 }
+
+function pathnameOnly(path: string): string {
+  const cut = path.split("?")[0] ?? path;
+  return cut.split("#")[0] ?? cut;
+}
+
+/** Intern team hoort nooit op de paywall, ook niet via `next=/abonnement`. */
+export function resolvePathForInternalTeam(
+  email: string | null | undefined,
+  nextPath: string
+): string {
+  if (!isInternalTeamAccount(email)) return nextPath;
+  const path = pathnameOnly(nextPath);
+  if (
+    !path ||
+    path === "/" ||
+    path === "/abonnement" ||
+    path.startsWith("/abonnement/")
+  ) {
+    return "/";
+  }
+  return nextPath;
+}

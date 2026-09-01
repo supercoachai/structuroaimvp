@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { HAPTIC_PATTERNS, triggerHaptic } from "@/lib/haptics";
 import { useI18n } from "@/lib/i18n";
 import {
   captureFocusSessionAbandoned,
@@ -31,8 +32,17 @@ import {
   type V2MicroStep,
   type V2Task,
 } from "./v2Tasks";
+import V2DoneAckOverlay from "./V2DoneAckOverlay";
+import { takeNextV2DoneQuote } from "./v2DoneQuotes";
+import { loadV2DoneTally, recordV2Done, type V2DoneTallyTick } from "./v2DoneTally";
+import { recordV2FocusSession } from "./v2FocusTally";
 import { v2NormalizeThings, v2PrimaryThing } from "./v2Things";
 import { markV2FirstValue } from "./v2CycleOptInPrompt";
+import {
+  isLastDagstartThing,
+  v2ShutdownHref,
+} from "./v2LastTaskShutdown";
+import { trackV2LastTaskShutdownStarted } from "./v2Analytics";
 import { recordV2FocusCompleted, recordV2FocusStart } from "./v2OpenTaskReminder";
 import {
   clearV2FocusTimer,
@@ -121,6 +131,10 @@ export default function FocusV2Client() {
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [acknowledging, setAcknowledging] = useState(false);
+  const [doneTick, setDoneTick] = useState<V2DoneTallyTick | null>(null);
+  const [ackTitle, setAckTitle] = useState<string | null>(null);
+  const [doneQuote, setDoneQuote] = useState("");
   const [extended, setExtended] = useState(false);
   /** null = geen aftel; 3/2/1 = pre-start countdown. */
   const [countIn, setCountIn] = useState<number | null>(null);
@@ -139,6 +153,9 @@ export default function FocusV2Client() {
   const suggestShownRef = useRef(false);
   const customInputRef = useRef<HTMLInputElement | null>(null);
   const parkHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingNavRef = useRef<{ things: string[]; todayDone: boolean } | null>(
+    null,
+  );
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countInRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Voorkomt dubbele focus_session_* events in één timer-run. */
@@ -154,10 +171,14 @@ export default function FocusV2Client() {
   });
 
   const things = v2NormalizeThings(state.things);
-  const thingLabel =
+  const liveThingLabel =
     (focusParam && things.includes(focusParam) ? focusParam : null) ??
     v2PrimaryThing(things) ??
     t("v2.focusDefaultThing");
+  // Bevries de titel tijdens het afrondscherm, anders flitst de volgende taak
+  // zodra `things` wordt bijgewerkt vóór de navigatie.
+  const thingLabel =
+    acknowledging && ackTitle ? ackTitle : liveThingLabel;
 
   const bucketLabel = (b: Bucket) => {
     if (b.durationBucket === "short") return t("v2.focusBucketShort");
@@ -178,7 +199,9 @@ export default function FocusV2Client() {
   };
 
   useEffect(() => {
+    if (acknowledging) return;
     setTasks(loadV2Tasks());
+    loadV2DoneTally();
     setSuggestDismissed(false);
     setSuggestError(null);
     setSelfEstimateOpen(false);
@@ -186,7 +209,7 @@ export default function FocusV2Client() {
     setCustomMinutes("");
     setCustomHint(null);
     suggestShownRef.current = false;
-  }, [thingLabel]);
+  }, [thingLabel, acknowledging]);
 
   useEffect(() => {
     if (!customOpen) return;
@@ -196,6 +219,7 @@ export default function FocusV2Client() {
 
   // Hervat na refresh / distractie.
   useEffect(() => {
+    if (acknowledging) return;
     const snap = loadV2FocusTimer(thingLabel);
     if (snap) {
       const b = bucketFromSnapshot(
@@ -237,7 +261,7 @@ export default function FocusV2Client() {
       }
     }
     setHydrated(true);
-  }, [thingLabel]);
+  }, [thingLabel, acknowledging]);
 
   // Persist timer-state.
   useEffect(() => {
@@ -372,7 +396,9 @@ export default function FocusV2Client() {
   );
   const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
   const activeMicroIdx = v2ActiveMicroStepIndex(microSteps);
-  const showMicroList = microSteps.length > 0 && !finished && countIn == null;
+  const showMicroList = microSteps.length > 0 && !finished && !acknowledging && countIn == null;
+  const allMicrosDone =
+    microSteps.length > 0 && microSteps.every((s) => s.done);
   const showMicroSuggest =
     microSteps.length === 0 &&
     !suggestDismissed &&
@@ -420,8 +446,8 @@ export default function FocusV2Client() {
   const preStart = !bucket && !finished && !extended && countIn == null;
   const countingIn = countIn != null;
   const focusLive = (running && !paused) || countingIn;
-  const showSessionDock = (timerActive || extended) && !finished && !countingIn;
-  const showFinishDock = finished;
+  const showSessionDock = (timerActive || extended) && !finished && !acknowledging && !countingIn;
+  const showFinishDock = finished && !acknowledging;
 
   const persistTasks = (next: V2Task[]) => {
     setTasks(next);
@@ -430,17 +456,29 @@ export default function FocusV2Client() {
 
   const toggleMicroStep = (stepId: string) => {
     if (!activeTask) return;
-    persistTasks(
-      tasks.map((tRow) => {
-        if (tRow.id !== activeTask.id) return tRow;
-        return {
-          ...tRow,
-          microSteps: tRow.microSteps.map((s) =>
-            s.id === stepId ? { ...s, done: !s.done } : s,
-          ),
-        };
-      }),
-    );
+    const step = activeTask.microSteps.find((s) => s.id === stepId);
+    const markingDone = step ? !step.done : false;
+    const next = tasks.map((tRow) => {
+      if (tRow.id !== activeTask.id) return tRow;
+      return {
+        ...tRow,
+        microSteps: tRow.microSteps.map((s) =>
+          s.id === stepId ? { ...s, done: !s.done } : s,
+        ),
+      };
+    });
+    persistTasks(next);
+    if (markingDone) {
+      const nextTask = next.find((tRow) => tRow.id === activeTask.id);
+      const last =
+        nextTask != null &&
+        nextTask.microSteps.length > 0 &&
+        nextTask.microSteps.every((s) => s.done);
+      triggerHaptic(
+        last ? HAPTIC_PATTERNS.TASK_DONE : HAPTIC_PATTERNS.MICROSTEP_DONE,
+        { respectReducedMotion: true },
+      );
+    }
   };
 
   const applySuggestedSteps = async () => {
@@ -577,6 +615,7 @@ export default function FocusV2Client() {
   };
 
   const handleDone = () => {
+    if (acknowledging) return;
     if (
       focusStartedRef.current &&
       !focusEndedRef.current &&
@@ -593,15 +632,57 @@ export default function FocusV2Client() {
       });
     }
     const nextTasks = completeV2TaskByTitle(tasks, thingLabel);
+    const newlyCompleted = nextTasks !== tasks;
     persistTasks(nextTasks);
     const remainingThings = removeV2ThingFromList(things, thingLabel);
+    const lastThing = isLastDagstartThing(things, thingLabel);
+    pendingNavRef.current = {
+      things: remainingThings,
+      todayDone: false,
+    };
+    if (newlyCompleted) {
+      setDoneTick(recordV2Done());
+    } else {
+      const tally = loadV2DoneTally();
+      setDoneTick({
+        weekFrom: tally.weekCount,
+        weekTo: tally.weekCount,
+        totalFrom: tally.total,
+        totalTo: tally.total,
+      });
+    }
+    recordV2FocusSession();
     recordV2FocusCompleted(thingLabel);
     markV2FirstValue();
     clearV2FocusTimer();
-    go("/", {
-      things: remainingThings,
-      todayDone: remainingThings.length === 0,
-    });
+    setRunning(false);
+    setPaused(false);
+    setExtended(false);
+    setFinished(true);
+    if (lastThing) {
+      trackV2LastTaskShutdownStarted({ source: "focus" });
+      go(v2ShutdownHref(), { things: [], todayDone: false }, { hard: true });
+      return;
+    }
+    setAckTitle(thingLabel);
+    setDoneQuote(takeNextV2DoneQuote(locale));
+    setAcknowledging(true);
+  };
+
+  const finishFocusAck = () => {
+    const nav = pendingNavRef.current;
+    pendingNavRef.current = null;
+    const home =
+      typeof window !== "undefined" && window.location.pathname.startsWith("/v2")
+        ? "/v2/home"
+        : "/";
+    // Hard nav: soft-push werd geannuleerd door de V2-state update, en
+    // één frame van de volgende taak werd zichtbaar. Overlay blijft tot unload.
+    if (nav) {
+      go(home, { things: nav.things, todayDone: nav.todayDone }, { hard: true });
+      return;
+    }
+    go(home, undefined, { hard: true });
   };
 
   const reset = () => {
@@ -666,7 +747,16 @@ export default function FocusV2Client() {
       style={{ background: "var(--surface)", color: "var(--text)" }}
     >
       <style>{v2ScopedCss}</style>
-      <div className="v2-focus-topbar">
+      {acknowledging && doneTick ? (
+        <V2DoneAckOverlay
+          title={ackTitle ?? thingLabel}
+          tick={doneTick}
+          quote={doneQuote}
+          actionLabel={t("v2.doneAckHome")}
+          onAction={finishFocusAck}
+        />
+      ) : null}
+      <div className="v2-focus-topbar" hidden={acknowledging}>
         <button type="button" onClick={() => go("/")} className="v2-link">
           {t("v2.focusClose")}
         </button>
@@ -677,7 +767,7 @@ export default function FocusV2Client() {
         )}
       </div>
 
-      <div className="v2-focus-stage">
+      <div className="v2-focus-stage" hidden={acknowledging}>
         <div className="v2-focus-stage__inner">
           <div className="v2-info-head v2-info-head--center">
             <p className="v2-focus-kicker">
@@ -697,14 +787,16 @@ export default function FocusV2Client() {
           <h1 className="v2-serif v2-focus-title">{thingLabel}</h1>
 
           {finished ? (
-            <div
-              className="v2-focus-done"
-              role="img"
-              aria-label={t("v2.focusDone")}
-            >
-              <span className="v2-focus-done__mark" aria-hidden>
-                ✓
-              </span>
+            <div className="v2-focus-done-wrap">
+              <div
+                className="v2-focus-done"
+                role="img"
+                aria-label={t("v2.focusDone")}
+              >
+                <span className="v2-focus-done__mark v2-done-ack-check" aria-hidden>
+                  ✓
+                </span>
+              </div>
             </div>
           ) : (
             <div
@@ -842,6 +934,12 @@ export default function FocusV2Client() {
             </ul>
           ) : null}
 
+          {showMicroList && allMicrosDone ? (
+            <p className="v2-done-ack v2-done-ack--block" role="status">
+              {t("v2.doneAckLastStep")}
+            </p>
+          ) : null}
+
           {showMicroSuggest ? (
             <section className="v2-focus-micro-suggest" aria-live="polite">
               <p className="v2-focus-micro-suggest__title">
@@ -895,7 +993,7 @@ export default function FocusV2Client() {
         </div>
       </div>
 
-      <div className="v2-focus-dock">
+      <div className="v2-focus-dock" hidden={acknowledging}>
         {preStart ? (
           <div className="v2-focus-dock__stack">
             <button

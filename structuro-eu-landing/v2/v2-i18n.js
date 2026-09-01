@@ -18,13 +18,16 @@
       nav_login: "Inloggen",
       nav_cta: "Start 7 dagen gratis",
       hero_cta: "Begin met één stap",
-      cta_reassure: "Klaar in ~30 seconden.",
+      cta_reassure: "Gratis proberen · geen creditcard · klaar in ~2 minuten",
       lang_label: "Taal",
       menu: "Menu",
       hero_eyebrow: "Voor ADHD-breinen die niet beginnen",
       hero_h1: 'Niet alles.<br><span class="it">Eén eerste stap.</span><br>Vandaag.',
       hero_secondary: "Welke hiervan ben jij?",
-      intro_support: "Structuro kiest wat haalbaar is. Jij bevestigt, en begint.",
+      intro_support:
+        "Structuro helpt je beginnen door je eerste stap klein genoeg te maken om nu te zetten.",
+      hero_proof: "Gebouwd met 100 ADHD'ers · 50+ diepte-interviews",
+      hero_press: "Geschreven over in ED, AD en BD →",
       hero_binary:
         "Andere apps bewaren je lijst. Structuro helpt je vandaag te starten.",
       founder_teaser_text:
@@ -347,13 +350,16 @@
       nav_login: "Log in",
       nav_cta: "Start 7 days free",
       hero_cta: "Start with one step",
-      cta_reassure: "Ready in ~30 seconds.",
+      cta_reassure: "Try for free · no credit card · ready in ~2 minutes",
       lang_label: "Language",
       menu: "Menu",
       hero_eyebrow: "For ADHD brains that don't start",
       hero_h1: 'Not everything.<br><span class="it">One first step.</span><br>Today.',
       hero_secondary: "Which of these is you?",
-      intro_support: "Structuro picks what is doable. You confirm, and begin.",
+      intro_support:
+        "Structuro helps you start by making the first step small enough to take now.",
+      hero_proof: "Built with 100 people with ADHD · 50+ in-depth interviews",
+      hero_press: "Covered in ED, AD and BD →",
       hero_binary:
         "Other apps store your lists. Structuro helps you start today.",
       founder_teaser_text:

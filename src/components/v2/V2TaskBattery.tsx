@@ -13,9 +13,11 @@ import { V2_BATTERY_MUTED, v2EnergyMeta } from "./v2EnergyMeta";
 export default function V2TaskBattery({
   energy,
   size = 20,
+  mutedColor = V2_BATTERY_MUTED,
 }: {
   energy: V2Energy | null | undefined;
   size?: number;
+  mutedColor?: string;
 }) {
   const { t } = useI18n();
   const meta = v2EnergyMeta(energy);
@@ -38,7 +40,7 @@ export default function V2TaskBattery({
       <Battery
         level={meta.level}
         color={meta.color}
-        mutedColor={V2_BATTERY_MUTED}
+        mutedColor={mutedColor}
         size={size}
       />
     </span>

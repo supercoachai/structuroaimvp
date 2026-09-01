@@ -22,6 +22,14 @@
       document.getElementById("siteHeader") ||
       document.querySelector(".site-header");
     if (!header) return;
+    function syncHeaderH() {
+      document.documentElement.style.setProperty(
+        "--v2-header-h",
+        header.offsetHeight + "px"
+      );
+    }
+    syncHeaderH();
+    window.addEventListener("resize", syncHeaderH);
     var on = false;
     var lastY = 0;
     var hidden = false;
@@ -648,45 +656,19 @@
   function initDemos() {
     var demos = document.querySelectorAll("[data-demo]");
     if (!demos.length) return;
-    if (reduce) {
-      demos.forEach(function (d) {
-        bindEnergyPills(d);
-        if (d.getAttribute("data-demo") === "home") {
-          d.setAttribute("data-energy", "ok");
-          resetHomeMicros(d);
-        }
-        setDemoState(d, d.getAttribute("data-demo-default") || "pick");
-      });
-      return;
-    }
-    if (!("IntersectionObserver" in window)) {
-      demos.forEach(function (d) {
-        bindEnergyPills(d);
-        var kind = d.getAttribute("data-demo");
-        d.classList.add("is-playing");
-        if (PLAYERS[kind]) PLAYERS[kind](d);
-      });
-      return;
-    }
-    var io = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          var root = entry.target;
-          var kind = root.getAttribute("data-demo");
-          if (entry.isIntersecting) {
-            if (root.classList.contains("is-playing")) return;
-            root.classList.add("is-playing");
-            if (PLAYERS[kind]) PLAYERS[kind](root);
-          } else {
-            stopDemo(root);
-          }
-        });
-      },
-      { threshold: 0.28 },
-    );
     demos.forEach(function (d) {
       bindEnergyPills(d);
-      io.observe(d);
+      if (d.getAttribute("data-demo") === "home") {
+        d.setAttribute("data-energy", "ok");
+        resetHomeMicros(d);
+      }
+      var fallback = d.getAttribute("data-demo-default") || "pick";
+      if (d.getAttribute("data-demo") === "energy") {
+        d.setAttribute("data-energy", d.getAttribute("data-energy") || "low");
+        setDemoState(d, fallback === "pick" ? "propose" : fallback);
+        return;
+      }
+      setDemoState(d, fallback);
     });
   }
 

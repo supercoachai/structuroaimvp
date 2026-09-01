@@ -19,6 +19,8 @@ async function seedV2Journey(page: Page, things: string[]) {
       };
       try {
         localStorage.setItem("v2_journey", JSON.stringify(journey));
+        localStorage.setItem("structuro_locale", "nl");
+        localStorage.setItem("structuro_lang", "nl");
       } catch {
         /* ignore */
       }
@@ -68,7 +70,7 @@ test.describe("V2 focus-einde en snooze", () => {
 
   test("focus: Afronden → Ik ben klaar → home", async ({ page }) => {
     await seedV2Journey(page, ["E2E focus ding"]);
-    await page.goto("/v2/focus", { waitUntil: "domcontentloaded" });
+    await page.goto("/focus?lang=nl", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByText("E2E focus ding")).toBeVisible({ timeout: 15_000 });
     // P0: één primary Start focus (AI/fallback estimate), geen drie gelijke duurknoppen.
@@ -86,8 +88,10 @@ test.describe("V2 focus-einde en snooze", () => {
     // Hold-to-confirm: delay tussen mousedown/mouseup (geen snelle tap).
     await page.getByRole("button", { name: "Ik ben klaar" }).click({ delay: 1000 });
 
-    await page.waitForURL(/\/v2\/home(\/|\?|$)/, { timeout: 15_000 });
-    expect(page.url()).toMatch(/\/v2\/home/);
+    // Laatste dagstart-taak: shutdown-ritueel i.p.v. done-overlay.
+    await page.waitForURL(/\/shutdown(\?from=last-task|$)/, { timeout: 15_000 });
+    await expect(page.getByText("Dagafsluiting")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Dit is gelukt vandaag.")).toBeVisible();
   });
 
   test("focus: toont microstappen en laat afvinken toe", async ({ page }) => {
@@ -148,5 +152,18 @@ test.describe("V2 focus-einde en snooze", () => {
     await expect(page.getByRole("button", { name: "Weer actief" })).toHaveCount(0);
     await expect(page.getByText(title)).toBeVisible();
     await expect(page.getByRole("button", { name: "Markeer als klaar" })).toBeVisible();
+  });
+
+  test("todo: laatste dagstart-taak vink start shutdown", async ({ page }) => {
+    const title = "E2E laatste todo ding";
+    await seedV2Journey(page, [title]);
+    await seedV2Task(page, title);
+    await page.goto("/todo?lang=nl", { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByText(title)).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: /Markeer als klaar|Mark as done/i }).click();
+
+    await page.waitForURL(/\/shutdown(\?from=last-task|$)/, { timeout: 15_000 });
+    await expect(page.getByText("Dagafsluiting")).toBeVisible({ timeout: 10_000 });
   });
 });

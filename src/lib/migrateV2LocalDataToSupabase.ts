@@ -42,6 +42,8 @@ const V2_ANON_KEYS = [
   "v2_tasks_remote_map",
   "v2_dump_remote_map",
   "v2_sync_user",
+  "v2_shutdown_invite",
+  "v2_shutdown_ack_played",
 ] as const;
 
 const migratedKey = (userId: string) => `structuro_v2_migrated_${userId}`;
@@ -176,9 +178,11 @@ export function v2TaskToInsert(task: V2Task): Omit<Task, "id"> {
     focusExitedAt: null,
     focusAttempts: 0,
     completedAt: task.done
-      ? task.completedDate
-        ? `${task.completedDate}T12:00:00.000Z`
-        : task.createdAt
+      ? task.completedAt
+        ? task.completedAt
+        : task.completedDate
+          ? `${task.completedDate}T12:00:00.000Z`
+          : task.createdAt
       : undefined,
     reminders: [],
     repeat: repeatFields.repeat,

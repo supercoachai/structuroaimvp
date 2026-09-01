@@ -1,5 +1,6 @@
 import { hasEventSignupAppTrial } from "@/lib/eventSignupTrialAccess";
 import { isGiftCompSignupSource } from "@/lib/giftCompAccess";
+import { isInternalTeamAccount } from "@/lib/internalTeamAccount";
 import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import {
   isRegistrationCheckoutEnabled,
@@ -41,6 +42,7 @@ export function requiresPaidSubscriptionBeforeOnboarding(
   if (process.env.NODE_ENV !== "production") return false;
   if (!isCheckoutGateActive(options)) return false;
   if (isProtectedTestAccount(row.email ?? null)) return false;
+  if (isInternalTeamAccount(row.email ?? null)) return false;
   if (!row.profileRowReadOk) return true;
   // Café / event-QR / gift-comp: geen Stripe-checkout vóór onboarding
   if (isEventSignupSource(row.signup_source)) return false;

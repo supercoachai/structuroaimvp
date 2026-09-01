@@ -234,6 +234,7 @@ export function persistOnboardingOwnTask(opts: {
             microSteps: micros.length > 0 ? micros : t.microSteps,
             done: false,
             completedDate: null,
+            completedAt: null,
             snoozeUntil: null,
           }
         : t,
