@@ -41,6 +41,7 @@ export default function V2ProposeStep({
   onPickEnergy,
   onConfirm,
   onAdjust,
+  onTypeOwn,
   cycleInfo,
   showCycleDiscover = false,
   confirmLabel,
@@ -56,6 +57,8 @@ export default function V2ProposeStep({
   onPickEnergy: (energy: V2Energy) => void;
   onConfirm: () => void;
   onAdjust: () => void;
+  /** Dagstart met account: typ een eigen taak i.p.v. alleen later in de app. */
+  onTypeOwn?: () => void;
   /** Bij opt-in + periodedata: orb-ring + fase-label + info-sheet. Geen chip. */
   cycleInfo?: V2CycleChipInfo | null;
   /** Guest-onboarding: soft cyclus-discovery onderaan. Niet op dagstart/landing. */
@@ -286,7 +289,16 @@ export default function V2ProposeStep({
               {resolvedAdjust}
             </button>
           ) : null}
-          {showOwnTasksHint ? (
+          {onTypeOwn ? (
+            <button
+              type="button"
+              className="v2-link"
+              onClick={onTypeOwn}
+              disabled={!energy}
+            >
+              {t("v2.proposeTypeOwn")}
+            </button>
+          ) : showOwnTasksHint ? (
             <p className="v2-propose-step__own-hint">
               {t("v2.proposeOwnTasksHint")}
             </p>

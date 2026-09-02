@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { useI18n } from "@/lib/i18n";
 
 import { v2Styles } from "./theme";
@@ -16,19 +18,38 @@ export default function V2AdjustStep({
   selected,
   maxSlots,
   onToggle,
+  onAddCustom,
   onConfirm,
   onSkip,
+  autoFocusCustom = false,
 }: {
   options: string[];
   selected: string[];
   maxSlots: number;
   onToggle: (title: string) => void;
+  onAddCustom?: (title: string) => void;
   onConfirm: () => void;
   onSkip: () => void;
+  autoFocusCustom?: boolean;
 }) {
   const { t } = useI18n();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [draft, setDraft] = useState("");
   const atMax = selected.length >= maxSlots;
   const rows = v2EnrichThingProposals(options);
+  const canAddCustom = Boolean(onAddCustom) && draft.trim().length >= 2 && !atMax;
+
+  useEffect(() => {
+    if (!autoFocusCustom) return;
+    const id = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(id);
+  }, [autoFocusCustom]);
+
+  const submitCustom = () => {
+    if (!onAddCustom || !canAddCustom) return;
+    onAddCustom(draft);
+    setDraft("");
+  };
 
   const title =
     maxSlots >= 3 ? (
@@ -74,6 +95,50 @@ export default function V2AdjustStep({
           );
         })}
       </div>
+      {onAddCustom ? (
+        <form
+          className="v2-adjust-custom"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitCustom();
+          }}
+        >
+          <label htmlFor="v2-adjust-custom-title" className="v2-adjust-custom__label">
+            {t("v2.adjustTypeOwnLabel")}
+          </label>
+          <div
+            className={`v2-own-task__custom${draft.trim() ? " v2-own-task__custom--filled" : ""}`}
+          >
+            <input
+              id="v2-adjust-custom-title"
+              ref={inputRef}
+              type="text"
+              className="v2-own-task__input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={t("v2.ownTaskPlaceholder")}
+              autoComplete="off"
+              maxLength={280}
+              disabled={atMax}
+            />
+            <button
+              type="submit"
+              className={`v2-own-task__add${canAddCustom ? " v2-own-task__add--on" : ""}`}
+              aria-label={t("v2.adjustTypeOwnAddAria")}
+              disabled={!canAddCustom}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M12 5v14M5 12h14"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </form>
+      ) : null}
       <div style={v2Styles.softActions}>
         <button
           type="button"

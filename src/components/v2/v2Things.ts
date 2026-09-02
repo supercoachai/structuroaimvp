@@ -229,6 +229,28 @@ export function v2NormalizeThings(things: string[] | undefined | null): string[]
     .map((t) => t.trim());
 }
 
+/** Eigen dagstart-taak: trim, max lengte, geen lege of dubbele titel. */
+export function normalizeDagstartCustomThing(
+  raw: string,
+  max = 280
+): string {
+  return raw.trim().replace(/\s+/g, " ").slice(0, max);
+}
+
+export function addUniqueDagstartThing(
+  list: string[],
+  rawTitle: string,
+  maxSlots: number
+): string[] {
+  const title = normalizeDagstartCustomThing(rawTitle);
+  if (title.length < 2) return list;
+  if (list.some((item) => item.toLowerCase() === title.toLowerCase())) {
+    return list;
+  }
+  if (list.length >= maxSlots) return list;
+  return [...list, title];
+}
+
 export function v2HasThings(things: string[]): boolean {
   return v2NormalizeThings(things).length > 0;
 }

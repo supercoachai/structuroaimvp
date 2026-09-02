@@ -3965,6 +3965,17 @@
   font-weight: 500;
   color: var(--text-muted);
 }
+.v2-root .v2-adjust-custom {
+  width: 100%;
+  margin: 4px 0 18px;
+}
+.v2-root .v2-adjust-custom__label {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
 
 .v2-root .v2-home {
   margin: 0 auto;

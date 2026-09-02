@@ -11,6 +11,7 @@ import {
 import { scrollV2ToTop, useV2Go } from "./v2nav";
 import { useV2, type V2Energy } from "./V2Context";
 import {
+  addUniqueDagstartThing,
   v2BuildAdjustOptions,
   v2MaxSlotsForEnergy,
   v2NormalizeThings,
@@ -41,7 +42,7 @@ function mapV2EnergyToProfile(energy: V2Energy | null): DagstartEnergy {
  * Dagelijkse dagstart (terugkerend / met account):
  * energy+voorstellen → klaar. Geen welkom-intro (ook onboarding start bij energy).
  * Geen cyclus aan/uit-toggle: voorkeur zit in settings; status-ring mag wél.
- * Escape: zelf aanpassen.
+ * Escape: zelf aanpassen of een eigen taak typen.
  */
 type Phase = "energy" | "adjust" | "done";
 const TOTAL_STEPS = 3;
@@ -63,6 +64,7 @@ export default function DagstartV2Client() {
   const [phase, setPhase] = useState<Phase>("energy");
   const [history, setHistory] = useState<Phase[]>([]);
   const [selectedThings, setSelectedThings] = useState<string[]>([]);
+  const [focusCustom, setFocusCustom] = useState(false);
   /**
    * Lokale draft voor een frisse pill-keuze. Nooit `state.energy` wissen bij mount:
    * anders verdwijnt de home-chip als je dagstart opent en weer weggaat (Stoppen/back).
@@ -179,6 +181,13 @@ export default function DagstartV2Client() {
   const openAdjust = () => {
     const picks = selectedThings.length > 0 ? selectedThings : proposals;
     setSelectedThings(picks);
+    setFocusCustom(false);
+    goTo("adjust");
+  };
+
+  const openTypeOwn = () => {
+    setSelectedThings([]);
+    setFocusCustom(true);
     goTo("adjust");
   };
 
@@ -188,6 +197,10 @@ export default function DagstartV2Client() {
       if (prev.length >= maxSlots) return prev;
       return [...prev, title];
     });
+  };
+
+  const addCustomThing = (title: string) => {
+    setSelectedThings((prev) => addUniqueDagstartThing(prev, title, maxSlots));
   };
 
   const leaveToHome = (patch?: { todayDone: boolean }) => {
@@ -242,6 +255,8 @@ export default function DagstartV2Client() {
                 onPickEnergy={pickEnergy}
                 onConfirm={confirmProposals}
                 onAdjust={openAdjust}
+                onTypeOwn={openTypeOwn}
+                showOwnTasksHint={false}
               />
             ) : null}
 
@@ -251,6 +266,8 @@ export default function DagstartV2Client() {
                 selected={selectedThings}
                 maxSlots={maxSlots}
                 onToggle={toggleAdjust}
+                onAddCustom={addCustomThing}
+                autoFocusCustom={focusCustom}
                 onConfirm={() => finishThings(selectedThings)}
                 onSkip={() => finishThings([])}
               />
