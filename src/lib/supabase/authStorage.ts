@@ -19,6 +19,30 @@ function cookieNameLooksLikeAuth(name: string): boolean {
   return false;
 }
 
+/** Auth-cookies die bij logout/account-delete gewist moeten worden. */
+export function collectAuthCookieNamesToClear(
+  cookieHeader: string | null | undefined
+): string[] {
+  const names = new Set<string>([
+    STRUCTURO_SUPABASE_AUTH_STORAGE_KEY,
+    `${STRUCTURO_SUPABASE_AUTH_STORAGE_KEY}.0`,
+    `${STRUCTURO_SUPABASE_AUTH_STORAGE_KEY}.1`,
+  ]);
+  const legacy = legacySupabaseAuthCookiePrefix();
+  if (legacy) {
+    names.add(legacy);
+    names.add(`${legacy}.0`);
+    names.add(`${legacy}.1`);
+  }
+  if (cookieHeader) {
+    for (const chunk of cookieHeader.split(";")) {
+      const name = chunk.trim().split("=")[0] ?? "";
+      if (name && cookieNameLooksLikeAuth(name)) names.add(name);
+    }
+  }
+  return [...names];
+}
+
 /** Client-side hint dat er nog een Supabase-sessie kan zijn (cookie/localStorage). */
 export function hasSupabaseAuthHintOnClient(): boolean {
   if (typeof window === "undefined") return false;

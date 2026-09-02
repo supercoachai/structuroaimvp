@@ -1,5 +1,6 @@
 import { trackClientFunnelEvent } from "./clientFunnelAnalyticsClient";
 import { focusPlannedMinutesBucket } from "./durationBuckets";
+import { sanitizeAnalyticsTaskId } from "./sanitizeAnalyticsTaskId";
 
 export type FocusSessionAnalyticsEnergy = "laag" | "normaal" | "hoog";
 
@@ -43,7 +44,7 @@ export function focusSessionMetrics(
       : 0;
 
   return {
-    task_id: taskId ?? "",
+    task_id: sanitizeAnalyticsTaskId(taskId),
     energy_level: energy,
     duration_planned_sec,
     duration_actual_sec,
@@ -58,7 +59,7 @@ export function captureFocusSessionStarted(payload: {
 }) {
   const analyticsEnergy = focusEnergyToAnalytics(payload.energy);
   trackClientFunnelEvent("focus_session_started", {
-    task_id: payload.taskId ?? "",
+    task_id: sanitizeAnalyticsTaskId(payload.taskId),
     energy_level: analyticsEnergy,
     duration_planned_sec: Math.max(0, Math.round(payload.plannedMinutes * 60)),
     duration_bucket: focusPlannedMinutesBucket(payload.plannedMinutes),

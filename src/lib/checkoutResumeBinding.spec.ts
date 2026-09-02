@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  decideCheckoutResumeMint,
   signCheckoutResumeToken,
   verifyCheckoutResumeToken,
 } from "./checkoutResumeBinding";
@@ -47,5 +48,47 @@ describe("checkoutResumeBinding", () => {
     const token = signCheckoutResumeToken("cs_test_123");
     vi.stubEnv("CHECKOUT_RESUME_SECRET", "ander-secret");
     expect(verifyCheckoutResumeToken(token, "cs_test_123")).toBe(false);
+  });
+
+  it("accepteert een geldige cookie zonder login", () => {
+    const token = signCheckoutResumeToken("cs_test_123");
+    expect(
+      decideCheckoutResumeMint({
+        cookieToken: token,
+        sessionId: "cs_test_123",
+        userId: null,
+        stripeClientReferenceId: "user-a",
+      })
+    ).toBe("already_bound");
+  });
+
+  it("weiger cs_ alleen, ook als de session van iemand anders is", () => {
+    expect(
+      decideCheckoutResumeMint({
+        cookieToken: null,
+        sessionId: "cs_test_123",
+        userId: null,
+        stripeClientReferenceId: "user-a",
+      })
+    ).toBe("deny");
+    expect(
+      decideCheckoutResumeMint({
+        cookieToken: null,
+        sessionId: "cs_test_123",
+        userId: "user-b",
+        stripeClientReferenceId: "user-a",
+      })
+    ).toBe("deny");
+  });
+
+  it("staat de ingelogde eigenaar toe om te binden", () => {
+    expect(
+      decideCheckoutResumeMint({
+        cookieToken: null,
+        sessionId: "cs_test_123",
+        userId: "user-a",
+        stripeClientReferenceId: "user-a",
+      })
+    ).toBe("owner");
   });
 });

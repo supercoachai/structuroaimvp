@@ -180,7 +180,8 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     infoSheetPlanBody:
       "Toont je fase naast je energie en kan zacht herinneren. Geen sturing: jij kiest hoeveel en wat.",
     infoSheetPrivateTitle: "Privé",
-    infoSheetPrivateBody: "Blijft op dit apparaat. Wordt nooit gedeeld.",
+    infoSheetPrivateBody:
+      "Staat in je account en synchroniseert mee. Alleen jij ziet het. Weg als je je account verwijdert.",
     infoSheetGotIt: "Begrepen",
     infoSheetOpenAria: "Meer over je cyclusfase",
     infoSheetCloseAria: "Sluit cyclusuitleg",
@@ -398,7 +399,8 @@ export const cycleLocale: Record<Locale, Record<string, string>> = {
     infoSheetPlanBody:
       "Shows your phase next to your energy and can softly remind you. No steering: you choose how much and what.",
     infoSheetPrivateTitle: "Private",
-    infoSheetPrivateBody: "Stays on this device. Never shared.",
+    infoSheetPrivateBody:
+      "Stored in your account and synced across devices. Only you can see it. Removed if you delete your account.",
     infoSheetGotIt: "Got it",
     infoSheetOpenAria: "More about your cycle phase",
     infoSheetCloseAria: "Close cycle explanation",

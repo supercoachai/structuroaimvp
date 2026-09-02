@@ -10,6 +10,7 @@ import {
   isJasperSignupSource,
 } from "@/lib/jasper/jasperOffer";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
+import { attachCheckoutResumeCookie } from "@/lib/checkoutResumeBinding";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
@@ -124,7 +125,7 @@ async function postCreateSession(request: Request) {
     userId,
     email,
     trialDays,
-    successUrl: `${base}/welkom?session_id={CHECKOUT_SESSION_ID}`,
+    successUrl: `${base}/welkom`,
     cancelUrl: `${base}/registreren/plan?cancelled=1`,
     metadata: {
       [CHECKOUT_METADATA_WELCOME_TASK]: addWelcomeTask ? "1" : "0",
@@ -153,11 +154,12 @@ async function postCreateSession(request: Request) {
     /* PostHog best-effort */
   }
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     url: session.url,
     checkoutSessionId: session.id,
     trialDays,
   });
+  return attachCheckoutResumeCookie(res, session.id);
 }
 
 export const POST = withApiErrorTracking(

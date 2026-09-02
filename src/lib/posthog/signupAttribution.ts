@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { ORGANIC_SIGNUP_SOURCE } from "@/lib/acquisition/bridgePaths";
+import { isClientPersistableSignupSource } from "@/lib/signupAttributionWritePolicy";
 import {
   EVENT_TRIAL_BY_SIGNUP_SOURCE,
   normalizeSignupSourceKey,
@@ -433,22 +434,19 @@ export function resolveRegistrationTrialDays(
   return resolveStripeTrialDaysForSignupSource(source);
 }
 
-/** Bron voor trial/checkout: profiel, anders auth metadata bij signup. */
+/**
+ * Bron voor trial/checkout/entitlement: alleen profiles.signup_source.
+ * Auth user_metadata is client-setbaar en telt niet mee.
+ */
 export function resolveProfileSignupSource(
   profileSignupSource: string | null | undefined,
-  userMetadata: Record<string, unknown> | null | undefined
+  _userMetadata?: Record<string, unknown> | null | undefined
 ): string | null {
   const fromProfile = (profileSignupSource ?? "").trim();
-  if (fromProfile) return fromProfile;
-
-  const fromMeta = userMetadata?.signup_source;
-  if (typeof fromMeta === "string" && fromMeta.trim()) {
-    return fromMeta.trim();
-  }
-  return null;
+  return fromProfile || null;
 }
 
-/** Schrijf acquisitie naar profiles (alleen als signup_source nog leeg is). */
+/** Schrijf acquisitie naar profiles via service_role (alleen als signup_source nog leeg is). */
 export async function persistSignupAttributionToProfile(
   userId: string
 ): Promise<boolean> {
@@ -457,31 +455,31 @@ export async function persistSignupAttributionToProfile(
   if (!signupSource) return false;
 
   const signupCampaign = getStoredSignupCampaign();
+  const persistable = isClientPersistableSignupSource(signupSource);
   const maxAttempts = 8;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
+      if (persistable) {
+        const res = await fetch("/api/profile/signup-attribution", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: signupSource,
+            utm_campaign: signupCampaign,
+          }),
+        });
+        if (res.ok) {
+          clearSignupAttributionStorage();
+          return true;
+        }
+        if (res.status === 403) {
+          return false;
+        }
+      }
+
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .update({
-          signup_source: signupSource,
-          signup_utm_campaign: signupCampaign,
-        })
-        .eq("id", userId)
-        .is("signup_source", null)
-        .select("id");
-
-      if (error) {
-        console.warn("[signupAttribution] profile update failed:", error.message);
-        return false;
-      }
-
-      if (data && data.length > 0) {
-        clearSignupAttributionStorage();
-        return true;
-      }
-
       const { data: profile } = await supabase
         .from("profiles")
         .select("signup_source")

@@ -27,7 +27,8 @@ function sleep(ms: number) {
 async function fetchStripeSessionPaid(sessionId: string): Promise<boolean> {
   try {
     const res = await fetch(
-      `/api/checkout/session-status?session_id=${encodeURIComponent(sessionId)}`
+      `/api/checkout/session-status?session_id=${encodeURIComponent(sessionId)}`,
+      { credentials: "include" }
     );
     if (!res.ok) return false;
     const data = (await res.json()) as { paid?: boolean };
@@ -180,9 +181,7 @@ function WelkomPageInner() {
         if (emailHint) {
           setRecoveryHint(t("welkomPage.recoveryHint", { email: emailHint }));
         }
-        const loginNext = checkoutSessionId
-          ? `/welkom?session_id=${encodeURIComponent(checkoutSessionId)}`
-          : "/welkom";
+        const loginNext = "/welkom";
         setCtaHref(
           `/login?checkout=1&next=${encodeURIComponent(loginNext)}`
         );

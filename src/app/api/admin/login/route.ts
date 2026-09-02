@@ -8,6 +8,10 @@ import {
   signAdminCookie,
   type AdminScope,
 } from "@/lib/admin/adminSession";
+import {
+  getClientIp,
+  isWaitlistRateLimited,
+} from "@/lib/wachtlijst/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +21,10 @@ function isScope(v: unknown): v is AdminScope {
 
 /** Wisselt het admin-secret in voor een ondertekend httpOnly-cookie. */
 export async function POST(request: Request) {
+  if (isWaitlistRateLimited(getClientIp(request))) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   let body: { scope?: string; secret?: string };
   try {
     body = await request.json();

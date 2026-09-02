@@ -129,10 +129,28 @@ export function V2Provider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const { hydrateV2FromSupabase } = await import("@/lib/v2/v2SupabaseSync");
+        const { fetchTodayV2ShutdownExists } = await import("@/lib/v2/v2ShutdownDb");
         await Promise.race([
           hydrateV2FromSupabase(),
           new Promise((resolve) => setTimeout(resolve, 4000)),
         ]);
+        const shutdownDone = await fetchTodayV2ShutdownExists();
+        if (!cancelled && shutdownDone) {
+          setState((prev) => {
+            if (prev.todayDone) return prev;
+            const next = {
+              ...prev,
+              todayDone: true,
+              todayDoneAt: prev.todayDoneAt ?? new Date().toISOString(),
+            };
+            try {
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {
+              /* negeren */
+            }
+            return next;
+          });
+        }
       } catch {
         // Sync is best-effort; lokaal blijft werken.
       }

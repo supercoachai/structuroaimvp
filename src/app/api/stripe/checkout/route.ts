@@ -12,6 +12,7 @@ import {
   isJasperSignupSource,
 } from "@/lib/jasper/jasperOffer";
 import { resolveProfileSignupSource } from "@/lib/posthog/signupAttribution";
+import { attachCheckoutResumeCookie } from "@/lib/checkoutResumeBinding";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
@@ -154,7 +155,8 @@ async function postCheckout(request: Request) {
     console.error("[checkout] PostHog capture failed (non-fatal)", phErr);
   }
 
-  return NextResponse.json({ url: session.url });
+  const res = NextResponse.json({ url: session.url });
+  return attachCheckoutResumeCookie(res, session.id);
 }
 
 export const POST = withApiErrorTracking("POST /api/stripe/checkout", postCheckout);

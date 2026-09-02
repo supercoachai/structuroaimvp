@@ -70,14 +70,15 @@ export type OnboardingReplayBypass = {
   lastDagstartDate?: string | null | undefined;
 };
 
-/** Bestaande gebruiker die de intro opnieuw bekijkt: geen Stripe-checkout. */
+/**
+ * Skip checkout alleen als deze gebruiker de dagstart al heeft gedaan.
+ * replay=1 en de client-cookie structuro_privacy_setup_done tellen niet:
+ * die zijn door de browser te zetten zonder betaalde checkout.
+ */
 export function canAccessOnboardingWithoutCheckout(
   bypass: OnboardingReplayBypass
 ): boolean {
-  if (bypass.replayQuery) return true;
-  if (bypass.privacySetupDone) return true;
-  if (bypass.lastDagstartDate) return true;
-  return false;
+  return Boolean(bypass.lastDagstartDate?.trim());
 }
 
 /** Na account aanmaken of sessie-check op /registreren: welkom, plan of onboarding. */

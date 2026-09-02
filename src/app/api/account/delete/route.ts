@@ -6,6 +6,7 @@ import { isProtectedTestAccount } from "@/lib/protectedTestAccount";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { captureServerException } from "@/lib/posthog/server";
 import { extractPostHogSessionIdFromRequest } from "@/lib/posthog/postHogCookie";
+import { collectAuthCookieNamesToClear } from "@/lib/supabase/authStorage";
 
 const ROUTE_LABEL = "POST /api/account/delete";
 
@@ -98,7 +99,10 @@ async function postDeleteAccount(request: Request): Promise<Response> {
   }
 
   const response = new NextResponse(null, { status: 204 });
-  for (const name of ["sb-access-token", "sb-refresh-token"]) {
+  const cookieNames = collectAuthCookieNamesToClear(
+    request.headers.get("cookie")
+  );
+  for (const name of cookieNames) {
     response.cookies.set(name, "", { path: "/", maxAge: 0 });
   }
   return response;

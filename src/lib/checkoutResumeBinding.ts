@@ -1,4 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import type { NextResponse } from "next/server";
+
+import { getAppOrigin } from "@/lib/appUrl";
 
 export const CHECKOUT_RESUME_COOKIE = "structuro_checkout_resume";
 export const CHECKOUT_RESUME_MAX_AGE_SEC = 48 * 60 * 60;
@@ -52,4 +55,37 @@ export function verifyCheckoutResumeToken(
   } catch {
     return false;
   }
+}
+
+export function attachCheckoutResumeCookie<T extends NextResponse>(
+  res: T,
+  sessionId: string
+): T {
+  const token = signCheckoutResumeToken(sessionId);
+  res.cookies.set(CHECKOUT_RESUME_COOKIE, token, {
+    httpOnly: true,
+    secure: getAppOrigin().startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: CHECKOUT_RESUME_MAX_AGE_SEC,
+  });
+  return res;
+}
+
+export type CheckoutResumeMintDecision = "already_bound" | "owner" | "deny";
+
+/** Cookie al geldig, of ingelogde eigenaar van de Stripe-session. Nooit cs_ alleen. */
+export function decideCheckoutResumeMint(opts: {
+  cookieToken: string | null | undefined;
+  sessionId: string;
+  userId: string | null | undefined;
+  stripeClientReferenceId: string | null | undefined;
+}): CheckoutResumeMintDecision {
+  if (verifyCheckoutResumeToken(opts.cookieToken, opts.sessionId)) {
+    return "already_bound";
+  }
+  const userId = opts.userId?.trim() ?? "";
+  const owner = opts.stripeClientReferenceId?.trim() ?? "";
+  if (userId && owner && userId === owner) return "owner";
+  return "deny";
 }

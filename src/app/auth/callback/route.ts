@@ -13,11 +13,8 @@ import {
 } from "@/lib/posthog/serverAlias";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { parseStAttrFromRequest } from "@/lib/posthog/firstTouchAttribution";
-import {
-  JASPER_SIGNUP_SOURCE,
-  isWeakProfileSourceForJasperUpgrade,
-} from "@/lib/jasper/jasperOffer";
 import { normalizeSignupSourceKey } from "@/lib/stripe/trialConfig";
+import { shouldWriteSignupSourceFromAuthCallback } from "@/lib/signupAttributionWritePolicy";
 import { buildTrustedRedirectUrl, sanitizeNextPath } from "@/lib/safeRedirect";
 import { PASSWORD_RECOVERY_PATH } from "@/lib/auth/passwordResetRedirect";
 import { createRouteHandlerSupabaseClient } from "@/lib/supabase/routeHandlerClient";
@@ -249,8 +246,8 @@ export async function GET(request: Request) {
           await markPasswordSetupCompleted(admin, user.id);
 
           // Magic link / OAuth opent vaak een nieuwe tab: sessionStorage is leeg.
-          // Schrijf signup_source uit st_attr cookie; jasper_podcast mag zwakke
-          // bronnen (structuro_eu, direct) overschrijven.
+          // Schrijf signup_source uit st_attr cookie. gift_comp nooit; event-QR
+          // alleen op een leeg profiel; jasper mag zwakke bronnen upgraden.
           const attr = parseStAttrFromRequest(request);
           const attrSource = normalizeSignupSourceKey(attr?.source);
           if (attrSource && attrSource !== "direct") {
@@ -263,13 +260,13 @@ export async function GET(request: Request) {
               const currentSource = normalizeSignupSourceKey(
                 existingProfile?.signup_source as string | null | undefined
               );
-              const isJasperAttr = attrSource === JASPER_SIGNUP_SOURCE;
-              const shouldWrite =
-                !currentSource ||
-                (isJasperAttr &&
-                  isWeakProfileSourceForJasperUpgrade(currentSource));
 
-              if (shouldWrite) {
+              if (
+                shouldWriteSignupSourceFromAuthCallback({
+                  currentSource,
+                  attrSource,
+                })
+              ) {
                 await admin
                   .from("profiles")
                   .update({

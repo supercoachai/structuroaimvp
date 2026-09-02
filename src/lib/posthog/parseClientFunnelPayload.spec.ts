@@ -32,4 +32,23 @@ describe("parseClientFunnelPayload", () => {
       })
     ).toBeNull();
   });
+
+  it("stript taaktitels uit task_id", () => {
+    const parsed = parseClientFunnelPayload({
+      event: "focus_session_started",
+      visitor_id: VISITOR_ID,
+      properties: { task_id: "Mail beantwoorden", surface: "app" },
+    });
+    expect(parsed?.payload.properties?.task_id).toBeUndefined();
+    expect(parsed?.payload.properties?.surface).toBe("app");
+  });
+
+  it("behoudt interne task ids", () => {
+    const parsed = parseClientFunnelPayload({
+      event: "focus_session_started",
+      visitor_id: VISITOR_ID,
+      properties: { task_id: "v2t-lmf8abc-1" },
+    });
+    expect(parsed?.payload.properties?.task_id).toBe("v2t-lmf8abc-1");
+  });
 });

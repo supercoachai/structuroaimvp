@@ -9,6 +9,7 @@ import {
   getStoredSignupSource,
   hasJasperAttributionOnClient,
   markJasperAttributionPersistent,
+  resolveProfileSignupSource,
   syncSignupAttributionFromPersistentStorage,
 } from "@/lib/posthog/signupAttribution";
 import { readFirstTouchSignupSourceFromCookie } from "@/lib/posthog/firstTouchAttribution";
@@ -119,5 +120,16 @@ describe("signupAttribution jasper", () => {
 
     expect(getStoredSignupSource()).toBe(JASPER_SIGNUP_SOURCE);
     expect(getResolvedSignupSourceForProfile()).toBe(JASPER_SIGNUP_SOURCE);
+  });
+});
+
+describe("resolveProfileSignupSource", () => {
+  it("negeert auth user_metadata voor entitlement", () => {
+    expect(
+      resolveProfileSignupSource(null, { signup_source: "adhd_cafe" })
+    ).toBeNull();
+    expect(
+      resolveProfileSignupSource("tiktok", { signup_source: "adhd_cafe" })
+    ).toBe("tiktok");
   });
 });

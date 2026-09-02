@@ -122,11 +122,11 @@ const paidProfile = {
   withEnv("production", "1", () => {
     assert.equal(
       canAccessOnboardingWithoutCheckout({ replayQuery: true }),
-      true
+      false
     );
     assert.equal(
       canAccessOnboardingWithoutCheckout({ privacySetupDone: true }),
-      true
+      false
     );
     assert.equal(
       canAccessOnboardingWithoutCheckout({ lastDagstartDate: "2026-06-01" }),

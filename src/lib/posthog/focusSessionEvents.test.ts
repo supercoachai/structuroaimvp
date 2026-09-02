@@ -11,11 +11,13 @@ assert.equal(focusEnergyToAnalytics("low"), "laag");
 assert.equal(focusEnergyToAnalytics("medium"), "normaal");
 assert.equal(focusEnergyToAnalytics("high"), "hoog");
 
-const completed = focusSessionMetrics(1, 0, "abc", "normaal");
+const completed = focusSessionMetrics(1, 0, "v2t-lmf8abc-1", "normaal");
 assert.equal(completed.duration_planned_sec, 60);
 assert.equal(completed.duration_actual_sec, 60);
 assert.equal(completed.completion_ratio, 1);
-assert.equal(completed.task_id, "abc");
+assert.equal(completed.task_id, "v2t-lmf8abc-1");
+
+assert.equal(focusSessionMetrics(1, 0, "Mail beantwoorden", "normaal").task_id, "");
 
 const early = focusSessionMetrics(60, 3540, "abc", "laag");
 assert.equal(early.duration_planned_sec, 3600);

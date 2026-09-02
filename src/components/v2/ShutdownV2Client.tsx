@@ -38,6 +38,7 @@ import {
   clearV2ShutdownInPlace,
   v2ShutdownFromLastTask,
 } from "./v2LastTaskShutdown";
+import { persistV2DailyShutdown } from "@/lib/v2/v2ShutdownDb";
 
 type Phase = "ack" | "park";
 type Sheet = "actions" | "confirm" | null;
@@ -213,6 +214,7 @@ export default function ShutdownV2Client({
     if (wins.length >= 1 && shouldOfferReturnPermission()) {
       markReturnPermissionPending();
     }
+    void persistV2DailyShutdown(wins.length);
     clearV2ShutdownInPlace();
     onExit?.();
     go("/", { todayDone: true });

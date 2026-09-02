@@ -1,21 +1,22 @@
-import { getAppOrigin } from "@/lib/appUrl";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { createClient } from "@/lib/supabase/server";
 import {
   CHECKOUT_RESUME_COOKIE,
-  CHECKOUT_RESUME_MAX_AGE_SEC,
-  signCheckoutResumeToken,
+  attachCheckoutResumeCookie,
+  decideCheckoutResumeMint,
 } from "@/lib/checkoutResumeBinding";
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
-import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
 const MAX_SESSION_AGE_MS = 48 * 60 * 60 * 1000;
 
 /**
- * Koppelt een betaalde Stripe-checkout aan deze browser via httpOnly-cookie.
- * Vereist vóór resume-session (voorkomt token_hash-lek aan willekeurige callers).
+ * Bevestigt of ververst de resume-cookie. Mint nooit een cookie op alleen cs_.
  */
 async function postBindSession(request: Request) {
   if (!isRegistrationCheckoutEnabled()) {
@@ -34,6 +35,27 @@ async function postBindSession(request: Request) {
     return NextResponse.json({ error: "invalid_session_id" }, { status: 400 });
   }
 
+  const cookieStore = await cookies();
+  const resumeCookie = cookieStore.get(CHECKOUT_RESUME_COOKIE)?.value ?? null;
+
+  if (decideCheckoutResumeMint({
+    cookieToken: resumeCookie,
+    sessionId,
+    userId: null,
+    stripeClientReferenceId: null,
+  }) === "already_bound") {
+    return NextResponse.json({ ok: true });
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return NextResponse.json({ error: "session_not_bound" }, { status: 403 });
+  }
+
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
@@ -45,6 +67,23 @@ async function postBindSession(request: Request) {
     checkoutSession = await stripe.checkout.sessions.retrieve(sessionId);
   } catch {
     return NextResponse.json({ error: "session_not_found" }, { status: 404 });
+  }
+
+  const ownerId =
+    (typeof checkoutSession.client_reference_id === "string" &&
+      checkoutSession.client_reference_id) ||
+    checkoutSession.metadata?.supabase_user_id ||
+    null;
+
+  if (
+    decideCheckoutResumeMint({
+      cookieToken: resumeCookie,
+      sessionId,
+      userId: user.id,
+      stripeClientReferenceId: typeof ownerId === "string" ? ownerId : null,
+    }) !== "owner"
+  ) {
+    return NextResponse.json({ error: "session_not_bound" }, { status: 403 });
   }
 
   const paid =
@@ -59,17 +98,8 @@ async function postBindSession(request: Request) {
     return NextResponse.json({ error: "session_expired" }, { status: 410 });
   }
 
-  const token = signCheckoutResumeToken(sessionId);
   const res = NextResponse.json({ ok: true });
-  const secure = getAppOrigin().startsWith("https://");
-  res.cookies.set(CHECKOUT_RESUME_COOKIE, token, {
-    httpOnly: true,
-    secure,
-    sameSite: "lax",
-    path: "/",
-    maxAge: CHECKOUT_RESUME_MAX_AGE_SEC,
-  });
-  return res;
+  return attachCheckoutResumeCookie(res, sessionId);
 }
 
 export const POST = withApiErrorTracking(

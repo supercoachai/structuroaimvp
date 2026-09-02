@@ -166,7 +166,7 @@ export default function FocusV2Client() {
     finished: false,
     remaining: 0,
     plannedMinutes: 0,
-    thingLabel: "",
+    analyticsTaskId: "",
     energy: null as string | null,
   });
 
@@ -179,6 +179,12 @@ export default function FocusV2Client() {
   // zodra `things` wordt bijgewerkt vóór de navigatie.
   const thingLabel =
     acknowledging && ackTitle ? ackTitle : liveThingLabel;
+
+  const activeTask = useMemo(
+    () => findV2TaskByTitle(tasks, thingLabel),
+    [tasks, thingLabel],
+  );
+  const analyticsTaskId = activeTask?.id ?? "";
 
   const bucketLabel = (b: Bucket) => {
     if (b.durationBucket === "short") return t("v2.focusBucketShort");
@@ -302,10 +308,10 @@ export default function FocusV2Client() {
       finished,
       remaining,
       plannedMinutes: bucket?.minutes ?? 0,
-      thingLabel,
+      analyticsTaskId,
       energy: (state.energy as string | null) ?? null,
     };
-  }, [running, finished, remaining, bucket, thingLabel, state.energy]);
+  }, [running, finished, remaining, bucket, analyticsTaskId, state.energy]);
 
   // Start-event zodra de echte timer loopt (na 3-2-1).
   useEffect(() => {
@@ -314,10 +320,10 @@ export default function FocusV2Client() {
     focusEndedRef.current = false;
     captureFocusSessionStarted({
       plannedMinutes: bucket.minutes,
-      taskId: thingLabel,
+      taskId: analyticsTaskId,
       energy: state.energy,
     });
-  }, [running, bucket, thingLabel, state.energy]);
+  }, [running, bucket, analyticsTaskId, state.energy]);
 
   // Natuurlijk klaar.
   useEffect(() => {
@@ -327,10 +333,10 @@ export default function FocusV2Client() {
     captureFocusSessionCompleted({
       plannedMinutes: bucket.minutes,
       timeLeftSec: 0,
-      taskId: thingLabel,
+      taskId: analyticsTaskId,
       energy: state.energy,
     });
-  }, [finished, bucket, thingLabel, state.energy]);
+  }, [finished, bucket, analyticsTaskId, state.energy]);
 
   // Navigatie weg tijdens lopende sessie.
   useEffect(() => {
@@ -342,7 +348,7 @@ export default function FocusV2Client() {
       captureFocusSessionAbandoned({
         plannedMinutes: live.plannedMinutes,
         timeLeftSec: live.remaining,
-        taskId: live.thingLabel,
+        taskId: live.analyticsTaskId,
         energy: live.energy,
         reason: "navigation",
       });
@@ -390,10 +396,6 @@ export default function FocusV2Client() {
     };
   }, [countIn]);
 
-  const activeTask = useMemo(
-    () => findV2TaskByTitle(tasks, thingLabel),
-    [tasks, thingLabel],
-  );
   const microSteps: V2MicroStep[] = activeTask?.microSteps ?? [];
   const activeMicroIdx = v2ActiveMicroStepIndex(microSteps);
   const showMicroList = microSteps.length > 0 && !finished && !acknowledging && countIn == null;
@@ -626,7 +628,7 @@ export default function FocusV2Client() {
       captureFocusSessionEndedEarly({
         plannedMinutes: bucket.minutes,
         timeLeftSec: remaining,
-        taskId: thingLabel,
+        taskId: analyticsTaskId,
         energy: state.energy,
         reason: extended ? "open_ended_done" : "manual_complete",
       });
@@ -691,7 +693,7 @@ export default function FocusV2Client() {
       captureFocusSessionAbandoned({
         plannedMinutes: bucket.minutes,
         timeLeftSec: remaining,
-        taskId: thingLabel,
+        taskId: analyticsTaskId,
         energy: state.energy,
         reason: "user_cancelled",
       });

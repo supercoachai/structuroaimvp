@@ -23,7 +23,8 @@ async function getTasks(_request: Request) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Supabase error:', error)
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 
   return NextResponse.json(data)
@@ -85,19 +86,13 @@ async function postTask(request: Request) {
 
     if (error) {
       console.error('Supabase error:', error);
-      return NextResponse.json({ 
-        error: error.message || 'Database fout bij toevoegen van taak',
-        details: error.details || null,
-        hint: error.hint || null
-      }, { status: 500 })
+      return NextResponse.json({ error: 'server_error' }, { status: 500 })
     }
 
     return NextResponse.json(data)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Unexpected error:', err);
-    return NextResponse.json({ 
-      error: err.message || 'Onverwachte fout bij toevoegen van taak' 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 }
 
@@ -166,7 +161,8 @@ async function putTask(request: Request) {
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Supabase error:', error);
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 
   return NextResponse.json(data)
@@ -194,7 +190,8 @@ async function deleteTask(request: Request) {
     .eq('user_id', user.id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('Supabase error:', error);
+    return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

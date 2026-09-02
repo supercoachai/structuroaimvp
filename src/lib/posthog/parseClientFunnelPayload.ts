@@ -4,6 +4,7 @@ import {
 } from "./clientFunnelAllowlist";
 import type { ClientFunnelServerPayload } from "./clientFunnelAnalytics";
 import { ACQUISITION_VISITOR_UUID_RE } from "./parseAcquisitionPayload";
+import { sanitizeAnalyticsTaskId } from "./sanitizeAnalyticsTaskId";
 
 const MAX_PROP_KEYS = 24;
 const MAX_STRING = 128;
@@ -57,7 +58,14 @@ export function parseClientFunnelPayload(
     if (!safeKey) continue;
     const safeVal = sanitizeValue(value);
     if (safeVal === null && value !== null) continue;
-    properties[safeKey] = safeVal;
+    if (safeKey === "task_id") {
+      const taskId =
+        typeof safeVal === "string" ? sanitizeAnalyticsTaskId(safeVal) : "";
+      if (!taskId) continue;
+      properties[safeKey] = taskId;
+    } else {
+      properties[safeKey] = safeVal;
+    }
     count += 1;
     if (count >= MAX_PROP_KEYS) break;
   }

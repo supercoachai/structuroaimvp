@@ -59,7 +59,7 @@ async function postStripeWebhook(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid payload";
     console.warn("[stripe-webhook] signature verification failed", message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
   const admin = createServiceRoleClient();
