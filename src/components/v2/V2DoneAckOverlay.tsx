@@ -73,6 +73,7 @@ export default function V2DoneAckOverlay({
       className={`v2-done-overlay${anim ? " is-anim" : ""}`}
       role="dialog"
       aria-label={aria}
+      aria-describedby={ack ? "v2-done-overlay-quote" : undefined}
       aria-modal="true"
     >
       <div className="v2-done-overlay__body">
@@ -92,7 +93,11 @@ export default function V2DoneAckOverlay({
         <p className="v2-done-overlay__klaar">{t("v2.doneAck")}</p>
         <div className="v2-done-overlay__rule" aria-hidden />
         <V2DoneTallyStats week={tick.weekTo} total={tick.totalTo} />
-        {ack ? <p className="v2-done-overlay__ack">{ack}</p> : null}
+        {ack ? (
+          <p id="v2-done-overlay-quote" className="v2-done-overlay__ack">
+            {ack}
+          </p>
+        ) : null}
       </div>
       <div className="v2-done-overlay__foot">
         <button type="button" className="v2-done-overlay__action" onClick={onAction}>

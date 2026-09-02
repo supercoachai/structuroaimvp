@@ -104,6 +104,106 @@ export const V2_DONE_QUOTES_NL: readonly string[] = [
   "Je hebt dit uit je werkgeheugen gezet. Fijn zo.",
   "Dit einde is van jou. Niemand hoeft het te keuren.",
   "Klaar. Dat mag het laatste woord zijn.",
+  "Je gaf dit ding een einde. Dat is zorgvuldig.",
+  "Aandacht die landt, is al een compliment.",
+  "Je bleef tot het klaar was. Kort, en echt.",
+  "Dit is volgen-door, zonder vuurwerk.",
+  "Je hoofd mag dit dossier sluiten.",
+  "Eén taak af. Geen extra verhaal erbij.",
+  "Je koos afronden. Dat mag je horen.",
+  "Het vinkje is vriendelijk, niet luid.",
+  "Je hebt dit uit de wacht gehaald.",
+  "Klaar zijn mag stil zijn. Stil is helder.",
+  "Je kwam terug bij wat je beloofde.",
+  "Dit was genoeg doen voor dit moment.",
+  "Je liet de taak niet half open.",
+  "Afronden is een zachte vorm van trouw.",
+  "Je aandacht had een slot. Dat slot viel.",
+  "Minder open eindes. Dat voelt schoner.",
+  "Je deed het af, ook zonder zin.",
+  "Dit telt in een brein dat snel afhaakt.",
+  "Je gaf chaos een laatste punt.",
+  "Het mag klaar zijn. Je mag dat geloven.",
+  "Je hebt vandaag al iets neergelegd.",
+  "Eén einde is een anker, geen podium.",
+  "Je werkte door het lastige begin heen.",
+  "Dit is bewijs dat stoppen ook lukt.",
+  "Je lijst kreeg rust. Jij ook.",
+  "Afronden zonder show. Precies goed.",
+  "Je hebt dit ding niet laten zweven.",
+  "Wat open stond, staat nu dicht.",
+  "Je koos einde boven nog een begin.",
+  "Dit mag bij de geweest-dingen.",
+  "Je brein krijgt een korte, echte pauze.",
+  "Klaar. Geen naschrift nodig.",
+  "Je hield de draad vast tot hij af was.",
+  "Dit is zorg voor je toekomstige zelf.",
+  "Je hebt een kleine belofte ingelost.",
+  "Dit zwijgt nu. Het trekt niet meer.",
+  "Je gaf jezelf een zachte landing.",
+  "Het mag voelen als niks bijzonders. Het is wél gedaan.",
+  "Je ADHD wilde door. Jij bleef tot hier.",
+  "Eén dichte lus. Adem maar.",
+  "Je tilde dit uit de mist en zette het weg.",
+  "Afronden is niet streng. Het is duidelijk.",
+  "Je mag dit loslaten zonder schuld.",
+  "Start tot stop: een volledige beweging.",
+  "Je hoofd hoeft dit niet te bewaren.",
+  "Klaar zijn is een vorm van vriendelijkheid.",
+  "Je zette een punt waar uitstel een komma zette.",
+  "Vijf minuten telt hetzelfde als vijftig, als het af is.",
+  "Je hebt de taak tot de rand gebracht.",
+  "Minder ruis achter je ogen.",
+  "Je deed wat je nu kon. En sloot het.",
+  "Dit is geen race. Dit is een einde.",
+  "Je gaf aandacht, daarna een grens.",
+  "Het vinkje is een feit, geen ster.",
+  "Je kwam tot afronden. Dat is zeldzaam kalm.",
+  "Dit mag je even geruststellen.",
+  "Minder open tabbladen in je dag.",
+  "De kamer in je hoofd is een tik groter.",
+  "Je liet dit niet in de wachtkamer.",
+  "Dit was genoeg om te stoppen.",
+  "Je hebt een klein contract nagekomen.",
+  "Klaar. De rest mag wachten.",
+  "Je aandacht is weer van jou.",
+  "Dit einde is licht, en dat is de bedoeling.",
+  "Je werkte met wat er was. Het is af.",
+  "Minder straks. Meer net gedaan.",
+  "Je gaf je zenuwstelsel een duidelijk signaal.",
+  "Dit telt omdat jij het afrondde.",
+  "Je mag nu iets anders, of niets.",
+  "Hier stopt het open gevoel.",
+  "Je hebt dit ding netjes neergezet.",
+  "Afronden zonder oordeel. Alleen: zo is het.",
+  "Je bleef bij één ding. Dat is al winst.",
+  "Dit is een stille, echte beloning.",
+  "Vergeten mag. De taak is bewaard als klaar.",
+  "Saai afronden is een veilige smaak.",
+  "Je hebt de cirkel rond gemaakt.",
+  "Je las de zin tot de punt.",
+  "Stoppen was toegestaan. Je nam het.",
+  "Dit stuk last is van je schouders.",
+  "Je deed het in één ronde. Dat is genoeg.",
+  "Gedaan mag blijven liggen als gedaan.",
+  "Je aandacht kreeg een thuis en mocht weer gaan.",
+  "Je rondde af. Dat mag zacht voelen.",
+  "Dit hoeft vannacht niet in ploegendienst.",
+  "Eén taak minder die fluistert.",
+  "Je koos duidelijkheid. Dat is vriendelijk.",
+  "Dit is af, in jouw maat.",
+  "Je hebt een einde waar rust op past.",
+  "Applaus is niet nodig. Klaar is genoeg.",
+  "Je gaf dit de tijd tot het stopte.",
+  "Minder herinneren. Meer gedaan.",
+  "Je kwam tot hier. Hier is genoeg.",
+  "Dit eert je volhouden, niet je tempo.",
+  "De stekker mag eruit. Echt.",
+  "Je mag opstaan. Dit blijft af.",
+  "Je liet het einde gebeuren. Rustig en echt.",
+  "Dit telt in het echt, niet op een bord.",
+  "Je hebt vandaag al een deur dichtgedaan.",
+  "Het is af. Dat mag het enige zijn dat telt.",
 ];
 
 export const V2_DONE_QUOTES_EN: readonly string[] = [
@@ -207,32 +307,164 @@ export const V2_DONE_QUOTES_EN: readonly string[] = [
   "You took this out of working memory. Good.",
   "This ending is yours. Nobody has to grade it.",
   "Done. That may be the last word.",
+  "You gave this thing an ending. That is careful.",
+  "Attention that lands is already a compliment.",
+  "You stayed until it was done. Short, and real.",
+  "This is follow-through, without fireworks.",
+  "Your head can close this file.",
+  "One task done. No extra story needed.",
+  "You chose finishing. You can hear that.",
+  "The check is kind, not loud.",
+  "You took this out of waiting.",
+  "Done may be quiet. Quiet is clear.",
+  "You came back to what you promised.",
+  "This was enough doing for this moment.",
+  "You did not leave the task half open.",
+  "Finishing is a quiet form of loyalty.",
+  "Your attention had a latch. It closed.",
+  "Fewer open endings. That feels cleaner.",
+  "You finished it, even without the mood.",
+  "This counts for a brain that drops off fast.",
+  "You gave chaos a final period.",
+  "It can be done. You can believe that.",
+  "You already set something down today.",
+  "One ending is an anchor, not a stage.",
+  "You worked through the hard start.",
+  "This is proof that stopping also works.",
+  "Your list got rest. You did too.",
+  "Finishing without a show. Exactly right.",
+  "You did not leave this thing hovering.",
+  "What stood open is closed now.",
+  "You chose an ending over another start.",
+  "This can go with the already-done things.",
+  "Your brain gets a short, real pause.",
+  "Done. No afterword needed.",
+  "You held the thread until it was finished.",
+  "This is care for your future self.",
+  "You kept a small promise.",
+  "This is quiet now. It does not pull.",
+  "You gave yourself a soft landing.",
+  "It may feel like nothing special. It was still done.",
+  "Your ADHD wanted to move on. You stayed until here.",
+  "One closed loop. Breathe.",
+  "You lifted this out of the fog and put it away.",
+  "Finishing is not strict. It is clear.",
+  "You can let this go without guilt.",
+  "Start to stop: a complete movement.",
+  "Your head does not have to keep this.",
+  "Being done is a form of kindness.",
+  "You put a period where delay put a comma.",
+  "Five minutes counts the same as fifty, if it is done.",
+  "You took the task to the edge.",
+  "Less noise behind your eyes.",
+  "You did what you could now. And closed it.",
+  "This is not a race. This is an ending.",
+  "You gave attention, then a boundary.",
+  "The check is a fact, not a star.",
+  "You made it to finishing. That is quietly rare.",
+  "This may settle you, for a moment.",
+  "Fewer open tabs in your day.",
+  "The room in your head is a touch bigger.",
+  "You did not leave this in the waiting room.",
+  "This was enough to stop.",
+  "You kept a small contract.",
+  "Done. The rest can wait.",
+  "Your attention is yours again.",
+  "This ending is light, and that is the point.",
+  "You worked with what was there. It is done.",
+  "Less later. More just-finished.",
+  "You gave your nervous system a clear signal.",
+  "This counts because you closed it.",
+  "You may do something else now, or nothing.",
+  "The open feeling stops here.",
+  "You set this thing down neatly.",
+  "Finishing without a verdict. Only: this is how it is.",
+  "You stayed with one thing. That is already a win.",
+  "This is a quiet, real reward.",
+  "Forgetting is allowed. The task is stored as done.",
+  "Boring-done is a safe taste.",
+  "You made the circle complete.",
+  "You read the sentence to the period.",
+  "Stopping was allowed. You took it.",
+  "This bit of weight is off your shoulders.",
+  "You did it in one round. That is enough.",
+  "Done can stay done, not as debt.",
+  "Your attention found a home and could leave again.",
+  "You finished. That may feel soft.",
+  "This does not need a night shift in your head.",
+  "One less task whispering.",
+  "You chose clarity. That is kind.",
+  "This is done, in your size.",
+  "You have an ending that rest can sit on.",
+  "Applause is not needed. Done is enough.",
+  "You gave this the time until it stopped.",
+  "Less remembering. More done.",
+  "You made it here. Here is enough.",
+  "This honours your follow-through, not your pace.",
+  "The plug can come out. Really.",
+  "You may stand up. This stays done.",
+  "You let the ending happen. Calm and real.",
+  "This counts in real life, not on a board.",
+  "You already closed a door today.",
+  "It is done. That may be the only thing that counts.",
 ];
+
+function pickFromList(list: readonly string[], index: number): string {
+  if (list.length === 0) return "";
+  const i = ((index % list.length) + list.length) % list.length;
+  return list[i] ?? list[0] ?? "";
+}
 
 export function pickV2DoneQuote(locale: Locale, index: number): string {
   const list = locale === "en" ? V2_DONE_QUOTES_EN : V2_DONE_QUOTES_NL;
-  const i = ((index % list.length) + list.length) % list.length;
-  return list[i] ?? list[0];
+  return pickFromList(list, index);
+}
+
+/**
+ * Cyclisch: vaste volgorde tot de lijst rond is, daarna weer bij 0.
+ * Slaat dezelfde zin over als die twee keer achter elkaar zou komen, tenzij de lijst 1 item is.
+ */
+export function advanceV2DoneQuote(
+  list: readonly string[],
+  index: number,
+): { quote: string; nextIndex: number } {
+  if (list.length === 0) return { quote: "", nextIndex: 0 };
+  const quote = pickFromList(list, index);
+  let nextIndex = index + 1;
+  if (list.length > 1) {
+    let guard = 0;
+    while (pickFromList(list, nextIndex) === quote && guard < list.length) {
+      nextIndex += 1;
+      guard += 1;
+    }
+  }
+  return { quote, nextIndex };
+}
+
+function readStoredIndex(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = window.localStorage.getItem(V2_DONE_QUOTE_INDEX_KEY);
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+  } catch {
+    /* privémodus */
+  }
+  return 0;
+}
+
+function writeStoredIndex(index: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(V2_DONE_QUOTE_INDEX_KEY, String(index));
+  } catch {
+    /* privémodus */
+  }
 }
 
 export function takeNextV2DoneQuote(locale: Locale): string {
-  let index = 0;
-  if (typeof window !== "undefined") {
-    try {
-      const raw = window.localStorage.getItem(V2_DONE_QUOTE_INDEX_KEY);
-      const n = Number(raw);
-      if (Number.isFinite(n) && n >= 0) index = Math.floor(n);
-    } catch {
-      /* privémodus */
-    }
-  }
-  const quote = pickV2DoneQuote(locale, index);
-  if (typeof window !== "undefined") {
-    try {
-      window.localStorage.setItem(V2_DONE_QUOTE_INDEX_KEY, String(index + 1));
-    } catch {
-      /* privémodus */
-    }
-  }
+  const list = locale === "en" ? V2_DONE_QUOTES_EN : V2_DONE_QUOTES_NL;
+  const { quote, nextIndex } = advanceV2DoneQuote(list, readStoredIndex());
+  writeStoredIndex(nextIndex);
   return quote;
 }

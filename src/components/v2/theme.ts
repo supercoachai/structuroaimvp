@@ -1020,7 +1020,7 @@ export const v2ScopedCss = `
 }
 .v2-done-overlay__ack {
   margin: 0;
-  max-width: 26ch;
+  max-width: 34ch;
   font-family: var(--font-ui, var(--font-inter), system-ui, sans-serif);
   font-weight: 500;
   font-size: 15px;
