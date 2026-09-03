@@ -742,7 +742,7 @@ def render(g: dict) -> str:
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
-<script defer src="/js/analytics.js?v=20260903a"></script>
+<script defer src="/js/analytics.js?v=20260903b"></script>
 </head>
 <body>
 <header class="site-header">
@@ -991,7 +991,7 @@ def write_hub() -> None:
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
-<script defer src="/js/analytics.js?v=20260903a"></script>
+<script defer src="/js/analytics.js?v=20260903b"></script>
 </head>
 <body>
 

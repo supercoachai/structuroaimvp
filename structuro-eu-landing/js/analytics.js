@@ -235,6 +235,15 @@
     return "unknown";
   }
 
+  function loadAmplitude() {
+    if (window.__structuroAmplitudeLoaded) return;
+    window.__structuroAmplitudeLoaded = true;
+    var s = document.createElement("script");
+    s.type = "module";
+    s.src = "/js/amplitude-init.js?v=20260903b";
+    document.head.appendChild(s);
+  }
+
   function loadMicrosoftClarity() {
     if (window.__structuroClarityLoaded) return;
     window.__structuroClarityLoaded = true;
@@ -540,6 +549,7 @@
     attachSignupBridgeRefresh();
     attachCtaClicks();
     loadMicrosoftClarity();
+    loadAmplitude();
     scheduleBootstrap();
   }
 
