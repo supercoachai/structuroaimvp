@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 LEGAL_BODIES_TS = ROOT / "src" / "lib" / "i18n" / "legalBodiesNlV11.ts"
 OUT = Path(__file__).resolve().parents[1]
 
-PRIVACY_UPDATED_NL = "Versie 1.2, geldig vanaf 2 augustus 2026."
-PRIVACY_UPDATED_EN = "Version 1.2, effective from 2 August 2026."
+PRIVACY_UPDATED_NL = "Versie 1.3, geldig vanaf 3 september 2026."
+PRIVACY_UPDATED_EN = "Version 1.3, effective from 3 September 2026."
 TERMS_UPDATED_NL = "Versie 1.1, geldig vanaf 26 mei 2026."
 TERMS_UPDATED_EN = "Version 1.1, effective from 26 May 2026."
 
@@ -140,7 +140,7 @@ def wrap_page(
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
-<script defer src="/js/analytics.js?v=20260819c"></script>
+<script defer src="/js/analytics.js?v=20260903a"></script>
 </head>
 <body>
 <header class="site-header">

@@ -1,5 +1,5 @@
 /**
- * Juridische teksten: privacy v1.2 (TikTok), terms v1.1.
+ * Juridische teksten: privacy v1.3 (Clarity), terms v1.1.
  * Wordt gebruikt door legalLocale en structuro-eu-landing build script.
  *
  * Opmaak voor LegalV2Client / EU HTML:
@@ -46,6 +46,8 @@ Wij verwerken persoonsgegevens alleen met een geldige rechtsgrond onder de AVG: 
 
 @Productanalyse (PostHog)@ alleen met jouw toestemming via cookiebanner en toggle in Instellingen. Zonder toestemming meten wij alleen anoniem en cookieless.
 
+@Sessie-opnames (Microsoft Clarity)@ alleen op de website structuro.eu, niet in de webapp op structuro.ai. Clarity maakt heatmaps en sessie-opnames van het websitebezoek.
+
 @TikTok-attributie@ gerechtvaardigd belang en/of jouw analytics-toestemming: om te meten of TikTok-verkeer tot gebruik of aanmelding leidt. Zie hoofdstuk 5.
 
 @Foutopsporing en beveiliging@ technische foutmeldingen, rate-limits en auditlogs: nodig om de dienst veilig en beschikbaar te houden. Wij registreren daarbij geen inhoud van taken, geparkeerde gedachten of cyclus-tracking.
@@ -74,6 +76,8 @@ Wij gebruiken onderstaande partijen die gegevens namens ons verwerken. Met al de
 
 @PostHog Inc.@ Verenigde Staten, dataregio EU. Productanalyse en foutopsporing zoals in hoofdstuk 4 en 7, inclusief optionele TikTok-attributieparameters. Gecertificeerd onder het EU-US Data Privacy Framework.
 
+@Microsoft Corporation (Clarity)@ Verenigde Staten. Sessie-opnames en heatmaps op structuro.eu zoals in hoofdstuk 4 en 7. Gecertificeerd onder het EU-US Data Privacy Framework.
+
 @Resend (Resend.com Inc.)@ Verenigde Staten. Transactionele e-mails; ontvangt alleen het e-mailadres en de inhoud van die e-mail.
 
 @Upstash, Inc.@ Verenigde Staten. Rate-limiting van publieke endpoints; ontvangt je IP-adres of een gehashte vorm daarvan.
@@ -94,6 +98,8 @@ Stripe plaatst tijdens de betaalflow eigen cookies voor fraudepreventie en sessi
 
 Met jouw toestemming kan PostHog cookies en localStorage gebruiken om je sessie te herkennen en gebeurtenissen aan je account te koppelen. Zonder toestemming gebruiken wij cookieless modus: anonieme telling zonder persoonlijke koppeling. Je keuze stel je in via de cookiebanner bij je eerste bezoek, of later via Instellingen, toggle Anonieme productanalyse.
 
+Op de website structuro.eu kan Microsoft Clarity cookies plaatsen voor sessie-opnames en heatmaps. Dit gebeurt niet in de webapp op structuro.ai.
+
 TikTok-attributieparameters (zoals ttclid) komen uit de URL bij aankomst; die zijn geen cookies die wij zelf zetten. Eventuele cookies van TikTok in de TikTok-app vallen onder TikTok.
 
 8. Bewaartermijnen
@@ -109,6 +115,8 @@ TikTok-attributieparameters (zoals ttclid) komen uit de URL bij aankomst; die zi
 @Reminder-send-logs@ logregels van verstuurde dagstart-, lunch- en shutdown-reminders: maximaal 90 dagen.
 
 @Productanalyse (PostHog)@ analytics-gebeurtenissen worden maximaal 12 maanden bewaard en daarna automatisch verwijderd.
+
+@Sessie-opnames (Microsoft Clarity)@ recordings en heatmaps worden bewaard volgens het bewaarbeleid van Microsoft Clarity (standaard tot 30 dagen in de Clarity-omgeving).
 
 9. Jouw rechten
 
@@ -172,6 +180,8 @@ We process personal data only on a valid lawful basis under the GDPR: performanc
 
 @Product analytics (PostHog)@ only with your consent via the cookie banner and toggle in Settings. Without consent we only measure anonymously and cookieless.
 
+@Session recordings (Microsoft Clarity)@ only on the website structuro.eu, not in the web app on structuro.ai. Clarity makes heatmaps and session recordings of website visits.
+
 @TikTok attribution@ legitimate interest and/or your analytics consent: to measure whether TikTok traffic leads to use or sign-up. See chapter 5.
 
 @Error tracking and security@ technical error reports, rate limits and audit logs: needed to keep the service secure and available. We do not record the content of your tasks, parked thoughts or cycle tracking.
@@ -200,6 +210,8 @@ We use the parties below to process data on our behalf. We have a Data Processin
 
 @PostHog Inc.@ United States, data region EU. Product analytics and error tracking as described in chapters 4 and 7, including optional TikTok attribution parameters. Certified under the EU-US Data Privacy Framework.
 
+@Microsoft Corporation (Clarity)@ United States. Session recordings and heatmaps on structuro.eu as described in chapters 4 and 7. Certified under the EU-US Data Privacy Framework.
+
 @Resend (Resend.com Inc.)@ United States. Transactional emails; receives only the email address and content of that email.
 
 @Upstash, Inc.@ United States. Rate-limiting of public endpoints; receives your IP address or a hashed form of it.
@@ -220,6 +232,8 @@ Stripe places its own cookies during the payment flow for fraud prevention and s
 
 With your consent, PostHog may use cookies and localStorage to recognise your session and link events to your account. Without consent we use cookieless mode: anonymous counting without personal linkage. You set your choice via the cookie banner on your first visit, or later via Settings, toggle Anonymous product analytics.
 
+On the website structuro.eu, Microsoft Clarity may place cookies for session recordings and heatmaps. This does not happen in the web app on structuro.ai.
+
 TikTok attribution parameters (such as ttclid) come from the URL on arrival; they are not cookies we set ourselves. Any cookies from TikTok inside the TikTok app fall under TikTok.
 
 8. Retention periods
@@ -235,6 +249,8 @@ TikTok attribution parameters (such as ttclid) come from the URL on arrival; the
 @Reminder send logs@ log records of sent day-start, lunch and shutdown reminders: maximum 90 days.
 
 @Product analytics (PostHog)@ analytics events are kept for a maximum of 12 months and then automatically deleted.
+
+@Session recordings (Microsoft Clarity)@ recordings and heatmaps are kept according to Microsoft Clarity's retention policy (typically up to 30 days in the Clarity environment).
 
 9. Your rights
 

@@ -8,7 +8,7 @@ import {
 
 /**
  * Teksten voor /privacy en /terms (LegalStaticPage).
- * NL en EN: privacy v1.2 (TikTok), terms v1.1.
+ * NL en EN: privacy v1.3 (Clarity), terms v1.1.
  */
 export const legalLocaleBundles: Record<Locale, { legal: Record<string, string> }> = {
   nl: {
@@ -17,7 +17,7 @@ export const legalLocaleBundles: Record<Locale, { legal: Record<string, string> 
       backSettings: "Terug naar instellingen",
       backHome: "Terug naar home",
       privacyTitle: "Privacybeleid",
-      privacyUpdated: "Versie 1.2, geldig vanaf 2 augustus 2026.",
+      privacyUpdated: "Versie 1.3, geldig vanaf 3 september 2026.",
       privacyBody: privacyBodyNlV11,
       termsTitle: "Algemene voorwaarden",
       termsUpdated: "Versie 1.1, geldig vanaf 26 mei 2026.",
@@ -30,7 +30,7 @@ export const legalLocaleBundles: Record<Locale, { legal: Record<string, string> 
       backSettings: "Back to settings",
       backHome: "Back to home",
       privacyTitle: "Privacy policy",
-      privacyUpdated: "Version 1.2, effective from 2 August 2026.",
+      privacyUpdated: "Version 1.3, effective from 3 September 2026.",
       privacyBody: privacyBodyEnV11,
       termsTitle: "Terms of use",
       termsUpdated: "Version 1.1, effective from 26 May 2026.",
