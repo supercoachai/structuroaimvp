@@ -10,6 +10,9 @@
  *   terug na uitloggen, browserdata wissen of op een tweede apparaat.
  * - Write-through: elke saveV2Tasks/saveV2Dump plant een gedebouncede push
  *   (insert/update/delete) naar Supabase.
+ * - Cloud-delete wint: gemapte of uit-remote (`sb-`) open taken die remote
+ *   weg zijn, worden lokaal getombstoned. Write-through mag ze niet opnieuw
+ *   inserten. Offline-nieuwe taken (geen mapping, id niet `sb-`) blijven.
  *
  * Guests (geen sessie) blijven volledig lokaal. Ongeclaimde guest-data wordt
  * eerst door V2ClaimOnAuth gemigreerd; hydratie wacht daarop (skip zolang er
@@ -48,7 +51,9 @@ import { loadV2Dump, V2_DUMP_KEY, type V2DumpItem } from "@/components/v2/v2Dump
 import {
   isRemovedV2Thing,
   omitRemovedOpenV2Tasks,
+  rememberRemovedV2Things,
   v2ThingTitleKey,
+  V2_REMOVED_THINGS_KEY,
 } from "@/components/v2/v2RemovedThings";
 
 export const V2_SYNC_USER_KEY = "v2_sync_user";
@@ -172,31 +177,51 @@ export function supabaseTaskToV2Task(task: Task, localId: string): V2Task {
  * Merge remote taken in de lokale lijst (pure functie, getest).
  * - Remote wint voor gemapte taken (cross-device last-write-wins).
  * - Gemapte lokale taken die remote weg zijn, verdwijnen lokaal.
- * - Lokale taken zonder mapping blijven staan (worden later gepusht).
+ * - Lokale taken zonder mapping blijven staan (worden later gepusht),
+ *   tenzij het een `sb-` restant is van een remote rij die weg is.
  * - Nieuwe remote taken komen erbij met local id `sb-<remoteId>`.
  * - Open taken met dezelfde titel (trim, case-insensitive) worden
  *   samengevoegd: voorkomt dat hydratie + journey-seed of DB-dubbels
  *   dezelfde taak twee keer in /todo tonen (afronden lijkt dan "niks").
+ * - `droppedOpenTitles`: open titels die remote weg zijn. Hydrate
+ *   tombstonet die zodat journey/home ze niet terugzaait.
  */
 export function mergeRemoteTasksIntoLocal(
   local: V2Task[],
   remote: Task[],
   map: IdMap
-): { tasks: V2Task[]; map: IdMap } {
+): { tasks: V2Task[]; map: IdMap; droppedOpenTitles: string[] } {
   const nextMap: IdMap = {};
   const remoteById = new Map(remote.map((t) => [String(t.id), t]));
   const mappedRemoteIds = new Set(Object.values(map));
+  const remoteOpenKeys = new Set(
+    remote
+      .filter((task) => !task.done)
+      .map((task) => v2ThingTitleKey(task.title ?? ""))
+      .filter((key) => key.length > 0),
+  );
+  const droppedOpenTitles: string[] = [];
   const result: V2Task[] = [];
+
+  const rememberDroppedOpen = (title: string) => {
+    if (v2ThingTitleKey(title)) droppedOpenTitles.push(title);
+  };
 
   for (const task of local) {
     const remoteId = map[task.id];
     if (!remoteId) {
-      // Nog niet gepusht: lokaal bewaren.
+      if (!shouldKeepUnmappedLocalOpenTask(task, remoteOpenKeys)) {
+        rememberDroppedOpen(task.title);
+        continue;
+      }
       result.push(task);
       continue;
     }
     const remoteTask = remoteById.get(remoteId);
-    if (!remoteTask) continue; // elders verwijderd
+    if (!remoteTask) {
+      if (!task.done) rememberDroppedOpen(task.title);
+      continue;
+    }
     result.push(supabaseTaskToV2Task(remoteTask, task.id));
     nextMap[task.id] = remoteId;
   }
@@ -227,7 +252,44 @@ export function mergeRemoteTasksIntoLocal(
   }
 
   const collapsed = collapseOpenTasksByTitle(result, nextMap);
-  return { tasks: pruneStaleCompletedV2Tasks(collapsed.tasks), map: collapsed.map };
+  return {
+    tasks: pruneStaleCompletedV2Tasks(collapsed.tasks),
+    map: collapsed.map,
+    droppedOpenTitles: uniqueOpenTitles(droppedOpenTitles),
+  };
+}
+
+function uniqueOpenTitles(titles: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const title of titles) {
+    const key = v2ThingTitleKey(title);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(title);
+  }
+  return out;
+}
+
+/**
+ * Unmapped lokale open taak: bewaren als hij nooit van remote kwam
+ * (offline/nieuw). `sb-` id's zijn eerdere hydrate-rijen; weg als remote
+ * die titel niet meer open heeft.
+ */
+export function shouldKeepUnmappedLocalOpenTask(
+  task: V2Task,
+  remoteOpenTitleKeys: ReadonlySet<string>,
+): boolean {
+  if (task.done) return true;
+  const key = v2ThingTitleKey(task.title);
+  if (!key) return true;
+  if (remoteOpenTitleKeys.has(key)) return true;
+  return !task.id.startsWith("sb-");
+}
+
+/** Geen insert van titels die lokaal als verwijderd staan. */
+export function shouldInsertUnmappedV2Task(title: string): boolean {
+  return title.trim().length > 0 && !isRemovedV2Thing(title);
 }
 
 /** Eén open rij per titel; mapping van gedropte dubbels gaat naar de keeper. */
@@ -361,6 +423,7 @@ async function hydrateNow(): Promise<void> {
       window.localStorage.removeItem(V2_DUMP_KEY);
       window.localStorage.removeItem(V2_TASKS_REMOTE_MAP_KEY);
       window.localStorage.removeItem(V2_DUMP_REMOTE_MAP_KEY);
+      window.localStorage.removeItem(V2_REMOVED_THINGS_KEY);
     } catch {
       /* ignore */
     }
@@ -384,6 +447,9 @@ async function hydrateNow(): Promise<void> {
       remoteTasks,
       readIdMap(V2_TASKS_REMOTE_MAP_KEY)
     );
+    if (merged.droppedOpenTitles.length > 0) {
+      rememberRemovedV2Things(merged.droppedOpenTitles);
+    }
     const stripped = omitRemovedOpenV2Tasks(merged.tasks);
     writeLocalTasks(stripped);
     writeIdMap(V2_TASKS_REMOTE_MAP_KEY, merged.map);
@@ -473,6 +539,7 @@ async function pushTasksNow(tasks: V2Task[]): Promise<void> {
     const remoteId = map[task.id];
     try {
       if (!remoteId) {
+        if (!shouldInsertUnmappedV2Task(task.title)) continue;
         const created = await addTaskToSupabase(userId, v2TaskToInsert(task));
         if (created?.id) map[task.id] = String(created.id);
       } else {

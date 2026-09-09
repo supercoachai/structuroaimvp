@@ -51,6 +51,8 @@ import {
   dismissV2TaskTitle,
   dropOpenTasksWithTitle,
   forgetRemovedV2Things,
+  isRemovedV2Thing,
+  omitRemovedOpenV2Tasks,
 } from "./v2RemovedThings";
 import { v2DoneAckFadeMs } from "./v2DoneAck";
 import V2DoneAckOverlay from "./V2DoneAckOverlay";
@@ -90,12 +92,12 @@ function writeTasksRemoteMap(map: Record<string, string>): void {
   }
 }
 
-/** Zaai journey-titels zonder dubbele open rijen; collapse bestaande dubbels. */
+/** Zaai journey-titels zonder dubbele of cloud-gewiste open rijen. */
 function prepareTodoTasks(
   initial: V2Task[],
   journeyThings: string[],
 ): V2Task[] {
-  let tasks = initial;
+  let tasks = omitRemovedOpenV2Tasks(initial);
   if (journeyThings.length > 0) {
     const openTitles = new Set(
       tasks
@@ -106,7 +108,7 @@ function prepareTodoTasks(
     const seeded: V2Task[] = [];
     for (const title of journeyThings) {
       const key = title.trim().toLowerCase();
-      if (!key || openTitles.has(key)) continue;
+      if (!key || openTitles.has(key) || isRemovedV2Thing(title)) continue;
       const seed = emptyDraft();
       seed.title = title;
       seeded.push(seed);

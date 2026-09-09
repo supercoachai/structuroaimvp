@@ -17,6 +17,7 @@ import {
 } from "./v2Tasks";
 import { v2DayEnergyToTask } from "./v2EnergyMeta";
 import { v2LookupThingEnergy } from "./v2Things";
+import { isRemovedV2Thing } from "./v2RemovedThings";
 
 export function v2DefaultMicroTitlesForThing(
   title: string,
@@ -59,6 +60,7 @@ export function ensureV2ThingsHaveTasks(
   let changed = false;
 
   for (const title of titles) {
+    if (isRemovedV2Thing(title)) continue;
     const existing = findV2TaskByTitle(tasks, title);
     if (!existing) {
       const seed = emptyDraft();

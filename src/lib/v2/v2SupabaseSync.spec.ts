@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Task } from "@/context/TaskContext";
 import type { ParkedThought } from "@/lib/supabase/parkedThoughtsDb";
@@ -7,8 +7,14 @@ import type { V2Task } from "@/components/v2/v2Tasks";
 import {
   mergeRemoteDumpIntoLocal,
   mergeRemoteTasksIntoLocal,
+  shouldInsertUnmappedV2Task,
+  shouldKeepUnmappedLocalOpenTask,
   supabaseTaskToV2Task,
 } from "./v2SupabaseSync";
+import {
+  omitRemovedOpenV2Tasks,
+  rememberRemovedV2Things,
+} from "@/components/v2/v2RemovedThings";
 
 function remoteTask(overrides: Partial<Task> = {}): Task {
   return {
@@ -107,7 +113,7 @@ describe("mergeRemoteTasksIntoLocal", () => {
       localTask({ id: "l1", title: "Oude titel" }),
       localTask({ id: "l2", title: "Elders verwijderd" }),
     ];
-    const { tasks } = mergeRemoteTasksIntoLocal(
+    const { tasks, droppedOpenTitles } = mergeRemoteTasksIntoLocal(
       local,
       [remoteTask({ id: "r1", title: "Nieuwe titel" })],
       { l1: "r1", l2: "r-weg" }
@@ -115,6 +121,7 @@ describe("mergeRemoteTasksIntoLocal", () => {
     expect(tasks).toHaveLength(1);
     expect(tasks[0].id).toBe("l1");
     expect(tasks[0].title).toBe("Nieuwe titel");
+    expect(droppedOpenTitles).toEqual(["Elders verwijderd"]);
   });
 
   it("bewaart lokale taken zonder mapping (nog niet gepusht)", () => {
@@ -162,6 +169,91 @@ describe("mergeRemoteTasksIntoLocal", () => {
     );
     expect(tasks).toHaveLength(1);
     expect(tasks[0].title).toBe("Open taak");
+  });
+
+  it("bewaart offline-nieuwe taken als remote leeg is, gooit sb-restanten weg", () => {
+    const { tasks, droppedOpenTitles } = mergeRemoteTasksIntoLocal(
+      [
+        localTask({ id: "sb-old", title: "Was ophangen" }),
+        localTask({ id: "v2t-new", title: "Nieuwe offline taak" }),
+      ],
+      [],
+      {}
+    );
+    expect(droppedOpenTitles).toEqual(["Was ophangen"]);
+    expect(tasks.map((t) => t.id)).toEqual(["v2t-new"]);
+  });
+
+  it("meldt gemapte cloud-delete ook als een onge-mapte seed van dezelfde titel blijft staan", () => {
+    const { tasks, droppedOpenTitles } = mergeRemoteTasksIntoLocal(
+      [
+        localTask({ id: "l1", title: "💊 ritalin (10 mg)" }),
+        localTask({ id: "seed", title: "💊 ritalin (10 mg)" }),
+      ],
+      [],
+      { l1: "r-weg" }
+    );
+    expect(droppedOpenTitles).toEqual(["💊 ritalin (10 mg)"]);
+    expect(tasks.map((t) => t.id)).toEqual(["seed"]);
+  });
+});
+
+describe("cloud-delete mag lokale cache niet terugzetten", () => {
+  const store: Record<string, string> = {};
+
+  beforeEach(() => {
+    for (const key of Object.keys(store)) delete store[key];
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (k: string) => store[k] ?? null,
+        setItem: (k: string, v: string) => {
+          store[k] = v;
+        },
+        removeItem: (k: string) => {
+          delete store[k];
+        },
+      },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("tombstonet de titel zodat een journey-seed niet teruggezet wordt", () => {
+    const merged = mergeRemoteTasksIntoLocal(
+      [
+        localTask({ id: "l1", title: "Mail naar Jasper" }),
+        localTask({ id: "seed", title: "Mail naar Jasper" }),
+      ],
+      [],
+      { l1: "r-weg" }
+    );
+    rememberRemovedV2Things(merged.droppedOpenTitles);
+    expect(omitRemovedOpenV2Tasks(merged.tasks)).toHaveLength(0);
+    expect(shouldInsertUnmappedV2Task("Mail naar Jasper")).toBe(false);
+    expect(shouldInsertUnmappedV2Task("Echt nieuwe taak")).toBe(true);
+  });
+
+  it("houdt een sb-kopie als de titel remote nog open is", () => {
+    expect(
+      shouldKeepUnmappedLocalOpenTask(
+        localTask({ id: "sb-r1", title: "Was ophangen" }),
+        new Set(["was ophangen"]),
+      ),
+    ).toBe(true);
+    expect(
+      shouldKeepUnmappedLocalOpenTask(
+        localTask({ id: "sb-r1", title: "Was ophangen" }),
+        new Set(),
+      ),
+    ).toBe(false);
+    expect(
+      shouldKeepUnmappedLocalOpenTask(
+        localTask({ id: "v2t-1", title: "Was ophangen" }),
+        new Set(),
+      ),
+    ).toBe(true);
   });
 });
 
