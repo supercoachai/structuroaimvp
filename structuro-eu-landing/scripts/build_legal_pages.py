@@ -74,8 +74,16 @@ def wrap_page(
     scope_html: str,
     back_label: str,
     nav_aria: str,
+    document_title: str | None = None,
+    description: str | None = None,
 ) -> str:
     h1_text = html.escape(h1 or title)
+    page_title = document_title or f"{title} · Structuro"
+    desc_tag = (
+        f'\n<meta name="description" content="{html.escape(description, quote=True)}"/>'
+        if description
+        else ""
+    )
     prefix = "/en" if lang == "en" else ""
     nav_items = []
     labels = (
@@ -122,7 +130,7 @@ def wrap_page(
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>{html.escape(title)} · Structuro</title>
+<title>{html.escape(page_title)}</title>{desc_tag}
 <link rel="canonical" href="{canonical}"/>
 <link rel="alternate" hreflang="nl" href="https://www.structuro.eu/{active}/"/>
 <link rel="alternate" hreflang="en" href="https://www.structuro.eu/en/{active}/"/>
@@ -146,7 +154,7 @@ def wrap_page(
 <header class="site-header">
   <div class="wrap nav">
     <a class="brand" href="{home}">
-      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="30" height="30"/></span>
+      <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="30" height="30"/></span>
       Structuro
     </a>
     <div class="legal-header-actions">
@@ -174,7 +182,7 @@ def wrap_page(
   <div class="wrap">
     <div class="foot-top">
       <a class="brand" href="{home}">
-        <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="" width="28" height="28"/></span>
+        <span class="brand-mark"><img src="/uploads/logo-structuro-mark.png?v=20260722e" alt="Structuro" width="28" height="28"/></span>
         Structuro
       </a>
       <nav class="foot-links">
@@ -217,12 +225,33 @@ def write_lang_pages(lang: str, privacy_raw: str, terms_raw: str) -> None:
             "(structuro.eu), in line with the policy for the web app."
         )
         meta = {
-            "privacy": ("Privacy policy", PRIVACY_UPDATED_EN),
-            "terms": ("Terms of use", TERMS_UPDATED_EN),
-            "cookies": (
-                "Cookie information",
-                f"See chapter 7 of the privacy policy. {PRIVACY_UPDATED_EN}",
-            ),
+            "privacy": {
+                "h1": "Privacy policy",
+                "updated": PRIVACY_UPDATED_EN,
+                "document_title": "Privacy policy: data, cookies and GDPR · Structuro",
+                "description": (
+                    "Structuro privacy policy: what data we process, why, and how you can erase it. "
+                    "GDPR, EU storage, we do not sell your data."
+                ),
+            },
+            "terms": {
+                "h1": "Terms of use",
+                "updated": TERMS_UPDATED_EN,
+                "document_title": "Terms of use: account, payment, cancel · Structuro",
+                "description": (
+                    "Structuro terms of use: what the app is and is not, accounts, payment and cancellation. "
+                    "Not a medical device or treatment."
+                ),
+            },
+            "cookies": {
+                "h1": "Cookie information",
+                "updated": f"See chapter 7 of the privacy policy. {PRIVACY_UPDATED_EN}",
+                "document_title": "Cookie information: session and analytics · Structuro",
+                "description": (
+                    "Cookies and local storage Structuro uses: session, preferences, optional analytics. "
+                    "No tracking without your consent."
+                ),
+            },
         }
         back = "← Back to the landing page"
         nav_aria = "Legal"
@@ -237,12 +266,33 @@ def write_lang_pages(lang: str, privacy_raw: str, terms_raw: str) -> None:
             "website (structuro.eu), in lijn met het beleid voor de webapp."
         )
         meta = {
-            "privacy": ("Privacybeleid", PRIVACY_UPDATED_NL),
-            "terms": ("Algemene voorwaarden", TERMS_UPDATED_NL),
-            "cookies": (
-                "Cookie-informatie",
-                f"Zie hoofdstuk 7 van het privacybeleid. {PRIVACY_UPDATED_NL}",
-            ),
+            "privacy": {
+                "h1": "Privacybeleid",
+                "updated": PRIVACY_UPDATED_NL,
+                "document_title": "Privacybeleid: gegevens, cookies en AVG · Structuro",
+                "description": (
+                    "Privacybeleid van Structuro: welke gegevens we verwerken, waarom, en hoe je ze wist. "
+                    "AVG, opslag in de EU, geen verkoop van data."
+                ),
+            },
+            "terms": {
+                "h1": "Algemene voorwaarden",
+                "updated": TERMS_UPDATED_NL,
+                "document_title": "Algemene voorwaarden: gebruik van de app · Structuro",
+                "description": (
+                    "Algemene voorwaarden van Structuro: wat de app wel en niet is, account, betaling en opzeggen. "
+                    "Geen medisch hulpmiddel."
+                ),
+            },
+            "cookies": {
+                "h1": "Cookie-informatie",
+                "updated": f"Zie hoofdstuk 7 van het privacybeleid. {PRIVACY_UPDATED_NL}",
+                "document_title": "Cookie-informatie: sessie en analyse · Structuro",
+                "description": (
+                    "Welke cookies en lokale opslag Structuro gebruikt: sessie, voorkeuren, optionele analyse. "
+                    "Geen tracking zonder jouw toestemming."
+                ),
+            },
         }
         back = "← Terug naar de landingspagina"
         nav_aria = "Juridisch"
@@ -253,39 +303,45 @@ def write_lang_pages(lang: str, privacy_raw: str, terms_raw: str) -> None:
     (base / "privacy" / "index.html").write_text(
         wrap_page(
             lang=lang,
-            title=meta["privacy"][0],
-            updated=meta["privacy"][1],
+            title=meta["privacy"]["h1"],
+            updated=meta["privacy"]["updated"],
             inner_html=privacy_html,
             active="privacy",
             scope_html=scope,
             back_label=back,
             nav_aria=nav_aria,
+            document_title=meta["privacy"]["document_title"],
+            description=meta["privacy"]["description"],
         ),
         encoding="utf-8",
     )
     (base / "terms" / "index.html").write_text(
         wrap_page(
             lang=lang,
-            title=meta["terms"][0],
-            updated=meta["terms"][1],
+            title=meta["terms"]["h1"],
+            updated=meta["terms"]["updated"],
             inner_html=terms_html,
             active="terms",
             scope_html=scope,
             back_label=back,
             nav_aria=nav_aria,
+            document_title=meta["terms"]["document_title"],
+            description=meta["terms"]["description"],
         ),
         encoding="utf-8",
     )
     (base / "cookies" / "index.html").write_text(
         wrap_page(
             lang=lang,
-            title=meta["cookies"][0],
-            updated=meta["cookies"][1],
+            title=meta["cookies"]["h1"],
+            updated=meta["cookies"]["updated"],
             inner_html=privacy_intro + cookie_html,
             active="cookies",
             scope_html=scope,
             back_label=back,
             nav_aria=nav_aria,
+            document_title=meta["cookies"]["document_title"],
+            description=meta["cookies"]["description"],
         ),
         encoding="utf-8",
     )
