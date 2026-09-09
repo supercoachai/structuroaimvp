@@ -15,7 +15,7 @@ from extra_guides import EXTRA_GUIDES
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-09"
-CSS_V = "20260909a"
+CSS_V = "20260909b"
 FEATURED_SLUGS = (
     "adhd-en-burn-out",
     "taakverlamming-adhd",
@@ -31,6 +31,17 @@ RELATED_ALIASES = {
     },
 }
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
+ORG_ID = "https://www.structuro.eu/#organization"
+ORG_LOGO = "https://www.structuro.eu/uploads/logo-structuro-mark.png"
+ORG_DESCRIPTION = (
+    "Rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. "
+    "Energie-first, één eerste stap. Geen planner, geen streaks."
+)
+ORG_SAME_AS = [
+    "https://www.instagram.com/structuro.ai/",
+    "https://www.tiktok.com/@structuro.ai",
+    "https://www.linkedin.com/company/structuro",
+]
 
 GUIDES = [
     {
@@ -44,6 +55,17 @@ GUIDES = [
         "thumb_mod": "",
         "read_min": "3 MIN",
         "title": "Waarom 'gewoon beginnen' niet werkt (en wat wel)",
+        "modified": "2026-09-09",
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "waarom-planners-falen",
+            "taakverlamming-adhd",
+            "een-stap-per-dag",
+        ],
+        "related_anchors": {
+            "niet-kunnen-beginnen-adhd": "wat er gebeurt als beginnen niet lukt",
+            "waarom-planners-falen": "waarom een planner taken bewaart, maar niet start",
+        },
         "description": "Je wilt wel, maar starten lukt niet. Dat is geen luiheid. Zo werkt taakinitiatie bij ADHD-breinen, en wat wél helpt om vandaag één stap te zetten.",
         "answer": (
             "Je wilt wel beginnen, maar de start blijft uit. Dat is geen karakterfout. "
@@ -84,6 +106,7 @@ GUIDES = [
 <h2>Veelgemaakte valkuilen</h2>
 <p>Wachten op motivatie. Motivatie komt vaak ná de eerste micro-actie, niet ervoor. Alles eerst uitwerken in notities. Dat voelt als vooruitgang, maar houdt de echte start buiten beeld. Een nieuwe app installeren als vervanging voor beginnen. En tot slot: jezelf straffen met een strengere planner nadat een zachtere aanpak 'mislukte'. Meestal was de aanpak te groot, niet te zacht.</p>
 <p>Herken je die cyclus, dan is de correctie simpel: kleinere ingang, minder zichtbaar tegelijk, en een dagstart die keuzedruk verlaagt vóór je überhaupt een lijst opent. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<p>Als de start blijft uit, lees <a href="/niet-kunnen-beginnen-adhd/">wat er gebeurt als beginnen niet lukt</a>. Als een planner de berg alleen scherper toont: <a href="/waarom-planners-falen/">waarom een planner taken bewaart, maar niet start</a>.</p>
 
 <h2>Hoe Structuro hierin past</h2>
 <p>Structuro is geen planner. Het is een rustige executie-interface: dagstart, max een paar taken zichtbaar, één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen schaamte-score. De belofte is niet 'meer organiseren', maar vandaag wél starten. Gebruik het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet raken. Klein beginnen is hier het punt, geen troostprijs.</p>
@@ -587,8 +610,10 @@ def related_html(current: str) -> str:
     for g in picks:
         num = g.get("card_num", "")
         label = g.get("card_label", g["eyebrow"].upper())
+        anchors = current_g.get("related_anchors") or {}
+        link_label = anchors.get(g["slug"], g["h1"])
         items.append(
-            f'<li><a href="/{g["slug"]}/">{esc(g["h1"])}'
+            f'<li><a href="/{g["slug"]}/">{esc(link_label)}'
             f"<span>{esc(num)} · {esc(label)}</span></a></li>"
         )
     return "\n      ".join(items)
@@ -642,6 +667,31 @@ def article_dates(g: dict) -> tuple[str, str]:
     return published, modified
 
 
+def organization_node() -> dict:
+    return {
+        "@type": "Organization",
+        "@id": ORG_ID,
+        "name": "Structuro",
+        "url": "https://www.structuro.eu/",
+        "logo": {"@type": "ImageObject", "url": ORG_LOGO},
+        "email": "info@structuro.eu",
+        "description": ORG_DESCRIPTION,
+        "disambiguatingDescription": (
+            "Nederlandse webapp op structuro.eu en structuro.ai. "
+            "Niet hetzelfde als Structured, de tijdlijn-app."
+        ),
+        "sameAs": ORG_SAME_AS,
+    }
+
+
+def organization_schema() -> str:
+    return json.dumps(
+        {"@context": "https://schema.org", **organization_node()},
+        ensure_ascii=False,
+        indent=2,
+    )
+
+
 def article_schema(g: dict) -> str:
     url = f"https://www.structuro.eu/{g['slug']}/"
     published, modified = article_dates(g)
@@ -654,14 +704,20 @@ def article_schema(g: dict) -> str:
             "inLanguage": "nl-NL",
             "datePublished": published,
             "dateModified": modified,
-            "author": {"@type": "Organization", "name": "Structuro", "url": "https://www.structuro.eu/"},
+            "author": {
+                "@type": "Organization",
+                "@id": ORG_ID,
+                "name": "Structuro",
+                "url": "https://www.structuro.eu/",
+            },
             "publisher": {
                 "@type": "Organization",
+                "@id": ORG_ID,
                 "name": "Structuro",
                 "url": "https://www.structuro.eu/",
                 "logo": {
                     "@type": "ImageObject",
-                    "url": "https://www.structuro.eu/uploads/logo-structuro-mark.png",
+                    "url": ORG_LOGO,
                 },
             },
             "image": [OG_IMAGE],
@@ -716,6 +772,14 @@ def hreflang_html(g: dict) -> str:
     )
 
 
+def en_nav_html(g: dict) -> str:
+    en = (g.get("hreflang") or {}).get("en")
+    if not en:
+        return ""
+    path = en.replace("https://www.structuro.eu", "")
+    return f'\n      <a href="{esc(path)}" hreflang="en">English</a>'
+
+
 def render(g: dict) -> str:
     slug = g["slug"]
     cta = (
@@ -729,6 +793,7 @@ def render(g: dict) -> str:
     title = f"{g.get('meta_title') or g['title']} · Structuro"
     hreflang = hreflang_html(g)
     hreflang_block = f"\n{hreflang}" if hreflang else ""
+    en_nav = en_nav_html(g)
     card_num = g.get("card_num", "0")
     card_label = g.get("card_label", g["eyebrow"].upper())
     read_min = g.get("read_min", "3 MIN")
@@ -775,6 +840,9 @@ def render(g: dict) -> str:
 <script type="application/ld+json">
 {breadcrumb_schema(g)}
 </script>
+<script type="application/ld+json">
+{organization_schema()}
+</script>
 <script>
   window.va = window.va || function () {{ (window.vaq = window.vaq || []).push(arguments); }};
 </script>
@@ -790,7 +858,7 @@ def render(g: dict) -> str:
       Structuro
     </a>
     <nav class="navlinks" aria-label="Hoofdmenu">
-      <a class="is-active" href="/gidsen/">Gidsen</a>
+      <a class="is-active" href="/gidsen/">Gidsen</a>{en_nav}
       <a href="/#prijs">Prijs</a>
       <a href="/#faq">FAQ</a>
       <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=nav_login">Inloggen</a>

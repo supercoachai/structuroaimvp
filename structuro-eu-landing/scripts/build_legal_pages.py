@@ -134,6 +134,7 @@ def wrap_page(
 <link rel="canonical" href="{canonical}"/>
 <link rel="alternate" hreflang="nl" href="https://www.structuro.eu/{active}/"/>
 <link rel="alternate" hreflang="en" href="https://www.structuro.eu/en/{active}/"/>
+<link rel="alternate" hreflang="x-default" href="https://www.structuro.eu/{active}/"/>
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>

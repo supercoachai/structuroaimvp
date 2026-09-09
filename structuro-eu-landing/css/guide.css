@@ -278,6 +278,32 @@ footer.site-foot{
 }
 .guide-prose li{margin:0 0 .45rem;line-height:1.55}
 .guide-prose a{text-decoration:underline;text-underline-offset:2px}
+.guide-table-wrap{
+  margin:0 0 1.4rem;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--g-line);border-radius:16px;background:var(--g-card);
+}
+.guide-table{
+  width:100%;border-collapse:collapse;min-width:640px;
+  font-size:14.5px;line-height:1.45;color:rgba(22,35,58,.82);
+}
+.guide-table caption{
+  caption-side:top;text-align:left;padding:14px 16px 8px;
+  font-family:var(--g-serif);font-size:1.05rem;color:var(--g-ink);
+}
+.guide-table th,.guide-table td{
+  padding:12px 14px;text-align:left;vertical-align:top;
+  border-top:1px solid var(--g-line);
+}
+.guide-table thead th{
+  font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;
+  color:var(--g-teal);border-top:0;background:rgba(45,90,86,.06);
+}
+.guide-table tbody th{font-weight:600;color:var(--g-ink);width:18%}
+.guide-method{
+  margin:0 0 1.1rem;padding:14px 16px;border-radius:14px;
+  background:rgba(22,35,58,.04);border:1px solid var(--g-line);
+  font-size:14.5px;line-height:1.55;color:var(--g-soft);
+}
 
 .guide-related{
   margin:2.6rem 0 0;padding-top:1.6rem;border-top:1px solid var(--g-line);

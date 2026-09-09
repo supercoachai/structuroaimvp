@@ -7,9 +7,9 @@
 
   var T = {
     nl: {
-      meta_title: "Structuro, rust voor je ADHD-brein",
+      meta_title: "ADHD-app voor beginnen met één stap | Structuro",
       meta_desc:
-        "Structuro begint bij lage energie met één eerste stap. Jij bevestigt, en begint. Voor ADHD-breinen die niet beginnen.",
+        "Structuro is een rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. Kies je energie, maak één taak kleiner en start zonder streaks of shame.",
       nav_how: "Dagstart",
       nav_why: "Herkenning",
       nav_reviews: "Reviews",
@@ -411,9 +411,9 @@
       footer_story: "Verhaal",
     },
     en: {
-      meta_title: "Structuro, calm for your ADHD brain",
+      meta_title: "ADHD app for starting with one step | Structuro",
       meta_desc:
-        "Structuro is a web app for ADHD brains that don't start. One first step, matched to your energy. 7 days free.",
+        "Structuro is a calm ADHD app for people who know what to do, but do not start. Choose your energy, make one task smaller, and start without streaks or shame.",
       nav_how: "Day start",
       nav_why: "Recognition",
       nav_reviews: "Reviews",
