@@ -130,10 +130,30 @@ export function V2Provider({ children }: { children: ReactNode }) {
       try {
         const { hydrateV2FromSupabase } = await import("@/lib/v2/v2SupabaseSync");
         const { fetchTodayV2ShutdownExists } = await import("@/lib/v2/v2ShutdownDb");
+        const { hydrateV2PreferredNameFromProfile } = await import(
+          "./v2PreferredNameSync"
+        );
+        const namePromise = hydrateV2PreferredNameFromProfile();
         await Promise.race([
           hydrateV2FromSupabase(),
           new Promise((resolve) => setTimeout(resolve, 4000)),
         ]);
+        const preferredName = await Promise.race([
+          namePromise,
+          new Promise<string>((resolve) => setTimeout(() => resolve(""), 2500)),
+        ]);
+        if (!cancelled && preferredName) {
+          setState((prev) => {
+            if (prev.name === preferredName) return prev;
+            const next = { ...prev, name: preferredName };
+            try {
+              window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {
+              /* negeren */
+            }
+            return next;
+          });
+        }
         const shutdownDone = await fetchTodayV2ShutdownExists();
         if (!cancelled && shutdownDone) {
           setState((prev) => {

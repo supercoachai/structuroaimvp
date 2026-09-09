@@ -14,6 +14,9 @@ export function persistV2PreferredName(name: string): string {
     if (trimmed.length > 0) {
       window.localStorage.setItem("structuro_user_name", trimmed);
       document.cookie = `${PREFERRED_NAME_COOKIE}=${encodeURIComponent(trimmed)}; path=/; max-age=1800; samesite=lax`;
+    } else {
+      window.localStorage.removeItem("structuro_user_name");
+      document.cookie = `${PREFERRED_NAME_COOKIE}=; path=/; max-age=0; samesite=lax`;
     }
   } catch {
     // Privémodus kan storage blokkeren.

@@ -17,6 +17,7 @@ import { V2AppShell } from "./V2Chrome";
 import { useV2 } from "./V2Context";
 import { getV2CycleChipInfo } from "./V2CycleChip";
 import { persistV2PreferredName } from "./v2DisplayName";
+import { syncV2PreferredNameToCloud } from "./v2PreferredNameSync";
 import V2SettingsAccordion, {
   V2SettingsIconAccount,
   V2SettingsIconBell,
@@ -73,6 +74,7 @@ export default function SettingsV2Client() {
   const [settings, setSettings] = useState<V2Settings>(() => readV2Settings());
   const [nameInput, setNameInput] = useState("");
   const [nameSaved, setNameSaved] = useState(false);
+  const [nameBusy, setNameBusy] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [showInstallHint, setShowInstallHint] = useState(false);
@@ -139,9 +141,18 @@ export default function SettingsV2Client() {
     setOpenId((prev) => (prev === id ? null : id));
   };
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
+    if (nameBusy) return;
     const value = persistV2PreferredName(nameInput);
     update({ name: value });
+    setNameInput(value);
+    setNameBusy(true);
+    const { error } = await syncV2PreferredNameToCloud(value);
+    setNameBusy(false);
+    if (error) {
+      toast(t("v2.nameError"));
+      return;
+    }
     setNameSaved(true);
     window.setTimeout(() => setNameSaved(false), 1800);
   };
@@ -329,14 +340,16 @@ export default function SettingsV2Client() {
                     value={nameInput}
                     onChange={(e) => setNameInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveName();
+                      if (e.key === "Enter") void handleSaveName();
                     }}
                     placeholder={t("settings.displayNamePlaceholder")}
+                    disabled={nameBusy}
                   />
                   <button
                     type="button"
                     className="btn-primary"
-                    onClick={handleSaveName}
+                    onClick={() => void handleSaveName()}
+                    disabled={nameBusy}
                     style={{
                       alignSelf: "flex-start",
                       minHeight: 44,
