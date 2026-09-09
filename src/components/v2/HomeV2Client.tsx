@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/lib/i18n";
@@ -49,6 +49,11 @@ import { getV2EnergyForToday } from "./v2Adaptive";
 import { v2EnergyMeta, v2TaskEnergyToDay } from "./v2EnergyMeta";
 import { estimateFocusDurationBucket } from "./v2FocusDurationEstimate";
 import { formatV2HomeClock, formatV2HomeDateLabel } from "./v2HomeDate";
+import {
+  formatV2HomeGreeting,
+  peekLocalV2GreetingName,
+  resolveV2GreetingFirstName,
+} from "./v2HomeGreeting";
 import V2TaskBattery from "./V2TaskBattery";
 import V2InstallGate from "./V2InstallGate";
 import {
@@ -154,6 +159,7 @@ export default function HomeV2Client() {
   const { state, ready, update } = useV2();
   const [greetingKeyState, setGreetingKeyState] = useState(greetingKey);
   const [now, setNow] = useState(() => new Date());
+  const [localGreetingName, setLocalGreetingName] = useState("");
   const [homePrompt, setHomePrompt] = useState<V2HomePrompt | null>(null);
   const [promptTracked, setPromptTracked] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -190,6 +196,13 @@ export default function HomeV2Client() {
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useLayoutEffect(() => {
+    const peek = () => setLocalGreetingName(peekLocalV2GreetingName());
+    peek();
+    const id = window.setTimeout(peek, 2800);
+    return () => window.clearTimeout(id);
+  }, [ready, state.name]);
 
   useEffect(() => {
     if (!ready) return;
@@ -254,7 +267,11 @@ export default function HomeV2Client() {
   }, [ready, homePrompt, promptTracked]);
 
   const greeting = t(greetingKeyState);
-  const headline = greeting || t("v2.homeGreetingFallback");
+  const greetingName = resolveV2GreetingFirstName(state.name, localGreetingName);
+  const headline = formatV2HomeGreeting(
+    greeting || t("v2.homeGreetingFallback"),
+    greetingName,
+  );
   const dateLabel = formatV2HomeDateLabel(now, locale);
   const energyMeta = v2EnergyMeta(state.energy);
   const energyChipKey = state.energy ? ENERGY_CHIP_KEY[state.energy] : null;
