@@ -7,6 +7,7 @@ import {
   stripAnonDistinctIdFromPath,
 } from "@/lib/posthog/anonDistinctCookie";
 import { captureRegistrationFunnelServer } from "@/lib/posthog/registrationFunnelAnalytics";
+import { trackOpinlyServer } from "@/lib/opinly/trackServer";
 import {
   aliasAnonymousDistinctToUserServer,
   resolveAnonDistinctIdForAlias,
@@ -227,6 +228,14 @@ export async function GET(request: Request) {
             source: attr?.source ?? "direct",
             utm_campaign: attr?.utm_campaign ?? null,
           });
+          void trackOpinlyServer(
+            "sign_up",
+            { method: "callback" },
+            {
+              externalEventId: user.id,
+              email: user.email,
+            }
+          );
           // Directe welkom-mail (idempotent; cron is vangnet).
           void import("@/lib/lifecycleMail/sendOne")
             .then(({ sendLifecycleHelloMail }) =>

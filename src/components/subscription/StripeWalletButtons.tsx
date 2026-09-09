@@ -12,6 +12,9 @@ import {
   isCheckoutFallbackError,
   mapWalletError,
 } from "@/lib/stripe/walletErrors";
+import { opinlyAnonIdBody } from "@/lib/opinly/anonIdBody";
+import { trackOpinly } from "@/lib/opinly/browser";
+import { trackOpinlyWalletConfirmation } from "@/lib/opinly/trackCheckoutConfirmation";
 
 type StripeWalletButtonsProps = {
   visibleWallets: WalletKind[];
@@ -65,6 +68,10 @@ export function StripeWalletButtons({
         const { onSuccess: ok, onError: err, onUnavailable: fallback } =
           callbacksRef.current;
         try {
+          trackOpinly("add_to_cart", {
+            plan: planRef.current,
+            method: "wallet",
+          });
           const res = await fetch("/api/stripe/wallet-subscribe", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -72,9 +79,18 @@ export function StripeWalletButtons({
             body: JSON.stringify({
               paymentMethodId: ev.paymentMethod.id,
               plan: planRef.current,
+              ...opinlyAnonIdBody(),
             }),
           });
-          const data = (await res.json()) as { ok?: boolean; error?: string };
+          const data = (await res.json()) as {
+            ok?: boolean;
+            error?: string;
+            subscriptionId?: string;
+            orderId?: string;
+            value?: number;
+            currency?: string;
+            status?: string;
+          };
           if (!res.ok || !data.ok) {
             ev.complete("fail");
             if (isCheckoutFallbackError(data.error)) {
@@ -85,6 +101,12 @@ export function StripeWalletButtons({
             return;
           }
           ev.complete("success");
+          trackOpinlyWalletConfirmation({
+            subscriptionId: data.orderId ?? data.subscriptionId,
+            value: data.value,
+            currency: data.currency,
+            status: data.status,
+          });
           ok();
         } catch {
           ev.complete("fail");

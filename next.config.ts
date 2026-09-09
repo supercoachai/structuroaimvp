@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withOpinlyConfig } from "@opinly/next";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import { SECURITY_HEADERS } from "./src/lib/securityHeaders";
+
+/** Exact 21 tekens, uit Opinly Settings → Developers. */
+function opinlyCdnNamespace(): string {
+  const value = process.env.OPINLY_CDN_NAMESPACE?.trim() ?? "";
+  if (value.length === 21) return value;
+  if (value) {
+    console.warn(
+      `[@opinly] OPINLY_CDN_NAMESPACE moet 21 tekens zijn (nu ${value.length}). Placeholder tot hij klopt.`
+    );
+  }
+  return "xxxxxxxxxxxxxxxxxxxxx";
+}
 
 /** Alleen tijdens `next dev` (true). Bij `next build` is NODE_ENV production → altijd uit in clientbundle. */
 const devResetToolbarEnabled = process.env.NODE_ENV === "development";
@@ -156,7 +169,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-const baseConfig = withBundleAnalyzer(nextConfig);
+const opinlyWrapped = withOpinlyConfig({
+  blogPath: "/blog",
+  imagesPath: "/opinly-images",
+  companyName: "Structuro",
+  cdnNamespace: opinlyCdnNamespace(),
+  // Pagina's draaien op de Next.js-app. structuro.eu/blog redirect hierheen.
+  siteUrl: "https://www.structuro.ai",
+})(nextConfig);
+
+const baseConfig = withBundleAnalyzer(opinlyWrapped);
 
 /**
  * Source maps uploaden naar PostHog Error Tracking (leesbare stack traces in productie).

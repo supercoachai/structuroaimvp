@@ -292,6 +292,21 @@
       "source": "/instagram/",
       "destination": "https://www.structuro.ai/social/instagram",
       "permanent": false
+    },
+    {
+      "source": "/blog",
+      "destination": "https://www.structuro.ai/blog",
+      "permanent": false
+    },
+    {
+      "source": "/blog/",
+      "destination": "https://www.structuro.ai/blog",
+      "permanent": false
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "https://www.structuro.ai/blog/:path*",
+      "permanent": false
     }
   ],
   "rewrites": [

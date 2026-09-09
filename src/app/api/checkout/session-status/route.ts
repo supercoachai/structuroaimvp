@@ -10,6 +10,7 @@ import { welcomeTaskEnabledFromCheckoutMetadata } from "@/lib/onboardingWelcomeT
 import { createStripeServerClient } from "@/lib/stripeServer";
 import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
+import { stripeCentsToMajor } from "@/lib/opinly/anon";
 
 export const runtime = "nodejs";
 
@@ -76,12 +77,16 @@ async function getCheckoutSessionStatus(request: Request) {
 
   const paid =
     session.payment_status === "paid" || session.status === "complete";
+  const value = stripeCentsToMajor(session.amount_total);
+  const currency = (session.currency || "eur").toUpperCase();
 
   return NextResponse.json({
     paid,
     status: session.status,
     payment_status: session.payment_status,
     addWelcomeTask: welcomeTaskEnabledFromCheckoutMetadata(session.metadata),
+    value,
+    currency,
   });
 }
 

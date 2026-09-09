@@ -54,6 +54,7 @@ export const APP_ROUTES = [
   { path: "/checkout-success", kind: "public", status: [200] },
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
   { path: "/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
+  { path: "/blog", kind: "public", status: [200], needles: ["structuro", "blog"] },
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
   { path: "/activiteit/admin", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/activiteit/funnel", kind: "public", status: [200, 307, 308], needles: ["privé-dashboard", "inloggen", "structuro"] },
@@ -140,6 +141,12 @@ export const APP_ROUTES = [
     kind: "api",
     method: "POST",
     status: [200, 401, 500, 405],
+  },
+  {
+    path: "/api/opinly/revalidate",
+    kind: "api",
+    method: "POST",
+    status: [401, 400, 405, 503],
   },
   {
     path: "/api/stripe/portal",

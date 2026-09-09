@@ -12,6 +12,8 @@ import type { RetentionStats } from "@/lib/retentionStats";
 import type { WalletKind } from "@/lib/stripe/walletBootstrap";
 import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
 import { StripeWalletButtons } from "./StripeWalletButtons";
+import { opinlyAnonIdBody } from "@/lib/opinly/anonIdBody";
+import { trackOpinly } from "@/lib/opinly/browser";
 
 type DoneMode = "stay" | "stop" | null;
 
@@ -36,12 +38,13 @@ export function PaywallInteractive({
 
   const startCheckout = useCallback(async () => {
     setBusy(true);
+    trackOpinly("add_to_cart", { plan: "monthly" });
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ plan: "monthly" }),
+        body: JSON.stringify({ plan: "monthly", ...opinlyAnonIdBody() }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {

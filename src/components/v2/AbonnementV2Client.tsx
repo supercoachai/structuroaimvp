@@ -27,6 +27,9 @@ import { WALLET_UNAVAILABLE_MESSAGE } from "@/lib/stripe/walletErrors";
 import { V2_CARD_TRIAL_DAYS } from "@/lib/stripe/v2CardTrial";
 import { trackClientFunnelEvent } from "@/lib/posthog/clientFunnelAnalyticsClient";
 import { resolveLoggedInInstallContinuePath } from "@/lib/pwaInstallHint";
+import { opinlyAnonIdBody } from "@/lib/opinly/anonIdBody";
+import { trackOpinly } from "@/lib/opinly/browser";
+import { trackOpinlyCheckoutConfirmation } from "@/lib/opinly/trackCheckoutConfirmation";
 
 import { V2Eyebrow, V2Header, V2Page } from "./V2Chrome";
 import { useV2 } from "./V2Context";
@@ -164,13 +167,14 @@ export default function AbonnementV2Client({
         card_trial: startCardTrial,
         trial_cohort: startCardTrial ? "card_7d" : "legacy",
       });
+      trackOpinly("add_to_cart", { plan });
       setBusy(true);
       try {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ plan, surface: "app" }),
+          body: JSON.stringify({ plan, surface: "app", ...opinlyAnonIdBody() }),
         });
         const data = (await res.json()) as { url?: string; error?: string };
         if (!res.ok || !data.url) {
@@ -691,6 +695,10 @@ export function AbonnementV2StripeSync({ active }: { active: boolean }) {
 
   useEffect(() => {
     if (!active) return;
+    const sessionId = new URLSearchParams(window.location.search).get(
+      "session_id"
+    );
+    void trackOpinlyCheckoutConfirmation(sessionId);
     let cancelled = false;
     void (async () => {
       await sleep(1500);
@@ -747,6 +755,10 @@ export function AbonnementV2StripeSuccess() {
       /* negeren */
     }
     setVisible(true);
+    const sessionId = new URLSearchParams(window.location.search).get(
+      "session_id"
+    );
+    void trackOpinlyCheckoutConfirmation(sessionId);
   }, [continueAfterCheckout]);
 
   if (!visible) return null;

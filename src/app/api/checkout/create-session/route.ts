@@ -18,6 +18,8 @@ import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
 import { planFromStripePriceId } from "@/lib/stripe/registerPlans";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { NextResponse } from "next/server";
+import { opinlyAnonMetadata } from "@/lib/opinly/anon";
+import { parseOpinlyAnonId } from "@/lib/opinly/trackServer";
 
 export const runtime = "nodejs";
 
@@ -39,6 +41,7 @@ async function postCreateSession(request: Request) {
     userId?: string;
     email?: string;
     addWelcomeTask?: boolean;
+    opinlyAnonId?: string;
   };
   try {
     body = await request.json();
@@ -51,6 +54,7 @@ async function postCreateSession(request: Request) {
   const email =
     typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const addWelcomeTask = body.addWelcomeTask === true;
+  const opinlyAnonId = parseOpinlyAnonId(body.opinlyAnonId);
 
   if (!priceId || !userId || !email) {
     return NextResponse.json({ error: "missing_parameters" }, { status: 400 });
@@ -125,13 +129,17 @@ async function postCreateSession(request: Request) {
     userId,
     email,
     trialDays,
-    successUrl: `${base}/welkom`,
+    successUrl: `${base}/welkom?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${base}/registreren/plan?cancelled=1`,
     metadata: {
       [CHECKOUT_METADATA_WELCOME_TASK]: addWelcomeTask ? "1" : "0",
       ...(jasperFlagged ? { jasper_offer: "1" } : {}),
+      ...opinlyAnonMetadata(opinlyAnonId),
     },
-    subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    subscriptionMetadata: {
+      ...(jasperFlagged ? { jasper_offer: "1" } : {}),
+      ...opinlyAnonMetadata(opinlyAnonId),
+    },
     discounts: jasperDiscount ?? undefined,
   });
 

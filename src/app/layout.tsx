@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Newsreader } from 'next/font/google'
 import './globals.css'
 import { AppProviders } from '@/components/AppProviders'
+import { OpinlyPixelScript } from '@/components/opinly/OpinlyPixelScript'
 import { getLocaleBootstrapScript } from '@/lib/i18n/clientLocale'
 
 const inter = Inter({
@@ -84,6 +85,7 @@ export default function RootLayout({
         >
           <AppProviders>{children}</AppProviders>
         </div>
+        <OpinlyPixelScript />
       </body>
     </html>
   )

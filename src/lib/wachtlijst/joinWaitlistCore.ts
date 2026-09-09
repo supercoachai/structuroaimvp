@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { WaitlistSignupSite } from "@/lib/posthog/waitlistAnalytics";
 import { captureWaitlistSignupServer } from "@/lib/posthog/waitlistAnalytics";
+import { trackOpinlyServer } from "@/lib/opinly/trackServer";
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sanitizeWaitlistSourceParam } from "@/lib/wachtlijst/source";
 
@@ -124,6 +125,11 @@ export async function joinWaitlistCore(
     }
 
     await captureWaitlistSignupServer({ source, site: input.site });
+    void trackOpinlyServer(
+      "generate_lead",
+      { source: source ?? undefined, site: input.site },
+      { email: emailLower, externalEventId: `waitlist:${emailLower}` }
+    );
 
     return { ok: true, firstName: firstNameFromName(name) };
   } catch (e) {

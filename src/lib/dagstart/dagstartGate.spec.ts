@@ -43,6 +43,7 @@ describe("isDagstartGateExemptPath", () => {
       "/stop-abonnement",
       "/privacy",
       "/terms",
+      "/blog",
       "/api/tasks",
       "/welkom/install",
     ]) {

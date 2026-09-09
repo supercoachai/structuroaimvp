@@ -1,3 +1,9 @@
+/** Opinly-blog: publieke content, geen app-shell of privacy-gate. */
+export function isOpinlyBlogPath(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return pathname === "/blog" || pathname.startsWith("/blog/");
+}
+
 /** Legacy marketing-URLs die alleen doorverwijzen (geen app-shell nodig). */
 export function isWaitlistMarketingPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;

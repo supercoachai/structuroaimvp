@@ -30,7 +30,7 @@ import AppShellSuspenseFallback from "@/components/shell/AppShellSuspenseFallbac
 import { ToastHost } from "@/components/Toast";
 import { PrivacySetupGate } from "@/components/consent/PrivacySetupGate";
 import { shouldUseAppShell } from "@/lib/appShell";
-import { isWaitlistMarketingPath } from "@/lib/marketingPaths";
+import { isOpinlyBlogPath, isWaitlistMarketingPath } from "@/lib/marketingPaths";
 import { isV2LiveShellPath } from "@/lib/v2/livePaths";
 import V2LiveShell from "@/components/v2/V2LiveShell";
 import "@/components/v2/structuro-tokens.css";
@@ -65,15 +65,17 @@ function GaSessionAbandonListener() {
 
 function ConditionalAppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (isWaitlistMarketingPath(pathname)) {
+  if (isWaitlistMarketingPath(pathname) || isOpinlyBlogPath(pathname)) {
     return <Suspense fallback={<AppShellSuspenseFallback />}>{children}</Suspense>;
   }
 
   if (isV2LiveShellPath(pathname)) {
+    // Shell buiten de fallback: anders unmount V2Provider bij RSC-refresh
+    // (auth-cookie, getUser) en flitst het logo over een al zichtbare home.
     return (
-      <Suspense fallback={<AppShellSuspenseFallback />}>
-        <V2LiveShell>{children}</V2LiveShell>
-      </Suspense>
+      <V2LiveShell>
+        <Suspense fallback={null}>{children}</Suspense>
+      </V2LiveShell>
     );
   }
 

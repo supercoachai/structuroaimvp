@@ -17,6 +17,7 @@ import {
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 import { resumeCheckoutSession } from "@/lib/resumeCheckoutSession";
 import { shouldShowPwaInstallHint } from "@/lib/pwaInstallHint";
+import { trackOpinlyCheckoutConfirmation } from "@/lib/opinly/trackCheckoutConfirmation";
 
 type WelkomPhase = "loading" | "ready" | "pending_payment" | "resuming";
 
@@ -90,6 +91,9 @@ function WelkomPageInner() {
       const checkoutSessionId = resolveCheckoutSessionId(
         searchParams?.get("session_id")
       );
+      if (checkoutSessionId) {
+        void trackOpinlyCheckoutConfirmation(checkoutSessionId);
+      }
       const checkoutReturn = readCheckoutReturn();
 
       const supabase = createClient();

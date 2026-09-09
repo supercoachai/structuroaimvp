@@ -21,6 +21,8 @@ import { withApiErrorTracking } from "@/lib/posthog/withApiErrorTracking";
 import { isRegistrationCheckoutEnabled } from "@/lib/stripe/registrationLaunch";
 import { isV2PublicEnabled } from "@/lib/v2/v2LabAccess";
 import { NextResponse } from "next/server";
+import { opinlyAnonMetadata } from "@/lib/opinly/anon";
+import { parseOpinlyAnonId } from "@/lib/opinly/trackServer";
 
 export const runtime = "nodejs";
 
@@ -39,7 +41,7 @@ async function postCheckout(request: Request) {
     );
   }
 
-  let body: { plan?: string; surface?: string };
+  let body: { plan?: string; surface?: string; opinlyAnonId?: string };
   try {
     body = await request.json();
   } catch {
@@ -50,6 +52,7 @@ async function postCheckout(request: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Expected plan: monthly | yearly" }, { status: 400 });
   }
+  const opinlyAnonId = parseOpinlyAnonId(body.opinlyAnonId);
 
   const useAppReturn =
     (body.surface === "v2" || body.surface === "app") && isV2PublicEnabled();
@@ -125,14 +128,18 @@ async function postCheckout(request: Request) {
     userId: user.id,
     email: user.email,
     trialDays,
-    successUrl: `${base}${successPath}`,
+    successUrl: `${base}${successPath}${successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${base}${cancelPath}`,
     metadata: {
       ...(jasperFlagged ? { jasper_offer: "1" } : {}),
       ...(freshV2CardTrial ? { v2_card_trial: "1" } : {}),
       surface: useAppReturn ? "app" : "legacy",
+      ...opinlyAnonMetadata(opinlyAnonId),
     },
-    subscriptionMetadata: jasperFlagged ? { jasper_offer: "1" } : undefined,
+    subscriptionMetadata: {
+      ...(jasperFlagged ? { jasper_offer: "1" } : {}),
+      ...opinlyAnonMetadata(opinlyAnonId),
+    },
     discounts: jasperDiscount ?? undefined,
   });
 

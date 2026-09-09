@@ -113,7 +113,8 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname.startsWith("/api/stripe/checkout") ||
     pathname.startsWith("/api/checkout/create-session") ||
     pathname.startsWith("/api/cron/expire-trials") ||
-    pathname.startsWith("/api/auth/request-password-reset")
+    pathname.startsWith("/api/auth/request-password-reset") ||
+    pathname.startsWith("/api/opinly/")
   );
 }
 
@@ -123,7 +124,9 @@ function isAnonymousPublicPage(pathname: string): boolean {
     pathname === "/privacy" ||
     pathname.startsWith("/privacy/") ||
     pathname === "/terms" ||
-    pathname.startsWith("/terms/")
+    pathname.startsWith("/terms/") ||
+    pathname === "/blog" ||
+    pathname.startsWith("/blog/")
   ) {
     return true;
   }
@@ -965,7 +968,9 @@ export async function updateSession(
       !onConsentPath &&
       !pathname.startsWith("/api") &&
       !pathname.startsWith("/privacy") &&
-      !pathname.startsWith("/terms")
+      !pathname.startsWith("/terms") &&
+      pathname !== "/blog" &&
+      !pathname.startsWith("/blog/")
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/consent";

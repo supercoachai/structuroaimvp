@@ -22,6 +22,8 @@ import { markCheckoutStartedAt } from "@/lib/lifecycleMail/markCheckoutStarted";
 import { captureServerEvent, captureServerException } from "@/lib/posthog/server";
 import { resolveV2CardCheckoutTrialDays } from "@/lib/stripe/v2CardTrial";
 import { NextResponse } from "next/server";
+import { opinlyAnonMetadata, stripeCentsToMajor } from "@/lib/opinly/anon";
+import { parseOpinlyAnonId, trackOpinlyServer } from "@/lib/opinly/trackServer";
 
 export const runtime = "nodejs";
 
@@ -35,7 +37,7 @@ async function postWalletSubscribe(request: Request) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
   }
 
-  let body: { paymentMethodId?: string; plan?: string };
+  let body: { paymentMethodId?: string; plan?: string; opinlyAnonId?: string };
   try {
     body = await request.json();
   } catch {
@@ -49,6 +51,7 @@ async function postWalletSubscribe(request: Request) {
   }
 
   const plan = body.plan === "yearly" ? "yearly" : "monthly";
+  const opinlyAnonId = parseOpinlyAnonId(body.opinlyAnonId);
   const priceId =
     plan === "yearly" ? STRIPE_PRICE_ID_YEARLY : STRIPE_PRICE_ID_MONTHLY;
 
@@ -114,6 +117,7 @@ async function postWalletSubscribe(request: Request) {
 
   const subscriptionMetadata: Record<string, string> = {
     supabase_user_id: user.id,
+    ...opinlyAnonMetadata(opinlyAnonId),
   };
   if (jasperFlagged) subscriptionMetadata.jasper_offer = "1";
   if (freshV2CardTrial) subscriptionMetadata.v2_card_trial = "1";
@@ -168,7 +172,9 @@ async function postWalletSubscribe(request: Request) {
     }
   }
 
-  const refreshed = await stripe.subscriptions.retrieve(subscription.id);
+  const refreshed = await stripe.subscriptions.retrieve(subscription.id, {
+    expand: ["latest_invoice"],
+  });
   const update = profileFieldsFromStripeSubscription(refreshed, customerId);
 
   if (gate.admin) {
@@ -212,10 +218,43 @@ async function postWalletSubscribe(request: Request) {
     console.error("[wallet-subscribe] PostHog capture failed (non-fatal)", phErr);
   }
 
+  const latestPaidInvoice =
+    refreshed.latest_invoice && typeof refreshed.latest_invoice !== "string"
+      ? refreshed.latest_invoice
+      : null;
+  const amountPaid = stripeCentsToMajor(latestPaidInvoice?.amount_paid);
+  const currency = (latestPaidInvoice?.currency || "eur").toUpperCase();
+  const purchaseOrderId = latestPaidInvoice?.id ?? refreshed.id;
+  if (amountPaid > 0) {
+    void trackOpinlyServer(
+      "purchase",
+      { value: amountPaid, currency, plan, method: "wallet" },
+      {
+        externalEventId: purchaseOrderId,
+        email: user.email,
+        anonId: opinlyAnonId,
+      }
+    );
+  } else {
+    void trackOpinlyServer(
+      "start_trial",
+      { plan, currency, value: 0, method: "wallet" },
+      {
+        externalEventId: refreshed.id,
+        email: user.email,
+        anonId: opinlyAnonId,
+      }
+    );
+  }
+
   return NextResponse.json({
     ok: true,
     status: update.subscription_status,
     current_period_end: update.subscription_current_period_end,
+    subscriptionId: refreshed.id,
+    orderId: amountPaid > 0 ? purchaseOrderId : refreshed.id,
+    value: amountPaid,
+    currency,
   });
 }
 

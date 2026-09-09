@@ -69,6 +69,7 @@ export function isDagstartGateExemptPath(pathname: string): boolean {
     return true;
   }
   if (pathname === "/jasper" || pathname.startsWith("/jasper/")) return true;
+  if (pathname === "/blog" || pathname.startsWith("/blog/")) return true;
   return false;
 }
 

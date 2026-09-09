@@ -33,6 +33,7 @@ function isFailOpenPath(pathname: string): boolean {
   if (pathname === '/inschrijven' || pathname.startsWith('/inschrijven/')) return true
   if (pathname === '/privacy' || pathname.startsWith('/privacy/')) return true
   if (pathname === '/terms' || pathname.startsWith('/terms/')) return true
+  if (pathname === '/blog' || pathname.startsWith('/blog/')) return true
   if (pathname === '/consent' || pathname.startsWith('/consent/')) return true
   if (pathname === '/abonnement' || pathname.startsWith('/abonnement/')) return true
   if (pathname === '/favicon.ico' || pathname === '/manifest.json' || pathname === '/sw.js') {

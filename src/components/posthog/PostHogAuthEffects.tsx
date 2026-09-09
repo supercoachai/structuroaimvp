@@ -20,6 +20,7 @@ import {
   aliasAnonymousFromMetadataIfNeeded,
 } from "@/lib/posthog/identityStitch";
 import { captureActivationFunnelEvent } from "@/lib/posthog/track";
+import { identifyOpinlyUser, trackOpinly } from "@/lib/opinly/browser";
 
 function signupDoneKey(uid: string) {
   return `structuro_ph_signup_done_${uid}`;
@@ -46,6 +47,7 @@ function tryCaptureSignup(user: {
       });
       sessionStorage.removeItem(PENDING_SIGNUP_KEY);
       sessionStorage.setItem(signupDoneKey(user.id), "1");
+      trackOpinly("sign_up", { method: "client" }, { externalEventId: user.id });
       return;
     }
   } catch {
@@ -67,6 +69,7 @@ function tryCaptureSignup(user: {
       source: getSignupAttributionSource(),
       utm_campaign: getStoredSignupCampaign(),
     });
+    trackOpinly("sign_up", { method: "client" }, { externalEventId: user.id });
     try {
       sessionStorage.setItem(signupDoneKey(user.id), "1");
     } catch {
@@ -119,6 +122,7 @@ export function PostHogAuthEffects() {
         // server-side alias in /auth/callback + registration-funnel: client
         // identify() vuurt vrijwel niet bij cookieless/auto-deny.
         tryCaptureSignup(user);
+        identifyOpinlyUser({ email: user.email, userId: user.id });
 
         try {
           // $email is functionele identity voor ingelogde users (niet marketing).

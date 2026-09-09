@@ -22,6 +22,14 @@ import {
 } from "@/lib/stripe/webhookProfileUpdate";
 import { sendSubscriptionReceiptEmail } from "@/lib/stripe/subscriptionReceiptEmail";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import {
+  readOpinlyAnonFromStripeMetadata,
+  stripeCentsToMajor,
+} from "@/lib/opinly/anon";
+import {
+  trackOpinlyPurchaseServer,
+  trackOpinlyServer,
+} from "@/lib/opinly/trackServer";
 
 /** PostHog is best-effort: mag geen Stripe-retry triggeren na geslaagde DB-write. */
 async function safeCapture(
@@ -160,6 +168,42 @@ async function postStripeWebhook(request: Request) {
             trial_cohort: isCardTrial ? "card_7d" : "legacy",
           });
         }
+
+        const sessionEmail =
+          session.customer_email?.trim() ||
+          session.customer_details?.email?.trim() ||
+          null;
+        const { data: opinlyProf } = await profileDb
+          .from("profiles")
+          .select("email")
+          .eq("id", userId)
+          .maybeSingle();
+        const opinlyEmail =
+          sessionEmail ||
+          (opinlyProf as { email?: string | null } | null)?.email ||
+          null;
+        const opinlyAnonId = readOpinlyAnonFromStripeMetadata(session.metadata);
+        const sessionValue = stripeCentsToMajor(session.amount_total);
+        const sessionCurrency = (session.currency || "eur").toUpperCase();
+        if (sessionValue > 0) {
+          await trackOpinlyPurchaseServer({
+            value: sessionValue,
+            currency: sessionCurrency,
+            orderId: session.id,
+            email: opinlyEmail,
+            anonId: opinlyAnonId,
+          });
+        } else if (subscription.status === "trialing") {
+          await trackOpinlyServer(
+            "start_trial",
+            { plan: plan ?? null, currency: sessionCurrency, value: 0 },
+            {
+              externalEventId: session.id,
+              email: opinlyEmail,
+              anonId: opinlyAnonId,
+            }
+          );
+        }
         break;
       }
 
@@ -243,10 +287,13 @@ async function postStripeWebhook(request: Request) {
         let trialCohort: "card_7d" | "legacy" = "legacy";
         const subRef = invoice.subscription;
         const subId = typeof subRef === "string" ? subRef : subRef?.id;
+        let invoiceSub: Stripe.Subscription | null = null;
         if (subId) {
-          const sub = await stripe.subscriptions.retrieve(subId);
-          periodEndIso = new Date(subscriptionCurrentPeriodEndUnix(sub) * 1000).toISOString();
-          if (sub.metadata?.v2_card_trial === "1") trialCohort = "card_7d";
+          invoiceSub = await stripe.subscriptions.retrieve(subId);
+          periodEndIso = new Date(
+            subscriptionCurrentPeriodEndUnix(invoiceSub) * 1000
+          ).toISOString();
+          if (invoiceSub.metadata?.v2_card_trial === "1") trialCohort = "card_7d";
         }
         await applyStripeProfileUpdateIfFresh(profileDb, customerId, event, {
           subscription_status: "active",
@@ -271,6 +318,13 @@ async function postStripeWebhook(request: Request) {
               card_trial: trialCohort === "card_7d",
             });
           }
+          await trackOpinlyPurchaseServer({
+            value: stripeCentsToMajor(amountPaid),
+            currency: (invoice.currency || "eur").toUpperCase(),
+            orderId: invoice.id,
+            email: paidRow?.email ?? invoice.customer_email,
+            anonId: readOpinlyAnonFromStripeMetadata(invoiceSub?.metadata),
+          });
           const to = paidRow?.email?.trim() || invoice.customer_email?.trim();
           if (to) {
             const euros = (amountPaid / 100).toFixed(2).replace(".", ",");

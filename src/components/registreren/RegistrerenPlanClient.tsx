@@ -28,6 +28,8 @@ import {
   type RegisterPlanId,
 } from "@/lib/stripe/registerPlans";
 import { isEventSignupSource } from "@/lib/stripe/trialConfig";
+import { opinlyAnonIdBody } from "@/lib/opinly/anonIdBody";
+import { trackOpinly } from "@/lib/opinly/browser";
 import { createClient } from "@/lib/supabase/client";
 import { profileHasAppAccess } from "@/lib/subscriptionAccess";
 
@@ -264,6 +266,7 @@ function RegistrerenPlanInner() {
     }
 
     setCreateWelcomeTaskFlag(welcomeTaskOptIn);
+    trackOpinly("add_to_cart", { price_id: priceId });
 
     const res = await fetch("/api/checkout/create-session", {
       method: "POST",
@@ -274,6 +277,7 @@ function RegistrerenPlanInner() {
         userId,
         email: userEmail,
         addWelcomeTask: welcomeTaskOptIn,
+        ...opinlyAnonIdBody(),
       }),
     });
 

@@ -17,6 +17,7 @@ import {
   resolveLiveHomePathClient,
   resolveLivePaywallPathClient,
 } from "@/lib/v2/v2LabAccess";
+import { identifyOpinlyUser, trackOpinly } from "@/lib/opinly/browser";
 
 type FinalizeNewAccountOptions = {
   /** Na v2 account-save / claim: blijf in /v2/* (geen v1-root) als v2 publiek is. */
@@ -57,6 +58,8 @@ export async function finalizeNewAccountSession(
 
   await persistSignupAttributionToProfile(userId);
   queueSignupCompletedForAnalytics();
+  identifyOpinlyUser({ email, userId });
+  trackOpinly("sign_up", { method: "account" }, { externalEventId: userId });
   // Analytics mag de post-signup UI niet blokkeren (lange load na e-mail-signup).
   void trackRegistrationFunnelServer("signup_completed", {
     source: getSignupAttributionSource(),

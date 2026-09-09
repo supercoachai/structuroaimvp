@@ -36,6 +36,7 @@ describe("pushSoftPrompt", () => {
     expect(isPushSoftPromptPathBlocked("/abonnement")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/abonnement?start_trial=1")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/stop-abonnement")).toBe(true);
+    expect(isPushSoftPromptPathBlocked("/blog")).toBe(true);
     expect(isPushSoftPromptPathBlocked("/")).toBe(false);
     expect(isPushSoftPromptPathBlocked("/dagstart")).toBe(false);
     expect(isPushSoftPromptPathBlocked("/settings")).toBe(false);

@@ -31,6 +31,7 @@ export function isBarePagePath(pathname: string | null): boolean {
     '/inschrijven',
     '/privacy',
     '/terms',
+    '/blog',
     '/activiteit',
   ];
   // Live home is ook bare (v2-shell), niet v1 AppLayout.

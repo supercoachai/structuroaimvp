@@ -16,6 +16,7 @@ const BLOCKED_PATH_PREFIXES = [
   "/onboarding",
   "/privacy",
   "/terms",
+  "/blog",
   "/abonnement",
   "/stop-abonnement",
 ] as const;
