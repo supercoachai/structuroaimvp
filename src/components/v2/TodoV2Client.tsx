@@ -43,9 +43,15 @@ import {
 } from "./v2Tasks";
 import {
   collapseOpenTasksByTitle,
+  purgeV2DeletedTaskTitle,
   V2_REMOTE_HYDRATED_EVENT,
   V2_TASKS_REMOTE_MAP_KEY,
 } from "@/lib/v2/v2SupabaseSync";
+import {
+  dismissV2TaskTitle,
+  dropOpenTasksWithTitle,
+  forgetRemovedV2Things,
+} from "./v2RemovedThings";
 import { v2DoneAckFadeMs } from "./v2DoneAck";
 import V2DoneAckOverlay from "./V2DoneAckOverlay";
 import { takeNextV2DoneQuote } from "./v2DoneQuotes";
@@ -373,6 +379,7 @@ export default function TodoV2Client() {
         .map((m) => ({ ...m, title: m.title.trim() }))
         .filter((m) => m.title.length > 0),
     };
+    forgetRemovedV2Things([title]);
     const exists = tasks.some((t) => t.id === clean.id);
     persist(exists ? tasks.map((t) => (t.id === clean.id ? clean : t)) : [...tasks, clean]);
     setDraft(null);
@@ -381,7 +388,9 @@ export default function TodoV2Client() {
 
   const removeTask = () => {
     if (!draft) return;
-    persist(tasks.filter((t) => t.id !== draft.id));
+    dismissV2TaskTitle(draft.title);
+    purgeV2DeletedTaskTitle(draft.title);
+    persist(dropOpenTasksWithTitle(tasks, draft.title));
     setDraft(null);
     setMicroDraft("");
   };

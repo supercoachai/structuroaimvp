@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   addTaskToSupabase,
   deleteTaskFromSupabase,
+  deleteTasksByTitleForUser,
   fetchTasksFromSupabase,
   updateTaskInSupabase,
 } from "@/lib/supabase/tasksDb";
@@ -44,6 +45,11 @@ import {
   type V2TaskEnergy,
 } from "@/components/v2/v2Tasks";
 import { loadV2Dump, V2_DUMP_KEY, type V2DumpItem } from "@/components/v2/v2Dump";
+import {
+  isRemovedV2Thing,
+  omitRemovedOpenV2Tasks,
+  v2ThingTitleKey,
+} from "@/components/v2/v2RemovedThings";
 
 export const V2_SYNC_USER_KEY = "v2_sync_user";
 /** Window-event zodra remote data in localStorage is gemerged. */
@@ -371,14 +377,28 @@ async function hydrateNow(): Promise<void> {
     }),
   ]);
 
+  let shouldPushTasks = false;
   if (remoteTasks) {
     const merged = mergeRemoteTasksIntoLocal(
       loadV2Tasks(),
       remoteTasks,
       readIdMap(V2_TASKS_REMOTE_MAP_KEY)
     );
-    writeLocalTasks(merged.tasks);
+    const stripped = omitRemovedOpenV2Tasks(merged.tasks);
+    writeLocalTasks(stripped);
     writeIdMap(V2_TASKS_REMOTE_MAP_KEY, merged.map);
+    const leftoverTitles = [
+      ...new Set(
+        remoteTasks
+          .filter((task) => !task.done && isRemovedV2Thing(task.title ?? ""))
+          .map((task) => task.title)
+          .filter((title) => title.trim().length > 0),
+      ),
+    ];
+    for (const title of leftoverTitles) {
+      purgeV2DeletedTaskTitle(title);
+    }
+    shouldPushTasks = stripped.length !== merged.tasks.length;
   }
 
   if (remoteThoughts) {
@@ -401,6 +421,7 @@ async function hydrateNow(): Promise<void> {
 
   syncUserId = userId;
   hydratedForUser = userId;
+  if (shouldPushTasks) queueV2TasksPush();
 
   // Al gemounte schermen kunnen hun lijst verversen.
   try {
@@ -499,6 +520,28 @@ async function pushDumpNow(items: V2DumpItem[]): Promise<void> {
   }
 
   writeIdMap(V2_DUMP_REMOTE_MAP_KEY, map);
+}
+
+/** Direct alle cloud-rijen met deze titel weg, niet wachten op debounce. */
+export function purgeV2DeletedTaskTitle(title: string): void {
+  const key = v2ThingTitleKey(title);
+  if (!key) return;
+  pushChain = pushChain.then(async () => {
+    const userId = syncUserId ?? (await getAuthedUserId());
+    if (!userId) return;
+    try {
+      const deleted = await deleteTasksByTitleForUser(userId, title);
+      if (deleted.length === 0) return;
+      const map = readIdMap(V2_TASKS_REMOTE_MAP_KEY);
+      const gone = new Set(deleted);
+      for (const [localId, remoteId] of Object.entries(map)) {
+        if (gone.has(remoteId)) delete map[localId];
+      }
+      writeIdMap(V2_TASKS_REMOTE_MAP_KEY, map);
+    } catch (err) {
+      console.warn("[v2Sync] verwijderde titel opruimen mislukt", title, err);
+    }
+  });
 }
 
 /** Debounced write-through vanuit saveV2Tasks. Guests: no-op. */

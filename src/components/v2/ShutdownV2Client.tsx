@@ -26,6 +26,11 @@ import {
   type V2Task,
 } from "./v2Tasks";
 import {
+  dismissV2TaskTitle,
+  dropOpenTasksWithTitle,
+} from "./v2RemovedThings";
+import { purgeV2DeletedTaskTitle } from "@/lib/v2/v2SupabaseSync";
+import {
   trackV2EveningDumpAdded,
   trackV2ShutdownCompleted,
 } from "./v2Analytics";
@@ -172,8 +177,15 @@ export default function ShutdownV2Client({
 
   const confirmDelete = () => {
     if (!pendingId) return;
+    const pending = tasks.find((task) => task.id === pendingId);
+    if (pending) {
+      dismissV2TaskTitle(pending.title);
+      purgeV2DeletedTaskTitle(pending.title);
+    }
     setTasks((prev) => {
-      const next = prev.filter((task) => task.id !== pendingId);
+      const next = pending
+        ? dropOpenTasksWithTitle(prev, pending.title)
+        : prev.filter((task) => task.id !== pendingId);
       persistTasks(next);
       return next;
     });

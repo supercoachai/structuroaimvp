@@ -221,6 +221,32 @@ export async function deleteTaskFromSupabase(
   if (error) throw new Error(error.message);
 }
 
+/** Alle rijen met dezelfde titel (trim, case-insensitive), ook sync-dubbels. */
+export async function deleteTasksByTitleForUser(
+  userId: string,
+  title: string
+): Promise<string[]> {
+  const needle = title.trim().toLowerCase();
+  if (!needle) return [];
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  const ids = (data ?? [])
+    .filter((row) => String(row.title ?? "").trim().toLowerCase() === needle)
+    .map((row) => String(row.id));
+  if (ids.length === 0) return [];
+  const { error: delError } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("user_id", userId)
+    .in("id", ids);
+  if (delError) throw new Error(delError.message);
+  return ids;
+}
+
 type TasksUpdater = (updater: (prev: Task[]) => Task[]) => void;
 
 /**
