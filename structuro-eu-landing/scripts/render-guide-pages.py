@@ -14,8 +14,22 @@ from extra_guides import EXTRA_GUIDES
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
-MODIFIED = "2026-08-19"
-CSS_V = "20260819a"
+MODIFIED = "2026-09-09"
+CSS_V = "20260909a"
+FEATURED_SLUGS = (
+    "adhd-en-burn-out",
+    "taakverlamming-adhd",
+    "beste-adhd-app-nederland",
+)
+RELATED_ALIASES = {
+    "structuro-of-todoist": {
+        "slug": "structuro-of-todoist",
+        "h1": "Structuro of Todoist: de lijst versus de start",
+        "eyebrow": "Vergelijking",
+        "card_num": "21",
+        "card_label": "TODOIST",
+    },
+}
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 
 GUIDES = [
@@ -545,18 +559,30 @@ def word_count_html(html: str) -> int:
 
 
 def related_html(current: str) -> str:
-    idx = next(i for i, g in enumerate(GUIDES) if g["slug"] == current)
-    n = len(GUIDES)
-    seen = {current}
+    by_slug = {g["slug"]: g for g in GUIDES}
+    by_slug.update(RELATED_ALIASES)
+    current_g = by_slug[current]
+    pinned = current_g.get("related_slugs") or []
     picks = []
-    for offset in (1, -1, 2, -2, 3, -3):
-        g = GUIDES[(idx + offset) % n]
-        if g["slug"] in seen:
+    seen = {current}
+    for slug in pinned:
+        g = by_slug.get(slug)
+        if not g or g["slug"] in seen:
             continue
         seen.add(g["slug"])
         picks.append(g)
         if len(picks) == 4:
             break
+    idx = next(i for i, g in enumerate(GUIDES) if g["slug"] == current)
+    n = len(GUIDES)
+    for offset in (1, -1, 2, -2, 3, -3):
+        if len(picks) == 4:
+            break
+        g = GUIDES[(idx + offset) % n]
+        if g["slug"] in seen:
+            continue
+        seen.add(g["slug"])
+        picks.append(g)
     items = []
     for g in picks:
         num = g.get("card_num", "")
@@ -680,6 +706,16 @@ def breadcrumb_schema(g: dict) -> str:
     )
 
 
+def hreflang_html(g: dict) -> str:
+    hl = g.get("hreflang") or {}
+    if not hl:
+        return ""
+    return "\n".join(
+        f'<link rel="alternate" hreflang="{esc(code)}" href="{esc(url)}"/>'
+        for code, url in hl.items()
+    )
+
+
 def render(g: dict) -> str:
     slug = g["slug"]
     cta = (
@@ -690,7 +726,9 @@ def render(g: dict) -> str:
         "https://www.structuro.ai/onboarding"
         f"?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=guide_nav"
     )
-    title = f"{g['title']} · Structuro"
+    title = f"{g.get('meta_title') or g['title']} · Structuro"
+    hreflang = hreflang_html(g)
+    hreflang_block = f"\n{hreflang}" if hreflang else ""
     card_num = g.get("card_num", "0")
     card_label = g.get("card_label", g["eyebrow"].upper())
     read_min = g.get("read_min", "3 MIN")
@@ -703,7 +741,7 @@ def render(g: dict) -> str:
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(g["description"])}"/>
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large"/>
-<link rel="canonical" href="https://www.structuro.eu/{slug}/"/>
+<link rel="canonical" href="https://www.structuro.eu/{slug}/"/>{hreflang_block}
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
@@ -913,6 +951,30 @@ def hub_card_html(g: dict) -> str:
     </a>"""
 
 
+def featured_hub_html() -> str:
+    by_slug = {g["slug"]: g for g in GUIDES}
+    cards = []
+    for slug in FEATURED_SLUGS:
+        g = by_slug[slug]
+        h2 = g.get("hub_h2") or g["h1"]
+        teaser = g.get("hub_teaser") or g["description"]
+        cards.append(
+            f"""    <a class="c picks-c" href="/{g["slug"]}/" data-ph-cta="gidsen_pick_{g.get("card_num", "")}">
+      <div class="kk"><b>{esc(g.get("card_num", ""))} · {esc(g.get("card_label", ""))}</b></div>
+      <h2>{esc(h2)}</h2>
+      <p class="teaser">{esc(teaser)}</p>
+      <div class="go">Open de kaart →</div>
+    </a>"""
+        )
+    return f"""  <section class="picks" aria-label="Vaak gezocht">
+    <p class="picks-kicker">Vaak gezocht</p>
+    <div class="picks-grid">
+{chr(10).join(cards)}
+    </div>
+  </section>
+"""
+
+
 def write_hub() -> None:
     n = len(GUIDES)
     desc = (
@@ -1023,6 +1085,7 @@ def write_hub() -> None:
     <div class="fan" aria-hidden="true"><i></i><i></i><i></i></div>
   </section>
 
+{featured_hub_html()}
   <section class="deck" aria-label="Alle gidsen">
 {cards}
   </section>
@@ -1148,7 +1211,10 @@ def ensure_vercel_routes() -> None:
 
 
 def main() -> None:
+    only = {arg for arg in sys.argv[1:] if not arg.startswith("-")}
     for g in GUIDES:
+        if only and g["slug"] not in only:
+            continue
         aw = len(g["answer"].split())
         bw = word_count_html(g["body"])
         if aw < 50 or aw > 70:
@@ -1159,6 +1225,8 @@ def main() -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(render(g), encoding="utf-8")
         print(f"wrote {out.relative_to(ROOT)} (answer={aw}, body={bw})")
+    if only:
+        return
     write_hub()
     ensure_sitemap()
     ensure_llms()

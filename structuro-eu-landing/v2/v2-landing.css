@@ -1362,6 +1362,11 @@ body.mobile-nav-open{overflow:hidden}
   display:flex;flex-direction:column;gap:20px;
 }
 .quote p{font-family:var(--v2-serif);font-size:17px;line-height:1.6;letter-spacing:-0.01em;flex:1;text-wrap:pretty}
+a.quote.guide-pick{color:inherit;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease}
+a.quote.guide-pick:hover{color:inherit;transform:translateY(-2px);box-shadow:0 1px 2px rgba(26,35,64,.03),0 16px 32px -18px rgba(26,35,64,.16)}
+a.quote.guide-pick b{display:block;font-size:15px;font-weight:600;color:var(--v2-text)}
+.guide-picks-more{text-align:center;margin:28px 0 0;font-size:15px;font-weight:600}
+.guide-picks-more a{color:var(--v2-teal)}
 .who{display:flex;align-items:center;gap:12px}
 .who .av{
   width:38px;height:38px;border-radius:50%;background:var(--v2-navy);color:var(--v2-on-navy);

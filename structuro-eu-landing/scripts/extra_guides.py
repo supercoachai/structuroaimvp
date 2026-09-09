@@ -111,7 +111,15 @@ EXTRA_GUIDES = [
         "thumb": "stille berg",
         "thumb_mod": "d",
         "read_min": "4 MIN",
+        "meta_title": "Taakverlamming bij ADHD: als alles te groot is",
         "title": "Taakverlamming bij ADHD: als alles tegelijk te groot is",
+        "modified": "2026-09-09",
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "adhd-en-burn-out",
+            "beste-adhd-app-nederland",
+            "een-stap-per-dag",
+        ],
         "description": "Taakverlamming bij ADHD is geen drama-woord voor luiheid. Het is een vol werkgeheugen plus te veel zichtbare stappen. Wat je kunt doen zonder jezelf te forceren.",
         "answer": (
             "Taakverlamming bij ADHD voelt als vastzitten terwijl je hard nadenkt. Te veel stappen zijn tegelijk zichtbaar, "
@@ -121,6 +129,10 @@ EXTRA_GUIDES = [
         "h1": "Taakverlamming bij ADHD: als alles tegelijk te groot is",
         "body": """
 <p>Taakverlamming klinkt zwaar, en dat is het van binnen ook. Buiten ziet het eruit als niks doen. Je zit voor een scherm, een aanrecht, een inbox. Je hoofd draait. Je lichaam niet. Dat is geen theater. Het is een systeem dat te veel opties tegelijk probeert te dragen.</p>
+
+<h2>ADHD-verlamming bij volwassenen, en executive dysfunction</h2>
+<p>In het Nederlands zoeken mensen op ADHD-verlamming, vaak met 'volwassenen' erachter. In het Engels heet hetzelfde gevoel vaak executive dysfunction. Wie 'executive dysfunction nederlands' intikt, zoekt meestal dit: de intentie is er, het uitvoeren hapert. Dat is geen aparte diagnose en geen karakterfout. Het is werkgeheugen plus te veel zichtbare stappen. Deze gids gebruikt taakverlamming, omdat dat het lijf raakt. De Engelse term mag ernaast staan, zonder medische claim.</p>
+<p>Als de batterij leeg is, wordt dezelfde berg zwaarder. Zie <a href="/adhd-en-burn-out/">ADHD en burn-out</a>. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
 
 <h2>Waarom 'gewoon kiezen' niet landt</h2>
 <p>Kiezen vraagt prioriteren. Prioriteren vraagt werkgeheugen. Bij veel ADHD-breinen is die ruimte sneller vol, vooral als elke taak extra stappen, foutkansen en sociale gevolgen meeneemt. Dan is 'kiezen' zelf al een taak, nog vóór het echte werk begint. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
@@ -158,6 +170,14 @@ EXTRA_GUIDES = [
         "cta_title": "Begin met één stap",
         "cta_p": "Eén micro-actie is genoeg als ingang. De berg mag wachten.",
         "faqs": [
+            (
+                "Wat is ADHD-verlamming bij volwassenen?",
+                "Een ervaringswoord: je wilt wel, maar geen stap voelt veilig. Te veel tegelijk zichtbaar. Geen officiële diagnose.",
+            ),
+            (
+                "Is taakverlamming hetzelfde als executive dysfunction?",
+                "Vaak hetzelfde gevoel. Executive dysfunction is de Engelse parapluterm. Taakverlamming is de start die vastzit. Geen medische claim.",
+            ),
             (
                 "Is taakverlamming een officiële diagnose?",
                 "Nee. Het is een ervaringswoord voor vastzitten bij te veel stappen. Geen medische term, wel herkenbaar.",
@@ -340,12 +360,25 @@ EXTRA_GUIDES = [
         "eyebrow": "Oplossing",
         "card_num": "10",
         "card_label": "APP",
+        "hreflang": {
+            "nl": "https://www.structuro.eu/beste-adhd-app-nederland/",
+            "en": "https://www.structuro.eu/en/best-adhd-apps-netherlands/",
+            "x-default": "https://www.structuro.eu/beste-adhd-app-nederland/",
+        },
         "hub_h2": "Beste ADHD-app voor jou",
         "hub_teaser": "Er is geen nummer 1. Wel een betere match: starten, tijd, of overzicht.",
         "thumb": "telefoon, rust",
         "thumb_mod": "d",
         "read_min": "4 MIN",
+        "meta_title": "Beste ADHD-app in Nederland? Kies op knelpunt",
         "title": "Beste ADHD-app in Nederland? Kies op knelpunt, niet op ranking",
+        "modified": "2026-09-09",
+        "related_slugs": [
+            "structuro-of-tiimo",
+            "structuro-of-structured",
+            "structuro-of-todoist",
+            "taakverlamming-adhd",
+        ],
         "description": "De beste ADHD-app in Nederland bestaat niet als algemeen cijfer. Wel als match: starten, visuele tijd, of overzicht. Zo kies je zonder weer een toolkerkhof.",
         "answer": (
             "De beste ADHD-app in Nederland is geen ranking. Het is de app die jouw knelpunt raakt. Als je niet begint, zoek je "
@@ -360,6 +393,9 @@ EXTRA_GUIDES = [
 <p><strong>Starten.</strong> Je wilt wel, de eerste klik blijft uit. Dan wil je weinig zichtbaar, een micro-stap, geen inhaaldruk. Dat is executie. Zie <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> en <a href="/taakverlamming-adhd/">taakverlamming</a>.</p>
 <p><strong>Tijd zien.</strong> Later voelt wazig, blokken helpen, visuele timers helpen. Dan kan een dag-tijdlijn of visuele planner beter passen dan een rustige start-app. Lees <a href="/tijdblindheid-adhd/">tijdblindheid</a>. Eerlijk: als dat jouw hoofdpijn is, kijk ook naar tools die daarvoor zijn gebouwd, zoals Tiimo of Structured. Meer in <a href="/structuro-of-tiimo/">Structuro of Tiimo</a> en <a href="/structuro-of-structured/">Structuro of Structured</a>.</p>
 <p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>.</p>
+
+<h2>Beste ADHD-app in Nederland: Tiimo, Structured of Todoist</h2>
+<p>Geen ranking. Wel drie eerlijke vs-pagina's: <a href="/structuro-of-tiimo/">Structuro of Tiimo</a> (visuele tijd versus starten), <a href="/structuro-of-structured/">Structuro of Structured</a> (tijdlijn versus eerste stap), <a href="/structuro-of-todoist/">Structuro of Todoist</a> (lijst versus start). Tiimo zelf wint op de merknaam. Jij wilt de klus. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
 
 <h2>Waar Nederlandse lijstjes vaak misgaan</h2>
 <p>Ze tellen features. Ze beloven focus als een persoonlijkheid. Ze zetten 'voor ADHD' op een gewone planner. Ze vergeten dat een webapp op je telefoon mag, zonder App Store. En ze doen alsof één winnaar bestaat. Dat is marketing, geen match.</p>
@@ -386,6 +422,14 @@ EXTRA_GUIDES = [
         "cta_title": "Begin met één stap",
         "cta_p": "Geen ranking. Wel een rustige dagstart als starten jouw knelpunt is.",
         "faqs": [
+            (
+                "Wat is de beste ADHD-app in Nederland?",
+                "Die bestaat niet als algemeen cijfer. Beste is de match: starten, tijd zien, of overzicht. Kies de klus, dan de tool.",
+            ),
+            (
+                "Structuro of Tiimo: welke kies ik?",
+                "Tiimo als visuele tijd en routines het gat zijn. Structuro als de eerste klik uitblijft. Geen winnaar, wel een andere klus.",
+            ),
             (
                 "Welke ADHD-app is objectief de beste?",
                 "Die bestaat niet. Beste is de match op jouw knelpunt: starten, tijd, of overzicht.",
@@ -635,7 +679,15 @@ EXTRA_GUIDES = [
         "thumb": "laag tij",
         "thumb_mod": "n",
         "read_min": "4 MIN",
+        "meta_title": "ADHD en burn-out: kleiner starten bij leegte",
         "title": "ADHD en burn-out: als leegte en niet-starten samenkomen",
+        "modified": "2026-09-09",
+        "related_slugs": [
+            "taakverlamming-adhd",
+            "energie-first",
+            "beste-adhd-app-nederland",
+            "adhd-op-het-werk",
+        ],
         "description": "ADHD en burn-out overlappen vaak in het gevoel: leeg, en toch een berg. Geen medische pagina. Wel hoe je de start kleiner maakt als de batterij laag is.",
         "answer": (
             "ADHD en burn-out kunnen samen voorkomen in hetzelfde lijf: weinig energie, en een start die te groot voelt. "
@@ -646,7 +698,7 @@ EXTRA_GUIDES = [
         "body": """
 <p>Veel volwassenen met ADHD herkennen periodes waarin niks meer lukt, terwijl de buitenwereld nog steeds een gewone dag verwacht. Soms heet dat overprikkeling. Soms uitputting. Soms gebruiken mensen het woord burn-out. Die woorden zijn niet hetzelfde, en deze pagina stelt geen diagnose. Ze beschrijft alleen een overlap die we in gesprekken vaak horen: de batterij is leeg, en de start is te hoog.</p>
 
-<h2>Waarom die overlap zo logisch voelt</h2>
+<h2>ADHD en burn-out: de overlap, geen diagnose</h2>
 <p>Jarenlang compenseren (avonden, deadlines, charme, chaos opruimen) is duur. Executieve frictie maakt gewone dagen al zwaar. Als daar langdurige uitputting bij komt, is 'gewoon beginnen' niet alleen een startprobleem. Het is een lichaam dat geen extra bewijs meer wil leveren. Een strengere planner is dan geweld. Zie <a href="/energie-first/">energie-first</a>.</p>
 <p>Taakverlamming in die fase is geen zwakte. Het is een noodrem. <a href="/taakverlamming-adhd/">Taakverlamming</a> beschrijft het mechanisme. Hier is de les strenger: de micro-actie mag nóg kleiner. Openen is genoeg. Antwoorden is extra. Afmaken is later.</p>
 
@@ -670,11 +722,15 @@ EXTRA_GUIDES = [
 <p>Kies de kleinste verzorgende daad die geen bewijs hoeft te leveren: water, raam, één zin in een document, een afspraak inplannen met zorg. Als zelfs dat te veel is, is de daad rust. Schrijf dat op als keuze, niet als falen. Herstel is geen sprint. Wie je vertelt dat je morgen een volle weekstructuur moet neerzetten, verkoopt het patroon dat je uitputte.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. 7 dagen, geen creditcard, iDEAL kan. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten.</p>
+<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. 7 dagen, geen creditcard, iDEAL kan. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Alleen als een micro-actie vandaag mag. Anders is rust de actie.",
         "faqs": [
+            (
+                "Wat is het verband tussen ADHD en burn-out?",
+                "Vaak dezelfde overlap in het lijf: lege batterij en een start die te groot voelt. Geen diagnose, wel herkenning. Zorg blijft zorg.",
+            ),
             (
                 "Zegt Structuro dat ik een burn-out heb?",
                 "Nee. We stellen geen diagnoses. We beschrijven lage energie en startfrictie, die soms samen voorkomen.",
