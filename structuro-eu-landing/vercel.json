@@ -7,7 +7,11 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "text/xml; charset=utf-8"
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     },
@@ -57,14 +61,113 @@
   ],
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "structuro.eu"
         }
       ],
-      "destination": "https://www.structuro.eu/:path*",
+      "destination": "https://www.structuro.eu/",
+      "permanent": true
+    },
+    {
+      "source": "/privacy",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/privacy/",
+      "permanent": true
+    },
+    {
+      "source": "/privacy/",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/privacy/",
+      "permanent": true
+    },
+    {
+      "source": "/terms",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/terms/",
+      "permanent": true
+    },
+    {
+      "source": "/terms/",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/terms/",
+      "permanent": true
+    },
+    {
+      "source": "/cookies",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/cookies/",
+      "permanent": true
+    },
+    {
+      "source": "/cookies/",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/cookies/",
+      "permanent": true
+    },
+    {
+      "source": "/v2",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/v2/",
+      "permanent": true
+    },
+    {
+      "source": "/v2/",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/v2/",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!sitemap\\.xml$|robots\\.txt$|llms\\.txt$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "structuro.eu"
+        }
+      ],
+      "destination": "https://www.structuro.eu/:path",
       "permanent": true
     },
     {
