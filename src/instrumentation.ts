@@ -4,6 +4,7 @@ import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 
 import { captureServerException } from "@/lib/posthog/server";
+import { isExpectedServerActionError } from "@/lib/posthog/filterServerRequestErrors";
 import { extractPostHogSessionIdFromRequest } from "@/lib/posthog/postHogCookie";
 
 const DEFAULT_POSTHOG_LOGS_URL = "https://eu.i.posthog.com/i/v1/logs";
@@ -68,6 +69,7 @@ export async function onRequestError(
   context: RequestErrorContext
 ): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (isExpectedServerActionError(err)) return;
 
   const cookieHeader = Array.isArray(request.headers.cookie)
     ? request.headers.cookie.join("; ")
