@@ -3,6 +3,7 @@ import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 
+import { isExpectedNextRequestError } from "@/lib/posthog/filterNoiseExceptions";
 import { captureServerException } from "@/lib/posthog/server";
 import { extractPostHogSessionIdFromRequest } from "@/lib/posthog/postHogCookie";
 
@@ -68,6 +69,7 @@ export async function onRequestError(
   context: RequestErrorContext
 ): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (isExpectedNextRequestError(err)) return;
 
   const cookieHeader = Array.isArray(request.headers.cookie)
     ? request.headers.cookie.join("; ")

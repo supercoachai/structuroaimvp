@@ -54,11 +54,29 @@ function isPosthogRecorderOnlyException(properties: Record<string, unknown>): bo
   );
 }
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error ?? "");
+}
+
+/**
+ * Next.js gooit dit bij een POST met `Next-Action` waarvan het action-ID
+ * niet in de huidige build zit (oude tab na deploy, of probe-verkeer).
+ * Geen user-actie mogelijk; niet naar error tracking sturen.
+ */
+export function isExpectedNextRequestError(error: unknown): boolean {
+  return /Failed to find Server Action/i.test(errorMessage(error));
+}
+
 /** Drop unactionable browser/host-bridge/replay noise before it becomes an issue. */
 export function shouldDropNoiseException(
   properties: Record<string, unknown>
 ): boolean {
   const messages = getExceptionMessages(properties);
+
+  if (messages.some((message) => isExpectedNextRequestError(message))) {
+    return true;
+  }
 
   if (
     messages.some((message) =>

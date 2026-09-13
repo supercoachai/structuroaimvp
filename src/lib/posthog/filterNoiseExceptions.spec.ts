@@ -1,6 +1,39 @@
 import { describe, expect, it } from "vitest";
 
-import { shouldDropNoiseException } from "./filterNoiseExceptions";
+import {
+  isExpectedNextRequestError,
+  shouldDropNoiseException,
+} from "./filterNoiseExceptions";
+
+describe("isExpectedNextRequestError", () => {
+  it("drops stale Server Action POSTs after a redeploy", () => {
+    expect(
+      isExpectedNextRequestError(
+        new Error(
+          'Failed to find Server Action "abc123". This request might be from an older or newer deployment.'
+        )
+      )
+    ).toBe(true);
+  });
+
+  it("drops the previous-deployment wording Next.js also uses", () => {
+    expect(
+      isExpectedNextRequestError(
+        new Error(
+          'Failed to find Server Action "x". This request might have come from a previous deployment.'
+        )
+      )
+    ).toBe(true);
+  });
+
+  it("keeps genuine server errors", () => {
+    expect(
+      isExpectedNextRequestError(
+        new Error("TypeError: Cannot read properties of undefined")
+      )
+    ).toBe(false);
+  });
+});
 
 describe("shouldDropNoiseException", () => {
   it("drops bare Script error without in-app frames", () => {
@@ -70,6 +103,16 @@ describe("shouldDropNoiseException", () => {
               ],
             },
           },
+        ],
+      })
+    ).toBe(true);
+  });
+
+  it("drops Server Action mismatch if it lands as a captured exception", () => {
+    expect(
+      shouldDropNoiseException({
+        $exception_values: [
+          'Failed to find Server Action "abc123". This request might be from an older or newer deployment.',
         ],
       })
     ).toBe(true);
