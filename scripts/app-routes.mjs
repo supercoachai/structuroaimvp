@@ -54,10 +54,11 @@ export const APP_ROUTES = [
   { path: "/checkout-success", kind: "public", status: [200] },
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
   { path: "/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
-  { path: "/blog", kind: "public", status: [200], needles: ["structuro", "blog"] },
+  // Blog verhuisd naar structuro.eu: 301 naar het gidsen-overzicht (redirect wordt gevolgd).
+  { path: "/blog", kind: "public", status: [200, 301, 308], needles: ["structuro"] },
   // SEO-bestanden: moeten 200 geven, nooit login-redirect (GSC-acceptatiecriteria).
   { path: "/robots.txt", kind: "public", status: [200], needles: ["user-agent"] },
-  { path: "/sitemap.xml", kind: "public", status: [200], needles: ["sitemapindex", "blog/sitemap.xml"] },
+  { path: "/sitemap.xml", kind: "public", status: [200], needles: ["urlset"] },
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
   { path: "/activiteit/admin", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/activiteit/funnel", kind: "public", status: [200, 307, 308], needles: ["privé-dashboard", "inloggen", "structuro"] },

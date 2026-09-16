@@ -5,9 +5,10 @@ import { CANONICAL_PRODUCTION_ORIGIN } from "@/lib/appUrl";
 /**
  * robots.txt voor www.structuro.ai (product-host).
  *
- * Kennislaag leeft op www.structuro.eu; hier is alleen de blog plus een
- * handvol publieke pagina's crawlbaar. De app-shell (dagstart, todo, focus,
- * settings) is bewust dicht: ingelogde flows horen niet in de index.
+ * Kennislaag leeft op www.structuro.eu. /blog blijft in Allow, ook al is het
+ * een 301 naar structuro.eu: Googlebot moet de redirect kunnen fetchen om de
+ * verhuizing te verwerken. De app-shell (dagstart, todo, focus, settings) is
+ * bewust dicht: ingelogde flows horen niet in de index.
  *
  * Google hanteert longest-match: een specifieke Allow wint van `Disallow: /`.
  */

@@ -321,6 +321,11 @@
       "permanent": true
     },
     {
+      "source": "/overprikkeling-adhd",
+      "destination": "/overprikkeling-adhd/",
+      "permanent": true
+    },
+    {
       "source": "/cyclus",
       "destination": "/cyclus/",
       "permanent": true
@@ -406,19 +411,39 @@
       "permanent": false
     },
     {
+      "source": "/blog/adhd-en-burn-out",
+      "destination": "/adhd-en-burn-out/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/adhd-en-burn-out/",
+      "destination": "/adhd-en-burn-out/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/overprikkeling-en-adhd-hoe-een-volle-dag-je-startmotor-leeglekt",
+      "destination": "/overprikkeling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/blog/overprikkeling-en-adhd-hoe-een-volle-dag-je-startmotor-leeglekt/",
+      "destination": "/overprikkeling-adhd/",
+      "permanent": true
+    },
+    {
       "source": "/blog",
-      "destination": "https://www.structuro.ai/blog",
-      "permanent": false
+      "destination": "/gidsen/",
+      "permanent": true
     },
     {
       "source": "/blog/",
-      "destination": "https://www.structuro.ai/blog",
-      "permanent": false
+      "destination": "/gidsen/",
+      "permanent": true
     },
     {
       "source": "/blog/:path*",
-      "destination": "https://www.structuro.ai/blog/:path*",
-      "permanent": false
+      "destination": "/gidsen/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -513,6 +538,10 @@
     {
       "source": "/adhd-op-het-werk/",
       "destination": "/adhd-op-het-werk/index.html"
+    },
+    {
+      "source": "/overprikkeling-adhd/",
+      "destination": "/overprikkeling-adhd/index.html"
     },
     {
       "source": "/onderzoek/",

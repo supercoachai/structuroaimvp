@@ -149,6 +149,32 @@ const nextConfig: NextConfig = {
         destination: "https://www.structuro.ai/:path*",
         permanent: true,
       },
+      /**
+       * Blog verhuisd naar de kennislaag op structuro.eu (Opinly stopt 26 sep 2026).
+       * Specifieke posts eerst, daarna catch-all naar het gidsen-overzicht.
+       * next.config-redirects draaien vóór middleware en vóór de Opinly-routes,
+       * dus de blogcode kan blijven staan zonder bereikbaar te zijn.
+       */
+      {
+        source: "/blog/adhd-en-burn-out",
+        destination: "https://www.structuro.eu/adhd-en-burn-out/",
+        permanent: true,
+      },
+      {
+        source: "/blog/overprikkeling-en-adhd-hoe-een-volle-dag-je-startmotor-leeglekt",
+        destination: "https://www.structuro.eu/overprikkeling-adhd/",
+        permanent: true,
+      },
+      {
+        source: "/blog",
+        destination: "https://www.structuro.eu/gidsen/",
+        permanent: true,
+      },
+      {
+        source: "/blog/:path*",
+        destination: "https://www.structuro.eu/gidsen/",
+        permanent: true,
+      },
     ];
   },
   /* config options here */
