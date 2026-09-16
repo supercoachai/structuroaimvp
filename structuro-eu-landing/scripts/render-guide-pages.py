@@ -15,7 +15,7 @@ from extra_guides import EXTRA_GUIDES
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-09"
-CSS_V = "20260916b"
+CSS_V = "20260916c"
 FEATURED_SLUGS = (
     "adhd-en-burn-out",
     "taakverlamming-adhd",
@@ -882,7 +882,7 @@ def render(g: dict) -> str:
 
   <section class="sc-cta" aria-label="Call to action">
     <div class="cl">
-      <div class="eyebrow"><i></i>Gebouwd op deze gesprekken</div>
+      <div class="eyebrow">Gebouwd op deze gesprekken</div>
       <h2>Dit is wat we ermee <em>bouwden</em>.</h2>
       <p class="sub">Je grootste taak staat er als stappen die je nu aankunt. Meer hoeft niet vandaag.</p>
       <div class="act">
@@ -895,8 +895,8 @@ def render(g: dict) -> str:
       </div>
     </div>
     <div class="shot">
-      <div class="cap">Je dashboard</div>
-      <img src="/uploads/guide-cta-dashboard.png" alt="Structuro dashboard: de taak die nu aan de beurt is, opgedeeld in stappen" width="471" height="540" loading="lazy">
+      <div class="cap">De app</div>
+      <img src="/uploads/guide-cta-phone.png" alt="Structuro-dagstart op een telefoon: één taak, microstappen, Start focus" width="400" height="851" loading="lazy">
     </div>
   </section>
 
@@ -1029,22 +1029,24 @@ def hub_card_html(g: dict) -> str:
 
 def featured_hub_html() -> str:
     by_slug = {g["slug"]: g for g in GUIDES}
+    th_variants = ("", " d", " n")
     cards = []
-    for slug in FEATURED_SLUGS:
+    for i, slug in enumerate(FEATURED_SLUGS):
         g = by_slug[slug]
         h2 = g.get("hub_h2") or g["h1"]
         teaser = g.get("hub_teaser") or g["description"]
+        th = th_variants[i % len(th_variants)]
+        label = (g.get("card_label") or "").capitalize()
         cards.append(
-            f"""    <a class="c picks-c" href="/{g["slug"]}/" data-ph-cta="gidsen_pick_{g.get("card_num", "")}">
-      <div class="kk"><b>{esc(g.get("card_num", ""))} · {esc(g.get("card_label", ""))}</b></div>
-      <h2>{esc(h2)}</h2>
-      <p class="teaser">{esc(teaser)}</p>
-      <div class="go">Open de kaart →</div>
+            f"""    <a class="k" href="/{g["slug"]}/" data-ph-cta="gidsen_pick_{g.get("card_num", "")}">
+      <div class="th{th}"><b>{esc(g.get("card_num", ""))}</b></div>
+      <div class="body"><div class="cat">{esc(label)}</div><h3>{esc(h2)}</h3><div class="te">{esc(teaser)}</div></div>
+      <div class="go">Open de kaart<i>→</i></div>
     </a>"""
         )
-    return f"""  <section class="picks" aria-label="Vaak gezocht">
-    <p class="picks-kicker">Vaak gezocht</p>
-    <div class="picks-grid">
+    return f"""  <section class="sc-rack" aria-label="Vaak gezocht">
+    <div class="eyebrow">Vaak gezocht</div>
+    <div class="rack">
 {chr(10).join(cards)}
     </div>
   </section>

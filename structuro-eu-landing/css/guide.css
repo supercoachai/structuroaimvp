@@ -107,22 +107,43 @@ h1.hero-title,
 .facts span::after{content:"·";margin-left:14px;color:var(--g-hair)}
 .facts span:last-child::after{content:""}
 
-/* featured picks on hub */
-.picks{padding:28px 0 8px}
-.picks-kicker{
-  margin:0 0 14px;font-size:11.5px;font-weight:600;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--g-faint);
+/* Vaak gezocht · optie C (kaartrek, sep 2026) */
+.sc-rack{padding:28px 0 8px}
+.sc-rack .eyebrow{font-size:11.5px}
+.sc-rack .rack{margin-top:20px;display:grid;grid-template-columns:1fr;gap:20px}
+.sc-rack a.k{
+  background:var(--g-card);border:1px solid var(--g-line);border-radius:14px;
+  overflow:hidden;display:flex;flex-direction:column;color:var(--g-ink);
+  box-shadow:0 1px 2px rgba(22,35,58,.05);
+  transition:transform .22s cubic-bezier(.2,.7,.3,1),box-shadow .22s,border-color .22s;
 }
-.picks-grid{display:grid;gap:14px}
-.picks-c{
-  transform:none!important;padding:20px 20px 18px;
+.sc-rack a.k:hover{
+  transform:translateY(-3px);box-shadow:0 16px 34px rgba(22,35,58,.10);
+  border-color:var(--g-hair);color:var(--g-ink);
 }
-.picks-c h2{font-size:22px;margin:0 0 8px}
-.picks-c .teaser{margin:0}
-.picks-c .go{margin-top:12px}
-@media (min-width:760px){
-  .picks-grid{grid-template-columns:repeat(3,1fr)}
-  .picks-c h2{font-size:23px}
+.sc-rack .th{height:86px;position:relative;background:linear-gradient(150deg,#122E2B,#2D5A56 48%,#BFD6CC)}
+.sc-rack .th.d{background:linear-gradient(150deg,#0D1A22,#1D4A46 52%,#9DC4BA)}
+.sc-rack .th.n{background:linear-gradient(150deg,#101E2E,#23504C 55%,#A8CCC2)}
+.sc-rack .th b{
+  position:absolute;left:20px;bottom:12px;font-family:var(--g-serif);
+  font-weight:400;font-size:17px;color:rgba(255,255,255,.88);letter-spacing:.01em;
+}
+.sc-rack .body{padding:22px 20px 0;display:flex;flex-direction:column;gap:9px;flex:1}
+.sc-rack .cat{font-size:10.5px;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--g-teal)}
+.sc-rack h3{
+  font-family:var(--g-serif);font-weight:400;font-size:25px;line-height:1.14;
+  letter-spacing:-.025em;margin:0;text-wrap:pretty;
+}
+.sc-rack .te{font-size:14.5px;line-height:1.55;color:var(--g-soft);margin-bottom:20px}
+.sc-rack .go{
+  margin-top:auto;padding:14px 20px;border-top:1px solid var(--g-line);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:14px;font-weight:600;color:var(--g-teal);white-space:nowrap;
+}
+.sc-rack .go i{font-style:normal;transition:transform .22s cubic-bezier(.2,.7,.3,1)}
+.sc-rack a.k:hover .go i{transform:translateX(5px)}
+@media (min-width:860px){
+  .sc-rack .rack{grid-template-columns:repeat(3,1fr)}
 }
 
 /* waaier */
@@ -214,7 +235,7 @@ h1.hero-title,
   display:flex;align-items:center;gap:11px;font-size:12px;font-weight:600;
   letter-spacing:.15em;text-transform:uppercase;color:var(--g-teal);margin:0;
 }
-.sc-cta .eyebrow i{width:18px;height:1.5px;background:var(--g-teal);display:block}
+.sc-cta .eyebrow::before{display:none}
 .sc-cta h2{
   font-family:var(--g-serif);font-weight:400;font-size:30px;line-height:1.16;
   letter-spacing:-.024em;margin:15px 0 0;max-width:20ch;color:var(--g-ink);
@@ -240,8 +261,8 @@ h1.hero-title,
   gap:12px;padding-top:34px;margin-bottom:-14px;
 }
 .sc-cta .shot img{
-  display:block;width:100%;height:auto;border:1px solid var(--g-line);
-  border-radius:14px 14px 0 0;filter:drop-shadow(0 22px 46px rgba(26,35,64,.15));
+  display:block;width:100%;height:auto;
+  filter:drop-shadow(0 22px 46px rgba(26,35,64,.18));
 }
 .sc-cta .cap{
   font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
