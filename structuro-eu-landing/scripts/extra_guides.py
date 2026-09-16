@@ -122,7 +122,7 @@ EXTRA_GUIDES = [
 <p>Kies één taak die al dagen in je hoofd zit. Zeg hardop welke frictie het is: te groot, te veel opties, energie, of te alleen. Doe alleen de bijbehorende micro-actie. Stop daarna bewust. Dat is de oefening. Niet de berg winnen. De ingang vinden.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. De dagstart vraagt energie, daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen creditcard nodig voor de trial (iDEAL kan). Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
+<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. De dagstart vraagt energie, daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen creditcard nodig voor de trial. Betalen kan later gewoon met iDEAL. Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen account nodig voor de eerste dagstart. Kies wat haalbaar is. Bevestig. Start.",
@@ -218,7 +218,7 @@ EXTRA_GUIDES = [
 <p>Als je vastzit, kies niet het belangrijkste project. Kies de rand die het minst dreigt. Zet de rest uit beeld: andere tabbladen dicht, lijst weg, telefoon omgedraaid. Doe één micro-actie. Zet daarna een stop, ook als je door zou kunnen. De stop leert je brein dat bewegen niet betekent dat de hele berg nu van je eist. Herhaal dat op een lage dag, niet alleen op een dag met paniek.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro toont niet je hele leven. De dagstart vraagt wat je nu aankunt, daarna één eerste stap. Geen growing list terwijl jij stilstaat. Geen streaks die je aanklagen als de verlamming een uur duurde. 7 dagen proberen, geen creditcard nodig, iDEAL kan. Als de berg vandaag te hoog is, is dat precies het moment om hem tot één klik te maken.</p>
+<p>Structuro toont niet je hele leven. De dagstart vraagt wat je nu aankunt, daarna één eerste stap. Geen growing list terwijl jij stilstaat. Geen streaks die je aanklagen als de verlamming een uur duurde. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als de berg vandaag te hoog is, is dat precies het moment om hem tot één klik te maken.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Eén micro-actie is genoeg als ingang. De berg mag wachten.",
@@ -304,7 +304,7 @@ EXTRA_GUIDES = [
 <p>Kies één taak die steeds in 'later' blijft hangen. Koppel hem aan iets dat morgen toch al gebeurt: na koffie, na de eerste mail, na het zetten van de laptop op het bureau. De koppeling mag saai zijn. Saai is betrouwbaar. Maak de actie twee minuten klein. Als de deadline-paniek later toch komt, heb je al een ingang geoefend. Dat is goedkoper dan alleen op crisis vertrouwen.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro duwt je niet in een uurrooster. De dagstart speelt zich af in het nu: hoe zit je energie, wat is één eerste stap. Geen week die je vooraf moet winnen. Geen streak die breekt als je tijd opnieuw verkeerd inschatte. 7 dagen, geen creditcard, iDEAL kan. Tijd hoeft niet perfect te voelen. Eén actie in dit moment is genoeg als correctie op later.</p>
+<p>Structuro duwt je niet in een uurrooster. De dagstart speelt zich af in het nu: hoe zit je energie, wat is één eerste stap. Geen week die je vooraf moet winnen. Geen streak die breekt als je tijd opnieuw verkeerd inschatte. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Tijd hoeft niet perfect te voelen. Eén actie in dit moment is genoeg als correctie op later.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele middag plannen. Eén actie die in het nu past.",
@@ -390,7 +390,7 @@ EXTRA_GUIDES = [
 <p>Open de tool die je nu gebruikt. Tel hoeveel items tegelijk zichtbaar zijn. Als het meer dan een paar is, is de planner al een berg. Verberg de rest of parkeer hem. Kies één start voor morgen die geen velden vraagt. Gebruik de dag daarna om te voelen of je begon, niet of het systeem compleet was. Compleetheid is de valkuil. Startbaarheid is de test.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro noemt zich geen klassieke planner, expres. Het is een executie-interface: dagstart, weinig tegelijk, één eerste stap, geen shame. 7 dagen proberen, geen creditcard, iDEAL kan. Als je een planner zoekt die niet overvraagt, let dan niet op hoe compleet hij is. Let op hoe weinig hij van je eist vóór je mag beginnen.</p>
+<p>Structuro noemt zich geen klassieke planner, expres. Het is een executie-interface: dagstart, weinig tegelijk, één eerste stap, geen shame. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je een planner zoekt die niet overvraagt, let dan niet op hoe compleet hij is. Let op hoe weinig hij van je eist vóór je mag beginnen.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen systeem vullen. Eerst een haalbare start, passend bij je energie.",
@@ -484,7 +484,7 @@ EXTRA_GUIDES = [
 <p>Schrijf in één zin jouw knelpunt: starten, tijd zien, of overzicht. Deinstalleren hoeft niet. Gebruik 48 uur alleen een tool die bij die zin past. Meet of je bewoog, niet of de app mooi is. Als je weer ging inrichten, was het de verkeerde klus. Kies dan de saaiere optie. Saaier is vaak de echte match, omdat hij minder van je eist vóór je mag beginnen.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro claimt niet de beste ADHD-app van Nederland te zijn. Het claimt een rustige match als jouw knelpunt starten is. Gebouwd met honderd ADHD'ers, 50+ interviews, gemaakt in Eindhoven. 7 dagen, geen creditcard, iDEAL kan. Als jouw knelpunt een visuele tijdlijn is, zeg dat hardop en kies daarvoor. Eerlijke match wint van een gekocht lijstje.</p>
+<p>Structuro zegt niet de beste ADHD-app van Nederland te zijn. Zo'n lijstje bestaat niet zonder belang erachter. Wat we wel durven zeggen: als starten jouw knelpunt is, is Structuro daarvoor gebouwd. Samen met honderd ADHD'ers, na ruim vijftig interviews, gemaakt in Eindhoven. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Zoek je vooral een visuele tijdlijn? Kies dan met een gerust hart een tool die dáárvoor gemaakt is. Een eerlijke match houdt langer stand dan een gekocht lijstje.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen ranking. Wel een rustige dagstart als starten jouw knelpunt is.",
@@ -566,7 +566,7 @@ EXTRA_GUIDES = [
 <p>Maak twee plekken, niet één. Plek A: dump, mag rommelig. Plek B: vandaag, mag bijna niks. Verplaats niet de hele dump naar B. Kies één regel. Als B groeit, gaat het extra terug naar A. Dat voelt onaf. Onaf is het punt. Een schone universele lijst is hoe de to-do weer wint van de start.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is dat startvlak, geen oneindige to-do. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. 7 dagen, geen creditcard, iDEAL kan. Als je een alternatief voor de to-do-lijst zoekt, zoek dan geen slimmere lijst. Zoek een smaller scherm. De lijst in de lade mag blijven bestaan. Hij hoeft je ochtend niet te openen. Jij opent één regel. Dat is het verschil tussen geheugen en executie.</p>
+<p>Structuro is dat startvlak, geen oneindige to-do. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je een alternatief voor de to-do-lijst zoekt, zoek dan geen slimmere lijst. Zoek een smaller scherm. De lijst in de lade mag blijven bestaan. Hij hoeft je ochtend niet te openen. Jij opent één regel. Dat is het verschil tussen geheugen en executie.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele inbox legen. Wel één zichtbare, haalbare actie.",
@@ -632,7 +632,7 @@ EXTRA_GUIDES = [
 <h2>Praktische verschillen om te checken</h2>
 <ul>
 <li><strong>Vorm.</strong> Tiimo is een app in de stores. Structuro is een webapp op telefoon en computer, op het homescreen te zetten. Nog geen aparte App Store-app.</li>
-<li><strong>Betalen.</strong> Structuro: 7 dagen, geen creditcard nodig, iDEAL kan, daarna €12,99 per maand of €119 per jaar. Tiimo: check hun eigen prijs en trial, die wijzigt.</li>
+<li><strong>Betalen.</strong> Structuro: 7 dagen gratis zonder creditcard, betalen kan gewoon met iDEAL, daarna €12,99 per maand of €119 per jaar. Tiimo: check hun eigen prijs en trial, die wijzigt.</li>
 <li><strong>Filosofie.</strong> Tijd zichtbaar versus start klein. Routines versus één stap vandaag.</li>
 <li><strong>Toon.</strong> Als gamification je tegenstaat, let daarop in elke tool, niet alleen op de naam ADHD.</li>
 </ul>
@@ -803,7 +803,7 @@ EXTRA_GUIDES = [
 <p>Kies de kleinste verzorgende daad die geen bewijs hoeft te leveren: water, raam, één zin in een document, een afspraak inplannen met zorg. Als zelfs dat te veel is, is de daad rust. Schrijf dat op als keuze, niet als falen. Herstel is geen sprint. Wie je vertelt dat je morgen een volle weekstructuur moet neerzetten, verkoopt het patroon dat je uitputte.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. 7 dagen, geen creditcard, iDEAL kan. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
+<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Alleen als een micro-actie vandaag mag. Anders is rust de actie.",
@@ -879,7 +879,7 @@ EXTRA_GUIDES = [
 <p>Kies vóór de eerste meeting één werkklik: bestand open, onderwerp, eerste bullet. Zet hem op papier of in een startvlak, niet in de hele backlog. Na de meeting doe je alleen die klik. Chat mag wachten tot de klik er is. Als de dag alsnog volstroomt, was de klik nog winst. Dat is het enige cijfer dat telt op een ADHD-werkdag: bewogen, niet bijgewerkt tot nul.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen enterprise-suite. Geen Slack-vervanger, geen Jira. Het is een privé-startvlak vóór of tussen het werk omheen: wat is vandaag haalbaar, wat is de eerste stap. 7 dagen, geen creditcard, iDEAL kan. Als je ADHD op het werk vooral voelt als niet-starten, is dat de klus. Niet 'productiever worden'. Bewegen op één ticket. De sprint mag van het team zijn. De klik is van jou.</p>
+<p>Structuro is geen enterprise-suite. Geen Slack-vervanger, geen Jira. Het is een privé-startvlak vóór of tussen het werk omheen: wat is vandaag haalbaar, wat is de eerste stap. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je ADHD op het werk vooral voelt als niet-starten, is dat de klus. Niet 'productiever worden'. Bewegen op één ticket. De sprint mag van het team zijn. De klik is van jou.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Eén werkklik. Niet de hele sprint winnen.",
@@ -953,7 +953,7 @@ EXTRA_GUIDES = [
 <p>Schrijf drie regels, niet tien. Regel 1: iets voor je lijf. Regel 2: één klik die telt. Regel 3: stop. Als regel 2 niet lukt, was regel 1 de ochtend. Herhaal dezelfde drie, geen extra's tot dit saai is. Saai is de overwinning. Variatie komt later, als starten al bestaat.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen ochtendprogramma van veertien stappen. De dagstart vraagt energie, daarna één eerste stap. Dat mag je ochtendroutine zijn, ook om 13:00. Geen streak die breekt als je uitslaapt. 7 dagen, geen creditcard, iDEAL kan. Als Instagram een langere ochtend verkoopt, is dat hun product. Jouw product is de eerste klik.</p>
+<p>Structuro is geen ochtendprogramma van veertien stappen. De dagstart vraagt energie, daarna één eerste stap. Dat mag je ochtendroutine zijn, ook om 13:00. Geen streak die breekt als je uitslaapt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als Instagram een langere ochtend verkoopt, is dat hun product. Jouw product is de eerste klik.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele ochtend winnen. Wel één start, passend bij je energie.",
@@ -1036,7 +1036,7 @@ EXTRA_GUIDES = [
 <p>Als de inbox de drempel is, lees <a href="/takenlijst-te-lang-adhd/">wanneer je lijst de start zwaarder maakt</a>.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen anti-uitstel-coach met streaks. Het is een startvlak: energie, één eerste stap, geen schuld als gisteren leeg was. 7 dagen, geen creditcard, iDEAL kan. Als jouw uitstel vooral 'geen ingang' is, is dat de klus. Als het vooral 'geen zin' is, mag de app klein blijven en jij eerlijk. Beide is menselijk. Alleen de berg als karakterfout is het verkeerde verhaal.</p>
+<p>Structuro is geen anti-uitstel-coach met streaks. Het is een startvlak: energie, één eerste stap, geen schuld als gisteren leeg was. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw uitstel vooral 'geen ingang' is, is dat de klus. Als het vooral 'geen zin' is, mag de app klein blijven en jij eerlijk. Beide is menselijk. Alleen de berg als karakterfout is het verkeerde verhaal.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de deadline winnen. Wel een ingang die nu mag bestaan.",
@@ -1106,7 +1106,7 @@ EXTRA_GUIDES = [
 <p>Als je merkt dat je 's avonds opnieuw dezelfde drie kandidaten weegt, was de default niet het probleem. Dan was de avond een tweede keuzeronde. Sluit die ronde: de default van overdag blijft staan tot je hem geraakt hebt. Een nieuwe ronde is keuzestress die zichzelf voedt. Eén ronde per taak is genoeg.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro toont weinig. De dagstart vraagt energie en één eerste stap, niet een menu van je hele leven. Dat is een ontwerp tegen keuzestress, geen persoonlijkheidstraining. 7 dagen, geen creditcard, iDEAL kan. Als jouw dag vastloopt op 'wat eerst', is dat de klus. Niet slimmer worden in vergelijken. Smaller worden in beeld.</p>
+<p>Structuro toont weinig. De dagstart vraagt energie en één eerste stap, niet een menu van je hele leven. Dat is een ontwerp tegen keuzestress, geen persoonlijkheidstraining. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw dag vastloopt op 'wat eerst', is dat de klus. Niet slimmer worden in vergelijken. Smaller worden in beeld.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de perfecte keuze. Wel een default die je nu kunt raken.",
@@ -1176,7 +1176,7 @@ EXTRA_GUIDES = [
 <p>Een te lange lijst is vaak ook een te vage lijst. 'Administratie' is geen klik. 'Open de blauwe envelop, scan pagina 1' wel. Herschrijf alleen de regel van vandaag tot hij fysiek is. De lade mag vaag blijven. Vandaag niet. Vage regels op vandaag zijn hoe de lijst weer groeit: je schuift ze door, en morgen zijn ze er nog, plus drie nieuwe.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is het startvlak, geen oneindige lijst. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. 7 dagen, geen creditcard, iDEAL kan. Als jouw pijn een te lange takenlijst is, zoek je geen slimmere inbox. Je zoekt een smaller vandaag. De lade mag vol zijn. Het scherm niet.</p>
+<p>Structuro is het startvlak, geen oneindige lijst. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw pijn een te lange takenlijst is, zoek je geen slimmere inbox. Je zoekt een smaller vandaag. De lade mag vol zijn. Het scherm niet.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de lijst legen. Wel één regel die je nu kunt raken.",
@@ -1247,7 +1247,7 @@ EXTRA_GUIDES = [
 <p>Als je merkt dat je een focus-app opent om jezelf te bewijzen in plaats van om een bestand te openen, is de app de taak geworden. Dat is hetzelfde lek als een planner die je inricht in plaats van start. Sluit de focus-app. Open het bestand. Aandacht die volgt, is winst. Aandacht die je eerst moet verdienen met een reeks, is een omweg.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro heeft geen streaks, geen badges, geen achterstallig-rood. Focus is de volgende stap ná de dagstart, niet een spel dat je kunt verliezen. 7 dagen, geen creditcard, iDEAL kan. Als jij aandacht zoekt zonder gehoorzaamheidsspel, is dat de match. Niet harder zitten. Eerlijker starten, en mogen stoppen.</p>
+<p>Structuro heeft geen streaks, geen badges, geen achterstallig-rood. Focus is de volgende stap ná de dagstart, niet een spel dat je kunt verliezen. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jij aandacht zoekt zonder gehoorzaamheidsspel, is dat de match. Niet harder zitten. Eerlijker starten, en mogen stoppen.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen reeks om te redden. Wel een korte, startbare aandachtspanne.",
