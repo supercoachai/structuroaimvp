@@ -7,7 +7,13 @@ import {
 } from './lib/v2/v2LabAccess'
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server'
 
+/** SEO-bestanden: altijd 200, nooit auth-redirect (Google verwacht text/plain of XML). */
+function isSeoFilePath(pathname: string): boolean {
+  return pathname === '/robots.txt' || pathname === '/sitemap.xml' || pathname === '/llms.txt'
+}
+
 function isFailOpenPath(pathname: string): boolean {
+  if (isSeoFilePath(pathname)) return true
   if (pathname.startsWith('/_next')) return true
   if (pathname.startsWith('/api/')) return true
   if (pathname.startsWith('/auth')) return true
@@ -43,6 +49,10 @@ function isFailOpenPath(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  // robots.txt / sitemap.xml vóór alles: geen Supabase-roundtrip, geen login-redirect.
+  if (isSeoFilePath(request.nextUrl.pathname)) {
+    return NextResponse.next({ request })
+  }
   try {
     return await updateSession(request, event)
   } catch (err) {
@@ -94,6 +104,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

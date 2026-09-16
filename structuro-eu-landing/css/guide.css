@@ -258,6 +258,11 @@ footer.site-foot{
   font-size:clamp(32px,7vw,46px);letter-spacing:-.026em;line-height:1.08;color:var(--g-ink);
   text-wrap:balance;
 }
+
+.guide-byline{
+  font-size:13px;color:var(--g-faint);margin:10px 0 0;line-height:1.5;
+}
+.guide-byline a{color:var(--g-teal);text-decoration:underline;text-underline-offset:2px;}
 .guide-answer{
   margin:20px 0 28px;padding:18px 18px;border-radius:16px;
   background:rgba(45,90,86,.07);border:1px solid rgba(45,90,86,.14);

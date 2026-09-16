@@ -55,6 +55,9 @@ export const APP_ROUTES = [
   { path: "/privacy", kind: "public", status: [200], needles: ["privacy"] },
   { path: "/terms", kind: "public", status: [200], needles: ["voorwaarden", "terms"] },
   { path: "/blog", kind: "public", status: [200], needles: ["structuro", "blog"] },
+  // SEO-bestanden: moeten 200 geven, nooit login-redirect (GSC-acceptatiecriteria).
+  { path: "/robots.txt", kind: "public", status: [200], needles: ["user-agent"] },
+  { path: "/sitemap.xml", kind: "public", status: [200], needles: ["sitemapindex", "blog/sitemap.xml"] },
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
   { path: "/activiteit/admin", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/activiteit/funnel", kind: "public", status: [200, 307, 308], needles: ["privé-dashboard", "inloggen", "structuro"] },

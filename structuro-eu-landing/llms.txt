@@ -4,6 +4,8 @@
 
 Structuro is een prikkelarme executie-interface: dagstart → focus → dagafsluiting. Energie-first, max een paar taken zichtbaar. Geen medisch advies; geen diagnose of behandeling.
 
+Auteur van de gidsen: Niels van den Hurk, founder van Structuro, zelf ADHD ([verhaal](https://www.structuro.eu/verhaal/)). Hoofdgids van het cluster taakinitiatie: [Taakverlamming bij ADHD](https://www.structuro.eu/taakverlamming-adhd/). Verdieping daarbinnen: niet kunnen beginnen, uitstelgedrag, en waarom 'gewoon beginnen' niet werkt.
+
 ## Primary
 
 - [Homepage](https://www.structuro.eu/): Merkbelofte en productintroductie

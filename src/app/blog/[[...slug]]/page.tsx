@@ -40,12 +40,33 @@ export async function generateStaticParams() {
   }
 }
 
+/**
+ * Slugs die ook als gids op www.structuro.eu bestaan. De kennislaag op .eu is
+ * canoniek; de blogversie wijst daarheen zodat Google en LLM's niet twee
+ * URL's voor hetzelfde onderwerp indexeren (entiteitssplit .eu/.ai).
+ */
+const EU_CANONICAL_OVERRIDES: Record<string, string> = {
+  "adhd-en-burn-out": "https://www.structuro.eu/adhd-en-burn-out/",
+};
+
 export async function generateMetadata(
   props: BlogPageProps,
   parent: ResolvingMetadata
 ) {
   const { slug } = await props.params;
-  return generateOpinlyMetadata(toBlogSeo(await resolveRoute(slug ?? [])), parent);
+  const metadata = await generateOpinlyMetadata(
+    toBlogSeo(await resolveRoute(slug ?? [])),
+    parent
+  );
+  const euCanonical =
+    slug?.length === 1 ? EU_CANONICAL_OVERRIDES[slug[0]] : undefined;
+  if (euCanonical) {
+    return {
+      ...metadata,
+      alternates: { ...metadata.alternates, canonical: euCanonical },
+    };
+  }
+  return metadata;
 }
 
 export default async function BlogPage(props: BlogPageProps) {
