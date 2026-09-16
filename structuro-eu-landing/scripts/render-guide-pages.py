@@ -15,7 +15,7 @@ from extra_guides import EXTRA_GUIDES
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-09"
-CSS_V = "20260909b"
+CSS_V = "20260916b"
 FEATURED_SLUGS = (
     "adhd-en-burn-out",
     "taakverlamming-adhd",
@@ -880,14 +880,23 @@ def render(g: dict) -> str:
 {g["body"].strip()}
   </article>
 
-  <section class="guide-cta" aria-label="Call to action">
-    <div>
-      <p class="guide-cta-title">{esc(g["cta_title"])}</p>
-      <p>{esc(g["cta_p"])}</p>
+  <section class="sc-cta" aria-label="Call to action">
+    <div class="cl">
+      <div class="eyebrow"><i></i>Gebouwd op deze gesprekken</div>
+      <h2>Dit is wat we ermee <em>bouwden</em>.</h2>
+      <p class="sub">Je grootste taak staat er als stappen die je nu aankunt. Meer hoeft niet vandaag.</p>
+      <div class="act">
+        <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Begin met één stap</a>
+        <ul class="checks">
+          <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>7 dagen gratis</li>
+          <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>Geen creditcard</li>
+          <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>Klaar in ~2 minuten</li>
+        </ul>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Begin met één stap</a>
-      <p class="reassure">Geen streaks. Geen shame. Gratis 7 dagen · geen creditcard · klaar in ~2 minuten.</p>
+    <div class="shot">
+      <div class="cap">Je dashboard</div>
+      <img src="/uploads/guide-cta-dashboard.png" alt="Structuro dashboard: de taak die nu aan de beurt is, opgedeeld in stappen" width="471" height="540" loading="lazy">
     </div>
   </section>
 
