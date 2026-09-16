@@ -937,7 +937,6 @@ def render(g: dict) -> str:
       <a href="/cookies/">Cookies</a>
     </div>
   </div>
-  <a class="verified-dr-badge" href="https://verifieddr.com" target="_blank" rel="noopener">Verified DR</a>
 </footer>
 </body>
 </html>
@@ -1200,9 +1199,9 @@ def write_hub() -> None:
       <a href="/privacy/">Privacy</a>
       <a href="/terms/">Voorwaarden</a>
       <a href="/cookies/">Cookies</a>
+      <a href="/en/guides/" hreflang="en">English</a>
     </div>
   </div>
-  <a class="verified-dr-badge" href="https://verifieddr.com" target="_blank" rel="noopener">Verified DR</a>
 </footer>
 </body>
 </html>

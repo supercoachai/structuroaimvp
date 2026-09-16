@@ -176,7 +176,6 @@ def wrap_page(
 {inner_html}
   </article>
   <a class="legal-back" href="{home}">{html.escape(back_label)}</a>
-  <a class="verified-dr-badge" href="https://verifieddr.com/website/structuro-eu" target="_blank" rel="noopener"><img src="https://verifieddr.com/badge/structuro-eu.svg?style=minimal&amp;metric=truedr" alt="Verified DR - Verified Domain Rating for structuro.eu" width="200" height="24" loading="lazy" decoding="async" /></a>
 </main>
 
 <footer class="site-foot">
