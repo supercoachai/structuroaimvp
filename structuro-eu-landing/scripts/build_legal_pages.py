@@ -101,15 +101,11 @@ def wrap_page(
             nav_items.append(f'<a href="{href}">{html.escape(label)}</a>')
     nav_join = "\n      ".join(nav_items)
 
-    nl_href = f"/{active}/"
-    en_href = f"/en/{active}/"
-    nl_active = ' aria-current="page" class="is-active"' if lang == "nl" else ""
-    en_active = ' aria-current="page" class="is-active"' if lang == "en" else ""
-    lang_switch = (
-        '<nav class="legal-lang" aria-label="Language">'
-        f'<a href="{nl_href}"{nl_active}>NL</a>'
-        f'<a href="{en_href}"{en_active}>EN</a>'
-        "</nav>"
+    # Taalwissel zit in de footer bij de copyright-regel; geen switcher in de header.
+    lang_link = (
+        f' · <a href="/{active}/" hreflang="nl">Nederlands</a>'
+        if lang == "en"
+        else f' · <a href="/en/{active}/" hreflang="en">English</a>'
     )
 
     canonical = (
@@ -159,7 +155,6 @@ def wrap_page(
       Structuro
     </a>
     <div class="legal-header-actions">
-      {lang_switch}
       <nav class="legal-nav" aria-label="{html.escape(nav_aria)}">
       {nav_join}
       </nav>
@@ -193,7 +188,7 @@ def wrap_page(
       </nav>
     </div>
     <div class="foot-bottom">
-      <span>© 2026 Structuro · {html.escape(made_in)}</span>
+      <span>© 2026 Structuro · {html.escape(made_in)}{lang_link}</span>
       <nav>
         <a href="{foot_privacy}">Privacy</a>
         <a href="{foot_terms}">{"Terms" if lang == "en" else "Voorwaarden"}</a>

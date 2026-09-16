@@ -772,7 +772,8 @@ def hreflang_html(g: dict) -> str:
     )
 
 
-def en_nav_html(g: dict) -> str:
+def en_foot_html(g: dict) -> str:
+    """Gedempte taallink in de footer (fsmall); header bevat geen taallink meer."""
     en = (g.get("hreflang") or {}).get("en")
     if not en:
         return ""
@@ -793,7 +794,7 @@ def render(g: dict) -> str:
     title = f"{g.get('meta_title') or g['title']} · Structuro"
     hreflang = hreflang_html(g)
     hreflang_block = f"\n{hreflang}" if hreflang else ""
-    en_nav = en_nav_html(g)
+    en_foot = en_foot_html(g)
     card_num = g.get("card_num", "0")
     card_label = g.get("card_label", g["eyebrow"].upper())
     read_min = g.get("read_min", "3 MIN")
@@ -858,7 +859,7 @@ def render(g: dict) -> str:
       Structuro
     </a>
     <nav class="navlinks" aria-label="Hoofdmenu">
-      <a class="is-active" href="/gidsen/">Gidsen</a>{en_nav}
+      <a class="is-active" href="/gidsen/">Gidsen</a>
       <a href="/#prijs">Prijs</a>
       <a href="/#faq">FAQ</a>
       <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=nav_login">Inloggen</a>
@@ -934,7 +935,7 @@ def render(g: dict) -> str:
       <span>© Structuro</span>
       <a href="/privacy/">Privacy</a>
       <a href="/terms/">Voorwaarden</a>
-      <a href="/cookies/">Cookies</a>
+      <a href="/cookies/">Cookies</a>{en_foot}
     </div>
   </div>
 </footer>
