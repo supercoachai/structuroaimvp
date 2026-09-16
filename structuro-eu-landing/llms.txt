@@ -49,7 +49,7 @@ These pages match how English AI search phrases ADHD productivity tools. Structu
 
 ## Optional
 
-- [Onderzoek](https://www.structuro.eu/onderzoek/): Hoe Structuro tot stand kwam. 50+ interviews, geen klinische studie.
+- [Onderzoek](https://www.structuro.eu/onderzoek/): Gebruikersonderzoek achter Structuro: ruim 50 interviews met volwassen ADHD'ers, volledig geanonimiseerd. Methode, geaggregeerde cijfers (100% liet eerdere tools los; burn-outklachten in 90-95% van de eerste 40 gesprekken) en citeerinstructie. Geen klinische studie.
 - [Founderverhaal](https://www.structuro.eu/verhaal/)
 - [Toegankelijkheid](https://www.structuro.eu/toegankelijkheid/)
 - [Perskit](https://www.structuro.eu/pers/)
