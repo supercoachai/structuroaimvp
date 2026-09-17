@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CANONICAL_PRODUCTION_ORIGIN } from "@/lib/appUrl";
+import { INDEXNOW_KEY_PATH } from "@/lib/indexNow";
 
 import robots from "./robots";
 import { GET as sitemapGet } from "./sitemap.xml/route";
@@ -16,6 +17,7 @@ describe("product-host robots", () => {
         "/login",
         "/registreren",
         "/llms.txt",
+        INDEXNOW_KEY_PATH,
         "/privacy",
         "/terms",
       ]),

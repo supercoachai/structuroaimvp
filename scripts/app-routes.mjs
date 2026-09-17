@@ -59,6 +59,12 @@ export const APP_ROUTES = [
   // SEO-bestanden: moeten 200 geven, nooit login-redirect (GSC-acceptatiecriteria).
   { path: "/robots.txt", kind: "public", status: [200], needles: ["user-agent"] },
   { path: "/sitemap.xml", kind: "public", status: [200], needles: ["urlset"] },
+  {
+    path: "/8d59491603984060b0f3eb025fea688d.txt",
+    kind: "public",
+    status: [200],
+    needles: ["8d59491603984060b0f3eb025fea688d"],
+  },
   { path: "/wachtlijst", kind: "public", status: [200, 307, 308] },
   { path: "/activiteit/admin", kind: "public", status: [200], needles: ["privé-dashboard", "inloggen"] },
   { path: "/activiteit/funnel", kind: "public", status: [200, 307, 308], needles: ["privé-dashboard", "inloggen", "structuro"] },

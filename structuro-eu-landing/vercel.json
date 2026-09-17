@@ -3,6 +3,19 @@
   "outputDirectory": ".",
   "headers": [
     {
+      "source": "/8d59491603984060b0f3eb025fea688d.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
       "source": "/sitemap.xml",
       "headers": [
         {
@@ -169,7 +182,7 @@
       "permanent": true
     },
     {
-      "source": "/:path((?!sitemap\\.xml$|robots\\.txt$|llms\\.txt$).*)",
+      "source": "/:path((?!sitemap\\.xml$|robots\\.txt$|llms\\.txt$|8d59491603984060b0f3eb025fea688d\\.txt$).*)",
       "has": [
         {
           "type": "host",

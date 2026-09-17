@@ -1,3 +1,4 @@
+import { INDEXNOW_KEY_PATH } from './lib/indexNow'
 import { updateSession } from './lib/supabase/middleware'
 import {
   isV2AppPath,
@@ -9,7 +10,12 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server
 
 /** SEO-bestanden: altijd 200, nooit auth-redirect (Google verwacht text/plain of XML). */
 function isSeoFilePath(pathname: string): boolean {
-  return pathname === '/robots.txt' || pathname === '/sitemap.xml' || pathname === '/llms.txt'
+  return (
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/llms.txt' ||
+    pathname === INDEXNOW_KEY_PATH
+  )
 }
 
 function isFailOpenPath(pathname: string): boolean {
@@ -104,6 +110,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js$|manifest\\.json$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|8d59491603984060b0f3eb025fea688d\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

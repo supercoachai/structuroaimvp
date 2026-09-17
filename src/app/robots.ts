@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { CANONICAL_PRODUCTION_ORIGIN } from "@/lib/appUrl";
+import { INDEXNOW_KEY_PATH } from "@/lib/indexNow";
 
 /**
  * robots.txt voor www.structuro.ai (product-host).
@@ -30,6 +31,7 @@ export default function robots(): MetadataRoute.Robots {
           "/login",
           "/registreren",
           "/llms.txt",
+          INDEXNOW_KEY_PATH,
         ],
         disallow: "/",
       },

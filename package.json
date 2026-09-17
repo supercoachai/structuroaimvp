@@ -46,6 +46,8 @@
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify": "node scripts/verify-app.mjs",
     "verify:quick": "VERIFY_SKIP_BUILD=1 VERIFY_SKIP_START=1 VERIFY_ALLOW_DEV_ROUTES=1 BASE_URL=http://127.0.0.1:3000 node scripts/verify-app.mjs",
+    "indexnow:submit": "node scripts/indexnow-submit.mjs",
+    "indexnow:submit:app": "node scripts/indexnow-submit.mjs --app",
     "jarvis": "node --env-file=.env.local jarvis/server.mjs"
   },
   "dependencies": {

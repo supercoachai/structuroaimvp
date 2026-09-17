@@ -97,6 +97,12 @@ describe("structuro.eu landing hygiene", () => {
     }
   });
 
+  it("host de IndexNow-sleutel als UTF-8-tekst op de site-root", () => {
+    const key = "8d59491603984060b0f3eb025fea688d";
+    const body = readFileSync(join(LANDING, `${key}.txt`), "utf8").trim();
+    expect(body).toBe(key);
+  });
+
   it("houdt voor-coaches indexeerbaar en de sitemap compleet", () => {
     const coaches = pages.find((p) => p.rel === "voor-coaches/index.html");
     expect(coaches?.noindex).toBe(false);
