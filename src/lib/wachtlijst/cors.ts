@@ -5,6 +5,10 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.structuro.ai",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+  "http://localhost:8765",
+  "http://127.0.0.1:8765",
 ]);
 
 export function waitlistCorsHeaders(origin: string | null): HeadersInit {

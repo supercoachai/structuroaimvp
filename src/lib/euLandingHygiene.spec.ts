@@ -109,6 +109,17 @@ describe("structuro.eu landing hygiene", () => {
     expect(urls.length).toBeGreaterThanOrEqual(40);
   });
 
+  it("toont op voor-coaches het home-dashboard en een echte aanvraag", () => {
+    const coaches = pages.find((p) => p.rel === "voor-coaches/index.html");
+    expect(coaches?.html).toContain('data-demo="home"');
+    expect(coaches?.html).toContain("Nu aan de beurt");
+    expect(coaches?.html).toContain("Wat jij ermee krijgt");
+    expect(coaches?.html).toContain("/js/coach-form.js");
+    expect(coaches?.html).not.toContain("geen verkoopdoel");
+    expect(coaches?.html).not.toContain("opent je eigen mail");
+    expect(coaches?.html).not.toContain("mailto:info@structuro.eu?subject=");
+  });
+
   it("heeft geen em-dash in user-facing landing HTML", () => {
     for (const p of pages) {
       expect(p.html.includes(EM_DASH), p.rel).toBe(false);

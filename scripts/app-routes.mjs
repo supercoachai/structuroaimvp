@@ -84,6 +84,7 @@ export const APP_ROUTES = [
 
   // —— API (geen 500; 401/404/405 is ok) ——
   { path: "/api/trial/config", kind: "api", status: [200, 401, 404, 405] },
+  { path: "/api/coach-aanvraag", kind: "api", status: [405] },
   { path: "/api/stripe/config", kind: "api", status: [200, 401, 404, 405, 503] },
   // Productie: hard 404. In dev (verify:quick) zijn deze endpoints bewust actief.
   { path: "/api/posthog-error-test", kind: "api", status: DEV_ROUTES_ALLOWED ? [200, 404] : [404] },
