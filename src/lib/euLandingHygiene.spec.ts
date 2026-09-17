@@ -118,6 +118,8 @@ describe("structuro.eu landing hygiene", () => {
     expect(coaches?.html).not.toContain("geen verkoopdoel");
     expect(coaches?.html).not.toContain("opent je eigen mail");
     expect(coaches?.html).not.toContain("mailto:info@structuro.eu?subject=");
+    expect(coaches?.html).not.toContain("Gebouwd met praktijkonderzoek");
+    expect(coaches?.html).not.toContain("Gebouwd vanuit gesprekken over volle lijsten");
   });
 
   it("heeft geen em-dash in user-facing landing HTML", () => {
