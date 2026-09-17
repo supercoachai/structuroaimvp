@@ -37,6 +37,25 @@ RELATED_ALIASES = {
         "card_label": "PRIKKELS",
     },
 }
+# Bestaande gidsen die niet in GUIDES staan (eigen HTML), wel op de hub.
+HUB_EXTRA = [
+    {
+        "slug": "overprikkeling-adhd",
+        "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
+        "hub_h2": "Overprikkeling en ADHD",
+        "hub_teaser": "Een volle dag lekt de startmotor leeg. Avond afsluiten, niet harder duwen.",
+        "eyebrow": "Symptoom",
+        "card_num": "22",
+        "card_label": "PRIKKELS",
+        "read_min": "4 MIN",
+        "thumb": "volle dag",
+        "thumb_mod": "d",
+        "answer": (
+            "Overprikkeling bij ADHD bouwt de hele dag op. Wilskracht is het verkeerde antwoord. "
+            "Avond afsluiten (shutdown) helpt de startmotor weer vullen, zonder medische claim."
+        ),
+    },
+]
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 ORG_ID = "https://www.structuro.eu/#organization"
 ORG_LOGO = "https://www.structuro.eu/uploads/logo-structuro-mark.png"
@@ -85,7 +104,7 @@ GUIDES = [
 <p>'Gewoon beginnen' klinkt logisch als je al weet wat er moet gebeuren. Voor een brein met executieve frictie is dat advies vaak het probleem zelf. De intentie is er. De startknop niet. Je blijft hangen tussen weten en doen, en dat voelt alsof je faalt terwijl je juist hard nadenkt.</p>
 
 <h2>Wat er gebeurt vóór je begint</h2>
-<p>Je ziet niet 'één mail beantwoorden'. Je ziet de hele keten: openen, nadenken, perfect formuleren, bijlagen, follow-up, mogelijke fouten. Die berg voelt als dreiging. Dan kies je uitstel, scrolling of iets anders dat wél meteen beloont. Dat voelt als luiheid. Het is vaker overprikkeling plus een te grote eerste stap.</p>
+<p>Je ziet niet 'één mail beantwoorden'. Je ziet de hele keten: openen, nadenken, perfect formuleren, bijlagen, follow-up, mogelijke fouten. Die berg voelt als dreiging. Dan kies je uitstel, scrolling of iets anders dat wél meteen beloont. Dat voelt als luiheid. Het is vaker <a href="/overprikkeling-adhd/">overprikkeling</a> plus een te grote eerste stap.</p>
 <p>Daarbij speelt tijdsperceptie mee: sommige mensen met ADHD schatten 'nu' versus 'later' minder scherp in (populair 'time blindness' genoemd). Dat is geen totale blindheid, wel een merkbare afwijking. Zonder een microscopisch kleine ingang blijft een taak in 'later' hangen, ook als de deadline dichterbij komt.</p>
 
 <h2>Waarom planners dit niet oplossen</h2>
@@ -377,6 +396,15 @@ GUIDES = [
         "thumb_mod": "d",
         "read_min": "3 MIN",
         "title": "Mentale belasting en de dagstart bij ADHD",
+        "related_slugs": [
+            "energie-first",
+            "overprikkeling-adhd",
+            "een-stap-per-dag",
+            "waarom-gewoon-beginnen-niet-werkt",
+        ],
+        "related_anchors": {
+            "overprikkeling-adhd": "als de dag je startmotor leeglekt",
+        },
         "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte dagstart ADHD verlaagt keuzedruk, zonder ochtendtheater.",
         "answer": (
             "Mentale belasting is de onzichtbare to-do in je hoofd: onthouden, kiezen, bijsturen. "
@@ -412,7 +440,7 @@ GUIDES = [
 <li>Je voelt schuld over gisteren vóór je vandaag mag beginnen.</li>
 <li>Kleine taken voelen even zwaar als grote.</li>
 </ul>
-<p>Die signalen vragen niet om meer discipline. Ze vragen om minder parallelle keuzes, minder werkgeheugenbelasting, en een kortere brug naar de eerste actie.</p>
+<p>Die signalen vragen niet om meer discipline. Ze vragen om minder parallelle keuzes, minder werkgeheugenbelasting, en een kortere brug naar de eerste actie. Als de dag zelf de startmotor leegtrekt, is dat <a href="/overprikkeling-adhd/">overprikkeling</a>, niet een extra ochtendtheater.</p>
 
 <h2>Mini-script voor een zware ochtend</h2>
 <ol>
@@ -481,7 +509,17 @@ GUIDES = [
         "thumb": "rust / avond",
         "thumb_mod": "",
         "read_min": "3 MIN",
+        "meta_title": "Energie-first: taken plannen op energie",
         "title": "Energie-first werken: taken plannen op energie, niet op moeten",
+        "related_slugs": [
+            "mentale-belasting-dagstart",
+            "overprikkeling-adhd",
+            "een-stap-per-dag",
+            "waarom-gewoon-beginnen-niet-werkt",
+        ],
+        "related_anchors": {
+            "overprikkeling-adhd": "als de dag je startmotor leeglekt",
+        },
         "description": "Kies taken rond je energie, niet je energie rond je to-do. Zo werkt energie-first zonder hustle, shame of vaste lat die je elke dag breekt.",
         "answer": (
             "Energie-first betekent: je dag bouwen rond wat je nu aankunt, niet rond wat je 'zou moeten'. "
@@ -511,7 +549,7 @@ GUIDES = [
 <li>Verberg de rest tijdelijk.</li>
 <li>Start. Evalueer pas daarna of er ruimte is voor meer.</li>
 </ol>
-<p>Op dagen met hoge mentale last is 'laag' vaker juist dan stoer. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<p>Op dagen met hoge mentale last is 'laag' vaker juist dan stoer. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>. Als de dag vol prikkels zat, lekt die last vaak door tot 's avonds: <a href="/overprikkeling-adhd/">overprikkeling en shutdown</a>.</p>
 
 <h2>Wat energie-first níet is</h2>
 <p>Het is niet 'alleen doen wat leuk is'. Het is niet deadlines ontkennen. Het is niet jezelf forever in mini-stappen houden als er wél capaciteit is. Het is de lat laten meebewegen zodat je überhaupt in beweging komt, ook op rommeldagen.</p>
@@ -949,6 +987,7 @@ def render(g: dict) -> str:
     <div class="flinks">
       <a href="/gidsen/">Gidsen</a>
       <a href="/onderzoek/">Onderzoek</a>
+      <a href="/toegankelijkheid/">Toegankelijkheid</a>
       <a href="/#prijs">Prijs</a>
       <a href="/#faq">FAQ</a>
       <a href="https://www.structuro.ai/login?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=footer_login">Inloggen</a>
@@ -1076,8 +1115,15 @@ def featured_hub_html() -> str:
 """
 
 
+def _hub_guides() -> list[dict]:
+    hub = list(GUIDES) + list(HUB_EXTRA)
+    hub.sort(key=lambda g: int(str(g.get("card_num") or 99)))
+    return hub
+
+
 def write_hub() -> None:
-    n = len(GUIDES)
+    hub_guides = _hub_guides()
+    n = len(hub_guides)
     hub_title = "ADHD-gidsen: kies een kaart · Structuro"
     desc = (
         f"{n} korte gidsen over starten met een ADHD-brein. "
@@ -1089,9 +1135,9 @@ def write_hub() -> None:
         + ', "url": "https://www.structuro.eu/'
         + g["slug"]
         + '/"}'
-        for g in GUIDES
+        for g in hub_guides
     )
-    cards = "\n\n".join(hub_card_html(g) for g in GUIDES)
+    cards = "\n\n".join(hub_card_html(g) for g in hub_guides)
     html = f"""<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -1268,6 +1314,10 @@ def ensure_llms() -> None:
     end = text.index("## Optional")
     lines = ["## Gidsen (SEO / GEO)", ""]
     for g in GUIDES:
+        lines.append(
+            f"- [{g['h1']}](https://www.structuro.eu/{g['slug']}/): {g['answer']}"
+        )
+    for g in HUB_EXTRA:
         lines.append(
             f"- [{g['h1']}](https://www.structuro.eu/{g['slug']}/): {g['answer']}"
         )

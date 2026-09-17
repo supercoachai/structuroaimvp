@@ -164,7 +164,7 @@ EXTRA_GUIDES = [
         "thumb": "stille berg",
         "thumb_mod": "d",
         "read_min": "4 MIN",
-        "meta_title": "Taakverlamming bij ADHD: wat helpt als alles te groot is",
+        "meta_title": "Taakverlamming bij ADHD: als alles te groot is",
         "title": "Taakverlamming bij ADHD: wat helpt als alles tegelijk te groot is",
         "modified": "2026-09-17",
         "related_slugs": [
@@ -177,7 +177,7 @@ EXTRA_GUIDES = [
             "adhd-keuzestress": "als kiezen zelf de taak wordt",
             "adhd-bij-vrouwen": "ADHD bij vrouwen: werk plus huis",
         },
-        "description": "Taakverlamming bij ADHD is geen drama-woord voor luiheid. Het is een vol werkgeheugen plus te veel zichtbare stappen. Wat je kunt doen zonder jezelf te forceren.",
+        "description": "Taakverlamming bij ADHD is geen drama-woord voor luiheid. Het is een vol werkgeheugen plus te veel zichtbare stappen. Wat je kunt doen zonder te forceren.",
         "answer": (
             "Taakverlamming bij ADHD voelt als vastzitten terwijl je hard nadenkt. Te veel stappen zijn tegelijk zichtbaar, "
             "het werkgeheugen zit vol, en geen enkele actie voelt veilig genoeg. Wat helpt is niet méér overzicht, maar minder "
@@ -356,6 +356,7 @@ EXTRA_GUIDES = [
         "related_anchors": {
             "waarom-planners-falen": "waarom een planner taken bewaart, maar niet start",
         },
+        "meta_title": "ADHD-planner die niet overvraagt",
         "title": "ADHD-planner die niet overvraagt: waarom een planner vaak faalt",
         "description": "Zoek je een ADHD-planner die niet overvraagt? Let op start, niet op overzicht. Minder tegelijk zichtbaar, energie eerst, geen straf voor een gemiste dag.",
         "answer": (
@@ -451,7 +452,7 @@ EXTRA_GUIDES = [
             "structuro-of-tiimo": "vergelijk Structuro met Tiimo",
             "structuro-of-structured": "vergelijk Structuro met Structured",
         },
-        "description": "De beste ADHD-app in Nederland bestaat niet als algemeen cijfer. Wel als match: starten, visuele tijd, of overzicht. Zo kies je zonder weer een toolkerkhof.",
+        "description": "De beste ADHD-app in Nederland is geen ranking. Kies op knelpunt: starten, visuele tijd of overzicht.",
         "answer": (
             "De beste ADHD-app in Nederland is geen ranking. Het is de app die jouw knelpunt raakt. Als je niet begint, zoek je "
             "starthulp: weinig tegelijk, energie eerst, geen shame. Als je tijd niet voelt, kan een visuele dagkaart beter passen. "
@@ -771,9 +772,12 @@ EXTRA_GUIDES = [
         "related_slugs": [
             "taakverlamming-adhd",
             "energie-first",
-            "beste-adhd-app-nederland",
+            "overprikkeling-adhd",
             "adhd-op-het-werk",
         ],
+        "related_anchors": {
+            "overprikkeling-adhd": "als de dag je startmotor leeglekt",
+        },
         "description": "ADHD en burn-out overlappen vaak in het gevoel: leeg, en toch een berg. Geen medische pagina. Wel hoe je de start kleiner maakt als de batterij laag is.",
         "answer": (
             "ADHD en burn-out kunnen samen voorkomen in hetzelfde lijf: weinig energie, en een start die te groot voelt. "
@@ -782,7 +786,7 @@ EXTRA_GUIDES = [
         ),
         "h1": "ADHD en burn-out: als leegte, overvolle agenda en niet-starten samenkomen",
         "body": """
-<p>Veel volwassenen met ADHD herkennen periodes waarin niks meer lukt, terwijl de buitenwereld nog steeds een gewone dag verwacht. Soms heet dat overprikkeling. Soms uitputting. Soms gebruiken mensen het woord burn-out. Die woorden zijn niet hetzelfde, en deze pagina stelt geen diagnose. Ze beschrijft alleen een overlap die we in gesprekken vaak horen: de batterij is leeg, en de start is te hoog.</p>
+<p>Veel volwassenen met ADHD herkennen periodes waarin niks meer lukt, terwijl de buitenwereld nog steeds een gewone dag verwacht. Soms heet dat <a href="/overprikkeling-adhd/">overprikkeling</a>. Soms uitputting. Soms gebruiken mensen het woord burn-out. Die woorden zijn niet hetzelfde, en deze pagina stelt geen diagnose. Ze beschrijft alleen een overlap die we in gesprekken vaak horen: de batterij is leeg, en de start is te hoog.</p>
 
 <h2>Overvolle agenda bij ADHD: de overlap, geen diagnose</h2>
 <p>Jarenlang compenseren (avonden, deadlines, charme, chaos opruimen) is duur. Executieve frictie maakt gewone dagen al zwaar. Als daar langdurige uitputting bij komt, is 'gewoon beginnen' niet alleen een startprobleem. Het is een lichaam dat geen extra bewijs meer wil leveren. Een strengere planner is dan geweld. Zie <a href="/energie-first/">energie-first</a>.</p>
@@ -1158,6 +1162,7 @@ EXTRA_GUIDES = [
         "thumb": "overvolle lijst",
         "thumb_mod": "",
         "read_min": "4 MIN",
+        "meta_title": "Takenlijst te lang bij ADHD: minder in beeld",
         "title": "Takenlijst te lang bij ADHD: overweldigd door de lijst, niet door de dag",
         "description": "Een te lange takenlijst bij ADHD maakt starten zwaarder. Hoe je de lijst als lade gebruikt, en vandaag tot één tot een paar regels terugbrengt.",
         "answer": (

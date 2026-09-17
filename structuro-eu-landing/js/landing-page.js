@@ -196,7 +196,7 @@ const TRANSLATIONS = {
     psych_tag5: 'Cyclus', psych_h3_5: 'Energie over de maand',
     psych_p5: 'Sommige weken voelt starten zwaarder. In Structuro kun je optioneel je cyclusfase meenemen als stille context naast je energie, zonder je te vergelijken met gisteren.',
     psych_tag6: 'Rust', psych_h3_6: 'Burn-out preventie',
-    psych_p6: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
+    psych_p6: 'Chronische <a href="/overprikkeling-adhd/">overprikkeling</a> en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
     empathy_eyebrow: 'Klinkt dit bekend?',
     empathy_p1: 'Je hebt een to-do lijst van 47 items die je al drie weken niet aanraakt. Je weet precies wat je moet doen. Maar je begint niet.',
     empathy_p2: 'En aan het einde van de dag voel je je schuldig, niet omdat je lui bent, maar omdat je brein gewoon niet meewerkte.',

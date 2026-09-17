@@ -49,7 +49,7 @@
         en: 'I don\'t feel time. A day has no beginning or end.',
       },
       body: {
-        nl: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed.',
+        nl: 'Als je geen intern klokje hebt, helpt een dagelijkse loop met afsluiting. Klaar is klaar, zonder schuld over wat je niet deed. Meer over <a href="/tijdblindheid-adhd/">tijdblindheid bij ADHD</a>.',
         en: 'If you don\'t have an internal clock, a daily loop with closure helps. Done is done, without guilt over what you didn\'t do.',
       },
       contentId: 'zelftest_tijdblindheid',
@@ -75,7 +75,7 @@
         en: 'Too many choices a day and I\'m done.',
       },
       body: {
-        nl: 'Chronische overprikkeling en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
+        nl: 'Chronische <a href="/overprikkeling-adhd/">overprikkeling</a> en schuld eten energie op. Minder keuzes per dag betekent minder beslismoeheid en meer herstel.',
         en: 'Chronic overstimulation and guilt drain energy. Fewer choices per day means less decision fatigue and more recovery.',
       },
       contentId: 'zelftest_keuzestress',

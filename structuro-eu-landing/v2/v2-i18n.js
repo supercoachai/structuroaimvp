@@ -347,6 +347,7 @@
       footer_privacy: "Privacy policy",
       footer_terms: "Algemene voorwaarden",
       footer_cookies: "Cookies",
+      footer_a11y: "Toegankelijkheid",
     },
     en: {
       meta_title: "ADHD app for starting with one step | Structuro",
@@ -688,6 +689,7 @@
       footer_privacy: "Privacy policy",
       footer_terms: "Terms",
       footer_cookies: "Cookies",
+      footer_a11y: "Accessibility",
     },
   };
 
