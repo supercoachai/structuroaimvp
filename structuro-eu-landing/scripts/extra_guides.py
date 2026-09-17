@@ -30,15 +30,16 @@ EXTRA_GUIDES = [
         "thumb": "lege cursor",
         "thumb_mod": "",
         "read_min": "5 MIN",
-        "meta_title": "Niet kunnen beginnen met ADHD: wat wél helpt",
-        "title": "Niet kunnen beginnen met ADHD: wat er gebeurt, en wat wél helpt",
-        "description": "Niet kunnen beginnen bij ADHD is vaak taakinitiatie-frictie, geen luiheid. Waarom de start hapert, en hoe je vandaag wél één stap zet.",
+        "meta_title": "Niet kunnen beginnen met ADHD: startprobleem",
+        "title": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
+        "description": "Niet kunnen beginnen bij ADHD is een startprobleem, geen luiheid. Waarom de start hapert, en hoe je vandaag wél één stap zet.",
         "answer": (
             "Niet kunnen beginnen bij ADHD is vaak geen gebrek aan wil. Het is taakinitiatie-frictie: de taak is te groot, "
             "er zijn te veel opties, de energie past niet, of de start voelt te alleen. Wat helpt is eerst die frictie benoemen, "
             "daarna één kleine actie. Geen strengere planner. Wel één haalbare stap vandaag."
         ),
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
+        "cluster_note": 'Hoofdgids van dit cluster: <a href="/taakverlamming-adhd/">taakverlamming bij ADHD, als alles tegelijk te groot is</a>.',
         "related_slugs": [
             "taakverlamming-adhd",
             "adhd-keuzestress",
@@ -51,11 +52,12 @@ EXTRA_GUIDES = [
             "energie-first": "als de energie niet past",
             "takenlijst-te-lang-adhd": "wanneer je lijst de start zwaarder maakt",
         },
-        "h1": "Niet kunnen beginnen met ADHD: wat er gebeurt, en wat wél helpt",
+        "h1": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
         "body": """
 <p>Je weet wat er moet gebeuren. Soms al dagen. En toch blijft de start uit. Dat voelt als falen, vooral als anderen 'gewoon beginnen' alsof dat een knop is. Bij veel ADHD-breinen is die knop het probleem: intentie is er, executie hapert. Niet kunnen beginnen is dan geen moreel oordeel. Het is een startprobleem. Lees ook <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
+<p>Deze gids blijft bij die startfrictie. Andere knelpunten horen op andere kaarten. Als de ochtend zelf de keten is: <a href="/adhd-ochtendroutine/">ADHD-ochtendroutine</a>. Als de berg in beeld de last is vóór je begint: <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a> en <a href="/energie-first/">energie-first</a>.</p>
 
-<h2>Je weet wat je moet doen. Welke frictie houdt je vandaag tegen?</h2>
+<h2>Startprobleem ADHD: je weet wat je moet doen</h2>
 <p>Taakinitiatie is de overgang van weten naar doen. Die overgang vraagt werkgeheugen, een eerste fysieke actie, en ruimte in je hoofd. Als die drie tegelijk binnenkomen, blokkeert het systeem. Je opent niet de mail. Je opent vijf tabbladen. Of niks. Daarna volgt schaamte, en schaamte maakt de volgende start nog zwaarder.</p>
 <p>Niet iedereen hapert op dezelfde plek. Kies hieronder de zin die het dichtst bij vandaag zit. Daarna één kleine actie, niet de hele berg.</p>
 
@@ -102,7 +104,7 @@ EXTRA_GUIDES = [
 <p>Dit zijn patronen die mensen beschrijven, geen diagnose en geen vaste oplossing voor iedereen. Een timer helpt de één om te starten, en voelt voor de ander als extra druk. Geen truc is universeel.</p>
 
 <h2>Wat we terughoren</h2>
-<p>In gesprekken met mensen die vastlopen op starten horen we niet één probleem. De één ziet een taak als een te grote berg. De ander blijft hangen tussen tien opties. Weer een ander merkt pas laat dat de energie voor die taak er vandaag niet is. En soms is de drempel dat niemand meekijkt.</p>
+<p>In gesprekken met mensen die vastlopen op starten horen we niet één probleem. De één ziet een taak als een te grote berg. De ander blijft hangen tussen tien opties. Weer een ander merkt pas laat dat de energie voor die taak er vandaag niet is. En soms is de drempel dat niemand meekijkt. Mensen zeggen het ook zo: ik kan niet starten, of ik voel schaamte dat ik niet begin. Dat is startfrictie, geen karakterfout.</p>
 <p>Daarom begint Structuro niet met een volle planning. Eerst kies je je energie. Dan kies je één ding. Daarna maak je alleen de start kleiner.</p>
 <p class="guide-method">Deze gids combineert gebruikersonderzoek van Structuro met openbare ervaringsverhalen en wetenschappelijke bronnen. Ervaringsverhalen laten patronen zien, maar voorspellen niet wat voor één persoon werkt.</p>
 
@@ -115,17 +117,18 @@ EXTRA_GUIDES = [
 </ol>
 <p>Dat sluit aan bij wat onderzoek implementatie-intenties noemt: een concrete als-dan-koppeling in plaats van wilskracht alleen. Het is geen behandeling. Het is frictie verlagen tot bewegen weer mogelijk is. Lees <a href="/een-stap-per-dag/">één stap per dag</a> als je de methode wilt herhalen zonder de hele week te winnen.</p>
 
-<h2>Valkuilen die de start stelen</h2>
-<p>Wachten op motivatie. Motivatie komt vaak ná de eerste micro-actie. Een nieuwe app installeren als vervanging voor beginnen. Alles eerst uitwerken in notities. En jezelf straffen met een strengere planner nadat een zachtere aanpak 'mislukte'. Meestal was de ingang te groot, niet te zacht. Meer items in beeld maken de start zwaarder. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<h2>Voorbereiden in plaats van doen: valkuilen die de start stelen</h2>
+<p>Wachten op motivatie. Motivatie komt vaak ná de eerste micro-actie. Een nieuwe app installeren als vervanging voor beginnen. Alles eerst uitwerken in notities. Voorbereiden in plaats van doen: research, mappen, nog één plan. En jezelf straffen met een strengere planner nadat een zachtere aanpak 'mislukte'. Meestal was de ingang te groot, niet te zacht. Meer items in beeld maken de start zwaarder. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
+<p>De eerste klik mag concreet zijn. E-mails niet beantwoorden, een saaie klus, of de belastingaangifte beginnen: splits tot de eerste fysieke handeling. Open het concept. Typ de onderwerpregel. Dat is starten. De rest mag later.</p>
 
 <h2>Wat je morgen kunt doen</h2>
 <p>Kies één taak die al dagen in je hoofd zit. Zeg hardop welke frictie het is: te groot, te veel opties, energie, of te alleen. Doe alleen de bijbehorende micro-actie. Stop daarna bewust. Dat is de oefening. Niet de berg winnen. De ingang vinden.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. De dagstart vraagt energie, daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen creditcard nodig voor de trial. Betalen kan later gewoon met iDEAL. Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
+<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. Eerst kies je wat haalbaar is. Daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen creditcard nodig voor de trial. Betalen kan later gewoon met iDEAL. Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
 """,
         "cta_title": "Begin met één stap",
-        "cta_p": "Geen account nodig voor de eerste dagstart. Kies wat haalbaar is. Bevestig. Start.",
+        "cta_p": "Kies wat haalbaar is. Bevestig. Start. Geen strengere planner.",
         "faqs": [
             (
                 "Is niet kunnen beginnen hetzelfde als uitstelgedrag?",
@@ -161,9 +164,9 @@ EXTRA_GUIDES = [
         "thumb": "stille berg",
         "thumb_mod": "d",
         "read_min": "4 MIN",
-        "meta_title": "Taakverlamming bij ADHD: als alles te groot is",
-        "title": "Taakverlamming bij ADHD: als alles tegelijk te groot is",
-        "modified": "2026-09-09",
+        "meta_title": "Taakverlamming bij ADHD: wat helpt als alles te groot is",
+        "title": "Taakverlamming bij ADHD: wat helpt als alles tegelijk te groot is",
+        "modified": "2026-09-17",
         "related_slugs": [
             "adhd-keuzestress",
             "niet-kunnen-beginnen-adhd",
@@ -179,7 +182,7 @@ EXTRA_GUIDES = [
             "het werkgeheugen zit vol, en geen enkele actie voelt veilig genoeg. Wat helpt is niet méér overzicht, maar minder "
             "tegelijk: één micro-actie, energie meewegen, de rest uit beeld. De berg mag bestaan. Jij raakt hem op één punt."
         ),
-        "h1": "Taakverlamming bij ADHD: als alles tegelijk te groot is",
+        "h1": "Taakverlamming bij ADHD: wat helpt als alles tegelijk te groot is",
         "body": """
 <p>Taakverlamming klinkt zwaar, en dat is het van binnen ook. Buiten ziet het eruit als niks doen. Je zit voor een scherm, een aanrecht, een inbox. Je hoofd draait. Je lichaam niet. Dat is geen theater. Het is een systeem dat te veel opties tegelijk probeert te dragen.</p>
 
@@ -194,7 +197,7 @@ EXTRA_GUIDES = [
 <h2>Verlamming is vaak te veel zichtbaar</h2>
 <p>Als twaalf dingen 'nu' zijn, is niks nu. Het brein zoekt een uitgang: scrollen, opruimen van iets kleins, een nieuwe tool, of bevriezen. Bevriezen is geen luiheid. Het is een noodrem. De correctie is het zichtveld smal maken tot er weer één veilige klik is. Methode: <a href="/een-stap-per-dag/">één stap per dag</a>.</p>
 
-<h2>Drie manieren om de berg te raken</h2>
+<h2>Wat helpt bij taakverlamming: drie manieren om de berg te raken</h2>
 <ul>
 <li><strong>Eén rand.</strong> Niet het midden van het project. De rand die het minst bedreigend is: map openen, kop koffie, schoenen.</li>
 <li><strong>Energie als filter.</strong> Op laag kies je de kleinste rand. Op hoog mag er meer. <a href="/energie-first/">Energie-first</a> is geen excuus, het is doseren.</li>
@@ -275,7 +278,7 @@ EXTRA_GUIDES = [
         "body": """
 <p>Tijdblindheid is een populair woord, geen medische stempel. Mensen gebruiken het voor een merkbare afwijking: inschatten hoe lang iets duurt, voelen wanneer je moet beginnen, 'vijf minuten' dat een uur wordt, of juist een deadline die opeens in je gezicht staat. Het is zelden dat je geen klok kunt lezen. Het is vaker dat tijd niet als een stevige lijn voelt.</p>
 
-<h2>Wat er hapert: nu versus later</h2>
+<h2>Tijdblindheid: nu versus later</h2>
 <p>Als later vaag is, wint nu. Nu is concreet: telefoon, een kleine taak, iets dat meteen beloont. Later is abstract: de mail, de administratie, het gesprek. Zonder een microscopisch kleine ingang in het heden blijft de belangrijke taak in later wonen. Tot paniek hem naar nu sleept. Die paniek werkt soms. Hij is duur.</p>
 <p>Executieve functies, waaronder plannen en starten, zijn bij ADHD vaker kwetsbaar. Tijd inschatten hangt daarmee samen. Dat is geen excuus om nooit te beginnen. Het is een reden om niet te vertrouwen op 'ik doe het vanavond wel' als enige systeem. Zie <a href="/waarom-gewoon-beginnen-niet-werkt/">niet kunnen beginnen</a>.</p>
 
@@ -342,7 +345,7 @@ EXTRA_GUIDES = [
         "thumb": "één regel",
         "thumb_mod": "",
         "read_min": "4 MIN",
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
         "related_slugs": [
             "waarom-planners-falen",
             "niet-kunnen-beginnen-adhd",
@@ -352,18 +355,18 @@ EXTRA_GUIDES = [
         "related_anchors": {
             "waarom-planners-falen": "waarom een planner taken bewaart, maar niet start",
         },
-        "title": "ADHD-planner die niet overvraagt: waar je op let",
+        "title": "ADHD-planner die niet overvraagt: waarom een planner vaak faalt",
         "description": "Zoek je een ADHD-planner die niet overvraagt? Let op start, niet op overzicht. Minder tegelijk zichtbaar, energie eerst, geen straf voor een gemiste dag.",
         "answer": (
             "Een ADHD-planner die niet overvraagt, optimaliseert voor starten, niet voor een volle week. Weinig tegelijk zichtbaar, "
             "een eerste stap die klein mag, energie als filter, geen streaks die je aanklagen. Als een tool vooral bewaart, herinnert "
             "en beloont, overvraagt hij het brein dat al vastzit op de start. Kies executie boven theater."
         ),
-        "h1": "ADHD-planner die niet overvraagt: waar je op let",
+        "h1": "ADHD-planner die niet overvraagt: waarom een planner vaak faalt",
         "body": """
 <p>De markt zit vol 'ADHD-planners'. Sommige zijn rustig. Sommige zijn dezelfde to-do in pasteltinten. Als je al vijf tools hebt afgehaakt, is de vraag niet welke sticker het mooist is. De vraag is: overvraagt deze planner het moment waarop jij moet beginnen?</p>
 
-<h2>Wat overvragen is</h2>
+<h2>Waarom werkt een planner niet bij ADHD?</h2>
 <p>Overvragen is: te veel velden, te veel categorieën, te veel 'sluit je dag af met een review van 12 stappen'. Het is een weekoverzicht dat je aanklaagt op dinsdag. Het is een streak die rood wordt. Het is een inbox die groeit terwijl jij stilstaat. Dat is geen hulp. Dat is een tweede baan.</p>
 <p>Een brein met executieve frictie heeft geen extra administratie nodig om te bewijzen dat het ernstig is. Het heeft een startbare ingang nodig. Lees <a href="/waarom-planners-falen/">waarom een planner taken bewaart, maar niet start</a> als je dit herkent.</p>
 
@@ -435,7 +438,8 @@ EXTRA_GUIDES = [
         "read_min": "4 MIN",
         "meta_title": "Beste ADHD-app in Nederland? Kies op knelpunt",
         "title": "Beste ADHD-app in Nederland? Kies op knelpunt, niet op ranking",
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
+        "cluster_note": 'Als het knelpunt starten of taakverlamming is, lees de <a href="https://www.structuro.eu/taakverlamming-adhd/">hoofdgids over taakverlamming bij ADHD</a>. Deze roundup is een knelpunt-match, geen ranking.',
         "related_slugs": [
             "structuro-of-tiimo",
             "structuro-of-structured",
@@ -454,14 +458,14 @@ EXTRA_GUIDES = [
         ),
         "h1": "Beste ADHD-app in Nederland? Kies op knelpunt, niet op ranking",
         "body": """
-<p>Google 'beste ADHD-app Nederland' en je krijgt lijstjes, affiliate-rondes en vijf sterren van mensen met een ander brein. Dat is een slechte manier om te kiezen. Apps zijn gereedschap. Gereedschap is goed of slecht voor een klus. Jouw klus is waarschijnlijk: starten, tijd zien, of minder in je hoofd houden. Zelden alle drie tegelijk in één scherm zonder ruis.</p>
+<p>Google 'beste ADHD-app Nederland' en je krijgt lijstjes, affiliate-rondes en vijf sterren van mensen met een ander brein. Dat is een slechte manier om te kiezen. Apps zijn gereedschap. Gereedschap is goed of slecht voor een klus. Jouw klus is waarschijnlijk: starten, tijd zien, of minder in je hoofd houden. Zelden alle drie tegelijk in één scherm zonder ruis. Zoek je een vervanger voor een bullet journal, dan is de test hetzelfde: bewaart hij, of helpt hij de eerste klik?</p>
 
 <h2>Drie klussen, drie soorten tools</h2>
-<p><strong>Starten.</strong> Je wilt wel, de eerste klik blijft uit. Dan wil je weinig zichtbaar, een micro-stap, geen inhaaldruk. Dat is executie. Zie <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> en <a href="/taakverlamming-adhd/">taakverlamming</a>.</p>
+<p><strong>Starten.</strong> Je wilt wel, de eerste klik blijft uit. Dan wil je weinig zichtbaar, een micro-stap, geen inhaaldruk. Dat is executie. Als vastzitten of niet kunnen beginnen het knelpunt is, lees de <a href="https://www.structuro.eu/taakverlamming-adhd/">hoofdgids taakverlamming bij ADHD</a>. Deze roundup kiest op knelpunt, het is geen ranking. Ook: <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>.</p>
 <p><strong>Tijd zien.</strong> Later voelt wazig, blokken helpen, visuele timers helpen. Dan kan een dag-tijdlijn of visuele planner beter passen dan een rustige start-app. Lees <a href="/tijdblindheid-adhd/">tijdblindheid</a>. Eerlijk: als dat jouw hoofdpijn is, kijk ook naar tools die daarvoor zijn gebouwd, zoals Tiimo of Structured. Meer in <a href="/structuro-of-tiimo/">vergelijk Structuro met Tiimo</a> en <a href="/structuro-of-structured/">vergelijk Structuro met Structured</a>.</p>
 <p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>.</p>
 
-<h2>Beste ADHD-app in Nederland: Tiimo, Structured of Todoist</h2>
+<h2>Structured-app in het Nederlands, Tiimo of Todoist: kies de klus</h2>
 <p>Geen ranking. Wel drie eerlijke vs-pagina's: <a href="/structuro-of-tiimo/">Structuro of Tiimo</a> (visuele tijd versus starten), <a href="/structuro-of-structured/">Structuro of Structured</a> (tijdlijn versus eerste stap), <a href="/structuro-of-todoist/">Structuro of Todoist</a> (lijst versus start). Tiimo zelf wint op de merknaam. Jij wilt de klus. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
 
 <h2>Waar Nederlandse lijstjes vaak misgaan</h2>
@@ -543,7 +547,7 @@ EXTRA_GUIDES = [
 <h2>Waarom de lijst zo verleidelijk blijft</h2>
 <p>Opschrijven geeft korte rust. Het brein denkt: vastgelegd, dus klaar. Even later is niks klaar, en de rust is op. Dan voeg je labels, projecten, data toe. De lijst wordt een systeem. Systemen voelen als vooruitgang. Starten is vooruitgang. Die twee worden verwisseld. Zie <a href="/waarom-planners-falen/">waarom planners falen</a>.</p>
 
-<h2>Wat een echt alternatief doet</h2>
+<h2>Wat een to-do-alternatief wél doet</h2>
 <ul>
 <li><strong>Scheidt dump en doen.</strong> Losse gedachten mogen eruit, zonder meteen een taak met deadline te zijn.</li>
 <li><strong>Toont weinig.</strong> Eén tot een paar items, niet de hele hinterland-lijst. <a href="/een-stap-per-dag/">Eén stap per dag</a>.</li>
@@ -608,21 +612,21 @@ EXTRA_GUIDES = [
             "en": "https://www.structuro.eu/en/structuro-vs-tiimo/",
             "x-default": "https://www.structuro.eu/structuro-of-tiimo/",
         },
-        "title": "Structuro of Tiimo: welke past bij jouw ADHD-klus",
+        "title": "Structuro of Tiimo: visuele tijd versus starten",
         "description": "Structuro of Tiimo? Tiimo helpt visuele tijd en routines. Structuro helpt beginnen met één stap. Eerlijke vergelijking, zonder winnaar-claim.",
         "answer": (
             "Tiimo is sterk als je visuele tijd, routines en een dagkaart nodig hebt. Structuro is sterk als je wilt beginnen, "
             "maar de eerste stap te groot voelt. Ze lossen een andere klus op. Kies Tiimo bij tijd zien. Kies Structuro bij "
             "taakinitiatie. Allebei 'voor ADHD' zeggen zegt weinig. Jouw knelpunt wel."
         ),
-        "h1": "Structuro of Tiimo: welke past bij jouw ADHD-klus",
+        "h1": "Structuro of Tiimo: visuele tijd versus starten",
         "body": """
 <p>Tiimo is een visuele planner, gebouwd met neurodivergente gebruikers in het achterhoofd: tijd zien, routines, iconen, een dag die eruitziet als een pad. Structuro is een prikkelarme executie-webapp: energie, dan één eerste stap, geen planner-theater. Die zin is al de vergelijking. De rest is nuance, geen wedstrijd.</p>
 
 <h2>Waar Tiimo logisch is</h2>
 <p>Als jouw dag uit elkaar valt omdat tijd niet voelt. Als overgangen (stoppen, beginnen, wisselen) het probleem zijn. Als een visuele timeline je kalmeert in plaats van overvraagt. Als je routines wilt zien, niet alleen taken opslaan. Dan is een tool als Tiimo een serieuze kandidaat. Dat is geen nederlaag voor Structuro. Dat is een andere klus. Zie <a href="/tijdblindheid-adhd/">tijdblindheid</a>.</p>
 
-<h2>Waar Structuro logisch is</h2>
+<h2>Tiimo-alternatief: waar starten de klus is</h2>
 <p>Als de agenda al bestaat en je hem toch niet ingaat. Als de eerste klik het probleem is, niet het ontbreken van een icoon per uur. Als streaks en volle dashboards je hebben afgebrand. Als je energie per dag wisselt en een vaste routine-kaart te star voelt. Dan wil je starthulp. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>, <a href="/taakverlamming-adhd/">taakverlamming</a>.</p>
 
 <h2>Waar ze allebei kunnen tegenvallen</h2>
@@ -680,7 +684,7 @@ EXTRA_GUIDES = [
         "thumb": "tijdlijn",
         "thumb_mod": "d",
         "read_min": "4 MIN",
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
         "hreflang": {
             "nl": "https://www.structuro.eu/structuro-of-structured/",
             "en": "https://www.structuro.eu/en/structuro-vs-structured/",
@@ -703,7 +707,7 @@ EXTRA_GUIDES = [
 <h2>Waar Structured logisch is</h2>
 <p>Als je wilt zien hoe de dag loopt. Als meetings, reistijd en pauzes in één beeld moeten. Als 'wat moet ik nu?' een tijdvraag is, niet een startvraag. Als een lijst te plat is en een kalender te koud. Dan is een timeline-app een helder instrument. Dat raakt <a href="/tijdblindheid-adhd/">tijdblindheid</a>: later krijgt een plek op een lijn.</p>
 
-<h2>Waar Structuro logisch is</h2>
+<h2>Tiimo-alternatief: waar starten de klus is</h2>
 <p>Als de tijdlijn al bestaat (in je hoofd, in Google, in Structured) en het blok 'werk aan X' toch leeg blijft. Als het vullen van de tijdlijn de productieve daad wás, en het echte werk niet. Als te veel blokken opnieuw een berg zijn. Dan is het probleem taakinitiatie. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>. <a href="/alternatief-voor-todo-lijst-adhd/">Geen tweede lijst</a>.</p>
 
 <h2>Het overlap-risico</h2>
@@ -761,8 +765,8 @@ EXTRA_GUIDES = [
         "thumb_mod": "n",
         "read_min": "4 MIN",
         "meta_title": "ADHD en burn-out: kleiner starten bij leegte",
-        "title": "ADHD en burn-out: als leegte en niet-starten samenkomen",
-        "modified": "2026-09-09",
+        "title": "ADHD en burn-out: als leegte, overvolle agenda en niet-starten samenkomen",
+        "modified": "2026-09-17",
         "related_slugs": [
             "taakverlamming-adhd",
             "energie-first",
@@ -775,11 +779,11 @@ EXTRA_GUIDES = [
             "Dit is geen diagnose en geen behandelplan. Wat wél past: de lat omlaag, één micro-actie, geen inhaalweek. "
             "Energie eerst. Zorg blijft zorg. Een rustige dagstart is hooguit een zachte ingang, geen herstelprogramma."
         ),
-        "h1": "ADHD en burn-out: als leegte en niet-starten samenkomen",
+        "h1": "ADHD en burn-out: als leegte, overvolle agenda en niet-starten samenkomen",
         "body": """
 <p>Veel volwassenen met ADHD herkennen periodes waarin niks meer lukt, terwijl de buitenwereld nog steeds een gewone dag verwacht. Soms heet dat overprikkeling. Soms uitputting. Soms gebruiken mensen het woord burn-out. Die woorden zijn niet hetzelfde, en deze pagina stelt geen diagnose. Ze beschrijft alleen een overlap die we in gesprekken vaak horen: de batterij is leeg, en de start is te hoog.</p>
 
-<h2>ADHD en burn-out: de overlap, geen diagnose</h2>
+<h2>Overvolle agenda bij ADHD: de overlap, geen diagnose</h2>
 <p>Jarenlang compenseren (avonden, deadlines, charme, chaos opruimen) is duur. Executieve frictie maakt gewone dagen al zwaar. Als daar langdurige uitputting bij komt, is 'gewoon beginnen' niet alleen een startprobleem. Het is een lichaam dat geen extra bewijs meer wil leveren. Een strengere planner is dan geweld. Zie <a href="/energie-first/">energie-first</a>.</p>
 <p>Taakverlamming in die fase is geen zwakte. Het is een noodrem. <a href="/taakverlamming-adhd/">Taakverlamming</a> beschrijft het mechanisme. Hier is de les strenger: de micro-actie mag nóg kleiner. Openen is genoeg. Antwoorden is extra. Afmaken is later.</p>
 
@@ -844,18 +848,18 @@ EXTRA_GUIDES = [
         "thumb": "stil bureau",
         "thumb_mod": "",
         "read_min": "4 MIN",
-        "title": "ADHD op het werk: starten als de dag al vol is",
+        "title": "ADHD op het werk: niet aan de slag terwijl je er al bent",
         "description": "ADHD op het werk is vaak geen kennisprobleem. Het is starten tussen inbox, meetings en tussendoor. Hoe je één werktaak raakt zonder een productiviteitsreligie.",
         "answer": (
             "ADHD op het werk wringt waar de dag uit andermans prioriteiten bestaat: mail, chat, meetings. Kennis is er, de start "
             "niet. Wat helpt is één werktaak vertalen naar een eerste klik, de rest parkeren, en energie meewegen. Geen heroïsche "
             "5-uur-focusmythe. Geen shame. Wel een smaller scherm in een brede werkdag."
         ),
-        "h1": "ADHD op het werk: starten als de dag al vol is",
+        "h1": "ADHD op het werk: niet aan de slag terwijl je er al bent",
         "body": """
 <p>Op het werk faalt 'gewoon beginnen' extra hard. De berg is niet alleen van jou. Collega's, klanten, Slack, een agenda die vol is vóór jij een keuze maakte. Mensen met ADHD raken daar niet omdat ze het vak niet kunnen. Ze raken daar omdat starten een privé-daad is in een publieke dag.</p>
 
-<h2>Het echte lek is zelden de functie</h2>
+<h2>Kantoor aankomen is niet starten</h2>
 <p>Het lek is de overgang: van meeting naar diepe taak, van inbox naar document, van 'ik weet wat de deliverable is' naar de eerste zin. Dat is taakinitiatie in een kantoorjas. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>. Ondertussen groeit de lijst met cc's. Dat is mentale last, geen incompetence. <a href="/mentale-belasting-dagstart/">Mentale belasting</a>.</p>
 
 <h2>Wat op werk níet helpt</h2>
@@ -916,22 +920,22 @@ EXTRA_GUIDES = [
         "thumb": "raamlicht",
         "thumb_mod": "",
         "read_min": "4 MIN",
-        "title": "ADHD-ochtendroutine: kleiner dan Instagram belooft",
+        "title": "ADHD-ochtendroutine: kleiner dan Instagram belooft, niet forceren",
         "description": "Een ADHD-ochtendroutine hoeft geen perfecte keten te zijn. Wat wél helpt: minder stappen, energie eerst, één eerste klik. Geen 5:00-mythe.",
         "answer": (
             "Een ochtendroutine bij ADHD faalt vaak omdat hij te lang is. Veel stappen vóór je mag beginnen is een tweede berg. "
             "Wat helpt is een korte keten: lichaam, één start, de rest mag wachten. Energie eerst. Geen 5:00-mythe, geen "
             "veertien stappen. Als de ochtend al vol is, is één haalbare actie de routine. Meer is theater."
         ),
-        "h1": "ADHD-ochtendroutine: kleiner dan Instagram belooft",
+        "h1": "ADHD-ochtendroutine: kleiner dan Instagram belooft, niet forceren",
         "body": """
 <p>Ochtendroutines online zijn vaak een film: water, journalen, sport, koude douche, review van gisteren, planning van vandaag. Voor een brein dat al hapert op de eerste klik is dat geen hulp. Dat is een project vóór het project. Als je ADHD hebt en de ochtend al zwaar voelt, is de routine zelf de plek waar de dag vastloopt.</p>
 
-<h2>Waarom lange ochtenden extra duren</h2>
+<h2>ADHD-ochtend niet forceren: waarom lange ketens extra duren</h2>
 <p>Elke stap is een start. Twaalf starts vóór 9:00 is twaalf kansen om te blijven hangen. Werkgeheugen raakt vol. Tijd voelt wazig. De klok is opeens 10:15 en je hebt alleen koffie gedaan, plus schuld. Zie <a href="/tijdblindheid-adhd/">tijdblindheid</a> en <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>. De ochtend is geen moreel examen. Het is een reeks overgangen.</p>
 <p>Daarom helpt 'gewoon eerder opstaan' zelden. Je krijgt meer minuten, niet minder frictie. Meer minuten met dezelfde berg is een langere ochtend van hetzelfde.</p>
 
-<h2>Wat een rustige ochtend wél mag zijn</h2>
+<h2>Energiebudget voor de dag: wat een rustige ochtend wél mag zijn</h2>
 <ul>
 <li><strong>Lichaam eerst, klein.</strong> Water, licht, eten. Geen bootcamp. Als dat de enige drie dingen zijn, was de ochtend geslaagd als ingang.</li>
 <li><strong>Eén werk- of leevenstart.</strong> Niet de lijst. De eerste fysieke actie. <a href="/een-stap-per-dag/">Eén stap per dag</a>.</li>
@@ -990,7 +994,7 @@ EXTRA_GUIDES = [
         "thumb": "later",
         "thumb_mod": "d",
         "read_min": "4 MIN",
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
         "related_slugs": [
             "takenlijst-te-lang-adhd",
             "niet-kunnen-beginnen-adhd",
@@ -1000,18 +1004,18 @@ EXTRA_GUIDES = [
         "related_anchors": {
             "takenlijst-te-lang-adhd": "wanneer je lijst de start zwaarder maakt",
         },
-        "title": "ADHD en uitstelgedrag: uitstel of een start die te groot is",
+        "title": "ADHD en uitstelgedrag: uitstelgedrag-start of een start die te groot is",
         "description": "Uitstelgedrag bij ADHD is niet altijd luiheid of 'geen zin'. Vaak is de taak te groot om te starten. Hoe je het verschil voelt, en wat je dan doet.",
         "answer": (
             "Uitstelgedrag bij ADHD is soms een keuze, vaker een start die te groot voelt. Je wilt wel, en later wint omdat nu "
             "geen veilige klik heeft. Wat helpt is het verschil benoemen: geen zin versus geen ingang. Daarna de taak kleiner "
             "maken dan je ego prettig vindt. Geen strengere deadline als enige medicijn. Wel één actie in het heden."
         ),
-        "h1": "ADHD en uitstelgedrag: uitstel of een start die te groot is",
+        "h1": "ADHD en uitstelgedrag: uitstelgedrag-start of een start die te groot is",
         "body": """
 <p>Uitstelgedrag is een woord dat anderen makkelijk in je mond leggen. Lui. Geen discipline. Altijd op het laatst. Soms klopt een deel: je schuift iets op omdat het saai is, of eng, of omdat later nog vaag voelt. Vaak klopt iets anders: je wilt beginnen, en de eerste klik bestaat niet in een formaat dat je lijf aankan. Dan is 'uitstel' een etiket op taakinitiatie.</p>
 
-<h2>Twee smaken die door elkaar lopen</h2>
+<h2>Uitstelgedrag-start of geen ingang: twee smaken</h2>
 <p><strong>Geen zin.</strong> De taak is helder, de start is mogelijk, je kiest iets anders. Dat mag. Het is menselijk. Het wordt zwaar als het de enige strategie is tot de deadline bijt.</p>
 <p><strong>Geen ingang.</strong> De taak is een keten. Je hoofd draait. Je opent niks. Dat is dichter bij <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> en <a href="/taakverlamming-adhd/">taakverlamming</a> dan bij 'ik stel uit omdat ik zo ben'.</p>
 <p>Die tweede smaak voedt schaamte. Schaamte maakt de taak groter. Groter maakt later aantrekkelijker. De lus is bekend. De correctie is niet meer wilskracht. Het is een kleinere nu.</p>
@@ -1084,7 +1088,7 @@ EXTRA_GUIDES = [
         "body": """
 <p>Sommige dagen is het werk niet het werk. Het is de keuze ervoor: welk ticket, welke tool, welke volgorde, welke mail eerst. Elk pad ziet er even urgent uit. Je hoofd houdt ze allemaal vast. Dan is kiezen geen luxe. Het is de berg. Mensen noemen dat keuzestress. Van binnen is het vaak een vol werkgeheugen plus te weinig veilige default.</p>
 
-<h2>Waarom meer opties niet vrijer voelt</h2>
+<h2>Werkgeheugen vol: waarom meer opties niet vrijer voelt</h2>
 <p>Overzicht belooft rust. Bij executieve frictie is overzicht vaak meer items om te wegen. Wegen is werk. Werk vóór het werk. Zie <a href="/mentale-belasting-dagstart/">mentale belasting</a> en <a href="/taakverlamming-adhd/">taakverlamming</a>. Een lijst van twaalf 'zou kunnen' is twaalf open lussen. Open lussen kosten aandacht, ook als je niks doet.</p>
 <p>Daarom faalt 'eerst even nadenken tot ik het zeker weet'. Zekerheid komt bij dit soort keuzes vaak ná de eerste micro-actie, niet ervoor. Wachten op zekerheid is een vorm van <a href="/adhd-uitstelgedrag/">uitstel</a> die eruitziet als zorgvuldigheid.</p>
 
@@ -1143,18 +1147,18 @@ EXTRA_GUIDES = [
         "thumb": "overvolle lijst",
         "thumb_mod": "",
         "read_min": "4 MIN",
-        "title": "Takenlijst te lang bij ADHD: de lade is niet de dag",
+        "title": "Takenlijst te lang bij ADHD: overweldigd door de lijst, niet door de dag",
         "description": "Een te lange takenlijst bij ADHD maakt starten zwaarder. Hoe je de lijst als lade gebruikt, en vandaag tot één tot een paar regels terugbrengt.",
         "answer": (
             "Een te lange takenlijst bij ADHD is zelden een tekort aan items. Het is te veel tegelijk in beeld. De lijst mag "
             "als lade bestaan. De dag mag bijna niks bevatten: één tot een paar startbare regels, passend bij energie. "
             "De rest is niet weg. Hij is alleen niet vandaag. Anders wint bewaren van beginnen, elke ochtend opnieuw."
         ),
-        "h1": "Takenlijst te lang bij ADHD: de lade is niet de dag",
+        "h1": "Takenlijst te lang bij ADHD: overweldigd door de lijst, niet door de dag",
         "body": """
 <p>Een lange lijst voelt verantwoordelijk. Alles staat erop, dus niks is vergeten. Tot je hem opent. Dan is hij een aanklacht. Elk item vraagt een beslissing. Elke beslissing is last. Aan het eind van het scrollen ben je moe, en nog niks begonnen. Dat is geen bewijs dat je meer moet opschrijven. Dat is bewijs dat de lade op het bureau staat.</p>
 
-<h2>Waarom 'gewoon bijwerken' de lijst langer maakt</h2>
+<h2>Overweldigd door je takenlijst: waarom bijwerken hem langer maakt</h2>
 <p>Bijwerken is een taak. Taken op een volle lijst worden extra regels, geen extra starts. Labels, sterren, data, projecten: taxonomie als rust. Rust die niet komt. Zie <a href="/alternatief-voor-todo-lijst-adhd/">alternatief voor de to-do-lijst</a> en <a href="/waarom-planners-falen/">waarom planners falen</a>. De lijst is een geheugen. De dag is executie. Die twee mengen is hoe ADHD-lijsten exploderen.</p>
 
 <h2>Twee plekken, één harde cap</h2>
@@ -1224,7 +1228,7 @@ EXTRA_GUIDES = [
         "body": """
 <p>Focus-apps beloven dat je eindelijk blijft zitten. Timers. Badges. Vuur-emoji's. Een reeks dagen die je niet mag breken. Voor sommige breinen is dat speels. Voor veel ADHD-breinen is het school: gehoorzamen, of rood. Als de bel gaat terwijl je net in de taak zakt, of als je de reeks breekt na één zware dag, volgt schaamte. Schaamte is geen aandachtsstrategie. Het is extra last.</p>
 
-<h2>Wat streaks doen met starten</h2>
+<h2>Waarom geen streaks in een ADHD-app</h2>
 <p>Een streak maakt van morgen een schuld. Vandaag moet, anders is gisteren weg. Dat is een hoge lat op een batterij die wisselt. Zie <a href="/energie-first/">energie-first</a>. Wie al hapert op <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>, krijgt er een meta-taak bij: de reeks redden. De reeks is niet het werk. Het werk is de klik.</p>
 <p>Hetzelfde geldt voor strikte pomodoro-religie. Een timer mag een cue zijn. Hij mag geen rechter zijn. Als 25 minuten te groot is, is 5 minuten focus. Als 5 te groot is, is openen focus. Woorden mogen kleiner dan de industrie toestaat.</p>
 

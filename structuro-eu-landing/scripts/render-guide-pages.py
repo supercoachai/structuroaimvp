@@ -24,7 +24,7 @@ FEATURED_SLUGS = (
 RELATED_ALIASES = {
     "structuro-of-todoist": {
         "slug": "structuro-of-todoist",
-        "h1": "Structuro of Todoist: de lijst versus de start",
+        "h1": "Structuro of Todoist: als Todoist bij ADHD niet werkt",
         "eyebrow": "Vergelijking",
         "card_num": "21",
         "card_label": "TODOIST",
@@ -55,7 +55,7 @@ GUIDES = [
         "thumb_mod": "",
         "read_min": "3 MIN",
         "title": "Waarom 'gewoon beginnen' niet werkt (en wat wel)",
-        "modified": "2026-09-09",
+        "modified": "2026-09-17",
         "related_slugs": [
             "niet-kunnen-beginnen-adhd",
             "waarom-planners-falen",
@@ -103,7 +103,7 @@ GUIDES = [
 </ol>
 <p>Dit is geen motivatiecoach. Het is frictie verlagen tot bewegen weer mogelijk is. Kleine, situatie-gekoppelde eerste stappen sluiten aan bij wat onderzoek noemt implementatie-intenties: externe cues in plaats van wilskracht alleen. Structuro maakt daar een rustige, evidence-informed interface van, geen klinisch protocol.</p>
 
-<h2>Veelgemaakte valkuilen</h2>
+<h2>Half afgemaakte taken: herstarten is ook beginnen</h2>
 <p>Wachten op motivatie. Motivatie komt vaak ná de eerste micro-actie, niet ervoor. Alles eerst uitwerken in notities. Dat voelt als vooruitgang, maar houdt de echte start buiten beeld. Een nieuwe app installeren als vervanging voor beginnen. En tot slot: jezelf straffen met een strengere planner nadat een zachtere aanpak 'mislukte'. Meestal was de aanpak te groot, niet te zacht.</p>
 <p>Herken je die cyclus, dan is de correctie simpel: kleinere ingang, minder zichtbaar tegelijk, en een dagstart die keuzedruk verlaagt vóór je überhaupt een lijst opent. Zie <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>.</p>
 <p>Als de start blijft uit, lees <a href="/niet-kunnen-beginnen-adhd/">wat er gebeurt als beginnen niet lukt</a>. Als een planner de berg alleen scherper toont: <a href="/waarom-planners-falen/">waarom een planner taken bewaart, maar niet start</a>.</p>
@@ -164,18 +164,18 @@ GUIDES = [
         "thumb": "notitieboek",
         "thumb_mod": "d",
         "read_min": "3 MIN",
-        "title": "Eén stap per dag: met vol hoofd tóch beginnen",
+        "title": "Eén stap per dag: een taak per dag bij ADHD",
         "description": "Met een vol hoofd helpt niet méér plannen, maar één haalbare stap. Zo werkt de één-stap-methode zonder shame, streaks of overvolle lijsten.",
         "answer": (
             "Met een vol hoofd win je niet door meer te organiseren. Je wint door vandaag één stap te kiezen "
             "die klein genoeg is om te starten. De rest mag uit zicht. Zo daalt de mentale last, komt er weer "
             "beweging, en hoef je jezelf niet te forceren met een planner-achtige weekbelofte die je toch niet waarmaakt."
         ),
-        "h1": "Eén stap per dag: met een vol hoofd tóch beginnen",
+        "h1": "Eén stap per dag: een taak per dag bij ADHD",
         "body": """
 <p>Als alles tegelijk voelt, zoekt je brein naar overzicht. Dat eindigt vaak in een langere lijst. De lijst groeit. De start blijft uit. Je hebt dan 'gewerkt aan je systeem' zonder iets te doen dat de last echt verlaagt. De methode hier is omgekeerd: verklein het zichtveld tot één stap.</p>
 
-<h2>De regel</h2>
+<h2>Een taak per dag: de regel</h2>
 <p>Kies één ding dat je vandaag kunt afronden of écht starten. Niet het belangrijkste van het jaar. Het haalbare van dit moment. Op lage energie mag dat belachelijk klein zijn: jas ophangen, mail-onderwerp typen, map openen, timer op twee minuten.</p>
 <p>De truc is niet maximaliseren. De truc is startbaar maken. Dat sluit aan bij <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
 
@@ -285,7 +285,7 @@ GUIDES = [
 <h2>Wat een planner wél doet</h2>
 <p>Hij bewaart taken, toont een week, stuurt herinneringen, viert streaks, nodigt uit tot tags en time-blocks. Voor sommige mensen werkt dat precies goed. Voor veel mensen met executieve frictie wordt de tool zelf een tweede baas: je moet het systeem onderhouden voordat je mag beginnen.</p>
 
-<h2>Waarom dat botst</h2>
+<h2>Planner faalt bij ADHD: waarom bewaren niet starten is</h2>
 <ul>
 <li><strong>Meer zicht = meer last.</strong> Een volle agenda is geen startknop. Werkgeheugen kan sneller vol raken.</li>
 <li><strong>Streaks straffen stilte.</strong> Eén gemiste dag voelt als falen. Dan open je de app niet meer.</li>
@@ -369,15 +369,15 @@ GUIDES = [
         "thumb": "raam, ochtend",
         "thumb_mod": "d",
         "read_min": "3 MIN",
-        "title": "Mentale belasting en de dagstart",
-        "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte, rustige dagstart verlaagt keuzedruk en helpt je één stap kiezen zonder ochtendtheater.",
+        "title": "Mentale belasting en de dagstart bij ADHD",
+        "description": "Mentale belasting voelt als een vol hoofd vóór je begint. Een korte dagstart ADHD verlaagt keuzedruk, zonder ochtendtheater.",
         "answer": (
             "Mentale belasting is de onzichtbare to-do in je hoofd: onthouden, kiezen, bijsturen. "
             "Werkgeheugen heeft beperkte capaciteit; bij ADHD raakt dat sneller vol. Een korte dagstart "
             "vermindert wat je tegelijk vasthoudt: energie checken, één stap kiezen, de rest uit zicht. "
             "Zo wordt starten weer mogelijk zonder een perfecte ochtendroutine of extra wilskracht."
         ),
-        "h1": "Mentale belasting en de dagstart",
+        "h1": "Mentale belasting en de dagstart bij ADHD",
         "body": """
 <p>Je kunt uitgerust wakker worden en tóch al moe zijn van je eigen hoofd. Dat is geen drama. Dat is mentale last: open loops, verwachtingen van anderen, onafgeronde gistertaken, en het gevoel dat je eerst moet organiseren voordat je mag beginnen. Hoe langer je die last meeneemt zonder hem te verkleinen, hoe zwaarder 'gewoon starten' voelt.</p>
 
@@ -385,7 +385,7 @@ GUIDES = [
 <p>Het probleem is zelden 'te weinig wil'. Het is te veel tegelijk onthouden en afwegen. Werkgeheugen heeft beperkte capaciteit. Bij ADHD is dat vaak sneller vol, zeker als je parallel nadenkt over prioriteit, perfectie, deadlines en wat anderen verwachten. Zonder een kort ritueel opent je brein te veel tabbladen tegelijk. Dan voelt starten onmogelijk, ook als de taken op zich doenlijk zijn. Zie <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
 <p>Mentale last is niet alleen 'te veel werk'. Het is te veel parallel vasthouden. Daarom helpt een dagstart die keuzes en zichtbaarheid reduceert harder dan een langere ochtendchecklist. Dit is cognitive load verlagen, geen 'decision fatigue' als bewezen mechanisme.</p>
 
-<h2>Wat een goede dagstart wél is</h2>
+<h2>Dagstart ADHD: wat een goede start wél is</h2>
 <ul>
 <li>Kort: seconden tot een paar minuten, geen meeting met jezelf.</li>
 <li>Energie-check: laag, genoeg, of hoog.</li>
@@ -474,7 +474,7 @@ GUIDES = [
         "thumb": "rust / avond",
         "thumb_mod": "",
         "read_min": "3 MIN",
-        "title": "Energie-first werken in plaats van moeten",
+        "title": "Energie-first werken: taken plannen op energie, niet op moeten",
         "description": "Kies taken rond je energie, niet je energie rond je to-do. Zo werkt energie-first zonder hustle, shame of vaste lat die je elke dag breekt.",
         "answer": (
             "Energie-first betekent: je dag bouwen rond wat je nu aankunt, niet rond wat je 'zou moeten'. "
@@ -482,7 +482,7 @@ GUIDES = [
             "ambitieuze lijst je verlamt op de dagen dat starten al zwaar genoeg is, zonder dat moeilijke "
             "dingen voor altijd verdwijnen."
         ),
-        "h1": "Energie-first werken in plaats van moeten",
+        "h1": "Energie-first werken: taken plannen op energie, niet op moeten",
         "body": """
 <p>'Moeten' negeert je batterij. Het zet een vaste lat, ook als je hoofd vol is of je lijf traag. Energie-first draait die volgorde om: eerst voelen wat er is, dan kiezen wat past. Dat klinkt soft. In de praktijk is het vaak de enige manier om consistent genoeg te bewegen zonder wekelijkse crash. Het mechanisme sluit aan bij state-regulation en arousal-variatie bij ADHD; plannen op energie is een theoretisch gemotiveerde ontwerpkeuze, geen klinisch bewezen protocol.</p>
 
@@ -497,7 +497,7 @@ GUIDES = [
 <h2>Waarom dit beter werkt dan time-blocking alleen</h2>
 <p>Een blok van 09:00 tot 11:00 zegt niets over of je brein dan kan starten. Time-blocking plant tijd. Energie-first plant capaciteit. Samen kunnen ze werken: je reserveert tijd, en vult die met een stap die bij je stand past. Alleen tijd zonder capaciteit eindigt in staren naar de taak. Zie ook <a href="/een-stap-per-dag/">één stap per dag</a>.</p>
 
-<h2>Hoe je het in 60 seconden toepast</h2>
+<h2>Hoe werkt energie-first plannen in 60 seconden?</h2>
 <ol>
 <li>Vraag: laag, genoeg, of hoog?</li>
 <li>Kies één stap die bij die stand past.</li>
@@ -705,10 +705,17 @@ def article_schema(g: dict) -> str:
             "datePublished": published,
             "dateModified": modified,
             "author": {
-                "@type": "Organization",
-                "@id": ORG_ID,
-                "name": "Structuro",
-                "url": "https://www.structuro.eu/",
+                "@type": "Person",
+                "@id": "https://www.structuro.eu/#niels",
+                "name": "Niels van den Hurk",
+                "url": "https://www.structuro.eu/verhaal/",
+                "jobTitle": "Founder",
+                "worksFor": {
+                    "@type": "Organization",
+                    "@id": ORG_ID,
+                    "name": "Structuro",
+                    "url": "https://www.structuro.eu/",
+                },
             },
             "publisher": {
                 "@type": "Organization",
@@ -770,6 +777,13 @@ def hreflang_html(g: dict) -> str:
         f'<link rel="alternate" hreflang="{esc(code)}" href="{esc(url)}"/>'
         for code, url in hl.items()
     )
+
+
+def cluster_note_html(g: dict) -> str:
+    note = (g.get("cluster_note") or "").strip()
+    if not note:
+        return ""
+    return f'  <p class="guide-note">{note}</p>\n'
 
 
 def en_foot_html(g: dict) -> str:
@@ -874,10 +888,11 @@ def render(g: dict) -> str:
     <div class="guide-heading">
       <div class="kk"><b>{esc(card_num)} · {esc(card_label)}</b><s></s><em>{esc(read_min)}</em></div>
       <h1>{esc(g["h1"])}</h1>
+      <p class="guide-byline">Door <a href="/verhaal/">Niels van den Hurk</a>, founder van Structuro, zelf ADHD.</p>
     </div>
   </div>
   <p class="guide-answer">{esc(g["answer"])}</p>
-  <article class="guide-prose">
+{cluster_note_html(g)}  <article class="guide-prose">
 {g["body"].strip()}
   </article>
 
@@ -1056,9 +1071,10 @@ def featured_hub_html() -> str:
 
 def write_hub() -> None:
     n = len(GUIDES)
+    hub_title = "ADHD-gidsen: kies een kaart · Structuro"
     desc = (
         f"{n} korte gidsen over starten met een ADHD-brein. "
-        "Geen streaks, geen schaamte, wel een haalbare eerste stap."
+        "Kies de kaart die bij jouw knelpunt past. Geen streaks, geen schaamte, wel een haalbare eerste stap."
     )
     has_part = ",\n    ".join(
         '{"@type": "Article", "name": '
@@ -1074,17 +1090,20 @@ def write_hub() -> None:
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gidsen · Structuro</title>
+<title>{hub_title}</title>
 <meta name="description" content="{esc(desc)}"/>
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large"/>
 <link rel="canonical" href="https://www.structuro.eu/gidsen/"/>
+<link rel="alternate" hreflang="nl" href="https://www.structuro.eu/gidsen/"/>
+<link rel="alternate" hreflang="en" href="https://www.structuro.eu/en/guides/"/>
+<link rel="alternate" hreflang="x-default" href="https://www.structuro.eu/gidsen/"/>
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
 <link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260730a"/>
 <meta property="og:site_name" content="Structuro"/>
 <meta property="og:locale" content="nl_NL"/>
-<meta property="og:title" content="Gidsen · Structuro"/>
+<meta property="og:title" content="{hub_title}"/>
 <meta property="og:description" content="{esc(desc)}"/>
 <meta property="og:url" content="https://www.structuro.eu/gidsen/"/>
 <meta property="og:image" content="{OG_IMAGE}"/>
@@ -1093,7 +1112,7 @@ def write_hub() -> None:
 <meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
 <meta property="og:type" content="website"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="Gidsen · Structuro"/>
+<meta name="twitter:title" content="{hub_title}"/>
 <meta name="twitter:description" content="{esc(desc)}"/>
 <meta name="twitter:image" content="{OG_IMAGE}"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -1104,7 +1123,7 @@ def write_hub() -> None:
 {{
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  "name": "Gidsen",
+  "name": "ADHD-gidsen: kies een kaart",
   "description": {json.dumps(desc, ensure_ascii=False)},
   "url": "https://www.structuro.eu/gidsen/",
   "isPartOf": {{
@@ -1159,7 +1178,7 @@ def write_hub() -> None:
       <h1 class="hero-title">Kies een kaart.</h1>
       <p class="sub">ADHD-executie, zonder planner-theater.</p>
       <p class="lede">Je hoeft niet alles te lezen. Elke kaart staat op zichzelf, is in een paar minuten uit en eindigt met één ding dat je vandaag kunt doen.</p>
-      <div class="facts"><span>{n} kaarten</span><span>kies er één</span><span>geen account nodig</span></div>
+      <div class="facts"><span>{n} kaarten</span><span>kies er één</span><span>kies je knelpunt</span></div>
     </div>
     <div class="fan" aria-hidden="true"><i></i><i></i><i></i></div>
   </section>
