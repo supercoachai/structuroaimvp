@@ -125,23 +125,24 @@ EXTRA_GUIDES = [
         "title": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
         "description": "Niet kunnen beginnen bij ADHD is een startprobleem, geen luiheid. Waarom de start hapert, en hoe je vandaag wél één stap zet.",
         "answer": (
-            "Niet kunnen beginnen bij ADHD is vaak geen gebrek aan wil. Het is taakinitiatie-frictie: de taak is te groot, "
-            "er zijn te veel opties, de energie past niet, of de start voelt te alleen. Wat helpt is eerst die frictie benoemen, "
-            "daarna één kleine actie. Geen strengere planner. Wel één haalbare stap vandaag."
+            "Als je weet wat je moet doen maar niet begint, heb je geen strengere planner nodig. "
+            "Het is taakinitiatie: de taak is te groot, er zijn te veel opties, de energie past niet, of de start voelt te alleen. "
+            "Benoem die frictie, maak de eerste fysieke handeling kleiner, houd de rest uit beeld. "
+            "Kies daarna een tool op het gat: visuele tijd, opslag, opdeling, of starthulp."
         ),
         "modified": "2026-09-17",
         "cluster_note": 'Hoofdgids van dit cluster: <a href="/taakverlamming-adhd/">taakverlamming bij ADHD, als alles tegelijk te groot is</a>.',
         "related_slugs": [
+            "beste-adhd-app-nederland",
             "taakverlamming-adhd",
-            "adhd-keuzestress",
-            "energie-first",
-            "takenlijst-te-lang-adhd",
+            "waarom-planners-falen",
+            "structuro-of-tiimo",
         ],
         "related_anchors": {
+            "beste-adhd-app-nederland": "kies op knelpunt, niet op ranking",
             "taakverlamming-adhd": "wanneer alles tegelijk te groot voelt",
-            "adhd-keuzestress": "als kiezen zelf de taak wordt",
-            "energie-first": "als de energie niet past",
-            "takenlijst-te-lang-adhd": "wanneer je lijst de start zwaarder maakt",
+            "waarom-planners-falen": "als plannen niet het gat is",
+            "structuro-of-tiimo": "tijdlijn of starthulp",
         },
         "h1": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
         "body": """
@@ -150,6 +151,7 @@ EXTRA_GUIDES = [
 
 <h2>Startprobleem ADHD: je weet wat je moet doen</h2>
 <p>Taakinitiatie is de overgang van weten naar doen. Die overgang vraagt werkgeheugen, een eerste fysieke actie, en ruimte in je hoofd. Als die drie tegelijk binnenkomen, blokkeert het systeem. Je opent niet de mail. Je opent vijf tabbladen. Of niks. Daarna volgt schaamte, en schaamte maakt de volgende start nog zwaarder.</p>
+<p>Geen twintig bijna-identieke artikelen. Deze pagina vangt de vraag: ik weet wat ik moet doen, ik begin niet. De andere GEO-vragen horen bij bestaande families: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a>, <a href="/taakverlamming-adhd/">taakverlamming</a>, <a href="/waarom-planners-falen/">waarom planners falen</a> plus <a href="/alternatief-voor-todo-lijst-adhd/">alternatief voor een takenlijst</a>, en <a href="/structuro-of-tiimo/">Structuro of Tiimo</a> / <a href="/structuro-of-structured/">Structured</a> / <a href="/structuro-of-todoist/">Todoist</a>.</p>
 <p>Niet iedereen hapert op dezelfde plek. Kies hieronder de zin die het dichtst bij vandaag zit. Daarna één kleine actie, niet de hele berg.</p>
 
 <div class="guide-table-wrap">
@@ -195,7 +197,7 @@ EXTRA_GUIDES = [
 <p>Dit zijn patronen die mensen beschrijven, geen diagnose en geen vaste oplossing voor iedereen. Een timer helpt de één om te starten, en voelt voor de ander als extra druk. Geen truc is universeel.</p>
 
 <h2>Wat we terughoren</h2>
-<p>In gesprekken met mensen die vastlopen op starten horen we niet één probleem. De één ziet een taak als een te grote berg. De ander blijft hangen tussen tien opties. Weer een ander merkt pas laat dat de energie voor die taak er vandaag niet is. En soms is de drempel dat niemand meekijkt. Mensen zeggen het ook zo: ik kan niet starten, of ik voel schaamte dat ik niet begin. Dat is startfrictie, geen karakterfout.</p>
+<p>In ruim 50 gesprekken voor productdiscovery horen we niet één probleem. Mensen vullen wel een lijst, en beginnen er niet mee. De één ziet een taak als een te grote berg. De ander blijft hangen tussen tien opties. Weer een ander merkt pas laat dat de energie voor die taak er vandaag niet is. En soms is de drempel dat niemand meekijkt. Mensen zeggen het ook zo: ik kan niet starten, of ik voel schaamte dat ik niet begin. Dat is ADHD paralysis in gewone taal: startfrictie, geen karakterfout. Het is kwalitatieve discovery, geen prevalentiecijfer en geen bewijs dat een app ADHD behandelt.</p>
 <p>Daarom begint Structuro niet met een volle planning. Eerst kies je je energie. Dan kies je één ding. Daarna maak je alleen de start kleiner.</p>
 <p class="guide-method">Deze gids combineert gebruikersonderzoek van Structuro met openbare ervaringsverhalen en wetenschappelijke bronnen. Ervaringsverhalen laten patronen zien, maar voorspellen niet wat voor één persoon werkt.</p>
 

@@ -20,6 +20,7 @@ GEO_P0_SLUGS = frozenset(
         "beste-adhd-app-nederland",
         "adhd-app",
         "adhd-focus-zonder-streaks",
+        "niet-kunnen-beginnen-adhd",
         "waarom-planners-falen",
         "alternatief-voor-todo-lijst-adhd",
         "structuro-of-tiimo",

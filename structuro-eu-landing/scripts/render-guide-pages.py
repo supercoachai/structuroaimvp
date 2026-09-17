@@ -12,11 +12,12 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 from extra_guides import EXTRA_GUIDES
 from geo_blocks import CANONICAL_DESCRIPTOR, apply_geo_flags, geo_blocks_html
+from guide_seo import apply_seo, cta_img_alt, og_image_alt
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-17"
-CSS_V = "20260917c"
+CSS_V = "20260917d"
 TITLE_MAX = 60
 DESC_MAX = 155
 BRAND_SUFFIX = " · Structuro"
@@ -620,6 +621,7 @@ GUIDES = [
 
 GUIDES.extend(EXTRA_GUIDES)
 apply_geo_flags(GUIDES)
+apply_seo(GUIDES)
 
 
 def esc(s: str) -> str:
@@ -914,7 +916,7 @@ def render(g: dict) -> str:
 <meta property="og:image" content="{OG_IMAGE}"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
-<meta property="og:image:alt" content="Structuro, rust voor je ADHD-brein"/>
+<meta property="og:image:alt" content="{esc(og_image_alt(g))}"/>
 <meta property="og:type" content="article"/>
 <meta property="article:published_time" content="{published}"/>
 <meta property="article:modified_time" content="{modified}"/>
@@ -992,7 +994,7 @@ def render(g: dict) -> str:
     </div>
     <div class="shot">
       <div class="cap">De app</div>
-      <img src="/uploads/guide-cta-phone.png" alt="Structuro-dagstart op een telefoon: één taak, microstappen, Start focus" width="400" height="851" loading="lazy">
+      <img src="/uploads/guide-cta-phone.png" alt="{esc(cta_img_alt(g))}" width="400" height="851" loading="lazy">
     </div>
   </section>
 
@@ -1385,6 +1387,7 @@ def ensure_vercel_routes() -> None:
     rewrite_sources = {r["source"] for r in data.get("rewrites", [])}
     new_redirs = []
     new_rewrites = []
+    known_slugs = {g["slug"] for g in GUIDES} | {g["slug"] for g in HUB_EXTRA}
     for g in GUIDES:
         bare = f"/{g['slug']}"
         slash = f"/{g['slug']}/"
@@ -1396,6 +1399,32 @@ def ensure_vercel_routes() -> None:
             new_rewrites.append(
                 {"source": slash, "destination": f"/{g['slug']}/index.html"}
             )
+        dest = f"/{g['slug']}/"
+        for alias in g.get("url_aliases") or []:
+            alias = alias.strip("/")
+            if not alias or alias in known_slugs:
+                continue
+            alias_bare = f"/{alias}"
+            alias_slash = f"/{alias}/"
+            if alias_bare not in redir_sources:
+                new_redirs.append(
+                    {"source": alias_bare, "destination": dest, "permanent": True}
+                )
+                redir_sources.add(alias_bare)
+            if alias_slash not in redir_sources:
+                new_redirs.append(
+                    {"source": alias_slash, "destination": dest, "permanent": True}
+                )
+                redir_sources.add(alias_slash)
+    extra_aliases = [
+        ("sensory-overload-adhd", "overprikkeling-adhd"),
+    ]
+    for alias, slug in extra_aliases:
+        dest = f"/{slug}/"
+        for src in (f"/{alias}", f"/{alias}/"):
+            if src not in redir_sources:
+                new_redirs.append({"source": src, "destination": dest, "permanent": True})
+                redir_sources.add(src)
 
     def insert_after(arr: list, after_source: str, items: list) -> None:
         idx = next(i for i, r in enumerate(arr) if r["source"] == after_source)

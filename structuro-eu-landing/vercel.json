@@ -201,6 +201,126 @@
       "permanent": true
     },
     {
+      "source": "/adhd-paralysis",
+      "destination": "/niet-kunnen-beginnen-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-paralysis/",
+      "destination": "/niet-kunnen-beginnen-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/task-paralysis-adhd",
+      "destination": "/taakverlamming-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/task-paralysis-adhd/",
+      "destination": "/taakverlamming-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-taakverlamming",
+      "destination": "/taakverlamming-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-taakverlamming/",
+      "destination": "/taakverlamming-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/time-blindness-adhd",
+      "destination": "/tijdblindheid-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/time-blindness-adhd/",
+      "destination": "/tijdblindheid-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/beste-adhd-app",
+      "destination": "/beste-adhd-app-nederland/",
+      "permanent": true
+    },
+    {
+      "source": "/beste-adhd-app/",
+      "destination": "/beste-adhd-app-nederland/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-tiimo",
+      "destination": "/structuro-of-tiimo/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-tiimo/",
+      "destination": "/structuro-of-tiimo/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-structured",
+      "destination": "/structuro-of-structured/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-structured/",
+      "destination": "/structuro-of-structured/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-burnout",
+      "destination": "/adhd-en-burn-out/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-burnout/",
+      "destination": "/adhd-en-burn-out/",
+      "permanent": true
+    },
+    {
+      "source": "/executive-dysfunction-adhd",
+      "destination": "/executieve-functies-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/executive-dysfunction-adhd/",
+      "destination": "/executieve-functies-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-todoist",
+      "destination": "/structuro-of-todoist/",
+      "permanent": true
+    },
+    {
+      "source": "/structuro-vs-todoist/",
+      "destination": "/structuro-of-todoist/",
+      "permanent": true
+    },
+    {
+      "source": "/goblin-tools-adhd",
+      "destination": "/structuro-of-goblin-tools/",
+      "permanent": true
+    },
+    {
+      "source": "/goblin-tools-adhd/",
+      "destination": "/structuro-of-goblin-tools/",
+      "permanent": true
+    },
+    {
+      "source": "/sensory-overload-adhd",
+      "destination": "/overprikkeling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/sensory-overload-adhd/",
+      "destination": "/overprikkeling-adhd/",
+      "permanent": true
+    },
+    {
       "source": "/structuro-of-goblin-tools",
       "destination": "/structuro-of-goblin-tools/",
       "permanent": true

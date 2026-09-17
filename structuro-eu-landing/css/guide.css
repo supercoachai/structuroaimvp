@@ -261,7 +261,7 @@ h1.hero-title,
   gap:12px;padding-top:34px;margin-bottom:-14px;
 }
 .sc-cta .shot img{
-  display:block;width:100%;height:auto;
+  display:block;width:100%;height:auto;aspect-ratio:400/851;
   filter:drop-shadow(0 22px 46px rgba(26,35,64,.18));
 }
 .sc-cta .cap{
