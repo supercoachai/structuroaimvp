@@ -326,6 +326,11 @@
       "permanent": true
     },
     {
+      "source": "/adhd-bij-vrouwen",
+      "destination": "/adhd-bij-vrouwen/",
+      "permanent": true
+    },
+    {
       "source": "/cyclus",
       "destination": "/cyclus/",
       "permanent": true
@@ -542,6 +547,10 @@
     {
       "source": "/overprikkeling-adhd/",
       "destination": "/overprikkeling-adhd/index.html"
+    },
+    {
+      "source": "/adhd-bij-vrouwen/",
+      "destination": "/adhd-bij-vrouwen/index.html"
     },
     {
       "source": "/onderzoek/",

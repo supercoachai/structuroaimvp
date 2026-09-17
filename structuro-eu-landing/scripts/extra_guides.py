@@ -54,7 +54,7 @@ EXTRA_GUIDES = [
         },
         "h1": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
         "body": """
-<p>Je weet wat er moet gebeuren. Soms al dagen. En toch blijft de start uit. Dat voelt als falen, vooral als anderen 'gewoon beginnen' alsof dat een knop is. Bij veel ADHD-breinen is die knop het probleem: intentie is er, executie hapert. Niet kunnen beginnen is dan geen moreel oordeel. Het is een startprobleem. Lees ook <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>.</p>
+<p>Je weet wat er moet gebeuren. Soms al dagen. En toch blijft de start uit. Dat voelt als falen, vooral als anderen 'gewoon beginnen' alsof dat een knop is. Bij veel ADHD-breinen is die knop het probleem: intentie is er, executie hapert. Niet kunnen beginnen is dan geen moreel oordeel. Het is een startprobleem. Lees ook <a href="/waarom-gewoon-beginnen-niet-werkt/">waarom 'gewoon beginnen' niet werkt</a>. Bij volwassen vrouwen hoort daar vaak werk plus huis bij: <a href="/adhd-bij-vrouwen/">ADHD bij vrouwen</a> blijft bij die executie, niet bij een test.</p>
 <p>Deze gids blijft bij die startfrictie. Andere knelpunten horen op andere kaarten. Als de ochtend zelf de keten is: <a href="/adhd-ochtendroutine/">ADHD-ochtendroutine</a>. Als de berg in beeld de last is vóór je begint: <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a> en <a href="/energie-first/">energie-first</a>.</p>
 
 <h2>Startprobleem ADHD: je weet wat je moet doen</h2>
@@ -171,10 +171,11 @@ EXTRA_GUIDES = [
             "adhd-keuzestress",
             "niet-kunnen-beginnen-adhd",
             "adhd-en-burn-out",
-            "beste-adhd-app-nederland",
+            "adhd-bij-vrouwen",
         ],
         "related_anchors": {
             "adhd-keuzestress": "als kiezen zelf de taak wordt",
+            "adhd-bij-vrouwen": "ADHD bij vrouwen: werk plus huis",
         },
         "description": "Taakverlamming bij ADHD is geen drama-woord voor luiheid. Het is een vol werkgeheugen plus te veel zichtbare stappen. Wat je kunt doen zonder jezelf te forceren.",
         "answer": (
@@ -850,6 +851,15 @@ EXTRA_GUIDES = [
         "read_min": "4 MIN",
         "title": "ADHD op het werk: niet aan de slag terwijl je er al bent",
         "description": "ADHD op het werk is vaak geen kennisprobleem. Het is starten tussen inbox, meetings en tussendoor. Hoe je één werktaak raakt zonder een productiviteitsreligie.",
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "adhd-bij-vrouwen",
+            "mentale-belasting-dagstart",
+            "overprikkeling-adhd",
+        ],
+        "related_anchors": {
+            "adhd-bij-vrouwen": "als werk én huis allebei trekken",
+        },
         "answer": (
             "ADHD op het werk wringt waar de dag uit andermans prioriteiten bestaat: mail, chat, meetings. Kennis is er, de start "
             "niet. Wat helpt is één werktaak vertalen naar een eerste klik, de rest parkeren, en energie meewegen. Geen heroïsche "
@@ -878,6 +888,7 @@ EXTRA_GUIDES = [
 
 <h2>Thuiswerken en kantoor</h2>
 <p>Thuis is de start soms zwaarder (geen drempel van aankomen) en soms lichter (minder prikkels). Kantoor kan structuur geven en overprikkelen. In beide gevallen blijft de regel: de eerste professionele actie mag kleiner zijn dan je functieomschrijving. De functieomschrijving is geen startsequentie.</p>
+<p>Als werk én huis allebei trekken, is dat dezelfde startfrictie in twee domeinen. Zie <a href="/adhd-bij-vrouwen/">ADHD bij vrouwen</a>: herkenning in executie, geen diagnose-pagina.</p>
 
 <h2>Wat je morgen kunt doen</h2>
 <p>Kies vóór de eerste meeting één werkklik: bestand open, onderwerp, eerste bullet. Zet hem op papier of in een startvlak, niet in de hele backlog. Na de meeting doe je alleen die klik. Chat mag wachten tot de klik er is. Als de dag alsnog volstroomt, was de klik nog winst. Dat is het enige cijfer dat telt op een ADHD-werkdag: bewogen, niet bijgewerkt tot nul.</p>
@@ -1275,6 +1286,117 @@ EXTRA_GUIDES = [
         ],
         "verantwoording_intro": (
             "Geen aandachtsstoornis-behandeling. Focus wordt als ontwerp van prikkels en lat beschreven, niet als klinisch protocol."
+        ),
+        "verantwoording_refs": REFS_CORE,
+    },
+    {
+        "slug": "adhd-bij-vrouwen",
+        "eyebrow": "Doelgroep",
+        "card_num": "23",
+        "card_label": "VROUWEN",
+        "hub_h2": "ADHD bij vrouwen",
+        "hub_teaser": "Werk plus huis, en de start blijft uit. Herkenning, geen diagnose.",
+        "thumb": "twee last",
+        "thumb_mod": "n",
+        "read_min": "5 MIN",
+        "published": "2026-09-17",
+        "modified": "2026-09-17",
+        "meta_title": "ADHD bij vrouwen: starten bij werk en huis",
+        "title": "ADHD bij vrouwen: starten als werk en huis allebei trekken",
+        "description": (
+            "ADHD bij vrouwen is vaak herkenning: niet beginnen, werk plus huis, overprikkeling. "
+            "Geen test of medicatie. Wel hoe je als volwassene één haalbare stap zet."
+        ),
+        "answer": (
+            "ADHD bij vrouwen laat zich vaak zien als een start die uitblijft, terwijl werk en huis allebei trekken. "
+            "Dit is geen diagnose-pagina en geen lijst met symptomen of medicatie. Wat past is herkenning in executie: "
+            "minder tegelijk in beeld, energie eerst, één kleine actie. Overprikkeling en mentale last maken die start zwaarder. "
+            "Deze gids gaat over beginnen, niet over behandeling."
+        ),
+        "cluster_note": (
+            'Dit is herkenning in executie, geen diagnose. Verdieping: '
+            '<a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>, '
+            '<a href="/adhd-op-het-werk/">ADHD op het werk</a>, '
+            '<a href="/overprikkeling-adhd/">overprikkeling</a>.'
+        ),
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "adhd-op-het-werk",
+            "overprikkeling-adhd",
+            "taakverlamming-adhd",
+        ],
+        "related_anchors": {
+            "niet-kunnen-beginnen-adhd": "als de eerste klik uitblijft",
+            "adhd-op-het-werk": "starten terwijl de werkdag al vol is",
+            "overprikkeling-adhd": "als de dag je startmotor leeglekt",
+            "taakverlamming-adhd": "wanneer alles tegelijk te groot voelt",
+        },
+        "h1": "ADHD bij vrouwen: starten als werk en huis allebei trekken",
+        "body": """
+<p>ADHD bij vrouwen wordt online vaak een medische pagina: symptomen, test, medicatie, 'hoe herken je het'. Die intentie bedienen we niet. Wat we wél herkennen uit gesprekken: je weet wat er moet gebeuren, werk en huis trekken allebei, en de start blijft uit. Dat is executie. Geen diagnose. Lees ook <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>.</p>
+<p>Deze gids is voor volwassen vrouwen die dat patroon in hun dag herkennen, met of zonder formeel label. We stellen geen diagnose. We verkopen geen test. We sommen geen kenmerken op als checklist. We praten over starten, mentale last, overprikkeling, werk en huishouden.</p>
+
+<h2>Wat deze pagina nadrukkelijk niet is</h2>
+<p>Geen 'heb ik ADHD'-funnel. Geen medicatie-advies. Geen boekrecensie. Geen podcast-lijst. Geen pagina over hoe ADHD zich 'uit' als klinisch beeld. En geen cyclus-marketing: als je fase als stille energie-context wilt meenemen, staat dat optioneel in de app en op de <a href="/cyclus/">cyclus-pagina</a>. Deze gids gaat over de klik van vandaag.</p>
+<p>Wie 'hoe herken je ADHD bij vrouwen' intikt, zoekt vaak zekerheid. Zekerheid hoort bij zorg. Herkenning in executie mag hier: je wilt wel, en de eerste handeling is te groot of te alleen. Dat verschil scheelt schaamte. Het vervangt geen huisarts.</p>
+
+<h2>ADHD bij volwassen vrouwen: herkenning in de start</h2>
+<p>Veel volwassen vrouwen herkennen het patroon pas laat, niet omdat het mild was, maar omdat compenseren jarenlang werkte: avonden, charme, chaos opruimen, alles onthouden voor anderen. Tot de compensatie op is. Dan ziet de buitenwereld 'niks doen'. Binnen draait het hoofd. Dat is dichter bij <a href="/taakverlamming-adhd/">taakverlamming</a> dan bij luiheid.</p>
+<p>De start hapert extra als twee werelden dezelfde batterij gebruiken. Een werkmail én de was. Een deadline én boodschappen. Geen van beide is 'klein'. Samen zijn ze één vol werkgeheugen. <a href="/mentale-belasting-dagstart/">Mentale belasting</a> is dan geen metafoor. Het is de onzichtbare to-do die de zichtbare to-do blokkeert.</p>
+
+<h2>Werk plus huis: twee bergen, één werkgeheugen</h2>
+<p>ADHD op het werk beschrijven we apart: inbox, meetings, tussendoor. Zie <a href="/adhd-op-het-werk/">ADHD op het werk</a>. Thuis komt daar een tweede berg bij die zelden in een sprint-board staat: eten, administratie, schoolrun, een rommelige kamer die meekijkt. Wie beide draagt, krijgt geen dubbele planner. Die krijgt dubbele startfrictie.</p>
+<p>De valkuil is een derde systeem: een gezinslijst plus een werklijst plus een 'ADHD-app'. Drie laden op het bureau. Wat helpt is het omgekeerde. Eén startvlak voor nu. De rest mag in de lade van werk of huis blijven. Jij spiegelt ze niet allebei. Eén klik. Daarna kijken.</p>
+<p>Huishouden uitstellen is in deze hoek geen karakter. Het is een keten zonder eerste fysieke handeling: 'opruimen' is een berg, 'één stapel in de kast' is een start. Zelfde les als bij mail. Andere kamer, dezelfde knop.</p>
+
+<h2>Overprikkeling maakt de start duurder</h2>
+<p>Een volle dag lekt de startmotor leeg: beslissingen, onderbrekingen, mislukte pogingen, een opmerking die blijft hangen. Tegen de middag is dezelfde taak zwaarder, zonder dat zij groter werd. <a href="/overprikkeling-adhd/">Overprikkeling</a> is hier geen stemmingswoord. Het is invoer die te lang te veel was.</p>
+<p>Wilskracht is dan het verkeerde antwoord. Extra structuur ook, als die structuur nog meer keuzes vraagt. Wat past: minder invoer, een bewuste stop, morgen opnieuw bij energie. <a href="/energie-first/">Energie-first</a> is geen excuus. Het is doseren zodat er überhaupt een klik overblijft.</p>
+
+<h2>Wat wél helpt, zonder een nieuwe identiteit</h2>
+<ul>
+<li><strong>Benoem het domein.</strong> Is de klik van werk of van huis? Kies er één. Allebei 'nu' is hoe niks nu is.</li>
+<li><strong>Maak de eerste actie fysiek en te klein.</strong> Openen, één sok, onderwerpregel. Niet het resultaat. <a href="/een-stap-per-dag/">Eén stap per dag</a>.</li>
+<li><strong>Verberg de tweede berg.</strong> Huis mag wachten terwijl je één werkklik doet. Werk mag in de lade terwijl je één huishoudklik doet.</li>
+<li><strong>Stopregel.</strong> De micro-actie telt ook als je daarna stopt. Anders blijft de lat 'het hele huishouden' of 'de hele inbox'.</li>
+</ul>
+<p>Dit is geen behandeling en geen belofte dat vrouwen-ADHD 'anders in de hersenen zit' als marketingclaim. Het is frictie verlagen tot bewegen weer mogelijk is. Kleine, situatie-gekoppelde stappen sluiten aan bij implementatie-intenties: als X, dan Y. Geen pep-talk.</p>
+
+<h2>Wat je morgen kunt doen</h2>
+<p>Schrijf twee kolommen: werk, huis. Streep de kolom door die vandaag niet de klik krijgt. In de overgebleven kolom: één fysieke actie van twee minuten. Zet de andere kolom uit zicht: app dicht, deur dicht, lijst omgedraaid. Doe alleen die actie. Stop. Als spijt komt over de andere berg, noteer je die voor later. Spijt tijdens de klik is extra last.</p>
+<p>Als zelfs twee minuten te veel is, was de dag al vol. Dan is de actie een shutdown, geen inhaal. Morgen opnieuw bij energie, niet bij schuld. <a href="/adhd-en-burn-out/">ADHD en burn-out</a> als leegte de enige taal is die nog klopt. Zorg blijft zorg.</p>
+
+<h2>Hoe Structuro hierin past</h2>
+<p>Structuro is geen vrouwen-product en geen medische app. Het is een prikkelarme executie-interface: dagstart, weinig tegelijk, één eerste stap, geen streaks. Optionele cycluscontext bestaat, zonder sturing en zonder dat deze gids daarvan afhangt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als ADHD bij vrouwen voor jou vooral voelt als niet-starten tussen werk en huis, is dat de klus. Niet een test halen. Eén klik, in één domein, vandaag.</p>
+""",
+        "cta_title": "Begin met één stap",
+        "cta_p": "Niet werk en huis tegelijk winnen. Wel één haalbare klik, passend bij je energie.",
+        "faqs": [
+            (
+                "Is dit een diagnose of een test voor ADHD bij vrouwen?",
+                "Nee. Geen test, geen kenmerkenlijst, geen medisch advies. Alleen herkenning in starten, werk en huis.",
+            ),
+            (
+                "Hoe herken je ADHD bij vrouwen zonder een symptomenpagina?",
+                "Kijk naar executie: je wilt wel, de start blijft uit, werk en huis trekken tegelijk. Dat is herkenning, geen diagnose. Zorg blijft zorg.",
+            ),
+            (
+                "Helpt medicatie, een boek of een podcast?",
+                "Dat valt buiten deze gids. Wij bouwen starthulp. Geen behandeling, geen literatuurlijst.",
+            ),
+            (
+                "Is dit hetzelfde als de cyclus-pagina?",
+                "Nee. Cyclus meenemen is optioneel in de app. Deze gids gaat over beginnen. Niet over fases als marketinghoek.",
+            ),
+            (
+                "Wat als werk én huishouden allebei blijven liggen?",
+                "Kies één domein voor de klik. De andere berg mag in de lade. Allebei nu is hoe niks start.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Geen klinische sekseverschillen, geen diagnose en geen behandeling. "
+            "Patronen komen uit gebruikersonderzoek van Structuro (executie, mentale last, startfrictie). "
+            "Cyclus is een optionele productfunctie, geen marketingclaim op deze pagina."
         ),
         "verantwoording_refs": REFS_CORE,
     },

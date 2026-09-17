@@ -29,6 +29,13 @@ RELATED_ALIASES = {
         "card_num": "21",
         "card_label": "TODOIST",
     },
+    "overprikkeling-adhd": {
+        "slug": "overprikkeling-adhd",
+        "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
+        "eyebrow": "Symptoom",
+        "card_num": "22",
+        "card_label": "PRIKKELS",
+    },
 }
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 ORG_ID = "https://www.structuro.eu/#organization"
@@ -351,7 +358,7 @@ GUIDES = [
             ),
             (
                 "Martinussen et al. (2005). A meta-analysis of working memory impairments in children with ADHD. JAACAP, 44(4), 377–384.",
-                "https://doi.org/10.1097/01.chi.0000153228.72591.95",
+                "https://pubmed.ncbi.nlm.nih.gov/15782085/",
             ),
             (
                 "Alderson et al. (2013). ADHD and working memory in adults: a meta-analytic review. Neuropsychology, 27(3), 287–302.",
@@ -448,11 +455,11 @@ GUIDES = [
         "verantwoording_refs": [
             (
                 "Sweller (1988). Cognitive load during problem solving: effects on learning. Cognitive Science, 12(2), 257–285.",
-                "https://doi.org/10.1016/0273-2307(88)90023-7",
+                "https://doi.org/10.1207/s15516709cog1202_4",
             ),
             (
                 "Martinussen et al. (2005). A meta-analysis of working memory impairments in children with ADHD. JAACAP, 44(4), 377–384.",
-                "https://doi.org/10.1097/01.chi.0000153228.72591.95",
+                "https://pubmed.ncbi.nlm.nih.gov/15782085/",
             ),
             (
                 "Alderson et al. (2013). ADHD and working memory in adults: a meta-analytic review. Neuropsychology, 27(3), 287–302.",

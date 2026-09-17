@@ -9,7 +9,7 @@
     nl: {
       meta_title: "ADHD-app voor beginnen met één stap | Structuro",
       meta_desc:
-        "Structuro is een rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. Kies je energie, maak één taak kleiner en start zonder streaks of shame.",
+        "Structuro is een rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. Kies energie, maak één taak kleiner en start zonder shame.",
       nav_how: "Dagstart",
       nav_why: "Herkenning",
       nav_reviews: "Reviews",

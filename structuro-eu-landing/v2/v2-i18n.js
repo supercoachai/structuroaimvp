@@ -9,7 +9,7 @@
     nl: {
       meta_title: "ADHD-app voor beginnen met één stap | Structuro",
       meta_desc:
-        "Structuro is een rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. Kies je energie, maak één taak kleiner en start zonder streaks of shame.",
+        "Structuro is een rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. Kies energie, maak één taak kleiner en start zonder shame.",
       nav_how: "Dagstart",
       nav_why: "Herkenning",
       nav_reviews: "Reviews",
@@ -293,7 +293,7 @@
       quote3_role: "ondernemer",
       gidsen_eyebrow: "Gidsen",
       gidsen_h2: "Drie kaarten om te beginnen.",
-      gidsen_support: "Niet 21 artikelen. Wel de drie vragen die mensen écht zoeken.",
+      gidsen_support: "Niet alles lezen. Wel de drie vragen die mensen écht zoeken.",
       gidsen_card1_t: "ADHD en burn-out",
       gidsen_card1_p: "Leegte plus niet-starten. Geen diagnose. Wel een kleinere ingang.",
       gidsen_card2_t: "Taakverlamming",
@@ -634,7 +634,7 @@
       quote3_role: "founder",
       gidsen_eyebrow: "Guides",
       gidsen_h2: "Three cards to start with.",
-      gidsen_support: "Not 21 articles. The three questions people actually search.",
+      gidsen_support: "Don't read everything. The three questions people actually search.",
       gidsen_card1_t: "ADHD and burnout",
       gidsen_card1_p: "Empty battery plus not starting. Not a diagnosis page. A smaller entry.",
       gidsen_card2_t: "Task paralysis",
