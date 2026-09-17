@@ -179,4 +179,71 @@ describe("structuro.eu landing hygiene", () => {
       expect(p.html, p.rel).not.toMatch(/https:\/\/(www\.)?structuro\.eu\/start/i);
     }
   });
+
+  it("verwijst bronnen naar PubMed, niet naar doi.org 302s", () => {
+    for (const p of indexable) {
+      expect(p.html, p.rel).not.toContain("https://doi.org/");
+    }
+  });
+
+  it("zet de primaire query in title, description, H1, lead, H2, strong, FAQ en img-alt", () => {
+    const queries: Record<string, string> = {
+      "niet-kunnen-beginnen-adhd/index.html": "ADHD paralysis",
+      "taakverlamming-adhd/index.html": "taakverlamming ADHD",
+      "tijdblindheid-adhd/index.html": "tijdblindheid ADHD",
+      "overprikkeling-adhd/index.html": "overprikkeling ADHD",
+      "adhd-planner-die-niet-overvraagt/index.html": "ADHD-planner",
+      "beste-adhd-app-nederland/index.html": "beste ADHD-app",
+      "alternatief-voor-todo-lijst-adhd/index.html": "to-do-lijst ADHD",
+      "structuro-of-tiimo/index.html": "Structuro vs Tiimo",
+      "structuro-of-structured/index.html": "Structuro vs Structured",
+      "structuro-of-todoist/index.html": "Structuro vs Todoist",
+      "structuro-of-goblin-tools/index.html": "Goblin Tools ADHD",
+      "adhd-en-burn-out/index.html": "ADHD burn-out",
+      "adhd-op-het-werk/index.html": "ADHD op het werk",
+      "adhd-ochtendroutine/index.html": "ADHD-ochtendroutine",
+      "adhd-uitstelgedrag/index.html": "ADHD uitstelgedrag",
+      "adhd-keuzestress/index.html": "ADHD keuzestress",
+      "takenlijst-te-lang-adhd/index.html": "takenlijst ADHD",
+      "adhd-focus-zonder-streaks/index.html": "ADHD-app zonder streaks",
+      "adhd-bij-vrouwen/index.html": "ADHD bij vrouwen",
+      "adhd-app/index.html": "ADHD-app",
+      "executieve-functies-adhd/index.html": "executieve functies ADHD",
+      "waarom-gewoon-beginnen-niet-werkt/index.html": "gewoon beginnen ADHD",
+      "een-stap-per-dag/index.html": "één stap per dag ADHD",
+      "waarom-planners-falen/index.html": "waarom planners falen",
+      "mentale-belasting-dagstart/index.html": "mentale belasting ADHD",
+      "energie-first/index.html": "energie-first ADHD",
+      "en/best-adhd-apps-netherlands/index.html": "best ADHD app",
+      "en/structuro-vs-tiimo/index.html": "Structuro vs Tiimo",
+      "en/structuro-vs-structured/index.html": "Structuro vs Structured",
+      "en/structuro-vs-todoist/index.html": "Structuro vs Todoist",
+    };
+    const fold = (s: string) =>
+      s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+    for (const [rel, query] of Object.entries(queries)) {
+      const page = pages.find((p) => p.rel === rel);
+      expect(page, rel).toBeTruthy();
+      const html = page!.html;
+      const q = fold(query);
+      expect(fold(page!.title), `${rel} title`).toContain(q);
+      expect(fold(page!.desc || ""), `${rel} description`).toContain(q);
+      const h1 = (html.match(/<h1>([\s\S]*?)<\/h1>/i) || [, ""])[1].replace(/<[^>]+>/g, "");
+      expect(fold(h1), `${rel} h1`).toContain(q);
+      const main = html.slice(html.toLowerCase().indexOf("<main"));
+      const words = (main.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<[^>]+>/g, " ").match(/[A-Za-zÀ-ÿ0-9]+(?:['’-][A-Za-zÀ-ÿ0-9]+)*/g) || []).slice(0, 150);
+      expect(fold(words.join(" ")), `${rel} first 150 words`).toContain(q);
+      expect(fold(html), `${rel} h2`).toMatch(
+        new RegExp(`<h2[^>]*>[^<]*${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"),
+      );
+      const strongs = [...html.matchAll(/<strong>([\s\S]*?)<\/strong>/gi)].map((m) =>
+        fold(m[1].replace(/<[^>]+>/g, "")),
+      );
+      expect(strongs.some((s) => s.includes(q)), `${rel} strong`).toBe(true);
+      expect(html, `${rel} faq`).toMatch(/faq|veelgestelde vragen/i);
+      expect(fold(html), `${rel} faq query`).toContain(q);
+      const alts = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => attr(m[0], "alt") || "");
+      expect(alts.some((a) => fold(a).includes(q)), `${rel} img-alt`).toBe(true);
+    }
+  });
 });

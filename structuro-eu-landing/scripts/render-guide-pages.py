@@ -29,7 +29,7 @@ FEATURED_SLUGS = (
 RELATED_ALIASES = {
     "overprikkeling-adhd": {
         "slug": "overprikkeling-adhd",
-        "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
+        "h1": "Overprikkeling ADHD: hoe een volle dag je startmotor leeglekt",
         "eyebrow": "Symptoom",
         "card_num": "22",
         "card_label": "PRIKKELS",
@@ -53,8 +53,8 @@ RELATED_ALIASES = {
 HUB_EXTRA = [
     {
         "slug": "overprikkeling-adhd",
-        "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
-        "hub_h2": "Overprikkeling en ADHD",
+        "h1": "Overprikkeling ADHD: hoe een volle dag je startmotor leeglekt",
+        "hub_h2": "Overprikkeling ADHD",
         "hub_teaser": "Een volle dag lekt de startmotor leeg. Avond afsluiten, niet harder duwen.",
         "eyebrow": "Symptoom",
         "card_num": "22",
@@ -63,8 +63,8 @@ HUB_EXTRA = [
         "thumb": "volle dag",
         "thumb_mod": "d",
         "answer": (
-            "Overprikkeling bij ADHD bouwt de hele dag op. Wilskracht is het verkeerde antwoord. "
-            "Avond afsluiten (shutdown) helpt de startmotor weer vullen, zonder medische claim."
+            "Overprikkeling ADHD, soms sensory overload genoemd, bouwt de hele dag op. "
+            "Wilskracht is het verkeerde antwoord. Avond afsluiten helpt de startmotor weer vullen, zonder medische claim."
         ),
     },
 ]
