@@ -104,6 +104,7 @@ describe("structuro.eu landing hygiene", () => {
     expect(coaches?.robots.toLowerCase()).toContain("follow");
     expect(sitemap).toContain("https://www.structuro.eu/voor-coaches/");
     expect(sitemap).toContain("https://www.structuro.eu/adhd-bij-vrouwen/");
+    expect(sitemap).toContain("https://www.structuro.eu/body-doubling-adhd/");
     const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(urls.length).toBeGreaterThanOrEqual(40);
   });
@@ -156,6 +157,7 @@ describe("structuro.eu landing hygiene", () => {
       "taakverlamming-adhd/index.html",
       "adhd-uitstelgedrag/index.html",
       "waarom-gewoon-beginnen-niet-werkt/index.html",
+      "body-doubling-adhd/index.html",
     ]) {
       const page = pages.find((p) => p.rel === rel);
       expect(page, rel).toBeTruthy();
@@ -199,6 +201,7 @@ describe("structuro.eu landing hygiene", () => {
       "structuro-of-structured/index.html": "Structuro vs Structured",
       "structuro-of-todoist/index.html": "Structuro vs Todoist",
       "structuro-of-goblin-tools/index.html": "Goblin Tools ADHD",
+      "body-doubling-adhd/index.html": "body doubling ADHD",
       "adhd-en-burn-out/index.html": "ADHD burn-out",
       "adhd-op-het-werk/index.html": "ADHD op het werk",
       "adhd-ochtendroutine/index.html": "ADHD-ochtendroutine",

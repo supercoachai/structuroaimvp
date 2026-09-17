@@ -2,6 +2,7 @@ cluster_id,cluster_name,priority_tier,ymyl_risk_max,recommended_url,primary_keyw
 generic_adhd,Generieke head term ADHD,P3,MEDIUM,https://www.structuro.eu/,adhd,1,19100.0,19100.0,IGNORE_IRRELEVANT,none
 hold_ymyl,YMYL / niet targeten zonder medische redactie,P3,HIGH,,kenmerken adhd,1491,880.0,85720.0,HOLD_YMYL,none
 women_practical,"ADHD bij vrouwen (executie, geen diagnose)",P1,MEDIUM,https://www.structuro.eu/adhd-bij-vrouwen/,adhd bij vrouwen,31,880.0,4400.0,EXPAND,guide
+body_doubling,"Body doubling (aanwezigheid, geen meekijk-app)",P0,LOW,https://www.structuro.eu/body-doubling-adhd/,body doubling adhd,2,260.0,520.0,EXPAND,guide
 residual:adhd relaties,Restcluster: adhd relaties,P2,NONE,,adhd relaties,3,590.0,1770.0,IGNORE_IRRELEVANT,none
 residual:adhd relatie,Restcluster: adhd relatie,P2,NONE,,relatie met adhd,6,590.0,2980.0,IGNORE_IRRELEVANT,none
 residual:adhd afkorting,Restcluster: adhd afkorting,P2,NONE,,afkorting adhd,2,590.0,1180.0,IGNORE_IRRELEVANT,none

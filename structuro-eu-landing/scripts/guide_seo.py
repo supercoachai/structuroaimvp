@@ -552,6 +552,33 @@ SEO: dict[str, dict] = {
         ),
         "img_alt": "Energie-first ADHD: eerst haalbaarheid, dan één stap in Structuro",
     },
+    "body-doubling-adhd": {
+        "primary_query": "body doubling ADHD",
+        "url_aliases": ["body-doubling", "adhd-body-doubling"],
+        "meta_title": "Body doubling ADHD: samen starten",
+        "description": (
+            "Body doubling ADHD is starten in aanwezigheid van een ander. Geen behandeling. "
+            "Als video te veel is, helpt een prikkelarme start zonder meekijker."
+        ),
+        "h1": "Body doubling ADHD: samen starten zonder een extra baas",
+        "answer": (
+            "Body doubling ADHD is starten in aanwezigheid van een ander: iemand in dezelfde ruimte, "
+            "of via video. Het is geen behandeling en geen bewijs dat je het alleen niet kunt. "
+            "Aanwezigheid verlaagt de drempel tot de eerste klik. Als video te veel prikkels is, of te sociaal voelt, "
+            "is de andere route een prikkelarme start zonder meekijker. Structuro is die tweede route, geen meekijk-app."
+        ),
+        "h2": "Wat body doubling ADHD is, en wat niet",
+        "body_lead": (
+            "<strong>Body doubling ADHD</strong> is een ervaringswoord, geen medische stempel. Mensen gebruiken het voor dit: "
+            "je weet wat er moet gebeuren, en de start blijft uit tot er iemand bij is. Dat kan een collega aan de tafel zijn, "
+            "een vriend, of een vreemde in een videosessie. De taak verandert niet. De aanwezigheid wel."
+        ),
+        "faq": (
+            "Wat is body doubling ADHD?",
+            "Starten in aanwezigheid van een ander: iemand in dezelfde ruimte, of via video. Geen behandeling. Geen bewijs dat je het alleen niet kunt.",
+        ),
+        "img_alt": "Body doubling ADHD: Structuro-dagstart als start zonder meekijker",
+    },
 }
 
 

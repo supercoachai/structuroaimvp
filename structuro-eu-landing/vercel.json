@@ -201,6 +201,31 @@
       "permanent": true
     },
     {
+      "source": "/body-doubling-adhd",
+      "destination": "/body-doubling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/body-doubling",
+      "destination": "/body-doubling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/body-doubling/",
+      "destination": "/body-doubling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-body-doubling",
+      "destination": "/body-doubling-adhd/",
+      "permanent": true
+    },
+    {
+      "source": "/adhd-body-doubling/",
+      "destination": "/body-doubling-adhd/",
+      "permanent": true
+    },
+    {
       "source": "/adhd-paralysis",
       "destination": "/niet-kunnen-beginnen-adhd/",
       "permanent": true
@@ -614,6 +639,10 @@
     {
       "source": "/energie-first/",
       "destination": "/energie-first/index.html"
+    },
+    {
+      "source": "/body-doubling-adhd/",
+      "destination": "/body-doubling-adhd/index.html"
     },
     {
       "source": "/structuro-of-goblin-tools/",

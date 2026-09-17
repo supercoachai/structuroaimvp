@@ -108,6 +108,7 @@ SLUG_REFS = {
     "adhd-bij-vrouwen": REFS_PRODUCT,
     "adhd-app": REFS_PRODUCT,
     "executieve-functies-adhd": REFS_EF,
+    "body-doubling-adhd": REFS_INITIATION,
 }
 
 EXTRA_GUIDES = [
@@ -136,13 +137,13 @@ EXTRA_GUIDES = [
             "beste-adhd-app-nederland",
             "taakverlamming-adhd",
             "waarom-planners-falen",
-            "structuro-of-tiimo",
+            "body-doubling-adhd",
         ],
         "related_anchors": {
             "beste-adhd-app-nederland": "kies op knelpunt, niet op ranking",
             "taakverlamming-adhd": "wanneer alles tegelijk te groot voelt",
             "waarom-planners-falen": "als plannen niet het gat is",
-            "structuro-of-tiimo": "tijdlijn of starthulp",
+            "body-doubling-adhd": "als de start te alleen voelt",
         },
         "h1": "Niet kunnen beginnen met ADHD: startprobleem, geen luiheid",
         "body": """
@@ -185,7 +186,7 @@ EXTRA_GUIDES = [
       <td>Eerst energie, dan de stap.</td>
     </tr>
     <tr>
-      <th scope="row">De start is te alleen</th>
+      <th scope="row"><a href="/body-doubling-adhd/">De start is te alleen</a></th>
       <td>“Als iemand even meekijkt, lukt het wel.”</td>
       <td>Vraag één persoon om een concrete check-in. Geen controle, geen schuld.</td>
       <td>Structuro is geen meekijk-app. Wel een start zonder straf.</td>
@@ -238,6 +239,10 @@ EXTRA_GUIDES = [
             (
                 "Moet ik medicatie of therapie hebben voordat een app helpt?",
                 "Nee. Structuro is geen behandeling. Het is een rustige starthulp. Zorg blijft zorg, dit blijft executie.",
+            ),
+            (
+                "Helpt body doubling als de start te alleen voelt?",
+                "Soms. Aanwezigheid van iemand anders kan de klik openen. Als video te veel prikkels is, is er een start zonder meekijker. Zie de gids body doubling ADHD.",
             ),
         ],
         "verantwoording_intro": (
@@ -403,9 +408,6 @@ EXTRA_GUIDES = [
 <h2>Wat je morgen kunt doen</h2>
 <p>Kies één taak die steeds in 'later' blijft hangen. Koppel hem aan iets dat morgen toch al gebeurt: na koffie, na de eerste mail, na het zetten van de laptop op het bureau. De koppeling mag saai zijn. Saai is betrouwbaar. Maak de actie twee minuten klein. Als de deadline-paniek later toch komt, heb je al een ingang geoefend. Dat is goedkoper dan alleen op crisis vertrouwen.</p>
 
-<h2>Wat je morgen kunt doen</h2>
-<p>Kies één taak die steeds in 'later' blijft hangen. Koppel hem aan iets dat morgen toch al gebeurt: na koffie, na de eerste mail, na het zetten van de laptop op het bureau. De koppeling mag saai zijn. Saai is betrouwbaar. Maak de actie twee minuten klein. Als de deadline-paniek later toch komt, heb je al een ingang geoefend. Dat is goedkoper dan alleen op crisis vertrouwen.</p>
-
 <h2>Hoe Structuro hierin past</h2>
 <p>Structuro duwt je niet in een uurrooster. De dagstart speelt zich af in het nu: hoe zit je energie, wat is één eerste stap. Geen week die je vooraf moet winnen. Geen streak die breekt als je tijd opnieuw verkeerd inschatte. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Tijd hoeft niet perfect te voelen. Eén actie in dit moment is genoeg als correctie op later.</p>
 """,
@@ -427,6 +429,10 @@ EXTRA_GUIDES = [
             (
                 "Moet ik mijn hele agenda omgooien?",
                 "Nee. Begin bij één taak die steeds in later blijft hangen. Koppel daar één micro-actie aan.",
+            ),
+            (
+                "Waarom kom ik te laat met ADHD?",
+                "Als later wazig is, start de vertrek-actie te laat, of blijft nu te lang winnen. Dat is geen bewijs dat je mensen niet serieus neemt. Koppel vertrekken aan iets dat al gebeurt, kleiner dan 'op tijd zijn'.",
             ),
         ],
         "verantwoording_intro": (
@@ -519,6 +525,10 @@ EXTRA_GUIDES = [
                 "Waarom falen 'ADHD-templates' zo vaak?",
                 "Omdat ze nog steeds een volle week vragen. Een template is geen start. Het is een vooringevulde berg.",
             ),
+            (
+                "Is planning ADHD hetzelfde als een ADHD-planner of agenda?",
+                "Vaak dezelfde intentie: de dag in beweging. Een agenda toont tijd. Een planner bewaart taken. Geen van beide start automatisch de eerste klik.",
+            ),
         ],
         "verantwoording_intro": (
             "Deze gids gaat over ontwerpkeuzes (minder keuzedruk, startbaarheid), niet over een medisch voorschrift. "
@@ -571,6 +581,7 @@ EXTRA_GUIDES = [
 <p><strong>Starten.</strong> Je wilt wel, de eerste klik blijft uit. Dan wil je weinig zichtbaar, een micro-stap, geen inhaaldruk. Dat is executie. Als vastzitten of niet kunnen beginnen het knelpunt is, lees de <a href="https://www.structuro.eu/taakverlamming-adhd/">hoofdgids taakverlamming bij ADHD</a>. Deze roundup kiest op knelpunt, het is geen ranking. Ook: <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>.</p>
 <p><strong>Tijd zien.</strong> Later voelt wazig, blokken helpen, visuele timers helpen. Dan kan een dag-tijdlijn of visuele planner beter passen dan een rustige start-app. Lees <a href="/tijdblindheid-adhd/">tijdblindheid</a>. De vergelijking zelf staat op <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a> en <a href="/structuro-of-structured/">Structuro vs Structured</a>, niet op deze roundup.</p>
 <p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>. Lijst versus start: <a href="/structuro-of-todoist/">Structuro vs Todoist</a>.</p>
+<p><strong>Samen beginnen.</strong> Als aanwezigheid de klik opent, is dat body doubling, geen extra planner. <a href="/body-doubling-adhd/">Body doubling ADHD</a>. Als video te veel prikkels is, blijft starthulp zonder meekijker.</p>
 
 <h2>Kies de vergelijkingspagina, niet dit lijstje</h2>
 <p>Deze pagina is een knelpunt-match. De vs-vragen hebben een eigen URL: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>, <a href="/structuro-of-structured/">Structuro vs Structured</a>, <a href="/structuro-of-todoist/">Structuro vs Todoist</a>, <a href="/structuro-of-goblin-tools/">Structuro vs Goblin Tools</a>. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
@@ -944,6 +955,10 @@ EXTRA_GUIDES = [
                 "Helpt een volle weekstructuur om eruit te komen?",
                 "Zelden in deze fase. Eerst kleiner, dan eventueel vorm. Een week winnen is geen herstelplan.",
             ),
+            (
+                "Is ADHD en burn-out hetzelfde als ADHD burn-out?",
+                "Ja. Zelfde overlap in het gevoel, andere spelling: leegte plus een berg. Geen diagnose. Zorg blijft zorg.",
+            ),
         ],
         "verantwoording_intro": (
             "Geen klinische richtlijn voor burn-out of ADHD. Overlap wordt als ervaringspatroon beschreven. Zoek professionele zorg bij ernstige uitputting."
@@ -1030,6 +1045,10 @@ EXTRA_GUIDES = [
             (
                 "Is dit een productiviteitsmethode?",
                 "Nee. Het is frictie verlagen tot je een werktaak raakt. Geen output-religie.",
+            ),
+            (
+                "Werkt dit ook als ik zzp'er ben of thuiswerk?",
+                "Ja. Thuis of zzp mist vaak de drempel van aankomen. De regel blijft: één professionele klik vóór chat en inbox. De functieomschrijving is geen startsequentie.",
             ),
         ],
         "verantwoording_intro": (
@@ -1135,10 +1154,11 @@ EXTRA_GUIDES = [
             "takenlijst-te-lang-adhd",
             "niet-kunnen-beginnen-adhd",
             "taakverlamming-adhd",
-            "waarom-gewoon-beginnen-niet-werkt",
+            "body-doubling-adhd",
         ],
         "related_anchors": {
             "takenlijst-te-lang-adhd": "wanneer je lijst de start zwaarder maakt",
+            "body-doubling-adhd": "als later wint tot iemand meekijkt",
         },
         "title": "ADHD en uitstelgedrag: uitstelgedrag-start of een start die te groot is",
         "meta_title": "ADHD en uitstelgedrag: start te groot",
@@ -1197,6 +1217,10 @@ EXTRA_GUIDES = [
             (
                 "Moet ik uitstelgedrag helemaal afleren?",
                 "Nee. Soms is parkeren wijs. Het punt is: niet liegen dat later een plan is als het een vlucht is.",
+            ),
+            (
+                "Is freeze of wachtmodus hetzelfde als uitstelgedrag?",
+                "Freeze of wachtmodus voelt als vastzitten, niet als kiezen voor later. Dat ligt dichter bij geen ingang dan bij geen zin. Maak de eerste klik belachelijk klein.",
             ),
         ],
         "verantwoording_intro": (
@@ -1356,6 +1380,16 @@ EXTRA_GUIDES = [
         "thumb": "stille timer",
         "thumb_mod": "d",
         "read_min": "4 MIN",
+        "modified": "2026-09-17",
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "body-doubling-adhd",
+            "adhd-op-het-werk",
+            "energie-first",
+        ],
+        "related_anchors": {
+            "body-doubling-adhd": "als starten lukt zodra iemand meekijkt",
+        },
         "title": "ADHD-app zonder streaks: aandacht zonder gehoorzaamheidsspel",
         "meta_title": "ADHD-app zonder streaks",
         "description": "Focus bij ADHD hoeft geen pomodoro-religie of streak te zijn. Korte blokken, een kleine start, geen straf als je stopt. Zo blijft aandacht menselijk.",
@@ -1380,8 +1414,9 @@ EXTRA_GUIDES = [
 <li><strong>Geen rood.</strong> Geen overdue, geen gebroken keten, geen 'je was zo goed bezig'. Dat kader is school.</li>
 </ul>
 
-<h2>Hyperfocus is geen bewijs dat starten lukt</h2>
-<p>Hyperfocus klinkt als superkracht: uren in iets zakken. Het is geen tegenbewijs voor startfrictie. Het is vaak aandacht die wél een ingang vond, plus beloning die dichtbij zat. De mail, de administratie, de saaie klus: die hebben die ingang niet. Een tool die hyperfocus probeert af te dwingen met streaks, mist het punt. De klus is de start van wat niet vanzelf trekt. Geen diagnose, geen claim dat iedereen dit zo ervaart.</p>
+<h2>Hyperfocus ADHD is geen bewijs dat starten lukt</h2>
+<p>Hyperfocus ADHD klinkt als superkracht: uren in iets zakken. Hyperfocusing is dezelfde zoekterm in het Engels. Het is geen tegenbewijs voor startfrictie. Het is vaak aandacht die wél een ingang vond, plus beloning die dichtbij zat. De mail, de administratie, de saaie klus: die hebben die ingang niet. Een tool die hyperfocus probeert af te dwingen met streaks, mist het punt. De klus is de start van wat niet vanzelf trekt. Geen diagnose, geen claim dat iedereen dit zo ervaart.</p>
+<p>Stoppen is het andere gat. Spreek een stop af vóór je inzakt, niet erna. De stop mag saai zijn: water, raam, een timer die geen rechter is. Wie hyperfocus ADHD alleen viert, merkt te laat dat de saaie taak nog steeds wacht.</p>
 
 <h2>Afleiding zonder zelfhaat</h2>
 <p>Afleiding is geen bewijs dat je focus 'niet kunt'. Het is een zenuwstelsel dat beloning nu verkiest boven later, plus een taak die te groot of te vaag is. Maak de taak concreter, de beloning van de micro-actie dichterbij (klaar met openen), en de omgeving iets saaier. Geen klooster. Wel: één scherm, één klik, dan kijken. Zie <a href="/adhd-keuzestress/">keuzestress</a> als zes tabbladen de aandacht stelen vóór je begint.</p>
@@ -1422,6 +1457,10 @@ EXTRA_GUIDES = [
             (
                 "Is hyperfocus hetzelfde als kunnen beginnen?",
                 "Nee. Hyperfocus is aandacht die al een ingang vond. Startfrictie zit juist bij taken zonder die ingang.",
+            ),
+            (
+                "Hoe stop ik hyperfocus ADHD zonder de dag te verliezen?",
+                "Spreek een stop af vóór je inzakt, niet erna. De stop mag saai zijn: water, raam, een zachte timer. Hyperfocus ADHD is geen bewijs dat saaie taken vanzelf starten.",
             ),
         ],
         "verantwoording_intro": (
@@ -1531,6 +1570,10 @@ EXTRA_GUIDES = [
             (
                 "Wat als werk én huishouden allebei blijven liggen?",
                 "Kies één domein voor de klik. De andere berg mag in de lade. Allebei nu is hoe niks start.",
+            ),
+            (
+                "Geldt dit ook voor ADHD bij volwassen vrouwen?",
+                "Ja. Deze gids is voor volwassen vrouwen. Herkenning in executie: werk plus huis, en de start blijft uit. Geen test.",
             ),
         ],
         "verantwoording_intro": (
@@ -1682,6 +1725,9 @@ EXTRA_GUIDES = [
 <p>In een overzichtsartikel beschrijft Diamond (2013) kernprocessen zoals werkgeheugen, inhibitie en cognitieve flexibiliteit, plus hogere processen zoals plannen. Dat is een onderzoekswoordenschat, geen persoonlijke handleiding. Mensen gebruiken het woord in het Nederlands vaak als: ik weet het wel, ik krijg het niet in beweging. Dat overlap met taakinitiatie is precies waar Structuro wél iets mag zeggen. Niet als arts. Als ontwerp van de start.</p>
 <p>Willcutt en collega's (2005) lieten in een meta-analyse zien dat executieve-functietheorieën van ADHD empirische steun hebben, en tegelijk dat EF-tekorten niet universeel of voldoende zijn om ADHD te verklaren. Kort: verband, geen 1-op-1. Wie 'executieve functies ADHD' googelt, zoekt vaak herkenning plus een volgende stap. Herkenning mag. Een universele brein-slogan niet.</p>
 
+<h2>Werkgeheugen ADHD en executive dysfunction nederlands</h2>
+<p>Werkgeheugen ADHD is in gewone taal: onthouden wat je net wilde terwijl je start. Als dat vol zit, hapert de klik. Executive dysfunction nederlands is de zoekterm voor hetzelfde gevoel: intentie zonder uitvoering. Geen extra diagnose op deze pagina. Minder tegelijk in beeld is vriendelijker dan een vollere lijst. Zie <a href="/taakverlamming-adhd/">taakverlamming</a> als de berg het woord is dat landt.</p>
+
 <h2>Taakinitiatie is één steen in die keten</h2>
 <p>Starten vraagt dat je een te grote keten tot één fysieke actie maakt, terwijl werkgeheugen al vol kan zitten. Te veel stappen tegelijk is hoe <a href="/taakverlamming-adhd/">taakverlamming</a> voelt. Te veel opties is <a href="/adhd-keuzestress/">keuzestress</a>. Energie die niet past is geen luiheid: <a href="/energie-first/">energie-first</a>. Op het werk komt daar andermans agenda bij: <a href="/adhd-op-het-werk/">ADHD op het werk</a>.</p>
 <p>In het kwalitatieve gebruikersonderzoek van Structuro onder ruim vijftig Nederlandse volwassenen kwam 'weten maar niet beginnen' als patroon terug. Dat is geen bewijs dat 'ADHD = executieve dysfunctie', en geen schatting voor iedereen met ADHD. De steekproef selecteerde zichzelf. Methode en beperkingen: <a href="/onderzoek/">onderzoek</a>.</p>
@@ -1728,6 +1774,14 @@ EXTRA_GUIDES = [
             (
                 "Waar staat jullie eigen onderzoek?",
                 "Op de onderzoekspagina: methode, aantallen, beperkingen. Kwalitatief, niet klinisch, niet generaliseerbaar naar iedereen.",
+            ),
+            (
+                "Wat is werkgeheugen ADHD in gewone taal?",
+                "Onthouden wat je net wilde terwijl je start. Als het vol zit, hapert de klik. Minder tegelijk in beeld is dan vriendelijker dan een vollere lijst.",
+            ),
+            (
+                "Wat betekent executive dysfunction nederlands?",
+                "Meestal: de intentie is er, het uitvoeren hapert. Geen extra diagnose. Zie ook taakverlamming als de berg het woord is dat landt.",
             ),
         ],
         "verantwoording_intro": (
@@ -1917,6 +1971,110 @@ EXTRA_GUIDES = [
             "gecontroleerd op 17 september 2026. Geen affiliate. Geen labtest."
         ),
         "verantwoording_refs": REFS_PRODUCT,
+    },
+    {
+        "slug": "body-doubling-adhd",
+        "eyebrow": "Oplossing",
+        "card_num": "27",
+        "card_label": "SAMEN",
+        "hub_h2": "Body doubling bij ADHD",
+        "hub_teaser": "Samen starten helpt soms. Als video te veel is, is er een start zonder meekijker.",
+        "thumb": "twee stoelen",
+        "thumb_mod": "n",
+        "read_min": "5 MIN",
+        "published": "2026-09-17",
+        "modified": "2026-09-17",
+        "meta_title": "Body doubling ADHD: samen starten",
+        "title": "Body doubling ADHD: samen starten zonder een extra baas",
+        "description": (
+            "Body doubling ADHD is starten in aanwezigheid van een ander. Geen behandeling. "
+            "Als video te veel is, helpt een prikkelarme start zonder meekijker."
+        ),
+        "cluster_note": (
+            'Body doubling is aanwezigheid. Structuro is geen meekijk-app. Startfrictie: '
+            '<a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>.'
+        ),
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "taakverlamming-adhd",
+            "adhd-focus-zonder-streaks",
+            "beste-adhd-app-nederland",
+        ],
+        "related_anchors": {
+            "niet-kunnen-beginnen-adhd": "als de eerste klik uitblijft",
+            "taakverlamming-adhd": "wanneer alles tegelijk te groot voelt",
+            "adhd-focus-zonder-streaks": "aandacht zonder streaks",
+            "beste-adhd-app-nederland": "kies op knelpunt, niet op ranking",
+        },
+        "limitation": (
+            "Structuro is geen body-doubling-app en geen behandeling. "
+            "Als aanwezigheid van iemand anders de klik opent, past een meekijker of Focusmate beter. "
+            "Als video te veel prikkels is, past een prikkelarme start zonder meekijker."
+        ),
+        "answer": (
+            "Body doubling ADHD is starten in aanwezigheid van een ander: iemand in dezelfde ruimte, "
+            "of via video. Het is geen behandeling en geen bewijs dat je het alleen niet kunt. "
+            "Aanwezigheid verlaagt de drempel tot de eerste klik. Als video te veel prikkels is, of te sociaal voelt, "
+            "is de andere route een prikkelarme start zonder meekijker. Structuro is die tweede route, geen meekijk-app."
+        ),
+        "h1": "Body doubling ADHD: samen starten zonder een extra baas",
+        "body": """
+<p>Body doubling ADHD is een ervaringswoord, geen medische stempel. Mensen gebruiken het voor dit: je weet wat er moet gebeuren, en de start blijft uit tot er iemand bij is. Dat kan een collega aan de andere kant van de tafel zijn. Een vriend op de bank. Of een vreemde in een videosessie. De taak verandert niet. De aanwezigheid wel. Lees ook <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> als de frictie 'te alleen' is.</p>
+
+<h2>Wat body doubling ADHD is, en wat niet</h2>
+<p>Wat het wél is: starten in aanwezigheid van een ander. Geen controle, geen schuld, geen tweede baas. Iemand die er gewoon is terwijl jij de eerste klik doet. Wat het niet is: behandeling, coaching, diagnose of bewijs dat je het alleen nooit kunt. Het is een drempel verlagen tot bewegen weer mogelijk is. Geen universele truc. Sommige mensen starten juist beter zonder ogen op hen.</p>
+<p>De Engelse zoekterm is dezelfde: body doubling. Nederlands voegt er ADHD aan toe omdat de startfrictie daar vaker herkend wordt. Dat maakt het nog geen klinisch protocol. Het blijft een community-term voor een sociale cue bij taakinitiatie.</p>
+
+<h2>Wanneer aanwezigheid de klik opent</h2>
+<p>De start is te alleen. Je opent niks tot er een mens in de buurt is. Niet omdat je onbekwaam bent. Omdat de eerste handeling lichter voelt als iemand anders ook werkt, of alleen maar zit. Dat is dichter bij <a href="/taakverlamming-adhd/">taakverlamming</a> dan bij luiheid: de berg is er, de ingang ontbreekt, tot de kamer niet leeg is.</p>
+<p>In persoon kan dat saai zijn: naast elkaar administratie, een bibliotheek, een keukentafel. Via video boek je een blok, groet je kort, en begin je. Tools als <a href="https://www.focusmate.com/" rel="noopener noreferrer">Focusmate</a> verkopen precies die sessie. Dat is hun klus. Niet de onze.</p>
+
+<h2>Wanneer video te veel is</h2>
+<p>Video is extra invoer. Gezicht, stem, een vreemde, de druk om 'productief te lijken'. Voor wie al vol zit, is dat geen hulp. Dat is <a href="/overprikkeling-adhd/">overprikkeling</a> in een call. Dan is meekijken het verkeerde medicijn. Dan wil je een start zonder meekijker: energie, één zichtbare klik, de rest uit beeld.</p>
+<p>Kies eerlijk. Als aanwezigheid de klik opent en de prikkels meevallen, is body doubling ADHD de match. Als de camera de drempel verhoogt, is het dat niet. Twee tools voor dezelfde klus is extra frictie. Eén route is genoeg.</p>
+
+<h2>Wat je níet van body doubling moet maken</h2>
+<ul>
+<li>Geen bewijs dat je 'niet zonder mensen kunt functioneren'.</li>
+<li>Geen vervanging van zorg, medicatie of behandeling.</li>
+<li>Geen streak van sessies die je moet redden. Zie <a href="/adhd-focus-zonder-streaks/">focus zonder streaks</a>.</li>
+<li>Geen tweede planningssysteem ernaast. De meekijker start. Hij plant niet je week.</li>
+</ul>
+<p>Schaamte zegt: als ik een meekijker nodig heb, ben ik zwak. Executie zegt: als aanwezigheid de klik opent, mag je die cue gebruiken. Die twee vechten. Kies executie. De rest is later.</p>
+
+<h2>Wat je morgen kunt doen</h2>
+<p>Schrijf één zin: mijn start is te alleen, of video is te veel. Bij te alleen: vraag één persoon om 25 minuten naast je te zitten, of boek één sessie. Geen controle, geen verslag. Alleen aanwezigheid plus één fysieke klik. Bij te veel: sla video over. Kies de kleinste klik zonder ogen op je. Stop daarna bewust. Dat is de oefening. Niet de berg winnen.</p>
+<p>Als zelfs die keuze te groot is, was de dag al vol. Dan is de actie rust, geen inhaal-sessie. <a href="/energie-first/">Energie-first</a> blijft de filter.</p>
+
+<h2>Hoe Structuro hierin past</h2>
+<p>Structuro is geen body-doubling-app. Geen video, geen vreemde aan de andere kant, geen sessie die je moet boeken. Het is een prikkelarme start zonder meekijker: energie, weinig tegelijk, één eerste stap, geen streaks. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als aanwezigheid jouw klik opent, gebruik dat. Als video te veel is, is dit de andere route. Geen medisch advies. Geen behandeling.</p>
+""",
+        "cta_title": "Begin met één stap",
+        "cta_p": "Geen meekijker verplicht. Wel een start die klein mag, passend bij je energie.",
+        "faqs": [
+            (
+                "Wat is body doubling ADHD?",
+                "Starten in aanwezigheid van een ander: iemand in dezelfde ruimte, of via video. Geen behandeling. Geen bewijs dat je het alleen niet kunt.",
+            ),
+            (
+                "Is Structuro een body-doubling-app?",
+                "Nee. Structuro is een prikkelarme start zonder meekijker. Als aanwezigheid de klik opent, past een mens ernaast of Focusmate beter.",
+            ),
+            (
+                "Moet ik video gebruiken?",
+                "Nee. Video is extra invoer. Als dat te veel prikkels is, kies een start zonder camera. Aanwezigheid mag ook een persoon in dezelfde kamer zijn.",
+            ),
+            (
+                "Is dit hetzelfde als coaching?",
+                "Nee. Body doubling is aanwezigheid, geen begeleiding en geen behandelrelatie.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Body doubling is een community-term voor starten in aanwezigheid van een ander, geen klinische classificatie. "
+            "Structuro is geen meekijk-app. Geen diagnose of behandeling. Focusmate-features en prijzen komen van focusmate.com, "
+            "gecontroleerd op 17 september 2026. Geen affiliate."
+        ),
+        "verantwoording_refs": REFS_INITIATION,
     },
 ]
 

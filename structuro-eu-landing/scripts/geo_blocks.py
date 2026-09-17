@@ -27,6 +27,7 @@ GEO_P0_SLUGS = frozenset(
         "structuro-of-structured",
         "structuro-of-todoist",
         "structuro-of-goblin-tools",
+        "body-doubling-adhd",
     }
 )
 CLUSTER_B_SLUGS = frozenset(
@@ -35,6 +36,7 @@ CLUSTER_B_SLUGS = frozenset(
         "taakverlamming-adhd",
         "adhd-uitstelgedrag",
         "waarom-gewoon-beginnen-niet-werkt",
+        "body-doubling-adhd",
     }
 )
 MATRIX_SLUGS = frozenset({"beste-adhd-app-nederland"})
@@ -116,6 +118,11 @@ PRODUCT_SOURCES_BY_SLUG: dict[str, list[tuple[str, str]]] = {
         ("Goblin Tools, Magic ToDo", "https://goblin.tools/todo"),
         ("Goblin Tools, About", "https://goblin.tools/About"),
         ("Goblin Tools Pro", "https://goblin.tools/pro/join"),
+        ("Structuro, prijs en product", "https://www.structuro.eu/"),
+    ],
+    "body-doubling-adhd": [
+        ("Focusmate, officiële site", "https://www.focusmate.com/"),
+        ("Focusmate, pricing", "https://www.focusmate.com/pricing"),
         ("Structuro, prijs en product", "https://www.structuro.eu/"),
     ],
 }
