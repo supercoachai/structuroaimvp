@@ -1,37 +1,58 @@
+# Kennislaag op www.structuro.eu. App-shell leeft op www.structuro.ai.
+# /v2/ is een legacy-spiegel van de homepage (noindex). niels-full is bronbestand, niet voor crawlers.
+
 User-agent: *
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 # Search / retrieval (zichtbaarheid in Search, AI Overviews, AI-antwoorden).
-# Training-crawlers staan hieronder apart: dat is geen rankingtactic.
-
 User-agent: Googlebot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: Bingbot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 # Training / model-ingest. Bewust toegestaan zodat productfeiten niet verdraaid
 # raken in trainingsdata. Dit is geen Google Search-rankingfactor.
 # OAI-SearchBot (search) is niet hetzelfde als GPTBot (training).
 User-agent: GPTBot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 User-agent: Applebot-Extended
 Allow: /
+Disallow: /v2/
+Disallow: /uploads/niels-full.jpg
 
 Sitemap: https://www.structuro.eu/sitemap.xml

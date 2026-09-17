@@ -29,6 +29,7 @@ export default function robots(): MetadataRoute.Robots {
           "/terms",
           "/login",
           "/registreren",
+          "/llms.txt",
         ],
         disallow: "/",
       },

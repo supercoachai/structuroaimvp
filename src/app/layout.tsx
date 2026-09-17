@@ -30,6 +30,7 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: 'Structuro',
   description: 'Platform voor volwassenen met ADHD-achtige kenmerken',
+  robots: { index: false, follow: true },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

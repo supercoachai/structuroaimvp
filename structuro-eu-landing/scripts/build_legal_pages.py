@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import html
+import json
 import re
 import sys
 from pathlib import Path
@@ -120,6 +121,22 @@ def wrap_page(
     foot_cookies = f"{prefix}/cookies/"
     made_in = "Made in the Netherlands" if lang == "en" else "Gemaakt in Nederland"
     eyebrow = "Legal" if lang == "en" else "Juridisch"
+    og_desc = html.escape(description or title, quote=True)
+    json_ld = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": title,
+            "url": canonical,
+            "inLanguage": "en" if lang == "en" else "nl-NL",
+            "isPartOf": {
+                "@type": "WebSite",
+                "name": "Structuro",
+                "url": "https://www.structuro.eu/",
+            },
+        },
+        ensure_ascii=False,
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="{lang}">
@@ -127,6 +144,7 @@ def wrap_page(
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{html.escape(page_title)}</title>{desc_tag}
+<meta name="robots" content="index,follow"/>
 <link rel="canonical" href="{canonical}"/>
 <link rel="alternate" hreflang="nl" href="https://www.structuro.eu/{active}/"/>
 <link rel="alternate" hreflang="en" href="https://www.structuro.eu/en/{active}/"/>
@@ -135,6 +153,15 @@ def wrap_page(
 <link rel="icon" href="/uploads/logo-structuro-favicon-48.png?v=20260730a" type="image/png" sizes="48x48"/>
 <link rel="icon" href="/uploads/logo-structuro-favicon-96.png?v=20260730a" type="image/png" sizes="96x96"/>
 <link rel="apple-touch-icon" href="/uploads/logo-structuro-apple.png?v=20260730a"/>
+<meta property="og:title" content="{html.escape(page_title)}"/>
+<meta property="og:description" content="{og_desc}"/>
+<meta property="og:url" content="{canonical}"/>
+<meta property="og:image" content="https://www.structuro.eu/uploads/og-share.png?v=20260808a"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="{html.escape(page_title)}"/>
+<meta name="twitter:description" content="{og_desc}"/>
+<meta name="twitter:image" content="https://www.structuro.eu/uploads/og-share.png?v=20260808a"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -146,6 +173,9 @@ def wrap_page(
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/js/ph-config.js?v=20260724a"></script>
 <script defer src="/js/analytics.js?v=20260903b"></script>
+<script type="application/ld+json">
+{json_ld}
+</script>
 </head>
 <body>
 <header class="site-header">
@@ -184,6 +214,7 @@ def wrap_page(
         <a href="{foot_privacy}">{"Privacy policy" if lang == "en" else "Privacybeleid"}</a>
         <a href="{foot_terms}">{"Terms of use" if lang == "en" else "Algemene voorwaarden"}</a>
         <a href="{foot_cookies}">Cookies</a>
+        <a href="/voor-coaches/">{"For coaches" if lang == "en" else "Voor coaches"}</a>
         <a href="mailto:info@structuro.eu">info@structuro.eu</a>
       </nav>
     </div>

@@ -14,8 +14,11 @@ from extra_guides import EXTRA_GUIDES
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
-MODIFIED = "2026-09-09"
-CSS_V = "20260916c"
+MODIFIED = "2026-09-17"
+CSS_V = "20260917a"
+TITLE_MAX = 60
+DESC_MAX = 155
+BRAND_SUFFIX = " · Structuro"
 FEATURED_SLUGS = (
     "adhd-app",
     "taakverlamming-adhd",
@@ -539,8 +542,9 @@ GUIDES = [
         "thumb": "rust / avond",
         "thumb_mod": "",
         "read_min": "3 MIN",
-        "meta_title": "Energie-first: taken plannen op energie",
-        "title": "Energie-first werken: taken plannen op energie, niet op moeten",
+        "meta_title": "Energie-first ADHD-methode: plannen op energie",
+        "title": "Energie-first ADHD-methode: plannen op energie, niet op moeten",
+        "cluster_note": 'Dit is de methode-kaart. Overprikkeling en avond-afsluiten staan op <a href="/overprikkeling-adhd/">overprikkeling en ADHD</a>.',
         "related_slugs": [
             "mentale-belasting-dagstart",
             "overprikkeling-adhd",
@@ -552,12 +556,12 @@ GUIDES = [
         },
         "description": "Kies taken rond je energie, niet je energie rond je to-do. Zo werkt energie-first zonder hustle, shame of vaste lat die je elke dag breekt.",
         "answer": (
-            "Energie-first betekent: je dag bouwen rond wat je nu aankunt, niet rond wat je 'zou moeten'. "
+            "De energie-first ADHD-methode betekent: je dag bouwen rond wat je nu aankunt, niet rond wat je 'zou moeten'. "
             "Op lage energie kies je één kleine stap. Op hoge energie mag er meer. Zo voorkom je dat een "
             "ambitieuze lijst je verlamt op de dagen dat starten al zwaar genoeg is, zonder dat moeilijke "
             "dingen voor altijd verdwijnen."
         ),
-        "h1": "Energie-first werken: taken plannen op energie, niet op moeten",
+        "h1": "Energie-first ADHD-methode: plannen op energie, niet op moeten",
         "body": """
 <p>'Moeten' negeert je batterij. Het zet een vaste lat, ook als je hoofd vol is of je lijf traag. Energie-first draait die volgorde om: eerst voelen wat er is, dan kiezen wat past. Dat klinkt soft. In de praktijk is het vaak de enige manier om consistent genoeg te bewegen zonder wekelijkse crash. Het mechanisme sluit aan bij state-regulation en arousal-variatie bij ADHD; plannen op energie is een theoretisch gemotiveerde ontwerpkeuze, geen klinisch bewezen protocol.</p>
 
@@ -752,9 +756,10 @@ def organization_node() -> dict:
         "email": "info@structuro.eu",
         "description": ORG_DESCRIPTION,
         "disambiguatingDescription": (
-            "Nederlandse webapp op structuro.eu en structuro.ai. "
-            "Niet hetzelfde als Structured, de tijdlijn-app."
+            "ADHD-executie-app Structuro op structuro.eu en structuro.ai. "
+            "Niet Structured.app (tijdlijn) en niet structuro.nl (staalbedrijf)."
         ),
+        "alternateName": ["Structuro app", "Structuro ADHD"],
         "sameAs": ORG_SAME_AS,
     }
 
@@ -775,7 +780,7 @@ def article_schema(g: dict) -> str:
             "@context": "https://schema.org",
             "@type": "Article",
             "headline": g["h1"],
-            "description": g["description"],
+            "description": meta_description(g),
             "inLanguage": "nl-NL",
             "datePublished": published,
             "dateModified": modified,
@@ -844,10 +849,33 @@ def breadcrumb_schema(g: dict) -> str:
     )
 
 
+def document_title(g: dict) -> str:
+    raw = (g.get("meta_title") or g["title"]).strip()
+    if raw.endswith("Structuro") and " · " in raw:
+        title = raw
+    else:
+        title = f"{raw}{BRAND_SUFFIX}"
+    if len(title) <= TITLE_MAX:
+        return title
+    if len(raw) <= TITLE_MAX:
+        return raw
+    cut = raw[:TITLE_MAX].rsplit(" ", 1)[0].rstrip(".,;:-")
+    return cut or raw[:TITLE_MAX]
+
+
+def meta_description(g: dict) -> str:
+    text = " ".join((g.get("description") or "").split())
+    if len(text) <= DESC_MAX:
+        return text
+    cut = text[:DESC_MAX].rsplit(" ", 1)[0].rstrip(".,;:")
+    return f"{cut}."
+
+
 def hreflang_html(g: dict) -> str:
-    hl = g.get("hreflang") or {}
+    hl = g.get("hreflang")
     if not hl:
-        return ""
+        url = f"https://www.structuro.eu/{g['slug']}/"
+        hl = {"nl": url, "x-default": url}
     return "\n".join(
         f'<link rel="alternate" hreflang="{esc(code)}" href="{esc(url)}"/>'
         for code, url in hl.items()
@@ -880,7 +908,8 @@ def render(g: dict) -> str:
         "https://www.structuro.ai/onboarding"
         f"?utm_source=structuro_eu&utm_medium=seo&utm_campaign={slug}&utm_content=guide_nav"
     )
-    title = f"{g.get('meta_title') or g['title']} · Structuro"
+    title = document_title(g)
+    desc = meta_description(g)
     hreflang = hreflang_html(g)
     hreflang_block = f"\n{hreflang}" if hreflang else ""
     en_foot = en_foot_html(g)
@@ -894,7 +923,7 @@ def render(g: dict) -> str:
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>{esc(title)}</title>
-<meta name="description" content="{esc(g["description"])}"/>
+<meta name="description" content="{esc(desc)}"/>
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large"/>
 <link rel="canonical" href="https://www.structuro.eu/{slug}/"/>{hreflang_block}
 <link rel="icon" href="/favicon.ico" sizes="any"/>
@@ -904,7 +933,7 @@ def render(g: dict) -> str:
 <meta property="og:site_name" content="Structuro"/>
 <meta property="og:locale" content="nl_NL"/>
 <meta property="og:title" content="{esc(title)}"/>
-<meta property="og:description" content="{esc(g["description"])}"/>
+<meta property="og:description" content="{esc(desc)}"/>
 <meta property="og:url" content="https://www.structuro.eu/{slug}/"/>
 <meta property="og:image" content="{OG_IMAGE}"/>
 <meta property="og:image:width" content="1200"/>
@@ -915,7 +944,7 @@ def render(g: dict) -> str:
 <meta property="article:modified_time" content="{modified}"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="{esc(title)}"/>
-<meta name="twitter:description" content="{esc(g["description"])}"/>
+<meta name="twitter:description" content="{esc(desc)}"/>
 <meta name="twitter:image" content="{OG_IMAGE}"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -1016,6 +1045,7 @@ def render(g: dict) -> str:
     </a>
     <div class="flinks">
       <a href="/gidsen/">Gidsen</a>
+      <a href="/voor-coaches/">Voor coaches</a>
       <a href="/onderzoek/">Onderzoek</a>
       <a href="/toegankelijkheid/">Toegankelijkheid</a>
       <a href="/#prijs">Prijs</a>
@@ -1036,34 +1066,7 @@ def render(g: dict) -> str:
 
 
 def write_sitemap() -> None:
-    urls = [
-        ("https://www.structuro.eu/", "1.0"),
-        ("https://www.structuro.eu/gidsen/", "0.85"),
-        ("https://www.structuro.eu/cyclus/", "0.75"),
-        ("https://www.structuro.eu/waarom-gewoon-beginnen-niet-werkt/", "0.9"),
-        ("https://www.structuro.eu/een-stap-per-dag/", "0.8"),
-        ("https://www.structuro.eu/waarom-planners-falen/", "0.8"),
-        ("https://www.structuro.eu/mentale-belasting-dagstart/", "0.8"),
-        ("https://www.structuro.eu/energie-first/", "0.8"),
-    ]
-    items = []
-    for loc, prio in urls:
-        items.append(
-            f"""  <url>
-    <loc>{loc}</loc>
-    <lastmod>{MODIFIED}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>{prio}</priority>
-  </url>"""
-        )
-    xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        + "\n".join(items)
-        + "\n</urlset>\n"
-    )
-    (ROOT / "sitemap.xml").write_text(xml, encoding="utf-8")
-    print("wrote sitemap.xml")
+    ensure_sitemap()
 
 
 def write_llms() -> None:
@@ -1260,7 +1263,7 @@ def write_hub() -> None:
       <div class="eyebrow">Gidsen</div>
       <h1 class="hero-title">Kies een kaart.</h1>
       <p class="sub">ADHD-executie, zonder planner-theater.</p>
-      <p class="lede">Je hoeft niet alles te lezen. Elke kaart staat op zichzelf, is in een paar minuten uit en eindigt met één ding dat je vandaag kunt doen.</p>
+      <p class="lede">Je hoeft niet alles te lezen. Elke kaart staat op zichzelf, is in een paar minuten uit en eindigt met één ding dat je vandaag kunt doen. De gids over taakverlamming staat op <a href="/taakverlamming-adhd/">een eigen URL</a>. Deze pagina is de inhoudsopgave.</p>
       <div class="facts"><span>{n} kaarten</span><span>kies er één</span><span>kies je knelpunt</span></div>
     </div>
     <div class="fan" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -1292,6 +1295,7 @@ def write_hub() -> None:
     </a>
     <div class="flinks">
       <a href="/gidsen/">Gidsen</a>
+      <a href="/voor-coaches/">Voor coaches</a>
       <a href="/onderzoek/">Onderzoek</a>
       <a href="/toegankelijkheid/">Toegankelijkheid</a>
       <a href="/#prijs">Prijs</a>
@@ -1325,38 +1329,58 @@ EXTRA_SITEMAP = [
 
 
 def ensure_sitemap() -> None:
-    path = ROOT / "sitemap.xml"
-    text = path.read_text(encoding="utf-8")
-    added = []
+    urls: list[tuple[str, str, str]] = [
+        ("https://www.structuro.eu/", "1.0", MODIFIED),
+        ("https://www.structuro.eu/gidsen/", "0.85", MODIFIED),
+        ("https://www.structuro.eu/voor-coaches/", "0.8", MODIFIED),
+        ("https://www.structuro.eu/onderzoek/", "0.8", MODIFIED),
+        ("https://www.structuro.eu/verhaal/", "0.7", MODIFIED),
+        ("https://www.structuro.eu/cyclus/", "0.7", MODIFIED),
+        ("https://www.structuro.eu/toegankelijkheid/", "0.4", MODIFIED),
+        ("https://www.structuro.eu/pers/", "0.5", MODIFIED),
+        ("https://www.structuro.eu/en/", "0.7", MODIFIED),
+        ("https://www.structuro.eu/en/guides/", "0.65", MODIFIED),
+        ("https://www.structuro.eu/en/structuro-vs-tiimo/", "0.6", MODIFIED),
+        ("https://www.structuro.eu/en/structuro-vs-structured/", "0.6", MODIFIED),
+        ("https://www.structuro.eu/en/structuro-vs-todoist/", "0.6", MODIFIED),
+        ("https://www.structuro.eu/en/best-adhd-apps-netherlands/", "0.6", MODIFIED),
+        ("https://www.structuro.eu/privacy/", "0.3", MODIFIED),
+        ("https://www.structuro.eu/terms/", "0.3", MODIFIED),
+        ("https://www.structuro.eu/cookies/", "0.3", MODIFIED),
+        ("https://www.structuro.eu/en/privacy/", "0.3", MODIFIED),
+        ("https://www.structuro.eu/en/terms/", "0.3", MODIFIED),
+        ("https://www.structuro.eu/en/cookies/", "0.3", MODIFIED),
+    ]
+    seen = {loc for loc, _, _ in urls}
     for g in GUIDES:
         loc = f"https://www.structuro.eu/{g['slug']}/"
-        if loc in text:
+        if loc in seen:
             continue
-        lastmod = g.get("modified") or MODIFIED
-        added.append(
-            f"""  <url>
+        seen.add(loc)
+        urls.append((loc, "0.75", g.get("modified") or MODIFIED))
+    for g in HUB_EXTRA:
+        loc = f"https://www.structuro.eu/{g['slug']}/"
+        if loc in seen:
+            continue
+        seen.add(loc)
+        urls.append((loc, "0.75", g.get("modified") or MODIFIED))
+    items = [
+        f"""  <url>
     <loc>{loc}</loc>
     <lastmod>{lastmod}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-  </url>"""
-        )
-    for loc, prio in EXTRA_SITEMAP:
-        if loc in text:
-            continue
-        added.append(
-            f"""  <url>
-    <loc>{loc}</loc>
-    <lastmod>2026-09-17</lastmod>
-    <changefreq>yearly</changefreq>
     <priority>{prio}</priority>
   </url>"""
-        )
-    if not added:
-        return
-    text = text.replace("</urlset>", "\n".join(added) + "\n</urlset>\n")
-    path.write_text(text, encoding="utf-8")
-    print(f"sitemap: +{len(added)} urls")
+        for loc, prio, lastmod in urls
+    ]
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(items)
+        + "\n</urlset>\n"
+    )
+    (ROOT / "sitemap.xml").write_text(xml, encoding="utf-8")
+    print(f"wrote sitemap.xml ({len(urls)} urls)")
 
 
 def ensure_llms() -> None:
