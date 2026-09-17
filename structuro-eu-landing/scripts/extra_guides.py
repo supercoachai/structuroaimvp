@@ -19,6 +19,95 @@ REFS_CORE = [
     ),
 ]
 
+REFS_EF = [
+    (
+        "Willcutt et al. (2005). Validity of the executive function theory of ADHD: a meta-analytic review. Biological Psychiatry, 57(11), 1336–1346.",
+        "https://doi.org/10.1016/j.biopsych.2005.02.005",
+    ),
+    (
+        "Diamond, A. (2013). Executive functions. Annual Review of Psychology, 64, 135–168.",
+        "https://doi.org/10.1146/annurev-psych-113011-143750",
+    ),
+    (
+        "Gollwitzer & Sheeran (2006). Implementation intentions and goal achievement: A meta-analysis. Advances in Experimental Social Psychology, 38, 69–119.",
+        "https://doi.org/10.1016/S0065-2601(06)38002-1",
+    ),
+]
+
+REFS_INITIATION = [
+    REFS_EF[0],
+    REFS_EF[2],
+]
+REFS_PLANNER = [
+    REFS_EF[2],
+    (
+        "Iyengar & Lepper (2000). When choice is demotivating: Can one desire too much of a good thing? Journal of Personality and Social Psychology, 79(6), 995–1006.",
+        "https://doi.org/10.1037/0022-3514.79.6.995",
+    ),
+]
+REFS_WORK = [
+    (
+        "Kessler et al. (2009). The prevalence and workplace costs of adult ADHD in a large sample of U.S. workers. Journal of Occupational and Environmental Medicine, 51(4), 385–398.",
+        "https://doi.org/10.1097/JOM.0b013e3181aed389",
+    ),
+    (
+        "Adamou et al. (2013). Occupational issues of adults with ADHD. BMC Psychiatry, 13, 59.",
+        "https://doi.org/10.1186/1471-244X-13-59",
+    ),
+    REFS_EF[2],
+]
+REFS_PROCRAST = [
+    (
+        "Steel, P. (2007). The nature of procrastination: A meta-analytic and theoretical review. Psychological Bulletin, 133(1), 65–94.",
+        "https://doi.org/10.1037/0033-2909.133.1.65",
+    ),
+    (
+        "Niermann & Scheres (2014). The relation between procrastination and symptoms of ADHD in undergraduate students. International Journal of Methods in Psychiatric Research, 23(4), 411–421.",
+        "https://doi.org/10.1002/mpr.1440",
+    ),
+]
+REFS_TIME = [
+    (
+        "Noreika, Falter & Rubia (2013). Timing deficits in ADHD: evidence from neurocognitive and neuroimaging studies. Neuropsychologia, 51(2), 235–266.",
+        "https://doi.org/10.1016/j.neuropsychologia.2012.09.036",
+    ),
+    REFS_EF[2],
+]
+REFS_CHOICE = [
+    (
+        "Iyengar & Lepper (2000). When choice is demotivating: Can one desire too much of a good thing? Journal of Personality and Social Psychology, 79(6), 995–1006.",
+        "https://doi.org/10.1037/0022-3514.79.6.995",
+    ),
+    REFS_EF[2],
+]
+REFS_PRODUCT = [REFS_EF[2]]
+REFS_SENSORY = [
+    (
+        "Panagiotidi, Overton & Stafford (2018). The relationship between ADHD traits and sensory sensitivity in the general population. Comprehensive Psychiatry, 80, 179–185.",
+        "https://doi.org/10.1016/j.comppsych.2017.10.008",
+    ),
+]
+SLUG_REFS = {
+    "niet-kunnen-beginnen-adhd": REFS_INITIATION,
+    "taakverlamming-adhd": REFS_INITIATION,
+    "tijdblindheid-adhd": REFS_TIME,
+    "adhd-planner-die-niet-overvraagt": REFS_PLANNER,
+    "beste-adhd-app-nederland": REFS_PRODUCT,
+    "alternatief-voor-todo-lijst-adhd": REFS_CHOICE,
+    "structuro-of-tiimo": REFS_PRODUCT,
+    "structuro-of-structured": REFS_PRODUCT,
+    "adhd-en-burn-out": REFS_INITIATION,
+    "adhd-op-het-werk": REFS_WORK,
+    "adhd-ochtendroutine": REFS_INITIATION,
+    "adhd-uitstelgedrag": REFS_PROCRAST,
+    "adhd-keuzestress": REFS_CHOICE,
+    "takenlijst-te-lang-adhd": REFS_CHOICE,
+    "adhd-focus-zonder-streaks": REFS_PRODUCT,
+    "adhd-bij-vrouwen": REFS_PRODUCT,
+    "adhd-app": REFS_PRODUCT,
+    "executieve-functies-adhd": REFS_EF,
+}
+
 EXTRA_GUIDES = [
     {
         "slug": "niet-kunnen-beginnen-adhd",
@@ -125,7 +214,7 @@ EXTRA_GUIDES = [
 <p>Kies één taak die al dagen in je hoofd zit. Zeg hardop welke frictie het is: te groot, te veel opties, energie, of te alleen. Doe alleen de bijbehorende micro-actie. Stop daarna bewust. Dat is de oefening. Niet de berg winnen. De ingang vinden.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. Eerst kies je wat haalbaar is. Daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand, geen creditcard nodig voor de trial. Betalen kan later gewoon met iDEAL. Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
+<p>Structuro is gebouwd voor dit exacte moment: je wilt wel, en de start blijft uit. Eerst kies je wat haalbaar is. Daarna één eerste stap. Jij bevestigt. Dan begin je. Geen streaks, geen rode achterstand. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Probeer het als starthulp, niet als bewijs dat je eindelijk perfect georganiseerd moet zijn. Geen medisch advies. Geen behandeling.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Kies wat haalbaar is. Bevestig. Start. Geen strengere planner.",
@@ -159,8 +248,8 @@ EXTRA_GUIDES = [
         "eyebrow": "Symptoom",
         "card_num": "07",
         "card_label": "VERLAMMING",
-        "hub_h2": "Taakverlamming bij ADHD",
-        "hub_teaser": "Te veel opties, te weinig start. Zo wordt de berg weer één klik.",
+        "hub_h2": "Als alles tegelijk te groot voelt",
+        "hub_teaser": "De gids over taakverlamming: te veel opties, te weinig start. Zo wordt de berg weer één klik.",
         "thumb": "stille berg",
         "thumb_mod": "d",
         "read_min": "4 MIN",
@@ -222,11 +311,15 @@ EXTRA_GUIDES = [
 <p>Als je vastzit, kies niet het belangrijkste project. Kies de rand die het minst dreigt. Zet de rest uit beeld: andere tabbladen dicht, lijst weg, telefoon omgedraaid. Doe één micro-actie. Zet daarna een stop, ook als je door zou kunnen. De stop leert je brein dat bewegen niet betekent dat de hele berg nu van je eist. Herhaal dat op een lage dag, niet alleen op een dag met paniek.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro toont niet je hele leven. De dagstart vraagt wat je nu aankunt, daarna één eerste stap. Geen growing list terwijl jij stilstaat. Geen streaks die je aanklagen als de verlamming een uur duurde. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als de berg vandaag te hoog is, is dat precies het moment om hem tot één klik te maken.</p>
+<p>Structuro toont niet je hele leven. De dagstart vraagt wat je nu aankunt, daarna één eerste stap. Geen growing list terwijl jij stilstaat. Geen streaks die je aanklagen als de verlamming een uur duurde. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als de berg vandaag te hoog is, is dat precies het moment om hem tot één klik te maken.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Eén micro-actie is genoeg als ingang. De berg mag wachten.",
         "faqs": [
+            (
+                "Wat is taakverlamming?",
+                "Taakverlamming is vastzitten terwijl je wilt bewegen: te veel stappen zichtbaar, werkgeheugen vol. Geen luiheid, geen officiële diagnose. Dit is de gids daarover, niet de overzichtspagina gidsen.",
+            ),
             (
                 "Wat is ADHD-verlamming bij volwassenen?",
                 "Een ervaringswoord: je wilt wel, maar geen stap voelt veilig. Te veel tegelijk zichtbaar. Geen officiële diagnose.",
@@ -308,7 +401,7 @@ EXTRA_GUIDES = [
 <p>Kies één taak die steeds in 'later' blijft hangen. Koppel hem aan iets dat morgen toch al gebeurt: na koffie, na de eerste mail, na het zetten van de laptop op het bureau. De koppeling mag saai zijn. Saai is betrouwbaar. Maak de actie twee minuten klein. Als de deadline-paniek later toch komt, heb je al een ingang geoefend. Dat is goedkoper dan alleen op crisis vertrouwen.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro duwt je niet in een uurrooster. De dagstart speelt zich af in het nu: hoe zit je energie, wat is één eerste stap. Geen week die je vooraf moet winnen. Geen streak die breekt als je tijd opnieuw verkeerd inschatte. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Tijd hoeft niet perfect te voelen. Eén actie in dit moment is genoeg als correctie op later.</p>
+<p>Structuro duwt je niet in een uurrooster. De dagstart speelt zich af in het nu: hoe zit je energie, wat is één eerste stap. Geen week die je vooraf moet winnen. Geen streak die breekt als je tijd opnieuw verkeerd inschatte. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Tijd hoeft niet perfect te voelen. Eén actie in dit moment is genoeg als correctie op later.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele middag plannen. Eén actie die in het nu past.",
@@ -351,7 +444,7 @@ EXTRA_GUIDES = [
             "waarom-planners-falen",
             "niet-kunnen-beginnen-adhd",
             "beste-adhd-app-nederland",
-            "een-stap-per-dag",
+            "adhd-app",
         ],
         "related_anchors": {
             "waarom-planners-falen": "waarom een planner taken bewaart, maar niet start",
@@ -385,6 +478,10 @@ EXTRA_GUIDES = [
 <p>Eén vraag: wat is vandaag haalbaar? Eén voorstel: de eerste stap, niet het project. Een dump voor losse gedachten, zonder dat die dump meteen een second brain wordt. Optioneel iets als cyclus of context, zonder sturing. Geen gamification die je waarde aan een reeks hangt.</p>
 <p>Dat is kleiner dan wat productiviteitsinternet belooft. Kleiner is hier het product, geen gebrek.</p>
 
+<h2>Planning, planner of agenda: meestal één intentie</h2>
+<p>Zoekwoorden als planning ADHD, ADHD planning, planner ADHD en ADHD agenda lijken vier markten. Vaak is het dezelfde vraag: hoe krijg ik de dag in beweging zonder een systeem dat me aanklaagt. Een papieren agenda kan prikkelarm zijn. Een digitale planner kan herinneren. Geen van beide start automatisch de eerste klik. Als de SERP vooral fysieke agenda's toont, is dat een winkelintentie. Deze gids blijft bij executie: helpt het systeem je beginnen, of bewaart het alleen taken?</p>
+<p>Kies daarom niet drie bijna-identieke pagina's. Kies één test. Overzicht versus start. Agenda versus takenlijst versus starthulp. Een klassieke agenda wint als je tijd wilt zien. Een lijst wint als je niks kwijt wilt. Een executie-app wint als je weet wat er moet, en de start uitblijft. Wie vooral een product zoekt, niet een vergelijking: <a href="/adhd-app/">ADHD-app voor wie niet begint</a>. Wie het woord 'executieve functies' zoekt: <a href="/executieve-functies-adhd/">executieve functies en ADHD</a>.</p>
+
 <h2>Papieren planners en bullet journals</h2>
 <p>Papier kan prikkelarm zijn. Het kan ook een kunstproject worden dat de start vervangt. Als tekenen van spreads het enige is dat lukt, was dat de micro-actie. Noem het dan niet falen van het systeem. Noem het: je koos een start die tekenen was, niet de administratie. Morgen mag de start de administratie zijn, even klein.</p>
 
@@ -395,7 +492,7 @@ EXTRA_GUIDES = [
 <p>Open de tool die je nu gebruikt. Tel hoeveel items tegelijk zichtbaar zijn. Als het meer dan een paar is, is de planner al een berg. Verberg de rest of parkeer hem. Kies één start voor morgen die geen velden vraagt. Gebruik de dag daarna om te voelen of je begon, niet of het systeem compleet was. Compleetheid is de valkuil. Startbaarheid is de test.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro noemt zich geen klassieke planner, expres. Het is een executie-interface: dagstart, weinig tegelijk, één eerste stap, geen shame. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je een planner zoekt die niet overvraagt, let dan niet op hoe compleet hij is. Let op hoe weinig hij van je eist vóór je mag beginnen.</p>
+<p>Structuro noemt zich geen klassieke planner, expres. Het is een executie-interface: dagstart, weinig tegelijk, één eerste stap, geen shame. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als je een planner zoekt die niet overvraagt, let dan niet op hoe compleet hij is. Let op hoe weinig hij van je eist vóór je mag beginnen.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen systeem vullen. Eerst een haalbare start, passend bij je energie.",
@@ -443,14 +540,18 @@ EXTRA_GUIDES = [
         "modified": "2026-09-17",
         "cluster_note": 'Als het knelpunt starten of taakverlamming is, lees de <a href="https://www.structuro.eu/taakverlamming-adhd/">hoofdgids over taakverlamming bij ADHD</a>. Deze roundup is een knelpunt-match, geen ranking.',
         "related_slugs": [
+            "adhd-app",
             "structuro-of-tiimo",
             "structuro-of-structured",
             "structuro-of-todoist",
-            "taakverlamming-adhd",
+            "adhd-focus-zonder-streaks",
         ],
         "related_anchors": {
-            "structuro-of-tiimo": "vergelijk Structuro met Tiimo",
-            "structuro-of-structured": "vergelijk Structuro met Structured",
+            "adhd-app": "wat Structuro als ADHD-app is",
+            "structuro-of-tiimo": "Structuro vs Tiimo",
+            "structuro-of-structured": "Structuro vs Structured",
+            "structuro-of-todoist": "Structuro vs Todoist",
+            "adhd-focus-zonder-streaks": "ADHD-app zonder streaks",
         },
         "description": "De beste ADHD-app in Nederland is geen ranking. Kies op knelpunt: starten, visuele tijd of overzicht.",
         "answer": (
@@ -464,15 +565,15 @@ EXTRA_GUIDES = [
 
 <h2>Drie klussen, drie soorten tools</h2>
 <p><strong>Starten.</strong> Je wilt wel, de eerste klik blijft uit. Dan wil je weinig zichtbaar, een micro-stap, geen inhaaldruk. Dat is executie. Als vastzitten of niet kunnen beginnen het knelpunt is, lees de <a href="https://www.structuro.eu/taakverlamming-adhd/">hoofdgids taakverlamming bij ADHD</a>. Deze roundup kiest op knelpunt, het is geen ranking. Ook: <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>.</p>
-<p><strong>Tijd zien.</strong> Later voelt wazig, blokken helpen, visuele timers helpen. Dan kan een dag-tijdlijn of visuele planner beter passen dan een rustige start-app. Lees <a href="/tijdblindheid-adhd/">tijdblindheid</a>. Eerlijk: als dat jouw hoofdpijn is, kijk ook naar tools die daarvoor zijn gebouwd, zoals Tiimo of Structured. Meer in <a href="/structuro-of-tiimo/">vergelijk Structuro met Tiimo</a> en <a href="/structuro-of-structured/">vergelijk Structuro met Structured</a>.</p>
-<p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>.</p>
+<p><strong>Tijd zien.</strong> Later voelt wazig, blokken helpen, visuele timers helpen. Dan kan een dag-tijdlijn of visuele planner beter passen dan een rustige start-app. Lees <a href="/tijdblindheid-adhd/">tijdblindheid</a>. De vergelijking zelf staat op <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a> en <a href="/structuro-of-structured/">Structuro vs Structured</a>, niet op deze roundup.</p>
+<p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>. Lijst versus start: <a href="/structuro-of-todoist/">Structuro vs Todoist</a>.</p>
 
-<h2>Structured-app in het Nederlands, Tiimo of Todoist: kies de klus</h2>
-<p>Geen ranking. Wel drie eerlijke vs-pagina's: <a href="/structuro-of-tiimo/">Structuro of Tiimo</a> (visuele tijd versus starten), <a href="/structuro-of-structured/">Structuro of Structured</a> (tijdlijn versus eerste stap), <a href="/structuro-of-todoist/">Structuro of Todoist</a> (lijst versus start). Tiimo zelf wint op de merknaam. Jij wilt de klus. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
+<h2>Kies de vergelijkingspagina, niet dit lijstje</h2>
+<p>Deze pagina is een knelpunt-match. De vs-vragen hebben een eigen URL: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>, <a href="/structuro-of-structured/">Structuro vs Structured</a>, <a href="/structuro-of-todoist/">Structuro vs Todoist</a>. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
 
 <h2>Waar Nederlandse lijstjes vaak misgaan</h2>
 <p>Ze tellen features. Ze beloven focus als een persoonlijkheid. Ze zetten 'voor ADHD' op een gewone planner. Ze vergeten dat een webapp op je telefoon mag, zonder App Store. En ze doen alsof één winnaar bestaat. Dat is marketing, geen match.</p>
-<p>Let ook op toon. Shame-gamification, streaks die je aanklagen, badges voor gehoorzaamheid: dat is een neurotypische school in een appjas. Als je daarop afhaakt, is de app niet 'te zacht'. Hij was te hard.</p>
+<p>Let ook op toon. Shame-gamification en badges voor gehoorzaamheid horen in een andere gids: <a href="/adhd-focus-zonder-streaks/">ADHD-app zonder streaks</a>. Als je daarop afhaakt, is de app niet te zacht. Hij was te hard.</p>
 
 <h2>Een korte keuze-test</h2>
 <ol>
@@ -481,7 +582,7 @@ EXTRA_GUIDES = [
 <li>Wat mag de tool níet doen? (rood worden, tien velden, social feed)</li>
 <li>Kun je hem morgen gebruiken zonder een uur inrichten?</li>
 </ol>
-<p>Als je bij 1 'beginnen' invult, zoek je geen nummer 1. Je zoekt de minste drempel. <a href="/adhd-planner-die-niet-overvraagt/">Een planner die niet overvraagt</a> is dezelfde test in andere woorden.</p>
+<p>Als je bij 1 'beginnen' invult, zoek je geen nummer 1. Je zoekt de minste drempel. <a href="/adhd-planner-die-niet-overvraagt/">Een planner die niet overvraagt</a> is dezelfde test in andere woorden. Zoek je geen vergelijking, maar wat Structuro zelf is: <a href="/adhd-app/">ADHD-app voor wie niet begint</a>.</p>
 
 <h2>Webapp versus 'echte app'</h2>
 <p>In Nederland verwachten mensen soms een icoon in de App Store. Een webapp op het homescreen is voor veel taken genoeg: dagstart, één stap, klaar. Geen valse belofte van een native store-app als die er niet is. Wel: werkt op telefoon en computer, in de browser.</p>
@@ -490,7 +591,7 @@ EXTRA_GUIDES = [
 <p>Schrijf in één zin jouw knelpunt: starten, tijd zien, of overzicht. Deinstalleren hoeft niet. Gebruik 48 uur alleen een tool die bij die zin past. Meet of je bewoog, niet of de app mooi is. Als je weer ging inrichten, was het de verkeerde klus. Kies dan de saaiere optie. Saaier is vaak de echte match, omdat hij minder van je eist vóór je mag beginnen.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro zegt niet de beste ADHD-app van Nederland te zijn. Zo'n lijstje bestaat niet zonder belang erachter. Wat we wel durven zeggen: als starten jouw knelpunt is, is Structuro daarvoor gebouwd. Samen met honderd ADHD'ers, na ruim vijftig interviews, gemaakt in Eindhoven. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Zoek je vooral een visuele tijdlijn? Kies dan met een gerust hart een tool die dáárvoor gemaakt is. Een eerlijke match houdt langer stand dan een gekocht lijstje.</p>
+<p>Structuro zegt niet de beste ADHD-app van Nederland te zijn. Zo'n lijstje bestaat niet zonder belang erachter. Wat we wel durven zeggen: als starten jouw knelpunt is, is Structuro daarvoor gebouwd. Samen met honderd ADHD'ers, na ruim vijftig interviews, gemaakt in Eindhoven. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Zoek je vooral een visuele tijdlijn? Kies dan met een gerust hart een tool die dáárvoor gemaakt is. Een eerlijke match houdt langer stand dan een gekocht lijstje.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen ranking. Wel een rustige dagstart als starten jouw knelpunt is.",
@@ -500,8 +601,8 @@ EXTRA_GUIDES = [
                 "Die bestaat niet als algemeen cijfer. Beste is de match: starten, tijd zien, of overzicht. Kies de klus, dan de tool.",
             ),
             (
-                "Structuro of Tiimo: welke kies ik?",
-                "Tiimo als visuele tijd en routines het gat zijn. Structuro als de eerste klik uitblijft. Geen winnaar, wel een andere klus.",
+                "Structuro vs Tiimo: welke kies ik?",
+                "De volledige vergelijking staat op de vs-pagina. Kort: Tiimo bij visuele tijd en routines, Structuro als de eerste klik uitblijft.",
             ),
             (
                 "Welke ADHD-app is objectief de beste?",
@@ -572,7 +673,7 @@ EXTRA_GUIDES = [
 <p>Maak twee plekken, niet één. Plek A: dump, mag rommelig. Plek B: vandaag, mag bijna niks. Verplaats niet de hele dump naar B. Kies één regel. Als B groeit, gaat het extra terug naar A. Dat voelt onaf. Onaf is het punt. Een schone universele lijst is hoe de to-do weer wint van de start.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is dat startvlak, geen oneindige to-do. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je een alternatief voor de to-do-lijst zoekt, zoek dan geen slimmere lijst. Zoek een smaller scherm. De lijst in de lade mag blijven bestaan. Hij hoeft je ochtend niet te openen. Jij opent één regel. Dat is het verschil tussen geheugen en executie.</p>
+<p>Structuro is dat startvlak, geen oneindige to-do. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als je een alternatief voor de to-do-lijst zoekt, zoek dan geen slimmere lijst. Zoek een smaller scherm. De lijst in de lade mag blijven bestaan. Hij hoeft je ochtend niet te openen. Jij opent één regel. Dat is het verschil tussen geheugen en executie.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele inbox legen. Wel één zichtbare, haalbare actie.",
@@ -604,7 +705,7 @@ EXTRA_GUIDES = [
         "eyebrow": "Vergelijking",
         "card_num": "12",
         "card_label": "TIIMO",
-        "hub_h2": "Structuro of Tiimo",
+        "hub_h2": "Structuro vs Tiimo",
         "hub_teaser": "Tiimo is sterk in visuele tijd. Structuro in starten. Kies de klus.",
         "thumb": "twee paden",
         "thumb_mod": "",
@@ -614,16 +715,16 @@ EXTRA_GUIDES = [
             "en": "https://www.structuro.eu/en/structuro-vs-tiimo/",
             "x-default": "https://www.structuro.eu/structuro-of-tiimo/",
         },
-        "title": "Structuro of Tiimo: visuele tijd versus starten",
-        "description": "Structuro of Tiimo? Tiimo helpt visuele tijd en routines. Structuro helpt beginnen met één stap. Eerlijke vergelijking, zonder winnaar-claim.",
+        "title": "Structuro vs Tiimo: visuele tijd versus starten",
+        "description": "Structuro vs Tiimo? Tiimo helpt visuele tijd en routines. Structuro helpt beginnen met één stap. Eerlijke vergelijking, zonder winnaar-claim.",
         "answer": (
             "Tiimo is sterk als je visuele tijd, routines en een dagkaart nodig hebt. Structuro is sterk als je wilt beginnen, "
             "maar de eerste stap te groot voelt. Ze lossen een andere klus op. Kies Tiimo bij tijd zien. Kies Structuro bij "
             "taakinitiatie. Allebei 'voor ADHD' zeggen zegt weinig. Jouw knelpunt wel."
         ),
-        "h1": "Structuro of Tiimo: visuele tijd versus starten",
+        "h1": "Structuro vs Tiimo: visuele tijd versus starten",
         "body": """
-<p>Tiimo is een visuele planner, gebouwd met neurodivergente gebruikers in het achterhoofd: tijd zien, routines, iconen, een dag die eruitziet als een pad. Structuro is een prikkelarme executie-webapp: energie, dan één eerste stap, geen planner-theater. Die zin is al de vergelijking. De rest is nuance, geen wedstrijd.</p>
+<p>Structuro vs Tiimo is geen wedstrijd om de beste ADHD-app. Tiimo is een visuele planner: tijd zien, routines, iconen, een dag die eruitziet als een pad. Structuro is een prikkelarme executie-webapp: energie, dan één eerste stap, geen planner-theater. Die zin is al de vergelijking. De rest is nuance.</p>
 
 <h2>Waar Tiimo logisch is</h2>
 <p>Als jouw dag uit elkaar valt omdat tijd niet voelt. Als overgangen (stoppen, beginnen, wisselen) het probleem zijn. Als een visuele timeline je kalmeert in plaats van overvraagt. Als je routines wilt zien, niet alleen taken opslaan. Dan is een tool als Tiimo een serieuze kandidaat. Dat is geen nederlaag voor Structuro. Dat is een andere klus. Zie <a href="/tijdblindheid-adhd/">tijdblindheid</a>.</p>
@@ -638,7 +739,7 @@ EXTRA_GUIDES = [
 <h2>Praktische verschillen om te checken</h2>
 <ul>
 <li><strong>Vorm.</strong> Tiimo is een app in de stores. Structuro is een webapp op telefoon en computer, op het homescreen te zetten. Nog geen aparte App Store-app.</li>
-<li><strong>Betalen.</strong> Structuro: 7 dagen gratis zonder creditcard, betalen kan gewoon met iDEAL, daarna €12,99 per maand of €119 per jaar. Tiimo: check hun eigen prijs en trial, die wijzigt.</li>
+<li><strong>Betalen.</strong> Structuro: eerst dagstart zonder account, daarna 7 dagen met betaalmethode (die week niets), daarna €12,99 per maand of €119 per jaar. Betalen kan met iDEAL. Tiimo: check hun eigen prijs en trial, die wijzigt.</li>
 <li><strong>Filosofie.</strong> Tijd zichtbaar versus start klein. Routines versus één stap vandaag.</li>
 <li><strong>Toon.</strong> Als gamification je tegenstaat, let daarop in elke tool, niet alleen op de naam ADHD.</li>
 </ul>
@@ -681,7 +782,7 @@ EXTRA_GUIDES = [
         "eyebrow": "Vergelijking",
         "card_num": "13",
         "card_label": "STRUCTURED",
-        "hub_h2": "Structuro of Structured",
+        "hub_h2": "Structuro vs Structured",
         "hub_teaser": "Structured is een tijdlijn van je dag. Structuro is de eerste stap in die dag.",
         "thumb": "tijdlijn",
         "thumb_mod": "d",
@@ -692,7 +793,7 @@ EXTRA_GUIDES = [
             "en": "https://www.structuro.eu/en/structuro-vs-structured/",
             "x-default": "https://www.structuro.eu/structuro-of-structured/",
         },
-        "title": "Structuro of Structured: tijdlijn versus eerste stap",
+        "title": "Structuro vs Structured: tijdlijn versus eerste stap",
         "description": "Structured zet je dag op een tijdlijn. Structuro helpt je de eerste stap te zetten. Eerlijk wanneer welke beter past, zonder hatelijke teardown.",
         "answer": (
             "Structuro en Structured hebben vergelijkbare namen, maar zijn verschillende producten. "
@@ -701,9 +802,9 @@ EXTRA_GUIDES = [
             "Als je de tijdlijn vult en toch niet begint, is Structured niet kapot. Dan ontbreekt executie. "
             "Kies het gereedschap dat bij dat gat past."
         ),
-        "h1": "Structuro of Structured: tijdlijn versus eerste stap",
+        "h1": "Structuro vs Structured: tijdlijn versus eerste stap",
         "body": """
-<p>Structuro en Structured hebben vergelijkbare namen, maar zijn verschillende producten. Structured visualiseert een dag op een tijdlijn. Structuro helpt je beginnen met de eerstvolgende stap.</p>
+<p>Structuro vs Structured is de Nederlandse vergelijking. Structured visualiseert een dag op een tijdlijn. Structuro helpt je beginnen met de eerstvolgende stap. De Engelse versie is een vertaling, niet een tweede productpagina.</p>
 <p>Structured (de app) is een kalme tijdlijn van je dag: blokken, volgorde, wat er nu speelt. Veel mensen met ADHD vinden dat prettiger dan een kale lijst, omdat tijd een plek krijgt. Structuro is geen tijdlijn. Het is een dagstart die vraagt wat je aankunt, en dan één stap.</p>
 
 <h2>Waar Structured logisch is</h2>
@@ -728,7 +829,7 @@ EXTRA_GUIDES = [
 
 <h2>Hoe je kiest zonder lijstjes</h2>
 <p>Was je laatste frustratie 'ik wist niet wat wanneer was' of 'ik wist het en deed het niet'? Eerste pad: tijdlijn. Tweede pad: eerste stap. Als het 'ik richtte twee uur in' was, kies de tool die inrichten weigert. Dat is een feature.</p>
-<p>Vergelijkbaar kader: <a href="/structuro-of-tiimo/">Structuro of Tiimo</a>. Tiimo is visuele routine, Structured is tijdlijn, Structuro is start. Drie klussen.</p>
+<p>Vergelijkbaar kader: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>. Tiimo is visuele routine, Structured is tijdlijn, Structuro is start. Drie klussen.</p>
 <p>Als je Structured houdt, maak het volgende blok expres te klein: openen, kop typen, bestand vinden. Niet 'het hele deliverable'. Meet na een week of je vaker in het blok kwam. Zo ja, de tijdlijn deed zijn werk plus een startregel. Zo nee, de tijdlijn is inrichten geworden. Dan is een apart startvlak de eerlijke volgende stap. Inrichten voelt productief omdat het zichtbaar is. Starten is vaak onzichtbaar tot het gebeurd is. Kies morgen het onzichtbare, ook als niemand het ziet.</p>
 """,
         "cta_title": "Begin met één stap",
@@ -812,7 +913,7 @@ EXTRA_GUIDES = [
 <p>Kies de kleinste verzorgende daad die geen bewijs hoeft te leveren: water, raam, één zin in een document, een afspraak inplannen met zorg. Als zelfs dat te veel is, is de daad rust. Schrijf dat op als keuze, niet als falen. Herstel is geen sprint. Wie je vertelt dat je morgen een volle weekstructuur moet neerzetten, verkoopt het patroon dat je uitputte.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
+<p>Structuro is gebouwd voor lage energie en één haalbare stap. Dat kan zacht voelen als je leeg bent. Het is geen burn-out-programma, geen therapie, geen claim dat ADHD tot burn-out leidt. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als zelfs dat te veel is, is dat informatie. Dan is rust de stap, en mag de webapp wachten. Zoek je een tool: <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland</a> kiest op knelpunt, niet op ranking.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Alleen als een micro-actie vandaag mag. Anders is rust de actie.",
@@ -857,8 +958,8 @@ EXTRA_GUIDES = [
         "description": "ADHD op het werk is vaak geen kennisprobleem. Het is starten tussen inbox, meetings en tussendoor. Hoe je één werktaak raakt zonder een productiviteitsreligie.",
         "related_slugs": [
             "niet-kunnen-beginnen-adhd",
+            "executieve-functies-adhd",
             "adhd-bij-vrouwen",
-            "mentale-belasting-dagstart",
             "overprikkeling-adhd",
         ],
         "related_anchors": {
@@ -887,6 +988,10 @@ EXTRA_GUIDES = [
 <li><strong>Tussendoor parkeren.</strong> Chat is een dump van anderen. Jij hoeft hem niet meteen tot jouw start te maken.</li>
 </ul>
 
+<h2>Na de meeting, de mail, de contextswitch</h2>
+<p>Het lek zit zelden in 'niet weten wat werk is'. Het zit in de overgang. Meeting klaar, hoofd vol, inbox groeit, en de deliverable is nog steeds een berg. Vertaal vóór je de call sluit één zin naar een eerste klik: bestand open, kop, eerste bullet. Daarna mag chat wachten. Dat is geen anti-sociale regel. Het is taakinitiatie in een kantoorjas. Lees <a href="/executieve-functies-adhd/">executieve functies en ADHD</a> als je het woord zoekt, en <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> als de klik uitblijft terwijl je al op kantoor zit.</p>
+<p>Prioriteren tussen vijf 'urgent' tickets is kiezen als extra taak. Maak er geen tweede Jira van. Eén werktaak in beeld. De rest blijft in het werksysteem. Te veel parallelle prio's is een ontwerpprobleem, geen bewijs dat je het vak niet kunt.</p>
+
 <h2>Leidinggevenden en openheid</h2>
 <p>Of je ADHD noemt op het werk is jouw besluit. Deze gids duwt niet. Wat je wél kunt vragen zonder label: minder parallelle prio's, schriftelijke afspraken, een realistische eerste deliverable. Dat helpt veel breinen, niet alleen ADHD. Als de cultuur alleen helden beloont, is de tool niet het probleem. De lat is het probleem.</p>
 
@@ -898,7 +1003,7 @@ EXTRA_GUIDES = [
 <p>Kies vóór de eerste meeting één werkklik: bestand open, onderwerp, eerste bullet. Zet hem op papier of in een startvlak, niet in de hele backlog. Na de meeting doe je alleen die klik. Chat mag wachten tot de klik er is. Als de dag alsnog volstroomt, was de klik nog winst. Dat is het enige cijfer dat telt op een ADHD-werkdag: bewogen, niet bijgewerkt tot nul.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen enterprise-suite. Geen Slack-vervanger, geen Jira. Het is een privé-startvlak vóór of tussen het werk omheen: wat is vandaag haalbaar, wat is de eerste stap. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als je ADHD op het werk vooral voelt als niet-starten, is dat de klus. Niet 'productiever worden'. Bewegen op één ticket. De sprint mag van het team zijn. De klik is van jou.</p>
+<p>Structuro is geen enterprise-suite. Geen Slack-vervanger, geen Jira. Het is een privé-startvlak vóór of tussen het werk omheen: wat is vandaag haalbaar, wat is de eerste stap. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als je ADHD op het werk vooral voelt als niet-starten, is dat de klus. Niet 'productiever worden'. Bewegen op één ticket. De sprint mag van het team zijn. De klik is van jou.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Eén werkklik. Niet de hele sprint winnen.",
@@ -935,16 +1040,19 @@ EXTRA_GUIDES = [
         "thumb": "raamlicht",
         "thumb_mod": "",
         "read_min": "4 MIN",
-        "title": "ADHD-ochtendroutine: kleiner dan Instagram belooft, niet forceren",
-        "description": "Een ADHD-ochtendroutine hoeft geen perfecte keten te zijn. Wat wél helpt: minder stappen, energie eerst, één eerste klik. Geen 5:00-mythe.",
+        "title": "ADHD-ochtendroutine: dagstart kleiner dan Instagram belooft",
+        "description": "Een ADHD-dagstart of ochtendroutine hoeft geen perfecte keten te zijn. Wat wél helpt: minder stappen, energie eerst, één eerste klik. Geen 5:00-mythe.",
         "answer": (
             "Een ochtendroutine bij ADHD faalt vaak omdat hij te lang is. Veel stappen vóór je mag beginnen is een tweede berg. "
             "Wat helpt is een korte keten: lichaam, één start, de rest mag wachten. Energie eerst. Geen 5:00-mythe, geen "
             "veertien stappen. Als de ochtend al vol is, is één haalbare actie de routine. Meer is theater."
         ),
-        "h1": "ADHD-ochtendroutine: kleiner dan Instagram belooft, niet forceren",
+        "h1": "ADHD-ochtendroutine: dagstart kleiner dan Instagram belooft",
         "body": """
-<p>Ochtendroutines online zijn vaak een film: water, journalen, sport, koude douche, review van gisteren, planning van vandaag. Voor een brein dat al hapert op de eerste klik is dat geen hulp. Dat is een project vóór het project. Als je ADHD hebt en de ochtend al zwaar voelt, is de routine zelf de plek waar de dag vastloopt.</p>
+<p>Ochtendroutines online zijn vaak een film: water, journalen, sport, koude douche, review van gisteren, planning van vandaag. Voor een brein dat al hapert op de eerste klik is dat geen hulp. Dat is een project vóór het project. Als je ADHD hebt en de ochtend al zwaar voelt, is de routine zelf de plek waar de dag vastloopt. Dagstart bij ADHD is hier die eerste keten, niet een lean-bord op kantoor. Keuzestress hoort op <a href="/adhd-keuzestress/">een andere kaart</a>.</p>
+
+<h2>Dagstart bij ADHD: niet veertien stappen vóór 8:00</h2>
+<p>Wie 'dagstart adhd' zoekt, zoekt vaak grip op de eerste minuten. Grip zit zelden in meer stappen. Grip zit in minder overgangen tot er beweging is. De product-dagstart van Structuro is hetzelfde idee: energie, dan één klik. De mentale last van een volle inbox beschrijft <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>. Deze gids blijft bij de ochtendketen.</p>
 
 <h2>ADHD-ochtend niet forceren: waarom lange ketens extra duren</h2>
 <p>Elke stap is een start. Twaalf starts vóór 9:00 is twaalf kansen om te blijven hangen. Werkgeheugen raakt vol. Tijd voelt wazig. De klok is opeens 10:15 en je hebt alleen koffie gedaan, plus schuld. Zie <a href="/tijdblindheid-adhd/">tijdblindheid</a> en <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>. De ochtend is geen moreel examen. Het is een reeks overgangen.</p>
@@ -972,11 +1080,15 @@ EXTRA_GUIDES = [
 <p>Schrijf drie regels, niet tien. Regel 1: iets voor je lijf. Regel 2: één klik die telt. Regel 3: stop. Als regel 2 niet lukt, was regel 1 de ochtend. Herhaal dezelfde drie, geen extra's tot dit saai is. Saai is de overwinning. Variatie komt later, als starten al bestaat.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen ochtendprogramma van veertien stappen. De dagstart vraagt energie, daarna één eerste stap. Dat mag je ochtendroutine zijn, ook om 13:00. Geen streak die breekt als je uitslaapt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als Instagram een langere ochtend verkoopt, is dat hun product. Jouw product is de eerste klik.</p>
+<p>Structuro is geen ochtendprogramma van veertien stappen. De dagstart vraagt energie, daarna één eerste stap. Dat mag je ochtendroutine zijn, ook om 13:00. Geen streak die breekt als je uitslaapt. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als Instagram een langere ochtend verkoopt, is dat hun product. Jouw product is de eerste klik.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de hele ochtend winnen. Wel één start, passend bij je energie.",
         "faqs": [
+            (
+                "Wat is een dagstart bij ADHD?",
+                "De eerste haalbare keten van de dag: lichaam, één start, de rest mag wachten. Geen 14-stappenroutine. Mentale last van de inbox: de gids mentale belasting en de dagstart.",
+            ),
             (
                 "Moet ik om 5:00 opstaan met ADHD?",
                 "Nee. Eerder opstaan zonder kleinere start is alleen een langere ochtend. De klik telt, niet het tijdstip.",
@@ -1055,7 +1167,7 @@ EXTRA_GUIDES = [
 <p>Als de inbox de drempel is, lees <a href="/takenlijst-te-lang-adhd/">wanneer je lijst de start zwaarder maakt</a>.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen anti-uitstel-coach met streaks. Het is een startvlak: energie, één eerste stap, geen schuld als gisteren leeg was. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw uitstel vooral 'geen ingang' is, is dat de klus. Als het vooral 'geen zin' is, mag de app klein blijven en jij eerlijk. Beide is menselijk. Alleen de berg als karakterfout is het verkeerde verhaal.</p>
+<p>Structuro is geen anti-uitstel-coach met streaks. Het is een startvlak: energie, één eerste stap, geen schuld als gisteren leeg was. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als jouw uitstel vooral 'geen ingang' is, is dat de klus. Als het vooral 'geen zin' is, mag de app klein blijven en jij eerlijk. Beide is menselijk. Alleen de berg als karakterfout is het verkeerde verhaal.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de deadline winnen. Wel een ingang die nu mag bestaan.",
@@ -1115,7 +1227,7 @@ EXTRA_GUIDES = [
 </ul>
 
 <h2>Keuzes die te groot zijn voor de ochtend</h2>
-<p>Carrière, verhuizen, welke app je leven gaat redden: dat zijn geen dagstart-keuzes. Stop ze in de lade. Als je ze in de ochtend meeneemt, eet één existentiële vraag de hele executie op. De dagstart mag alleen wegen wat vandaag een klik kan krijgen. De rest is te groot. Te groot mag bestaan. Niet op dit scherm. Zie <a href="/adhd-planner-die-niet-overvraagt/">een planner die niet overvraagt</a>.</p>
+<p>Carrière, verhuizen, welke app je leven gaat redden: dat zijn geen ochtendkeuzes. Stop ze in de lade. Als je ze in de ochtend meeneemt, eet één existentiële vraag de hele executie op. Wat je wél mag wegen is één klik vandaag. De ochtendketen staat in <a href="/adhd-ochtendroutine/">ADHD-ochtendroutine</a>. De last van een volle inbox in <a href="/mentale-belasting-dagstart/">mentale belasting en de dagstart</a>. Deze gids blijft bij kiezen, niet bij de dagstart zelf.</p>
 
 <h2>Tools die keuzestress verkopen als vrijheid</h2>
 <p>Templates, dashboards, 'kies je systeem'. Elk systeem is een keuze-boom. Als je al vastzit, is een nieuwe boom geen vrijheid. Het is een nieuwe taak. De test is bot: na het kiezen van de tool, bewoog je in het echte werk? Zo nee, was de tool de keuze die de start stal.</p>
@@ -1125,7 +1237,7 @@ EXTRA_GUIDES = [
 <p>Als je merkt dat je 's avonds opnieuw dezelfde drie kandidaten weegt, was de default niet het probleem. Dan was de avond een tweede keuzeronde. Sluit die ronde: de default van overdag blijft staan tot je hem geraakt hebt. Een nieuwe ronde is keuzestress die zichzelf voedt. Eén ronde per taak is genoeg.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro toont weinig. De dagstart vraagt energie en één eerste stap, niet een menu van je hele leven. Dat is een ontwerp tegen keuzestress, geen persoonlijkheidstraining. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw dag vastloopt op 'wat eerst', is dat de klus. Niet slimmer worden in vergelijken. Smaller worden in beeld.</p>
+<p>Structuro toont weinig. De dagstart vraagt energie en één eerste stap, niet een menu van je hele leven. Dat is een ontwerp tegen keuzestress, geen persoonlijkheidstraining. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als jouw dag vastloopt op 'wat eerst', is dat de klus. Niet slimmer worden in vergelijken. Smaller worden in beeld.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de perfecte keuze. Wel een default die je nu kunt raken.",
@@ -1196,7 +1308,7 @@ EXTRA_GUIDES = [
 <p>Een te lange lijst is vaak ook een te vage lijst. 'Administratie' is geen klik. 'Open de blauwe envelop, scan pagina 1' wel. Herschrijf alleen de regel van vandaag tot hij fysiek is. De lade mag vaag blijven. Vandaag niet. Vage regels op vandaag zijn hoe de lijst weer groeit: je schuift ze door, en morgen zijn ze er nog, plus drie nieuwe.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is het startvlak, geen oneindige lijst. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jouw pijn een te lange takenlijst is, zoek je geen slimmere inbox. Je zoekt een smaller vandaag. De lade mag vol zijn. Het scherm niet.</p>
+<p>Structuro is het startvlak, geen oneindige lijst. Dump mag later een taak worden, of weg. De dagstart kiest wat nu past. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als jouw pijn een te lange takenlijst is, zoek je geen slimmere inbox. Je zoekt een smaller vandaag. De lade mag vol zijn. Het scherm niet.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet de lijst legen. Wel één regel die je nu kunt raken.",
@@ -1233,14 +1345,14 @@ EXTRA_GUIDES = [
         "thumb": "stille timer",
         "thumb_mod": "d",
         "read_min": "4 MIN",
-        "title": "ADHD-focus zonder streaks: aandacht zonder gehoorzaamheidsspel",
+        "title": "ADHD-app zonder streaks: aandacht zonder gehoorzaamheidsspel",
         "description": "Focus bij ADHD hoeft geen pomodoro-religie of streak te zijn. Korte blokken, een kleine start, geen straf als je stopt. Zo blijft aandacht menselijk.",
         "answer": (
             "Focus bij ADHD wordt vaak verkocht als timers, streaks en deep work. Dat wordt een tweede baas. Wat vaker werkt: "
             "een korte, saaiere aandachtspanne, gekoppeld aan één startbare actie, zonder reeks om te beschermen. Stoppen telt. "
             "Een gemiste dag is geen falen. Aandacht is geen gehoorzaamheidsspel. Het is een klik, daarna kijken of er nog energie is."
         ),
-        "h1": "ADHD-focus zonder streaks: aandacht zonder gehoorzaamheidsspel",
+        "h1": "ADHD-app zonder streaks: aandacht zonder gehoorzaamheidsspel",
         "body": """
 <p>Focus-apps beloven dat je eindelijk blijft zitten. Timers. Badges. Vuur-emoji's. Een reeks dagen die je niet mag breken. Voor sommige breinen is dat speels. Voor veel ADHD-breinen is het school: gehoorzamen, of rood. Als de bel gaat terwijl je net in de taak zakt, of als je de reeks breekt na één zware dag, volgt schaamte. Schaamte is geen aandachtsstrategie. Het is extra last.</p>
 
@@ -1256,6 +1368,9 @@ EXTRA_GUIDES = [
 <li><strong>Geen rood.</strong> Geen overdue, geen gebroken keten, geen 'je was zo goed bezig'. Dat kader is school.</li>
 </ul>
 
+<h2>Hyperfocus is geen bewijs dat starten lukt</h2>
+<p>Hyperfocus klinkt als superkracht: uren in iets zakken. Het is geen tegenbewijs voor startfrictie. Het is vaak aandacht die wél een ingang vond, plus beloning die dichtbij zat. De mail, de administratie, de saaie klus: die hebben die ingang niet. Een tool die hyperfocus probeert af te dwingen met streaks, mist het punt. De klus is de start van wat niet vanzelf trekt. Geen diagnose, geen claim dat iedereen dit zo ervaart.</p>
+
 <h2>Afleiding zonder zelfhaat</h2>
 <p>Afleiding is geen bewijs dat je focus 'niet kunt'. Het is een zenuwstelsel dat beloning nu verkiest boven later, plus een taak die te groot of te vaag is. Maak de taak concreter, de beloning van de micro-actie dichterbij (klaar met openen), en de omgeving iets saaier. Geen klooster. Wel: één scherm, één klik, dan kijken. Zie <a href="/adhd-keuzestress/">keuzestress</a> als zes tabbladen de aandacht stelen vóór je begint.</p>
 
@@ -1267,11 +1382,15 @@ EXTRA_GUIDES = [
 <p>Als je merkt dat je een focus-app opent om jezelf te bewijzen in plaats van om een bestand te openen, is de app de taak geworden. Dat is hetzelfde lek als een planner die je inricht in plaats van start. Sluit de focus-app. Open het bestand. Aandacht die volgt, is winst. Aandacht die je eerst moet verdienen met een reeks, is een omweg.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro heeft geen streaks, geen badges, geen achterstallig-rood. Focus is de volgende stap ná de dagstart, niet een spel dat je kunt verliezen. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als jij aandacht zoekt zonder gehoorzaamheidsspel, is dat de match. Niet harder zitten. Eerlijker starten, en mogen stoppen.</p>
+<p>Structuro heeft geen streaks, geen badges, geen achterstallig-rood. Focus is de volgende stap ná de dagstart, niet een spel dat je kunt verliezen. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als jij aandacht zoekt zonder gehoorzaamheidsspel, is dat de match. Niet harder zitten. Eerlijker starten, en mogen stoppen.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Geen reeks om te redden. Wel een korte, startbare aandachtspanne.",
         "faqs": [
+            (
+                "Welke ADHD-app heeft geen streaks?",
+                "Structuro heeft geen streaks, badges of achterstallig-rood. Deze gids legt uit waarom. De roundup 'beste app' is een knelpunt-match, geen streak-artikel.",
+            ),
             (
                 "Is een timer dan altijd fout?",
                 "Nee. Een timer mag een cue zijn. Hij is te hard als hij straft, onderbreekt in een flow, of een reeks wordt.",
@@ -1287,6 +1406,10 @@ EXTRA_GUIDES = [
             (
                 "Kan ik focus-apps houden naast Structuro?",
                 "Ja, als ze niet dezelfde klus doen. Twee streak-systemen is dubbel. Eén startvlak is genoeg.",
+            ),
+            (
+                "Is hyperfocus hetzelfde als kunnen beginnen?",
+                "Nee. Hyperfocus is aandacht die al een ingang vond. Startfrictie zit juist bij taken zonder die ingang.",
             ),
         ],
         "verantwoording_intro": (
@@ -1372,7 +1495,7 @@ EXTRA_GUIDES = [
 <p>Als zelfs twee minuten te veel is, was de dag al vol. Dan is de actie een shutdown, geen inhaal. Morgen opnieuw bij energie, niet bij schuld. <a href="/adhd-en-burn-out/">ADHD en burn-out</a> als leegte de enige taal is die nog klopt. Zorg blijft zorg.</p>
 
 <h2>Hoe Structuro hierin past</h2>
-<p>Structuro is geen vrouwen-product en geen medische app. Het is een prikkelarme executie-interface: dagstart, weinig tegelijk, één eerste stap, geen streaks. Optionele cycluscontext bestaat, zonder sturing en zonder dat deze gids daarvan afhangt. Je probeert het zeven dagen gratis, zonder creditcard, en betalen kan gewoon met iDEAL. Als ADHD bij vrouwen voor jou vooral voelt als niet-starten tussen werk en huis, is dat de klus. Niet een test halen. Eén klik, in één domein, vandaag.</p>
+<p>Structuro is geen vrouwen-product en geen medische app. Het is een prikkelarme executie-interface: dagstart, weinig tegelijk, één eerste stap, geen streaks. Optionele cycluscontext bestaat, zonder sturing en zonder dat deze gids daarvan afhangt. Je kunt eerst de dagstart zonder account. Daarna 7 dagen met betaalmethode; die week betaal je niets. Betalen kan later met iDEAL. Als ADHD bij vrouwen voor jou vooral voelt als niet-starten tussen werk en huis, is dat de klus. Niet een test halen. Eén klik, in één domein, vandaag.</p>
 """,
         "cta_title": "Begin met één stap",
         "cta_p": "Niet werk en huis tegelijk winnen. Wel één haalbare klik, passend bij je energie.",
@@ -1405,7 +1528,206 @@ EXTRA_GUIDES = [
         ),
         "verantwoording_refs": REFS_CORE,
     },
+    {
+        "slug": "adhd-app",
+        "eyebrow": "Product",
+        "card_num": "24",
+        "card_label": "ADHD-APP",
+        "hub_h2": "ADHD-app voor wie niet begint",
+        "hub_teaser": "Geen ranking. Wel een rustige executie-app: energie, weinig tegelijk, één eerste stap.",
+        "thumb": "één scherm",
+        "thumb_mod": "",
+        "read_min": "5 MIN",
+        "published": "2026-09-17",
+        "modified": "2026-09-17",
+        "meta_title": "ADHD-app voor wie weet wat er moet, maar niet begint",
+        "title": "ADHD-app: voor wie niet begint, geen planner om alles te beheren",
+        "description": "Structuro is een rustige ADHD-app voor volwassenen die weten wat er moet gebeuren, maar niet beginnen. Energie eerst, één stap, geen streaks.",
+        "cluster_note": 'Zoek je een vergelijking tussen tools? Dat staat op <a href="/beste-adhd-app-nederland/">beste ADHD-app in Nederland: kies op knelpunt</a>. Deze pagina is de productlanding.',
+        "related_slugs": [
+            "beste-adhd-app-nederland",
+            "adhd-planner-die-niet-overvraagt",
+            "executieve-functies-adhd",
+            "niet-kunnen-beginnen-adhd",
+        ],
+        "related_anchors": {
+            "beste-adhd-app-nederland": "vergelijk op knelpunt, geen ranking",
+            "adhd-planner-die-niet-overvraagt": "planner die niet overvraagt",
+            "executieve-functies-adhd": "executieve functies en taakinitiatie",
+            "niet-kunnen-beginnen-adhd": "als de start uitblijft",
+        },
+        "answer": (
+            "Een ADHD-app helpt alleen als hij jouw knelpunt raakt. Structuro is een rustige executie-app voor volwassenen "
+            "die weten wat er moet gebeuren, maar niet beginnen. Geen planner om alles te beheren. Wel energie eerst, weinig "
+            "tegelijk, en één eerste stap die klein genoeg is. Geen diagnose of behandeling. Wel een dagstart die je mag proberen."
+        ),
+        "h1": "ADHD-app: voor wie niet begint, geen planner om alles te beheren",
+        "body": """
+<p>Wie op 'ADHD app' zoekt, krijgt vaak lijstjes, store-collecties en tools die alles willen bijhouden. Dat is een andere klus dan de onze. Structuro is gebouwd voor het moment waarop je al weet wat er moet, en de start toch uitblijft. Geen medisch product. Geen claim dat dit de beste ADHD-app is. Wel een prikkelarme executie-interface: dagstart, weinig tegelijk, één eerste stap.</p>
+<p>Wil je eerst types vergelijken (starten, tijd zien, overzicht): <a href="/beste-adhd-app-nederland/">kies op knelpunt, niet op ranking</a>. Deze pagina legt uit wat Structuro wél en níet is.</p>
+
+<h2>Voor wie deze ADHD-app wél is</h2>
+<ul>
+<li>Volwassenen met ADHD-gerelateerde startfrictie, of hetzelfde patroon zonder dat we daar een diagnose van maken.</li>
+<li>Mensen die planners en lijsten al hebben geprobeerd en afhaken op vullen, herinneren of schaamte.</li>
+<li>Wie op werk of thuis vastloopt tussen weten en doen: inbox, meeting, huishouden, één document dat open moet.</li>
+</ul>
+<p>In <a href="/onderzoek/">kwalitatief gebruikersonderzoek van Structuro</a> onder ruim vijftig Nederlandse volwassenen kwam dat startprobleem steeds terug. Dat is geen populatieschatting en geen klinische studie. Het is waarom het product zo smal is gebouwd.</p>
+
+<h2>Voor wie hij waarschijnlijk níet is</h2>
+<ul>
+<li>Wie vooral visuele tijd, routines of een dagkaart nodig heeft. Kijk dan eerlijk naar tools die daarvoor zijn gemaakt. <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>.</li>
+<li>Wie een vol takenbeheer, projecten en integraties zoekt. <a href="/structuro-of-todoist/">Structuro vs Todoist</a>.</li>
+<li>Kinderen, diagnose, medicatie, supplementen of een test. Dat is zorg of een andere site. Niet deze app.</li>
+</ul>
+
+<h2>Executie-app versus planner of agenda</h2>
+<p>Een klassieke planner bewaart wat je moet doen. Een agenda toont wanneer. Een ADHD-app die overvraagt, vraagt velden, categorieën en een week die je moet winnen. Structuro vraagt eerst: hoe is je energie. Daarna maximaal een paar haalbare dingen. Daarna één eerste stap die klein mag. De rest mag in een dump, uit zicht. Lees <a href="/adhd-planner-die-niet-overvraagt/">een planner die niet overvraagt</a> als je twijfelt tussen woorden.</p>
+<p>Planning ADHD, ADHD planner en ADHD agenda zijn in zoekgedrag vaak dezelfde intentie: minder chaos, meer doen. De test is niet welk woord op de doos staat. De test is: kom je in de taak, of alleen in het systeem.</p>
+
+<h2>Hoe de dagstart werkt</h2>
+<ol>
+<li>Energie: wat is nu haalbaar, zonder theater.</li>
+<li>Selectie: weinig tegelijk. Geen tweede inbox van je hele leven.</li>
+<li>Eerste stap: klein genoeg om te starten. Jij bevestigt.</li>
+<li>Focus mag daarna, zonder streak die je aanklaagt.</li>
+<li>Dump: gedachten kwijt, zonder dat ze meteen taken worden.</li>
+</ol>
+<p>Dat sluit aan op taakinitiatie, niet op 'meer discipline'. Zie <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a> en <a href="/executieve-functies-adhd/">executieve functies en ADHD</a>.</p>
+
+<h2>Prijs, trial, privacy: alleen wat we kunnen staven</h2>
+<p>Je kunt eerst een anonieme dagstart doen, zonder account. Daarna 7 dagen gratis. Voor die trial geef je een betaalmethode op; die week betaal je niets. Daarna €12,99 per maand of €119 per jaar. Betalen kan onder meer met iDEAL. Binnen 14 dagen na je eerste betaling geld terug als je niet tevreden bent. Gegevens blijven van jou, opgeslagen binnen de EU; we verkopen ze niet. Details: <a href="/privacy/">privacybeleid</a> en de prijssectie op de <a href="/#prijs">homepage</a>.</p>
+
+<h2>Wat je morgen kunt doen</h2>
+<p>Open geen vijf nieuwe apps. Benoem de klus: starten, tijd zien, of overzicht. Als het starten is, probeer één dagstart. Als het tijd zien is, kies een visuele tool zonder schuldgevoel. Als het overzicht is, houd de lijst waar hij is en maak het scherm smaller. De verkeerde categorie winnen is duurder dan één eerlijke match.</p>
+
+<h2>Hoe Structuro hierin past</h2>
+<p>Structuro noemt zich expres geen klassieke planner. Het is starthulp: energie, weinig tegelijk, één stap. Gemaakt in Nederland, met input van mensen die dit patroon kennen, waaronder de founder. Geen medisch advies. Geen behandeling. Als jouw zoekopdracht 'ADHD app' was omdat beginnen niet lukt, is dit de pagina. Als je een winnaar van een lijstje zoekt, is die winnaar niet wij, en mag dat zo blijven.</p>
+""",
+        "cta_title": "Probeer de dagstart",
+        "cta_p": "Eerst zonder account. Daarna 7 dagen trial. Geen ranking, wel een start.",
+        "faqs": [
+            (
+                "Is Structuro de beste ADHD-app?",
+                "Nee, en die ranking bestaat niet zonder belang. Het is een match als jouw knelpunt starten is.",
+            ),
+            (
+                "Verschil met de pagina 'beste ADHD-app'?",
+                "Die pagina vergelijkt types tools. Deze pagina legt uit wat Structuro is, voor wie, en hoe je het probeert.",
+            ),
+            (
+                "Moet ik een creditcard of iDEAL klaarzetten?",
+                "Eerst kan de dagstart zonder account. Voor de 7-dagen-trial geef je een betaalmethode op. Die week betaal je niets.",
+            ),
+            (
+                "Werkt het voor kinderen of als diagnose-tool?",
+                "Nee. Volwassen executie. Geen test, geen behandeling, geen kindproduct.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Productbeschrijving op basis van de zichtbare app en de publieke prijs- en privacyteksten. "
+            "Geen medische claim. Onderzoekscitaten verwijzen naar kwalitatief gebruikersonderzoek, geen klinische studie."
+        ),
+        "verantwoording_refs": REFS_CORE,
+    },
+    {
+        "slug": "executieve-functies-adhd",
+        "eyebrow": "Begrip",
+        "card_num": "25",
+        "card_label": "EXECUTIE",
+        "hub_h2": "Executieve functies en ADHD",
+        "hub_teaser": "Starten, kiezen, volhouden. Geen slogan dat ADHD gelijk is aan één profiel.",
+        "thumb": "startketen",
+        "thumb_mod": "d",
+        "read_min": "6 MIN",
+        "published": "2026-09-17",
+        "modified": "2026-09-17",
+        "meta_title": "Executieve functies en ADHD: starten zonder slogan",
+        "title": "Executieve functies en ADHD: taakinitiatie, geen universeel profiel",
+        "description": "Executieve functies bij ADHD gaan over starten, kiezen en bijsturen. Niet iedereen hapert hetzelfde. Wat de term betekent, en wat je praktisch kunt doen.",
+        "related_slugs": [
+            "niet-kunnen-beginnen-adhd",
+            "taakverlamming-adhd",
+            "adhd-op-het-werk",
+            "adhd-app",
+        ],
+        "related_anchors": {
+            "niet-kunnen-beginnen-adhd": "als de start uitblijft",
+            "taakverlamming-adhd": "als alles tegelijk te groot is",
+            "adhd-op-het-werk": "dezelfde frictie op het werk",
+            "adhd-app": "ADHD-app voor wie niet begint",
+        },
+        "answer": (
+            "Executieve functies zijn mentale vaardigheden die helpen om te starten, te kiezen en vol te houden. Bij ADHD hapert "
+            "dat vaker, maar niet bij iedereen op dezelfde plek. Deze gids legt de term voorzichtig uit, koppelt hem aan "
+            "taakinitiatie, en blijft weg van diagnose of behandeling. Wat wél mag: de start kleiner maken en minder tegelijk tonen."
+        ),
+        "h1": "Executieve functies en ADHD: taakinitiatie, geen universeel profiel",
+        "body": """
+<p>Executieve functies klinken klinisch. In gewone taal: de vaardigheden waarmee je een intentie omzet in gedrag. Remmen, onthouden wat je net wilde, wisselen van taak, een eerste actie in gang zetten. Bij ADHD wordt dat cluster vaker onderzocht. Dat is niet hetzelfde als: iedereen met ADHD heeft hetzelfde executieve-functieprofiel, of ADHD ís executieve dysfunctie. Die slogan is te plat, en onbruikbaar als je morgen een mail moet openen.</p>
+
+<h2>Wat 'executieve functies' wél betekent</h2>
+<p>In een overzichtsartikel beschrijft Diamond (2013) kernprocessen zoals werkgeheugen, inhibitie en cognitieve flexibiliteit, plus hogere processen zoals plannen. Dat is een onderzoekswoordenschat, geen persoonlijke handleiding. Mensen gebruiken het woord in het Nederlands vaak als: ik weet het wel, ik krijg het niet in beweging. Dat overlap met taakinitiatie is precies waar Structuro wél iets mag zeggen. Niet als arts. Als ontwerp van de start.</p>
+<p>Willcutt en collega's (2005) lieten in een meta-analyse zien dat executieve-functietheorieën van ADHD empirische steun hebben, en tegelijk dat EF-tekorten niet universeel of voldoende zijn om ADHD te verklaren. Kort: verband, geen 1-op-1. Wie 'executieve functies ADHD' googelt, zoekt vaak herkenning plus een volgende stap. Herkenning mag. Een universele brein-slogan niet.</p>
+
+<h2>Taakinitiatie is één steen in die keten</h2>
+<p>Starten vraagt dat je een te grote keten tot één fysieke actie maakt, terwijl werkgeheugen al vol kan zitten. Te veel stappen tegelijk is hoe <a href="/taakverlamming-adhd/">taakverlamming</a> voelt. Te veel opties is <a href="/adhd-keuzestress/">keuzestress</a>. Energie die niet past is geen luiheid: <a href="/energie-first/">energie-first</a>. Op het werk komt daar andermans agenda bij: <a href="/adhd-op-het-werk/">ADHD op het werk</a>.</p>
+<p>In het kwalitatieve gebruikersonderzoek van Structuro onder ruim vijftig Nederlandse volwassenen kwam 'weten maar niet beginnen' als patroon terug. Dat is geen bewijs dat 'ADHD = executieve dysfunctie', en geen schatting voor iedereen met ADHD. De steekproef selecteerde zichzelf. Methode en beperkingen: <a href="/onderzoek/">onderzoek</a>.</p>
+
+<h2>Wat je níet van deze pagina moet maken</h2>
+<ul>
+<li>Geen test of kenmerkenlijst. Geen 'heb ik ADHD'.</li>
+<li>Geen behandeling, medicatie of training-als-genezing.</li>
+<li>Geen claim dat één app executieve functies 'herstelt'.</li>
+</ul>
+<p>Als je zorg nodig hebt, is dat zorg. Deze gids blijft bij frictie verlagen tot bewegen weer mogelijk is.</p>
+
+<h2>Wat wél helpt bij de start, zonder neuro-mythe</h2>
+<ol>
+<li>Zeg de taak in één zin. De rest is keten, geen start.</li>
+<li>Splits de eerste fysieke handeling af tot hij bijna te klein voelt.</li>
+<li>Maak de rest onzichtbaar. Overzicht in de lade, start op het scherm.</li>
+<li>Koppel: als X (koffie, einde meeting), dan Y (bestand open). Dat sluit aan bij onderzoek naar implementatie-intenties (Gollwitzer &amp; Sheeran, 2006): een als-dan is geen wilskrachtpreaching.</li>
+<li>Stop bewust. Afronden van een micro-actie telt. De lat 'afmaken' is hoe later wint.</li>
+</ol>
+<p>Praktisch verder: <a href="/niet-kunnen-beginnen-adhd/">niet kunnen beginnen</a>, <a href="/een-stap-per-dag/">één stap per dag</a>, <a href="/adhd-uitstelgedrag/">uitstelgedrag versus geen ingang</a>.</p>
+
+<h2>Wat je morgen kunt doen</h2>
+<p>Kies één taak die al in je hoofd zit. Schrijf niet je executieve-functiescore op. Schrijf de eerste klik. Doe alleen die. Als het woord 'executieve functies' je hielp om schaamte te verlagen, was dat het nut van de term. Als het woord een nieuwe berg werd (eerst begrijpen, dan pas mogen beginnen), was het dezelfde val als een planner: uitleg in plaats van ingang.</p>
+
+<h2>Hoe Structuro hierin past</h2>
+<p>Structuro is geen training van executieve functies. Het is een smaller scherm: energie, weinig tegelijk, één eerste stap. Dat raakt taakinitiatie, één steen in een groter geheel. Product: <a href="/adhd-app/">ADHD-app voor wie niet begint</a>. Trial: eerst dagstart zonder account, daarna 7 dagen met betaalmethode terwijl je die week niets betaalt. Geen medisch advies.</p>
+""",
+        "cta_title": "Maak de start kleiner",
+        "cta_p": "Geen profielscore. Wel één eerste klik, passend bij je energie.",
+        "faqs": [
+            (
+                "Is ADHD hetzelfde als executieve dysfunctie?",
+                "Nee. Onderzoek vindt verbanden, geen 1-op-1. Niet iedereen hapert op dezelfde functie, en EF-tekorten verklaren ADHD niet alleen.",
+            ),
+            (
+                "Is dit een diagnose-pagina?",
+                "Nee. Geen test, geen kenmerkenlijst, geen behandeling. Alleen uitleg plus startfrictie.",
+            ),
+            (
+                "Helpt een app mijn executieve functies?",
+                "Een app traint geen brein als therapie. Hij kan de start kleiner en het scherm rustiger maken. Dat is ontwerp, geen kuur.",
+            ),
+            (
+                "Waar staat jullie eigen onderzoek?",
+                "Op de onderzoekspagina: methode, aantallen, beperkingen. Kwalitatief, niet klinisch, niet generaliseerbaar naar iedereen.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Wetenschappelijke zinnen steunen op onderwerpspecifieke bronnen (Willcutt 2005, Diamond 2013, Gollwitzer & Sheeran 2006). "
+            "Structuro-onderzoek is kwalitatief gebruikersonderzoek, geen klinische studie. Geen diagnose of behandeling."
+        ),
+        "verantwoording_refs": REFS_EF,
+    },
 ]
 
 for _g in EXTRA_GUIDES:
     _g.setdefault("published", "2026-08-19")
+    _slug = _g.get("slug")
+    if _slug in SLUG_REFS:
+        _g["verantwoording_refs"] = SLUG_REFS[_slug]

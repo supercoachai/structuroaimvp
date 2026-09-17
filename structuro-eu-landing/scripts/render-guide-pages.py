@@ -17,14 +17,14 @@ PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-09"
 CSS_V = "20260916c"
 FEATURED_SLUGS = (
-    "adhd-en-burn-out",
+    "adhd-app",
     "taakverlamming-adhd",
-    "beste-adhd-app-nederland",
+    "executieve-functies-adhd",
 )
 RELATED_ALIASES = {
     "structuro-of-todoist": {
         "slug": "structuro-of-todoist",
-        "h1": "Structuro of Todoist: als Todoist bij ADHD niet werkt",
+        "h1": "Structuro vs Todoist: als Todoist bij ADHD niet werkt",
         "eyebrow": "Vergelijking",
         "card_num": "21",
         "card_label": "TODOIST",
@@ -36,9 +36,39 @@ RELATED_ALIASES = {
         "card_num": "22",
         "card_label": "PRIKKELS",
     },
+    "adhd-app": {
+        "slug": "adhd-app",
+        "h1": "ADHD-app: voor wie niet begint, geen planner om alles te beheren",
+        "eyebrow": "Product",
+        "card_num": "24",
+        "card_label": "ADHD-APP",
+    },
+    "executieve-functies-adhd": {
+        "slug": "executieve-functies-adhd",
+        "h1": "Executieve functies en ADHD: taakinitiatie, geen universeel profiel",
+        "eyebrow": "Begrip",
+        "card_num": "25",
+        "card_label": "EXECUTIE",
+    },
 }
 # Bestaande gidsen die niet in GUIDES staan (eigen HTML), wel op de hub.
 HUB_EXTRA = [
+    {
+        "slug": "structuro-of-todoist",
+        "h1": "Structuro vs Todoist: als de lijst niet laat starten",
+        "hub_h2": "Structuro vs Todoist",
+        "hub_teaser": "Todoist bewaart de lijst. Structuro helpt beginnen. Kies de klus.",
+        "eyebrow": "Vergelijking",
+        "card_num": "21",
+        "card_label": "TODOIST",
+        "read_min": "4 MIN",
+        "thumb": "lijst versus start",
+        "thumb_mod": "",
+        "answer": (
+            "Todoist bewaart taken. Structuro helpt de eerste klik. "
+            "Als de lijst groeit terwijl jij stilstaat, is starten de klus, niet nóg een inbox."
+        ),
+    },
     {
         "slug": "overprikkeling-adhd",
         "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
@@ -950,7 +980,7 @@ def render(g: dict) -> str:
         <a class="btn" href="{cta}" data-ph-cta="guide_cta" data-signup-bridge="guide_cta">Begin met één stap</a>
         <ul class="checks">
           <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>7 dagen gratis</li>
-          <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>Geen creditcard</li>
+          <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>Eerst dagstart zonder account</li>
           <li><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.6 6.4 4.3 9.1 10.4 3"></path></svg>Klaar in ~2 minuten</li>
         </ul>
       </div>
@@ -1284,6 +1314,16 @@ def write_hub() -> None:
     print("wrote gidsen/index.html")
 
 
+EXTRA_SITEMAP = [
+    ("https://www.structuro.eu/privacy/", "0.3"),
+    ("https://www.structuro.eu/terms/", "0.3"),
+    ("https://www.structuro.eu/cookies/", "0.3"),
+    ("https://www.structuro.eu/en/privacy/", "0.3"),
+    ("https://www.structuro.eu/en/terms/", "0.3"),
+    ("https://www.structuro.eu/en/cookies/", "0.3"),
+]
+
+
 def ensure_sitemap() -> None:
     path = ROOT / "sitemap.xml"
     text = path.read_text(encoding="utf-8")
@@ -1292,12 +1332,24 @@ def ensure_sitemap() -> None:
         loc = f"https://www.structuro.eu/{g['slug']}/"
         if loc in text:
             continue
+        lastmod = g.get("modified") or MODIFIED
         added.append(
             f"""  <url>
     <loc>{loc}</loc>
-    <lastmod>{MODIFIED}</lastmod>
+    <lastmod>{lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
+  </url>"""
+        )
+    for loc, prio in EXTRA_SITEMAP:
+        if loc in text:
+            continue
+        added.append(
+            f"""  <url>
+    <loc>{loc}</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>{prio}</priority>
   </url>"""
         )
     if not added:

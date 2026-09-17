@@ -59,6 +59,9 @@ next-env.d.ts
 /Structuro_*.docx
 /*.xlsx
 /*.pptx
+# Ruwe keyword-exports; afgeleide maps staan in docs/seo/
+/data/seo/*.xlsx
+/data/seo/*.xls
 .~lock.*
 ~$*
 

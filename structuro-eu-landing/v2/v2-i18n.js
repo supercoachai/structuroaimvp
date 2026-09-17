@@ -18,7 +18,7 @@
       nav_login: "Inloggen",
       nav_cta: "Start 7 dagen gratis",
       hero_cta: "Begin met één stap",
-      cta_reassure: "Gratis proberen · geen creditcard · klaar in ~2 minuten",
+      cta_reassure: "Eerst dagstart zonder account · daarna 7 dagen trial",
       lang_label: "Taal",
       menu: "Menu",
       hero_eyebrow: "Voor ADHD-breinen die niet beginnen",
@@ -301,6 +301,9 @@
       gidsen_card3_t: "Beste ADHD-app",
       gidsen_card3_p: "Geen nummer 1. Wel een match: starten, tijd, of overzicht.",
       gidsen_all: "Alle gidsen",
+      gidsen_app: "ADHD-app kiezen",
+      gidsen_compare:
+        'Vergelijken: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a> · <a href="/structuro-of-todoist/">Structuro vs Todoist</a> · <a href="/structuro-of-structured/">Structuro vs Structured</a> · <a href="/adhd-focus-zonder-streaks/">zonder streaks</a>',
       press_label: "Gezien in",
       press_quote: "“Eindelijk iets dat niet uitgaat van een neurotypisch brein.”",
       price_eyebrow: "Prijs",
@@ -319,7 +322,7 @@
         "Klassieke planners gaan uit van overzicht en discipline. Structuro gaat uit van executie: één eerste stap, aangepast aan je energie. Minder systeem, meer beginnen.",
       faq_day_q: "Werkt dit ook als ik niet elke dag iets doe?",
       faq_day_a:
-        "Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint opnieuw.",
+        'Ja. Er zijn geen streaks, badges of achterstallig-meldingen. Een dag overslaan is geen falen, morgen begint opnieuw. Meer: <a href="/adhd-focus-zonder-streaks/">ADHD-app zonder streaks</a>.',
       faq_refund_q: "Hoe werkt de 7 dagen gratis?",
       faq_refund_a:
         "Je probeert eerst de dagstart, nog zonder account.<br><br>Daarna maak je een account en start je 7 dagen gratis. Daarvoor geef je een betaalmethode op, maar die week betaal je niets.<br><br>Vóór we iets afschrijven mailen we je, met een stop-knop (één klik). Stoppen kan ook via Instellingen → Abonnement beheren.<br><br>Niet tevreden binnen 14 dagen na je eerste betaling? Geld terug, zonder rompslomp.",
@@ -361,7 +364,7 @@
       nav_login: "Log in",
       nav_cta: "Start 7 days free",
       hero_cta: "Start with one step",
-      cta_reassure: "Try for free · no credit card · ready in ~2 minutes",
+      cta_reassure: "Day start first, no account · then 7-day trial",
       lang_label: "Language",
       menu: "Menu",
       hero_eyebrow: "For ADHD brains that don't start",
@@ -643,6 +646,9 @@
       gidsen_card3_t: "Best ADHD app",
       gidsen_card3_p: "No number 1. A match: starting, time, or overview.",
       gidsen_all: "All guides",
+      gidsen_app: "Choose an ADHD app",
+      gidsen_compare:
+        'Compare: <a href="/en/structuro-vs-tiimo/">Structuro vs Tiimo</a> · <a href="/en/structuro-vs-todoist/">Structuro vs Todoist</a> · <a href="/en/structuro-vs-structured/">Structuro vs Structured</a> · <a href="/adhd-focus-zonder-streaks/">no streaks</a>',
       press_label: "Seen in",
       press_quote: "“Finally something that doesn’t assume a neurotypical brain.”",
       price_eyebrow: "Pricing",
@@ -661,7 +667,7 @@
         "Classic planners assume overview and discipline. Structuro assumes execution: one first step, matched to your energy. Less system, more starting.",
       faq_day_q: "Does this work if I don't do something every day?",
       faq_day_a:
-        "Yes. No streaks, badges, or overdue alerts. Skipping a day isn't failure. Tomorrow simply starts again.",
+        'Yes. No streaks, badges, or overdue alerts. Skipping a day is not failure. Tomorrow you start again. More: <a href="/adhd-focus-zonder-streaks/">ADHD app without streaks</a>.',
       faq_refund_q: "How does the 7-day free trial work?",
       faq_refund_a:
         "You try the day start first, still without an account.<br><br>Then you create an account and start 7 days free. A payment method is required, but you pay nothing that week.<br><br>Before we charge you, we email you with a stop button (one click). You can also stop via Settings → Manage subscription.<br><br>Not happy within 14 days after your first payment? Money back, no hassle.",

@@ -1,17 +1,28 @@
 User-agent: *
 Allow: /
 
-# Retrieval crawlers for AI-answer surfaces (GEO)
+# Search / retrieval (zichtbaarheid in Search, AI Overviews, AI-antwoorden).
+# Training-crawlers staan hieronder apart: dat is geen rankingtactic.
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
 User-agent: OAI-SearchBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
-User-agent: GPTBot
+User-agent: PerplexityBot
 Allow: /
 
-User-agent: PerplexityBot
+# Training / model-ingest. Bewust toegestaan zodat productfeiten niet verdraaid
+# raken in trainingsdata. Dit is geen Google Search-rankingfactor.
+# OAI-SearchBot (search) is niet hetzelfde als GPTBot (training).
+User-agent: GPTBot
 Allow: /
 
 User-agent: ClaudeBot

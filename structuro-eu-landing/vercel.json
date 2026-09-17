@@ -201,6 +201,16 @@
       "permanent": true
     },
     {
+      "source": "/adhd-app",
+      "destination": "/adhd-app/",
+      "permanent": true
+    },
+    {
+      "source": "/executieve-functies-adhd",
+      "destination": "/executieve-functies-adhd/",
+      "permanent": true
+    },
+    {
       "source": "/adhd-ochtendroutine",
       "destination": "/adhd-ochtendroutine/",
       "permanent": true
@@ -479,6 +489,14 @@
     {
       "source": "/energie-first/",
       "destination": "/energie-first/index.html"
+    },
+    {
+      "source": "/adhd-app/",
+      "destination": "/adhd-app/index.html"
+    },
+    {
+      "source": "/executieve-functies-adhd/",
+      "destination": "/executieve-functies-adhd/index.html"
     },
     {
       "source": "/adhd-ochtendroutine/",
