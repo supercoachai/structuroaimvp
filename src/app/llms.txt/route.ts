@@ -4,6 +4,8 @@ const BODY = `# Structuro app
 
 > Product host. Knowledge lives at https://www.structuro.eu/llms.txt
 
+Structuro is een Nederlandse, prikkelarme executie-app voor volwassenen die weten wat ze moeten doen, maar niet beginnen. Het is geen planner, behandeling of medisch hulpmiddel.
+
 Structuro is the Dutch ADHD execution web app (structuro.ai). Not the steel company structuro.nl, not Structured.app.
 
 Start here: https://www.structuro.ai/onboarding (anonymous day start).

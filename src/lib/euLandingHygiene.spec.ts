@@ -113,4 +113,70 @@ describe("structuro.eu landing hygiene", () => {
       expect(p.html.includes(EM_DASH), p.rel).toBe(false);
     }
   });
+
+  it("houdt Structured-H2 vrij van Tiimo-alternatief", () => {
+    const page = pages.find((p) => p.rel === "structuro-of-structured/index.html");
+    expect(page, "structured page").toBeTruthy();
+    expect(page!.html).not.toContain("Tiimo-alternatief");
+    expect(page!.html).toContain("Structured-alternatief");
+  });
+
+  it("zet Goblin-vergelijking in sitemap, hub en related", () => {
+    expect(sitemap).toContain("https://www.structuro.eu/structuro-of-goblin-tools/");
+    const goblin = pages.find((p) => p.rel === "structuro-of-goblin-tools/index.html");
+    expect(goblin, "goblin page").toBeTruthy();
+    expect(goblin!.html).toContain("goblin.tools");
+    expect(goblin!.hreflangs).toEqual(expect.arrayContaining(["nl", "x-default"]));
+    expect(goblin!.hreflangs).not.toContain("en");
+    const hub = pages.find((p) => p.rel === "gidsen/index.html");
+    expect(hub!.html).toContain("/structuro-of-goblin-tools/");
+    const beste = pages.find((p) => p.rel === "beste-adhd-app-nederland/index.html");
+    expect(beste!.html).toContain("/structuro-of-goblin-tools/");
+    const taak = pages.find((p) => p.rel === "taakverlamming-adhd/index.html");
+    expect(taak!.html).toContain("/structuro-of-goblin-tools/");
+  });
+
+  it("heeft de canonieke descriptor in Organization JSON-LD", () => {
+    const needle =
+      "Structuro is een Nederlandse, prikkelarme executie-app voor volwassenen die weten wat ze moeten doen, maar niet beginnen. Het is geen planner, behandeling of medisch hulpmiddel.";
+    const adhdApp = pages.find((p) => p.rel === "adhd-app/index.html");
+    expect(adhdApp!.html).toContain(needle);
+    expect(adhdApp!.html).toContain('"@type": "Organization"');
+    const coaches = pages.find((p) => p.rel === "voor-coaches/index.html");
+    expect(coaches!.html).toContain(needle);
+    const pers = pages.find((p) => p.rel === "pers/index.html");
+    expect(pers!.html).toContain(needle);
+  });
+
+  it("zet groepsniveau-disclaimer op cluster B-gidsen", () => {
+    const disclaimer =
+      "Dit beschrijft patronen op groepsniveau. Het voorspelt niet wat voor één persoon geldt.";
+    for (const rel of [
+      "niet-kunnen-beginnen-adhd/index.html",
+      "taakverlamming-adhd/index.html",
+      "adhd-uitstelgedrag/index.html",
+      "waarom-gewoon-beginnen-niet-werkt/index.html",
+    ]) {
+      const page = pages.find((p) => p.rel === rel);
+      expect(page, rel).toBeTruthy();
+      expect(page!.html, rel).toContain(disclaimer);
+    }
+  });
+
+  it("linkt officiële productbronnen op de multi-productmatrix", () => {
+    const beste = pages.find((p) => p.rel === "beste-adhd-app-nederland/index.html");
+    expect(beste!.html).toContain("tiimoapp.com");
+    expect(beste!.html).toContain("structured.app");
+    expect(beste!.html).toContain("todoist.com");
+    expect(beste!.html).toContain("goblin.tools");
+    expect(beste!.html).toContain("focusmate.com");
+    expect(beste!.html).toContain("Functies en prijzen gecontroleerd op 17 september 2026");
+    expect(beste!.html).toContain("niet bevestigd");
+  });
+
+  it("heeft geen legacy /start CTA naar structuro.eu", () => {
+    for (const p of pages) {
+      expect(p.html, p.rel).not.toMatch(/https:\/\/(www\.)?structuro\.eu\/start/i);
+    }
+  });
 });

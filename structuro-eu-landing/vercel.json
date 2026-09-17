@@ -201,6 +201,11 @@
       "permanent": true
     },
     {
+      "source": "/structuro-of-goblin-tools",
+      "destination": "/structuro-of-goblin-tools/",
+      "permanent": true
+    },
+    {
       "source": "/adhd-app",
       "destination": "/adhd-app/",
       "permanent": true
@@ -489,6 +494,10 @@
     {
       "source": "/energie-first/",
       "destination": "/energie-first/index.html"
+    },
+    {
+      "source": "/structuro-of-goblin-tools/",
+      "destination": "/structuro-of-goblin-tools/index.html"
     },
     {
       "source": "/adhd-app/",

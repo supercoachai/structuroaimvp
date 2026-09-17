@@ -96,6 +96,8 @@ SLUG_REFS = {
     "alternatief-voor-todo-lijst-adhd": REFS_CHOICE,
     "structuro-of-tiimo": REFS_PRODUCT,
     "structuro-of-structured": REFS_PRODUCT,
+    "structuro-of-todoist": REFS_PRODUCT,
+    "structuro-of-goblin-tools": REFS_PRODUCT,
     "adhd-en-burn-out": REFS_INITIATION,
     "adhd-op-het-werk": REFS_WORK,
     "adhd-ochtendroutine": REFS_INITIATION,
@@ -261,11 +263,11 @@ EXTRA_GUIDES = [
             "adhd-keuzestress",
             "niet-kunnen-beginnen-adhd",
             "adhd-en-burn-out",
-            "adhd-bij-vrouwen",
+            "structuro-of-goblin-tools",
         ],
         "related_anchors": {
             "adhd-keuzestress": "als kiezen zelf de taak wordt",
-            "adhd-bij-vrouwen": "ADHD bij vrouwen: werk plus huis",
+            "structuro-of-goblin-tools": "Goblin Tools deelt op, Structuro start",
         },
         "description": "Taakverlamming bij ADHD is geen drama-woord voor luiheid. Het is een vol werkgeheugen plus te veel zichtbare stappen. Wat je kunt doen zonder te forceren.",
         "answer": (
@@ -544,16 +546,14 @@ EXTRA_GUIDES = [
         "related_slugs": [
             "adhd-app",
             "structuro-of-tiimo",
-            "structuro-of-structured",
             "structuro-of-todoist",
-            "adhd-focus-zonder-streaks",
+            "structuro-of-goblin-tools",
         ],
         "related_anchors": {
             "adhd-app": "wat Structuro als ADHD-app is",
             "structuro-of-tiimo": "Structuro vs Tiimo",
-            "structuro-of-structured": "Structuro vs Structured",
             "structuro-of-todoist": "Structuro vs Todoist",
-            "adhd-focus-zonder-streaks": "ADHD-app zonder streaks",
+            "structuro-of-goblin-tools": "Structuro vs Goblin Tools",
         },
         "description": "De beste ADHD-app in Nederland is geen ranking. Kies op knelpunt: starten, visuele tijd of overzicht.",
         "answer": (
@@ -571,7 +571,7 @@ EXTRA_GUIDES = [
 <p><strong>Overzicht.</strong> Te veel losse eindjes, niks kwijt willen. Dan is een lijst, notes of takenbeheer logisch. Weet dat overzicht de start niet automatiseert. <a href="/alternatief-voor-todo-lijst-adhd/">Alternatief voor de to-do-lijst</a>. Lijst versus start: <a href="/structuro-of-todoist/">Structuro vs Todoist</a>.</p>
 
 <h2>Kies de vergelijkingspagina, niet dit lijstje</h2>
-<p>Deze pagina is een knelpunt-match. De vs-vragen hebben een eigen URL: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>, <a href="/structuro-of-structured/">Structuro vs Structured</a>, <a href="/structuro-of-todoist/">Structuro vs Todoist</a>. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
+<p>Deze pagina is een knelpunt-match. De vs-vragen hebben een eigen URL: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>, <a href="/structuro-of-structured/">Structuro vs Structured</a>, <a href="/structuro-of-todoist/">Structuro vs Todoist</a>, <a href="/structuro-of-goblin-tools/">Structuro vs Goblin Tools</a>. Als starten het gat is, lees <a href="/taakverlamming-adhd/">taakverlamming</a>. Als de batterij leeg is: <a href="/adhd-en-burn-out/">ADHD en burn-out</a>.</p>
 
 <h2>Waar Nederlandse lijstjes vaak misgaan</h2>
 <p>Ze tellen features. Ze beloven focus als een persoonlijkheid. Ze zetten 'voor ADHD' op een gewone planner. Ze vergeten dat een webapp op je telefoon mag, zonder App Store. En ze doen alsof één winnaar bestaat. Dat is marketing, geen match.</p>
@@ -814,7 +814,7 @@ EXTRA_GUIDES = [
 <h2>Waar Structured logisch is</h2>
 <p>Als je wilt zien hoe de dag loopt. Als meetings, reistijd en pauzes in één beeld moeten. Als 'wat moet ik nu?' een tijdvraag is, niet een startvraag. Als een lijst te plat is en een kalender te koud. Dan is een timeline-app een helder instrument. Dat raakt <a href="/tijdblindheid-adhd/">tijdblindheid</a>: later krijgt een plek op een lijn.</p>
 
-<h2>Tiimo-alternatief: waar starten de klus is</h2>
+<h2>Structured-alternatief: waar starten de klus is</h2>
 <p>Als de tijdlijn al bestaat (in je hoofd, in Google, in Structured) en het blok 'werk aan X' toch leeg blijft. Als het vullen van de tijdlijn de productieve daad wás, en het echte werk niet. Als te veel blokken opnieuw een berg zijn. Dan is het probleem taakinitiatie. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>. <a href="/alternatief-voor-todo-lijst-adhd/">Geen tweede lijst</a>.</p>
 
 <h2>Het overlap-risico</h2>
@@ -1573,7 +1573,7 @@ EXTRA_GUIDES = [
         ),
         "h1": "ADHD-app: voor wie niet begint, geen planner om alles te beheren",
         "body": """
-<p>Wie op 'ADHD app' zoekt, krijgt vaak lijstjes, store-collecties en tools die alles willen bijhouden. Dat is een andere klus dan de onze. Structuro is gebouwd voor het moment waarop je al weet wat er moet, en de start toch uitblijft. Geen medisch product. Geen claim dat dit de beste ADHD-app is. Wel een prikkelarme executie-interface: dagstart, weinig tegelijk, één eerste stap.</p>
+<p>Structuro is een Nederlandse, prikkelarme executie-app voor volwassenen die weten wat ze moeten doen, maar niet beginnen. Het is geen planner, behandeling of medisch hulpmiddel. Wie op 'ADHD app' zoekt, krijgt vaak lijstjes, store-collecties en tools die alles willen bijhouden. Dat is een andere klus. Structuro is gebouwd voor het moment waarop je al weet wat er moet, en de start toch uitblijft.</p>
 <p>Wil je eerst types vergelijken (starten, tijd zien, overzicht): <a href="/beste-adhd-app-nederland/">kies op knelpunt, niet op ranking</a>. Deze pagina legt uit wat Structuro wél en níet is.</p>
 
 <h2>Voor wie deze ADHD-app wél is</h2>
@@ -1733,6 +1733,188 @@ EXTRA_GUIDES = [
             "Structuro-onderzoek is kwalitatief gebruikersonderzoek, geen klinische studie. Geen diagnose of behandeling."
         ),
         "verantwoording_refs": REFS_EF,
+    },
+    {
+        "slug": "structuro-of-todoist",
+        "eyebrow": "Vergelijking",
+        "card_num": "21",
+        "card_label": "TODOIST",
+        "hub_h2": "Structuro vs Todoist",
+        "hub_teaser": "Todoist bewaart de lijst. Structuro helpt beginnen. Kies de klus.",
+        "thumb": "lijst versus start",
+        "thumb_mod": "",
+        "read_min": "5 MIN",
+        "published": "2026-08-31",
+        "modified": "2026-09-17",
+        "hreflang": {
+            "nl": "https://www.structuro.eu/structuro-of-todoist/",
+            "en": "https://www.structuro.eu/en/structuro-vs-todoist/",
+            "x-default": "https://www.structuro.eu/structuro-of-todoist/",
+        },
+        "title": "Structuro vs Todoist: lijst of eerste stap",
+        "meta_title": "Structuro vs Todoist: lijst of start",
+        "description": "Todoist bewaart taken. Structuro helpt de eerste klik. Eerlijk wanneer een lijst past, en wanneer starten de klus is.",
+        "related_slugs": [
+            "alternatief-voor-todo-lijst-adhd",
+            "structuro-of-tiimo",
+            "beste-adhd-app-nederland",
+            "structuro-of-goblin-tools",
+        ],
+        "related_anchors": {
+            "alternatief-voor-todo-lijst-adhd": "alternatief voor de to-do-lijst",
+            "structuro-of-tiimo": "Structuro vs Tiimo",
+            "beste-adhd-app-nederland": "kies op knelpunt",
+            "structuro-of-goblin-tools": "Structuro vs Goblin Tools",
+        },
+        "answer": (
+            "Todoist is sterk als de klus vangen, taggen en projecten bewaren is. Structuro helpt als de klus vandaag "
+            "starten is: energie eerst, één kleine stap, weinig in beeld. Als de lijst groeit terwijl jij stilstaat, "
+            "is starten het gat, niet nóg een inbox. Kies Todoist voor opslag. Kies Structuro voor de eerste klik. "
+            "Geen van beide is een behandeling of medisch hulpmiddel."
+        ),
+        "h1": "Structuro vs Todoist: als de lijst niet laat starten",
+        "body": """
+<p>Structuro vs Todoist is geen wedstrijd om de beste ADHD-app. Todoist presenteert zich als to-do-lijst: taken vastleggen, organiseren, Today en Upcoming. Dat staat op <a href="https://www.todoist.com/" rel="noopener noreferrer">todoist.com</a>. Structuro is een prikkelarme executie-webapp: energie, dan één eerste stap. Die zin is de vergelijking. De rest is nuance.</p>
+
+<h2>Waar Todoist logisch is</h2>
+<p>Gedeelde projecten. Terugkerende admin. Een inbox zodat gedachten uit je hoofd mogen. Filters als ze ruis minderen, niet als ze een tweede baan worden. Op <a href="https://www.todoist.com/pricing" rel="noopener noreferrer">todoist.com/pricing</a> staat een gratis Beginner-plan (onder meer vijf persoonlijke projecten, reminders, list- en board-layouts) en een Pro-plan met onder meer calendar layout, meer projecten en Task Assist. Het Pro-bedrag stond op 17 september 2026 niet als vast getal op die pagina. Dan is Todoist overzicht. Overzicht is een echte klus. Zie <a href="/alternatief-voor-todo-lijst-adhd/">alternatief voor de to-do-lijst</a>.</p>
+
+<h2>Todoist-alternatief: waar starten de klus is</h2>
+<p>Als de inbox vol is en vandaag leeg. Als opsplitsen eenmalig kan, maar je de hele berg elke ochtend niet aankunt. Als Today een aanklacht wordt in plaats van een ingang. Dan is het probleem taakinitiatie. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>. <a href="/takenlijst-te-lang-adhd/">Takenlijst te lang</a>.</p>
+
+<h2>Praktische verschillen, alleen wat we konden staven</h2>
+<ul>
+<li><strong>Klus.</strong> Todoist: bewaren en organiseren. Structuro: de eerste klik, passend bij energie.</li>
+<li><strong>Zicht.</strong> Todoist kan Today smal maken, en ook een groot systeem worden. Structuro toont expres weinig.</li>
+<li><strong>Opdelen.</strong> Todoist noemt sub-tasks in alle plannen en Task Assist in Pro. Structuro maakt de eerste stap klein in de dagstart, niet een universele breakdown-engine.</li>
+<li><strong>Gamification.</strong> Niet bevestigd op de geopende Todoist-pagina's. Structuro heeft geen streaks.</li>
+<li><strong>Platform.</strong> Structuro is een webapp. Todoist's volledige store-lijst stond niet uitgeschreven op de geopende pagina's.</li>
+</ul>
+
+<h2>Twee systemen onderhouden</h2>
+<p>Mag: Todoist als lade, Structuro als vandaag. In de praktijk niet: twee complete systemen. Alles migreren is een taak. Taken zijn het probleem. Houd het archief. Maak vandaag kleiner.</p>
+<p>Ook: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a>, <a href="/structuro-of-goblin-tools/">Structuro vs Goblin Tools</a>, <a href="/beste-adhd-app-nederland/">kies op knelpunt</a>. Engels: <a href="/en/structuro-vs-todoist/" hreflang="en">Structuro vs Todoist</a>.</p>
+
+<h2>Hoe je in vijf minuten kiest</h2>
+<p>Schrijf op: mijn laatste mislukking was (a) ik kwijt wat ik moet doen, of (b) ik weet het en beweeg niet. (a) wijst naar een lijst. (b) wijst naar executie. Als het 'ik richtte twee uur labels in' was, kies de tool die inrichten weigert.</p>
+<p>Als je Todoist houdt, maak het volgende item expres te klein: openen, onderwerpregel, bestand vinden. Niet 'het hele deliverable'. Meet na een week of je vaker in de taak kwam. Zo nee, de lijst is inrichten geworden. Dan is een apart startvlak de eerlijke volgende stap.</p>
+<p>Een lijst wint als hij betrouwbaar is en uit zicht mag. Hij verliest als hij elke ochtend de hele hinterland-berg opent. Structuro wint niet van Todoist. Het lost een ander gat op. Wie beide klussen heeft, mag beide tools houden, op voorwaarde dat de lade de start niet overschrijft. Wie twijfelt, kiest één week één scherm. Meet bewegen, niet inrichten. Inrichten voelt productief omdat het zichtbaar is. Starten is vaak onzichtbaar tot het gebeurd is.</p>
+<p>Functies en prijzen van Todoist kunnen wijzigen. Wat hier staat, is wat todoist.com en todoist.com/pricing op 17 september 2026 toonden. Wat we niet zagen, zoals een vast Pro-bedrag, blijft niet bevestigd. Gokken in een vergelijking is hoe roundups onbetrouwbaar worden.</p>
+""",
+        "cta_title": "Begin met één stap",
+        "cta_p": "Als de lijst vol is en jij stilstaat, test dan de dagstart. Eén klik.",
+        "faqs": [
+            (
+                "Moet ik uit Todoist migreren?",
+                "Niet standaard. Houd Todoist als lade als die al je wereld bevat. Gebruik een startvlak voor vandaag. Alles overzetten is een nieuwe berg.",
+            ),
+            (
+                "Is Todoist ADHD-vriendelijk?",
+                "Voor vangen en overzicht vaak wel. Voor een groeiende inbox kan het verlammen. Vriendelijk is de klus, niet het etiket.",
+            ),
+            (
+                "Waarom noemen AI-lijstjes Todoist zo vaak?",
+                "Jaren store-pagina's en roundups. Frequentie is niet de test of jij begint.",
+            ),
+            (
+                "Wat kost Todoist?",
+                "Beginner is gratis volgens todoist.com/pricing. Het Pro-bedrag stond daar op 17 september 2026 niet als vast getal. Check hun eigen checkout.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Vergelijking op gebruikersklus, geen labtest. Productdetails van Todoist komen van todoist.com. "
+            "Die kunnen wijzigen. Geen affiliate."
+        ),
+        "verantwoording_refs": REFS_PRODUCT,
+    },
+    {
+        "slug": "structuro-of-goblin-tools",
+        "eyebrow": "Vergelijking",
+        "card_num": "26",
+        "card_label": "GOBLIN",
+        "hub_h2": "Structuro vs Goblin Tools",
+        "hub_teaser": "Goblin deelt een te grote taak op. Structuro is de dagelijkse lus tot je begint.",
+        "thumb": "opdelen",
+        "thumb_mod": "n",
+        "read_min": "5 MIN",
+        "published": "2026-09-17",
+        "modified": "2026-09-17",
+        "hreflang": {
+            "nl": "https://www.structuro.eu/structuro-of-goblin-tools/",
+            "x-default": "https://www.structuro.eu/structuro-of-goblin-tools/",
+        },
+        "title": "Structuro vs Goblin Tools: opdelen of starten",
+        "meta_title": "Structuro vs Goblin Tools: opdelen of start",
+        "description": "Goblin Tools deelt een te grote taak op. Structuro helpt de eerste klik in een dagelijkse lus. Eerlijke as, geen ranking.",
+        "related_slugs": [
+            "taakverlamming-adhd",
+            "beste-adhd-app-nederland",
+            "structuro-of-todoist",
+            "niet-kunnen-beginnen-adhd",
+        ],
+        "related_anchors": {
+            "taakverlamming-adhd": "als alles tegelijk te groot is",
+            "beste-adhd-app-nederland": "kies op knelpunt, geen ranking",
+            "structuro-of-todoist": "lijst versus eerste stap",
+            "niet-kunnen-beginnen-adhd": "als de start uitblijft",
+        },
+        "answer": (
+            "Goblin Tools helpt een te grote taak opdelen, vooral met Magic ToDo. Structuro is geen opdeel-tool. "
+            "Het is een dagelijkse lus: energie, weinig tegelijk, één start, focus, shutdown. Kies Goblin als de klus "
+            "nog een berg stappen is. Kies Structuro als de stappen al duidelijk zijn en de eerste klik uitblijft. "
+            "Geen van beide is een behandeling of medisch hulpmiddel."
+        ),
+        "h1": "Structuro vs Goblin Tools: opdelen of de eerste klik",
+        "body": """
+<p>Structuro vs Goblin Tools is de ontbrekende vergelijking in veel ADHD-toolantwoorden. Op <a href="https://goblin.tools/" rel="noopener noreferrer">goblin.tools</a> staat een collectie kleine, eenvoudige tools voor als iets te groot of te ingewikkeld voelt. Magic ToDo deelt todo-items op. Structuro bouwt een dagelijkse lus: energie, selectie, eerste stap, focus, shutdown. Dat is een andere klus. Allebei 'helpt bij beginnen' zeggen is te grof. De test is: heb je stappen nodig, of een start?</p>
+
+<h2>Waar Goblin Tools logisch is</h2>
+<p>Als één taak nog een berg is en je niet weet wat de eerste fysieke handeling is. <a href="https://goblin.tools/todo" rel="noopener noreferrer">Magic ToDo</a> werkt als todo-lijst met extra: een knop die stappen voorstelt, en een spiciness-niveau dat hint hoe fijnmazig die stappen mogen zijn. Taskmaster richt zich op één taak tegelijk. Compiler zet een braindump om in acties. Estimator raadt een tijdsduur. Dat staat op de officiële site, niet op een affiliate-lijstje. Zie <a href="/taakverlamming-adhd/">taakverlamming</a> als de berg het probleem is, en deze pagina als je tussen opdelen en starten kiest.</p>
+
+<h2>Goblin-alternatief: waar starten de klus is</h2>
+<p>Als de stappen al op papier staan en je ze toch niet ingaat. Als je Magic ToDo opent, een mooie keten krijgt, en daarna alsnog stilstaat. Dan ontbreekt niet opdeling. Dan ontbreekt executie: energie, één zichtbare klik, de rest uit beeld. <a href="/niet-kunnen-beginnen-adhd/">Niet kunnen beginnen</a>. <a href="/een-stap-per-dag/">Eén stap per dag</a>.</p>
+
+<h2>Praktische verschillen, alleen wat we konden staven</h2>
+<ul>
+<li><strong>Vorm.</strong> Goblin Tools is een set single-task tools op het web, met mobile apps op Android en iOS volgens <a href="https://goblin.tools/About" rel="noopener noreferrer">About</a>. Structuro is één prikkelarme webapp-lus, geen set losse AI-tooltjes.</li>
+<li><strong>Opdelen versus lus.</strong> Goblin: break-down van één te grote klus. Structuro: elke dag opnieuw energie, weinig tegelijk, één start.</li>
+<li><strong>Prijs.</strong> goblin.tools blijft volgens About forever free zonder ads. Geavanceerde features zitten in Pro: $3 / €3 / £3 per maand en één week trial, volgens <a href="https://goblin.tools/pro/join" rel="noopener noreferrer">goblin.tools/pro/join</a>. Structuro: eerst dagstart zonder account, daarna 7 dagen trial, daarna €12,99 per maand of €119 per jaar.</li>
+<li><strong>AI-output.</strong> Goblin waarschuwt zelf dat modeloutput giswerk is, geen waarheid. Structuro vraagt jou te bevestigen wat haalbaar is. Geen van beide is een orakel.</li>
+<li><strong>Medisch.</strong> Geen van beide is diagnose, behandeling of medisch hulpmiddel. Goblin's voorwaarden zeggen expliciet: niet vertrouwen voor medisch, juridisch of veiligheidskritisch gebruik.</li>
+</ul>
+
+<h2>Mag je allebei gebruiken?</h2>
+<p>Ja, als ze niet dezelfde klus doen. Goblin om één berg in stappen te hakken. Structuro om morgen die eerste stap daadwerkelijk in te gaan. Twee opdeel-tools is dubbel. Twee start-apps is dubbel. Elke extra app is een extra start.</p>
+
+<h2>Hoe je in vijf minuten kiest</h2>
+<p>Schrijf op: mijn laatste mislukking was (a) ik wist niet wat de eerste handeling was, of (b) ik wist het en deed het niet. (a) wijst naar opdelen. (b) wijst naar executie. Als het allebei is, hak één taak één keer in stappen, en gebruik daarna een week alleen een startvlak. Zonder klik speelt de mooiste keten niet.</p>
+<p>Meer keuze-kader: <a href="/beste-adhd-app-nederland/">beste ADHD-app voor jou</a>, met een neutrale matrix. Geen ranking. Ook: <a href="/structuro-of-todoist/">Structuro vs Todoist</a> als opslag het andere gat is. Functies en prijzen van Goblin Tools kunnen wijzigen. Wat hier staat, is wat goblin.tools op 17 september 2026 toonde.</p>
+""",
+        "cta_title": "Begin met één stap",
+        "cta_p": "Als de stappen er al zijn en jij stilstaat, test dan de dagstart. Eén klik.",
+        "faqs": [
+            (
+                "Is Structuro een Goblin-kloon?",
+                "Nee. Goblin Tools deelt een te grote taak op. Structuro is een dagelijkse lus tot de eerste klik.",
+            ),
+            (
+                "Is Goblin Tools gratis?",
+                "De website is volgens goblin.tools/About forever free zonder ads. Pro is optioneel: $3 / €3 / £3 per maand plus een week trial, volgens goblin.tools/pro/join.",
+            ),
+            (
+                "Kan ik Goblin houden en Structuro ernaast?",
+                "Ja, als Goblin opdeelt en Structuro start. Twee tools voor dezelfde klus is extra frictie.",
+            ),
+            (
+                "Is dit medisch advies?",
+                "Nee. Geen diagnose, geen behandeling, geen medisch hulpmiddel. Productiviteitstools, geen zorg.",
+            ),
+        ],
+        "verantwoording_intro": (
+            "Vergelijking op gebruikersklus. Goblin-features en prijzen komen van goblin.tools, /todo, /About en /pro/join, "
+            "gecontroleerd op 17 september 2026. Geen affiliate. Geen labtest."
+        ),
+        "verantwoording_refs": REFS_PRODUCT,
     },
 ]
 

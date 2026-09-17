@@ -11,11 +11,12 @@ _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 from extra_guides import EXTRA_GUIDES
+from geo_blocks import CANONICAL_DESCRIPTOR, apply_geo_flags, geo_blocks_html
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLISHED = "2026-08-08"
 MODIFIED = "2026-09-17"
-CSS_V = "20260917a"
+CSS_V = "20260917c"
 TITLE_MAX = 60
 DESC_MAX = 155
 BRAND_SUFFIX = " · Structuro"
@@ -25,13 +26,6 @@ FEATURED_SLUGS = (
     "executieve-functies-adhd",
 )
 RELATED_ALIASES = {
-    "structuro-of-todoist": {
-        "slug": "structuro-of-todoist",
-        "h1": "Structuro vs Todoist: als Todoist bij ADHD niet werkt",
-        "eyebrow": "Vergelijking",
-        "card_num": "21",
-        "card_label": "TODOIST",
-    },
     "overprikkeling-adhd": {
         "slug": "overprikkeling-adhd",
         "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
@@ -57,22 +51,6 @@ RELATED_ALIASES = {
 # Bestaande gidsen die niet in GUIDES staan (eigen HTML), wel op de hub.
 HUB_EXTRA = [
     {
-        "slug": "structuro-of-todoist",
-        "h1": "Structuro vs Todoist: als de lijst niet laat starten",
-        "hub_h2": "Structuro vs Todoist",
-        "hub_teaser": "Todoist bewaart de lijst. Structuro helpt beginnen. Kies de klus.",
-        "eyebrow": "Vergelijking",
-        "card_num": "21",
-        "card_label": "TODOIST",
-        "read_min": "4 MIN",
-        "thumb": "lijst versus start",
-        "thumb_mod": "",
-        "answer": (
-            "Todoist bewaart taken. Structuro helpt de eerste klik. "
-            "Als de lijst groeit terwijl jij stilstaat, is starten de klus, niet nóg een inbox."
-        ),
-    },
-    {
         "slug": "overprikkeling-adhd",
         "h1": "Overprikkeling en ADHD: hoe een volle dag je startmotor leeglekt",
         "hub_h2": "Overprikkeling en ADHD",
@@ -92,10 +70,7 @@ HUB_EXTRA = [
 OG_IMAGE = "https://www.structuro.eu/uploads/og-share.png?v=20260808a"
 ORG_ID = "https://www.structuro.eu/#organization"
 ORG_LOGO = "https://www.structuro.eu/uploads/logo-structuro-mark.png"
-ORG_DESCRIPTION = (
-    "Rustige ADHD-app voor wie weet wat er moet gebeuren, maar niet begint. "
-    "Energie-first, één eerste stap. Geen planner, geen streaks."
-)
+ORG_DESCRIPTION = CANONICAL_DESCRIPTOR
 ORG_SAME_AS = [
     "https://www.instagram.com/structuro.ai/",
     "https://www.tiktok.com/@structuro.ai",
@@ -119,7 +94,7 @@ GUIDES = [
             "niet-kunnen-beginnen-adhd",
             "waarom-planners-falen",
             "taakverlamming-adhd",
-            "een-stap-per-dag",
+            "adhd-uitstelgedrag",
         ],
         "related_anchors": {
             "niet-kunnen-beginnen-adhd": "wat er gebeurt als beginnen niet lukt",
@@ -644,6 +619,7 @@ GUIDES = [
 ]
 
 GUIDES.extend(EXTRA_GUIDES)
+apply_geo_flags(GUIDES)
 
 
 def esc(s: str) -> str:
@@ -997,7 +973,7 @@ def render(g: dict) -> str:
   </div>
   <p class="guide-answer">{esc(g["answer"])}</p>
 {cluster_note_html(g)}  <article class="guide-prose">
-{g["body"].strip()}
+{geo_blocks_html(g)}{g["body"].strip()}
   </article>
 
   <section class="sc-cta" aria-label="Call to action">
@@ -1073,7 +1049,7 @@ def write_llms() -> None:
     lines = [
         "# Structuro",
         "",
-        "> Rustige executie-app voor ADHD-breinen. Helpt je beginnen met één haalbare stap per dag. Geen planner, geen streaks, geen shame-gamification.",
+        f"> {CANONICAL_DESCRIPTOR}",
         "",
         "Structuro is een prikkelarme executie-interface: dagstart → focus → dagafsluiting. Energie-first, max een paar taken zichtbaar. Geen medisch advies; geen diagnose of behandeling.",
         "",

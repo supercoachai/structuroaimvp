@@ -303,7 +303,7 @@
       gidsen_all: "Alle gidsen",
       gidsen_app: "ADHD-app kiezen",
       gidsen_compare:
-        'Vergelijken: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a> · <a href="/structuro-of-todoist/">Structuro vs Todoist</a> · <a href="/structuro-of-structured/">Structuro vs Structured</a> · <a href="/adhd-focus-zonder-streaks/">zonder streaks</a>',
+        'Vergelijken: <a href="/structuro-of-tiimo/">Structuro vs Tiimo</a> · <a href="/structuro-of-todoist/">Structuro vs Todoist</a> · <a href="/structuro-of-structured/">Structuro vs Structured</a> · <a href="/structuro-of-goblin-tools/">Goblin Tools</a> · <a href="/adhd-focus-zonder-streaks/">zonder streaks</a>',
       press_label: "Gezien in",
       press_quote: "“Eindelijk iets dat niet uitgaat van een neurotypisch brein.”",
       price_eyebrow: "Prijs",
