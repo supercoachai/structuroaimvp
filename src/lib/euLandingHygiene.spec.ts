@@ -195,6 +195,42 @@ describe("structuro.eu landing hygiene", () => {
     expect(beste!.html).toContain("niet bevestigd");
   });
 
+  it("host fonts lokaal en vermijdt Google Fonts", () => {
+    for (const p of indexable) {
+      expect(p.html, p.rel).not.toContain("fonts.googleapis.com");
+      expect(p.html, p.rel).not.toContain("fonts.gstatic.com");
+      expect(p.html, p.rel).toContain("/css/fonts.css");
+    }
+  });
+
+  it("verwijst externe bronnen naar finale 200-URL's, geen 3XX/4XX-hop", () => {
+    for (const p of indexable) {
+      expect(p.html, p.rel).not.toContain("https://tiimoapp.com/");
+      expect(p.html, p.rel).not.toContain("https://www.tiimoapp.com/pricing");
+      expect(p.html, p.rel).not.toContain("https://www.focusmate.com/pricing\"");
+      expect(p.html, p.rel).not.toContain("onlinelibrary.wiley.com");
+      expect(p.html, p.rel).not.toMatch(
+        /linkedin\.com\/company\/structuro(?![-a-zA-Z0-9])/,
+      );
+    }
+    const mentale = pages.find((p) => p.rel === "mentale-belasting-dagstart/index.html");
+    expect(mentale!.html).toContain("https://dblp.org/rec/journals/cogsci/Sweller88");
+    const beste = pages.find((p) => p.rel === "beste-adhd-app-nederland/index.html");
+    expect(beste!.html).toContain("https://www.tiimoapp.com/");
+    expect(beste!.html).toContain("https://www.tiimoapp.com/faq");
+    expect(beste!.html).toContain("https://www.focusmate.com/pricing/");
+  });
+
+  it("zet zichtbare ankertekst op icoon-only externe links", () => {
+    const cyclus = pages.find((p) => p.rel === "cyclus/index.html");
+    expect(cyclus!.html).toContain('<span class="sr-only">Instagram</span>');
+    expect(cyclus!.html).toContain('<span class="sr-only">TikTok</span>');
+    expect(cyclus!.html).toContain('<span class="sr-only">LinkedIn</span>');
+    expect(cyclus!.html).toContain("linkedin.com/company/structuro-ai");
+    const coaches = pages.find((p) => p.rel === "voor-coaches/index.html");
+    expect(coaches!.html).toContain('<span class="sr-only">Beluister op Spotify</span>');
+  });
+
   it("heeft geen legacy /start CTA naar structuro.eu", () => {
     for (const p of pages) {
       expect(p.html, p.rel).not.toMatch(/https:\/\/(www\.)?structuro\.eu\/start/i);

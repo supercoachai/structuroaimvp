@@ -87,8 +87,8 @@ DEFAULT_LIMITATION = (
 PRODUCT_SOURCES_BY_SLUG: dict[str, list[tuple[str, str]]] = {
     "beste-adhd-app-nederland": [
         ("Structuro, prijs en product (structuro.eu)", "https://www.structuro.eu/"),
-        ("Tiimo, officiële site", "https://tiimoapp.com/"),
-        ("Tiimo, pricing en plannen", "https://tiimoapp.com/pricing"),
+        ("Tiimo, officiële site", "https://www.tiimoapp.com/"),
+        ("Tiimo, pricing en plannen", "https://www.tiimoapp.com/faq"),
         ("Structured, officiële site", "https://structured.app/"),
         ("Todoist, officiële site", "https://www.todoist.com/"),
         ("Todoist, plans and pricing", "https://www.todoist.com/pricing"),
@@ -97,11 +97,11 @@ PRODUCT_SOURCES_BY_SLUG: dict[str, list[tuple[str, str]]] = {
         ("Goblin Tools, About", "https://goblin.tools/About"),
         ("Goblin Tools Pro", "https://goblin.tools/pro/join"),
         ("Focusmate, officiële site", "https://www.focusmate.com/"),
-        ("Focusmate, pricing", "https://www.focusmate.com/pricing"),
+        ("Focusmate, pricing", "https://www.focusmate.com/pricing/"),
     ],
     "structuro-of-tiimo": [
-        ("Tiimo, officiële site", "https://tiimoapp.com/"),
-        ("Tiimo, pricing en plannen", "https://tiimoapp.com/pricing"),
+        ("Tiimo, officiële site", "https://www.tiimoapp.com/"),
+        ("Tiimo, pricing en plannen", "https://www.tiimoapp.com/faq"),
         ("Structuro, prijs en product", "https://www.structuro.eu/"),
     ],
     "structuro-of-structured": [
@@ -122,7 +122,7 @@ PRODUCT_SOURCES_BY_SLUG: dict[str, list[tuple[str, str]]] = {
     ],
     "body-doubling-adhd": [
         ("Focusmate, officiële site", "https://www.focusmate.com/"),
-        ("Focusmate, pricing", "https://www.focusmate.com/pricing"),
+        ("Focusmate, pricing", "https://www.focusmate.com/pricing/"),
         ("Structuro, prijs en product", "https://www.structuro.eu/"),
     ],
 }

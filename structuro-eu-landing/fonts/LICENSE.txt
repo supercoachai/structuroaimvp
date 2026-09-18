@@ -1,0 +1,11 @@
+Inter (latin / latin-ext variable)
+Copyright 2016 The Inter Project Authors
+SIL Open Font License 1.1
+https://github.com/rsms/inter
+
+Newsreader (latin / latin-ext variable)
+Copyright 2020 Production Type
+SIL Open Font License 1.1
+https://github.com/productiontype/Newsreader
+
+Files vendored via Fontsource for self-hosting on structuro.eu.

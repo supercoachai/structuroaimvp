@@ -11,13 +11,7 @@
   }
 
   function loadStorySerifFont() {
-    if (window.__structuroStorySerifLoaded) return;
-    window.__structuroStorySerifLoaded = true;
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href =
-      "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&display=swap";
-    document.head.appendChild(link);
+    /* Newsreader wordt self-hosted via /css/fonts.css. */
   }
 
   function observeSection(selector, src, margin, withFonts) {

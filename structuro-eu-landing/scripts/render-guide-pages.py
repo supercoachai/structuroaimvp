@@ -75,7 +75,7 @@ ORG_DESCRIPTION = CANONICAL_DESCRIPTOR
 ORG_SAME_AS = [
     "https://www.instagram.com/structuro.ai/",
     "https://www.tiktok.com/@structuro.ai",
-    "https://www.linkedin.com/company/structuro",
+    "https://www.linkedin.com/company/structuro-ai",
 ]
 
 GUIDES = [
@@ -924,9 +924,9 @@ def render(g: dict) -> str:
 <meta name="twitter:title" content="{esc(title)}"/>
 <meta name="twitter:description" content="{esc(desc)}"/>
 <meta name="twitter:image" content="{OG_IMAGE}"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="/css/fonts.css?v=20260918a"/>
 <link rel="stylesheet" href="/css/guide.css?v={CSS_V}"/>
 <script type="application/ld+json">
 {article_schema(g)}
@@ -1179,9 +1179,9 @@ def write_hub() -> None:
 <meta name="twitter:title" content="{hub_title}"/>
 <meta name="twitter:description" content="{esc(desc)}"/>
 <meta name="twitter:image" content="{OG_IMAGE}"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="preload" href="/fonts/newsreader-latin.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="/css/fonts.css?v=20260918a"/>
 <link rel="stylesheet" href="/css/guide.css?v={CSS_V}"/>
 <script type="application/ld+json">
 {{

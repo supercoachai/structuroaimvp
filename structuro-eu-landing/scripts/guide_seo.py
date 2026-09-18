@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import re
 
-# doi.org geeft 302 naar de uitgever. PubMed landt zonder die hop.
+# doi.org geeft 302 naar de uitgever. PubMed landt zonder die hop (203 is OK).
+# Wiley abs-URL's geven 403 voor crawlers; Sweller 1988 gaat naar DBLP (200).
 DOI_TO_STABLE = {
     "https://doi.org/10.1016/j.biopsych.2005.02.005": "https://pubmed.ncbi.nlm.nih.gov/15950006/",
     "https://doi.org/10.1016/S0065-2601(06)38002-1": "https://pubmed.ncbi.nlm.nih.gov/17139775/",
@@ -36,7 +37,7 @@ DOI_TO_STABLE = {
     "https://doi.org/10.1177/1087054718772138": "https://pubmed.ncbi.nlm.nih.gov/29759042/",
     "https://doi.org/10.1371/journal.pone.0089129": "https://pubmed.ncbi.nlm.nih.gov/24586543/",
     "https://doi.org/10.1016/j.cpr.2016.12.004": "https://pubmed.ncbi.nlm.nih.gov/28088686/",
-    "https://doi.org/10.1207/s15516709cog1202_4": "https://onlinelibrary.wiley.com/doi/abs/10.1207/s15516709cog1202_4",
+    "https://doi.org/10.1207/s15516709cog1202_4": "https://dblp.org/rec/journals/cogsci/Sweller88",
 }
 
 SEO: dict[str, dict] = {
